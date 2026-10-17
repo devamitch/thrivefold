@@ -1,0 +1,202 @@
+import React, { useState } from 'react';
+import { ScrollView, StyleSheet, Text, View, Alert } from 'react-native';
+import { Button } from '../../../components/ui/Button';
+import { Card } from '../../../components/ui/Card';
+import { Badge } from '../../../components/ui/Badge';
+import { Header } from '../../../components/ui/Header';
+import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
+import { useTheme } from '../../../theme/useTheme';
+import { useAuthStore } from '../../../stores/useAuthStore';
+import { usePolicyStore } from '../../../stores/usePolicyStore';
+import { evaluateFeatureEligibility } from '../../../domain/policy/engine';
+
+interface CircleItem {
+  id: string;
+  title: string;
+  description: string;
+  memberCount: number;
+  category: string;
+}
+
+export default function CommunitiesScreen() {
+  const { colors, typography, spacing, experience } = useTheme();
+  const user = useAuthStore((s) => s.user);
+  const activeTrialStartDate = useAuthStore((s) => s.activeTrialStartDate);
+  const introsSentToday = useAuthStore((s) => s.introsSentToday);
+  const consentedFeatures = usePolicyStore((s) => s.consentedFeatures);
+  const blockedUserIds = usePolicyStore((s) => s.blockedUserIds);
+
+  const [joinedCircleIds, setJoinedCircleIds] = useState<string[]>([]);
+
+  // Policy check for trial lockout
+  const eligibility = evaluateFeatureEligibility('community_directory', {
+    userId: user?.id ?? 'dev_user',
+    age: user?.age ?? 26,
+    isAgeVerified: user?.isAgeVerified ?? true,
+    experience,
+    completedCheckInDays: 3,
+    consentedFeatures,
+    activeTrialStartDate: activeTrialStartDate ?? undefined,
+    hasActiveSubscription: user?.hasActiveSubscription ?? false,
+    introsSentToday,
+    blockedUserIds,
+  });
+
+  const getCohorts = (): CircleItem[] => {
+    if (experience === 'men_health') {
+      return [
+        {
+          id: 'men_strength',
+          title: 'Strength, Stamina & Recovery',
+          description: 'Optimizing sleep, VO2 max endurance, and active longevity habits.',
+          memberCount: 142,
+          category: "Men's Health",
+        },
+        {
+          id: 'men_mindset',
+          title: 'Mental Fortitude & Stress Grounding',
+          description: 'Stoic practices, decompressing after high-stress days, and presence.',
+          memberCount: 98,
+          category: 'Resilience',
+        },
+        {
+          id: 'men_fatherhood',
+          title: 'Fatherhood & Life Balance',
+          description: 'Navigating family presence, work boundaries, and personal vitality.',
+          memberCount: 76,
+          category: 'Fatherhood',
+        },
+      ];
+    }
+    if (experience === 'pride_wellbeing') {
+      return [
+        {
+          id: 'pride_affirming',
+          title: 'Affirming Care Navigation',
+          description: 'Safe healthcare resources, provider recommendations, and hormone therapy care.',
+          memberCount: 118,
+          category: 'Affirming Care',
+        },
+        {
+          id: 'pride_chosen_family',
+          title: 'Chosen Family & Mental Haven',
+          description: 'Safe peer reflections, celebrating milestones, and unconditional community.',
+          memberCount: 204,
+          category: 'Haven',
+        },
+      ];
+    }
+    return [
+      {
+        id: 'women_cycle',
+        title: 'Cycle Syncing & Hormonal Balance',
+        description: 'Nutrition, energy alignment, and symptom management across menstrual phases.',
+        memberCount: 312,
+        category: "Women's Health",
+      },
+      {
+        id: 'women_pcos',
+        title: 'PCOS & Endometriosis Resilience',
+        description: 'Holistic approaches, dietary support, and shared compassionate experiences.',
+        memberCount: 187,
+        category: 'Hormonal Wellness',
+      },
+      {
+        id: 'women_matrescence',
+        title: 'Matrescence & Postpartum Care',
+        description: 'Gentle support for postpartum transitions, sleep shifts, and self-compassion.',
+        memberCount: 94,
+        category: 'Maternal Care',
+      },
+    ];
+  };
+
+  const circles = getCohorts();
+
+  const handleToggleJoin = (circleId: string, title: string) => {
+    if (joinedCircleIds.includes(circleId)) {
+      setJoinedCircleIds((prev) => prev.filter((id) => id !== circleId));
+      Alert.alert('Left Circle', `You have left ${title}.`);
+    } else {
+      setJoinedCircleIds((prev) => [...prev, circleId]);
+      Alert.alert('Joined Circle 🎉', `Welcome to ${title}! All group prompts are strictly chip-based.`);
+    }
+  };
+
+  return (
+    <ScreenWrapper scrollable>
+      <Header title="Private Circles" subtitle="Segmented, identity-safe affinity spaces" showBack />
+      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: spacing.xxl }]}>
+        {/* Policy Notice if Barred */}
+        {!eligibility.allowed && (
+          <Card variant="surface1" style={{ marginBottom: spacing.md, borderColor: colors.warning, borderWidth: 1 }}>
+            <Badge label="Restricted During Trial" variant="warning" />
+            <Text style={[typography.subbodyBold, { color: colors.text.primary, marginTop: 8 }]}>
+              Community Discovery Inactive
+            </Text>
+            <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+              {eligibility.message}
+            </Text>
+          </Card>
+        )}
+
+        {/* Safe Circles Info */}
+        <Card style={{ marginBottom: spacing.md }}>
+          <Text style={[typography.subbody, { color: colors.text.secondary }]}>
+            All circles are private and segmented by health journey. Conversations are conducted exclusively through curated topic prompts to ensure a zero-harassment sanctuary.
+          </Text>
+        </Card>
+
+        {/* Circles List */}
+        <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: spacing.sm }]}>
+          Recommended for Your Journey
+        </Text>
+
+        {circles.map((circle) => {
+          const isJoined = joinedCircleIds.includes(circle.id);
+          return (
+            <Card key={circle.id} style={{ marginBottom: spacing.md }}>
+              <View style={styles.cardHeader}>
+                <View style={{ flex: 1, paddingRight: 8 }}>
+                  <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                    {circle.title}
+                  </Text>
+                  <Text style={[typography.caption, { color: colors.primary, marginTop: 2 }]}>
+                    {circle.category} · {circle.memberCount} members
+                  </Text>
+                </View>
+                <Badge label={isJoined ? 'Member' : 'Private'} variant={isJoined ? 'success' : 'neutral'} />
+              </View>
+
+              <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 8, marginBottom: 12 }]}>
+                {circle.description}
+              </Text>
+
+              <Button
+                label={isJoined ? 'Leave Circle' : 'Join Private Circle'}
+                variant={isJoined ? 'outline' : 'primary'}
+                size="sm"
+                disabled={!eligibility.allowed}
+                onPress={() => handleToggleJoin(circle.id, circle.title)}
+              />
+            </Card>
+          );
+        })}
+      </ScrollView>
+    </ScreenWrapper>
+  );
+}
+
+const styles = StyleSheet.create({
+  scroll: {
+    flex: 1,
+  },
+  content: {
+    paddingHorizontal: 16,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+});
