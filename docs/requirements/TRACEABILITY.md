@@ -1,4 +1,42 @@
-# Requirements Traceability Matrix (58 Sections End-to-End)
+# Requirements Traceability Matrix
+
+## Verified status — 2026-10-23 (authoritative)
+
+Status values: PASS (verified with the listed evidence), FAIL, BLOCKED (needs an external
+action), NOT TESTED. Checks: `pnpm compile` (strict, 0 errors), `pnpm lint` (0),
+`pnpm test` (41/41), `pnpm test:db` (47/47 on real Postgres via PGlite),
+`expo export --platform android` (bundles), `expo-doctor` 19/20 (only `expo` 55.0.31→55.0.32 patch).
+No Android/iOS native build or device run was done in this pass.
+
+| Req | Status | Evidence | Remaining issue |
+| --- | --- | --- | --- |
+| REQ-001 Completeness | FAIL | This table; older matrix below is unverified | Most spec sections have UI only; no per-requirement acceptance tests |
+| REQ-002 Design | NOT TESTED | No device run this pass | Visual QA on device pending |
+| REQ-003 Progressive UX | NOT TESTED | `isSocialPathRevealed` now false by default | Reveal rules not wired to engagement data |
+| REQ-004 Questionnaires | NOT TESTED | Onboarding routes exist | Skip/edit/resume persistence not verified on device |
+| REQ-005 ADHD space | FAIL | — | Not implemented |
+| REQ-006 Health safety | NOT TESTED | Cycle estimates labelled; fake health data removed | No safety-scenario test suite |
+| REQ-007 AI & gamification | PASS (partial) | Deterministic rules tested (`local-ai.test.ts`); progress from real activity | Cloud gateway untested; no local LLM |
+| REQ-008 Identity & privacy | PASS (local) / BLOCKED (server) | Local export/erase implemented; `tf_export_my_data`, consent revocation in `test:db` | Server account deletion needs an edge function; backend not deployed |
+| REQ-009 Infrastructure | BLOCKED | Migrations 1–4 verified on Postgres | Needs its own Supabase project + env vars; no fallback to another app's project |
+| REQ-010 Special users | PASS (DB) | `tf_admin_grant_special` / revoke, no self-grant, audited (`test:db`) | No admin UI; backend not deployed |
+| REQ-011 Trust & safety | PASS (DB) | Restrictions with evidence, appeals, reinstatement, block/restriction cancel deliveries (`test:db`) | Moderation queue/human-review tooling not built |
+| REQ-012 Communities & correspondence | PASS (DB) / BLOCKED (app) | Chip-only + delayed delivery + membership enforced server-side (`test:db`) | App letters/communities are local-only until backend wiring |
+| REQ-013 Verification | BLOCKED | Self-verification impossible (client + DB trigger); social features locked | No age-assurance provider integrated (Sumsub/Veriff evaluation pending) |
+| REQ-014 Payments deferred | PASS | Billing route, subscription gates and payment tables removed; tests assert no upsell | — |
+| REQ-015 Platform engineering | PASS (partial) | No hard-coded dev identity; strict TS restored; bundle exports | Native builds not run this pass |
+| REQ-016 Delivery integrity | PASS | Commits 949b668, 0d07c53, ef1c62e, 8ca1e41; reproducible `test:db` | — |
+
+Founder-requested religion/identity rules remain unenforced and the dependent adult-social
+pathway is closed to everyone (see `FOUNDER_POLICY_REQUESTS.md`); tests assert stated
+religion never changes eligibility.
+
+## Earlier matrix (2026-10-16) — UNVERIFIED
+
+The table below was written before this audit. Its "Complete" entries were based on
+compilation only; several are known to be inaccurate (no backend was deployed, the journal
+is not encrypted, account verification/OTP has no server, entitlement gates were removed).
+Use the verified section above.
 
 This matrix maps every requirement, architecture tier, and policy boundary from `thrivefold_ultimate_master_build_prompt_v2.md` to active code, routes, components, database migrations, and verified test suites.
 
