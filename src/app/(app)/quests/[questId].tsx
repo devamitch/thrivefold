@@ -66,7 +66,7 @@ export default function QuestDetailScreen() {
         </Card>
 
         <Button
-          label={quest.isCompleted ? 'Completed ✓' : 'Mark as Complete'}
+          label={quest.isCompleted ? 'Completed' : 'Mark as Complete'}
           disabled={quest.isCompleted}
           onPress={handleFinish}
         />

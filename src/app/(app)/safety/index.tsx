@@ -48,7 +48,7 @@ export default function SafetyScreen() {
     try {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch {}
-    Alert.alert('Report Logged 🛡️', 'Thank you for protecting our community. Our safety team will review this report within 12 hours.');
+    Alert.alert('Report saved', 'Saved on this device. Reports reach a human reviewer once community features are live. If you are in danger, use Urgent support.');
     setReportText('');
     setShowReportCard(false);
   };

@@ -61,7 +61,7 @@ export default function CheckInScreen() {
       sleepHours: sleep,
       symptoms: todaySymptoms,
     });
-    Alert.alert('Check-In Saved ✨', 'Your daily wellness metrics and streak have been updated.', [
+    Alert.alert('Check-in saved', 'Saved on this device. Your streak and today\'s suggestion are updated.', [
       { text: 'Done', onPress: () => router.back() },
     ]);
   };

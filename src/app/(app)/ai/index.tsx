@@ -113,7 +113,7 @@ export default function AiVaultScreen() {
 
         {memories.length === 0 ? (
           <Card variant="surface1" style={{ alignItems: 'center', padding: spacing.xl }}>
-            <Text style={{ fontSize: 32, marginBottom: 8 }}>🔒</Text>
+            <Ionicons name="lock-closed-outline" size={28} color={colors.text.muted} style={{ marginBottom: 8 }} />
             <Text style={[typography.bodyBold, { color: colors.text.primary }]}>No Memories Stored</Text>
             <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4, textAlign: 'center' }]}>
               Your memory vault is clean. When enabled, only user-confirmed routine preferences are retained.

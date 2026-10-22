@@ -120,7 +120,7 @@ export default function CommunitiesScreen() {
       Alert.alert('Left Circle', `You have left ${title}.`);
     } else {
       setJoinedCircleIds((prev) => [...prev, circleId]);
-      Alert.alert('Joined Circle 🎉', `Welcome to ${title}! All group prompts are strictly chip-based.`);
+      Alert.alert('Saved for later', `${title} will open when community features launch. You'll need a quick age check first.`);
     }
   };
 

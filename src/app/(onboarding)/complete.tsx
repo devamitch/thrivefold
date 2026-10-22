@@ -59,7 +59,7 @@ export default function CompleteOnboardingScreen() {
     >
       <View style={styles.flex}>
         <Image
-          source={require('../../../assets/brand/icon.png')}
+          source={require('../../../assets/brand/Minimalist-Terracotta-T-and-Leaf-Emblem.png')}
           style={styles.mark}
           contentFit="contain"
           accessibilityIgnoresInvertColors

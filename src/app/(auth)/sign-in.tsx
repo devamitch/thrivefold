@@ -78,7 +78,7 @@ export default function SignInScreen() {
         <View style={styles.hero}>
           <View style={[styles.mark, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Image
-              source={require('../../../assets/brand/icon.png')}
+              source={require('../../../assets/brand/Minimalist-Terracotta-T-and-Leaf-Emblem.png')}
               style={styles.markImage}
               contentFit="contain"
               accessibilityIgnoresInvertColors

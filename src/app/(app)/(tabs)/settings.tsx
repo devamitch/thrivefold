@@ -20,6 +20,45 @@ export default function SettingsScreen() {
   const themeMode = useRootStore((s) => s.themeMode);
   const setThemeMode = useRootStore((s) => s.setThemeMode);
   const user = useRootStore((s) => s.user);
+  const signOut = useRootStore((s) => s.signOut);
+  const resetOnboarding = useRootStore((s) => s.resetOnboarding);
+
+  const rows: { icon: keyof typeof Ionicons.glyphMap; title: string; body: string; onPress: () => void }[] = [
+    {
+      icon: 'restaurant-outline',
+      title: 'Food & reminders',
+      body: 'Optional eating and reminder preferences',
+      onPress: () => router.push('/(onboarding)/lifestyle-preferences'),
+    },
+    {
+      icon: 'refresh-outline',
+      title: 'Redo setup',
+      body: 'Change your goals and routine length',
+      onPress: () => {
+        resetOnboarding();
+        router.replace('/');
+      },
+    },
+    {
+      icon: 'log-out-outline',
+      title: user?.isGuest ? 'Leave guest mode' : 'Sign out',
+      body: 'Your records stay on this phone until you erase them',
+      onPress: () => {
+        signOut();
+        router.replace('/');
+      },
+    },
+    ...(__DEV__
+      ? [
+          {
+            icon: 'construct-outline' as const,
+            title: 'Developer tools',
+            body: 'Clear storage, switch theme, reset flows',
+            onPress: () => router.push('/(app)/dev'),
+          },
+        ]
+      : []),
+  ];
 
   const experiences: { id: ProductExperience; label: string; icon: IconName }[] = [
     { id: 'women_health', label: "Women's Health", icon: 'heart' },
@@ -183,6 +222,21 @@ export default function SettingsScreen() {
             <Ionicons name="download-outline" size={18} color={colors.text.muted} />
           </View>
         </Card>
+
+        {rows.map((r) => (
+          <Card key={r.title} onPress={r.onPress} style={{ marginBottom: 8 }}>
+            <View style={styles.rowBetween}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <Ionicons name={r.icon} size={20} color={colors.primary} />
+                <View style={{ marginLeft: 12, flex: 1 }}>
+                  <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{r.title}</Text>
+                  <Text style={[typography.caption, { color: colors.text.secondary }]}>{r.body}</Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
+            </View>
+          </Card>
+        ))}
 
         <Card onPress={handleDeleteAccount} style={{ marginTop: spacing.md, borderColor: colors.error }}>
           <View style={styles.rowBetween}>

@@ -1,7 +1,6 @@
 /**
- * Animated Thrivefold logo icon for the central dock orb.
- * Uses the transparent brand mark (generated from thrivefold-master-icon.svg) with a
- * single soft glow pulse on mount.
+ * Animated Thrivefold Minimalist Terracotta T and Leaf Emblem.
+ * Zero gradients, clean organic lines, soft pulse on mount.
  */
 import React, { memo, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
@@ -23,7 +22,7 @@ interface AnimatedBrandIconProps {
 }
 
 const PULSE_DURATION = 3200;
-const BRAND_COLOR = '#B45309'; // Warm terracotta from women theme
+const BRAND_COLOR = '#C86D51'; // Minimalist terracotta
 
 export const AnimatedBrandIcon = memo(function AnimatedBrandIcon({
   size = 56,
@@ -34,8 +33,6 @@ export const AnimatedBrandIcon = memo(function AnimatedBrandIcon({
 
   useEffect(() => {
     if (reduceMotion) return;
-    // One breath in and out on mount — a continuous loop on an always-visible
-    // element costs frames and battery for no extra meaning.
     pulse.value = withRepeat(
       withTiming(1, { duration: PULSE_DURATION / 2, easing: Easing.inOut(Easing.ease) }),
       2,
@@ -44,16 +41,20 @@ export const AnimatedBrandIcon = memo(function AnimatedBrandIcon({
   }, [pulse, reduceMotion]);
 
   const glowStyle = useAnimatedStyle(() => ({
-    opacity: 0.35 + pulse.value * 0.25,
-    transform: [{ scale: 1 + pulse.value * 0.06 }],
+    opacity: 0.25 + pulse.value * 0.2,
+    transform: [{ scale: 1 + pulse.value * 0.05 }],
   }));
 
-  const iconSize = withBackground ? size * 0.62 : size;
+  const iconRadius = withBackground ? Math.round(size * 0.44) : 0;
 
   const icon = (
     <Image
-      source={require('../../../assets/brand/icon.png')}
-      style={{ width: iconSize, height: iconSize }}
+      source={require('../../../assets/brand/Minimalist-Terracotta-T-and-Leaf-Emblem.png')}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: iconRadius,
+      }}
       accessibilityIgnoresInvertColors
       contentFit="contain"
       cachePolicy="memory-disk"
@@ -68,16 +69,34 @@ export const AnimatedBrandIcon = memo(function AnimatedBrandIcon({
         style={[
           styles.glow,
           {
-            width: size,
-            height: size,
-            borderRadius: size / 2,
+            width: size + 4,
+            height: size + 4,
+            borderRadius: (size + 4) / 2,
             backgroundColor: BRAND_COLOR,
           },
           glowStyle,
         ]}
       />
-      <View style={[styles.bg, { width: size, height: size, borderRadius: size / 2 }]}>
-        {icon}
+      <View
+        style={[
+          styles.bg,
+          {
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            backgroundColor: '#FDFBF7',
+            borderWidth: 1.5,
+            borderColor: 'rgba(200, 109, 81, 0.2)',
+          },
+        ]}
+      >
+        <Image
+          source={require('../../../assets/brand/Minimalist-Terracotta-T-and-Leaf-Emblem.png')}
+          style={{ width: size * 0.84, height: size * 0.84 }}
+          accessibilityIgnoresInvertColors
+          contentFit="contain"
+          cachePolicy="memory-disk"
+        />
       </View>
     </View>
   );
@@ -91,7 +110,6 @@ const styles = StyleSheet.create({
   bg: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#1E1916',
     overflow: 'hidden',
     position: 'absolute',
   },

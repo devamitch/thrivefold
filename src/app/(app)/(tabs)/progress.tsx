@@ -19,12 +19,12 @@ import {
 } from '../../../components/navigation/CustomTabBar';
 
 const ACHIEVEMENTS = [
-  { id: 'first_quest', icon: '⚡', title: 'First Quest', desc: 'Completed your very first task' },
-  { id: 'three_day_streak', icon: '🔥', title: '3-Day Streak', desc: 'Checked in 3 days in a row' },
-  { id: 'ai_vault', icon: '🛡️', title: 'AI Explorer', desc: 'Inspected your on-device AI' },
-  { id: 'letters', icon: '✉️', title: 'Pen Pal', desc: 'Sent your first curated letter' },
-  { id: 'seven_day_streak', icon: '💎', title: '7-Day Steady', desc: 'Seven consecutive check-ins' },
-  { id: 'circles', icon: '🫂', title: 'Circle Member', desc: 'Joined a private support circle' },
+  { id: 'first_quest', icon: 'flash-outline' as const, title: 'First Quest', desc: 'Completed your very first task' },
+  { id: 'three_day_streak', icon: 'flame-outline' as const, title: '3-Day Streak', desc: 'Checked in 3 days in a row' },
+  { id: 'ai_vault', icon: 'shield-checkmark-outline' as const, title: 'AI Explorer', desc: 'Inspected your on-device AI' },
+  { id: 'letters', icon: 'mail-outline' as const, title: 'Pen Pal', desc: 'Sent your first curated letter' },
+  { id: 'seven_day_streak', icon: 'diamond-outline' as const, title: '7-Day Steady', desc: 'Seven consecutive check-ins' },
+  { id: 'circles', icon: 'people-outline' as const, title: 'Circle Member', desc: 'Joined a private support circle' },
 ];
 
 export default function ProgressScreen() {
@@ -73,7 +73,7 @@ export default function ProgressScreen() {
             <View style={[styles.levelCard, { backgroundColor: colors.surface, marginTop: spacing.md }]}>
               <View style={styles.levelRow}>
                 <View style={[styles.levelBadge, { backgroundColor: colors.primary + '18' }]}>
-                  <Text style={styles.levelEmoji}>⚡</Text>
+                  <Ionicons name="flash" size={16} color={colors.primary} />
                   <Text style={[typography.display, { color: colors.primary }]}>{LEVEL}</Text>
                 </View>
                 <View style={{ flex: 1, marginLeft: 16 }}>
@@ -136,7 +136,7 @@ export default function ProgressScreen() {
               colors={[colors.primary + '20', colors.primary + '08']}
               style={[styles.streakBanner, { borderColor: colors.primary + '30' }]}
             >
-              <Text style={{ fontSize: 36 }}>🔥</Text>
+              <Ionicons name="flame" size={32} color={colors.primary} />
               <View style={{ marginLeft: 16, flex: 1 }}>
                 <Text style={[typography.subheading, { color: colors.primary }]}>
                   {currentStreak} Day Streak
@@ -181,7 +181,7 @@ export default function ProgressScreen() {
                       },
                     ]}
                   >
-                    <Text style={{ fontSize: 22 }}>{ach.icon}</Text>
+                    <Ionicons name={ach.icon} size={22} color={unlocked.has(ach.id) ? colors.primary : colors.text.muted} />
                   </View>
                   <View style={{ flex: 1, marginLeft: 12 }}>
                     <Text

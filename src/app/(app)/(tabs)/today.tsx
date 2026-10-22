@@ -21,27 +21,27 @@ import {
 } from '../../../components/navigation/CustomTabBar';
 
 const ENERGY_LABELS: Record<number, string> = {
-  1: '😴 Drained',
-  3: '😔 Low',
-  5: '😐 Okay',
-  7: '😊 Good',
-  9: '😄 Great',
-  10: '🔥 Peak',
+  1: 'Drained',
+  3: 'Low',
+  5: 'Okay',
+  7: 'Good',
+  9: 'Great',
+  10: 'Peak',
 };
 
 const MOOD_LABELS: Record<number, string> = {
-  1: '😢 Very low',
-  3: '😕 Down',
-  5: '😐 Neutral',
-  7: '🙂 Positive',
-  9: '😁 Happy',
-  10: '✨ Joyful',
+  1: 'Very low',
+  3: 'Down',
+  5: 'Neutral',
+  7: 'Positive',
+  9: 'Happy',
+  10: 'Joyful',
 };
 
 const INTENSITY_OPTIONS = [
-  { id: 'rest', label: 'Rest Day', emoji: '🛌', desc: '5 min gentle stretch' },
-  { id: 'light', label: 'Light', emoji: '🌿', desc: '15 min easy flow' },
-  { id: 'regular', label: 'Regular', emoji: '⚡', desc: '30 min full routine' },
+  { id: 'rest', label: 'Rest Day', icon: 'bed-outline' as const, desc: '5 min gentle stretch' },
+  { id: 'light', label: 'Light', icon: 'leaf-outline' as const, desc: '15 min easy flow' },
+  { id: 'regular', label: 'Regular', icon: 'walk-outline' as const, desc: '30 min full routine' },
 ] as const;
 
 export default function TodayScreen() {
@@ -137,7 +137,7 @@ export default function TodayScreen() {
                       How are you today?
                     </Text>
                   </View>
-                  <Text style={{ fontSize: 30 }}>🌤️</Text>
+                  <Ionicons name="partly-sunny-outline" size={28} color={colors.primary} />
                 </View>
 
                 {/* Energy */}
@@ -234,7 +234,7 @@ export default function TodayScreen() {
                           },
                         ]}
                       >
-                        <Text style={{ fontSize: 20 }}>{opt.emoji}</Text>
+                        <Ionicons name={opt.icon} size={20} color={colors.primary} />
                         <Text
                           style={[
                             typography.captionBold,
@@ -271,7 +271,7 @@ export default function TodayScreen() {
                   </View>
                   <View style={{ marginLeft: 12, flex: 1 }}>
                     <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                      Check-in logged ✅
+                      Check-in saved
                     </Text>
                     <Text style={[typography.caption, { color: colors.text.secondary }]}>
                       Energy {energy}/10 · Mood {mood}/10 · {intensity} intensity

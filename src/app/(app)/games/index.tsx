@@ -48,21 +48,21 @@ export default function GamesScreen() {
       title: 'Harmonic Box Breathing',
       type: 'Nervous System Reset',
       desc: 'An interactive 4-4-4-4 box breathing guide with gentle haptic rhythms to reduce acute autonomic heart rate.',
-      icon: '🫁',
+      icon: 'cloud-outline' as const,
     },
     {
       id: 'game_focus',
       title: 'Sensory Grounding (5-4-3-2-1)',
       type: 'Cognitive Grounding',
       desc: 'Step-by-step sensory check: 5 things you see, 4 you feel, 3 you hear, 2 you smell, 1 you taste.',
-      icon: '🎯',
+      icon: 'locate-outline' as const,
     },
     {
       id: 'game_reflex',
       title: 'Calm Pulse Synchronization',
       type: 'Rhythm Coordination',
       desc: 'Tap along with steady 60 BPM ambient tempo pulses to synchronize breath and recover relaxed presence.',
-      icon: '🎵',
+      icon: 'musical-notes-outline' as const,
     },
   ];
 
@@ -93,7 +93,7 @@ export default function GamesScreen() {
           <Card key={g.id} style={{ marginBottom: spacing.md }}>
             <View style={styles.cardHeader}>
               <View style={[styles.iconBox, { backgroundColor: colors.surface1 }]}>
-                <Text style={{ fontSize: 26 }}>{g.icon}</Text>
+                <Ionicons name={g.icon} size={26} color={colors.primary} />
               </View>
               <View style={{ flex: 1, marginLeft: 12 }}>
                 <Badge label={g.type} variant="primary" style={{ marginBottom: 4 }} />

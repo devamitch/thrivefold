@@ -14,6 +14,8 @@ export default function AppLayout() {
       <Stack.Screen name="quests" />
       <Stack.Screen name="games" />
       <Stack.Screen name="journal" />
+      <Stack.Screen name="learn" />
+      <Stack.Screen name="dev" />
       <Stack.Screen name="ai" />
       <Stack.Screen name="circles" />
       <Stack.Screen name="letters" />

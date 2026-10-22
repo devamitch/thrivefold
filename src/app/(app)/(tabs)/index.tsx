@@ -16,6 +16,8 @@ import { getCyclePredictions } from '../../../domain/health/cycleCalculations';
 import { useRootStore } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
 
+import { LettermarkIcon, LettermarkCategoryKey } from '../../../components/brand/LettermarkIcon';
+
 const PHASE_INFO: Record<string, { color: string; icon: string; bg: string }> = {
   menstrual: { color: '#EF4444', icon: '🌑', bg: '#FEF2F2' },
   follicular: { color: '#10B981', icon: '🌱', bg: '#ECFDF5' },
@@ -23,33 +25,48 @@ const PHASE_INFO: Record<string, { color: string; icon: string; bg: string }> = 
   luteal: { color: '#8B5CF6', icon: '🌙', bg: '#F5F3FF' },
 };
 
+const WELLBEING_SPHERES: LettermarkCategoryKey[] = [
+  'womens-health',
+  'mens-health',
+  'pride-wellbeing',
+  'adhd-support',
+  'mind-mood',
+  'fitness',
+  'nutrition',
+  'sleep',
+  'community',
+  'letters',
+  'local-ai',
+  'growth-quests',
+];
+
 const QUICK_ACTIONS = [
   {
     id: 'journal',
-    icon: 'edit' as const,
-    label: 'Journal',
-    sub: 'Private reflection',
-    route: '/(app)/journal' as any,
+    lettermark: 'letters' as LettermarkCategoryKey,
+    label: 'Slow Letters',
+    sub: 'Curated delivery',
+    route: '/(app)/letters' as any,
   },
   {
     id: 'games',
-    icon: 'sliders' as const,
-    label: 'Wellness',
-    sub: 'Breath & focus',
+    lettermark: 'fitness' as LettermarkCategoryKey,
+    label: 'Movement & Focus',
+    sub: 'Breath & routines',
     route: '/(app)/games' as any,
   },
   {
     id: 'circles',
-    icon: 'group' as const,
-    label: 'Circles',
-    sub: 'Support hubs',
+    lettermark: 'community' as LettermarkCategoryKey,
+    label: 'Support Circles',
+    sub: 'Private hubs',
     route: '/(app)/circles' as any,
   },
   {
     id: 'ai',
-    icon: 'shieldCheck' as const,
-    label: 'AI Vault',
-    sub: 'On-device AI',
+    lettermark: 'local-ai' as LettermarkCategoryKey,
+    label: 'Local AI Vault',
+    sub: 'Zero cloud upload',
     route: '/(app)/ai' as any,
   },
 ];
@@ -101,16 +118,19 @@ export default function HomeScreen() {
       badge: "Women's Health",
       gradient: [colors.primaryAlpha, 'transparent'] as [string, string],
       icon: '🌸',
+      lettermark: 'womens-health' as LettermarkCategoryKey,
     },
     men_health: {
       badge: "Men's Vitality",
       gradient: ['rgba(23,60,74,0.08)', 'transparent'] as [string, string],
       icon: '🌊',
+      lettermark: 'mens-health' as LettermarkCategoryKey,
     },
     pride_wellbeing: {
       badge: 'Pride Wellbeing',
       gradient: ['rgba(217,119,6,0.08)', 'transparent'] as [string, string],
       icon: '🏳️‍🌈',
+      lettermark: 'pride-wellbeing' as LettermarkCategoryKey,
     },
   }[experience];
 
@@ -128,9 +148,14 @@ export default function HomeScreen() {
           style={[styles.heroGrad, { paddingTop: insets.top + 16 }]}
         >
           <View style={[styles.headerRow, { paddingHorizontal: spacing.base }]}>
+            <LettermarkIcon
+              id={expMeta.lettermark}
+              size={52}
+              style={{ marginRight: 12 }}
+            />
             <View style={styles.headerLeft}>
               <Text style={[typography.label, { color: colors.primary }]}>
-                {expMeta.icon} {expMeta.badge}
+                {expMeta.badge}
               </Text>
               <Text
                 style={[typography.heading, { color: colors.text.primary, marginTop: 2 }]}
@@ -366,6 +391,46 @@ export default function HomeScreen() {
             </Animated.View>
           )}
 
+          {/* ── 12 Spheres of Wellbeing ── */}
+          <Animated.View entering={FadeInDown.delay(130).springify()} style={{ marginTop: spacing.lg }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: spacing.sm,
+              }}
+            >
+              <Text style={[typography.subheading, { color: colors.text.primary }]}>
+                Wellbeing Spheres
+              </Text>
+              <Badge label="12 Guides" variant="neutral" />
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 14, paddingRight: spacing.base, paddingVertical: 4 }}
+            >
+              {WELLBEING_SPHERES.map((key) => (
+                <LettermarkIcon
+                  key={key}
+                  id={key}
+                  size={58}
+                  showLabel
+                  onPress={() => {
+                    if (key === 'womens-health') router.push('/(app)/health/cycle' as any);
+                    else if (key === 'mens-health') router.push('/(app)/health/exercise' as any);
+                    else if (key === 'letters') router.push('/(app)/letters' as any);
+                    else if (key === 'community') router.push('/(app)/circles' as any);
+                    else if (key === 'local-ai') router.push('/(app)/ai' as any);
+                    else if (key === 'growth-quests') router.push('/(app)/(tabs)/progress' as any);
+                    else router.push('/(app)/learn');
+                  }}
+                />
+              ))}
+            </ScrollView>
+          </Animated.View>
+
           {/* ── Quick Actions Grid ── */}
           <Text
             style={[
@@ -380,16 +445,14 @@ export default function HomeScreen() {
               <Animated.View
                 key={action.id}
                 style={styles.gridItem}
-                entering={FadeInDown.delay(140 + idx * 30).springify()}
+                entering={FadeInDown.delay(160 + idx * 30).springify()}
               >
                 <PressableScale
                   onPress={() => router.push(action.route)}
                   scaleTo={0.96}
                   style={[styles.gridCard, { backgroundColor: colors.surface }]}
                 >
-                  <View style={[styles.gridIcon, { backgroundColor: colors.primary + '14' }]}>
-                    <Icon name={action.icon} size={20} color={colors.primary} />
-                  </View>
+                  <LettermarkIcon id={action.lettermark} size={44} />
                   <Text
                     style={[typography.subbodyBold, { color: colors.text.primary, marginTop: 8 }]}
                   >
@@ -406,7 +469,7 @@ export default function HomeScreen() {
           {/* ── Health Education Snippet ── */}
           <Animated.View entering={FadeInDown.delay(220).springify()}>
             <Card
-              onPress={() => router.push('/(app)/(tabs)/learn' as any)}
+              onPress={() => router.push('/(app)/learn')}
               variant="surface1"
               style={[styles.cardBase, { marginBottom: 0 }]}
             >
