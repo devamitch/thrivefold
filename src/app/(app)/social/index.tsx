@@ -7,28 +7,27 @@ import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { Header } from '../../../components/ui/Header';
 import { useTheme } from '../../../theme/useTheme';
-import { useAuthStore } from '../../../stores/useAuthStore';
-import { usePolicyStore } from '../../../stores/usePolicyStore';
+import { useRootStore } from '../../../stores/useRootStore';
 import { evaluateFeatureEligibility } from '../../../domain/policy/engine';
 
 export default function SocialIntroScreen() {
   const router = useRouter();
   const { colors, typography, spacing, experience } = useTheme();
-  const user = useAuthStore((s) => s.user);
-  const introsSentToday = useAuthStore((s) => s.introsSentToday);
-  const activeTrialStartDate = useAuthStore((s) => s.activeTrialStartDate);
-  const consentedFeatures = usePolicyStore((s) => s.consentedFeatures);
-  const blockedUserIds = usePolicyStore((s) => s.blockedUserIds);
+  const user = useRootStore((s) => s.user);
+  const introsSentToday = useRootStore((s) => s.introsSentToday);
+  const activeTrialStartDate = useRootStore((s) => s.activeTrialStartDate);
+  const consentedFeatures = useRootStore((s) => s.consentedFeatures);
+  const blockedUserIds = useRootStore((s) => s.blockedUserIds);
 
+  const completedCheckInDays = useRootStore((s) => s.completedCheckInDaysCount);
   const decision = evaluateFeatureEligibility('restricted_correspondence_trial', {
     userId: user?.id ?? 'dev_user',
-    age: user?.age ?? 26,
-    isAgeVerified: user?.isAgeVerified ?? true,
+    age: user?.age ?? null,
+    isAgeVerified: user?.isAgeVerified ?? false,
     experience,
-    completedCheckInDays: 3,
+    completedCheckInDays,
     consentedFeatures,
     activeTrialStartDate: activeTrialStartDate ?? undefined,
-    hasActiveSubscription: user?.hasActiveSubscription ?? false,
     introsSentToday,
     blockedUserIds,
   });

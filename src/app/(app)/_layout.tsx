@@ -20,7 +20,6 @@ export default function AppLayout() {
       <Stack.Screen name="social" />
       <Stack.Screen name="organizations" />
       <Stack.Screen name="safety" />
-      <Stack.Screen name="billing" />
       <Stack.Screen name="settings" />
     </Stack>
   );

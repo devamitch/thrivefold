@@ -1,5 +1,6 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { Header } from '../../../components/ui/Header';
@@ -7,6 +8,7 @@ import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { useTheme } from '../../../theme/useTheme';
 
 export default function OrganizationsScreen() {
+  const router = useRouter();
   const { colors, typography } = useTheme();
 
   return (
@@ -21,17 +23,7 @@ export default function OrganizationsScreen() {
           <Text style={[typography.subbody, { color: colors.text.secondary, marginBottom: 16 }]}>
             Apply for verified organization status to manage communities and programs
           </Text>
-          <Button label="Start Application" size="sm" />
-        </Card>
-
-        {/* Application Status */}
-        <Card style={{ marginBottom: 16, padding: 24 }}>
-          <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: 12 }]}>
-            Application Status
-          </Text>
-          <Text style={[typography.caption, { color: colors.text.muted }]}>
-            No active application
-          </Text>
+          <Button label="Start Application" size="sm" onPress={() => router.push('/(app)/organizations/apply')} />
         </Card>
 
         {/* Organization Benefits */}

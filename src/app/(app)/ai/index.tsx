@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
@@ -11,6 +12,7 @@ import { localMemoryVault } from '../../../services/memory/localMemoryVault';
 import { localAi } from '../../../services/local-ai/localAiService';
 
 export default function AiVaultScreen() {
+  const router = useRouter();
   const { colors, typography, spacing } = useTheme();
 
   const [memories, setMemories] = useState(localMemoryVault.getAllMemories());
@@ -71,6 +73,31 @@ export default function AiVaultScreen() {
             />
           )}
         </Card>
+
+        {/* AI Management Sub-Navigation */}
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: spacing.md }}>
+          <Button
+            label="Memory Vault"
+            size="sm"
+            variant="outline"
+            icon={<Ionicons name="hardware-chip-outline" size={14} color={colors.primary} />}
+            onPress={() => router.push('/(app)/ai/memory')}
+          />
+          <Button
+            label="Privacy Guardrails"
+            size="sm"
+            variant="outline"
+            icon={<Ionicons name="shield-checkmark-outline" size={14} color={colors.primary} />}
+            onPress={() => router.push('/(app)/ai/privacy')}
+          />
+          <Button
+            label="Engine Status"
+            size="sm"
+            variant="ghost"
+            icon={<Ionicons name="stats-chart-outline" size={14} color={colors.text.secondary} />}
+            onPress={() => router.push('/(app)/ai/model-status')}
+          />
+        </View>
 
         {/* Memory Vault Header */}
         <View style={[styles.rowBetween, { marginVertical: spacing.sm }]}>

@@ -5,12 +5,14 @@ import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Header } from '../../../components/ui/Header';
 import { useTheme } from '../../../theme/useTheme';
-import { useQuestStore } from '../../../stores/useQuestStore';
+import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { spacing } from '../../../theme/spacing';
 
 export default function QuestsScreen() {
   const { colors, typography } = useTheme();
-  const { xp, level, coins, streak, todayQuests, completeQuest, refreshDailyQuests } = useQuestStore();
+  const { xp, level, coins, streak, todayQuests, completeQuest, refreshDailyQuests } = useRootStore(
+    useShallow((s) => ({ xp: s.xp, level: s.level, coins: s.coins, streak: s.streak, todayQuests: s.todayQuests, completeQuest: s.completeQuest, refreshDailyQuests: s.refreshDailyQuests })),
+  );
 
   const completedCount = todayQuests.filter((q) => q.isCompleted).length;
 

@@ -3,10 +3,13 @@ import { Stack } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet } from 'react-native';
-import { useAuthStore } from '../stores/useAuthStore';
+import { useRootStore } from '../stores/useRootStore';
+
+import { ErrorBoundary } from '../components/ErrorBoundary';
+import { Toast } from '../components/ui/Toast';
 
 export default function RootLayout() {
-  const resetDailyQuotaIfNewDay = useAuthStore((s) => s.resetDailyQuotaIfNewDay);
+  const resetDailyQuotaIfNewDay = useRootStore((s) => s.resetDailyQuotaIfNewDay);
 
   useEffect(() => {
     resetDailyQuotaIfNewDay();
@@ -15,18 +18,21 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={styles.container}>
       <SafeAreaProvider>
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            animation: 'slide_from_right',
-          }}
-        >
-          <Stack.Screen name="index" />
-          <Stack.Screen name="(public)" />
-          <Stack.Screen name="(auth)" />
-          <Stack.Screen name="(onboarding)" />
-          <Stack.Screen name="(app)" />
-        </Stack>
+        <ErrorBoundary>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              animation: 'slide_from_right',
+            }}
+          >
+            <Stack.Screen name="index" />
+            <Stack.Screen name="(public)" />
+            <Stack.Screen name="(auth)" />
+            <Stack.Screen name="(onboarding)" />
+            <Stack.Screen name="(app)" />
+          </Stack>
+          <Toast />
+        </ErrorBoundary>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

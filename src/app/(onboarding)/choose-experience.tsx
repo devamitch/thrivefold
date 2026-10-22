@@ -6,36 +6,38 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Header } from '../../components/ui/Header';
 import { useTheme } from '../../theme/useTheme';
-import { useAppStore } from '../../stores/useAppStore';
+import { useRootStore } from '../../stores/useRootStore';
 import { ProductExperience } from '../../theme/tokens';
+
+import { Icon, IconName } from '../../components/ui/Icon';
 
 export default function ChooseExperienceScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
-  const experience = useAppStore((s) => s.experience);
-  const setExperience = useAppStore((s) => s.setExperience);
+  const experience = useRootStore((s) => s.experience);
+  const setExperience = useRootStore((s) => s.setExperience);
 
-  const experiences: { id: ProductExperience; title: string; subtitle: string; desc: string; icon: string }[] = [
+  const experiences: { id: ProductExperience; title: string; subtitle: string; desc: string; icon: IconName }[] = [
     {
       id: 'women_health',
       title: "Women's Health & Wellbeing",
       subtitle: 'Harmony & Vitality',
       desc: 'Cycle tracking, symptom patterns, hormonal balance, emotional resilience and gentle movement.',
-      icon: '🌸',
+      icon: 'heart',
     },
     {
       id: 'men_health',
       title: "Men's Health & Vitality",
       subtitle: 'Strength, Mobility & Focus',
       desc: 'Posture mobility, stress & work decompression, pelvic-floor awareness, and sustainable fitness routines.',
-      icon: '🌿',
+      icon: 'bolt',
     },
     {
       id: 'pride_wellbeing',
       title: 'Pride & LGBTQ+ Wellbeing',
       subtitle: 'Affirmative Self-Care',
       desc: 'Identity-affirming health tools, rainbow-gold visual system, private community circles, and optional pronouns.',
-      icon: '✨',
+      icon: 'sun',
     },
   ];
 
@@ -60,14 +62,14 @@ export default function ChooseExperienceScreen() {
               style={[
                 styles.expCard,
                 {
-                  borderColor: isSelected ? colors.primary : colors.border,
-                  borderWidth: isSelected ? 2 : 1,
                   marginBottom: spacing.md,
                 },
               ]}
             >
               <View style={styles.cardHeader}>
-                <Text style={styles.icon}>{item.icon}</Text>
+                <View style={[styles.iconContainer, { backgroundColor: isSelected ? colors.primaryAlpha : colors.surface1 }]}>
+                  <Icon name={item.icon} size={24} color={isSelected ? colors.primary : colors.text.secondary} />
+                </View>
                 <View style={styles.headerText}>
                   <Text style={[typography.subheading, { color: colors.text.primary }]}>
                     {item.title}
@@ -105,8 +107,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  icon: {
-    fontSize: 28,
+  iconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: 12,
   },
   headerText: {

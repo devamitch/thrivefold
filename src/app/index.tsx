@@ -1,14 +1,13 @@
 import { useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import { useAppStore } from '../stores/useAppStore';
-import { useAuthStore } from '../stores/useAuthStore';
+import { useRootStore } from '../stores/useRootStore';
 import { useTheme } from '../theme/useTheme';
 
 export default function BootstrapResolver() {
   const router = useRouter();
-  const isOnboarded = useAppStore((s) => s.isOnboarded);
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const isOnboarded = useRootStore((s) => s.isOnboarded);
+  const isAuthenticated = useRootStore((s) => s.isAuthenticated);
   const { colors } = useTheme();
 
   useEffect(() => {

@@ -1,30 +1,34 @@
 import React from 'react';
 import {
-  Text,
-  StyleSheet,
-  Pressable,
-  ViewStyle,
-  TextStyle,
   ActivityIndicator,
   StyleProp,
+  StyleSheet,
+  Text,
+  TextStyle,
+  View,
+  ViewStyle,
 } from 'react-native';
 import { useTheme } from '../../theme/useTheme';
+import { PressableScale } from './PressableScale';
+import { SquircleSurface } from './SquircleSurface';
 
-import * as Haptics from 'expo-haptics';
-
-interface ButtonProps {
-  label: string;
+export interface ButtonProps {
+  label?: string;
+  title?: string; // support Neev API
   onPress?: () => void;
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'small' | 'medium' | 'large';
   disabled?: boolean;
   loading?: boolean;
   style?: StyleProp<ViewStyle>;
   icon?: React.ReactNode;
+  /** Defaults to the visible label; set it for symbol-only buttons. */
+  accessibilityLabel?: string;
 }
 
 export const Button: React.FC<ButtonProps> = ({
   label,
+  title,
   onPress,
   variant = 'primary',
   size = 'md',
@@ -32,30 +36,24 @@ export const Button: React.FC<ButtonProps> = ({
   loading = false,
   style,
   icon,
+  accessibilityLabel,
 }) => {
   const { colors, typography, spacing } = useTheme();
+  const displayLabel = label || title || '';
 
-  const handlePress = () => {
-    if (onPress) {
-      try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      } catch {}
-      onPress();
-    }
-  };
+  const normalizedSize = size === 'small' ? 'sm' : size === 'large' ? 'lg' : size === 'medium' ? 'md' : size;
 
   let bg = colors.primary;
   let textColor = colors.onPrimary;
-  let borderColor = 'transparent';
+  let stroke: string | undefined = undefined;
 
   if (variant === 'secondary') {
     bg = colors.surface1;
     textColor = colors.text.primary;
-    borderColor = colors.border;
   } else if (variant === 'outline') {
     bg = 'transparent';
     textColor = colors.primary;
-    borderColor = colors.borderStrong;
+    stroke = colors.borderStrong;
   } else if (variant === 'ghost') {
     bg = 'transparent';
     textColor = colors.text.secondary;
@@ -64,54 +62,69 @@ export const Button: React.FC<ButtonProps> = ({
     textColor = '#FFFFFF';
   }
 
-  const paddingV = size === 'sm' ? spacing.sm : size === 'lg' ? spacing.base : spacing.md;
-  const paddingH = size === 'sm' ? spacing.md : size === 'lg' ? spacing.xl : spacing.lg;
-
-  const buttonStyle: ViewStyle = {
-    backgroundColor: disabled ? colors.surface2 : bg,
-    borderColor,
-    borderWidth: variant === 'outline' || variant === 'secondary' ? 1 : 0,
-    paddingVertical: paddingV,
-    paddingHorizontal: paddingH,
-    borderRadius: 16,
-    opacity: disabled ? 0.6 : 1,
-  };
+  const radius = normalizedSize === 'sm' ? 12 : normalizedSize === 'lg' ? 16 : 14;
+  const minHeight = normalizedSize === 'sm' ? 40 : normalizedSize === 'lg' ? 54 : 48;
+  const paddingH = normalizedSize === 'sm' ? spacing.md : normalizedSize === 'lg' ? spacing.xl : spacing.lg;
 
   const textStyle: TextStyle = {
     color: disabled ? colors.text.muted : textColor,
-    ...(size === 'sm' ? typography.subbodyBold : typography.bodyBold),
+    ...(normalizedSize === 'sm' ? typography.subbodyBold : typography.bodyBold),
     textAlign: 'center',
   };
 
+  const inactive = disabled || loading;
+
   return (
-    <Pressable
-      onPress={handlePress}
-      disabled={disabled || loading}
-      style={({ pressed }) => [
-        styles.base,
-        buttonStyle,
-        pressed && !disabled && { opacity: 0.85, transform: [{ scale: 0.98 }] },
-        style,
-      ]}
+    <PressableScale
+      onPress={onPress}
+      disabled={inactive}
+      scaleTo={normalizedSize === 'sm' ? 0.96 : 0.98}
+      style={style}
       accessibilityRole="button"
-      accessibilityState={{ disabled }}
+      accessibilityLabel={accessibilityLabel ?? (label || title)}
+      accessibilityState={{ disabled: inactive, busy: loading }}
     >
-      {loading ? (
-        <ActivityIndicator color={textColor} size="small" />
-      ) : (
-        <>
-          {icon}
-          <Text style={[textStyle, icon ? { marginLeft: 8 } : null]}>{label}</Text>
-        </>
-      )}
-    </Pressable>
+      <SquircleSurface
+        radius={radius}
+        smoothing={1}
+        fill={disabled ? colors.surface2 : bg}
+        stroke={stroke}
+        style={[
+          styles.surface,
+          {
+            minHeight,
+            paddingHorizontal: paddingH,
+          },
+        ]}
+      >
+        {loading ? (
+          <ActivityIndicator color={textColor} size="small" />
+        ) : (
+          <View style={styles.row}>
+            {icon}
+            {displayLabel ? (
+              <Text style={[textStyle, icon ? { marginLeft: 8 } : null]}>{displayLabel}</Text>
+            ) : null}
+          </View>
+        )}
+      </SquircleSurface>
+    </PressableScale>
   );
 };
 
+export const AppButton = Button;
+
 const styles = StyleSheet.create({
-  base: {
+  surface: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
   },
 });
+
+export default Button;

@@ -12,13 +12,15 @@ import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { APPROVED_CHIPS, ChipCategory } from '../../../domain/chips/catalog';
 import { STAMP_CATALOG } from '../../../domain/letters/stampCatalog';
 import { calculateDeliveryHours } from '../../../domain/letters/deliveryCalculator';
-import { useLetterStore } from '../../../stores/useLetterStore';
+import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
 
 export default function LetterComposeScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
-  const { createDraft, sendLetter } = useLetterStore();
+  const { createDraft, sendLetter } = useRootStore(
+    useShallow((s) => ({ createDraft: s.createDraft, sendLetter: s.sendLetter })),
+  );
 
   const [selectedChips, setSelectedChips] = useState<string[]>([]);
   const [selectedStamp, setSelectedStamp] = useState(STAMP_CATALOG[0].id);
@@ -65,7 +67,7 @@ export default function LetterComposeScreen() {
     sendLetter(draftId, 'penpal_aurora_seeker');
 
     Alert.alert(
-      'Letter Sealed & Sent 🕊️',
+      'Letter Sealed & Sent',
       `Your letter is traveling with the ${activeStamp.name} stamp. Estimated transit time is ${estimatedDelayHours} hours (${estimatedDistanceKm.toLocaleString()} km).`,
       [
         {

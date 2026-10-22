@@ -4,7 +4,7 @@ import { useTheme } from '../../theme/useTheme';
 
 interface BadgeProps {
   label: string;
-  variant?: 'primary' | 'success' | 'warning' | 'info' | 'neutral';
+  variant?: 'primary' | 'success' | 'warning' | 'info' | 'neutral' | 'danger' | 'error';
   style?: ViewStyle;
 }
 
@@ -23,6 +23,9 @@ export const Badge: React.FC<BadgeProps> = ({ label, variant = 'primary', style 
   } else if (variant === 'info') {
     bg = colors.infoSurface;
     textCol = colors.info;
+  } else if (variant === 'danger' || variant === 'error') {
+    bg = colors.errorSurface ?? '#FEE2E2';
+    textCol = colors.error;
   } else if (variant === 'neutral') {
     bg = colors.surface1;
     textCol = colors.text.secondary;

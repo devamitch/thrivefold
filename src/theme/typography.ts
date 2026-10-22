@@ -13,6 +13,13 @@ const fontBold = Platform.select({
 });
 
 export const typography = {
+  hero: {
+    fontFamily: fontBold,
+    fontSize: 40,
+    lineHeight: 46,
+    fontWeight: '800',
+    letterSpacing: -1,
+  } as TextStyle,
   display: {
     fontFamily: fontBold,
     fontSize: 34,

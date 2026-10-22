@@ -4,12 +4,14 @@ import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { Header } from '../../../components/ui/Header';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
-import { useHealthStore } from '../../../stores/useHealthStore';
+import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
 
 export default function JournalScreen() {
   const { colors, typography } = useTheme();
-  const { journalEntries, addJournalEntry, deleteJournalEntry } = useHealthStore();
+  const { journalEntries, addJournalEntry, deleteJournalEntry } = useRootStore(
+    useShallow((s) => ({ journalEntries: s.journalEntries, addJournalEntry: s.addJournalEntry, deleteJournalEntry: s.deleteJournalEntry })),
+  );
 
   const [newTitle, setNewTitle] = useState('');
   const [newContent, setNewContent] = useState('');

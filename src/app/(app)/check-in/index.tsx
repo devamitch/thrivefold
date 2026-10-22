@@ -7,7 +7,7 @@ import { Card } from '../../../components/ui/Card';
 import { Chip } from '../../../components/ui/Chip';
 import { Header } from '../../../components/ui/Header';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
-import { useHealthStore } from '../../../stores/useHealthStore';
+import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
 
 export default function CheckInScreen() {
@@ -23,12 +23,15 @@ export default function CheckInScreen() {
     addTodaySymptom,
     removeTodaySymptom,
     addCheckIn,
-  } = useHealthStore();
+  } = useRootStore(
+    useShallow((s) => ({ todayEnergy: s.todayEnergy, todayMood: s.todayMood, todayStress: s.todayStress, todaySleepHours: s.todaySleepHours, todaySymptoms: s.todaySymptoms, updateTodayMetrics: s.updateTodayMetrics, addTodaySymptom: s.addTodaySymptom, removeTodaySymptom: s.removeTodaySymptom, addCheckIn: s.addCheckIn })),
+  );
 
-  const [energy, setEnergy] = useState(todayEnergy);
-  const [mood, setMood] = useState(todayMood);
-  const [stress, setStress] = useState(todayStress);
-  const [sleep, setSleep] = useState(todaySleepHours);
+  // Neutral starting positions for the controls; nothing is saved until "Save".
+  const [energy, setEnergy] = useState(todayEnergy ?? 5);
+  const [mood, setMood] = useState(todayMood ?? 5);
+  const [stress, setStress] = useState(todayStress ?? 5);
+  const [sleep, setSleep] = useState(todaySleepHours ?? 7);
 
   const symptomsList = [
     'Cramps',

@@ -8,13 +8,15 @@ import { Card } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
 import { Header } from '../../../components/ui/Header';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
-import { useLetterStore } from '../../../stores/useLetterStore';
+import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
 
 export default function LettersInboxScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
-  const { inbox, connections } = useLetterStore();
+  const { inbox, connections } = useRootStore(
+    useShallow((s) => ({ inbox: s.inbox, connections: s.connections })),
+  );
 
   return (
     <ScreenWrapper scrollable>
@@ -62,6 +64,52 @@ export default function LettersInboxScreen() {
             />
           </View>
         </Card>
+
+        {/* Quick Postal Navigation */}
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: spacing.lg }}>
+          <Button
+            label="Discover"
+            size="sm"
+            variant="outline"
+            icon={<Ionicons name="compass-outline" size={14} color={colors.primary} />}
+            onPress={() => router.push('/(app)/letters/discover')}
+          />
+          <Button
+            label="Open Letters"
+            size="sm"
+            variant="outline"
+            icon={<Ionicons name="mail-open-outline" size={14} color={colors.primary} />}
+            onPress={() => router.push('/(app)/letters/open-letters')}
+          />
+          <Button
+            label="Outbox"
+            size="sm"
+            variant="outline"
+            icon={<Ionicons name="paper-plane-outline" size={14} color={colors.primary} />}
+            onPress={() => router.push('/(app)/letters/outbox')}
+          />
+          <Button
+            label="Drafts"
+            size="sm"
+            variant="ghost"
+            icon={<Ionicons name="document-text-outline" size={14} color={colors.text.secondary} />}
+            onPress={() => router.push('/(app)/letters/drafts')}
+          />
+          <Button
+            label="Profile"
+            size="sm"
+            variant="ghost"
+            icon={<Ionicons name="person-outline" size={14} color={colors.text.secondary} />}
+            onPress={() => router.push('/(app)/letters/profile')}
+          />
+          <Button
+            label="Pacing"
+            size="sm"
+            variant="ghost"
+            icon={<Ionicons name="options-outline" size={14} color={colors.text.secondary} />}
+            onPress={() => router.push('/(app)/letters/preferences')}
+          />
+        </View>
 
         {/* Active Pen-Pal Connections */}
         <View style={styles.sectionHeader}>

@@ -5,12 +5,12 @@ import { ScreenWrapper } from '../../components/ui/ScreenWrapper';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { useTheme } from '../../theme/useTheme';
-import { useAppStore } from '../../stores/useAppStore';
+import { useRootStore } from '../../stores/useRootStore';
 
 export default function CompleteOnboardingScreen() {
   const router = useRouter();
   const { colors, typography, spacing, experience } = useTheme();
-  const setIsOnboarded = useAppStore((s) => s.setIsOnboarded);
+  const setIsOnboarded = useRootStore((s) => s.setIsOnboarded);
 
   const handleStart = () => {
     setIsOnboarded(true);

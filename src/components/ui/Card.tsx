@@ -1,16 +1,18 @@
 import React from 'react';
-import { Pressable, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
+import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 import { useTheme } from '../../theme/useTheme';
+import { PressableScale } from './PressableScale';
+import { SquircleSurface } from './SquircleSurface';
 
-import * as Haptics from 'expo-haptics';
-
-interface CardProps {
-  children: React.ReactNode;
-  variant?: 'surface' | 'surface1' | 'glass' | 'tinted';
+export interface CardProps {
+  children?: React.ReactNode;
+  variant?: 'surface' | 'surface1' | 'surface2' | 'surface3' | 'glass' | 'tinted';
   style?: StyleProp<ViewStyle>;
   onPress?: () => void;
   radius?: number;
   padding?: number;
+  /** When true, avoids drawing SVG path on high-frequency virtualized lists */
+  nativeSurface?: boolean;
 }
 
 export const Card: React.FC<CardProps> = ({
@@ -20,52 +22,74 @@ export const Card: React.FC<CardProps> = ({
   onPress,
   radius = 20,
   padding,
+  nativeSurface = false,
 }) => {
   const { colors, spacing } = useTheme();
 
-  const handlePress = () => {
-    if (onPress) {
-      try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      } catch {}
-      onPress();
-    }
-  };
-
   let bg = colors.surface;
   if (variant === 'surface1') bg = colors.surface1;
+  if (variant === 'surface2') bg = colors.surface2;
+  if (variant === 'surface3') bg = colors.surface3;
   if (variant === 'glass') bg = colors.surfaceGlass;
   if (variant === 'tinted') bg = colors.primaryAlpha;
 
-  const cardStyle: ViewStyle = {
-    backgroundColor: bg,
-    borderRadius: radius,
-    borderColor: colors.border,
-    borderWidth: 1,
-    padding: padding !== undefined ? padding : spacing.base,
-  };
+  const defaultPadding = padding !== undefined ? padding : spacing.base;
 
-  if (onPress) {
-    return (
-      <Pressable
-        onPress={handlePress}
-        style={({ pressed }) => [
+  if (nativeSurface) {
+    const content = (
+      <View
+        style={[
           styles.base,
-          cardStyle,
-          pressed && { opacity: 0.88, transform: [{ scale: 0.99 }] },
+          {
+            backgroundColor: bg,
+            borderRadius: radius,
+            padding: defaultPadding,
+          },
           style,
         ]}
       >
         {children}
-      </Pressable>
+      </View>
+    );
+
+    if (onPress) {
+      return (
+        <PressableScale onPress={onPress} scaleTo={0.985}>
+          {content}
+        </PressableScale>
+      );
+    }
+    return content;
+  }
+
+  const surface = (
+    <SquircleSurface
+      radius={radius}
+      smoothing={1}
+      fill={bg}
+      style={[styles.base, { padding: defaultPadding }, style]}
+    >
+      {children}
+    </SquircleSurface>
+  );
+
+  if (onPress) {
+    return (
+      <PressableScale onPress={onPress} scaleTo={0.985}>
+        {surface}
+      </PressableScale>
     );
   }
 
-  return <View style={[styles.base, cardStyle, style]}>{children}</View>;
+  return surface;
 };
 
 const styles = StyleSheet.create({
   base: {
+    elevation: 0,
+    shadowOpacity: 0,
     overflow: 'hidden',
   },
 });
+
+export default Card;

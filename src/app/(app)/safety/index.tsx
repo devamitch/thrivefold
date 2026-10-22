@@ -9,14 +9,14 @@ import { Badge } from '../../../components/ui/Badge';
 import { Header } from '../../../components/ui/Header';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { useTheme } from '../../../theme/useTheme';
-import { usePolicyStore } from '../../../stores/usePolicyStore';
+import { useRootStore } from '../../../stores/useRootStore';
 
 export default function SafetyScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
-  const blockedUserIds = usePolicyStore((s) => s.blockedUserIds);
-  const blockUser = usePolicyStore((s) => s.blockUser);
-  const unblockUser = usePolicyStore((s) => s.unblockUser);
+  const blockedUserIds = useRootStore((s) => s.blockedUserIds);
+  const blockUser = useRootStore((s) => s.blockUser);
+  const unblockUser = useRootStore((s) => s.unblockUser);
 
   const [reportText, setReportText] = useState('');
   const [showReportCard, setShowReportCard] = useState(false);
@@ -57,6 +57,37 @@ export default function SafetyScreen() {
     <ScreenWrapper scrollable>
       <Header title="Safety, Crisis & Privacy" subtitle="Instant hotlines and protection controls" showBack />
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: spacing.xxl }]}>
+        {/* Quick Safety Hub Links */}
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+          <Button
+            label="24/7 Helplines"
+            size="sm"
+            variant="outline"
+            icon={<Ionicons name="call-outline" size={14} color={colors.primary} />}
+            onPress={() => router.push('/(app)/safety/urgent-support')}
+          />
+          <Button
+            label="Submit Report"
+            size="sm"
+            variant="outline"
+            icon={<Ionicons name="shield-outline" size={14} color={colors.primary} />}
+            onPress={() => router.push('/(app)/safety/report')}
+          />
+          <Button
+            label="Blocked Users"
+            size="sm"
+            variant="outline"
+            icon={<Ionicons name="ban-outline" size={14} color={colors.primary} />}
+            onPress={() => router.push('/(app)/safety/blocked-users')}
+          />
+          <Button
+            label="Appeal Action"
+            size="sm"
+            variant="ghost"
+            icon={<Ionicons name="refresh-outline" size={14} color={colors.text.secondary} />}
+            onPress={() => router.push('/(app)/safety/appeal')}
+          />
+        </View>
         {/* Emergency Resources */}
         <Card style={{ marginBottom: spacing.md, backgroundColor: colors.errorSurface, borderColor: colors.error }}>
           <View style={styles.emergencyHeader}>

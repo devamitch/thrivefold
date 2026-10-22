@@ -60,9 +60,9 @@ export default function GoalsScreen() {
         </View>
 
         <Button
-          label="Finish Onboarding"
+          label="Next: Movement Constraints"
           disabled={selectedGoals.length === 0}
-          onPress={() => router.push('/(onboarding)/complete')}
+          onPress={() => router.push('/(onboarding)/activity-constraints')}
           style={{ marginTop: spacing.xl }}
         />
       </View>

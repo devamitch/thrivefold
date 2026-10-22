@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
 import { Header } from '../../../components/ui/Header';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { useTheme } from '../../../theme/useTheme';
-import { useAuthStore } from '../../../stores/useAuthStore';
-import { usePolicyStore } from '../../../stores/usePolicyStore';
+import { useRootStore } from '../../../stores/useRootStore';
 import { evaluateFeatureEligibility } from '../../../domain/policy/engine';
 
 interface CircleItem {
@@ -19,25 +19,26 @@ interface CircleItem {
 }
 
 export default function CommunitiesScreen() {
+  const router = useRouter();
   const { colors, typography, spacing, experience } = useTheme();
-  const user = useAuthStore((s) => s.user);
-  const activeTrialStartDate = useAuthStore((s) => s.activeTrialStartDate);
-  const introsSentToday = useAuthStore((s) => s.introsSentToday);
-  const consentedFeatures = usePolicyStore((s) => s.consentedFeatures);
-  const blockedUserIds = usePolicyStore((s) => s.blockedUserIds);
+  const user = useRootStore((s) => s.user);
+  const activeTrialStartDate = useRootStore((s) => s.activeTrialStartDate);
+  const introsSentToday = useRootStore((s) => s.introsSentToday);
+  const consentedFeatures = useRootStore((s) => s.consentedFeatures);
+  const blockedUserIds = useRootStore((s) => s.blockedUserIds);
 
   const [joinedCircleIds, setJoinedCircleIds] = useState<string[]>([]);
 
   // Policy check for trial lockout
+  const completedCheckInDays = useRootStore((s) => s.completedCheckInDaysCount);
   const eligibility = evaluateFeatureEligibility('community_directory', {
     userId: user?.id ?? 'dev_user',
-    age: user?.age ?? 26,
-    isAgeVerified: user?.isAgeVerified ?? true,
+    age: user?.age ?? null,
+    isAgeVerified: user?.isAgeVerified ?? false,
     experience,
-    completedCheckInDays: 3,
+    completedCheckInDays,
     consentedFeatures,
     activeTrialStartDate: activeTrialStartDate ?? undefined,
-    hasActiveSubscription: user?.hasActiveSubscription ?? false,
     introsSentToday,
     blockedUserIds,
   });
@@ -125,7 +126,12 @@ export default function CommunitiesScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Private Circles" subtitle="Segmented, identity-safe affinity spaces" showBack />
+      <Header
+        title="Private Circles"
+        subtitle="Segmented, identity-safe affinity spaces"
+        showBack
+        rightAction={<Button label="Invites" variant="outline" size="sm" onPress={() => router.push('/(app)/circles/invitations')} />}
+      />
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: spacing.xxl }]}>
         {/* Policy Notice if Barred */}
         {!eligibility.allowed && (
@@ -172,13 +178,23 @@ export default function CommunitiesScreen() {
                 {circle.description}
               </Text>
 
-              <Button
-                label={isJoined ? 'Leave Circle' : 'Join Private Circle'}
-                variant={isJoined ? 'outline' : 'primary'}
-                size="sm"
-                disabled={!eligibility.allowed}
-                onPress={() => handleToggleJoin(circle.id, circle.title)}
-              />
+              <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
+                <Button
+                  label={isJoined ? 'Leave Circle' : 'Join Private Circle'}
+                  variant={isJoined ? 'outline' : 'primary'}
+                  size="sm"
+                  disabled={!eligibility.allowed}
+                  onPress={() => handleToggleJoin(circle.id, circle.title)}
+                  style={{ flex: 1 }}
+                />
+                <Button
+                  label="Open Hub"
+                  variant="outline"
+                  size="sm"
+                  onPress={() => router.push(`/(app)/circles/${circle.id}` as any)}
+                  style={{ flex: 1 }}
+                />
+              </View>
             </Card>
           );
         })}

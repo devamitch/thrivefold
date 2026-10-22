@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- Background subtle gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FAF9F5"/>
+      <stop offset="100%" stop-color="#F3EFE6"/>
+    </linearGradient>
+
+    <!-- Warm terracotta gradient for central origami fold -->
+    <linearGradient id="terracottaMain" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#E07A1E"/>
+      <stop offset="50%" stop-color="#B45309"/>
+      <stop offset="100%" stop-color="#883506"/>
+    </linearGradient>
+
+    <!-- Warm terracotta deep shadow fold -->
+    <linearGradient id="terracottaDeep" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#B45309"/>
+      <stop offset="100%" stop-color="#6E2805"/>
+    </linearGradient>
+
+    <!-- Pistachio/Sage organic leaf gradient -->
+    <linearGradient id="sageLeaf" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8EA28D"/>
+      <stop offset="100%" stop-color="#5E745D"/>
+    </linearGradient>
+
+    <!-- Golden sun/lotus highlight -->
+    <linearGradient id="goldAccent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FBBF24"/>
+      <stop offset="60%" stop-color="#D97706"/>
+      <stop offset="100%" stop-color="#B45309"/>
+    </linearGradient>
+
+    <filter id="softGlow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="24" flood-color="#883506" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <!-- Canvas Background -->
+  <rect width="1024" height="1024" fill="url(#bgGrad)"/>
+
+  <!-- Outer Organic Squircle Plate -->
+  <rect x="72" y="72" width="880" height="880" rx="240" fill="#FFFFFF" stroke="#EAE5DC" stroke-width="8"/>
+
+  <!-- Subtle Concentric Sanctuary Halo -->
+  <circle cx="512" cy="512" r="340" fill="none" stroke="#E8E2D5" stroke-width="3" stroke-dasharray="14 16" opacity="0.6"/>
+
+  <!-- Master Emblem Group with soft organic drop shadow -->
+  <g id="lotus-origami-bloom" transform="translate(512, 512)" filter="url(#softGlow)">
+    <!-- Outer Left Leaf Wing (Pistachio Sage) -->
+    <path d="M -20 -50 C -140 -20, -260 70, -260 210 C -260 290, -180 320, -80 280 C -25 255, 0 185, 0 140 Z" 
+          fill="url(#sageLeaf)" opacity="0.92"/>
+
+    <!-- Outer Right Leaf Wing (Pistachio Sage) -->
+    <path d="M 20 -50 C 140 -20, 260 70, 260 210 C 260 290, 180 320, 80 280 C 25 255, 0 185, 0 140 Z" 
+          fill="url(#sageLeaf)" opacity="0.92"/>
+
+    <!-- Secondary Left Fold (Terracotta Deep) -->
+    <path d="M 0 -150 C -95 -40, -195 75, -170 225 C -150 260, -70 280, 0 250 Z" 
+          fill="url(#terracottaDeep)" opacity="0.96"/>
+
+    <!-- Secondary Right Fold (Terracotta Light/Mid) -->
+    <path d="M 0 -150 C 95 -40, 195 75, 170 225 C 150 260, 70 280, 0 250 Z" 
+          fill="url(#terracottaMain)" opacity="0.96"/>
+
+    <!-- Center Upright Lotus Petal - Left Facet -->
+    <path d="M 0 -280 C -50 -170, -105 -20, -70 160 C -35 210, 0 240, 0 240 Z" 
+          fill="url(#terracottaMain)"/>
+
+    <!-- Center Upright Lotus Petal - Right Facet (Catching Warm Golden Light) -->
+    <path d="M 0 -280 C 50 -170, 105 -20, 70 160 C 35 210, 0 240, 0 240 Z" 
+          fill="url(#goldAccent)"/>
+
+    <!-- Origami Center Spine Line -->
+    <line x1="0" y1="-275" x2="0" y2="240" stroke="#FFF7ED" stroke-width="4.5" stroke-linecap="round" opacity="0.8"/>
+
+    <!-- Meditative Sanctuary Heart / Seed -->
+    <circle cx="0" cy="210" r="18" fill="#FFFBF5" stroke="#B45309" stroke-width="5"/>
+
+    <!-- Slow Mail / Origami Envelope Fold at Base -->
+    <path d="M -110 300 L 0 355 L 110 300" fill="none" stroke="#B45309" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="-145" y1="300" x2="145" y2="300" stroke="#B45309" stroke-width="8" stroke-linecap="round"/>
+  </g>
+</svg>

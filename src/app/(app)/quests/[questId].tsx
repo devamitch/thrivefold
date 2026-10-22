@@ -8,15 +8,15 @@ import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { Header } from '../../../components/ui/Header';
 import { useTheme } from '../../../theme/useTheme';
-import { useHealthStore } from '../../../stores/useHealthStore';
+import { useRootStore } from '../../../stores/useRootStore';
 
 export default function QuestDetailScreen() {
   const router = useRouter();
   const { questId } = useLocalSearchParams<{ questId: string }>();
   const { colors, typography, spacing } = useTheme();
 
-  const todayQuests = useHealthStore((s) => s.todayQuests);
-  const completeQuest = useHealthStore((s) => s.completeQuest);
+  const todayQuests = useRootStore((s) => s.todayQuests);
+  const completeQuest = useRootStore((s) => s.completeQuest);
 
   const quest = todayQuests.find((q) => q.id === questId) ?? todayQuests[0];
 

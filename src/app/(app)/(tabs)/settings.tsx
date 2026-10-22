@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Alert, Share } from 'react-native';
+import { buildLocalExport, eraseLocalData } from '../../../services/privacy/localData';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
@@ -7,26 +8,33 @@ import { Card } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
 import { Header } from '../../../components/ui/Header';
 import { useTheme } from '../../../theme/useTheme';
-import { useAppStore } from '../../../stores/useAppStore';
-import { useAuthStore } from '../../../stores/useAuthStore';
+import { useRootStore } from '../../../stores/useRootStore';
 import { ProductExperience } from '../../../theme/tokens';
+
+import { Icon, IconName } from '../../../components/ui/Icon';
 
 export default function SettingsScreen() {
   const router = useRouter();
   const { colors, typography, spacing, experience, isDark } = useTheme();
-  const setExperience = useAppStore((s) => s.setExperience);
-  const themeMode = useAppStore((s) => s.themeMode);
-  const setThemeMode = useAppStore((s) => s.setThemeMode);
-  const user = useAuthStore((s) => s.user);
+  const setExperience = useRootStore((s) => s.setExperience);
+  const themeMode = useRootStore((s) => s.themeMode);
+  const setThemeMode = useRootStore((s) => s.setThemeMode);
+  const user = useRootStore((s) => s.user);
 
-  const experiences: { id: ProductExperience; label: string; icon: string }[] = [
-    { id: 'women_health', label: "Women's Health", icon: '🌸' },
-    { id: 'men_health', label: "Men's Health", icon: '🌿' },
-    { id: 'pride_wellbeing', label: 'Pride & LGBTQ+', icon: '✨' },
+  const experiences: { id: ProductExperience; label: string; icon: IconName }[] = [
+    { id: 'women_health', label: "Women's Health", icon: 'heart' },
+    { id: 'men_health', label: "Men's Health", icon: 'bolt' },
+    { id: 'pride_wellbeing', label: 'Pride & LGBTQ+', icon: 'sun' },
   ];
 
-  const handleExportData = () => {
-    Alert.alert('Data Export Generated', 'Your local-first health history, reflections, and check-in logs have been prepared for private JSON download.');
+  // Hands the full JSON copy of this device's Thrivefold data to the system share sheet
+  // (save to Files, send to yourself, etc.).
+  const handleExportData = async () => {
+    try {
+      await Share.share({ title: 'Thrivefold data export', message: buildLocalExport() });
+    } catch {
+      Alert.alert("Couldn't export", 'Please try again.');
+    }
   };
 
   const handleDeleteAccount = () => {
@@ -35,7 +43,14 @@ export default function SettingsScreen() {
       'This will erase all locally stored cycle metrics, private journals, AI memory tokens, and account keys. This action is irreversible.',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Erase Everything', style: 'destructive', onPress: () => router.replace('/(onboarding)/choose-experience') },
+        {
+          text: 'Erase Everything',
+          style: 'destructive',
+          onPress: () => {
+            eraseLocalData();
+            router.replace('/(auth)/sign-in');
+          },
+        },
       ]
     );
   };
@@ -74,16 +89,17 @@ export default function SettingsScreen() {
                 style={[
                   styles.optionCard,
                   {
-                    borderColor: isSelected ? colors.primary : colors.border,
-                    borderWidth: isSelected ? 2 : 1,
                     marginBottom: 8,
                   },
                 ]}
               >
                 <View style={styles.rowBetween}>
-                  <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                    {exp.icon}  {exp.label}
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <Icon name={exp.icon} size={20} color={isSelected ? colors.primary : colors.text.secondary} />
+                    <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                      {exp.label}
+                    </Text>
+                  </View>
                   {isSelected && <Badge label="Active" variant="primary" />}
                 </View>
               </Card>
@@ -148,20 +164,6 @@ export default function SettingsScreen() {
               </Text>
               <Text style={[typography.caption, { color: colors.text.secondary }]}>
                 Manage blocked correspondents and safety reports
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
-          </View>
-        </Card>
-
-        <Card onPress={() => router.push('/(app)/billing')} style={{ marginBottom: 8 }}>
-          <View style={styles.rowBetween}>
-            <View>
-              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                Subscription & Free Tier Status
-              </Text>
-              <Text style={[typography.caption, { color: colors.text.secondary }]}>
-                Zero-cost personal tier active
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />

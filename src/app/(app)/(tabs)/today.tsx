@@ -1,23 +1,63 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
-import { Header } from '../../../components/ui/Header';
+import { PressableScale } from '../../../components/ui/PressableScale';
 import { useTheme } from '../../../theme/useTheme';
-import { useHealthStore } from '../../../stores/useHealthStore';
+import { useRootStore } from '../../../stores/useRootStore';
+import {
+  useScrollAwareTabBar,
+  useTabBarInset,
+} from '../../../components/navigation/CustomTabBar';
+
+const ENERGY_LABELS: Record<number, string> = {
+  1: '😴 Drained',
+  3: '😔 Low',
+  5: '😐 Okay',
+  7: '😊 Good',
+  9: '😄 Great',
+  10: '🔥 Peak',
+};
+
+const MOOD_LABELS: Record<number, string> = {
+  1: '😢 Very low',
+  3: '😕 Down',
+  5: '😐 Neutral',
+  7: '🙂 Positive',
+  9: '😁 Happy',
+  10: '✨ Joyful',
+};
+
+const INTENSITY_OPTIONS = [
+  { id: 'rest', label: 'Rest Day', emoji: '🛌', desc: '5 min gentle stretch' },
+  { id: 'light', label: 'Light', emoji: '🌿', desc: '15 min easy flow' },
+  { id: 'regular', label: 'Regular', emoji: '⚡', desc: '30 min full routine' },
+] as const;
 
 export default function TodayScreen() {
   const { colors, typography, spacing } = useTheme();
-  const todayQuests = useHealthStore((s) => s.todayQuests);
-  const completeQuest = useHealthStore((s) => s.completeQuest);
-  const addCheckIn = useHealthStore((s) => s.addCheckIn);
+  const insets = useSafeAreaInsets();
+  const tabBarInset = useTabBarInset();
+  const { onScroll, scrollEventThrottle } = useScrollAwareTabBar();
+
+  const todayQuests = useRootStore((s) => s.todayQuests);
+  const completeQuest = useRootStore((s) => s.completeQuest);
+  const addCheckIn = useRootStore((s) => s.addCheckIn);
 
   const [energy, setEnergy] = useState(7);
   const [mood, setMood] = useState(8);
   const [stress, setStress] = useState(4);
+  const [intensity, setIntensity] = useState<'rest' | 'light' | 'regular'>('regular');
   const [checkedInToday, setCheckedInToday] = useState(false);
 
   const handleSaveCheckIn = () => {
@@ -32,171 +72,346 @@ export default function TodayScreen() {
     setCheckedInToday(true);
   };
 
+  const completedCount = todayQuests.filter((q) => q.isCompleted).length;
+  const totalCount = todayQuests.length;
+  const progressPct = totalCount > 0 ? completedCount / totalCount : 0;
+
   return (
-    <ScreenWrapper scrollable>
-      <Header title="Today's Plan" subtitle="Adaptive Quests & Daily Check-in" />
-      <View style={[styles.content, { paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }]}>
-        {/* Daily Check-in Widget */}
-        <Card style={{ marginBottom: spacing.lg }}>
-          <View style={styles.rowBetween}>
-            <Text style={[typography.subheading, { color: colors.text.primary }]}>
-              Daily Check-in
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      <ScrollView
+        contentContainerStyle={[styles.scroll, { paddingBottom: tabBarInset }]}
+        showsVerticalScrollIndicator={false}
+        onScroll={onScroll}
+        scrollEventThrottle={scrollEventThrottle}
+      >
+        {/* ── Page Header ── */}
+        <LinearGradient
+          colors={[colors.success + '14', colors.background]}
+          style={[styles.header, { paddingTop: insets.top + 16 }]}
+        >
+          <View style={{ paddingHorizontal: spacing.base }}>
+            <Text style={[typography.label, { color: colors.success }]}>DAILY PLAN</Text>
+            <Text style={[typography.heading, { color: colors.text.primary, marginTop: 4 }]}>
+              Today's Journey
             </Text>
-            {checkedInToday ? (
-              <Badge label="Logged Today" variant="success" />
-            ) : (
-              <Badge label="Pending" variant="warning" />
-            )}
-          </View>
-          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4, marginBottom: spacing.md }]}>
-            How is your energy and mood feeling today?
-          </Text>
 
-          {/* Energy Rating */}
-          <Text style={[typography.subbodyBold, { color: colors.text.primary, marginBottom: 6 }]}>
-            Energy Level: {energy} / 10
-          </Text>
-          <View style={styles.sliderRow}>
-            {[1, 3, 5, 7, 9, 10].map((val) => (
-              <Pressable
-                key={val}
-                onPress={() => setEnergy(val)}
-                style={[
-                  styles.pillBtn,
-                  {
-                    backgroundColor: energy === val ? colors.primary : colors.surface1,
-                    borderColor: colors.border,
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    typography.captionBold,
-                    { color: energy === val ? colors.onPrimary : colors.text.primary },
-                  ]}
-                >
-                  {val}
+            {/* Quest Progress Bar */}
+            <View style={[styles.progressContainer, { marginTop: spacing.md }]}>
+              <View style={styles.progressLabelRow}>
+                <Text style={[typography.subbodyBold, { color: colors.text.primary }]}>
+                  {completedCount} of {totalCount} quests done
                 </Text>
-              </Pressable>
-            ))}
-          </View>
-
-          {/* Mood Rating */}
-          <Text style={[typography.subbodyBold, { color: colors.text.primary, marginTop: spacing.md, marginBottom: 6 }]}>
-            Mood: {mood} / 10
-          </Text>
-          <View style={styles.sliderRow}>
-            {[1, 3, 5, 7, 9, 10].map((val) => (
-              <Pressable
-                key={val}
-                onPress={() => setMood(val)}
-                style={[
-                  styles.pillBtn,
-                  {
-                    backgroundColor: mood === val ? colors.primary : colors.surface1,
-                    borderColor: colors.border,
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    typography.captionBold,
-                    { color: mood === val ? colors.onPrimary : colors.text.primary },
-                  ]}
-                >
-                  {val}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-
-          {!checkedInToday && (
-            <Button
-              label="Save Check-in"
-              size="sm"
-              onPress={handleSaveCheckIn}
-              style={{ marginTop: spacing.base }}
-            />
-          )}
-        </Card>
-
-        {/* Quests List */}
-        <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: spacing.sm }]}>
-          Daily Micro-Quests
-        </Text>
-        {todayQuests.map((quest) => (
-          <Card key={quest.id} style={{ marginBottom: spacing.sm }}>
-            <View style={styles.rowBetween}>
-              <View style={{ flex: 1, paddingRight: 12 }}>
-                <View style={styles.questMeta}>
-                  <Badge label={`${quest.durationMinutes} min`} variant="neutral" />
-                  <Text style={[typography.captionBold, { color: colors.primary, marginLeft: 8 }]}>
-                    +{quest.xpReward} XP
-                  </Text>
-                </View>
-                <Text
-                  style={[
-                    typography.bodyBold,
-                    {
-                      color: quest.isCompleted ? colors.text.muted : colors.text.primary,
-                      textDecorationLine: quest.isCompleted ? 'line-through' : 'none',
-                      marginTop: 6,
-                    },
-                  ]}
-                >
-                  {quest.title}
+                <Text style={[typography.captionBold, { color: colors.success }]}>
+                  {Math.round(progressPct * 100)}%
                 </Text>
               </View>
-
-              <Pressable
-                onPress={() => completeQuest(quest.id)}
-                disabled={quest.isCompleted}
-                style={[
-                  styles.checkCircle,
-                  {
-                    backgroundColor: quest.isCompleted ? colors.success : colors.surface1,
-                    borderColor: quest.isCompleted ? colors.success : colors.borderStrong,
-                  },
-                ]}
-              >
-                {quest.isCompleted && <Ionicons name="checkmark" size={16} color="#FFFFFF" />}
-              </Pressable>
+              <View style={[styles.progressTrack, { backgroundColor: colors.success + '20' }]}>
+                <Animated.View
+                  style={[
+                    styles.progressFill,
+                    {
+                      backgroundColor: colors.success,
+                      width: `${progressPct * 100}%`,
+                    },
+                  ]}
+                />
+              </View>
             </View>
-          </Card>
-        ))}
-      </View>
-    </ScreenWrapper>
+          </View>
+        </LinearGradient>
+
+        <View style={[styles.content, { paddingHorizontal: spacing.base }]}>
+          {/* ── Daily Check-In Card ── */}
+          {!checkedInToday ? (
+            <Animated.View entering={FadeInDown.delay(60).springify()}>
+              <Card style={[styles.cardBase, { padding: 20 }]}>
+                <View style={styles.cardRow}>
+                  <View style={{ flex: 1 }}>
+                    <Badge label="Check-in pending" variant="warning" />
+                    <Text
+                      style={[
+                        typography.subheading,
+                        { color: colors.text.primary, marginTop: 6 },
+                      ]}
+                    >
+                      How are you today?
+                    </Text>
+                  </View>
+                  <Text style={{ fontSize: 30 }}>🌤️</Text>
+                </View>
+
+                {/* Energy */}
+                <View style={styles.ratingSection}>
+                  <Text style={[typography.subbodyBold, { color: colors.text.primary }]}>
+                    Energy   {ENERGY_LABELS[energy] ?? `${energy}/10`}
+                  </Text>
+                  <View style={styles.ratingRow}>
+                    {[1, 3, 5, 7, 9, 10].map((val) => (
+                      <PressableScale
+                        key={val}
+                        onPress={() => setEnergy(val)}
+                        scaleTo={0.92}
+                        style={[
+                          styles.ratingBtn,
+                          {
+                            backgroundColor:
+                              energy === val ? colors.primary : colors.surface1,
+                            borderColor: energy === val ? colors.primary : colors.border,
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            typography.captionBold,
+                            {
+                              color:
+                                energy === val ? colors.onPrimary : colors.text.secondary,
+                            },
+                          ]}
+                        >
+                          {val}
+                        </Text>
+                      </PressableScale>
+                    ))}
+                  </View>
+                </View>
+
+                {/* Mood */}
+                <View style={styles.ratingSection}>
+                  <Text style={[typography.subbodyBold, { color: colors.text.primary }]}>
+                    Mood   {MOOD_LABELS[mood] ?? `${mood}/10`}
+                  </Text>
+                  <View style={styles.ratingRow}>
+                    {[1, 3, 5, 7, 9, 10].map((val) => (
+                      <PressableScale
+                        key={val}
+                        onPress={() => setMood(val)}
+                        scaleTo={0.92}
+                        style={[
+                          styles.ratingBtn,
+                          {
+                            backgroundColor:
+                              mood === val ? colors.accent : colors.surface1,
+                            borderColor: mood === val ? colors.accent : colors.border,
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            typography.captionBold,
+                            {
+                              color:
+                                mood === val ? colors.onPrimary : colors.text.secondary,
+                            },
+                          ]}
+                        >
+                          {val}
+                        </Text>
+                      </PressableScale>
+                    ))}
+                  </View>
+                </View>
+
+                {/* Intensity */}
+                <View style={styles.ratingSection}>
+                  <Text style={[typography.subbodyBold, { color: colors.text.primary, marginBottom: 8 }]}>
+                    Preferred intensity today
+                  </Text>
+                  <View style={styles.intensityRow}>
+                    {INTENSITY_OPTIONS.map((opt) => (
+                      <PressableScale
+                        key={opt.id}
+                        onPress={() => setIntensity(opt.id)}
+                        scaleTo={0.95}
+                        style={[
+                          styles.intensityBtn,
+                          {
+                            backgroundColor:
+                              intensity === opt.id ? colors.primary + '14' : colors.surface1,
+                            borderColor:
+                              intensity === opt.id ? colors.primary : colors.border,
+                            borderWidth: intensity === opt.id ? 2 : 1,
+                          },
+                        ]}
+                      >
+                        <Text style={{ fontSize: 20 }}>{opt.emoji}</Text>
+                        <Text
+                          style={[
+                            typography.captionBold,
+                            {
+                              color:
+                                intensity === opt.id ? colors.primary : colors.text.primary,
+                              marginTop: 4,
+                            },
+                          ]}
+                        >
+                          {opt.label}
+                        </Text>
+                        <Text style={[typography.caption, { color: colors.text.muted, marginTop: 2 }]}>
+                          {opt.desc}
+                        </Text>
+                      </PressableScale>
+                    ))}
+                  </View>
+                </View>
+
+                <Button
+                  label="Save Check-in"
+                  onPress={handleSaveCheckIn}
+                  style={{ marginTop: spacing.md }}
+                />
+              </Card>
+            </Animated.View>
+          ) : (
+            <Animated.View entering={FadeInDown.springify()}>
+              <Card style={[styles.cardBase, { padding: 16 }]}>
+                <View style={styles.cardRow}>
+                  <View style={[styles.successIcon, { backgroundColor: colors.success + '18' }]}>
+                    <Ionicons name="checkmark-circle" size={24} color={colors.success} />
+                  </View>
+                  <View style={{ marginLeft: 12, flex: 1 }}>
+                    <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                      Check-in logged ✅
+                    </Text>
+                    <Text style={[typography.caption, { color: colors.text.secondary }]}>
+                      Energy {energy}/10 · Mood {mood}/10 · {intensity} intensity
+                    </Text>
+                  </View>
+                </View>
+              </Card>
+            </Animated.View>
+          )}
+
+          {/* ── Daily Micro-Quests ── */}
+          <Text
+            style={[
+              typography.subheading,
+              { color: colors.text.primary, marginTop: spacing.md, marginBottom: spacing.sm },
+            ]}
+          >
+            Today's Micro-Quests
+          </Text>
+          {todayQuests.map((quest, idx) => (
+            <Animated.View
+              key={quest.id}
+              entering={FadeInDown.delay(100 + idx * 40).springify()}
+            >
+              <Card style={[styles.questCard, { marginBottom: 10 }]}>
+                <View style={styles.cardRow}>
+                  <View style={{ flex: 1, paddingRight: 12 }}>
+                    <View style={styles.questMeta}>
+                      <Badge label={`${quest.durationMinutes} min`} variant="neutral" />
+                      <Text
+                        style={[
+                          typography.captionBold,
+                          { color: colors.primary, marginLeft: 8 },
+                        ]}
+                      >
+                        +{quest.xpReward} XP
+                      </Text>
+                    </View>
+                    <Text
+                      style={[
+                        typography.bodyBold,
+                        {
+                          color: quest.isCompleted ? colors.text.muted : colors.text.primary,
+                          textDecorationLine: quest.isCompleted ? 'line-through' : 'none',
+                          marginTop: 6,
+                        },
+                      ]}
+                    >
+                      {quest.title}
+                    </Text>
+                  </View>
+
+                  <PressableScale
+                    onPress={() => completeQuest(quest.id)}
+                    disabled={quest.isCompleted}
+                    scaleTo={0.88}
+                    style={[
+                      styles.checkCircle,
+                      {
+                        backgroundColor: quest.isCompleted ? colors.success : 'transparent',
+                        borderColor: quest.isCompleted ? colors.success : colors.borderStrong,
+                      },
+                    ]}
+                  >
+                    {quest.isCompleted && (
+                      <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                    )}
+                  </PressableScale>
+                </View>
+              </Card>
+            </Animated.View>
+          ))}
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
-    flex: 1,
+  root: { flex: 1 },
+  scroll: { flexGrow: 1 },
+  header: {
+    paddingBottom: 20,
   },
-  rowBetween: {
+  progressContainer: {},
+  progressLabelRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    marginBottom: 8,
   },
-  sliderRow: {
+  progressTrack: {
+    height: 6,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: 6,
+    borderRadius: 3,
+  },
+  content: { paddingTop: 16 },
+  cardBase: { marginBottom: 14 },
+  cardRow: { flexDirection: 'row', alignItems: 'center' },
+  ratingSection: { marginTop: 16 },
+  ratingRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginTop: 8,
   },
-  pillBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 12,
+  ratingBtn: {
+    width: 42,
+    height: 36,
+    borderRadius: 10,
     borderWidth: 1,
-  },
-  questMeta: {
-    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
   },
+  intensityRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  intensityBtn: {
+    flex: 1,
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 14,
+  },
+  successIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  questCard: { padding: 14 },
+  questMeta: { flexDirection: 'row', alignItems: 'center' },
   checkCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1.5,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
