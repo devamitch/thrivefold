@@ -31,8 +31,6 @@ export interface PolicyConfig {
   under25TrialDays: number;
   under25DailyIntroQuota: number;
   communityAccessDuringTrial: boolean;
-  muslimMen18to30WomenDatingRestricted: boolean;
-  hinduWomenDatingRestricted: boolean;
 }
 
 export const DEFAULT_POLICY: PolicyConfig = {
@@ -41,8 +39,6 @@ export const DEFAULT_POLICY: PolicyConfig = {
   under25TrialDays: 7,
   under25DailyIntroQuota: 1,
   communityAccessDuringTrial: false,
-  muslimMen18to30WomenDatingRestricted: true, // REVIEW_REQUIRED
-  hinduWomenDatingRestricted: true, // REVIEW_REQUIRED
 };
 
 export function calculateAgeBand(birthDate: Date): AgeBand {
@@ -68,7 +64,7 @@ export function evaluateFeatureEligibility(
   featureId: FeatureId,
   ageBand: AgeBand,
   verificationResult: AgeVerificationResult | null,
-  userPreferences: Record<string, any>,
+  _userPreferences: Record<string, unknown>,
   policy: PolicyConfig = DEFAULT_POLICY,
 ): FeatureEligibility {
   // Always require 18+ for social features
@@ -99,32 +95,30 @@ export function evaluateFeatureEligibility(
     }
   }
 
-  // Muslim men 18-30 women dating restriction (REVIEW_REQUIRED)
-  if (policy.muslimMen18to30WomenDatingRestricted && ageBand === '18_24' && featureId === 'adult_social') {
-    const religion = userPreferences.religion;
-    if (religion === 'muslim') {
-      return {
-        featureId,
-        isEligible: false,
-        reasonCode: 'POLICY_RESTRICTION_REVIEW_REQUIRED',
-        requiresConsent: false,
-        requiresVerification: false,
-      };
-    }
+  // Founder-requested identity rules (master spec §23.5–23.6) are never enforced per
+  // person: nobody is excluded or singled out because of a stated religion. While those
+  // rules await legal/platform review, the adult-social pathway that would depend on
+  // them is unavailable to everyone.
+  if (featureId === 'adult_social' || featureId === 'meetup') {
+    return {
+      featureId,
+      isEligible: false,
+      reasonCode: 'POLICY_RESTRICTION_REVIEW_REQUIRED',
+      requiresConsent: false,
+      requiresVerification: true,
+    };
   }
 
-  // Hindu women dating restriction (REVIEW_REQUIRED)
-  if (policy.hinduWomenDatingRestricted && featureId === 'adult_social') {
-    const religion = userPreferences.religion;
-    if (religion === 'hindu') {
-      return {
-        featureId,
-        isEligible: false,
-        reasonCode: 'POLICY_RESTRICTION_REVIEW_REQUIRED',
-        requiresConsent: false,
-        requiresVerification: false,
-      };
-    }
+  // Social features need real age assurance, not a self-attestation.
+  if ((featureId === 'letters' || featureId === 'structured_intro') && !verificationResult?.isVerified) {
+    return {
+      featureId,
+      isEligible: false,
+      reasonCode: 'VERIFICATION_REQUIRED',
+      requiresConsent: false,
+      requiresVerification: true,
+      minimumAge: 18,
+    };
   }
 
   // Default eligible for verified adults

@@ -38,7 +38,8 @@ export interface EligibilityDecision {
 
 export interface UserEvaluationContext {
   userId: string;
-  age: number;
+  /** null until the person has stated or verified their age. */
+  age: number | null;
   isAgeVerified: boolean;
   experience: ProductExperience;
   completedCheckInDays: number;
@@ -46,7 +47,6 @@ export interface UserEvaluationContext {
   selfDeclaredReligion?: string;
   consentedFeatures: string[];
   activeTrialStartDate?: string;
-  hasActiveSubscription?: boolean;
   introsSentToday: number;
   blockedUserIds: string[];
 }

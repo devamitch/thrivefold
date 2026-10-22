@@ -1,5 +1,8 @@
-import { evaluateFeatureEligibility } from '../../src/domain/policy/engine';
+import { evaluateFeatureEligibility, policyConfig } from '../../src/domain/policy/engine';
 import { UserEvaluationContext, RecipientEvaluationContext } from '../../src/domain/policy/types';
+
+// The under-25 pilot ships disabled; tests that exercise its rules enable it explicitly.
+const pilotEnabled = { ...policyConfig, under25Pilot: { ...policyConfig.under25Pilot, enabled: true } };
 
 describe('Thrivefold Deterministic Policy Engine', () => {
   const baseUser: UserEvaluationContext = {
@@ -32,8 +35,47 @@ describe('Thrivefold Deterministic Policy Engine', () => {
       isAgeVerified: true,
     };
 
-    const decision = evaluateFeatureEligibility('restricted_correspondence_trial', adultUser);
+    const decision = evaluateFeatureEligibility('restricted_correspondence_trial', adultUser, undefined, pilotEnabled);
     expect(decision.allowed).toBe(true);
+  });
+
+  test('P0: Unknown age is never treated as adult', () => {
+    const decision = evaluateFeatureEligibility('letters', { ...baseUser, age: null, isAgeVerified: false });
+    expect(decision.allowed).toBe(false);
+    expect(decision.reasonCode).toBe('UNDERAGE_FORBIDDEN');
+  });
+
+  test('P0: A stated adult age without verification does not unlock social features', () => {
+    const decision = evaluateFeatureEligibility('letters', { ...baseUser, isAgeVerified: false });
+    expect(decision.allowed).toBe(false);
+    expect(decision.reasonCode).toBe('NEEDS_VERIFICATION');
+  });
+
+  test('P1: Unreviewed pilot pathways are off by default', () => {
+    expect(policyConfig.under25Pilot.enabled).toBe(false);
+    expect(policyConfig.women18To40Pathway.enabled).toBe(false);
+    expect(policyConfig.olderWomenCohorts.women35To49.enabled).toBe(false);
+    expect(policyConfig.olderWomenCohorts.women50Plus.enabled).toBe(false);
+    const decision = evaluateFeatureEligibility('restricted_correspondence_trial', { ...baseUser, age: 22, experience: 'men_health' });
+    expect(decision.allowed).toBe(false);
+    expect(decision.reasonCode).toBe('POLICY_REVIEW_REQUIRED');
+  });
+
+  test('REQ-014: An expired introductory period cannot be bought back', () => {
+    const decision = evaluateFeatureEligibility(
+      'restricted_correspondence_trial',
+      {
+        ...baseUser,
+        age: 22,
+        experience: 'men_health',
+        activeTrialStartDate: new Date(Date.now() - 8 * 86_400_000).toISOString(),
+      },
+      undefined,
+      pilotEnabled,
+    );
+    expect(decision.allowed).toBe(false);
+    expect(decision.reasonCode).toBe('TRIAL_EXPIRED');
+    expect(decision.message ?? '').not.toMatch(/upgrade|subscri|purchase/i);
   });
 
   test('P0: Blocked recipient immediately halts communication', () => {
@@ -65,7 +107,7 @@ describe('Thrivefold Deterministic Policy Engine', () => {
       introsSentToday: 0,
     };
 
-    const decision = evaluateFeatureEligibility('restricted_correspondence_trial', youngMaleUser);
+    const decision = evaluateFeatureEligibility('restricted_correspondence_trial', youngMaleUser, undefined, pilotEnabled);
     expect(decision.allowed).toBe(true);
     expect(decision.reasonCode).toBe('TRIAL_ACTIVE');
   });
@@ -77,10 +119,9 @@ describe('Thrivefold Deterministic Policy Engine', () => {
       age: 22,
       experience: 'men_health',
       activeTrialStartDate: new Date().toISOString(),
-      hasActiveSubscription: false,
     };
 
-    const decision = evaluateFeatureEligibility('community_directory', youngMaleUser);
+    const decision = evaluateFeatureEligibility('community_directory', youngMaleUser, undefined, pilotEnabled);
     expect(decision.allowed).toBe(false);
     expect(decision.reasonCode).toBe('COMMUNITY_RESTRICTED_DURING_TRIAL');
   });
@@ -95,7 +136,7 @@ describe('Thrivefold Deterministic Policy Engine', () => {
       introsSentToday: 1, // already sent 1 today
     };
 
-    const decision = evaluateFeatureEligibility('restricted_correspondence_trial', quotaExhaustedUser);
+    const decision = evaluateFeatureEligibility('restricted_correspondence_trial', quotaExhaustedUser, undefined, pilotEnabled);
     expect(decision.allowed).toBe(false);
     expect(decision.reasonCode).toBe('ONE_NEW_INTRO_DAILY_QUOTA_EXHAUSTED');
   });
