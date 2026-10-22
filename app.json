@@ -63,7 +63,14 @@
             "./assets/fonts/Geist-Regular.ttf",
             "./assets/fonts/Geist-Medium.ttf",
             "./assets/fonts/Geist-SemiBold.ttf",
-            "./assets/fonts/Geist-Bold.ttf"
+            "./assets/fonts/Geist-Bold.ttf",
+            "./assets/fonts/Fraunces-Variable.ttf",
+            "./assets/fonts/SpaceGrotesk-Regular.ttf",
+            "./assets/fonts/SpaceGrotesk-Medium.ttf",
+            "./assets/fonts/SpaceGrotesk-SemiBold.ttf",
+            "./assets/fonts/SpaceGrotesk-Bold.ttf",
+            "./assets/fonts/SpaceMono-Regular.ttf",
+            "./assets/fonts/SpaceMono-Bold.ttf"
           ]
         }
       ],

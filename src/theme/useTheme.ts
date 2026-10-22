@@ -1,13 +1,13 @@
 import { useColorScheme } from 'react-native';
 import { getThemeColors, ThemeColors } from './colors';
 import { ProductExperience } from './tokens';
-import { typography } from './typography';
+import { typographyFor, type Typography } from './typography';
 import { spacing } from './spacing';
 import { useRootStore } from '../stores/useRootStore';
 
 export interface ThemeContextValue {
   colors: ThemeColors;
-  typography: typeof typography;
+  typography: Typography;
   spacing: typeof spacing;
   experience: ProductExperience;
   isDark: boolean;
@@ -24,7 +24,7 @@ export function useTheme(): ThemeContextValue {
 
   return {
     colors,
-    typography,
+    typography: typographyFor(experience),
     spacing,
     experience,
     isDark,
