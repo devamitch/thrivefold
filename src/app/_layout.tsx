@@ -2,7 +2,8 @@ import React, { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { StyleSheet } from 'react-native';
+import { StatusBar, StyleSheet } from 'react-native';
+import { useTheme } from '../theme/useTheme';
 import { useRootStore } from '../stores/useRootStore';
 
 import { ErrorBoundary } from '../components/ErrorBoundary';
@@ -19,6 +20,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={styles.container}>
       <SafeAreaProvider>
         <ErrorBoundary>
+          <ThemedStatusBar />
           <Stack
             screenOptions={{
               headerShown: false,
@@ -43,3 +45,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 });
+
+/** One status bar for the whole app: dark icons on light canvases, light on dark. */
+function ThemedStatusBar() {
+  const { isDark } = useTheme();
+  return <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} translucent backgroundColor="transparent" />;
+}

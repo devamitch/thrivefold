@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -58,14 +57,8 @@ export default function CompleteOnboardingScreen() {
       ]}
     >
       <View style={styles.flex}>
-        <Image
-          source={require('../../../assets/brand/Minimalist-Terracotta-T-and-Leaf-Emblem.png')}
-          style={styles.mark}
-          contentFit="contain"
-          accessibilityIgnoresInvertColors
-        />
         <Text
-          style={[typography.display, styles.center, { color: colors.text.primary, marginTop: spacing.md }]}
+          style={[typography.display, styles.center, { color: colors.text.primary, marginTop: spacing.xl }]}
           accessibilityRole="header"
         >
           {pseudonym && pseudonym !== 'Friend' && pseudonym !== 'Guest' ? `You're set, ${pseudonym}` : "You're all set"}
@@ -112,7 +105,6 @@ export default function CompleteOnboardingScreen() {
 const styles = StyleSheet.create({
   center: { textAlign: 'center' },
   flex: { flex: 1 },
-  mark: { alignSelf: 'center', height: 88, width: 88 },
   optional: { alignItems: 'center', flexDirection: 'row', justifyContent: 'center', minHeight: 44 },
   root: { flex: 1 },
   row: { flexDirection: 'row', paddingVertical: 10 },

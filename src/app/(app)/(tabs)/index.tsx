@@ -1,76 +1,56 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import { useScrollAwareTabBar, useTabBarInset } from '../../../components/navigation/CustomTabBar';
-import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
-import { Icon } from '../../../components/ui/Icon';
 import { PressableScale } from '../../../components/ui/PressableScale';
 import { evaluateDeterministicRoutine } from '../../../domain/ai/deterministicRules';
 import { getCyclePredictions } from '../../../domain/health/cycleCalculations';
-import { useRootStore } from '../../../stores/useRootStore';
+import { useRootStore, useShallow } from '../../../stores/useRootStore';
+import type { ProductExperience } from '../../../theme/tokens';
 import { useTheme } from '../../../theme/useTheme';
 
-import { LettermarkIcon, LettermarkCategoryKey } from '../../../components/brand/LettermarkIcon';
+type Shortcut = { icon: keyof typeof Ionicons.glyphMap; label: string; route: Href };
 
-const PHASE_INFO: Record<string, { color: string; icon: string; bg: string }> = {
-  menstrual: { color: '#EF4444', icon: '🌑', bg: '#FEF2F2' },
-  follicular: { color: '#10B981', icon: '🌱', bg: '#ECFDF5' },
-  ovulatory: { color: '#F59E0B', icon: '☀️', bg: '#FFFBEB' },
-  luteal: { color: '#8B5CF6', icon: '🌙', bg: '#F5F3FF' },
+/** Four shortcuts per experience — the health tools that matter most for it. */
+const SHORTCUTS: Record<ProductExperience, Shortcut[]> = {
+  women_health: [
+    { icon: 'water-outline', label: 'Cycle', route: '/(app)/health/cycle' },
+    { icon: 'pulse-outline', label: 'Symptoms', route: '/(app)/health/symptoms' },
+    { icon: 'moon-outline', label: 'Sleep', route: '/(app)/health/sleep' },
+    { icon: 'book-outline', label: 'Journal', route: '/(app)/journal' },
+  ],
+  men_health: [
+    { icon: 'body-outline', label: 'Mobility', route: '/(app)/health/men' },
+    { icon: 'moon-outline', label: 'Sleep', route: '/(app)/health/sleep' },
+    { icon: 'happy-outline', label: 'Mood', route: '/(app)/health/mood' },
+    { icon: 'book-outline', label: 'Journal', route: '/(app)/journal' },
+  ],
+  pride_wellbeing: [
+    { icon: 'heart-outline', label: 'Self-care', route: '/(app)/health/pride' },
+    { icon: 'happy-outline', label: 'Mood', route: '/(app)/health/mood' },
+    { icon: 'moon-outline', label: 'Sleep', route: '/(app)/health/sleep' },
+    { icon: 'book-outline', label: 'Journal', route: '/(app)/journal' },
+  ],
 };
 
-const WELLBEING_SPHERES: LettermarkCategoryKey[] = [
-  'womens-health',
-  'mens-health',
-  'pride-wellbeing',
-  'adhd-support',
-  'mind-mood',
-  'fitness',
-  'nutrition',
-  'sleep',
-  'community',
-  'letters',
-  'local-ai',
-  'growth-quests',
-];
+const greeting = () => {
+  const h = new Date().getHours();
+  return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+};
 
-const QUICK_ACTIONS = [
-  {
-    id: 'journal',
-    lettermark: 'letters' as LettermarkCategoryKey,
-    label: 'Slow Letters',
-    sub: 'Curated delivery',
-    route: '/(app)/letters' as any,
-  },
-  {
-    id: 'games',
-    lettermark: 'fitness' as LettermarkCategoryKey,
-    label: 'Movement & Focus',
-    sub: 'Breath & routines',
-    route: '/(app)/games' as any,
-  },
-  {
-    id: 'circles',
-    lettermark: 'community' as LettermarkCategoryKey,
-    label: 'Support Circles',
-    sub: 'Private hubs',
-    route: '/(app)/circles' as any,
-  },
-  {
-    id: 'ai',
-    lettermark: 'local-ai' as LettermarkCategoryKey,
-    label: 'Local AI Vault',
-    sub: 'Zero cloud upload',
-    route: '/(app)/ai' as any,
-  },
-];
+const today = () => new Date().toISOString().split('T')[0];
 
+/**
+ * Home (master spec §2.5): immediately useful — today's check-in, one suitable task,
+ * progress, a rest option, and the health shortcuts relevant to this person.
+ * Every value comes from their own records; nothing is shown that they didn't create.
+ */
 export default function HomeScreen() {
   const router = useRouter();
   const { colors, typography, spacing, experience } = useTheme();
@@ -78,531 +58,260 @@ export default function HomeScreen() {
   const tabBarInset = useTabBarInset();
   const { onScroll, scrollEventThrottle } = useScrollAwareTabBar();
 
-  const currentStreak = useRootStore((s) => s.currentStreak);
-  const cycleData = useRootStore((s) => s.cycleData);
-  const checkInHistory = useRootStore((s) => s.checkInHistory);
-  const isSocialPathRevealed = useRootStore((s) => s.isSocialPathRevealed);
-  const user = useRootStore((s) => s.user);
+  const { user, cycleData, checkInHistory, streak, level, quests } = useRootStore(
+    useShallow((s) => ({
+      user: s.user,
+      cycleData: s.cycleData,
+      checkInHistory: s.checkInHistory,
+      streak: s.currentStreak,
+      level: s.level,
+      quests: s.todayQuests,
+    })),
+  );
 
-  // No check-in yet: the suggestion uses neutral mid-scale inputs and says so, rather
-  // than presenting invented readings as the person's own.
-  const lastCheckIn = checkInHistory[0];
-  const hasCheckIn = Boolean(lastCheckIn);
-
+  const todaysCheckIn = checkInHistory.find((c) => c.date === today());
+  const latest = checkInHistory[0];
   const recommendation = evaluateDeterministicRoutine({
-    energy: lastCheckIn?.energy ?? 5,
-    mood: lastCheckIn?.mood ?? 5,
-    stress: lastCheckIn?.stress ?? 5,
+    energy: latest?.energy ?? 5,
+    mood: latest?.mood ?? 5,
+    stress: latest?.stress ?? 5,
     experience,
   });
+  const questsDone = quests.filter((q) => q.isCompleted).length;
+  const name = user?.pseudonym && !['Friend', 'Guest'].includes(user.pseudonym) ? user.pseudonym : null;
+  const dateLabel = new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
 
-  const getGreeting = () => {
-    const h = new Date().getHours();
-    if (h < 12) return 'Good morning';
-    if (h < 17) return 'Good afternoon';
-    return 'Good evening';
-  };
-
-  const cycle = cycleData
-    ? getCyclePredictions(cycleData.lastPeriodDate, cycleData.cycleLengthDays, cycleData.periodLengthDays)
-    : null;
-  const phase = cycle?.currentPhase.phase ?? 'follicular';
-  const phaseStyle = PHASE_INFO[phase] ?? PHASE_INFO.follicular;
-  const cycleLength = cycleData?.cycleLengthDays ?? 28;
+  const cycle =
+    experience === 'women_health' && cycleData
+      ? getCyclePredictions(cycleData.lastPeriodDate, cycleData.cycleLengthDays, cycleData.periodLengthDays)
+      : null;
   const daysToPeriod = cycle
     ? Math.max(0, Math.ceil((new Date(cycle.nextPeriodDate).getTime() - Date.now()) / 86_400_000))
     : null;
 
-  const expMeta = {
-    women_health: {
-      badge: "Women's Health",
-      gradient: [colors.primaryAlpha, 'transparent'] as [string, string],
-      icon: '🌸',
-      lettermark: 'womens-health' as LettermarkCategoryKey,
-    },
-    men_health: {
-      badge: "Men's Vitality",
-      gradient: ['rgba(23,60,74,0.08)', 'transparent'] as [string, string],
-      icon: '🌊',
-      lettermark: 'mens-health' as LettermarkCategoryKey,
-    },
-    pride_wellbeing: {
-      badge: 'Pride Wellbeing',
-      gradient: ['rgba(217,119,6,0.08)', 'transparent'] as [string, string],
-      icon: '🏳️‍🌈',
-      lettermark: 'pride-wellbeing' as LettermarkCategoryKey,
-    },
-  }[experience];
+  const fade = (i: number) => FadeInDown.delay(40 * i).duration(320);
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingBottom: tabBarInset }]}
+        contentContainerStyle={{
+          paddingTop: insets.top + spacing.md,
+          paddingBottom: tabBarInset + spacing.lg,
+          paddingHorizontal: spacing.base,
+        }}
         showsVerticalScrollIndicator={false}
         onScroll={onScroll}
         scrollEventThrottle={scrollEventThrottle}
       >
-        {/* ── Hero Header ── */}
-        <LinearGradient
-          colors={[colors.primary + '18', colors.background]}
-          style={[styles.heroGrad, { paddingTop: insets.top + 16 }]}
-        >
-          <View style={[styles.headerRow, { paddingHorizontal: spacing.base }]}>
-            <LettermarkIcon
-              id={expMeta.lettermark}
-              size={52}
-              style={{ marginRight: 12 }}
-            />
-            <View style={styles.headerLeft}>
-              <Text style={[typography.label, { color: colors.primary }]}>
-                {expMeta.badge}
-              </Text>
-              <Text
-                style={[typography.heading, { color: colors.text.primary, marginTop: 2 }]}
-                numberOfLines={1}
-              >
-                {getGreeting()},{'\n'}
-                {user?.pseudonym ?? 'Seeker'} ✨
-              </Text>
-            </View>
-            <PressableScale
-              onPress={() => router.push('/(app)/(tabs)/settings')}
-              style={[styles.avatarBtn, { backgroundColor: colors.surface1 }]}
+        {/* Header: date, greeting, account */}
+        <View style={styles.header}>
+          <View style={styles.flex}>
+            <Text style={[typography.label, { color: colors.text.muted }]}>{dateLabel}</Text>
+            <Text
+              style={[typography.display, { color: colors.text.primary, marginTop: 4 }]}
+              numberOfLines={2}
+              accessibilityRole="header"
             >
-              <Ionicons name="person-outline" size={20} color={colors.text.primary} />
-            </PressableScale>
+              {name ? `${greeting()},\n${name}` : greeting()}
+            </Text>
           </View>
-
-          {/* Streak + Level Row */}
-          <View
-            style={[styles.statsRow, { paddingHorizontal: spacing.base, marginTop: spacing.md }]}
+          <PressableScale
+            onPress={() => router.push('/(app)/(tabs)/settings')}
+            accessibilityRole="button"
+            accessibilityLabel="You"
+            style={[styles.round, { backgroundColor: colors.surface1 }]}
           >
-            <View
-              style={[
-                styles.statPill,
-                { backgroundColor: colors.primary + '18', borderColor: colors.primary + '28' },
-              ]}
-            >
-              <Text style={styles.statEmoji}>🔥</Text>
-              <Text style={[typography.bodyBold, { color: colors.primary }]}>{currentStreak}</Text>
-              <Text style={[typography.caption, { color: colors.text.secondary }]}>
-                {' '}
-                day streak
-              </Text>
-            </View>
-            <View
-              style={[
-                styles.statPill,
-                { backgroundColor: colors.surface1, borderColor: colors.border },
-              ]}
-            >
-              <Text style={styles.statEmoji}>⚡</Text>
-              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Lv 3</Text>
-              <Text style={[typography.caption, { color: colors.text.secondary }]}> Thriver</Text>
-            </View>
-            <View
-              style={[
-                styles.statPill,
-                { backgroundColor: colors.success + '14', borderColor: colors.success + '28' },
-              ]}
-            >
-              <Text style={styles.statEmoji}>🛡️</Text>
-              <Text style={[typography.bodyBold, { color: colors.success }]}>AI Active</Text>
-            </View>
-          </View>
-        </LinearGradient>
+            <Ionicons name="person-outline" size={20} color={colors.text.primary} />
+          </PressableScale>
+        </View>
 
-        <View style={[styles.content, { paddingHorizontal: spacing.base }]}>
-          {/* ── Women's Cycle Card ── */}
-          {experience === 'women_health' && (
-            <Animated.View entering={FadeInDown.delay(60).springify()}>
-              <Pressable
-                onPress={() => router.push('/(app)/health/cycle' as any)}
-                style={({ pressed }) => [{ opacity: pressed ? 0.9 : 1 }]}
-              >
-                <View
-                  style={[
-                    styles.cycleCard,
-                    { backgroundColor: phaseStyle.bg, borderColor: phaseStyle.color + '30' },
-                  ]}
-                >
-                  <View style={styles.cycleRow}>
-                    <Text style={styles.cycleEmoji}>{phaseStyle.icon}</Text>
-                    <View style={styles.cycleText}>
-                      <Text style={[typography.label, { color: phaseStyle.color }]}>
-                        Current Phase
-                      </Text>
-                      <Text
-                        style={[
-                          typography.subheading,
-                          { color: colors.text.primary, marginTop: 2 },
-                        ]}
-                      >
-                        {cycle
-                          ? `${phase.charAt(0).toUpperCase() + phase.slice(1)} Phase`
-                          : 'Set up cycle tracking'}
-                      </Text>
-                      <Text
-                        style={[typography.caption, { color: colors.text.secondary, marginTop: 3 }]}
-                      >
-                        {cycle
-                          ? `Day ${cycle.currentPhase.day} of ${cycleLength} · Next period in ~${daysToPeriod} days (estimate)`
-                          : 'Add your last period date to see your phase'}
-                      </Text>
+        {/* Today's check-in */}
+        <Animated.View entering={fade(1)}>
+          <Card style={{ marginTop: spacing.lg, padding: spacing.base }}>
+            {todaysCheckIn ? (
+              <>
+                <View style={styles.rowBetween}>
+                  <Text style={[typography.subheading, { color: colors.text.primary }]}>Today you feel</Text>
+                  <Text
+                    onPress={() => router.push('/(app)/check-in')}
+                    style={[typography.subbodyBold, { color: colors.primary }]}
+                    accessibilityRole="button"
+                  >
+                    Update
+                  </Text>
+                </View>
+                <View style={[styles.metrics, { marginTop: spacing.md }]}>
+                  {[
+                    ['Energy', todaysCheckIn.energy],
+                    ['Mood', todaysCheckIn.mood],
+                    ['Stress', todaysCheckIn.stress],
+                  ].map(([label, value]) => (
+                    <View key={label} style={[styles.metric, { backgroundColor: colors.surface1 }]}>
+                      <Text style={[typography.heading, { color: colors.text.primary }]}>{value}</Text>
+                      <Text style={[typography.caption, { color: colors.text.muted }]}>{label} /10</Text>
                     </View>
-                    <Ionicons
-                      name="chevron-forward"
-                      size={18}
-                      color={colors.text.muted}
-                      style={{ marginTop: 4 }}
-                    />
-                  </View>
-                  {/* Phase bar */}
-                  <View style={[styles.phaseBar, { backgroundColor: phaseStyle.color + '20' }]}>
-                    <View
-                      style={[
-                        styles.phaseFill,
-                        {
-                          backgroundColor: phaseStyle.color,
-                          width: `${cycle ? Math.min(100, (cycle.currentPhase.day / cycleLength) * 100) : 0}%`,
-                        },
-                      ]}
-                    />
-                  </View>
+                  ))}
                 </View>
-              </Pressable>
-            </Animated.View>
-          )}
-
-          {/* ── Men's Vitality Card ── */}
-          {experience === 'men_health' && (
-            <Animated.View entering={FadeInDown.delay(60).springify()}>
-              <Card
-                onPress={() => router.push('/(app)/health/exercise' as any)}
-                variant="surface"
-                style={styles.cardBase}
-              >
-                <View style={styles.cardHeader}>
-                  <View>
-                    <Badge label="Physical Routine" variant="primary" />
-                    <Text
-                      style={[typography.subheading, { color: colors.text.primary, marginTop: 6 }]}
-                    >
-                      Mobility & Spine Relief
-                    </Text>
-                  </View>
-                  <Ionicons name="barbell-outline" size={26} color={colors.primary} />
-                </View>
-                <Text
-                  style={[
-                    typography.subbody,
-                    { color: colors.text.secondary, marginTop: spacing.xs },
-                  ]}
-                >
-                  Equipment-free desk relief and core stabilisation tailored for today.
+              </>
+            ) : (
+              <>
+                <Text style={[typography.subheading, { color: colors.text.primary }]}>How are you today?</Text>
+                <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>
+                  A one-minute check-in tunes today's suggestion to how you actually feel.
                 </Text>
-              </Card>
-            </Animated.View>
-          )}
+                <Button label="Check in" onPress={() => router.push('/(app)/check-in')} style={{ marginTop: spacing.md }} />
+              </>
+            )}
+          </Card>
+        </Animated.View>
 
-          {/* ── Today's Adaptive Task ── */}
-          <Animated.View entering={FadeInDown.delay(100).springify()}>
-            <LinearGradient
-              colors={[colors.primary + '14', colors.primary + '05']}
-              style={[styles.taskCard, { borderColor: colors.primary + '20' }]}
-            >
-              <View style={styles.cardHeader}>
-                <View style={{ flex: 1 }}>
-                  <Badge label="Today's Focus" variant="success" />
-                  <Text
-                    style={[typography.subheading, { color: colors.text.primary, marginTop: 6 }]}
-                  >
-                    {recommendation.title}
+        {/* Experience card: cycle for women's health */}
+        {experience === 'women_health' && (
+          <Animated.View entering={fade(2)}>
+            <Card onPress={() => router.push('/(app)/health/cycle')} style={{ marginTop: spacing.md, padding: spacing.base }}>
+              <View style={styles.rowBetween}>
+                <View style={[styles.iconTile, { backgroundColor: colors.primaryAlpha }]}>
+                  <Ionicons name="water-outline" size={20} color={colors.primary} />
+                </View>
+                <View style={[styles.flex, { marginLeft: 12 }]}>
+                  <Text style={[typography.label, { color: colors.text.muted }]}>Cycle</Text>
+                  <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 2 }]}>
+                    {cycle
+                      ? `Day ${cycle.currentPhase.day} · ${cycle.currentPhase.label} phase`
+                      : 'Set up cycle tracking'}
+                  </Text>
+                  <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                    {cycle ? `Next period in about ${daysToPeriod} days (estimate)` : 'Add your last period date'}
                   </Text>
                 </View>
-                <View style={[styles.durationBadge, { backgroundColor: colors.primary + '18' }]}>
-                  <Ionicons name="time-outline" size={12} color={colors.primary} />
-                  <Text style={[typography.captionBold, { color: colors.primary, marginLeft: 3 }]}>
-                    {recommendation.durationMinutes}m
-                  </Text>
-                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
               </View>
-
-              <Text
-                style={[
-                  typography.subbody,
-                  { color: colors.text.secondary, marginTop: spacing.xs, lineHeight: 20 },
-                ]}
-              >
-                {recommendation.description}
-              </Text>
-
-              <View style={[styles.aiChip, { backgroundColor: colors.surface }]}>
-                <Ionicons name="sparkles" size={13} color={colors.primary} />
-                <Text
-                  style={[
-                    typography.caption,
-                    { color: colors.text.secondary, flex: 1, marginLeft: 6 },
-                  ]}
-                >
-                  {hasCheckIn
-                    ? recommendation.aiExplanation.text
-                    : 'A gentle default for today. Check in to get a suggestion based on how you feel.'}
-                </Text>
-              </View>
-
-              <Button
-                label="Start Task"
-                onPress={() => router.push('/(app)/quests/quest_01' as any)}
-                style={{ marginTop: spacing.md }}
-              />
-            </LinearGradient>
-          </Animated.View>
-
-          {/* ── Letters Invite (Progressive Disclosure) ── */}
-          {isSocialPathRevealed && (
-            <Animated.View entering={FadeInRight.delay(120).springify()}>
-              <Card
-                variant="surface"
-                style={[styles.cardBase, { borderWidth: 1.5, borderColor: colors.accent + '30' }]}
-                onPress={() => router.push('/(app)/letters' as any)}
-              >
-                <View style={styles.cardHeader}>
-                  <View style={{ flex: 1 }}>
-                    <Badge label="Unlocked ✨" variant="info" />
-                    <Text
-                      style={[typography.subheading, { color: colors.text.primary, marginTop: 6 }]}
-                    >
-                      Slow Letters & Connection
-                    </Text>
-                  </View>
-                  <Icon name="send" size={22} color={colors.accent} />
-                </View>
-                <Text
-                  style={[
-                    typography.caption,
-                    { color: colors.text.secondary, marginTop: spacing.xs },
-                  ]}
-                >
-                  Exchange thoughtful, chip-curated letters. Distance-delayed delivery. No free
-                  text.
-                </Text>
-              </Card>
-            </Animated.View>
-          )}
-
-          {/* ── 12 Spheres of Wellbeing ── */}
-          <Animated.View entering={FadeInDown.delay(130).springify()} style={{ marginTop: spacing.lg }}>
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: spacing.sm,
-              }}
-            >
-              <Text style={[typography.subheading, { color: colors.text.primary }]}>
-                Wellbeing Spheres
-              </Text>
-              <Badge label="12 Guides" variant="neutral" />
-            </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: 14, paddingRight: spacing.base, paddingVertical: 4 }}
-            >
-              {WELLBEING_SPHERES.map((key) => (
-                <LettermarkIcon
-                  key={key}
-                  id={key}
-                  size={58}
-                  showLabel
-                  onPress={() => {
-                    if (key === 'womens-health') router.push('/(app)/health/cycle' as any);
-                    else if (key === 'mens-health') router.push('/(app)/health/exercise' as any);
-                    else if (key === 'letters') router.push('/(app)/letters' as any);
-                    else if (key === 'community') router.push('/(app)/circles' as any);
-                    else if (key === 'local-ai') router.push('/(app)/ai' as any);
-                    else if (key === 'growth-quests') router.push('/(app)/(tabs)/progress' as any);
-                    else router.push('/(app)/learn');
-                  }}
-                />
-              ))}
-            </ScrollView>
-          </Animated.View>
-
-          {/* ── Quick Actions Grid ── */}
-          <Text
-            style={[
-              typography.subheading,
-              { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm },
-            ]}
-          >
-            Quick Access
-          </Text>
-          <View style={styles.grid}>
-            {QUICK_ACTIONS.map((action, idx) => (
-              <Animated.View
-                key={action.id}
-                style={styles.gridItem}
-                entering={FadeInDown.delay(160 + idx * 30).springify()}
-              >
-                <PressableScale
-                  onPress={() => router.push(action.route)}
-                  scaleTo={0.96}
-                  style={[styles.gridCard, { backgroundColor: colors.surface }]}
-                >
-                  <LettermarkIcon id={action.lettermark} size={44} />
-                  <Text
-                    style={[typography.subbodyBold, { color: colors.text.primary, marginTop: 8 }]}
-                  >
-                    {action.label}
-                  </Text>
-                  <Text style={[typography.caption, { color: colors.text.muted, marginTop: 2 }]}>
-                    {action.sub}
-                  </Text>
-                </PressableScale>
-              </Animated.View>
-            ))}
-          </View>
-
-          {/* ── Health Education Snippet ── */}
-          <Animated.View entering={FadeInDown.delay(220).springify()}>
-            <Card
-              onPress={() => router.push('/(app)/learn')}
-              variant="surface1"
-              style={[styles.cardBase, { marginBottom: 0 }]}
-            >
-              <View style={styles.cardHeader}>
-                <View style={{ flex: 1 }}>
-                  <Badge label="Learn" variant="neutral" />
-                  <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 6 }]}>
-                    Today's Health Insight
-                  </Text>
-                </View>
-                <Ionicons name="book-outline" size={20} color={colors.text.muted} />
-              </View>
-              <Text
-                style={[
-                  typography.subbody,
-                  { color: colors.text.secondary, marginTop: spacing.xs },
-                ]}
-              >
-                Evidence-based articles on sleep, nutrition, cycle awareness, and emotional
-                resilience. Curated daily.
-              </Text>
             </Card>
           </Animated.View>
-        </View>
+        )}
+
+        {/* One suitable task, with a rest option */}
+        <Animated.View entering={fade(3)}>
+          <Text style={[typography.label, styles.section, { color: colors.text.muted }]}>Today's focus</Text>
+          <Card style={{ padding: spacing.base }}>
+            <View style={styles.rowBetween}>
+              <Text style={[typography.heading, styles.flex, { color: colors.text.primary }]}>
+                {recommendation.title}
+              </Text>
+              {recommendation.durationMinutes > 0 ? (
+                <View style={[styles.pill, { backgroundColor: colors.surface1 }]}>
+                  <Ionicons name="time-outline" size={13} color={colors.text.secondary} />
+                  <Text style={[typography.captionBold, { color: colors.text.secondary, marginLeft: 4 }]}>
+                    {recommendation.durationMinutes} min
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+            <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: spacing.sm }]}>
+              {recommendation.description}
+            </Text>
+            <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.sm }]}>
+              {todaysCheckIn || latest
+                ? recommendation.aiExplanation.text
+                : 'A gentle default. Check in for a suggestion that fits how you feel.'}
+            </Text>
+            <View style={[styles.actions, { marginTop: spacing.md }]}>
+              <Button label="Start" onPress={() => router.push('/(app)/quests')} style={styles.flex} />
+              <Button
+                label="Rest instead"
+                variant="outline"
+                onPress={() => router.push('/(app)/games')}
+                style={styles.flex}
+              />
+            </View>
+          </Card>
+        </Animated.View>
+
+        {/* Progress — real numbers only */}
+        <Animated.View entering={fade(4)}>
+          <Card onPress={() => router.push('/(app)/(tabs)/progress')} style={{ marginTop: spacing.md, padding: spacing.base }}>
+            <View style={styles.progressRow}>
+              {[
+                { value: streak, label: streak === 1 ? 'day streak' : 'day streak' },
+                { value: `${questsDone}/${quests.length}`, label: 'tasks today' },
+                { value: level, label: 'level' },
+              ].map((m, i) => (
+                <View
+                  key={m.label}
+                  style={[styles.progressItem, i > 0 && { borderLeftColor: colors.border, borderLeftWidth: StyleSheet.hairlineWidth }]}
+                >
+                  <Text style={[typography.heading, { color: colors.text.primary }]}>{m.value}</Text>
+                  <Text style={[typography.caption, { color: colors.text.muted }]}>{m.label}</Text>
+                </View>
+              ))}
+            </View>
+          </Card>
+        </Animated.View>
+
+        {/* Health shortcuts relevant to this experience */}
+        <Animated.View entering={fade(5)}>
+          <Text style={[typography.label, styles.section, { color: colors.text.muted }]}>Your tools</Text>
+          <View style={styles.grid}>
+            {SHORTCUTS[experience].map((s) => (
+              <PressableScale
+                key={s.label}
+                onPress={() => router.push(s.route)}
+                accessibilityRole="button"
+                accessibilityLabel={s.label}
+                style={[styles.tool, { backgroundColor: colors.surface, borderColor: colors.border }]}
+              >
+                <Ionicons name={s.icon} size={22} color={colors.primary} />
+                <Text style={[typography.subbodyBold, { color: colors.text.primary, marginTop: 8 }]}>{s.label}</Text>
+              </PressableScale>
+            ))}
+          </View>
+          <PressableScale
+            onPress={() => router.push('/(app)/learn')}
+            accessibilityRole="button"
+            style={[styles.learn, { borderColor: colors.border }]}
+          >
+            <Ionicons name="school-outline" size={18} color={colors.text.secondary} />
+            <Text style={[typography.subbody, styles.flex, { color: colors.text.secondary, marginLeft: 10 }]}>
+              Learn the basics — plain-language health guides
+            </Text>
+            <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
+          </PressableScale>
+        </Animated.View>
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
-  scroll: { flexGrow: 1 },
-  heroGrad: {
-    paddingBottom: 20,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  headerLeft: { flex: 1, paddingRight: 12 },
-  avatarBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
+  actions: { flexDirection: 'row', gap: 10 },
+  flex: { flex: 1 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  header: { alignItems: 'flex-start', flexDirection: 'row' },
+  iconTile: { alignItems: 'center', borderRadius: 12, height: 40, justifyContent: 'center', width: 40 },
+  learn: {
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 20,
-  },
-  statsRow: {
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
-    gap: 8,
-  },
-  statPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  statEmoji: { fontSize: 14, marginRight: 4 },
-  content: { paddingTop: 16 },
-  cycleCard: {
-    borderRadius: 20,
-    padding: 16,
-    borderWidth: 1.5,
-    marginBottom: 14,
-  },
-  cycleRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  cycleEmoji: { fontSize: 30, marginRight: 12, marginTop: 4 },
-  cycleText: { flex: 1 },
-  phaseBar: {
-    height: 4,
-    borderRadius: 2,
-    marginTop: 14,
-    overflow: 'hidden',
-  },
-  phaseFill: {
-    height: 4,
-    borderRadius: 2,
-  },
-  cardBase: {
-    marginBottom: 14,
-    padding: 16,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  taskCard: {
-    borderRadius: 20,
-    padding: 16,
-    borderWidth: 1,
-    marginBottom: 14,
-  },
-  durationBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    borderRadius: 10,
-  },
-  aiChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    borderRadius: 12,
     marginTop: 12,
+    minHeight: 52,
+    paddingHorizontal: 14,
   },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 16,
-  },
-  gridItem: {
-    width: '47.5%',
-  },
-  gridCard: {
+  metric: { alignItems: 'center', borderRadius: 14, flex: 1, paddingVertical: 12 },
+  metrics: { flexDirection: 'row', gap: 8 },
+  pill: { alignItems: 'center', borderRadius: 10, flexDirection: 'row', marginLeft: 8, paddingHorizontal: 8, paddingVertical: 4 },
+  progressItem: { alignItems: 'center', flex: 1 },
+  progressRow: { flexDirection: 'row' },
+  rowBetween: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
+  root: { flex: 1 },
+  round: { alignItems: 'center', borderRadius: 22, height: 44, justifyContent: 'center', width: 44 },
+  section: { marginBottom: 10, marginTop: 28 },
+  tool: {
+    borderCurve: 'continuous',
     borderRadius: 18,
-    padding: 14,
-    overflow: 'hidden',
-  },
-  gridIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    flexBasis: '47%',
+    flexGrow: 1,
+    padding: 16,
   },
 });
