@@ -87,7 +87,6 @@ buck-out/
 
 # VS Code
 .vscode
-.agents
 
 # Expo
 .expo/
@@ -185,7 +184,6 @@ buck-out/
 
 # VS Code
 .vscode
-.agents
 
 # Expo
 .expo/
@@ -222,3 +220,7 @@ credentials.json
 blinkquest-*.json
 **/backups/
 *.original.*
+
+# Agent skills are shared, versioned instructions for every AI tool (see AGENTS.md).
+!.agents/
+!.claude/skills
