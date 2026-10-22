@@ -1,81 +1,63 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ScreenWrapper } from '../../components/ui/ScreenWrapper';
+import React from 'react';
+import { StyleSheet, View } from 'react-native';
+
+import { OnboardingScaffold } from '../../components/onboarding/OnboardingScaffold';
 import { Chip } from '../../components/ui/Chip';
-import { Button } from '../../components/ui/Button';
-import { Header } from '../../components/ui/Header';
-import { useTheme } from '../../theme/useTheme';
+import { useRootStore, useShallow } from '../../stores/useRootStore';
+import { ProductExperience } from '../../theme/tokens';
+
+const SHARED_GOALS = [
+  'More energy',
+  'Better sleep',
+  'Less stress',
+  'Gentle movement',
+  'Mobility & posture',
+  'Daily habits',
+  'Emotional support',
+  'Learning about my body',
+];
+
+const GOALS_BY_EXPERIENCE: Record<ProductExperience, string[]> = {
+  women_health: ['Cycle & reproductive health', ...SHARED_GOALS],
+  men_health: ['Strength without strain', ...SHARED_GOALS],
+  pride_wellbeing: ['Affirming self-care', ...SHARED_GOALS],
+};
 
 export default function GoalsScreen() {
   const router = useRouter();
-  const { colors, typography, spacing } = useTheme();
+  const { experience, goals, setOnboardingAnswers } = useRootStore(
+    useShallow((s) => ({
+      experience: s.experience,
+      goals: s.onboarding.goals,
+      setOnboardingAnswers: s.setOnboardingAnswers,
+    })),
+  );
 
-  const [selectedGoals, setSelectedGoals] = useState<string[]>([
-    'Daily Stress Relief',
-    'Gentle Mobility',
-  ]);
-
-  const availableGoals = [
-    'Cycle & Reproductive Health',
-    'Daily Stress Relief',
-    'Gentle Mobility',
-    'Posture & Spine Care',
-    'Better Sleep & Wind-Down',
-    'Mindful Breathing',
-    'Emotional Reflection & Journaling',
-    'Hydration & Daily Habits',
-    'Quiet Pen-Pal Correspondence',
-  ];
-
-  const toggleGoal = (goal: string) => {
-    setSelectedGoals((prev) =>
-      prev.includes(goal) ? prev.filter((g) => g !== goal) : [...prev, goal]
-    );
-  };
+  const toggle = (goal: string) =>
+    setOnboardingAnswers({
+      goals: goals.includes(goal) ? goals.filter((g) => g !== goal) : [...goals, goal],
+    });
+  const next = () => router.push('/(onboarding)/activity-constraints');
 
   return (
-    <ScreenWrapper scrollable>
-      <Header title="Your Wellness Focus" showBack />
-      <View style={[styles.content, { padding: spacing.base }]}>
-        <Text style={[typography.heading, { color: colors.text.primary, marginBottom: spacing.xs }]}>
-          What Matters Most Today?
-        </Text>
-        <Text style={[typography.subbody, { color: colors.text.secondary, marginBottom: spacing.lg }]}>
-          Select the focus areas you wish to prioritize. Thrivefold will adapt your daily quests and check-in prompts accordingly.
-        </Text>
-
-        <View style={styles.chipsContainer}>
-          {availableGoals.map((goal) => {
-            const isSelected = selectedGoals.includes(goal);
-            return (
-              <Chip
-                key={goal}
-                label={goal}
-                selected={isSelected}
-                onPress={() => toggleGoal(goal)}
-              />
-            );
-          })}
-        </View>
-
-        <Button
-          label="Next: Movement Constraints"
-          disabled={selectedGoals.length === 0}
-          onPress={() => router.push('/(onboarding)/activity-constraints')}
-          style={{ marginTop: spacing.xl }}
-        />
+    <OnboardingScaffold
+      step="goals"
+      title="What would you like help with?"
+      subtitle="Pick any that fit. This shapes your daily suggestions — change it any time."
+      primaryLabel={goals.length ? 'Continue' : 'Continue without choosing'}
+      onPrimary={next}
+      onSkip={next}
+    >
+      <View style={styles.chips}>
+        {GOALS_BY_EXPERIENCE[experience].map((goal) => (
+          <Chip key={goal} label={goal} selected={goals.includes(goal)} onPress={() => toggle(goal)} />
+        ))}
       </View>
-    </ScreenWrapper>
+    </OnboardingScaffold>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
-    flex: 1,
-  },
-  chipsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
 });

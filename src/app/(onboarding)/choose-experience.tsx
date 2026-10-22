@@ -1,15 +1,34 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ScreenWrapper } from '../../components/ui/ScreenWrapper';
+import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+
+import { OnboardingScaffold } from '../../components/onboarding/OnboardingScaffold';
 import { Card } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
-import { Header } from '../../components/ui/Header';
-import { useTheme } from '../../theme/useTheme';
+import { Icon, IconName } from '../../components/ui/Icon';
 import { useRootStore } from '../../stores/useRootStore';
 import { ProductExperience } from '../../theme/tokens';
+import { useTheme } from '../../theme/useTheme';
 
-import { Icon, IconName } from '../../components/ui/Icon';
+const EXPERIENCES: { id: ProductExperience; title: string; desc: string; icon: IconName }[] = [
+  {
+    id: 'women_health',
+    title: "Women's health",
+    desc: 'Cycle and symptom tracking, energy, sleep and gentle movement.',
+    icon: 'heart',
+  },
+  {
+    id: 'men_health',
+    title: "Men's health",
+    desc: 'Mobility, posture, stress recovery and sustainable routines.',
+    icon: 'bolt',
+  },
+  {
+    id: 'pride_wellbeing',
+    title: 'LGBTQ+ wellbeing',
+    desc: 'Affirming self-care with private, optional identity settings.',
+    icon: 'sun',
+  },
+];
 
 export default function ChooseExperienceScreen() {
   const router = useRouter();
@@ -17,105 +36,76 @@ export default function ChooseExperienceScreen() {
   const experience = useRootStore((s) => s.experience);
   const setExperience = useRootStore((s) => s.setExperience);
 
-  const experiences: { id: ProductExperience; title: string; subtitle: string; desc: string; icon: IconName }[] = [
-    {
-      id: 'women_health',
-      title: "Women's Health & Wellbeing",
-      subtitle: 'Harmony & Vitality',
-      desc: 'Cycle tracking, symptom patterns, hormonal balance, emotional resilience and gentle movement.',
-      icon: 'heart',
-    },
-    {
-      id: 'men_health',
-      title: "Men's Health & Vitality",
-      subtitle: 'Strength, Mobility & Focus',
-      desc: 'Posture mobility, stress & work decompression, pelvic-floor awareness, and sustainable fitness routines.',
-      icon: 'bolt',
-    },
-    {
-      id: 'pride_wellbeing',
-      title: 'Pride & LGBTQ+ Wellbeing',
-      subtitle: 'Affirmative Self-Care',
-      desc: 'Identity-affirming health tools, rainbow-gold visual system, private community circles, and optional pronouns.',
-      icon: 'sun',
-    },
-  ];
-
   return (
-    <ScreenWrapper scrollable>
-      <Header title="Thrivefold" subtitle="Personal wellbeing that adapts to you." />
-      <View style={[styles.content, { padding: spacing.base }]}>
-        <Text style={[typography.heading, { color: colors.text.primary, marginBottom: spacing.xs }]}>
-          Select Your Experience
-        </Text>
-        <Text style={[typography.subbody, { color: colors.text.secondary, marginBottom: spacing.lg }]}>
-          Choose the starting focus for your daily routines and dashboard. You can switch or adjust themes at any time.
-        </Text>
-
-        {experiences.map((item) => {
-          const isSelected = experience === item.id;
-          return (
-            <Card
-              key={item.id}
-              variant={isSelected ? 'tinted' : 'surface'}
-              onPress={() => setExperience(item.id)}
-              style={[
-                styles.expCard,
-                {
-                  marginBottom: spacing.md,
-                },
-              ]}
+    <OnboardingScaffold
+      step="choose-experience"
+      title="Where would you like to start?"
+      subtitle="This sets your home screen and look. You can switch any time in Settings."
+      primaryLabel="Continue"
+      onPrimary={() => router.push('/(onboarding)/privacy-choices')}
+    >
+      {EXPERIENCES.map((item) => {
+        const selected = experience === item.id;
+        return (
+          <Card
+            key={item.id}
+            variant={selected ? 'tinted' : 'surface'}
+            onPress={() => setExperience(item.id)}
+            style={[
+              styles.card,
+              { marginBottom: spacing.md, borderColor: selected ? colors.primary : colors.border },
+            ]}
+          >
+            <View
+              style={styles.row}
+              accessible
+              accessibilityRole="radio"
+              accessibilityState={{ selected }}
+              accessibilityLabel={`${item.title}. ${item.desc}`}
             >
-              <View style={styles.cardHeader}>
-                <View style={[styles.iconContainer, { backgroundColor: isSelected ? colors.primaryAlpha : colors.surface1 }]}>
-                  <Icon name={item.icon} size={24} color={isSelected ? colors.primary : colors.text.secondary} />
-                </View>
-                <View style={styles.headerText}>
-                  <Text style={[typography.subheading, { color: colors.text.primary }]}>
-                    {item.title}
-                  </Text>
-                  <Text style={[typography.captionBold, { color: colors.primary, marginTop: 2 }]}>
-                    {item.subtitle}
-                  </Text>
-                </View>
+              <View
+                style={[
+                  styles.icon,
+                  { backgroundColor: selected ? colors.primaryAlpha : colors.surface1 },
+                ]}
+              >
+                <Icon name={item.icon} size={22} color={selected ? colors.primary : colors.text.secondary} />
               </View>
-              <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: spacing.sm }]}>
-                {item.desc}
-              </Text>
-            </Card>
-          );
-        })}
-
-        <Button
-          label="Continue to Privacy & Terms"
-          onPress={() => router.push('/(onboarding)/privacy-choices')}
-          style={{ marginTop: spacing.lg }}
-        />
-      </View>
-    </ScreenWrapper>
+              <View style={styles.text}>
+                <Text style={[typography.subheading, { color: colors.text.primary }]}>{item.title}</Text>
+                <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>
+                  {item.desc}
+                </Text>
+              </View>
+              <View
+                style={[
+                  styles.radio,
+                  { borderColor: selected ? colors.primary : colors.border },
+                ]}
+              >
+                {selected ? <View style={[styles.radioDot, { backgroundColor: colors.primary }]} /> : null}
+              </View>
+            </View>
+          </Card>
+        );
+      })}
+    </OnboardingScaffold>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
-    flex: 1,
-  },
-  expCard: {
-    padding: 16,
-  },
-  cardHeader: {
-    flexDirection: 'row',
+  card: { borderWidth: 1.5, padding: 16 },
+  icon: { alignItems: 'center', borderRadius: 14, height: 44, justifyContent: 'center', width: 44 },
+  radio: {
     alignItems: 'center',
-  },
-  iconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    alignItems: 'center',
+    borderRadius: 11,
+    borderWidth: 2,
+    height: 22,
     justifyContent: 'center',
-    marginRight: 12,
+    marginLeft: 12,
+    width: 22,
   },
-  headerText: {
-    flex: 1,
-  },
+  radioDot: { borderRadius: 5, height: 10, width: 10 },
+  row: { alignItems: 'center', flexDirection: 'row' },
+  text: { flex: 1, marginLeft: 12 },
 });

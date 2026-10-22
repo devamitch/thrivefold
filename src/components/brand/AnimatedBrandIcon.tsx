@@ -1,7 +1,7 @@
 /**
  * Animated Thrivefold logo icon for the central dock orb.
- * Uses the brand SVG master icon rendered via expo-image with GPU tint,
- * wrapped in Reanimated pulsing glow animation.
+ * Uses the transparent brand mark (generated from thrivefold-master-icon.svg) with a
+ * single soft glow pulse on mount.
  */
 import React, { memo, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
@@ -34,9 +34,11 @@ export const AnimatedBrandIcon = memo(function AnimatedBrandIcon({
 
   useEffect(() => {
     if (reduceMotion) return;
+    // One breath in and out on mount — a continuous loop on an always-visible
+    // element costs frames and battery for no extra meaning.
     pulse.value = withRepeat(
-      withTiming(1, { duration: PULSE_DURATION, easing: Easing.inOut(Easing.ease) }),
-      -1,
+      withTiming(1, { duration: PULSE_DURATION / 2, easing: Easing.inOut(Easing.ease) }),
+      2,
       true,
     );
   }, [pulse, reduceMotion]);
@@ -50,8 +52,9 @@ export const AnimatedBrandIcon = memo(function AnimatedBrandIcon({
 
   const icon = (
     <Image
-      source={require('../../../assets/brand/app-icon.png')}
-      style={{ width: iconSize, height: iconSize, borderRadius: iconSize * 0.22 }}
+      source={require('../../../assets/brand/icon.png')}
+      style={{ width: iconSize, height: iconSize }}
+      accessibilityIgnoresInvertColors
       contentFit="contain"
       cachePolicy="memory-disk"
     />

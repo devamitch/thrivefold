@@ -1,81 +1,105 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ScreenWrapper } from '../../components/ui/ScreenWrapper';
+import React from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+
+import { OnboardingScaffold } from '../../components/onboarding/OnboardingScaffold';
 import { Chip } from '../../components/ui/Chip';
-import { Button } from '../../components/ui/Button';
-import { Header } from '../../components/ui/Header';
-import { Card } from '../../components/ui/Card';
+import { useRootStore, useShallow } from '../../stores/useRootStore';
+import type { OnboardingAnswers } from '../../stores/slices/appSlice';
 import { useTheme } from '../../theme/useTheme';
+
+const CONSTRAINTS = [
+  'Lower back',
+  'Knees or joints',
+  'Wrists or shoulders',
+  'Pelvic floor',
+  'Recovering / low energy',
+  'Pregnancy or post-partum',
+  'Mostly sitting all day',
+  'Low impact only',
+];
+
+const LENGTHS: { value: NonNullable<OnboardingAnswers['routineMinutes']>; label: string }[] = [
+  { value: 5, label: '5 min' },
+  { value: 10, label: '10 min' },
+  { value: 20, label: '20 min' },
+];
 
 export default function ActivityConstraintsScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
+  const { constraints, routineMinutes, setOnboardingAnswers } = useRootStore(
+    useShallow((s) => ({
+      constraints: s.onboarding.constraints,
+      routineMinutes: s.onboarding.routineMinutes,
+      setOnboardingAnswers: s.setOnboardingAnswers,
+    })),
+  );
 
-  const [selectedConstraints, setSelectedConstraints] = useState<string[]>(['Desk Worker / Sedentary']);
-
-  const constraintOptions = [
-    'None / Fully Mobile',
-    'Desk Worker / Sedentary',
-    'Lower Back Sensitivity',
-    'Knee / Joint Discomfort',
-    'Wrist / Shoulder Tightness',
-    'Pelvic Floor Caution',
-    'Chronic Fatigue / Recovery Mode',
-    'Post-Partum / Healing',
-    'Low Intensity Only',
-  ];
-
-  const toggleConstraint = (opt: string) => {
-    setSelectedConstraints((prev) =>
-      prev.includes(opt) ? prev.filter((o) => o !== opt) : [...prev, opt]
-    );
-  };
+  const toggle = (c: string) =>
+    setOnboardingAnswers({
+      constraints: constraints.includes(c) ? constraints.filter((x) => x !== c) : [...constraints, c],
+    });
+  const next = () => router.push('/(onboarding)/complete');
 
   return (
-    <ScreenWrapper scrollable>
-      <Header title="Movement Constraints" subtitle="Step 4 of 9" showBack />
-      <View style={[styles.content, { padding: spacing.base }]}>
-        <Text style={[typography.heading, { color: colors.text.primary, marginBottom: spacing.xs }]}>
-          Safe Movement Pacing
-        </Text>
-        <Text style={[typography.subbody, { color: colors.text.secondary, marginBottom: spacing.md }]}>
-          We tailor all mobility exercises, yoga sequences, and stretches to your physical boundaries. You can update these anytime.
-        </Text>
-
-        <Card style={{ marginBottom: spacing.md }}>
-          <Text style={[typography.subbodyBold, { color: colors.text.primary, marginBottom: 8 }]}>
-            Any physical limitations or preferences?
-          </Text>
-          <View style={styles.chipRow}>
-            {constraintOptions.map((opt) => (
-              <Chip
-                key={opt}
-                label={opt}
-                selected={selectedConstraints.includes(opt)}
-                onPress={() => toggleConstraint(opt)}
-                style={{ marginRight: 6, marginBottom: 6 }}
-              />
-            ))}
-          </View>
-        </Card>
-
-        <Button
-          label="Next: Lifestyle & Rhythm"
-          onPress={() => router.push('/(onboarding)/lifestyle-preferences')}
-          style={{ marginTop: spacing.md }}
-        />
+    <OnboardingScaffold
+      step="activity-constraints"
+      title="Anything we should go easy on?"
+      subtitle="We'll leave out movements that don't suit you. Skip if nothing applies."
+      primaryLabel="Continue"
+      onPrimary={next}
+      onSkip={next}
+    >
+      <View style={styles.chips}>
+        {CONSTRAINTS.map((c) => (
+          <Chip key={c} label={c} selected={constraints.includes(c)} onPress={() => toggle(c)} />
+        ))}
       </View>
-    </ScreenWrapper>
+
+      <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.xl }]}>
+        How long can a daily routine be?
+      </Text>
+      <View style={[styles.segment, { backgroundColor: colors.surface1, marginTop: spacing.sm }]}>
+        {LENGTHS.map((l) => {
+          const selected = routineMinutes === l.value;
+          return (
+            <Pressable
+              key={l.value}
+              onPress={() => setOnboardingAnswers({ routineMinutes: selected ? null : l.value })}
+              accessibilityRole="radio"
+              accessibilityState={{ selected }}
+              style={[styles.segmentItem, selected && { backgroundColor: colors.surface, borderColor: colors.primary }]}
+            >
+              <Text
+                style={[
+                  typography.bodyBold,
+                  { color: selected ? colors.primary : colors.text.secondary },
+                ]}
+              >
+                {l.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.sm }]}>
+        Not medical advice. If something hurts, stop and talk to a clinician.
+      </Text>
+    </OnboardingScaffold>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  segment: { borderRadius: 16, flexDirection: 'row', gap: 4, padding: 4 },
+  segmentItem: {
+    alignItems: 'center',
+    borderColor: 'transparent',
+    borderRadius: 12,
+    borderWidth: 1.5,
     flex: 1,
-  },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    minHeight: 48,
+    justifyContent: 'center',
   },
 });

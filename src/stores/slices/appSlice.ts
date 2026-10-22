@@ -15,10 +15,32 @@ export interface ToastItem {
   actionRoute?: string;
 }
 
+/** Answers from onboarding. Every field is optional and editable later (REQ-004). */
+export interface OnboardingAnswers {
+  goals: string[];
+  constraints: string[];
+  routineMinutes: 5 | 10 | 20 | null;
+  diet: string | null;
+  observances: string[];
+}
+
+export const EMPTY_ONBOARDING: OnboardingAnswers = {
+  goals: [],
+  constraints: [],
+  routineMinutes: null,
+  diet: null,
+  observances: [],
+};
+
 export interface AppSlice {
   experience: ProductExperience;
   themeMode: ThemeMode;
   isOnboarded: boolean;
+  onboarding: OnboardingAnswers;
+  /** Last onboarding screen reached, so a closed app resumes where it left off. */
+  onboardingStep: string | null;
+  /** When the person stated they are 18+ (a self-declaration, not verification). */
+  adultConfirmedAt: string | null;
   quietHoursEnabled: boolean;
   quietHoursStart: string; // e.g. "22:00"
   quietHoursEnd: string; // e.g. "07:00"
@@ -27,6 +49,10 @@ export interface AppSlice {
   setExperience: (exp: ProductExperience) => void;
   setThemeMode: (mode: ThemeMode) => void;
   setIsOnboarded: (val: boolean) => void;
+  setOnboardingAnswers: (answers: Partial<OnboardingAnswers>) => void;
+  setOnboardingStep: (step: string | null) => void;
+  confirmAdult: () => void;
+  resetOnboarding: () => void;
   setQuietHours: (enabled: boolean, start?: string, end?: string) => void;
   toggleOfflineMode: () => void;
   showToast: (toast: Omit<ToastItem, 'id'> & { id?: string }) => void;
@@ -42,6 +68,9 @@ export const createAppSlice: StateCreator<
   experience: 'women_health',
   themeMode: 'system',
   isOnboarded: false,
+  onboarding: EMPTY_ONBOARDING,
+  onboardingStep: null,
+  adultConfirmedAt: null,
   quietHoursEnabled: true,
   quietHoursStart: '22:00',
   quietHoursEnd: '07:00',
@@ -49,7 +78,15 @@ export const createAppSlice: StateCreator<
   toasts: [],
   setExperience: (experience) => set({ experience }),
   setThemeMode: (themeMode) => set({ themeMode }),
-  setIsOnboarded: (isOnboarded) => set({ isOnboarded }),
+  setIsOnboarded: (isOnboarded) =>
+    set(isOnboarded ? { isOnboarded, onboardingStep: null } : { isOnboarded }),
+  setOnboardingAnswers: (answers) =>
+    set((state) => ({ onboarding: { ...state.onboarding, ...answers } })),
+  setOnboardingStep: (onboardingStep) => set({ onboardingStep }),
+  confirmAdult: () => set({ adultConfirmedAt: new Date().toISOString() }),
+  // Starts onboarding again with blank answers; health records are untouched.
+  resetOnboarding: () =>
+    set({ isOnboarded: false, onboarding: EMPTY_ONBOARDING, onboardingStep: null }),
   setQuietHours: (quietHoursEnabled, start, end) =>
     set((state) => ({
       quietHoursEnabled,

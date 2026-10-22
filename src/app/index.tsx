@@ -1,40 +1,24 @@
-import { useEffect } from 'react';
-import { useRouter } from 'expo-router';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { Redirect } from 'expo-router';
+
+import { ONBOARDING_STEPS, type OnboardingStep } from '../components/onboarding/OnboardingScaffold';
 import { useRootStore } from '../stores/useRootStore';
-import { useTheme } from '../theme/useTheme';
 
+/**
+ * Single routing decision for app start and after sign-in/sign-out:
+ * signed out -> sign-in; not onboarded -> the onboarding step they reached last;
+ * otherwise -> home. The store hydrates synchronously from MMKV, so no spinner.
+ */
 export default function BootstrapResolver() {
-  const router = useRouter();
-  const isOnboarded = useRootStore((s) => s.isOnboarded);
   const isAuthenticated = useRootStore((s) => s.isAuthenticated);
-  const { colors } = useTheme();
+  const isOnboarded = useRootStore((s) => s.isOnboarded);
+  const step = useRootStore((s) => s.onboardingStep);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!isAuthenticated) {
-        router.replace('/(auth)/sign-in');
-      } else if (!isOnboarded) {
-        router.replace('/(onboarding)/choose-experience');
-      } else {
-        router.replace('/(app)/(tabs)');
-      }
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, [isAuthenticated, isOnboarded, router]);
-
-  return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <ActivityIndicator size="large" color={colors.primary} />
-    </View>
-  );
+  if (!isAuthenticated) return <Redirect href="/(auth)/sign-in" />;
+  if (!isOnboarded) {
+    const resume: OnboardingStep = ONBOARDING_STEPS.includes(step as OnboardingStep)
+      ? (step as OnboardingStep)
+      : 'choose-experience';
+    return <Redirect href={`/(onboarding)/${resume}`} />;
+  }
+  return <Redirect href="/(app)/(tabs)" />;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

@@ -1,80 +1,120 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { ScreenWrapper } from '../../components/ui/ScreenWrapper';
-import { Card } from '../../components/ui/Card';
+import React from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import { Button } from '../../components/ui/Button';
+import { Card } from '../../components/ui/Card';
+import { useRootStore, useShallow } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
-import { useRootStore } from '../../stores/useRootStore';
+
+const EXPERIENCE_LABEL = {
+  women_health: "Women's health",
+  men_health: "Men's health",
+  pride_wellbeing: 'LGBTQ+ wellbeing',
+} as const;
 
 export default function CompleteOnboardingScreen() {
   const router = useRouter();
-  const { colors, typography, spacing, experience } = useTheme();
-  const setIsOnboarded = useRootStore((s) => s.setIsOnboarded);
+  const insets = useSafeAreaInsets();
+  const { colors, typography, spacing } = useTheme();
+  const { experience, onboarding, pseudonym, setIsOnboarded } = useRootStore(
+    useShallow((s) => ({
+      experience: s.experience,
+      onboarding: s.onboarding,
+      pseudonym: s.user?.pseudonym,
+      setIsOnboarded: s.setIsOnboarded,
+    })),
+  );
 
-  const handleStart = () => {
+  const finish = (then?: '/(app)/check-in') => {
     setIsOnboarded(true);
     router.replace('/(app)/(tabs)');
+    if (then) router.push(then);
   };
 
-  const getGreeting = () => {
-    if (experience === 'men_health') {
-      return 'Your Men’s Health & Vitality Space is Ready';
-    }
-    if (experience === 'pride_wellbeing') {
-      return 'Your Affirmative Self-Care Space is Ready';
-    }
-    return 'Your Women’s Health & Harmony Space is Ready';
-  };
+  const rows = [
+    { label: 'Focus', value: EXPERIENCE_LABEL[experience] },
+    { label: 'Goals', value: onboarding.goals.length ? onboarding.goals.join(', ') : 'None yet' },
+    {
+      label: 'Go easy on',
+      value: onboarding.constraints.length ? onboarding.constraints.join(', ') : 'Nothing',
+    },
+    { label: 'Routine', value: onboarding.routineMinutes ? `${onboarding.routineMinutes} minutes` : 'Flexible' },
+  ];
 
   return (
-    <ScreenWrapper style={styles.center}>
-      <View style={[styles.content, { padding: spacing.xl }]}>
-        <Text style={styles.emoji}>🌱</Text>
+    <View
+      style={[
+        styles.root,
+        {
+          backgroundColor: colors.background,
+          paddingTop: insets.top + spacing.xl,
+          paddingBottom: Math.max(insets.bottom, 12) + 8,
+          paddingHorizontal: spacing.base,
+        },
+      ]}
+    >
+      <View style={styles.flex}>
+        <Image
+          source={require('../../../assets/brand/icon.png')}
+          style={styles.mark}
+          contentFit="contain"
+          accessibilityIgnoresInvertColors
+        />
         <Text
-          style={[
-            typography.heading,
-            { color: colors.text.primary, textAlign: 'center', marginBottom: spacing.sm },
-          ]}
+          style={[typography.display, styles.center, { color: colors.text.primary, marginTop: spacing.md }]}
+          accessibilityRole="header"
         >
-          {getGreeting()}
+          {pseudonym && pseudonym !== 'Friend' && pseudonym !== 'Guest' ? `You're set, ${pseudonym}` : "You're all set"}
         </Text>
-        <Text
-          style={[
-            typography.body,
-            { color: colors.text.secondary, textAlign: 'center', marginBottom: spacing.xl },
-          ]}
-        >
-          Your daily check-in, gentle movement recommendations, and local AI memory vault are initialized.
+        <Text style={[typography.body, styles.center, { color: colors.text.secondary, marginTop: spacing.sm }]}>
+          Start with a one-minute check-in so today's suggestion fits how you feel.
         </Text>
 
-        <Card variant="tinted" style={{ marginBottom: spacing.xl, padding: spacing.base }}>
-          <Text style={[typography.subbodyBold, { color: colors.primary, marginBottom: 4 }]}>
-            Local-First Protection Active
-          </Text>
-          <Text style={[typography.caption, { color: colors.text.secondary }]}>
-            All sensitive cycle metrics and personal reflections remain safely on this device.
-          </Text>
+        <Card style={{ marginTop: spacing.xl, padding: spacing.base }}>
+          {rows.map((r, i) => (
+            <View
+              key={r.label}
+              style={[
+                styles.row,
+                i > 0 && { borderTopColor: colors.border, borderTopWidth: StyleSheet.hairlineWidth },
+              ]}
+            >
+              <Text style={[typography.subbody, styles.rowLabel, { color: colors.text.muted }]}>{r.label}</Text>
+              <Text style={[typography.subbodyBold, styles.flex, { color: colors.text.primary }]} numberOfLines={2}>
+                {r.value}
+              </Text>
+            </View>
+          ))}
         </Card>
 
-        <Button label="Open Health Dashboard" onPress={handleStart} />
+        <Pressable
+          onPress={() => router.push('/(onboarding)/lifestyle-preferences')}
+          accessibilityRole="button"
+          style={[styles.optional, { marginTop: spacing.md }]}
+        >
+          <Ionicons name="add-circle-outline" size={18} color={colors.primary} />
+          <Text style={[typography.subbody, { color: colors.primary, marginLeft: 6 }]}>
+            Add food & reminder preferences (optional)
+          </Text>
+        </Pressable>
       </View>
-    </ScreenWrapper>
+
+      <Button label="Start today's check-in" size="lg" onPress={() => finish('/(app)/check-in')} />
+      <Button label="Go to home" variant="ghost" onPress={() => finish()} style={{ marginTop: spacing.sm }} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  center: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  content: {
-    width: '100%',
-    maxWidth: 440,
-    alignItems: 'center',
-  },
-  emoji: {
-    fontSize: 54,
-    marginBottom: 16,
-  },
+  center: { textAlign: 'center' },
+  flex: { flex: 1 },
+  mark: { alignSelf: 'center', height: 88, width: 88 },
+  optional: { alignItems: 'center', flexDirection: 'row', justifyContent: 'center', minHeight: 44 },
+  root: { flex: 1 },
+  row: { flexDirection: 'row', paddingVertical: 10 },
+  rowLabel: { width: 96 },
 });

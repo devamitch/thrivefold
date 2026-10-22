@@ -17,7 +17,7 @@
       "icon": "./assets/images/app-icon-android-legacy.png",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/app-icon-android-adaptive-foreground.png",
-        "backgroundColor": "#FAF9F5"
+        "backgroundColor": "#FAF7F2"
       },
       "permissions": [
         "android.permission.CAMERA",
@@ -67,7 +67,7 @@
           "image": "./assets/images/splash-screen.png",
           "imageWidth": 260,
           "resizeMode": "contain",
-          "backgroundColor": "#FAF9F5"
+          "backgroundColor": "#FAF7F2"
         }
       ]
     ],

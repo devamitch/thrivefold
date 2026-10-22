@@ -1,5 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
-  <defs>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024"><defs>
+    <!-- Background subtle gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FAF9F5"/>
+      <stop offset="100%" stop-color="#F3EFE6"/>
+    </linearGradient>
+
     <!-- Warm terracotta gradient for central origami fold -->
     <linearGradient id="terracottaMain" x1="0%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" stop-color="#E07A1E"/>
@@ -27,13 +32,9 @@
     </linearGradient>
 
     <filter id="softGlow" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="10" stdDeviation="18" flood-color="#883506" flood-opacity="0.15"/>
+      <feDropShadow dx="0" dy="12" stdDeviation="24" flood-color="#883506" flood-opacity="0.12"/>
     </filter>
-  </defs>
-
-  <!-- Transparent background for Android adaptive foreground -->
-  <!-- Master Emblem Group centered in safe area -->
-  <g id="lotus-origami-bloom" transform="translate(512, 512) scale(0.85)" filter="url(#softGlow)">
+  </defs><g transform="translate(512, 485) scale(0.72)" filter="url(#softGlow)">
     <!-- Outer Left Leaf Wing (Pistachio Sage) -->
     <path d="M -20 -50 C -140 -20, -260 70, -260 210 C -260 290, -180 320, -80 280 C -25 255, 0 185, 0 140 Z" 
           fill="url(#sageLeaf)" opacity="0.92"/>
@@ -67,5 +68,4 @@
     <!-- Slow Mail / Origami Envelope Fold at Base -->
     <path d="M -110 300 L 0 355 L 110 300" fill="none" stroke="#B45309" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
     <line x1="-145" y1="300" x2="145" y2="300" stroke="#B45309" stroke-width="8" stroke-linecap="round"/>
-  </g>
-</svg>
+  </g></svg>

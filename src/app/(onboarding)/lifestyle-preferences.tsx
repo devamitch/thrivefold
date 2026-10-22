@@ -1,85 +1,79 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ScreenWrapper } from '../../components/ui/ScreenWrapper';
-import { Chip } from '../../components/ui/Chip';
+import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+
 import { Button } from '../../components/ui/Button';
-import { Header } from '../../components/ui/Header';
 import { Card } from '../../components/ui/Card';
+import { Chip } from '../../components/ui/Chip';
+import { Header } from '../../components/ui/Header';
+import { ScreenWrapper } from '../../components/ui/ScreenWrapper';
+import { useRootStore, useShallow } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
 
+const DIETS = ['No preference', 'Vegetarian', 'Vegan', 'Pescatarian', 'Gluten-free', 'Halal', 'Kosher', 'No onion or garlic'];
+const REMINDERS = ['Fasting days', 'Weekly rest day', 'Meditation days', 'Festival dates I choose'];
+
+/**
+ * Optional preferences (master spec §3.3 step 7 and §23.7). Nothing is pre-selected,
+ * nothing is inferred from these answers, and they only shape meal and reminder
+ * suggestions. Reachable from onboarding's last step and from Settings.
+ */
 export default function LifestylePreferencesScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
+  const { diet, observances, setOnboardingAnswers } = useRootStore(
+    useShallow((s) => ({
+      diet: s.onboarding.diet,
+      observances: s.onboarding.observances,
+      setOnboardingAnswers: s.setOnboardingAnswers,
+    })),
+  );
 
-  const [diet, setDiet] = useState<string>('Vegetarian');
-  const [observances, setObservances] = useState<string[]>(['Mindful Meditation Days']);
-
-  const dietOptions = ['Standard / Omnivore', 'Vegetarian', 'Vegan', 'Pescatarian', 'Gluten-Free', 'Halal', 'Kosher', 'Sattvic / No Onion-Garlic'];
-  const observanceOptions = [
-    'Mindful Meditation Days',
-    'Full Moon / Ekadashi Observance',
-    'Sabbath / Quiet Friday-Saturday',
-    'Ramadan / Fasting Rhythm',
-    'Sunday Rest & Solitude',
-    'None / Secular Self-Care',
-  ];
-
-  const toggleObservance = (item: string) => {
-    setObservances((prev) =>
-      prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item]
-    );
-  };
+  const toggleReminder = (item: string) =>
+    setOnboardingAnswers({
+      observances: observances.includes(item) ? observances.filter((i) => i !== item) : [...observances, item],
+    });
 
   return (
-    <ScreenWrapper scrollable>
-      <Header title="Lifestyle & Rhythm" subtitle="Step 5 of 9" showBack />
-      <View style={[styles.content, { padding: spacing.base }]}>
-        <Text style={[typography.heading, { color: colors.text.primary, marginBottom: spacing.xs }]}>
-          Voluntary Preferences
-        </Text>
-        <Text style={[typography.subbody, { color: colors.text.secondary, marginBottom: spacing.md }]}>
-          Your dietary preferences and cultural calendar choices adapt reminders and meal suggestions. We never infer identity or beliefs indirectly.
-        </Text>
-
-        <Card style={{ marginBottom: spacing.md }}>
-          <Text style={[typography.subbodyBold, { color: colors.text.primary, marginBottom: 8 }]}>
-            Dietary Guidance Anchor
+    <ScreenWrapper scrollable disableScrollAwareDock>
+      <Header title="Food & reminders" subtitle="Optional" showBack />
+      <View style={{ padding: spacing.base }}>
+        <Card style={{ padding: spacing.base, marginBottom: spacing.lg }}>
+          <Text style={[typography.subbody, { color: colors.text.secondary }]}>
+            Only used to tailor meal ideas and the reminders you pick. Never used to guess anything
+            about you, and never shared. Clear it any time.
           </Text>
-          <View style={styles.chipRow}>
-            {dietOptions.map((opt) => (
-              <Chip
-                key={opt}
-                label={opt}
-                selected={diet === opt}
-                onPress={() => setDiet(opt)}
-                style={{ marginRight: 6, marginBottom: 6 }}
-              />
-            ))}
-          </View>
         </Card>
 
-        <Card style={{ marginBottom: spacing.md }}>
-          <Text style={[typography.subbodyBold, { color: colors.text.primary, marginBottom: 8 }]}>
-            Optional Observance & Rest Reminders
-          </Text>
-          <View style={styles.chipRow}>
-            {observanceOptions.map((opt) => (
-              <Chip
-                key={opt}
-                label={opt}
-                selected={observances.includes(opt)}
-                onPress={() => toggleObservance(opt)}
-                style={{ marginRight: 6, marginBottom: 6 }}
-              />
-            ))}
-          </View>
-        </Card>
+        <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: spacing.sm }]}>
+          Eating preference
+        </Text>
+        <View style={styles.chips}>
+          {DIETS.map((d) => (
+            <Chip
+              key={d}
+              label={d}
+              selected={diet === d}
+              onPress={() => setOnboardingAnswers({ diet: diet === d ? null : d })}
+            />
+          ))}
+        </View>
 
+        <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.xl, marginBottom: spacing.sm }]}>
+          Reminders you'd like
+        </Text>
+        <View style={styles.chips}>
+          {REMINDERS.map((r) => (
+            <Chip key={r} label={r} selected={observances.includes(r)} onPress={() => toggleReminder(r)} />
+          ))}
+        </View>
+
+        <Button label="Done" onPress={() => router.back()} style={{ marginTop: spacing.xl }} />
         <Button
-          label="Next: Health Integrations"
-          onPress={() => router.push('/(onboarding)/health-permissions')}
-          style={{ marginTop: spacing.md }}
+          label="Clear these preferences"
+          variant="ghost"
+          onPress={() => setOnboardingAnswers({ diet: null, observances: [] })}
+          style={{ marginTop: spacing.sm }}
         />
       </View>
     </ScreenWrapper>
@@ -87,11 +81,5 @@ export default function LifestylePreferencesScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: {
-    flex: 1,
-  },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
 });

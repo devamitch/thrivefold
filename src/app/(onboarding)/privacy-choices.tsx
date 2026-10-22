@@ -1,109 +1,135 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Switch } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { ScreenWrapper } from '../../components/ui/ScreenWrapper';
+import React from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+
+import { OnboardingScaffold } from '../../components/onboarding/OnboardingScaffold';
 import { Card } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
-import { Header } from '../../components/ui/Header';
+import { useRootStore } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
+
+const POINTS = [
+  {
+    icon: 'phone-portrait-outline' as const,
+    title: 'Stays on this phone',
+    body: 'Check-ins, cycle data, journal and progress are stored on this device.',
+  },
+  {
+    icon: 'eye-off-outline' as const,
+    title: 'Never guessed about you',
+    body: 'We never infer religion, orientation, health conditions or anything sensitive.',
+  },
+  {
+    icon: 'notifications-off-outline' as const,
+    title: 'Discreet reminders',
+    body: 'Lock-screen notifications never show health details unless you choose to.',
+  },
+  {
+    icon: 'download-outline' as const,
+    title: 'Yours to take or delete',
+    body: 'Export or erase everything from Settings, any time.',
+  },
+];
 
 export default function PrivacyChoicesScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
-
-  const [isAdultConfirmed, setIsAdultConfirmed] = useState(true);
-  const [localVaultAgreed, setLocalVaultAgreed] = useState(true);
-  const [allowAnonymousMetrics, setAllowAnonymousMetrics] = useState(false);
+  const adultConfirmedAt = useRootStore((s) => s.adultConfirmedAt);
+  const confirmAdult = useRootStore((s) => s.confirmAdult);
+  const adult = Boolean(adultConfirmedAt);
 
   return (
-    <ScreenWrapper scrollable>
-      <Header title="Privacy & Integrity" showBack />
-      <View style={[styles.content, { padding: spacing.base }]}>
-        <Text style={[typography.heading, { color: colors.text.primary, marginBottom: spacing.xs }]}>
-          Your Data Stays With You
-        </Text>
-        <Text style={[typography.subbody, { color: colors.text.secondary, marginBottom: spacing.lg }]}>
-          Thrivefold uses a local-first architecture. Health logs, reflections, and personal memories are kept securely on your device.
-        </Text>
-
-        <Card style={{ marginBottom: spacing.md }}>
-          <View style={styles.row}>
-            <View style={styles.textCol}>
-              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                Adult Eligibility (18+)
-              </Text>
-              <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>
-                I confirm that I am at least 18 years of age. All sensitive correspondence requires adult status.
-              </Text>
+    <OnboardingScaffold
+      step="privacy-choices"
+      title="Your data, your rules"
+      subtitle="A quick look at how Thrivefold treats what you share."
+      primaryLabel="Continue"
+      primaryDisabled={!adult}
+      onPrimary={() => router.push('/(onboarding)/goals')}
+    >
+      <Card style={{ padding: spacing.base, marginBottom: spacing.lg }}>
+        {POINTS.map((p, i) => (
+          <View key={p.title} style={[styles.point, i > 0 && { marginTop: spacing.md }]}>
+            <View style={[styles.pointIcon, { backgroundColor: colors.primaryAlpha }]}>
+              <Ionicons name={p.icon} size={18} color={colors.primary} />
             </View>
-            <Switch
-              value={isAdultConfirmed}
-              onValueChange={setIsAdultConfirmed}
-              thumbColor={colors.primary}
-              trackColor={{ false: colors.surface2, true: colors.primaryAlpha }}
-            />
-          </View>
-        </Card>
-
-        <Card style={{ marginBottom: spacing.md }}>
-          <View style={styles.row}>
-            <View style={styles.textCol}>
-              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                Local Device Vault
-              </Text>
-              <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>
-                Store journals, cycle tracking, and AI memories locally on this phone. No unconsented cloud uploads.
-              </Text>
+            <View style={styles.flex}>
+              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{p.title}</Text>
+              <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 2 }]}>{p.body}</Text>
             </View>
-            <Switch
-              value={localVaultAgreed}
-              onValueChange={setLocalVaultAgreed}
-              thumbColor={colors.primary}
-              trackColor={{ false: colors.surface2, true: colors.primaryAlpha }}
-            />
           </View>
-        </Card>
+        ))}
+      </Card>
 
-        <Card style={{ marginBottom: spacing.lg }}>
-          <View style={styles.row}>
-            <View style={styles.textCol}>
-              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                Anonymous Crash Diagnostics
-              </Text>
-              <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>
-                Share non-sensitive crash logs to help maintain app reliability. Never shares personal health notes.
-              </Text>
-            </View>
-            <Switch
-              value={allowAnonymousMetrics}
-              onValueChange={setAllowAnonymousMetrics}
-              thumbColor={colors.primary}
-              trackColor={{ false: colors.surface2, true: colors.primaryAlpha }}
-            />
-          </View>
-        </Card>
+      {/* A plain statement, never pre-ticked (master spec §3.1). It is not age verification. */}
+      <Pressable
+        onPress={() => !adult && confirmAdult()}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: adult }}
+        accessibilityLabel="I'm 18 or older"
+        style={[
+          styles.check,
+          { borderColor: adult ? colors.primary : colors.border, backgroundColor: colors.surface },
+        ]}
+      >
+        <View
+          style={[
+            styles.box,
+            {
+              borderColor: adult ? colors.primary : colors.text.muted,
+              backgroundColor: adult ? colors.primary : 'transparent',
+            },
+          ]}
+        >
+          {adult ? <Ionicons name="checkmark" size={16} color={colors.onPrimary} /> : null}
+        </View>
+        <View style={styles.flex}>
+          <Text style={[typography.bodyBold, { color: colors.text.primary }]}>I'm 18 or older</Text>
+          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+            Thrivefold is for adults. Letters and communities also need an age check later.
+          </Text>
+        </View>
+      </Pressable>
 
-        <Button
-          label="Confirm & Set Goals"
-          disabled={!isAdultConfirmed || !localVaultAgreed}
-          onPress={() => router.push('/(onboarding)/goals')}
-        />
+      <View style={[styles.links, { marginTop: spacing.lg }]}>
+        <Pressable onPress={() => router.push('/(public)/legal/privacy')} hitSlop={10} accessibilityRole="link">
+          <Text style={[typography.subbody, { color: colors.primary }]}>Privacy policy</Text>
+        </Pressable>
+        <Pressable onPress={() => router.push('/(public)/legal/terms')} hitSlop={10} accessibilityRole="link">
+          <Text style={[typography.subbody, { color: colors.primary }]}>Terms</Text>
+        </Pressable>
       </View>
-    </ScreenWrapper>
+    </OnboardingScaffold>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
-    flex: 1,
-  },
-  row: {
-    flexDirection: 'row',
+  box: {
     alignItems: 'center',
-    justifyContent: 'space-between',
+    borderRadius: 7,
+    borderWidth: 2,
+    height: 24,
+    justifyContent: 'center',
+    marginRight: 12,
+    width: 24,
   },
-  textCol: {
-    flex: 1,
-    paddingRight: 16,
+  check: {
+    alignItems: 'center',
+    borderCurve: 'continuous',
+    borderRadius: 18,
+    borderWidth: 1.5,
+    flexDirection: 'row',
+    padding: 16,
+  },
+  flex: { flex: 1 },
+  links: { flexDirection: 'row', gap: 24, justifyContent: 'center' },
+  point: { alignItems: 'flex-start', flexDirection: 'row' },
+  pointIcon: {
+    alignItems: 'center',
+    borderRadius: 10,
+    height: 32,
+    justifyContent: 'center',
+    marginRight: 12,
+    width: 32,
   },
 });
