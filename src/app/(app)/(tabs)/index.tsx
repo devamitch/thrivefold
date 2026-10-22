@@ -190,6 +190,52 @@ export default function HomeScreen() {
           </Animated.View>
         )}
 
+        {/* Experience card: Men's Health Focus */}
+        {experience === 'men_health' && (
+          <Animated.View entering={fade(2)}>
+            <Card onPress={() => router.push('/(app)/health/men')} style={{ marginTop: spacing.md, padding: spacing.base }}>
+              <View style={styles.rowBetween}>
+                <View style={[styles.iconTile, { backgroundColor: colors.primaryAlpha }]}>
+                  <Ionicons name="barbell-outline" size={20} color={colors.primary} />
+                </View>
+                <View style={[styles.flex, { marginLeft: 12 }]}>
+                  <Text style={[typography.label, { color: colors.text.muted }]}>Men's Vitality</Text>
+                  <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 2 }]}>
+                    Mobility, Conditioning & Recovery
+                  </Text>
+                  <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                    Postural decompression, recovery readiness, pelvic floor
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
+              </View>
+            </Card>
+          </Animated.View>
+        )}
+
+        {/* Experience card: Pride Wellbeing Focus */}
+        {experience === 'pride_wellbeing' && (
+          <Animated.View entering={fade(2)}>
+            <Card onPress={() => router.push('/(app)/health/pride')} style={{ marginTop: spacing.md, padding: spacing.base }}>
+              <View style={styles.rowBetween}>
+                <View style={[styles.iconTile, { backgroundColor: colors.primaryAlpha }]}>
+                  <Ionicons name="heart-outline" size={20} color={colors.primary} />
+                </View>
+                <View style={[styles.flex, { marginLeft: 12 }]}>
+                  <Text style={[typography.label, { color: colors.text.muted }]}>Affirming Care</Text>
+                  <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 2 }]}>
+                    Grounding, Hormones & Reflections
+                  </Text>
+                  <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                    Private self-care routine and identity-safe tracking
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
+              </View>
+            </Card>
+          </Animated.View>
+        )}
+
         {/* One suitable task, with a rest option */}
         <Animated.View entering={fade(3)}>
           <Text style={[typography.label, styles.section, { color: colors.text.muted }]}>Today's focus</Text>
@@ -238,7 +284,7 @@ export default function HomeScreen() {
               ].map((m, i) => (
                 <View
                   key={m.label}
-                  style={[styles.progressItem, i > 0 && { borderLeftColor: colors.border, borderLeftWidth: StyleSheet.hairlineWidth }]}
+                  style={styles.progressItem}
                 >
                   <Text style={[typography.heading, { color: colors.text.primary }]}>{m.value}</Text>
                   <Text style={[typography.caption, { color: colors.text.muted }]}>{m.label}</Text>
@@ -258,7 +304,7 @@ export default function HomeScreen() {
                 onPress={() => router.push(s.route)}
                 accessibilityRole="button"
                 accessibilityLabel={s.label}
-                style={[styles.tool, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                style={[styles.tool, { backgroundColor: colors.surface }]}
               >
                 <Ionicons name={s.icon} size={22} color={colors.primary} />
                 <Text style={[typography.subbodyBold, { color: colors.text.primary, marginTop: 8 }]}>{s.label}</Text>
@@ -268,7 +314,7 @@ export default function HomeScreen() {
           <PressableScale
             onPress={() => router.push('/(app)/learn')}
             accessibilityRole="button"
-            style={[styles.learn, { borderColor: colors.border }]}
+            style={[styles.learn, { backgroundColor: colors.surface1 }]}
           >
             <Ionicons name="school-outline" size={18} color={colors.text.secondary} />
             <Text style={[typography.subbody, styles.flex, { color: colors.text.secondary, marginLeft: 10 }]}>
@@ -291,7 +337,9 @@ const styles = StyleSheet.create({
   learn: {
     alignItems: 'center',
     borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 0,
+    elevation: 0,
+    shadowOpacity: 0,
     flexDirection: 'row',
     marginTop: 12,
     minHeight: 52,
@@ -309,7 +357,9 @@ const styles = StyleSheet.create({
   tool: {
     borderCurve: 'continuous',
     borderRadius: 18,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 0,
+    elevation: 0,
+    shadowOpacity: 0,
     flexBasis: '47%',
     flexGrow: 1,
     padding: 16,

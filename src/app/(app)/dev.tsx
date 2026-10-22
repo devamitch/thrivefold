@@ -1,157 +1,714 @@
+import React, { useState } from 'react';
+import {
+  Alert,
+  Share,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Redirect, useRouter } from 'expo-router';
-import React from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import * as Haptics from 'expo-haptics';
 
-import { Card } from '../../components/ui/Card';
-import { Header } from '../../components/ui/Header';
 import { ScreenWrapper } from '../../components/ui/ScreenWrapper';
-import { eraseLocalData } from '../../services/privacy/localData';
+import { Header } from '../../components/ui/Header';
+import { Card } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+import { Badge } from '../../components/ui/Badge';
+import { Chip } from '../../components/ui/Chip';
+import { PressableScale } from '../../components/ui/PressableScale';
+
+import { buildLocalExport, eraseLocalData } from '../../services/privacy/localData';
 import { useRootStore, useShallow } from '../../stores/useRootStore';
 import { ProductExperience } from '../../theme/tokens';
+import { ThemeMode } from '../../stores/slices/appSlice';
 import { useTheme } from '../../theme/useTheme';
+import { CyclePhase } from '../../domain/health/cycleCalculations';
 
-/**
- * Developer tools. Only reachable in development builds (__DEV__); release builds
- * redirect away, so none of this ships to users.
- */
 export default function DevToolsScreen() {
-  if (!__DEV__) return <Redirect href="/" />;
-  return <DevTools />;
-}
-
-function DevTools() {
   const router = useRouter();
-  const { colors, typography, spacing } = useTheme();
-  const s = useRootStore(
+  const { colors, typography, spacing, experience, isDark } = useTheme();
+
+  const store = useRootStore(
     useShallow((st) => ({
       user: st.user,
       experience: st.experience,
+      themeMode: st.themeMode,
       isOnboarded: st.isOnboarded,
       onboardingStep: st.onboardingStep,
       checkIns: st.checkInHistory.length,
       journal: st.journalEntries.length,
+      currentStreak: st.currentStreak,
+      level: st.level,
       xp: st.xp,
-      revealed: st.isSocialPathRevealed,
+      isSocialPathRevealed: st.isSocialPathRevealed,
+      quietHoursEnabled: st.quietHoursEnabled,
+      offlineModeForced: st.offlineModeForced,
       setExperience: st.setExperience,
+      setThemeMode: st.setThemeMode,
+      setUser: st.setUser,
+      continueAsGuest: st.continueAsGuest,
       signOut: st.signOut,
+      setIsOnboarded: st.setIsOnboarded,
       resetOnboarding: st.resetOnboarding,
+      setOnboardingAnswers: st.setOnboardingAnswers,
       setSocialPathRevealed: st.setSocialPathRevealed,
+      setQuietHours: st.setQuietHours,
+      toggleOfflineMode: st.toggleOfflineMode,
+      showToast: st.showToast,
+      addCheckIn: st.addCheckIn,
+      addJournalEntry: st.addJournalEntry,
+      updateCycleData: st.updateCycleData,
+      clearCycleData: st.clearCycleData,
+      addXP: st.addXP,
+      resetStreak: st.resetStreak,
+      resetDailyQuotaIfNewDay: st.resetDailyQuotaIfNewDay,
     })),
   );
 
-  const confirm = (title: string, message: string, run: () => void) =>
+  const confirmAction = (title: string, message: string, onConfirm: () => void) => {
     Alert.alert(title, message, [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Do it', style: 'destructive', onPress: run },
+      { text: 'Proceed', style: 'destructive', onPress: onConfirm },
     ]);
+  };
 
-  const actions: { icon: keyof typeof Ionicons.glyphMap; title: string; body: string; run: () => void }[] = [
-    {
-      icon: 'trash-outline',
-      title: 'Clear all local storage',
-      body: 'Wipes every persisted record and returns to a fresh install.',
-      run: () =>
-        confirm('Clear storage?', 'Everything on this device is erased.', () => {
-          eraseLocalData();
-          router.replace('/');
-        }),
-    },
-    {
-      icon: 'log-out-outline',
-      title: 'Sign out',
-      body: 'Keeps health data; returns to the entry screen.',
-      run: () => {
-        s.signOut();
-        router.replace('/');
-      },
-    },
-    {
-      icon: 'refresh-outline',
-      title: 'Restart onboarding',
-      body: 'Clears onboarding answers and runs the four steps again.',
-      run: () => {
-        s.resetOnboarding();
-        router.replace('/');
-      },
-    },
-    {
-      icon: s.revealed ? 'eye-off-outline' : 'eye-outline',
-      title: s.revealed ? 'Hide social path' : 'Reveal social path',
-      body: 'Toggles the gradual-reveal flag for testing letters UI.',
-      run: () => s.setSocialPathRevealed(!s.revealed),
-    },
+  // ── Seed realistic mock data for UI testing ──
+  const handleSeedMockData = () => {
+    // Seed 7 days of check-ins
+    const now = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const isoDate = d.toISOString().split('T')[0];
+      store.addCheckIn({
+        date: isoDate,
+        energy: 6 + ((i * 2) % 4),
+        mood: 7 + ((i * 3) % 3),
+        stress: 3 + ((i * 2) % 5),
+        sleepHours: 7.2 + (i % 2) * 0.5,
+        symptoms: i === 0 ? ['High Focus', 'Light Cramps'] : ['Steady Energy'],
+        notes: i === 0 ? 'Felt centered and mindful after evening walk.' : undefined,
+      });
+    }
+
+    // Seed cycle tracking
+    const periodStart = new Date();
+    periodStart.setDate(periodStart.getDate() - 12);
+    store.updateCycleData({
+      lastPeriodDate: periodStart.toISOString().split('T')[0],
+      cycleLengthDays: 28,
+      periodLengthDays: 5,
+      currentPhase: 'follicular',
+      estimatedNextPeriodDate: new Date(periodStart.getTime() + 28 * 86400000).toISOString().split('T')[0],
+    });
+
+    // Seed journal entries
+    store.addJournalEntry(
+      'Morning Reflection & Stillness',
+      'Started the day early with gentle stretches and a cup of peppermint tea. Noticing clarity and steady breath.',
+      8,
+    );
+    store.addJournalEntry(
+      'Evening Sanctuary Walk',
+      'Golden hour twilight through the park. Allowed thoughts to settle without rushing into task mode.',
+      9,
+    );
+
+    // Seed XP
+    store.addXP(250);
+
+    try {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch {}
+    store.showToast({
+      type: 'success',
+      title: 'Mock Data Injected',
+      message: '7 check-ins, cycle metrics, journal entries & XP seeded.',
+    });
+  };
+
+  // ── Toggle Adult 18+ Verification ──
+  const handleToggleAgeVerification = () => {
+    if (!store.user) {
+      store.continueAsGuest();
+    }
+    const currentUser = useRootStore.getState().user;
+    if (currentUser) {
+      const nextVerified = !currentUser.isAgeVerified;
+      store.setUser({
+        ...currentUser,
+        isAgeVerified: nextVerified,
+        age: nextVerified ? 24 : 16,
+        ageBand: nextVerified ? 'adult_18_plus' : 'minor_16_17',
+      });
+      store.showToast({
+        type: 'info',
+        title: 'Age Status Updated',
+        message: `User age status set to: ${nextVerified ? 'Adult 18+ (Verified)' : 'Minor Under-18'}`,
+      });
+    }
+  };
+
+  // ── Switch Pseudonym ──
+  const handleSetPseudonym = (name: string) => {
+    const currentUser = store.user;
+    if (currentUser) {
+      store.setUser({ ...currentUser, pseudonym: name });
+    } else {
+      store.continueAsGuest();
+      const updated = useRootStore.getState().user;
+      if (updated) store.setUser({ ...updated, pseudonym: name });
+    }
+    store.showToast({ type: 'success', message: `Pseudonym set to ${name}` });
+  };
+
+  // ── Fast-track Complete Onboarding ──
+  const handleFastTrackOnboarding = () => {
+    store.setOnboardingAnswers({
+      goals: ['steady_energy', 'deep_sleep', 'mindful_routines'],
+      constraints: ['desk_work', 'screen_fatigue'],
+      routineMinutes: 10,
+      diet: 'balanced',
+      observances: [],
+    });
+    store.setIsOnboarded(true);
+    store.showToast({
+      type: 'success',
+      title: 'Onboarding Completed',
+      message: 'User marked as fully onboarded with curated goals.',
+    });
+    router.replace('/(app)/(tabs)');
+  };
+
+  const experiences: { id: ProductExperience; label: string; sub: string }[] = [
+    { id: 'women_health', label: "Women's Health", sub: 'Terracotta & Sage · Fraunces' },
+    { id: 'men_health', label: "Men's Health", sub: 'Slate Teal & Amber · SpaceMono' },
+    { id: 'pride_wellbeing', label: 'Pride & LGBTQ+', sub: 'Amethyst & Rose · Serene' },
   ];
 
-  const experiences: ProductExperience[] = ['women_health', 'men_health', 'pride_wellbeing'];
+  const themes: { id: ThemeMode; label: string }[] = [
+    { id: 'system', label: 'System Default' },
+    { id: 'light', label: 'Light Porcelain' },
+    { id: 'dark', label: 'Dark Obsidian' },
+  ];
+
+  const screenJumps: { name: string; route: any; icon: keyof typeof Ionicons.glyphMap; group: string }[] = [
+    { name: 'Home Tab', route: '/(app)/(tabs)', icon: 'home-outline', group: 'Tabs' },
+    { name: "Today's Plan", route: '/(app)/(tabs)/today', icon: 'today-outline', group: 'Tabs' },
+    { name: 'Progress & Stats', route: '/(app)/(tabs)/progress', icon: 'trending-up-outline', group: 'Tabs' },
+    { name: 'Settings & Privacy', route: '/(app)/(tabs)/settings', icon: 'settings-outline', group: 'Tabs' },
+    { name: 'Daily Check-in', route: '/(app)/check-in', icon: 'heart-outline', group: 'Health' },
+    { name: 'Cycle Tracking', route: '/(app)/health/cycle', icon: 'water-outline', group: 'Health' },
+    { name: "Men's Health Hub", route: '/(app)/health/men', icon: 'barbell-outline', group: 'Health' },
+    { name: 'Pride Wellbeing Hub', route: '/(app)/health/pride', icon: 'color-wand-outline', group: 'Health' },
+    { name: 'Sleep Log', route: '/(app)/health/sleep', icon: 'moon-outline', group: 'Health' },
+    { name: 'Mood & Energy', route: '/(app)/health/mood', icon: 'happy-outline', group: 'Health' },
+    { name: 'Symptoms Log', route: '/(app)/health/symptoms', icon: 'pulse-outline', group: 'Health' },
+    { name: 'Journal', route: '/(app)/journal', icon: 'book-outline', group: 'Social & Journal' },
+    { name: 'New Journal Entry', route: '/(app)/journal/new', icon: 'create-outline', group: 'Social & Journal' },
+    { name: 'Letterbox', route: '/(app)/letters', icon: 'mail-outline', group: 'Social & Journal' },
+    { name: 'Private Circles', route: '/(app)/circles', icon: 'people-outline', group: 'Social & Journal' },
+    { name: 'AI Memory Vault', route: '/(app)/ai', icon: 'hardware-chip-outline', group: 'Systems' },
+    { name: 'Safety & Appeals', route: '/(app)/safety', icon: 'shield-outline', group: 'Systems' },
+    { name: 'Urgent Support', route: '/(app)/safety/urgent-support', icon: 'call-outline', group: 'Systems' },
+    { name: 'Sign-in Screen', route: '/(auth)/sign-in', icon: 'log-in-outline', group: 'Auth' },
+    { name: 'Onboarding Step 1', route: '/(onboarding)/choose-experience', icon: 'compass-outline', group: 'Auth' },
+  ];
 
   return (
     <ScreenWrapper scrollable disableScrollAwareDock>
-      <Header title="Developer tools" subtitle="Development builds only" showBack />
-      <View style={{ padding: spacing.base }}>
-        <Card style={{ padding: spacing.base, marginBottom: spacing.md }}>
-          {[
-            ['User', s.user ? `${s.user.pseudonym} (${s.user.isGuest ? 'guest' : 'local'})` : 'signed out'],
-            ['Experience', s.experience],
-            ['Onboarded', s.isOnboarded ? 'yes' : `no (step: ${s.onboardingStep ?? 'start'})`],
-            ['Records', `${s.checkIns} check-ins · ${s.journal} journal · ${s.xp} XP`],
-          ].map(([k, v]) => (
-            <View key={k} style={styles.row}>
-              <Text style={[typography.caption, styles.key, { color: colors.text.muted }]}>{k}</Text>
-              <Text style={[typography.subbodyBold, styles.flex, { color: colors.text.primary }]}>{v}</Text>
-            </View>
-          ))}
+      <Header title="Developer Menu" subtitle="Full Device & App State Controls" showBack />
+
+      <View style={{ paddingHorizontal: spacing.base, paddingBottom: spacing['4xl'] }}>
+        {/* ── 1. Live System Status ── */}
+        <Card style={styles.card}>
+          <View style={styles.rowBetween}>
+            <Text style={[typography.subheading, { color: colors.text.primary }]}>Live System State</Text>
+            <Badge
+              label={store.user?.isAgeVerified ? 'Adult 18+' : 'Under-18 / Unverified'}
+              variant={store.user?.isAgeVerified ? 'success' : 'warning'}
+            />
+          </View>
+
+          <View style={{ marginTop: spacing.md, gap: 6 }}>
+            {[
+              ['User Pseudonym', store.user?.pseudonym ?? 'None (Signed out)'],
+              ['User ID', store.user?.id ? `${store.user.id.slice(0, 16)}...` : 'None'],
+              ['Auth Mode', store.user?.isGuest ? 'Guest User' : store.user ? 'Local Vault' : 'Anonymous'],
+              ['Experience', store.experience],
+              ['Theme Scheme', `${store.themeMode} (${isDark ? 'Dark Mode' : 'Light Mode'})`],
+              ['Onboarded', store.isOnboarded ? 'Yes (Completed)' : `No (Step: ${store.onboardingStep ?? 'Not started'})`],
+              ['Records', `${store.checkIns} check-ins · ${store.journal} journal`],
+              ['Progress', `Level ${store.level} · ${store.xp} XP · Streak ${store.currentStreak}d`],
+            ].map(([k, v]) => (
+              <View key={k} style={styles.infoRow}>
+                <Text style={[typography.caption, { color: colors.text.muted, width: 110 }]}>{k}</Text>
+                <Text style={[typography.subbodyBold, { color: colors.text.primary, flex: 1 }]}>{v}</Text>
+              </View>
+            ))}
+          </View>
         </Card>
 
-        <Text style={[typography.label, { color: colors.text.muted, marginBottom: spacing.sm }]}>Theme</Text>
-        <View style={[styles.segment, { backgroundColor: colors.surface1, marginBottom: spacing.lg }]}>
-          {experiences.map((e) => (
-            <Text
-              key={e}
-              onPress={() => s.setExperience(e)}
-              accessibilityRole="button"
-              style={[
-                typography.subbodyBold,
-                styles.segmentItem,
-                {
-                  color: s.experience === e ? colors.primary : colors.text.secondary,
-                  backgroundColor: s.experience === e ? colors.surface : 'transparent',
-                },
-              ]}
-            >
-              {e.split('_')[0]}
-            </Text>
-          ))}
-        </View>
+        {/* ── 2. User & Profile Management ── */}
+        <Text style={[typography.label, { color: colors.primary, marginTop: spacing.lg, marginBottom: spacing.sm }]}>
+          USER & PROFILE CONTROLS
+        </Text>
+        <Card style={styles.card}>
+          <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: spacing.sm }]}>
+            Change active pseudonym:
+          </Text>
+          <View style={styles.chipRow}>
+            {['SolsticeSeeker', 'Alex', 'Rowan', 'Morgan'].map((p) => (
+              <Chip
+                key={p}
+                label={p}
+                selected={store.user?.pseudonym === p}
+                onPress={() => handleSetPseudonym(p)}
+              />
+            ))}
+          </View>
 
-        {actions.map((a) => (
-          <Card key={a.title} onPress={a.run} style={{ padding: spacing.base, marginBottom: spacing.sm }}>
-            <View style={styles.actionRow}>
-              <Ionicons name={a.icon} size={20} color={colors.primary} />
-              <View style={[styles.flex, { marginLeft: 12 }]}>
-                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{a.title}</Text>
-                <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>{a.body}</Text>
+          <View style={{ marginTop: spacing.md, gap: 8 }}>
+            <Button
+              variant="secondary"
+              label={store.user?.isAgeVerified ? 'Set Age to Minor (<18)' : 'Verify as Adult (18+)'}
+              icon={
+                <Ionicons
+                  name={store.user?.isAgeVerified ? 'lock-closed-outline' : 'shield-checkmark-outline'}
+                  size={18}
+                  color={colors.text.primary}
+                />
+              }
+              onPress={handleToggleAgeVerification}
+            />
+
+            {!store.isOnboarded ? (
+              <Button
+                variant="primary"
+                label="Fast-Track Complete Onboarding"
+                icon={<Ionicons name="flash-outline" size={18} color={colors.onPrimary} />}
+                onPress={handleFastTrackOnboarding}
+              />
+            ) : null}
+
+            <Button
+              variant="secondary"
+              label="Reset Onboarding Flow (Start Wizard Again)"
+              icon={<Ionicons name="refresh-outline" size={18} color={colors.text.primary} />}
+              onPress={() => {
+                store.resetOnboarding();
+                router.replace('/(onboarding)/choose-experience' as any);
+              }}
+            />
+
+            <Button
+              variant="secondary"
+              label={store.user ? 'Delete Active User & Sign Out' : 'Sign In as Fresh Guest'}
+              icon={<Ionicons name={store.user ? 'person-remove-outline' : 'person-add-outline'} size={18} color={colors.text.primary} />}
+              onPress={() => {
+                if (store.user) {
+                  confirmAction('Delete User?', 'This signs out and removes the current user profile.', () => {
+                    store.signOut();
+                    router.replace('/(auth)/sign-in');
+                  });
+                } else {
+                  store.continueAsGuest();
+                  store.showToast({ type: 'success', message: 'Signed in as guest.' });
+                }
+              }}
+            />
+          </View>
+        </Card>
+
+        {/* ── 3. Cohort Experience & Theme Palette Switcher ── */}
+        <Text style={[typography.label, { color: colors.primary, marginTop: spacing.lg, marginBottom: spacing.sm }]}>
+          COHORT EXPERIENCE & PALETTE
+        </Text>
+        <Card style={styles.card}>
+          <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: spacing.sm }]}>
+            Active Experience (Colors & Fonts adapt automatically):
+          </Text>
+          <View style={{ gap: 8 }}>
+            {experiences.map((exp) => {
+              const isSelected = store.experience === exp.id;
+              return (
+                <PressableScale
+                  key={exp.id}
+                  onPress={() => store.setExperience(exp.id)}
+                  style={[
+                    styles.experienceRow,
+                    {
+                      backgroundColor: isSelected ? colors.primaryAlpha : colors.surface1,
+                    },
+                  ]}
+                  scaleTo={0.98}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={[typography.bodyBold, { color: isSelected ? colors.primary : colors.text.primary }]}>
+                      {exp.label}
+                    </Text>
+                    <Text style={[typography.caption, { color: colors.text.muted, marginTop: 2 }]}>
+                      {exp.sub}
+                    </Text>
+                  </View>
+                  {isSelected && <Badge label="Active" variant="primary" />}
+                </PressableScale>
+              );
+            })}
+          </View>
+
+          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: spacing.md, marginBottom: spacing.sm }]}>
+            Appearance Theme:
+          </Text>
+          <View style={styles.themeRow}>
+            {themes.map((t) => (
+              <PressableScale
+                key={t.id}
+                onPress={() => store.setThemeMode(t.id)}
+                style={[
+                  styles.themeTab,
+                  {
+                    backgroundColor: store.themeMode === t.id ? colors.primary : colors.surface1,
+                  },
+                ]}
+                scaleTo={0.96}
+              >
+                <Text
+                  style={[
+                    typography.captionBold,
+                    { color: store.themeMode === t.id ? colors.onPrimary : colors.text.primary },
+                  ]}
+                >
+                  {t.label}
+                </Text>
+              </PressableScale>
+            ))}
+          </View>
+
+          {/* Palette Swatches */}
+          <View style={styles.swatchGrid}>
+            {[
+              ['Background', colors.background],
+              ['Surface', colors.surface],
+              ['Surface 1', colors.surface1],
+              ['Primary', colors.primary],
+              ['Accent', colors.accent],
+              ['Dock', colors.dock],
+              ['Dock Active', colors.dockActive],
+            ].map(([name, col]) => (
+              <View key={name} style={styles.swatchItem}>
+                <View style={[styles.swatchCircle, { backgroundColor: col }]} />
+                <Text style={[typography.caption, { color: colors.text.muted, fontSize: 10 }]}>{name}</Text>
               </View>
-            </View>
-          </Card>
-        ))}
+            ))}
+          </View>
+        </Card>
+
+        {/* ── 4. Local Storage & Mock Data Engine ── */}
+        <Text style={[typography.label, { color: colors.primary, marginTop: spacing.lg, marginBottom: spacing.sm }]}>
+          STORAGE & MOCK DATA
+        </Text>
+        <Card style={styles.card}>
+          <View style={{ gap: 8 }}>
+            <Button
+              variant="primary"
+              label="Seed 7-Day Health & Journal Records"
+              icon={<Ionicons name="cloud-upload-outline" size={18} color={colors.onPrimary} />}
+              onPress={handleSeedMockData}
+            />
+
+            <Button
+              variant="secondary"
+              label="Export Local Vault Data (JSON Share)"
+              icon={<Ionicons name="share-outline" size={18} color={colors.text.primary} />}
+              onPress={async () => {
+                try {
+                  await Share.share({ title: 'Thrivefold Device Export', message: buildLocalExport() });
+                } catch {
+                  Alert.alert('Export failed');
+                }
+              }}
+            />
+
+            <Button
+              variant="secondary"
+              label="Clear Health & Cycle Data Only"
+              icon={<Ionicons name="trash-bin-outline" size={18} color={colors.text.primary} />}
+              onPress={() => {
+                confirmAction('Clear Health Records?', 'Wipes check-ins and cycle data while keeping user profile.', () => {
+                  useRootStore.setState({
+                    checkInHistory: [],
+                    cycleData: null,
+                    todayEnergy: null,
+                    todayMood: null,
+                    todayStress: null,
+                    todaySleepHours: null,
+                    todaySymptoms: [],
+                  });
+                  store.showToast({ type: 'info', message: 'Health history cleared.' });
+                });
+              }}
+            />
+
+            <Button
+              variant="danger"
+              label="Wipe All Local Storage (Fresh Install Nuke)"
+              icon={<Ionicons name="trash-outline" size={18} color="#FFFFFF" />}
+              onPress={() => {
+                confirmAction(
+                  'Wipe EVERYTHING?',
+                  'This erases all records, MMKV vault keys, journals, and accounts from this device.',
+                  () => {
+                    eraseLocalData();
+                    router.replace('/');
+                  },
+                );
+              }}
+            />
+          </View>
+        </Card>
+
+        {/* ── 5. Feature Flags & Policies ── */}
+        <Text style={[typography.label, { color: colors.primary, marginTop: spacing.lg, marginBottom: spacing.sm }]}>
+          FEATURE FLAGS & LOCAL PRIVACY
+        </Text>
+        <Card style={styles.card}>
+          <View style={{ gap: 8 }}>
+            <PressableScale
+              onPress={() => store.setSocialPathRevealed(!store.isSocialPathRevealed)}
+              style={styles.flagRow}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Social Path Unlocked</Text>
+                <Text style={[typography.caption, { color: colors.text.secondary }]}>
+                  Controls gradual reveal of correspondence & letter features
+                </Text>
+              </View>
+              <Badge
+                label={store.isSocialPathRevealed ? 'Enabled' : 'Hidden'}
+                variant={store.isSocialPathRevealed ? 'success' : 'neutral'}
+              />
+            </PressableScale>
+
+            <PressableScale
+              onPress={() => store.setQuietHours(!store.quietHoursEnabled)}
+              style={styles.flagRow}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Quiet Hours Filter</Text>
+                <Text style={[typography.caption, { color: colors.text.secondary }]}>
+                  Suppresses non-urgent prompts 22:00 - 07:00
+                </Text>
+              </View>
+              <Badge
+                label={store.quietHoursEnabled ? 'Active' : 'Disabled'}
+                variant={store.quietHoursEnabled ? 'primary' : 'neutral'}
+              />
+            </PressableScale>
+
+            <PressableScale
+              onPress={store.toggleOfflineMode}
+              style={styles.flagRow}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Forced Offline Mode</Text>
+                <Text style={[typography.caption, { color: colors.text.secondary }]}>
+                  Blocks any external network requests (strict on-device)
+                </Text>
+              </View>
+              <Badge
+                label={store.offlineModeForced ? 'Forced Offline' : 'Online OK'}
+                variant={store.offlineModeForced ? 'warning' : 'neutral'}
+              />
+            </PressableScale>
+
+            <Button
+              variant="secondary"
+              label="Reset Daily Intro Quota"
+              icon={<Ionicons name="time-outline" size={18} color={colors.text.primary} />}
+              onPress={() => {
+                store.resetDailyQuotaIfNewDay();
+                store.showToast({ type: 'success', message: 'Daily quota reset.' });
+              }}
+            />
+          </View>
+        </Card>
+
+        {/* ── 6. Direct Screen Jump Menu ── */}
+        <Text style={[typography.label, { color: colors.primary, marginTop: spacing.lg, marginBottom: spacing.sm }]}>
+          DIRECT SCREEN JUMP MATRIX ({screenJumps.length} SCREENS)
+        </Text>
+        <Card style={styles.card}>
+          <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: spacing.sm }]}>
+            Instantly navigate to any screen in Thrivefold:
+          </Text>
+          <View style={{ gap: 6 }}>
+            {screenJumps.map((jump) => (
+              <PressableScale
+                key={jump.name}
+                onPress={() => router.push(jump.route)}
+                style={[styles.jumpRow, { backgroundColor: colors.surface1 }]}
+                scaleTo={0.98}
+              >
+                <Ionicons name={jump.icon} size={18} color={colors.primary} />
+                <View style={{ flex: 1, marginLeft: 10 }}>
+                  <Text style={[typography.subbodyBold, { color: colors.text.primary }]}>{jump.name}</Text>
+                  <Text style={[typography.caption, { color: colors.text.muted, fontSize: 10 }]}>{jump.group}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
+              </PressableScale>
+            ))}
+          </View>
+        </Card>
+
+        {/* ── 7. Interactive Toast & Haptics Tester ── */}
+        <Text style={[typography.label, { color: colors.primary, marginTop: spacing.lg, marginBottom: spacing.sm }]}>
+          INTERACTIVE FEEDBACK TESTER
+        </Text>
+        <Card style={styles.card}>
+          <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: spacing.sm }]}>
+            Test System Toasts:
+          </Text>
+          <View style={styles.chipRow}>
+            <Chip
+              label="Success Toast"
+              onPress={() =>
+                store.showToast({
+                  type: 'success',
+                  title: 'Routine Completed',
+                  message: 'Gentle mobility routine logged.',
+                })
+              }
+            />
+            <Chip
+              label="Info Toast"
+              onPress={() =>
+                store.showToast({
+                  type: 'info',
+                  title: 'Cycle Prediction',
+                  message: 'Next luteal phase begins in 4 days.',
+                })
+              }
+            />
+            <Chip
+              label="Warning Toast"
+              onPress={() =>
+                store.showToast({
+                  type: 'warning',
+                  title: 'Low Sleep Logged',
+                  message: 'Gentle rest suggested for today.',
+                })
+              }
+            />
+            <Chip
+              label="Error Toast"
+              onPress={() =>
+                store.showToast({
+                  type: 'error',
+                  title: 'Storage Full Warning',
+                  message: 'Local encrypted vault approaching limit.',
+                })
+              }
+            />
+          </View>
+
+          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: spacing.md, marginBottom: spacing.sm }]}>
+            Test Hardware Haptics:
+          </Text>
+          <View style={styles.chipRow}>
+            <Chip
+              label="Light Impact"
+              onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+            />
+            <Chip
+              label="Medium Impact"
+              onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)}
+            />
+            <Chip
+              label="Heavy Impact"
+              onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy)}
+            />
+            <Chip
+              label="Selection Tap"
+              onPress={() => Haptics.selectionAsync()}
+            />
+          </View>
+        </Card>
       </View>
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  actionRow: { alignItems: 'center', flexDirection: 'row' },
-  flex: { flex: 1 },
-  key: { width: 96 },
-  row: { flexDirection: 'row', paddingVertical: 6 },
-  segment: { borderRadius: 14, flexDirection: 'row', gap: 4, padding: 4 },
-  segmentItem: {
-    borderRadius: 10,
+  card: {
+    padding: 16,
+    elevation: 0,
+    shadowOpacity: 0,
+    borderWidth: 0,
+  },
+  rowBetween: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 2,
+  },
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+  },
+  experienceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 14,
+  },
+  themeRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  themeTab: {
     flex: 1,
-    overflow: 'hidden',
-    paddingVertical: 12,
-    textAlign: 'center',
-    textTransform: 'capitalize',
+    paddingVertical: 10,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  swatchGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 16,
+    paddingTop: 12,
+    borderTopWidth: 0,
+  },
+  swatchItem: {
+    alignItems: 'center',
+    width: 64,
+  },
+  swatchCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginBottom: 4,
+    borderWidth: 0,
+  },
+  flagRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+  },
+  jumpRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
   },
 });

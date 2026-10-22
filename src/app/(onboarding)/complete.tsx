@@ -10,9 +10,9 @@ import { useRootStore, useShallow } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
 
 const EXPERIENCE_LABEL = {
-  women_health: "Women's health",
-  men_health: "Men's health",
-  pride_wellbeing: 'LGBTQ+ wellbeing',
+  women_health: "Women's Health",
+  men_health: "Men's Health",
+  pride_wellbeing: 'LGBTQ+ Wellbeing',
 } as const;
 
 export default function CompleteOnboardingScreen() {
@@ -36,12 +36,16 @@ export default function CompleteOnboardingScreen() {
 
   const rows = [
     { label: 'Focus', value: EXPERIENCE_LABEL[experience] },
-    { label: 'Goals', value: onboarding.goals.length ? onboarding.goals.join(', ') : 'None yet' },
+    { label: 'Goals', value: onboarding.goals.length ? onboarding.goals.join(', ') : 'General vitality & energy' },
     {
       label: 'Go easy on',
-      value: onboarding.constraints.length ? onboarding.constraints.join(', ') : 'Nothing',
+      value: onboarding.constraints.length ? onboarding.constraints.join(', ') : 'No constraints reported',
     },
-    { label: 'Routine', value: onboarding.routineMinutes ? `${onboarding.routineMinutes} minutes` : 'Flexible' },
+    { label: 'Routine', value: onboarding.routineMinutes ? `${onboarding.routineMinutes} minutes` : 'Flexible duration' },
+    { label: 'Food & diet', value: onboarding.diet ? onboarding.diet : 'No preference' },
+    ...(onboarding.observances && onboarding.observances.length > 0
+      ? [{ label: 'Reminders', value: onboarding.observances.join(', ') }]
+      : []),
   ];
 
   return (
@@ -58,25 +62,25 @@ export default function CompleteOnboardingScreen() {
     >
       <View style={styles.flex}>
         <Text
-          style={[typography.display, styles.center, { color: colors.text.primary, marginTop: spacing.xl }]}
+          style={[typography.display, styles.center, { color: colors.text.primary, marginTop: spacing.lg }]}
           accessibilityRole="header"
         >
           {pseudonym && pseudonym !== 'Friend' && pseudonym !== 'Guest' ? `You're set, ${pseudonym}` : "You're all set"}
         </Text>
         <Text style={[typography.body, styles.center, { color: colors.text.secondary, marginTop: spacing.sm }]}>
-          Start with a one-minute check-in so today's suggestion fits how you feel.
+          Your daily recommendations are now tailored to your selected rhythm and preferences.
         </Text>
 
         <Card style={{ marginTop: spacing.xl, padding: spacing.base }}>
-          {rows.map((r, i) => (
+          {rows.map((r) => (
             <View
               key={r.label}
               style={[
                 styles.row,
-                i > 0 && { borderTopColor: colors.border, borderTopWidth: StyleSheet.hairlineWidth },
+                { backgroundColor: colors.surface1, marginBottom: 8, borderRadius: 12, paddingHorizontal: 12 },
               ]}
             >
-              <Text style={[typography.subbody, styles.rowLabel, { color: colors.text.muted }]}>{r.label}</Text>
+              <Text style={[typography.captionBold, styles.rowLabel, { color: colors.text.muted }]}>{r.label}</Text>
               <Text style={[typography.subbodyBold, styles.flex, { color: colors.text.primary }]} numberOfLines={2}>
                 {r.value}
               </Text>
@@ -89,9 +93,9 @@ export default function CompleteOnboardingScreen() {
           accessibilityRole="button"
           style={[styles.optional, { marginTop: spacing.md }]}
         >
-          <Ionicons name="add-circle-outline" size={18} color={colors.primary} />
+          <Ionicons name="options-outline" size={18} color={colors.primary} />
           <Text style={[typography.subbody, { color: colors.primary, marginLeft: 6 }]}>
-            Add food & reminder preferences (optional)
+            Edit food & reminder preferences
           </Text>
         </Pressable>
       </View>
@@ -107,6 +111,6 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   optional: { alignItems: 'center', flexDirection: 'row', justifyContent: 'center', minHeight: 44 },
   root: { flex: 1 },
-  row: { flexDirection: 'row', paddingVertical: 10 },
-  rowLabel: { width: 96 },
+  row: { alignItems: 'center', flexDirection: 'row', paddingVertical: 10 },
+  rowLabel: { width: 100 },
 });

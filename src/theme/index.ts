@@ -4,3 +4,4 @@ export * from './typography';
 export * from './spacing';
 export * from './squircle';
 export * from './useTheme';
+export * from './icons';

@@ -7,17 +7,35 @@ import { Chip } from '../../components/ui/Chip';
 import { useRootStore, useShallow } from '../../stores/useRootStore';
 import type { OnboardingAnswers } from '../../stores/slices/appSlice';
 import { useTheme } from '../../theme/useTheme';
+import { ProductExperience } from '../../theme/tokens';
 
-const CONSTRAINTS = [
+const SHARED_CONSTRAINTS = [
   'Lower back',
   'Knees or joints',
   'Wrists or shoulders',
-  'Pelvic floor',
   'Recovering / low energy',
-  'Pregnancy or post-partum',
   'Mostly sitting all day',
   'Low impact only',
 ];
+
+const CONSTRAINTS_BY_EXPERIENCE: Record<ProductExperience, string[]> = {
+  women_health: [
+    ...SHARED_CONSTRAINTS,
+    'Pelvic floor & sacrum',
+    'Cramps / sensitive phase',
+  ],
+  men_health: [
+    ...SHARED_CONSTRAINTS,
+    'Tight hips / groin',
+    'Hamstrings & calves',
+    'Neck / upper spine',
+  ],
+  pride_wellbeing: [
+    ...SHARED_CONSTRAINTS,
+    'Chest / posture strain',
+    'Neck / upper back tension',
+  ],
+};
 
 const LENGTHS: { value: NonNullable<OnboardingAnswers['routineMinutes']>; label: string }[] = [
   { value: 5, label: '5 min' },
@@ -28,6 +46,7 @@ const LENGTHS: { value: NonNullable<OnboardingAnswers['routineMinutes']>; label:
 export default function ActivityConstraintsScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
+  const experience = useRootStore((s) => s.experience);
   const { constraints, routineMinutes, setOnboardingAnswers } = useRootStore(
     useShallow((s) => ({
       constraints: s.onboarding.constraints,
@@ -36,11 +55,13 @@ export default function ActivityConstraintsScreen() {
     })),
   );
 
+  const activeConstraints = CONSTRAINTS_BY_EXPERIENCE[experience] ?? SHARED_CONSTRAINTS;
+
   const toggle = (c: string) =>
     setOnboardingAnswers({
       constraints: constraints.includes(c) ? constraints.filter((x) => x !== c) : [...constraints, c],
     });
-  const next = () => router.push('/(onboarding)/complete');
+  const next = () => router.push('/(onboarding)/lifestyle-preferences');
 
   return (
     <OnboardingScaffold
@@ -52,7 +73,7 @@ export default function ActivityConstraintsScreen() {
       onSkip={next}
     >
       <View style={styles.chips}>
-        {CONSTRAINTS.map((c) => (
+        {activeConstraints.map((c) => (
           <Chip key={c} label={c} selected={constraints.includes(c)} onPress={() => toggle(c)} />
         ))}
       </View>
@@ -69,11 +90,14 @@ export default function ActivityConstraintsScreen() {
               onPress={() => setOnboardingAnswers({ routineMinutes: selected ? null : l.value })}
               accessibilityRole="radio"
               accessibilityState={{ selected }}
-              style={[styles.segmentItem, selected && { backgroundColor: colors.surface, borderColor: colors.primary }]}
+              style={[
+                styles.segmentItem,
+                selected && { backgroundColor: colors.surface, borderColor: colors.primary },
+              ]}
             >
               <Text
                 style={[
-                  typography.bodyBold,
+                  typography.subbodyBold,
                   { color: selected ? colors.primary : colors.text.secondary },
                 ]}
               >
@@ -83,23 +107,24 @@ export default function ActivityConstraintsScreen() {
           );
         })}
       </View>
-      <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.sm }]}>
-        Not medical advice. If something hurts, stop and talk to a clinician.
-      </Text>
     </OnboardingScaffold>
   );
 }
 
 const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  segment: { borderRadius: 16, flexDirection: 'row', gap: 4, padding: 4 },
+  segment: {
+    borderRadius: 14,
+    flexDirection: 'row',
+    padding: 4,
+  },
   segmentItem: {
     alignItems: 'center',
+    borderRadius: 10,
+    borderWidth: 1,
     borderColor: 'transparent',
-    borderRadius: 12,
-    borderWidth: 1.5,
     flex: 1,
-    minHeight: 48,
     justifyContent: 'center',
+    minHeight: 44,
   },
 });

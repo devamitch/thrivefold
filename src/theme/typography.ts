@@ -7,7 +7,7 @@ import type { ProductExperience } from './tokens';
  * each weight is its own family because on Android a custom family plus a separate
  * fontWeight can fall back to the system font.
  *
- * - Women's health & LGBTQ+: Fraunces (variable serif) for display/headings — warm,
+ * - Women's health & LGBTQ+: Fraunces (static SemiBold/Medium serif) for display/headings — warm,
  *   editorial — with Geist (shared with BlinkQuest/Neev) for everything you read.
  * - Men's health: Space Mono for headings and labels (calm, technical character) with
  *   Space Grotesk for body text, because long monospaced paragraphs tire the eye.
@@ -15,34 +15,46 @@ import type { ProductExperience } from './tokens';
 interface Faces {
   display: string;
   heading: string;
+  subheading: string;
   regular: string;
   medium: string;
   semibold: string;
   bold: string;
+  mono: string;
+  monoBold: string;
   label: string;
+  stat: string;
   /** Monospaced/serif display faces read larger; nudge tracking per family. */
   displayTracking: number;
 }
 
 const SERIF_FACES: Faces = {
   display: 'Fraunces-Variable',
-  heading: 'Fraunces-Variable',
+  heading: 'Fraunces-Medium',
+  subheading: 'Geist-SemiBold',
   regular: 'Geist-Regular',
   medium: 'Geist-Medium',
   semibold: 'Geist-SemiBold',
   bold: 'Geist-Bold',
+  mono: 'SpaceMono-Regular',
+  monoBold: 'SpaceMono-Bold',
   label: 'Geist-SemiBold',
+  stat: 'Fraunces-SemiBold',
   displayTracking: -0.6,
 };
 
 const MONO_FACES: Faces = {
   display: 'SpaceMono-Bold',
   heading: 'SpaceMono-Bold',
+  subheading: 'SpaceMono-Bold',
   regular: 'SpaceGrotesk-Regular',
   medium: 'SpaceGrotesk-Medium',
   semibold: 'SpaceGrotesk-SemiBold',
   bold: 'SpaceGrotesk-Bold',
+  mono: 'SpaceMono-Regular',
+  monoBold: 'SpaceMono-Bold',
   label: 'SpaceMono-Regular',
+  stat: 'SpaceMono-Bold',
   displayTracking: -1.2,
 };
 
@@ -51,7 +63,7 @@ function build(f: Faces) {
     hero: { fontFamily: f.display, fontSize: 38, lineHeight: 46, letterSpacing: f.displayTracking - 0.4 } as TextStyle,
     display: { fontFamily: f.display, fontSize: 32, lineHeight: 40, letterSpacing: f.displayTracking } as TextStyle,
     heading: { fontFamily: f.heading, fontSize: 24, lineHeight: 31, letterSpacing: f.displayTracking / 2 } as TextStyle,
-    subheading: { fontFamily: f.semibold, fontSize: 18, lineHeight: 24, letterSpacing: -0.2 } as TextStyle,
+    subheading: { fontFamily: f.subheading, fontSize: 18, lineHeight: 24, letterSpacing: -0.2 } as TextStyle,
     body: { fontFamily: f.regular, fontSize: 16, lineHeight: 23, letterSpacing: 0 } as TextStyle,
     bodyBold: { fontFamily: f.semibold, fontSize: 16, lineHeight: 23, letterSpacing: 0 } as TextStyle,
     subbody: { fontFamily: f.regular, fontSize: 14, lineHeight: 20, letterSpacing: 0 } as TextStyle,
@@ -65,6 +77,9 @@ function build(f: Faces) {
       letterSpacing: 0.8,
       textTransform: 'uppercase',
     } as TextStyle,
+    mono: { fontFamily: f.mono, fontSize: 13, lineHeight: 18, letterSpacing: 0 } as TextStyle,
+    monoBold: { fontFamily: f.monoBold, fontSize: 13, lineHeight: 18, letterSpacing: 0 } as TextStyle,
+    stat: { fontFamily: f.stat, fontSize: 28, lineHeight: 34, letterSpacing: f.displayTracking } as TextStyle,
   } as const;
 }
 

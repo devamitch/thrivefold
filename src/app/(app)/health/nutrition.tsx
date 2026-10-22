@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
@@ -7,26 +8,108 @@ import { Header } from '../../../components/ui/Header';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { useTheme } from '../../../theme/useTheme';
+import { useRootStore } from '../../../stores/useRootStore';
+
+interface MealRecommendation {
+  id: string;
+  type: string;
+  title: string;
+  time: string;
+  tags: string[];
+}
+
+const MEALS_BY_DIET: Record<string, MealRecommendation[]> = {
+  Vegetarian: [
+    { id: 'm1', type: 'Breakfast', title: 'High-Protein Chia & Almond Spelt Porridge', time: '08:30 AM', tags: ['Plant Protein', 'High Fiber'] },
+    { id: 'm2', type: 'Lunch', title: 'Warm Lentil & Sweet Potato Dal with Baby Spinach', time: '01:15 PM', tags: ['Iron Rich', 'Polyphenols'] },
+    { id: 'm3', type: 'Dinner', title: 'Grilled Paneer & Roasted Quinoa Bowl with Tahini', time: '07:30 PM', tags: ['Complete Protein', 'Zinc'] },
+    { id: 'm4', type: 'Snack', title: 'Raw Walnuts & Pumpkin Seeds with Chamomile Infusion', time: '04:45 PM', tags: ['Omega-3', 'Calming'] },
+  ],
+  Vegan: [
+    { id: 'm1', type: 'Breakfast', title: 'Sprouted Tofu Scramble with Turmeric & Sourdough', time: '08:30 AM', tags: ['Clean Protein', 'Anti-Inflammatory'] },
+    { id: 'm2', type: 'Lunch', title: 'Edamame, Chickpea & Wild Rice Bowl with Miso Slaw', time: '01:15 PM', tags: ['Complete Amino Chain', 'Micronutrients'] },
+    { id: 'm3', type: 'Dinner', title: 'Lentil & Walnut Bolognese over Gluten-Free Pasta', time: '07:30 PM', tags: ['Sustained Energy', 'High Fiber'] },
+    { id: 'm4', type: 'Snack', title: 'Chia Seed Coconut Yogurt with Fresh Berries', time: '04:45 PM', tags: ['Antioxidants', 'Prebiotics'] },
+  ],
+  Pescatarian: [
+    { id: 'm1', type: 'Breakfast', title: 'Poached Eggs over Avocado & Seeded Rye', time: '08:30 AM', tags: ['Choline', 'Healthy Fats'] },
+    { id: 'm2', type: 'Lunch', title: 'Wild Alaskan Salmon & Roasted Broccolini Bowl', time: '01:15 PM', tags: ['EPA/DHA Omega-3', 'Cellular Repair'] },
+    { id: 'm3', type: 'Dinner', title: 'Mediterranean White Fish with Olive Tapenade & Quinoa', time: '07:30 PM', tags: ['Lean Protein', 'Cardioprotective'] },
+    { id: 'm4', type: 'Snack', title: 'Seaweed Thins & Roasted Pumpkin Seeds', time: '04:45 PM', tags: ['Iodine', 'Magnesium'] },
+  ],
+  'Gluten-free': [
+    { id: 'm1', type: 'Breakfast', title: 'Certified GF Rolled Oats with Blueberries & Hemp Hearts', time: '08:30 AM', tags: ['Gluten-Free', 'High Fiber'] },
+    { id: 'm2', type: 'Lunch', title: 'Grass-Fed Beef or Tempeh Bowl with Roasted Yams', time: '01:15 PM', tags: ['Iron & Zinc', 'Gut Friendly'] },
+    { id: 'm3', type: 'Dinner', title: 'Baked Lemon Herb Salmon with Steamed Asparagus', time: '07:30 PM', tags: ['Omega-3', 'Easy Digest'] },
+    { id: 'm4', type: 'Snack', title: 'Green Apple Slices with Almond Butter', time: '04:45 PM', tags: ['Pectin', 'Steady Glucose'] },
+  ],
+  Halal: [
+    { id: 'm1', type: 'Breakfast', title: 'Organic Boiled Eggs with Cucumbers, Feta & Olives', time: '08:30 AM', tags: ['Wholesome', 'Protein Rich'] },
+    { id: 'm2', type: 'Lunch', title: 'Za\'atar Grilled Chicken Breast with Brown Basmati & Tahini', time: '01:15 PM', tags: ['Lean Protein', 'Complex Carbs'] },
+    { id: 'm3', type: 'Dinner', title: 'Slow-Simmered Lamb & Chickpea Stew with Wilted Greens', time: '07:30 PM', tags: ['Iron Dense', 'Collagen Rich'] },
+    { id: 'm4', type: 'Snack', title: 'Medjool Dates & Roasted Almonds', time: '04:45 PM', tags: ['Natural Glucose', 'Magnesium'] },
+  ],
+  Kosher: [
+    { id: 'm1', type: 'Breakfast', title: 'Smoked Salmon over Sprouted Grains with Dill', time: '08:30 AM', tags: ['Omega-3', 'Brain Fuel'] },
+    { id: 'm2', type: 'Lunch', title: 'Roasted Turkey Breast Salad with Pumpkin Seeds & Citrus', time: '01:15 PM', tags: ['Lean Protein', 'Antioxidants'] },
+    { id: 'm3', type: 'Dinner', title: 'Braised Beef Brisket with Roasted Root Vegetables', time: '07:30 PM', tags: ['Sustained Satiety', 'Micronutrients'] },
+    { id: 'm4', type: 'Snack', title: 'Pomegranate Seeds & Raw Walnuts', time: '04:45 PM', tags: ['Polyphenols', 'Cardiovascular'] },
+  ],
+};
+
+const DEFAULT_MEALS: MealRecommendation[] = [
+  { id: 'm1', type: 'Breakfast', title: 'Warm Steel-Cut Oats with Chia, Walnuts & Blueberries', time: '08:30 AM', tags: ['High Fiber', 'Antioxidants'] },
+  { id: 'm2', type: 'Lunch', title: 'Mediterranean Bowl with Roasted Veggies, Quinoa & Greens', time: '01:15 PM', tags: ['Clean Fuel', 'Micronutrients'] },
+  { id: 'm3', type: 'Dinner', title: 'Wild Salmon or Lentil Power Bowl with Steamed Greens', time: '07:30 PM', tags: ['Omega-3', 'Cellular Repair'] },
+  { id: 'm4', type: 'Snack', title: 'Raw Almonds & Calming Chamomile Infusion', time: '04:45 PM', tags: ['Magnesium', 'Nervous Reset'] },
+];
 
 export default function NutritionScreen() {
+  const router = useRouter();
   const { colors, typography, spacing } = useTheme();
+  const onboarding = useRootStore((s) => s.onboarding);
   const [waterGlasses, setWaterGlasses] = useState(5);
 
-  const meals = [
-    { id: 'm1', type: 'Breakfast', title: 'Warm Steel-Cut Oats with Chia & Blueberries', time: '08:30 AM', tags: ['High Fiber', 'Antioxidants'] },
-    { id: 'm2', type: 'Lunch', title: 'Quinoa Bowl with Roasted Veggies & Tahini', time: '01:15 PM', tags: ['Plant Protein', 'Micronutrients'] },
-    { id: 'm3', type: 'Snack', title: 'Raw Walnuts & Chamomile Infusion', time: '04:45 PM', tags: ['Omega-3', 'Calming'] },
-  ];
+  const activeDiet = onboarding.diet && onboarding.diet !== 'No preference' ? onboarding.diet : null;
+  const meals = activeDiet ? (MEALS_BY_DIET[activeDiet] ?? DEFAULT_MEALS) : DEFAULT_MEALS;
 
   return (
     <ScreenWrapper scrollable>
       <Header title="Nutrition & Hydration" subtitle="Nourishment & Cellular Balance" showBack />
-      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}
+      >
+        {/* Active Dietary Preference Banner */}
+        <Card variant="tinted" style={{ marginBottom: spacing.md, padding: spacing.lg }}>
+          <View style={styles.headerRow}>
+            <View>
+              <Text style={[typography.captionBold, { color: colors.text.muted }]}>DIETARY RHYTHM</Text>
+              <Text style={[typography.heading, { color: colors.primary, marginTop: 2 }]}>
+                {activeDiet ? `${activeDiet} Focus` : 'Balanced Whole Foods'}
+              </Text>
+            </View>
+            <Badge label={activeDiet ? 'Personalized' : 'Flexible'} variant="primary" />
+          </View>
+          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 6 }]}>
+            {activeDiet
+              ? `All daily meal ideas and recipes are tailored to your ${activeDiet} preference selected during onboarding.`
+              : 'Nutrient-dense, balanced macro recommendations to sustain cellular energy and mental clarity.'}
+          </Text>
+          <Button
+            label="Edit Food Preferences"
+            size="sm"
+            variant="outline"
+            onPress={() => router.push('/(onboarding)/lifestyle-preferences')}
+            style={{ marginTop: 12, alignSelf: 'flex-start' }}
+          />
+        </Card>
+
         {/* Hydration Tracker */}
         <Card style={{ marginBottom: spacing.md, padding: spacing.lg }}>
           <View style={styles.headerRow}>
             <View>
-              <Text style={[typography.caption, { color: colors.text.muted }]}>DAILY HYDRATION</Text>
+              <Text style={[typography.captionBold, { color: colors.text.muted }]}>DAILY HYDRATION</Text>
               <Text style={[typography.heading, { color: colors.primary, marginTop: 2 }]}>
                 {waterGlasses * 250} ml / 2000 ml
               </Text>
@@ -65,12 +148,13 @@ export default function NutritionScreen() {
 
         {/* Meal Logs */}
         <View style={styles.headerRow}>
-          <Text style={[typography.subheading, { color: colors.text.primary }]}>Today's Nourishment</Text>
-          <Button label="+ Log Meal" variant="outline" size="sm" />
+          <Text style={[typography.subheading, { color: colors.text.primary }]}>
+            Today's {activeDiet ? `${activeDiet} ` : ''}Nourishment Plan
+          </Text>
         </View>
 
         {meals.map((meal) => (
-          <Card key={meal.id} style={{ marginTop: spacing.sm }}>
+          <Card key={meal.id} style={{ marginTop: spacing.sm, padding: spacing.md }}>
             <View style={styles.headerRow}>
               <Badge label={meal.type} variant="neutral" />
               <Text style={[typography.caption, { color: colors.text.muted }]}>{meal.time}</Text>
@@ -78,7 +162,7 @@ export default function NutritionScreen() {
             <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 8 }]}>
               {meal.title}
             </Text>
-            <View style={styles.tagRow}>
+            <View style={[styles.tagRow, { marginTop: 6 }]}>
               {meal.tags.map((t) => (
                 <Text key={t} style={[typography.caption, { color: colors.primary, marginRight: 8, marginTop: 4 }]}>
                   #{t}
@@ -97,7 +181,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    flex: 1,
+    flexGrow: 1,
   },
   headerRow: {
     flexDirection: 'row',

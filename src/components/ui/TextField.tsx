@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   StyleProp,
   StyleSheet,
+  Text,
   TextInput,
   TextInputProps,
   TextStyle,
@@ -35,18 +36,16 @@ export function TextField({
   return (
     <View style={[styles.container, containerStyle]}>
       {label ? (
-        <TextInput
-          editable={false}
-          value={label}
-          style={[styles.label, typography.caption, { color: colors.text.secondary }]}
-        />
+        <Text style={[styles.label, typography.caption, { color: colors.text.secondary }]}>
+          {label}
+        </Text>
       ) : null}
       <SquircleSurface
         radius={14}
         smoothing={1}
-        fill={colors.surface}
-        stroke={error ? colors.error : isFocused ? colors.primary : colors.border}
-        strokeWidth={isFocused || error ? 1.5 : 1}
+        fill={colors.surface1}
+        stroke={error ? colors.error : isFocused ? colors.primary : undefined}
+        strokeWidth={isFocused || error ? 1 : 0}
         style={styles.surface}
       >
         <View style={styles.inputWrapper}>
@@ -67,11 +66,9 @@ export function TextField({
         </View>
       </SquircleSurface>
       {error ? (
-        <TextInput
-          editable={false}
-          value={error}
-          style={[styles.error, typography.caption, { color: colors.error }]}
-        />
+        <Text style={[styles.error, typography.caption, { color: colors.error }]}>
+          {error}
+        </Text>
       ) : null}
     </View>
   );

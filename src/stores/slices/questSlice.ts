@@ -1,20 +1,39 @@
 import type { StateCreator } from 'zustand';
 
 import type { RootState } from '../rootTypes';
-
+import {
+  calculateDailyPointProgress,
+  calculateLevelFromXp,
+  completeAndVerifyAssignment,
+  generateDailyAssignments,
+  replaceWithSpecialQuest,
+  skipTaskAssignment,
+} from '../../domain/game/questEngine';
+import {
+  getSpecialQuestsForExperience,
+  getTaskById,
+  getTasksForExperience,
+} from '../../domain/game/gameCatalogService';
+import type {
+  EvidenceSubmission,
+  TaskAssignment,
+  VerificationResult,
+} from '../../domain/game/types';
 
 export interface Quest {
   id: string;
   title: string;
   description: string;
-  category: 'movement' | 'breathing' | 'mindfulness' | 'hydration' | 'rest' | 'nutrition';
+  category: string;
   durationMinutes: number;
   xpReward: number;
   coinsReward: number;
   isCompleted: boolean;
   completedAt?: string;
   difficulty: 'gentle' | 'standard' | 'advanced';
-  phaseRelevance?: string[]; // Which cycle phases this is best for
+  phaseRelevance?: string[];
+  status?: string;
+  taskPoints?: number;
 }
 
 export interface QuestSlice {
@@ -25,6 +44,10 @@ export interface QuestSlice {
   questsCompleted: number;
   achievements: string[];
   todayQuests: Quest[];
+  dailyAssignments: TaskAssignment[];
+  dailyPoints: number;
+  dailyPointsTarget: number;
+  dailyGoalReached: boolean;
   completeQuest: (questId: string) => void;
   addXP: (amount: number) => void;
   addCoins: (amount: number) => void;
@@ -32,165 +55,273 @@ export interface QuestSlice {
   resetStreak: () => void;
   unlockAchievement: (achievementId: string) => void;
   refreshDailyQuests: () => void;
+  skipDailyTask: (assignmentId: string, reason?: string) => void;
+  joinSpecialQuest: (skippedAssignmentId: string, specialQuestId: string) => void;
+  verifyAndCompleteTask: (
+    assignmentId: string,
+    submission: EvidenceSubmission,
+  ) => VerificationResult;
 }
 
-// XP thresholds for levels
 export const xpForLevel = (level: number): number => {
-  return 100 + (level - 1) * 50;
+  return Math.floor(100 * Math.pow(level, 1.25));
 };
-
-// Progress starts at zero and only grows from things the person actually does.
 
 export const createQuestSlice: StateCreator<
   RootState,
   [['zustand/persist', unknown]],
   [],
   QuestSlice
-> = (set, get) => ({
-  xp: 0,
-  level: 1,
-  coins: 0,
-  streak: 0,
-  questsCompleted: 0,
-  achievements: [],
-  todayQuests: [
-    {
-      id: 'quest_01',
-      title: '5-Minute Morning Mobility Sequence',
-      description: 'Gentle stretching to start your day with mindful movement',
-      category: 'movement',
-      durationMinutes: 5,
-      xpReward: 30,
-      coinsReward: 10,
-      isCompleted: false,
-      difficulty: 'gentle',
-      phaseRelevance: ['menstrual', 'follicular', 'ovulation', 'luteal'],
-    },
-    {
-      id: 'quest_02',
-      title: 'Midday Parasympathetic Box Breathing',
-      description: '4-4-4-4 breathing pattern to reset your nervous system',
-      category: 'breathing',
-      durationMinutes: 4,
-      xpReward: 25,
-      coinsReward: 8,
-      isCompleted: false,
-      difficulty: 'standard',
-      phaseRelevance: ['menstrual', 'luteal'],
-    },
-    {
-      id: 'quest_03',
-      title: 'Hydration Anchor: 500ml Water with Electrolytes',
-      description: 'Mid-morning hydration to support hormone balance',
-      category: 'hydration',
-      durationMinutes: 1,
-      xpReward: 15,
-      coinsReward: 5,
-      isCompleted: false,
-      difficulty: 'gentle',
-      phaseRelevance: ['menstrual', 'follicular', 'ovulation', 'luteal'],
-    },
-    {
-      id: 'quest_04',
-      title: 'Quiet Reflection: Log One Gratitude Point',
-      description: 'Write down one thing you are grateful for today',
-      category: 'mindfulness',
-      durationMinutes: 3,
-      xpReward: 20,
-      coinsReward: 7,
-      isCompleted: false,
-      difficulty: 'gentle',
-      phaseRelevance: ['menstrual', 'luteal'],
-    },
-    {
-      id: 'quest_05',
-      title: 'Evening Magnesium-Rich Snack',
-      description: 'Dark chocolate or nuts to support PMS relief',
-      category: 'nutrition',
-      durationMinutes: 2,
-      xpReward: 20,
-      coinsReward: 7,
-      isCompleted: false,
-      difficulty: 'gentle',
-      phaseRelevance: ['luteal'],
-    },
-  ],
+> = (set, get) => {
+  const todayStr = new Date().toISOString().split('T')[0];
+  const initialAssignments = generateDailyAssignments('men_health', todayStr);
 
-  completeQuest: (questId) =>
-    set((state) => {
-      const quest = state.todayQuests.find((q) => q.id === questId);
-      if (!quest || quest.isCompleted) return state;
+  const initialQuests: Quest[] = initialAssignments.map((asg) => {
+    const def = getTaskById(asg.taskId);
+    return {
+      id: asg.assignmentId,
+      title: def?.title ?? 'Daily Wellness Anchor',
+      description: def?.shortDescription ?? 'Complete mindful practice',
+      category: def?.category ?? 'movement',
+      durationMinutes: def?.estimatedDurationMinutes ?? 5,
+      xpReward: def?.points.xp ?? 25,
+      coinsReward: def?.points.coins ?? 10,
+      isCompleted: false,
+      difficulty: (def?.difficulty as 'gentle' | 'standard' | 'advanced') ?? 'standard',
+      status: 'assigned',
+      taskPoints: def?.points.taskPoints ?? 15,
+    };
+  });
 
-      const newXp = state.xp + quest.xpReward;
-      const newCoins = state.coins + quest.coinsReward;
-      const newLevel = Math.floor(newXp / 100) + 1;
+  return {
+    xp: 0,
+    level: 1,
+    coins: 0,
+    streak: 0,
+    questsCompleted: 0,
+    achievements: [],
+    todayQuests: initialQuests,
+    dailyAssignments: initialAssignments,
+    dailyPoints: 0,
+    dailyPointsTarget: 40,
+    dailyGoalReached: false,
 
-      return {
-        todayQuests: state.todayQuests.map((q) =>
-          q.id === questId ? { ...q, isCompleted: true, completedAt: new Date().toISOString() } : q
-        ),
-        xp: newXp,
-        coins: newCoins,
-        level: newLevel,
-        questsCompleted: state.questsCompleted + 1,
+    completeQuest: (questId) => {
+      const state = get();
+      const assignment = state.dailyAssignments.find(
+        (a) => a.assignmentId === questId || a.taskId === questId,
+      );
+
+      if (assignment) {
+        const taskDef = getTaskById(assignment.taskId);
+        if (taskDef) {
+          state.verifyAndCompleteTask(assignment.assignmentId, {
+            assignmentId: assignment.assignmentId,
+            elapsedSeconds: taskDef.estimatedDurationMinutes * 60,
+            notes: 'Completed in session',
+            selfDeclaredHonest: true,
+          });
+          return;
+        }
+      }
+
+      // Legacy fallback
+      set((s) => {
+        const q = s.todayQuests.find((item) => item.id === questId);
+        if (!q || q.isCompleted) return s;
+
+        const newXp = s.xp + q.xpReward;
+        const newCoins = s.coins + q.coinsReward;
+        const newLevel = calculateLevelFromXp(newXp);
+        const newPoints = s.dailyPoints + (q.taskPoints ?? 15);
+        const goalReached = newPoints >= s.dailyPointsTarget;
+
+        return {
+          todayQuests: s.todayQuests.map((item) =>
+            item.id === questId
+              ? { ...item, isCompleted: true, completedAt: new Date().toISOString() }
+              : item,
+          ),
+          xp: newXp,
+          coins: newCoins,
+          level: newLevel,
+          dailyPoints: newPoints,
+          dailyGoalReached: goalReached,
+          questsCompleted: s.questsCompleted + 1,
+          streak: goalReached && !s.dailyGoalReached ? s.streak + 1 : s.streak,
+        };
+      });
+    },
+
+    skipDailyTask: (assignmentId, reason) => {
+      set((s) => {
+        const updatedAssignments = skipTaskAssignment(s.dailyAssignments, assignmentId, reason);
+        const updatedQuests = s.todayQuests.map((q) =>
+          q.id === assignmentId ? { ...q, status: 'skipped' } : q,
+        );
+        return {
+          dailyAssignments: updatedAssignments,
+          todayQuests: updatedQuests,
+        };
+      });
+    },
+
+    joinSpecialQuest: (skippedAssignmentId, specialQuestId) => {
+      const state = get();
+      const specialQuests = getSpecialQuestsForExperience(state.experience);
+      const specialQuest = specialQuests.find((sq) => sq.id === specialQuestId);
+      if (!specialQuest) return;
+
+      const today = new Date().toISOString().split('T')[0];
+      const updatedAssignments = replaceWithSpecialQuest(
+        state.dailyAssignments,
+        skippedAssignmentId,
+        specialQuest,
+        today,
+      );
+
+      const newQuestItem: Quest = {
+        id: updatedAssignments[updatedAssignments.length - 1].assignmentId,
+        title: specialQuest.title,
+        description: specialQuest.shortDescription,
+        category: specialQuest.category,
+        durationMinutes: specialQuest.estimatedDurationMinutes,
+        xpReward: specialQuest.points.xp,
+        coinsReward: specialQuest.points.coins,
+        isCompleted: false,
+        difficulty: (specialQuest.difficulty as 'gentle' | 'standard' | 'advanced') ?? 'standard',
+        status: 'assigned',
+        taskPoints: specialQuest.points.taskPoints,
       };
-    }),
 
-  addXP: (amount) =>
-    set((state) => {
-      const newXp = state.xp + amount;
-      const newLevel = Math.floor(newXp / 100) + 1;
-      return { xp: newXp, level: newLevel };
-    }),
+      set({
+        dailyAssignments: updatedAssignments,
+        todayQuests: [
+          ...state.todayQuests.map((q) =>
+            q.id === skippedAssignmentId ? { ...q, status: 'replaced' } : q,
+          ),
+          newQuestItem,
+        ],
+      });
+    },
 
-  addCoins: (amount) => set((state) => ({ coins: state.coins + amount })),
+    verifyAndCompleteTask: (assignmentId, submission) => {
+      const state = get();
+      let assignment = state.dailyAssignments.find(
+        (a) => a.assignmentId === assignmentId || a.taskId === assignmentId,
+      );
+      if (!assignment) {
+        const fallbackTask =
+          getTaskById(assignmentId) ?? getTasksForExperience(state.experience)[0];
+        assignment = {
+          assignmentId,
+          taskId: fallbackTask.id,
+          assignedDate: new Date().toISOString().split('T')[0],
+          status: 'assigned',
+          isSpecialQuestReplacement: false,
+          earnedTaskPoints: 0,
+          earnedXp: 0,
+          earnedCoins: 0,
+        };
+        set({ dailyAssignments: [...state.dailyAssignments, assignment] });
+      }
 
-  incrementStreak: () => set((state) => ({ streak: state.streak + 1 })),
+      const taskDef =
+        getTaskById(assignment.taskId) ??
+        getTaskById(assignmentId) ??
+        getTasksForExperience(state.experience)[0];
 
-  resetStreak: () => set({ streak: 0 }),
+      const { updatedAssignments, result } = completeAndVerifyAssignment(
+        state.dailyAssignments,
+        assignmentId,
+        taskDef,
+        submission,
+      );
 
-  unlockAchievement: (achievementId) =>
-    set((state) => {
-      if (state.achievements.includes(achievementId)) return state;
-      return { achievements: [...state.achievements, achievementId] };
-    }),
+      if (result.success) {
+        const pointStatus = calculateDailyPointProgress(
+          updatedAssignments,
+          state.dailyPointsTarget,
+        );
+        const newXp = state.xp + result.earnedXp;
+        const newCoins = state.coins + result.earnedCoins;
+        const newLevel = calculateLevelFromXp(newXp);
+        const newlyReachedGoal = pointStatus.goalReached && !state.dailyGoalReached;
 
-  refreshDailyQuests: () =>
-    set(() => ({
-      todayQuests: [
-        {
-          id: `quest_${Date.now()}_1`,
-          title: 'Morning Body Scan',
-          description: 'Take 2 minutes to scan your body from head to toe',
-          category: 'mindfulness',
-          durationMinutes: 2,
-          xpReward: 20,
-          coinsReward: 7,
+        set({
+          dailyAssignments: updatedAssignments,
+          todayQuests: state.todayQuests.map((q) =>
+            q.id === assignmentId
+              ? {
+                  ...q,
+                  isCompleted: true,
+                  completedAt: result.verifiedAt,
+                  status: result.status,
+                }
+              : q,
+          ),
+          xp: newXp,
+          coins: newCoins,
+          level: newLevel,
+          dailyPoints: pointStatus.dailyPoints,
+          dailyGoalReached: pointStatus.goalReached,
+          questsCompleted: state.questsCompleted + 1,
+          streak: newlyReachedGoal ? state.streak + 1 : state.streak,
+        });
+      }
+
+      return result;
+    },
+
+    addXP: (amount) =>
+      set((state) => {
+        const newXp = state.xp + amount;
+        const newLevel = calculateLevelFromXp(newXp);
+        return { xp: newXp, level: newLevel };
+      }),
+
+    addCoins: (amount) => set((state) => ({ coins: state.coins + amount })),
+
+    incrementStreak: () => set((state) => ({ streak: state.streak + 1 })),
+
+    resetStreak: () => set({ streak: 0 }),
+
+    unlockAchievement: (achievementId) =>
+      set((state) => {
+        if (state.achievements.includes(achievementId)) return state;
+        return { achievements: [...state.achievements, achievementId] };
+      }),
+
+    refreshDailyQuests: () => {
+      const state = get();
+      const today = new Date().toISOString().split('T')[0];
+      const newAssignments = generateDailyAssignments(state.experience, today);
+
+      const newQuests: Quest[] = newAssignments.map((asg) => {
+        const def = getTaskById(asg.taskId);
+        return {
+          id: asg.assignmentId,
+          title: def?.title ?? 'Daily Wellness Anchor',
+          description: def?.shortDescription ?? 'Complete mindful practice',
+          category: def?.category ?? 'movement',
+          durationMinutes: def?.estimatedDurationMinutes ?? 5,
+          xpReward: def?.points.xp ?? 25,
+          coinsReward: def?.points.coins ?? 10,
           isCompleted: false,
-          difficulty: 'gentle',
-        },
-        {
-          id: `quest_${Date.now()}_2`,
-          title: '20-Minute Walk',
-          description: 'Get outside for a gentle walk',
-          category: 'movement',
-          durationMinutes: 20,
-          xpReward: 40,
-          coinsReward: 15,
-          isCompleted: false,
-          difficulty: 'standard',
-        },
-        {
-          id: `quest_${Date.now()}_3`,
-          title: '4-7-8 Breathing',
-          description: '4 seconds in, 7 hold, 8 out - repeat 4 times',
-          category: 'breathing',
-          durationMinutes: 3,
-          xpReward: 25,
-          coinsReward: 8,
-          isCompleted: false,
-          difficulty: 'standard',
-        },
-      ],
-    })),
-});
+          difficulty: (def?.difficulty as 'gentle' | 'standard' | 'advanced') ?? 'standard',
+          status: 'assigned',
+          taskPoints: def?.points.taskPoints ?? 15,
+        };
+      });
+
+      const pointStatus = calculateDailyPointProgress(newAssignments, state.dailyPointsTarget);
+
+      set({
+        dailyAssignments: newAssignments,
+        todayQuests: newQuests,
+        dailyPoints: pointStatus.dailyPoints,
+        dailyGoalReached: pointStatus.goalReached,
+      });
+    },
+  };
+};

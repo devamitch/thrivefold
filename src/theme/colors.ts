@@ -83,127 +83,127 @@ function palette(r: Recipe): ThemeColors {
     surface1,
     surface2,
     surface3,
-    surfaceGlass: alpha(surface, 0.92),
+    surfaceGlass: alpha(surface, 0.94),
     text: { primary: inkPrimary, secondary: inkSecondary, muted: inkMuted, inverse: dark ? background : '#FFFFFF' },
     primary: r.primary,
     onPrimary: r.onPrimary,
-    primaryAlpha: alpha(r.primary, dark ? 0.2 : 0.1),
+    primaryAlpha: alpha(r.primary, dark ? 0.18 : 0.1),
     primaryGradient: r.gradient,
     accent: r.accent,
     accentText: r.accentText,
-    border: alpha(inkPrimary, dark ? 0.1 : 0.08),
-    borderStrong: alpha(inkPrimary, dark ? 0.18 : 0.15),
+    border: 'transparent',
+    borderStrong: alpha(inkPrimary, dark ? 0.08 : 0.05),
     ...r.status,
     successSurface: alpha(r.status.success, dark ? 0.18 : 0.1),
     warningSurface: alpha(r.status.warning, dark ? 0.18 : 0.1),
     infoSurface: alpha(r.status.info, dark ? 0.18 : 0.1),
     errorSurface: alpha(r.status.error, dark ? 0.18 : 0.1),
-    scrim: dark ? 'rgba(0, 0, 0, 0.6)' : alpha(inkPrimary, 0.4),
+    scrim: dark ? 'rgba(0, 0, 0, 0.65)' : alpha(inkPrimary, 0.35),
     brandAccent: r.accent,
     badgeBg: alpha(r.primary, dark ? 0.2 : 0.1),
     badgeText: dark ? r.primary : r.primary,
     dock: r.dock,
     dockActive: r.dockActive,
-    dockMuted: dark ? '#8C847D' : '#A39B94',
+    dockMuted: dark ? '#7A7570' : '#948D86',
   };
 }
 
-const LIGHT_STATUS = { success: '#43704F', warning: '#8C6114', info: '#4A6F8C', error: '#B0503F' };
-const DARK_STATUS = { success: '#86B596', warning: '#D9AE62', info: '#8AAAC4', error: '#E08F80' };
+const LIGHT_STATUS = { success: '#3B7349', warning: '#9E6A17', info: '#3E6F94', error: '#B84535' };
+const DARK_STATUS = { success: '#7DB58E', warning: '#DEB05C', info: '#7EA6CC', error: '#E37F71' };
 
-/** Women's health — clay and sage. */
+/** Women's health — serene warm porcelain ivory, terracotta clay and sage. */
 export const womenLightColors = palette({
   experience: 'women_health',
   scheme: 'light',
-  canvas: ['#F7F3EE', '#FFFDFA', '#F0EAE3', '#E7DED5', '#DCD0C4'],
-  ink: ['#2B2420', '#5E544E', '#6F655E'],
-  primary: '#A0583F',
+  canvas: ['#FAF8F5', '#FFFFFF', '#F4EFEA', '#EAE2DA', '#DFD5CB'],
+  ink: ['#1C1917', '#57524E', '#857D76'],
+  primary: '#B85D3E',
   onPrimary: '#FFFFFF',
-  accent: '#5C7A66',
-  accentText: '#4A6654',
-  gradient: ['#B86A4F', '#A0583F'],
+  accent: '#5E826D',
+  accentText: '#486956',
+  gradient: ['#C76A4B', '#B85D3E'],
   status: LIGHT_STATUS,
-  dock: '#2A2420',
-  dockActive: '#E4A98F',
+  dock: '#1A1614',
+  dockActive: '#E28A6D',
 });
 
 export const womenDarkColors = palette({
   experience: 'women_health',
   scheme: 'dark',
-  canvas: ['#171412', '#201C19', '#2A2521', '#332D29', '#3E3732'],
-  ink: ['#F1EAE3', '#C2B6AC', '#8E847C'],
-  primary: '#DA9B82',
-  onPrimary: '#1F1714',
-  accent: '#93B39D',
-  accentText: '#A9C7B2',
-  gradient: ['#E3AC95', '#DA9B82'],
+  canvas: ['#13100E', '#1C1816', '#27221F', '#332C28', '#403833'],
+  ink: ['#F7F4F0', '#C6BEB5', '#8A8177'],
+  primary: '#E28A6D',
+  onPrimary: '#17110E',
+  accent: '#8EB9A0',
+  accentText: '#A6CDB5',
+  gradient: ['#ECA085', '#E28A6D'],
   status: DARK_STATUS,
-  dock: '#25211E',
-  dockActive: '#E4A98F',
+  dock: '#13100E',
+  dockActive: '#E28A6D',
 });
 
-/** Men's health — slate teal and sand. */
+/** Men's health — frosted titanium slate, architectural deep spruce teal and forged amber bronze. */
 export const menLightColors = palette({
   experience: 'men_health',
   scheme: 'light',
-  canvas: ['#F2F4F3', '#FCFDFC', '#E8ECEB', '#DDE3E2', '#D0D8D7'],
-  ink: ['#1D2729', '#4C5A5D', '#5F6C6B'],
-  primary: '#2E5C62',
+  canvas: ['#F3F6F8', '#FFFFFF', '#E7EDF0', '#D9E2E6', '#C9D5DB'],
+  ink: ['#0F181A', '#3C4D51', '#6B7C80'],
+  primary: '#1B5760',
   onPrimary: '#FFFFFF',
-  accent: '#9C7A4B',
-  accentText: '#7E6138',
-  gradient: ['#3A6F76', '#2E5C62'],
+  accent: '#C47D33',
+  accentText: '#15454D',
+  gradient: ['#246B75', '#1B5760'],
   status: LIGHT_STATUS,
-  dock: '#1C2527',
-  dockActive: '#8FC3C0',
+  dock: '#0D1618',
+  dockActive: '#42B0A9',
 });
 
 export const menDarkColors = palette({
   experience: 'men_health',
   scheme: 'dark',
-  canvas: ['#111618', '#182023', '#20292C', '#283235', '#313C3F'],
-  ink: ['#E8EEEE', '#AEBBBC', '#7C8A8B'],
-  primary: '#7DB5B2',
-  onPrimary: '#0F1A1B',
-  accent: '#D1AE7A',
-  accentText: '#DEC193',
-  gradient: ['#8FC3C0', '#7DB5B2'],
+  canvas: ['#0B1113', '#121C1F', '#1A2529', '#233237', '#2E3F45'],
+  ink: ['#EEF4F5', '#A2B5B8', '#66787B'],
+  primary: '#4CBAB3',
+  onPrimary: '#071517',
+  accent: '#E8A24B',
+  accentText: '#4CBAB3',
+  gradient: ['#5FC4BD', '#4CBAB3'],
   status: DARK_STATUS,
-  dock: '#1A2224',
-  dockActive: '#8FC3C0',
+  dock: '#080E10',
+  dockActive: '#4CBAB3',
 });
 
-/** LGBTQ+ wellbeing — deep gold and plum; the rainbow is an accent, never a wash. */
-const QUIET_RAINBOW = ['#C27C83', '#CFA25A', '#7FA58A', '#6E91B0', '#9283B2'] as const;
+/** LGBTQ+ wellbeing — lavender porcelain, royal amethyst, and glowing rose quartz. */
+const QUIET_RAINBOW = ['#C86678', '#D49E48', '#68A882', '#5A8EB8', '#8E6CB8'] as const;
 
 export const prideLightColors = palette({
   experience: 'pride_wellbeing',
   scheme: 'light',
-  canvas: ['#F6F4F1', '#FEFDFB', '#EEEAE4', '#E4DED6', '#D8D1C8'],
-  ink: ['#262229', '#57505D', '#726A78'],
-  primary: '#7E5C1E',
+  canvas: ['#F7F5FA', '#FFFFFF', '#EFEAF5', '#E2D8EC', '#D4C7DF'],
+  ink: ['#181222', '#4C415D', '#776B8B'],
+  primary: '#7348B8',
   onPrimary: '#FFFFFF',
-  accent: '#6C5A8C',
-  accentText: '#5A4878',
+  accent: '#B84776',
+  accentText: '#5C3797',
   gradient: QUIET_RAINBOW,
   status: LIGHT_STATUS,
-  dock: '#26222A',
-  dockActive: '#E2C17A',
+  dock: '#140E1E',
+  dockActive: '#B682F2',
 });
 
 export const prideDarkColors = palette({
   experience: 'pride_wellbeing',
   scheme: 'dark',
-  canvas: ['#151318', '#1D1A21', '#26222B', '#2F2A35', '#3A3440'],
-  ink: ['#F2EFF5', '#BCB3C6', '#867D90'],
-  primary: '#DDB867',
-  onPrimary: '#1D1810',
-  accent: '#AE9BD0',
-  accentText: '#C2B3DD',
+  canvas: ['#0E0B16', '#171224', '#211A31', '#2C233F', '#392E50'],
+  ink: ['#F6F2FA', '#B7AACC', '#75688A'],
+  primary: '#B682F2',
+  onPrimary: '#100520',
+  accent: '#F07AA6',
+  accentText: '#B682F2',
   gradient: QUIET_RAINBOW,
   status: DARK_STATUS,
-  dock: '#211D25',
-  dockActive: '#E2C17A',
+  dock: '#0A0711',
+  dockActive: '#B682F2',
 });
 
 export function getThemeColors(experience: ProductExperience, scheme: ColorScheme): ThemeColors {

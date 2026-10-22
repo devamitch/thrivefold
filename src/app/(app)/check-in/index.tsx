@@ -10,9 +10,57 @@ import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
 
+import { ProductExperience } from '../../../theme/tokens';
+
+const SYMPTOMS_BY_EXPERIENCE: Record<ProductExperience, string[]> = {
+  women_health: [
+    'Cramps',
+    'Bloating',
+    'Headache',
+    'Fatigue',
+    'Breast Tenderness',
+    'Acne',
+    'Back Pain',
+    'Nausea',
+    'High Energy',
+    'Clear Skin',
+    'Calm Mood',
+    'Social',
+  ],
+  men_health: [
+    'Muscle Soreness',
+    'Lower Back Strain',
+    'Desk Posture',
+    'High Focus',
+    'Fatigue',
+    'Joint Stiffness',
+    'Peak Energy',
+    'Headache',
+    'Calm Mood',
+    'Restless',
+    'Rest Day Needed',
+    'Social',
+  ],
+  pride_wellbeing: [
+    'Tension / Stress',
+    'Headache',
+    'Fatigue',
+    'Chest / Posture Strain',
+    'High Energy',
+    'Calm Mood',
+    'Rest Day Needed',
+    'Mental Clarity',
+    'Body Ease',
+    'Social',
+    'Bloating',
+    'Lower Back Pain',
+  ],
+};
+
 export default function CheckInScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
+  const experience = useRootStore((s) => s.experience);
   const {
     todayEnergy,
     todayMood,
@@ -33,20 +81,7 @@ export default function CheckInScreen() {
   const [stress, setStress] = useState(todayStress ?? 5);
   const [sleep, setSleep] = useState(todaySleepHours ?? 7);
 
-  const symptomsList = [
-    'Cramps',
-    'Bloating',
-    'Headache',
-    'Fatigue',
-    'Breast Tenderness',
-    'Acne',
-    'Back Pain',
-    'Nausea',
-    'High Energy',
-    'Clear Skin',
-    'Calm Mood',
-    'Social',
-  ];
+  const symptomsList = SYMPTOMS_BY_EXPERIENCE[experience] ?? SYMPTOMS_BY_EXPERIENCE.men_health;
 
   const handleSave = () => {
     try {
@@ -79,7 +114,7 @@ export default function CheckInScreen() {
             style={[
               styles.sliderPoint,
               {
-                backgroundColor: i <= value ? color : colors.border,
+                backgroundColor: i <= value ? color : colors.surface1,
                 flex: 1,
                 marginHorizontal: 1,
               },
@@ -224,5 +259,6 @@ const styles = StyleSheet.create({
   chipsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    gap: 8,
   },
 });

@@ -9,14 +9,9 @@ import { Badge } from '../../../components/ui/Badge';
 import { Header } from '../../../components/ui/Header';
 import { useTheme } from '../../../theme/useTheme';
 import { useRootStore } from '../../../stores/useRootStore';
-import { ProductExperience } from '../../../theme/tokens';
-
-import { Icon, IconName } from '../../../components/ui/Icon';
-
 export default function SettingsScreen() {
   const router = useRouter();
   const { colors, typography, spacing, experience, isDark } = useTheme();
-  const setExperience = useRootStore((s) => s.setExperience);
   const themeMode = useRootStore((s) => s.themeMode);
   const setThemeMode = useRootStore((s) => s.setThemeMode);
   const user = useRootStore((s) => s.user);
@@ -48,23 +43,14 @@ export default function SettingsScreen() {
         router.replace('/');
       },
     },
-    ...(__DEV__
-      ? [
-          {
-            icon: 'construct-outline' as const,
-            title: 'Developer tools',
-            body: 'Clear storage, switch theme, reset flows',
-            onPress: () => router.push('/(app)/dev'),
-          },
-        ]
-      : []),
+    {
+      icon: 'construct-outline' as const,
+      title: 'Developer Menu & Tools',
+      body: 'Clear storage, delete users, switch themes, mock data',
+      onPress: () => router.push('/(app)/dev'),
+    },
   ];
 
-  const experiences: { id: ProductExperience; label: string; icon: IconName }[] = [
-    { id: 'women_health', label: "Women's Health", icon: 'heart' },
-    { id: 'men_health', label: "Men's Health", icon: 'bolt' },
-    { id: 'pride_wellbeing', label: 'Pride & LGBTQ+', icon: 'sun' },
-  ];
 
   // Hands the full JSON copy of this device's Thrivefold data to the system share sheet
   // (save to Files, send to yourself, etc.).
@@ -113,38 +99,6 @@ export default function SettingsScreen() {
           </View>
         </Card>
 
-        {/* Experience Switcher */}
-        <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: spacing.sm }]}>
-          Active Product Experience
-        </Text>
-        <View style={{ marginBottom: spacing.md }}>
-          {experiences.map((exp) => {
-            const isSelected = experience === exp.id;
-            return (
-              <Card
-                key={exp.id}
-                onPress={() => setExperience(exp.id)}
-                variant={isSelected ? 'tinted' : 'surface'}
-                style={[
-                  styles.optionCard,
-                  {
-                    marginBottom: 8,
-                  },
-                ]}
-              >
-                <View style={styles.rowBetween}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    <Icon name={exp.icon} size={20} color={isSelected ? colors.primary : colors.text.secondary} />
-                    <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                      {exp.label}
-                    </Text>
-                  </View>
-                  {isSelected && <Badge label="Active" variant="primary" />}
-                </View>
-              </Card>
-            );
-          })}
-        </View>
 
         {/* Theme Settings */}
         <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: spacing.sm }]}>
@@ -238,7 +192,7 @@ export default function SettingsScreen() {
           </Card>
         ))}
 
-        <Card onPress={handleDeleteAccount} style={{ marginTop: spacing.md, borderColor: colors.error }}>
+        <Card onPress={handleDeleteAccount} variant="surface1" style={{ marginTop: spacing.md }}>
           <View style={styles.rowBetween}>
             <Text style={[typography.bodyBold, { color: colors.error }]}>
               Erase Data & Reset Account

@@ -14,6 +14,7 @@ export const ONBOARDING_STEPS = [
   'privacy-choices',
   'goals',
   'activity-constraints',
+  'lifestyle-preferences',
 ] as const;
 export type OnboardingStep = (typeof ONBOARDING_STEPS)[number];
 
@@ -80,7 +81,7 @@ export function OnboardingScaffold({
               key={s}
               style={[
                 styles.progressDot,
-                { backgroundColor: i <= index ? colors.primary : colors.border },
+                { backgroundColor: i <= index ? colors.primary : colors.surface1 },
               ]}
             />
           ))}
@@ -127,7 +128,6 @@ export function OnboardingScaffold({
           {
             paddingHorizontal: spacing.base,
             paddingBottom: Math.max(insets.bottom, 12) + 8,
-            borderTopColor: colors.border,
             backgroundColor: colors.background,
           },
         ]}
@@ -140,9 +140,9 @@ export function OnboardingScaffold({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  footer: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 12 },
+  footer: { borderTopWidth: 0, paddingTop: 14 },
   progress: { flex: 1, flexDirection: 'row', gap: 6, justifyContent: 'center' },
-  progressDot: { borderRadius: 2, height: 4, maxWidth: 44, flex: 1 },
+  progressDot: { borderRadius: 2, height: 4, maxWidth: 36, flex: 1 },
   root: { flex: 1 },
   skip: { alignItems: 'flex-end' },
   subtitle: { marginBottom: 24, marginTop: 8 },

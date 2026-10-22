@@ -87,7 +87,12 @@ export const Card: React.FC<CardProps> = ({
 const styles = StyleSheet.create({
   base: {
     elevation: 0,
+    shadowColor: 'transparent',
     shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
+    borderWidth: 0,
+    borderColor: 'transparent',
     overflow: 'hidden',
   },
 });

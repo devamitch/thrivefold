@@ -37,20 +37,12 @@ import {
 
 export { hideTabBar, showTabBar, tabBarScrollProgress, useScrollAwareTabBar }
 
+import { getExperienceIcons } from "../../theme/icons"
+
 type BottomTabBarProps = Parameters<NonNullable<ComponentProps<typeof Tabs>["tabBar"]>>[0]
 
-type TabMeta = {
-  activeIcon: keyof typeof Ionicons.glyphMap
-  inactiveIcon: keyof typeof Ionicons.glyphMap
-  label: string
-}
+const DEFAULT_ROUTES = ["index", "today", "progress", "settings"]
 
-const TAB_META: Record<string, TabMeta> = {
-  index: { activeIcon: "home", inactiveIcon: "home-outline", label: "Home" },
-  today: { activeIcon: "today", inactiveIcon: "today-outline", label: "Today" },
-  progress: { activeIcon: "trending-up", inactiveIcon: "trending-up-outline", label: "Progress" },
-  settings: { activeIcon: "person-circle", inactiveIcon: "person-circle-outline", label: "You" },
-}
 
 /* ── Dock geometry (colours come from the active theme: colors.dock*) ── */
 
@@ -160,6 +152,7 @@ interface TabButtonProps {
   focused: boolean
   activeColor: string
   mutedColor: string
+  fontFamily?: string
   onTabPress: (key: string, name: string, focused: boolean) => void
 }
 
@@ -172,6 +165,7 @@ const TabButton = memo(function TabButton({
   focused,
   activeColor,
   mutedColor,
+  fontFamily,
   onTabPress,
 }: TabButtonProps) {
   const reduceMotion = useReducedMotion()
@@ -207,7 +201,7 @@ const TabButton = memo(function TabButton({
       <Animated.View style={[styles.iconWrap, iconStyle]}>
         <Ionicons name={iconName} size={ICON_SIZE} color={iconColor} />
       </Animated.View>
-      <Animated.Text style={[styles.label, labelStyle]} numberOfLines={1}>
+      <Animated.Text style={[styles.label, labelStyle, fontFamily ? { fontFamily } : null]} numberOfLines={1}>
         {label}
       </Animated.Text>
     </PressableScale>
@@ -216,7 +210,8 @@ const TabButton = memo(function TabButton({
 
 /* ── Main CustomTabBar Component ───────────────────────────────── */
 export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
-  const { colors } = useTheme()
+  const { colors, typography, experience } = useTheme()
+  const experienceIcons = useMemo(() => getExperienceIcons(experience), [experience])
   const insets = useSafeAreaInsets()
   const reduceMotion = useReducedMotion()
   const { width } = useWindowDimensions()
@@ -233,7 +228,7 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
   const rimPath = useMemo(() => buildRimPath(barW), [barW])
 
   const routes = useMemo(
-    () => state.routes.filter((route) => TAB_META[route.name]),
+    () => state.routes.filter((route) => DEFAULT_ROUTES.includes(route.name)),
     [state.routes],
   )
 
@@ -277,19 +272,20 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
   }, [])
 
   const renderTab = (route: (typeof routes)[number], index: number) => {
-    const meta = TAB_META[route.name]
+    const meta = experienceIcons.tabs[route.name as keyof typeof experienceIcons.tabs]
     if (!meta) return null
     return (
       <TabButton
         key={route.key}
         routeKey={route.key}
         routeName={route.name}
-        activeIcon={meta.activeIcon}
-        inactiveIcon={meta.inactiveIcon}
+        activeIcon={meta.active}
+        inactiveIcon={meta.inactive}
         label={meta.label}
         focused={activeIndex === index}
         activeColor={colors.dockActive}
         mutedColor={colors.dockMuted}
+        fontFamily={typography.label.fontFamily}
         onTabPress={onTabPress}
       />
     )
@@ -341,11 +337,17 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
             style={styles.orbButton}
           >
             <View style={[styles.centerOrb, { backgroundColor: colors.dockActive }]}>
-              <Ionicons name="leaf" size={26} color={colors.dock} />
+              <Ionicons name={experienceIcons.orb.icon} size={26} color={colors.dock} />
             </View>
 
-            <Animated.Text style={[styles.scanLabel, { color: colors.dockActive }]} numberOfLines={1}>
-              Thrive
+            <Animated.Text
+              style={[
+                styles.scanLabel,
+                { color: colors.dockActive, fontFamily: typography.label.fontFamily },
+              ]}
+              numberOfLines={1}
+            >
+              {experienceIcons.orb.label}
             </Animated.Text>
           </PressableScale>
         </Animated.View>
