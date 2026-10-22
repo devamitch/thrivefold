@@ -1,93 +1,78 @@
-import { TextStyle, Platform } from 'react-native';
+import { TextStyle } from 'react-native';
 
-const fontFamily = Platform.select({
-  ios: 'System',
-  android: 'sans-serif',
-  default: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-});
-
-const fontBold = Platform.select({
-  ios: 'System',
-  android: 'sans-serif-medium',
-  default: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-});
+// Geist (shared with BlinkQuest/Neev), embedded at build time by the expo-font plugin
+// in app.json. Each weight is its own family: on Android a custom family plus a
+// separate fontWeight can fall back to the system font, so weights are not set here.
+const regular = 'Geist-Regular';
+const medium = 'Geist-Medium';
+const semibold = 'Geist-SemiBold';
+const bold = 'Geist-Bold';
 
 export const typography = {
   hero: {
-    fontFamily: fontBold,
+    fontFamily: bold,
     fontSize: 40,
     lineHeight: 46,
-    fontWeight: '800',
     letterSpacing: -1,
   } as TextStyle,
   display: {
-    fontFamily: fontBold,
+    fontFamily: bold,
     fontSize: 34,
     lineHeight: 40,
-    fontWeight: '700',
     letterSpacing: -0.8,
   } as TextStyle,
   heading: {
-    fontFamily: fontBold,
+    fontFamily: bold,
     fontSize: 24,
     lineHeight: 30,
-    fontWeight: '700',
     letterSpacing: -0.5,
   } as TextStyle,
   subheading: {
-    fontFamily: fontBold,
+    fontFamily: semibold,
     fontSize: 19,
     lineHeight: 25,
-    fontWeight: '600',
     letterSpacing: -0.3,
   } as TextStyle,
   body: {
-    fontFamily,
+    fontFamily: regular,
     fontSize: 16,
     lineHeight: 22,
-    fontWeight: '400',
     letterSpacing: 0,
   } as TextStyle,
   bodyBold: {
-    fontFamily: fontBold,
+    fontFamily: semibold,
     fontSize: 16,
     lineHeight: 22,
-    fontWeight: '600',
     letterSpacing: 0,
   } as TextStyle,
   subbody: {
-    fontFamily,
+    fontFamily: regular,
     fontSize: 14,
     lineHeight: 19,
-    fontWeight: '400',
     letterSpacing: 0,
   } as TextStyle,
   subbodyBold: {
-    fontFamily: fontBold,
+    fontFamily: semibold,
     fontSize: 14,
     lineHeight: 19,
-    fontWeight: '600',
     letterSpacing: 0,
   } as TextStyle,
   caption: {
-    fontFamily,
+    fontFamily: regular,
     fontSize: 12,
     lineHeight: 16,
-    fontWeight: '400',
     letterSpacing: 0.1,
   } as TextStyle,
   captionBold: {
-    fontFamily: fontBold,
+    fontFamily: semibold,
     fontSize: 12,
     lineHeight: 16,
-    fontWeight: '600',
     letterSpacing: 0.1,
   } as TextStyle,
   label: {
-    fontFamily: fontBold,
+    fontFamily: bold,
     fontSize: 11,
     lineHeight: 14,
-    fontWeight: '700',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   } as TextStyle,
