@@ -2,6 +2,14 @@ import type { ProductExperience } from './tokens';
 
 export type ColorScheme = 'light' | 'dark';
 
+/**
+ * Semantic colour tokens. Screens use these names only — never raw hex — so every
+ * experience and scheme stays consistent (master spec §2.4, §34).
+ *
+ * Palette intent: calm, low-glare and eye-friendly. Warm off-white canvases instead of
+ * pure white, muted primaries that still pass WCAG AA on their surfaces, desaturated
+ * status colours, and one accent per experience used sparingly.
+ */
 export interface ThemeColors {
   scheme: ColorScheme;
   experience: ProductExperience;
@@ -37,229 +45,166 @@ export interface ThemeColors {
   brandAccent: string;
   badgeBg: string;
   badgeText: string;
+  /** Bottom dock (always a deep surface, in both schemes) and its icon colours. */
+  dock: string;
+  dockActive: string;
+  dockMuted: string;
 }
 
-export const womenLightColors: ThemeColors = {
-  scheme: 'light',
+const alpha = (hex: string, a: number) => {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+};
+
+interface Recipe {
+  experience: ProductExperience;
+  scheme: ColorScheme;
+  canvas: [background: string, surface: string, s1: string, s2: string, s3: string];
+  ink: [primary: string, secondary: string, muted: string];
+  primary: string;
+  onPrimary: string;
+  accent: string;
+  accentText: string;
+  gradient: readonly [string, string, ...string[]];
+  status: { success: string; warning: string; info: string; error: string };
+  dock: string;
+  dockActive: string;
+}
+
+function palette(r: Recipe): ThemeColors {
+  const dark = r.scheme === 'dark';
+  const [background, surface, surface1, surface2, surface3] = r.canvas;
+  const [inkPrimary, inkSecondary, inkMuted] = r.ink;
+  return {
+    scheme: r.scheme,
+    experience: r.experience,
+    background,
+    surface,
+    surface1,
+    surface2,
+    surface3,
+    surfaceGlass: alpha(surface, 0.92),
+    text: { primary: inkPrimary, secondary: inkSecondary, muted: inkMuted, inverse: dark ? background : '#FFFFFF' },
+    primary: r.primary,
+    onPrimary: r.onPrimary,
+    primaryAlpha: alpha(r.primary, dark ? 0.2 : 0.1),
+    primaryGradient: r.gradient,
+    accent: r.accent,
+    accentText: r.accentText,
+    border: alpha(inkPrimary, dark ? 0.1 : 0.08),
+    borderStrong: alpha(inkPrimary, dark ? 0.18 : 0.15),
+    ...r.status,
+    successSurface: alpha(r.status.success, dark ? 0.18 : 0.1),
+    warningSurface: alpha(r.status.warning, dark ? 0.18 : 0.1),
+    infoSurface: alpha(r.status.info, dark ? 0.18 : 0.1),
+    errorSurface: alpha(r.status.error, dark ? 0.18 : 0.1),
+    scrim: dark ? 'rgba(0, 0, 0, 0.6)' : alpha(inkPrimary, 0.4),
+    brandAccent: r.accent,
+    badgeBg: alpha(r.primary, dark ? 0.2 : 0.1),
+    badgeText: dark ? r.primary : r.primary,
+    dock: r.dock,
+    dockActive: r.dockActive,
+    dockMuted: dark ? '#8C847D' : '#A39B94',
+  };
+}
+
+const LIGHT_STATUS = { success: '#43704F', warning: '#8C6114', info: '#4A6F8C', error: '#B0503F' };
+const DARK_STATUS = { success: '#86B596', warning: '#D9AE62', info: '#8AAAC4', error: '#E08F80' };
+
+/** Women's health — clay and sage. */
+export const womenLightColors = palette({
   experience: 'women_health',
-  background: '#FAF7F5',
-  surface: '#FFFFFF',
-  surface1: '#F4EFEA',
-  surface2: '#EFE6DE',
-  surface3: '#E5D8CC',
-  surfaceGlass: 'rgba(255, 255, 255, 0.85)',
-  text: {
-    primary: '#2D2522',
-    secondary: '#6E5F5A',
-    muted: '#9E8D86',
-    inverse: '#FFFFFF',
-  },
-  primary: '#B45309', // Warm terracotta / lotus
+  scheme: 'light',
+  canvas: ['#F7F3EE', '#FFFDFA', '#F0EAE3', '#E7DED5', '#DCD0C4'],
+  ink: ['#2B2420', '#5E544E', '#6F655E'],
+  primary: '#A0583F',
   onPrimary: '#FFFFFF',
-  primaryAlpha: 'rgba(180, 83, 9, 0.12)',
-  primaryGradient: ['#D97706', '#92400E'],
-  accent: '#7C3AED', // Lavender / violet accent from HarmonyBloom
-  accentText: '#6D28D9',
-  border: 'rgba(45, 37, 34, 0.08)',
-  borderStrong: 'rgba(45, 37, 34, 0.16)',
-  success: '#10B981',
-  warning: '#F59E0B',
-  info: '#3B82F6',
-  error: '#EF4444',
-  successSurface: '#ECFDF5',
-  warningSurface: '#FFFBEB',
-  infoSurface: '#EFF6FF',
-  errorSurface: '#FEF2F2',
-  scrim: 'rgba(45, 37, 34, 0.45)',
-  brandAccent: '#E11D48',
-  badgeBg: 'rgba(180, 83, 9, 0.1)',
-  badgeText: '#B45309',
-};
+  accent: '#5C7A66',
+  accentText: '#4A6654',
+  gradient: ['#B86A4F', '#A0583F'],
+  status: LIGHT_STATUS,
+  dock: '#2A2420',
+  dockActive: '#E4A98F',
+});
 
-export const womenDarkColors: ThemeColors = {
-  scheme: 'dark',
+export const womenDarkColors = palette({
   experience: 'women_health',
-  background: '#191514',
-  surface: '#241F1D',
-  surface1: '#2E2724',
-  surface2: '#3A312E',
-  surface3: '#463C38',
-  surfaceGlass: 'rgba(36, 31, 29, 0.85)',
-  text: {
-    primary: '#FDFCFB',
-    secondary: '#C4B7B2',
-    muted: '#8A7A74',
-    inverse: '#191514',
-  },
-  primary: '#F59E0B',
-  onPrimary: '#191514',
-  primaryAlpha: 'rgba(245, 158, 11, 0.18)',
-  primaryGradient: ['#F59E0B', '#B45309'],
-  accent: '#A78BFA',
-  accentText: '#C4B5FD',
-  border: 'rgba(253, 252, 251, 0.08)',
-  borderStrong: 'rgba(253, 252, 251, 0.16)',
-  success: '#34D399',
-  warning: '#FBBF24',
-  info: '#60A5FA',
-  error: '#F87171',
-  successSurface: 'rgba(16, 185, 129, 0.15)',
-  warningSurface: 'rgba(245, 158, 11, 0.15)',
-  infoSurface: 'rgba(59, 130, 246, 0.15)',
-  errorSurface: 'rgba(239, 68, 68, 0.15)',
-  scrim: 'rgba(0, 0, 0, 0.7)',
-  brandAccent: '#FB7185',
-  badgeBg: 'rgba(245, 158, 11, 0.15)',
-  badgeText: '#FBBF24',
-};
-
-export const menLightColors: ThemeColors = {
-  scheme: 'light',
-  experience: 'men_health',
-  background: '#F5F7F8',
-  surface: '#FFFFFF',
-  surface1: '#EAF0F2',
-  surface2: '#DCE4E7',
-  surface3: '#CCD7DC',
-  surfaceGlass: 'rgba(255, 255, 255, 0.88)',
-  text: {
-    primary: '#122329',
-    secondary: '#3E5660',
-    muted: '#718C97',
-    inverse: '#FFFFFF',
-  },
-  primary: '#173C4A', // Midnight teal
-  onPrimary: '#FFFFFF',
-  primaryAlpha: 'rgba(23, 60, 74, 0.12)',
-  primaryGradient: ['#173C4A', '#2D6273'],
-  accent: '#C18B43', // Warm amber
-  accentText: '#9A6B29',
-  border: 'rgba(18, 35, 41, 0.09)',
-  borderStrong: 'rgba(18, 35, 41, 0.18)',
-  success: '#059669',
-  warning: '#D97706',
-  info: '#2563EB',
-  error: '#DC2626',
-  successSurface: '#ECFDF5',
-  warningSurface: '#FFFBEB',
-  infoSurface: '#EFF6FF',
-  errorSurface: '#FEF2F2',
-  scrim: 'rgba(18, 35, 41, 0.5)',
-  brandAccent: '#397A78',
-  badgeBg: 'rgba(23, 60, 74, 0.09)',
-  badgeText: '#173C4A',
-};
-
-export const menDarkColors: ThemeColors = {
   scheme: 'dark',
+  canvas: ['#171412', '#201C19', '#2A2521', '#332D29', '#3E3732'],
+  ink: ['#F1EAE3', '#C2B6AC', '#8E847C'],
+  primary: '#DA9B82',
+  onPrimary: '#1F1714',
+  accent: '#93B39D',
+  accentText: '#A9C7B2',
+  gradient: ['#E3AC95', '#DA9B82'],
+  status: DARK_STATUS,
+  dock: '#25211E',
+  dockActive: '#E4A98F',
+});
+
+/** Men's health — slate teal and sand. */
+export const menLightColors = palette({
   experience: 'men_health',
-  background: '#0B1418',
-  surface: '#131F24',
-  surface1: '#1C2D34',
-  surface2: '#273D46',
-  surface3: '#324E59',
-  surfaceGlass: 'rgba(19, 31, 36, 0.88)',
-  text: {
-    primary: '#EDF3F5',
-    secondary: '#A3B9C2',
-    muted: '#6B828C',
-    inverse: '#0B1418',
-  },
-  primary: '#438A9C',
-  onPrimary: '#FFFFFF',
-  primaryAlpha: 'rgba(67, 138, 156, 0.2)',
-  primaryGradient: ['#326B7A', '#1C424C'],
-  accent: '#F59E0B',
-  accentText: '#FCD34D',
-  border: 'rgba(237, 243, 245, 0.08)',
-  borderStrong: 'rgba(237, 243, 245, 0.16)',
-  success: '#10B981',
-  warning: '#F59E0B',
-  info: '#3B82F6',
-  error: '#EF4444',
-  successSurface: 'rgba(16, 185, 129, 0.15)',
-  warningSurface: 'rgba(245, 158, 11, 0.15)',
-  infoSurface: 'rgba(59, 130, 246, 0.15)',
-  errorSurface: 'rgba(239, 68, 68, 0.15)',
-  scrim: 'rgba(0, 0, 0, 0.75)',
-  brandAccent: '#5EEAD4',
-  badgeBg: 'rgba(67, 138, 156, 0.18)',
-  badgeText: '#7DD3FC',
-};
-
-export const prideLightColors: ThemeColors = {
   scheme: 'light',
-  experience: 'pride_wellbeing',
-  background: '#FAF8F5',
-  surface: '#FFFFFF',
-  surface1: '#F4EFEB',
-  surface2: '#EFE5DD',
-  surface3: '#E4D5C9',
-  surfaceGlass: 'rgba(255, 255, 255, 0.88)',
-  text: {
-    primary: '#242028',
-    secondary: '#5C5468',
-    muted: '#9186A0',
-    inverse: '#FFFFFF',
-  },
-  primary: '#D97706', // Warm Gold
+  canvas: ['#F2F4F3', '#FCFDFC', '#E8ECEB', '#DDE3E2', '#D0D8D7'],
+  ink: ['#1D2729', '#4C5A5D', '#5F6C6B'],
+  primary: '#2E5C62',
   onPrimary: '#FFFFFF',
-  primaryAlpha: 'rgba(217, 119, 6, 0.12)',
-  primaryGradient: ['#E11D48', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6'],
-  accent: '#8B5CF6',
-  accentText: '#7C3AED',
-  border: 'rgba(36, 32, 40, 0.08)',
-  borderStrong: 'rgba(36, 32, 40, 0.16)',
-  success: '#10B981',
-  warning: '#F59E0B',
-  info: '#3B82F6',
-  error: '#EF4444',
-  successSurface: '#ECFDF5',
-  warningSurface: '#FFFBEB',
-  infoSurface: '#EFF6FF',
-  errorSurface: '#FEF2F2',
-  scrim: 'rgba(36, 32, 40, 0.45)',
-  brandAccent: '#D97706',
-  badgeBg: 'rgba(217, 119, 6, 0.1)',
-  badgeText: '#B45309',
-};
+  accent: '#9C7A4B',
+  accentText: '#7E6138',
+  gradient: ['#3A6F76', '#2E5C62'],
+  status: LIGHT_STATUS,
+  dock: '#1C2527',
+  dockActive: '#8FC3C0',
+});
 
-export const prideDarkColors: ThemeColors = {
+export const menDarkColors = palette({
+  experience: 'men_health',
   scheme: 'dark',
+  canvas: ['#111618', '#182023', '#20292C', '#283235', '#313C3F'],
+  ink: ['#E8EEEE', '#AEBBBC', '#7C8A8B'],
+  primary: '#7DB5B2',
+  onPrimary: '#0F1A1B',
+  accent: '#D1AE7A',
+  accentText: '#DEC193',
+  gradient: ['#8FC3C0', '#7DB5B2'],
+  status: DARK_STATUS,
+  dock: '#1A2224',
+  dockActive: '#8FC3C0',
+});
+
+/** LGBTQ+ wellbeing — deep gold and plum; the rainbow is an accent, never a wash. */
+const QUIET_RAINBOW = ['#C27C83', '#CFA25A', '#7FA58A', '#6E91B0', '#9283B2'] as const;
+
+export const prideLightColors = palette({
   experience: 'pride_wellbeing',
-  background: '#16131A',
-  surface: '#201C26',
-  surface1: '#2A2533',
-  surface2: '#352F40',
-  surface3: '#413A4D',
-  surfaceGlass: 'rgba(32, 28, 38, 0.88)',
-  text: {
-    primary: '#F9F7FB',
-    secondary: '#BFB5CE',
-    muted: '#867999',
-    inverse: '#16131A',
-  },
-  primary: '#FBBF24',
-  onPrimary: '#16131A',
-  primaryAlpha: 'rgba(251, 191, 36, 0.2)',
-  primaryGradient: ['#FB7185', '#FBBF24', '#34D399', '#60A5FA', '#A78BFA'],
-  accent: '#A78BFA',
-  accentText: '#C4B5FD',
-  border: 'rgba(249, 247, 251, 0.08)',
-  borderStrong: 'rgba(249, 247, 251, 0.16)',
-  success: '#34D399',
-  warning: '#FBBF24',
-  info: '#60A5FA',
-  error: '#F87171',
-  successSurface: 'rgba(16, 185, 129, 0.15)',
-  warningSurface: 'rgba(245, 158, 11, 0.15)',
-  infoSurface: 'rgba(59, 130, 246, 0.15)',
-  errorSurface: 'rgba(239, 68, 68, 0.15)',
-  scrim: 'rgba(0, 0, 0, 0.75)',
-  brandAccent: '#FBBF24',
-  badgeBg: 'rgba(251, 191, 36, 0.15)',
-  badgeText: '#FCD34D',
-};
+  scheme: 'light',
+  canvas: ['#F6F4F1', '#FEFDFB', '#EEEAE4', '#E4DED6', '#D8D1C8'],
+  ink: ['#262229', '#57505D', '#726A78'],
+  primary: '#7E5C1E',
+  onPrimary: '#FFFFFF',
+  accent: '#6C5A8C',
+  accentText: '#5A4878',
+  gradient: QUIET_RAINBOW,
+  status: LIGHT_STATUS,
+  dock: '#26222A',
+  dockActive: '#E2C17A',
+});
+
+export const prideDarkColors = palette({
+  experience: 'pride_wellbeing',
+  scheme: 'dark',
+  canvas: ['#151318', '#1D1A21', '#26222B', '#2F2A35', '#3A3440'],
+  ink: ['#F2EFF5', '#BCB3C6', '#867D90'],
+  primary: '#DDB867',
+  onPrimary: '#1D1810',
+  accent: '#AE9BD0',
+  accentText: '#C2B3DD',
+  gradient: QUIET_RAINBOW,
+  status: DARK_STATUS,
+  dock: '#211D25',
+  dockActive: '#E2C17A',
+});
 
 export function getThemeColors(experience: ProductExperience, scheme: ColorScheme): ThemeColors {
   if (experience === 'men_health') {

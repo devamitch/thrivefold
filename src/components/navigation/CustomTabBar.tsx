@@ -26,7 +26,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import Svg, { ClipPath, Defs, Path } from "react-native-svg"
 
 import { PressableScale } from "../ui/PressableScale"
-import { AnimatedBrandIcon } from "../brand/AnimatedBrandIcon"
+import { useTheme } from "../../theme/useTheme"
 
 import {
   hideTabBar,
@@ -49,14 +49,10 @@ const TAB_META: Record<string, TabMeta> = {
   index: { activeIcon: "home", inactiveIcon: "home-outline", label: "Home" },
   today: { activeIcon: "today", inactiveIcon: "today-outline", label: "Today" },
   progress: { activeIcon: "trending-up", inactiveIcon: "trending-up-outline", label: "Progress" },
-  learn: { activeIcon: "book", inactiveIcon: "book-outline", label: "Learn" },
-  settings: { activeIcon: "settings", inactiveIcon: "settings-outline", label: "Settings" },
+  settings: { activeIcon: "person-circle", inactiveIcon: "person-circle-outline", label: "You" },
 }
 
-/* ── Thrivefold Dock Constants (Warm Terracotta Palette) ───────── */
-const DOCK_COLOR = "#1E1916"
-const ACCENT_COLOR = "#B45309" // Primary terracotta
-const MUTED_COLOR = "#9E8D86"
+/* ── Dock geometry (colours come from the active theme: colors.dock*) ── */
 
 const CENTER_SIZE = 60
 const BAR_H = 70
@@ -162,6 +158,8 @@ interface TabButtonProps {
   inactiveIcon: keyof typeof Ionicons.glyphMap
   label: string
   focused: boolean
+  activeColor: string
+  mutedColor: string
   onTabPress: (key: string, name: string, focused: boolean) => void
 }
 
@@ -172,6 +170,8 @@ const TabButton = memo(function TabButton({
   inactiveIcon,
   label,
   focused,
+  activeColor,
+  mutedColor,
   onTabPress,
 }: TabButtonProps) {
   const reduceMotion = useReducedMotion()
@@ -187,11 +187,11 @@ const TabButton = memo(function TabButton({
   }))
 
   const labelStyle = useAnimatedStyle(() => ({
-    color: interpolateColor(progress.value, [0, 1], [MUTED_COLOR, ACCENT_COLOR]),
+    color: interpolateColor(progress.value, [0, 1], [mutedColor, activeColor]),
   }))
 
   const iconName = focused ? activeIcon : inactiveIcon
-  const iconColor = focused ? ACCENT_COLOR : MUTED_COLOR
+  const iconColor = focused ? activeColor : mutedColor
 
   return (
     <PressableScale
@@ -199,7 +199,7 @@ const TabButton = memo(function TabButton({
       accessibilityLabel={label}
       accessibilityState={{ selected: focused }}
       onPress={() => onTabPress(routeKey, routeName, focused)}
-      android_ripple={{ color: "rgba(180, 83, 9, 0.15)", borderless: true, radius: 28 }}
+      android_ripple={{ color: "rgba(255, 255, 255, 0.12)", borderless: true, radius: 28 }}
       scaleTo={0.94}
       style={styles.tab}
       testID={`tab-${routeName}`}
@@ -216,6 +216,7 @@ const TabButton = memo(function TabButton({
 
 /* ── Main CustomTabBar Component ───────────────────────────────── */
 export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+  const { colors } = useTheme()
   const insets = useSafeAreaInsets()
   const reduceMotion = useReducedMotion()
   const { width } = useWindowDimensions()
@@ -287,6 +288,8 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
         inactiveIcon={meta.inactiveIcon}
         label={meta.label}
         focused={activeIndex === index}
+        activeColor={colors.dockActive}
+        mutedColor={colors.dockMuted}
         onTabPress={onTabPress}
       />
     )
@@ -306,7 +309,7 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
             </ClipPath>
           </Defs>
           {/* Solid deep obsidian body */}
-          <Path d={barPath} fill={DOCK_COLOR} />
+          <Path d={barPath} fill={colors.dock} />
           {/* Hairline outline tracing the silhouette */}
           <Path d={rimPath} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth={1} />
         </Svg>
@@ -324,7 +327,7 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
         <Animated.View pointerEvents="box-none" style={[styles.centerWrap, orbPress]}>
           <PressableScale
             accessibilityRole="button"
-            accessibilityLabel="Thrivefold Action"
+            accessibilityLabel="Thrive: start today's check-in"
             testID="tab-action-orb"
             hitSlop={6}
             onPressIn={() => {
@@ -337,11 +340,11 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
             scaleTo={0.94}
             style={styles.orbButton}
           >
-            <View style={styles.centerOrb}>
-              <AnimatedBrandIcon size={56} withBackground={true} />
+            <View style={[styles.centerOrb, { backgroundColor: colors.dockActive }]}>
+              <Ionicons name="leaf" size={26} color={colors.dock} />
             </View>
 
-            <Animated.Text style={styles.scanLabel} numberOfLines={1}>
+            <Animated.Text style={[styles.scanLabel, { color: colors.dockActive }]} numberOfLines={1}>
               Thrive
             </Animated.Text>
           </PressableScale>
@@ -387,7 +390,6 @@ const styles = StyleSheet.create({
     width: ICON_SIZE,
   },
   label: {
-    color: MUTED_COLOR,
     fontSize: 12,
     fontWeight: "500",
     lineHeight: LABEL_LINE,

@@ -16,11 +16,11 @@ export default function TabsLayout() {
         sceneStyle: { backgroundColor: colors.background },
       }}
     >
+      {/* Two tabs each side of the central Thrive button (CustomTabBar). */}
       <Tabs.Screen name="index" options={{ title: 'Home' }} />
       <Tabs.Screen name="today" options={{ title: 'Today' }} />
       <Tabs.Screen name="progress" options={{ title: 'Progress' }} />
-      <Tabs.Screen name="learn" options={{ title: 'Learn' }} />
-      <Tabs.Screen name="settings" options={{ title: 'Settings' }} />
+      <Tabs.Screen name="settings" options={{ title: 'You' }} />
     </Tabs>
   );
 }

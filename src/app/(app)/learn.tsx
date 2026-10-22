@@ -1,10 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
-import { Card } from '../../../components/ui/Card';
-import { Badge } from '../../../components/ui/Badge';
-import { Header } from '../../../components/ui/Header';
-import { useTheme } from '../../../theme/useTheme';
+import { ScreenWrapper } from '../../components/ui/ScreenWrapper';
+import { Card } from '../../components/ui/Card';
+import { Badge } from '../../components/ui/Badge';
+import { Header } from '../../components/ui/Header';
+import { useTheme } from '../../theme/useTheme';
 
 export default function LearnScreen() {
   const { colors, typography, spacing } = useTheme();
@@ -42,7 +42,7 @@ export default function LearnScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Health Education" subtitle="Evidence-Based Clinical Summaries" />
+      <Header title="Learn" subtitle="Plain-language health basics" showBack />
       <View style={[styles.content, { paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }]}>
         <Card variant="surface1" style={{ marginBottom: spacing.md, padding: spacing.base }}>
           <Text style={[typography.captionBold, { color: colors.primary }]}>
