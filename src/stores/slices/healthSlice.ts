@@ -3,6 +3,7 @@ import type { StateCreator } from 'zustand';
 import type { RootState } from '../rootTypes';
 import { CyclePhase } from '../../domain/health/cycleCalculations';
 import { formatLocalDate } from '../../domain/calendar/universalCalendarEngine';
+import type { WorkoutSession } from '../../domain/fitness/workouts';
 
 
 export type FlowIntensity = 'none' | 'spotting' | 'light' | 'medium' | 'heavy';
@@ -93,6 +94,9 @@ export interface HealthSlice {
   checkInHistory: DailyCheckInRecord[];
   journalEntries: JournalEntry[];
   personalEvents: PersonalCalendarEvent[];
+  workoutSessions: WorkoutSession[];
+  saveWorkoutSession: (session: Omit<WorkoutSession, 'id'>) => void;
+  deleteWorkoutSession: (id: string) => void;
   // Mood and check-in tracking fields
   todayEnergy: number | null; // 1-10
   todayMood: number | null; // 1-10
@@ -239,6 +243,18 @@ export const createHealthSlice: StateCreator<
   journalEntries: [],
   // Only events the person adds; nothing is pre-filled.
   personalEvents: [],
+  workoutSessions: [],
+
+  saveWorkoutSession: (session) =>
+    set((state) => ({
+      workoutSessions: [
+        { ...session, id: `wk_${Date.now()}_${Math.random().toString(36).slice(2, 6)}` },
+        ...state.workoutSessions,
+      ].slice(0, 500),
+    })),
+
+  deleteWorkoutSession: (id) =>
+    set((state) => ({ workoutSessions: state.workoutSessions.filter((w) => w.id !== id) })),
 
   addCheckIn: (record) =>
     set((state) => {
