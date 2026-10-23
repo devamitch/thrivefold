@@ -22,6 +22,7 @@ import {
 import { useRootStore } from '../../../stores/useRootStore';
 import type { PeriodLogRecord, ReproductiveContext } from '../../../stores/slices/healthSlice';
 import { useTheme } from '../../../theme/useTheme';
+import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngine';
 
 const CONTEXT_OPTIONS: { id: ReproductiveContext; label: string; icon: string; desc: string }[] = [
   { id: 'regular', label: 'Regular (21–35d)', icon: 'checkmark-circle-outline', desc: 'Consistent cycle duration' },
@@ -52,14 +53,14 @@ export default function CycleScreen() {
 
   const currentContext: ReproductiveContext = cycleData?.reproductiveContext ?? 'regular';
 
-  const effectiveLastPeriod = useMemo(() => {
+  // Only a period the person actually logged. No date is ever assumed: without one there are
+  // no phase or next-period estimates, just a prompt to log.
+  const effectiveLastPeriod = useMemo<string | null>(() => {
     if (cycleData?.lastPeriodDate) return cycleData.lastPeriodDate;
     if (cycleData?.periodHistory && cycleData.periodHistory.length > 0) {
       return cycleData.periodHistory[0].startDate;
     }
-    const d = new Date();
-    d.setDate(d.getDate() - 10);
-    return d.toISOString().split('T')[0];
+    return null;
   }, [cycleData]);
 
   const predictions = useMemo(
@@ -86,10 +87,9 @@ export default function CycleScreen() {
 
   const pregnancyProgress = useMemo(() => {
     if (currentContext !== 'pregnant') return null;
-    return calculatePregnancyProgress(
-      cycleData?.pregnancyDetails?.conceptionDate ?? effectiveLastPeriod,
-      cycleData?.pregnancyDetails?.estimatedDueDate
-    );
+    const reference = cycleData?.pregnancyDetails?.conceptionDate ?? effectiveLastPeriod;
+    if (!reference) return null;
+    return calculatePregnancyProgress(reference, cycleData?.pregnancyDetails?.estimatedDueDate);
   }, [currentContext, cycleData, effectiveLastPeriod]);
 
   const [editingParams, setEditingParams] = useState(false);
@@ -99,6 +99,7 @@ export default function CycleScreen() {
   const [selectedDayOffset, setSelectedDayOffset] = useState<number>(0);
 
   const saveCycleParams = () => {
+    if (!effectiveLastPeriod) return;
     const next = getCyclePredictions(effectiveLastPeriod, cycleLength, periodLength);
     updateCycleData({
       lastPeriodDate: effectiveLastPeriod,
@@ -107,7 +108,7 @@ export default function CycleScreen() {
       ...(next
         ? {
             currentPhase: next.currentPhase.phase,
-            estimatedNextPeriodDate: new Date(next.nextPeriodDate).toISOString().split('T')[0],
+            estimatedNextPeriodDate: formatLocalDate(next.nextPeriodDate),
           }
         : {}),
     });
@@ -149,7 +150,7 @@ export default function CycleScreen() {
     for (let offset = -2; offset <= 11; offset++) {
       const d = new Date(today);
       d.setDate(today.getDate() + offset);
-      const dateKey = d.toISOString().split('T')[0];
+      const dateKey = formatLocalDate(d);
       const phase = predictions?.cycleDayMap.get(dateKey) ?? 'follicular';
       days.push({
         offset,
@@ -220,17 +221,17 @@ export default function CycleScreen() {
 
         {/* PREGNANCY PROGRESS (OPT-IN CONTEXT) */}
         {currentContext === 'pregnant' && pregnancyProgress && (
-          <Card style={{ marginBottom: spacing.md, padding: spacing.lg, backgroundColor: '#FFF9F5', borderColor: '#DA7756' }}>
+          <Card style={{ marginBottom: spacing.md, padding: spacing.lg, backgroundColor: colors.surface1, borderColor: colors.accent }}>
             <View style={styles.rowBetween}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Ionicons name="heart" size={20} color="#DA7756" />
+                <Ionicons name="heart" size={20} color={colors.accent} />
                 <Text style={[typography.heading, { color: colors.text.primary, marginLeft: 8 }]}>
                   Week {pregnancyProgress.gestationalWeeks} + {pregnancyProgress.gestationalDays} Days
                 </Text>
               </View>
               <Badge label={`Trimester ${pregnancyProgress.trimester}`} variant="primary" />
             </View>
-            <Text style={[typography.bodyBold, { color: '#DA7756', marginTop: 10 }]}>
+            <Text style={[typography.bodyBold, { color: colors.accentText, marginTop: 10 }]}>
               Estimated Due Date: {pregnancyProgress.estimatedDueDate.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
             </Text>
             <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>
@@ -358,8 +359,8 @@ export default function CycleScreen() {
             </View>
 
             {advancedMetrics.isLate && (
-              <View style={{ marginTop: 12, backgroundColor: '#FFF5F0', padding: 10, borderRadius: 10 }}>
-                <Text style={[typography.captionBold, { color: '#DA7756' }]}>
+              <View style={{ marginTop: 12, backgroundColor: colors.warningSurface, padding: 10, borderRadius: 10 }}>
+                <Text style={[typography.captionBold, { color: colors.warning }]}>
                   {advancedMetrics.isConfirmedMissed
                     ? `Confirmed Missed Period (${advancedMetrics.daysLate}d late)`
                     : `Period Late by ${advancedMetrics.daysLate} Days`}
@@ -402,7 +403,7 @@ export default function CycleScreen() {
               >
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Ionicons name="water" size={14} color="#DA7756" style={{ marginRight: 6 }} />
+                    <Ionicons name="water" size={14} color={colors.accent} style={{ marginRight: 6 }} />
                     <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
                       {new Date(rec.startDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                       {rec.endDate ? ` → ${new Date(rec.endDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}` : ' (Ongoing)'}
@@ -419,8 +420,27 @@ export default function CycleScreen() {
           )}
         </Card>
 
+        {currentContext !== 'pregnant' && !predictions && (
+          <Card style={{ marginBottom: spacing.md, padding: spacing.lg }}>
+            <Text style={[typography.subheading, { color: colors.text.primary }]}>No estimates yet</Text>
+            <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 6 }]}>
+              Log the first day of your last period and Thrivefold will estimate your phases and next period from
+              it. Nothing is assumed before then.
+            </Text>
+            <Button
+              label="Log a period"
+              size="sm"
+              onPress={() => {
+                setSelectedRecordToEdit(null);
+                setPeriodLoggerOpen(true);
+              }}
+              style={{ marginTop: spacing.md, alignSelf: 'flex-start' }}
+            />
+          </Card>
+        )}
+
         {/* FOLLICULAR & CYCLE RHYTHM STRIP */}
-        {currentContext !== 'pregnant' && (
+        {currentContext !== 'pregnant' && predictions && (
           <Card style={{ marginBottom: spacing.md, padding: spacing.md }}>
             <View style={styles.rowBetween}>
               <Text style={[typography.subheading, { color: colors.text.primary }]}>
@@ -478,7 +498,7 @@ export default function CycleScreen() {
         )}
 
         {/* Selected Phase Vitality Card */}
-        {currentContext !== 'pregnant' && (
+        {currentContext !== 'pregnant' && predictions && (
           <Card style={{ marginBottom: spacing.md, padding: spacing.lg, backgroundColor: colors.surface }}>
             <View style={styles.rowBetween}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -487,7 +507,7 @@ export default function CycleScreen() {
                   {activePhaseConfig.label} Phase
                 </Text>
               </View>
-              <Badge label={`Day ${predictions?.currentPhase.day ?? 12}`} variant="primary" />
+              <Badge label={`Day ${predictions.currentPhase.day}`} variant="primary" />
             </View>
 
             <Text style={[typography.body, { color: colors.text.secondary, marginTop: 10, lineHeight: 22 }]}>
@@ -527,7 +547,7 @@ export default function CycleScreen() {
         )}
 
         {/* Edit or Set Up Cycle Baseline Parameters */}
-        {editingParams ? (
+        {!effectiveLastPeriod ? null : editingParams ? (
           <Card style={{ marginBottom: spacing.md, padding: spacing.md }}>
             <Text style={[typography.subheading, { color: colors.text.primary }]}>
               Adjust Baseline Cycle Cadence
@@ -602,7 +622,7 @@ export default function CycleScreen() {
       {/* Period Logger Modal */}
       <PeriodLoggerModal
         visible={periodLoggerOpen}
-        initialDateStr={selectedRecordToEdit?.startDate ?? effectiveLastPeriod}
+        initialDateStr={selectedRecordToEdit?.startDate ?? effectiveLastPeriod ?? formatLocalDate(new Date())}
         onClose={() => {
           setPeriodLoggerOpen(false);
           setSelectedRecordToEdit(null);
