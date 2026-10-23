@@ -1,6 +1,7 @@
 import type { StateCreator } from 'zustand';
 
 import type { RootState } from '../rootTypes';
+import { formatLocalDate } from '../../domain/calendar/universalCalendarEngine';
 
 
 export interface UserProfile {
@@ -74,10 +75,10 @@ export const createAuthSlice: StateCreator<
       incrementIntroQuota: () =>
         set((state) => ({
           introsSentToday: state.introsSentToday + 1,
-          lastIntroDate: new Date().toISOString().split('T')[0],
+          lastIntroDate: formatLocalDate(new Date()),
         })),
       resetDailyQuotaIfNewDay: () => {
-        const today = new Date().toISOString().split('T')[0];
+        const today = formatLocalDate(new Date());
         if (get().lastIntroDate !== today) {
           set({ introsSentToday: 0, lastIntroDate: today });
         }

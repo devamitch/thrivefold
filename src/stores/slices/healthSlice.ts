@@ -2,6 +2,7 @@ import type { StateCreator } from 'zustand';
 
 import type { RootState } from '../rootTypes';
 import { CyclePhase } from '../../domain/health/cycleCalculations';
+import { formatLocalDate } from '../../domain/calendar/universalCalendarEngine';
 
 
 export type FlowIntensity = 'none' | 'spotting' | 'light' | 'medium' | 'heavy';
@@ -120,7 +121,7 @@ export interface HealthSlice {
   deletePersonalEvent: (id: string) => void;
 }
 
-const isoDay = (d: Date) => d.toISOString().split('T')[0];
+const isoDay = (d: Date) => formatLocalDate(d);
 
 /** Consecutive days (ending today or yesterday) that have at least one check-in. */
 function streakFrom(history: DailyCheckInRecord[]): number {
@@ -206,9 +207,10 @@ function recomputeCycleStatsFromPeriods(
   }
 
   const nextStart = new Date(new Date(lastPeriodDate).getTime() + cycleLengthDays * 86400000);
-  const y = nextStart.getFullYear();
-  const m = String(nextStart.getMonth() + 1).padStart(2, '0');
-  const d = String(nextStart.getDate()).padStart(2, '0');
+  // `new Date('YYYY-MM-DD')` is UTC midnight, so read it back in UTC to keep the same day.
+  const y = nextStart.getUTCFullYear();
+  const m = String(nextStart.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(nextStart.getUTCDate()).padStart(2, '0');
   const estimatedNextPeriodDate = `${y}-${m}-${d}`;
 
   return {

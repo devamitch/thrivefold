@@ -14,6 +14,7 @@ import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { checkInsUntilInsights, computeInsights, type Insight } from '../../../domain/ai/insights';
 import { searchDocuments, type RetrievalDocument } from '../../../domain/ai/localRetrieval';
 import { activeMemories } from '../../../domain/ai/types';
+import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngine';
 
 const KIND_LABEL: Record<Insight['kind'], string> = {
   trend: 'This week',
@@ -25,7 +26,7 @@ const KIND_LABEL: Record<Insight['kind'], string> = {
 };
 
 /** Same date convention the check-in screen uses when it saves records. */
-const todayKey = () => new Date().toISOString().split('T')[0];
+const todayKey = () => formatLocalDate(new Date());
 
 export default function InsightsScreen() {
   const router = useRouter();

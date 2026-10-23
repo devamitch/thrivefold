@@ -23,6 +23,7 @@ import { ProductExperience } from '../../theme/tokens';
 import { ThemeMode } from '../../stores/slices/appSlice';
 import { useTheme } from '../../theme/useTheme';
 import { CyclePhase } from '../../domain/health/cycleCalculations';
+import { formatLocalDate } from '../../domain/calendar/universalCalendarEngine';
 
 export default function DevToolsScreen() {
   const router = useRouter();
@@ -82,7 +83,7 @@ export default function DevToolsScreen() {
     for (let i = 6; i >= 0; i--) {
       const d = new Date(now);
       d.setDate(d.getDate() - i);
-      const isoDate = d.toISOString().split('T')[0];
+      const isoDate = formatLocalDate(d);
       store.addCheckIn({
         date: isoDate,
         energy: 6 + ((i * 2) % 4),
@@ -98,11 +99,11 @@ export default function DevToolsScreen() {
     const periodStart = new Date();
     periodStart.setDate(periodStart.getDate() - 12);
     store.updateCycleData({
-      lastPeriodDate: periodStart.toISOString().split('T')[0],
+      lastPeriodDate: formatLocalDate(periodStart),
       cycleLengthDays: 28,
       periodLengthDays: 5,
       currentPhase: 'follicular',
-      estimatedNextPeriodDate: new Date(periodStart.getTime() + 28 * 86400000).toISOString().split('T')[0],
+      estimatedNextPeriodDate: formatLocalDate(new Date(periodStart.getTime() + 28 * 86400000)),
     });
 
     // Seed journal entries

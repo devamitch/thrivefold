@@ -19,6 +19,7 @@ import type {
   TaskAssignment,
   VerificationResult,
 } from '../../domain/game/types';
+import { formatLocalDate } from '../../domain/calendar/universalCalendarEngine';
 
 export interface Quest {
   id: string;
@@ -74,7 +75,7 @@ export const createQuestSlice: StateCreator<
   [],
   QuestSlice
 > = (set, get) => {
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = formatLocalDate(new Date());
   const initialAssignments = generateDailyAssignments('men_health', todayStr);
 
   const initialQuests: Quest[] = initialAssignments.map((asg) => {
@@ -190,7 +191,7 @@ export const createQuestSlice: StateCreator<
         state.dailyAssignments[0]?.assignmentId ??
         skippedId;
 
-      const today = new Date().toISOString().split('T')[0];
+      const today = formatLocalDate(new Date());
       const updatedAssignments = replaceWithSpecialQuest(
         state.dailyAssignments,
         targetSkippedId,
@@ -235,7 +236,7 @@ export const createQuestSlice: StateCreator<
         assignment = {
           assignmentId,
           taskId: fallbackTask.id,
-          assignedDate: new Date().toISOString().split('T')[0],
+          assignedDate: formatLocalDate(new Date()),
           status: 'assigned',
           isSpecialQuestReplacement: false,
           earnedTaskPoints: 0,
@@ -313,7 +314,7 @@ export const createQuestSlice: StateCreator<
 
     refreshDailyQuests: () => {
       const state = get();
-      const today = new Date().toISOString().split('T')[0];
+      const today = formatLocalDate(new Date());
       const newAssignments = generateDailyAssignments(state.experience, today);
 
       const newQuests: Quest[] = newAssignments.map((asg) => {

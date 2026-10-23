@@ -11,6 +11,7 @@ import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
 
 import { ProductExperience } from '../../../theme/tokens';
+import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngine';
 
 const SYMPTOMS_BY_EXPERIENCE: Record<ProductExperience, string[]> = {
   women_health: [
@@ -89,7 +90,7 @@ export default function CheckInScreen() {
     } catch {}
     updateTodayMetrics(energy, mood, stress, sleep);
     addCheckIn({
-      date: new Date().toISOString().split('T')[0],
+      date: formatLocalDate(new Date()),
       energy,
       mood,
       stress,
