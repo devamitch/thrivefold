@@ -8,6 +8,8 @@ export interface HealthCheckInSignal {
   physicalPainOrLimitation?: string;
   intensityPreference?: 'rest' | 'light' | 'regular';
   experience: ProductExperience;
+  /** Recent strain from logged days (see `recentLoad` in insights.ts). Optional. */
+  recentLoad?: { shortSleepStreak: number; highStressStreak: number };
 }
 
 export interface TaskRecommendation {
@@ -48,7 +50,30 @@ export function evaluateDeterministicRoutine(signal: HealthCheckInSignal): TaskR
     };
   }
 
-  // 2. High stress / low energy: Breathing or gentle mobility
+  // 2. Several hard days in a row: recovery comes before effort, whatever today's sliders say.
+  const load = signal.recentLoad;
+  if (load && (load.shortSleepStreak >= 3 || load.highStressStreak >= 3)) {
+    const reason =
+      load.shortSleepStreak >= 3
+        ? `${load.shortSleepStreak} days in a row with under 6 hours of sleep`
+        : `${load.highStressStreak} high-stress days in a row`;
+    return {
+      taskId: 'rec_recovery_reset',
+      title: 'Recovery Reset: Slow Breathing & Easy Stretch',
+      category: 'breathing',
+      durationMinutes: 8,
+      description: 'Five minutes of slow breathing followed by a few easy stretches. Stop whenever you like.',
+      modifications: ['Can be done seated or lying down', 'Skip the stretches if you prefer to only breathe'],
+      aiExplanation: {
+        text: `Adapted from your recent check-ins: ${reason}. A gentler day helps you recover.`,
+        confidence: 0.9,
+        source: 'local_deterministic',
+        limitationsDisclosed: 'Based on your own logged check-ins. Not medical advice.',
+      },
+    };
+  }
+
+  // 3. High stress / low energy: Breathing or gentle mobility
   if (signal.energy <= 3 || signal.stress >= 8 || signal.intensityPreference === 'rest') {
     return {
       taskId: 'rec_parasympathetic_breath',
@@ -66,7 +91,7 @@ export function evaluateDeterministicRoutine(signal: HealthCheckInSignal): TaskR
     };
   }
 
-  // 3. Moderate energy / light preference: Mobility & decompression
+  // 4. Moderate energy / light preference: Mobility & decompression
   if (signal.energy <= 6 || signal.intensityPreference === 'light') {
     if (signal.experience === 'men_health') {
       return {
@@ -101,7 +126,7 @@ export function evaluateDeterministicRoutine(signal: HealthCheckInSignal): TaskR
     };
   }
 
-  // 4. Regular energy: Progressive wellness session
+  // 5. Regular energy: Progressive wellness session
   if (signal.experience === 'men_health') {
     return {
       taskId: 'rec_men_bodyweight_vitality',

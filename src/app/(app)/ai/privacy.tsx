@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Switch } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
@@ -7,112 +7,66 @@ import { Header } from '../../../components/ui/Header';
 import { Badge } from '../../../components/ui/Badge';
 import { useTheme } from '../../../theme/useTheme';
 
+const FACTS: { icon: keyof typeof Ionicons.glyphMap; title: string; body: string }[] = [
+  {
+    icon: 'phone-portrait-outline',
+    title: 'Everything is worked out on this device',
+    body: 'Suggestions, patterns and note search use your records stored on this phone. Nothing is sent to a server or an AI company.',
+  },
+  {
+    icon: 'bookmark-outline',
+    title: 'Memory holds only what you choose',
+    body: 'Journal entries are never turned into memories automatically. You can edit, pause or forget memories at any time.',
+  },
+  {
+    icon: 'git-branch-outline',
+    title: 'Rules decide, not AI',
+    body: 'Age, eligibility, blocking, rewards and safety are decided by fixed, tested rules. Suggestions never diagnose.',
+  },
+  {
+    icon: 'eye-off-outline',
+    title: 'Nothing is guessed about you',
+    body: 'Religion, orientation, ethnicity or health conditions are never inferred from what you write or do.',
+  },
+];
+
 export default function AiPrivacyScreen() {
   const { colors, typography, spacing } = useTheme();
 
-  const [allowCloudEscalation, setAllowCloudEscalation] = useState(false);
-  const [allowMemoryExtraction, setAllowMemoryExtraction] = useState(true);
-  const [allowLocalEmbeddings, setAllowLocalEmbeddings] = useState(true);
-
   return (
     <ScreenWrapper scrollable>
-      <Header title="AI Privacy & Guardrails" subtitle="Deterministic Rules & Zero-Leakage Architecture" showBack />
-      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
-        <Card style={{ marginBottom: spacing.md }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-            <Ionicons name="shield-checkmark" size={22} color={colors.primary} />
-            <Text style={[typography.subheading, { color: colors.text.primary, marginLeft: 8 }]}>
-              Non-Negotiable AI Directives (Section 5.7)
-            </Text>
-          </View>
-          <Text style={[typography.body, { color: colors.text.secondary, lineHeight: 22 }]}>
-            AI models NEVER make final decisions regarding age eligibility, account bans, religious matching, medical diagnoses, or billing. Pure deterministic TypeScript rules govern all safety boundaries.
-          </Text>
-        </Card>
-
-        {/* Local Embeddings Switch */}
-        <Card style={{ marginBottom: spacing.md }}>
-          <View style={styles.switchRow}>
-            <View style={{ flex: 1, paddingRight: 12 }}>
-              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                On-Device Vector Indexing
-              </Text>
-              <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                Embeds educational health guides inside your device's local database for fast retrieval.
+      <Header title="AI Privacy" subtitle="What happens to your data" showBack />
+      <View style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
+        {FACTS.map((f) => (
+          <Card key={f.title} style={{ marginBottom: spacing.sm }}>
+            <View style={styles.row}>
+              <Ionicons name={f.icon} size={20} color={colors.primary} />
+              <Text style={[typography.bodyBold, { color: colors.text.primary, marginLeft: 10, flex: 1 }]}>
+                {f.title}
               </Text>
             </View>
-            <Switch
-              value={allowLocalEmbeddings}
-              onValueChange={setAllowLocalEmbeddings}
-              trackColor={{ false: colors.surface1, true: colors.primary }}
-            />
-          </View>
-        </Card>
+            <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 6 }]}>{f.body}</Text>
+          </Card>
+        ))}
 
-        {/* Local Memory Extraction Switch */}
-        <Card style={{ marginBottom: spacing.md }}>
-          <View style={styles.switchRow}>
-            <View style={{ flex: 1, paddingRight: 12 }}>
-              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                Extract Learned Preferences
-              </Text>
-              <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                Permits local classifier to store workout intensity preferences into your local vault.
-              </Text>
-            </View>
-            <Switch
-              value={allowMemoryExtraction}
-              onValueChange={setAllowMemoryExtraction}
-              trackColor={{ false: colors.surface1, true: colors.primary }}
-            />
+        <Card variant="surface1" style={{ marginTop: spacing.sm }}>
+          <View style={[styles.row, { justifyContent: 'space-between' }]}>
+            <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Cloud AI</Text>
+            <Badge label="Not available" variant="neutral" />
           </View>
-        </Card>
-
-        {/* Cloud Escalation Consent (Section 5.6) */}
-        <Card style={{ marginBottom: spacing.md }}>
-          <View style={styles.switchRow}>
-            <View style={{ flex: 1, paddingRight: 12 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                  Optional Cloud AI Escalation
-                </Text>
-                <Badge label="Off by default" variant="neutral" style={{ marginLeft: 8 }} />
-              </View>
-              <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                Routes complex health education synthesis via authenticated server proxy. Never sends raw journal entries or intimate health logs.
-              </Text>
-            </View>
-            <Switch
-              value={allowCloudEscalation}
-              onValueChange={setAllowCloudEscalation}
-              trackColor={{ false: colors.surface1, true: colors.primary }}
-            />
-          </View>
-        </Card>
-
-        <Card variant="surface1" style={{ marginBottom: spacing.md }}>
-          <Text style={[typography.captionBold, { color: colors.text.primary }]}>
-            No Client API Keys
-          </Text>
-          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-            Zero cloud AI keys (Gemini, OpenAI, Anthropic) are shipped inside mobile bundles. All cloud calls route through rate-capped serverless functions.
+          <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 6 }]}>
+            This build has no cloud AI. If it is added later, it will be off until you turn it on for a specific
+            feature, and it will never receive your journal or intimate health records.
           </Text>
         </Card>
-      </ScrollView>
+      </View>
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-  },
-  switchRow: {
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
   },
 });

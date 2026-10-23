@@ -1,119 +1,225 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, Text, StyleSheet, Switch, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
 import { Header } from '../../../components/ui/Header';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
+import { TextField } from '../../../components/ui/TextField';
 import { useTheme } from '../../../theme/useTheme';
-import { useRootStore } from '../../../stores/useRootStore';
+import { useRootStore, useShallow } from '../../../stores/useRootStore';
+import { activeMemories, type MemoryItem } from '../../../domain/ai/types';
+
+const MAX_LENGTH = 280;
 
 export default function AiMemoryScreen() {
   const { colors, typography, spacing } = useTheme();
-  const showAlert = useRootStore((s) => s.showAlert);
-  const showToast = useRootStore((s) => s.showToast);
+  const {
+    aiMemories,
+    aiMemoryEnabled,
+    addAiMemory,
+    updateAiMemory,
+    deleteAiMemory,
+    clearAiMemories,
+    setAiMemoryEnabled,
+    showAlert,
+    showToast,
+  } = useRootStore(
+    useShallow((s) => ({
+      aiMemories: s.aiMemories,
+      aiMemoryEnabled: s.aiMemoryEnabled,
+      addAiMemory: s.addAiMemory,
+      updateAiMemory: s.updateAiMemory,
+      deleteAiMemory: s.deleteAiMemory,
+      clearAiMemories: s.clearAiMemories,
+      setAiMemoryEnabled: s.setAiMemoryEnabled,
+      showAlert: s.showAlert,
+      showToast: s.showToast,
+    })),
+  );
 
-  const [memories, setMemories] = useState([
-    { id: 'mem_1', text: 'Prefers gentle morning mobility over high-intensity cardio due to desk work stiffness.', source: 'Onboarding Goals', date: 'Yesterday' },
-    { id: 'mem_2', text: 'Practicing regular 4-7-8 breathing when stress levels exceed 6/10.', source: 'Daily Check-In', date: '2 days ago' },
-    { id: 'mem_3', text: 'Vegetarian dietary focus; appreciates whole plant nourishment recommendations.', source: 'Lifestyle Preferences', date: '3 days ago' },
-  ]);
+  const memories = useMemo(() => activeMemories(aiMemories), [aiMemories]);
+  const [draft, setDraft] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editText, setEditText] = useState('');
 
-  const handleDelete = (id: string) => {
-    showAlert({
-      title: 'Erase Memory',
-      message: 'Remove this learned preference from your device-local vault?',
-      confirmText: 'Erase',
-      destructive: true,
-      onConfirm: () => {
-        setMemories((prev) => prev.filter((m) => m.id !== id));
-        showToast({ type: 'info', message: 'Memory erased.' });
-      },
-    });
+  const handleAdd = () => {
+    if (addAiMemory({ content: draft, category: 'preference', source: 'user' })) {
+      setDraft('');
+      showToast({ type: 'success', message: 'Saved on this device.' });
+    }
   };
 
-  const handleClearAll = () => {
+  const startEdit = (m: MemoryItem) => {
+    setEditingId(m.id);
+    setEditText(m.content);
+  };
+
+  const saveEdit = () => {
+    if (editingId) updateAiMemory(editingId, editText);
+    setEditingId(null);
+  };
+
+  const confirmDelete = (id: string) =>
     showAlert({
-      title: 'Reset All Memories',
-      message: 'This clears all on-device learned context for task personalization.',
-      confirmText: 'Reset All',
+      title: 'Forget this memory?',
+      message: 'It will be removed from this device.',
+      confirmText: 'Forget',
+      destructive: true,
+      onConfirm: () => deleteAiMemory(id),
+    });
+
+  const confirmClear = () =>
+    showAlert({
+      title: 'Forget everything?',
+      message: 'All memories on this device will be removed. This cannot be undone.',
+      confirmText: 'Forget all',
       destructive: true,
       onConfirm: () => {
-        setMemories([]);
-        showToast({ type: 'info', message: 'All memories reset.' });
+        clearAiMemories();
+        showToast({ type: 'info', message: 'All memories removed.' });
       },
     });
-  };
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Local Memory Vault" subtitle="Inspect, Edit & Delete Learned Personal Context" showBack />
-      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
-        {/* Core Principle Banner (Section 5.3) */}
-        <Card style={{ marginBottom: spacing.md, backgroundColor: colors.surface1, borderColor: colors.border }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-            <Ionicons name="hardware-chip-outline" size={20} color={colors.primary} />
-            <Text style={[typography.subbodyBold, { color: colors.text.primary, marginLeft: 6 }]}>
-              User-Controlled Memory (Section 5.3)
-            </Text>
+      <Header title="Memory" subtitle="Things you chose to keep, stored only on this device" showBack />
+      <View style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
+        <Card style={{ marginBottom: spacing.md }}>
+          <View style={styles.row}>
+            <View style={{ flex: 1, paddingRight: 12 }}>
+              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Use memory</Text>
+              <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                When off, nothing new is kept and existing memories are not used or searched. They stay until you
+                remove them.
+              </Text>
+            </View>
+            <Switch
+              value={aiMemoryEnabled}
+              onValueChange={setAiMemoryEnabled}
+              trackColor={{ false: colors.surface1, true: colors.primary }}
+              accessibilityLabel="Use memory"
+            />
           </View>
-          <Text style={[typography.caption, { color: colors.text.secondary, lineHeight: 18 }]}>
-            Personal memories are stored separately from model weights. We avoid auto-promoting every journal note into a permanent memory. You can inspect and erase any entry at any time.
-          </Text>
         </Card>
 
-        <View style={styles.headerRow}>
-          <Text style={[typography.subheading, { color: colors.text.primary }]}>
-            Active Local Memories ({memories.length})
-          </Text>
-          {memories.length > 0 && (
-            <Button label="Clear All" variant="ghost" size="sm" onPress={handleClearAll} />
-          )}
+        {aiMemoryEnabled ? (
+          <Card variant="surface1" style={{ marginBottom: spacing.md }}>
+            <Text style={[typography.subbodyBold, { color: colors.text.primary, marginBottom: spacing.sm }]}>
+              Add something to remember
+            </Text>
+            <TextField
+              value={draft}
+              onChangeText={setDraft}
+              placeholder="e.g. Mornings work best for my routines"
+              maxLength={MAX_LENGTH}
+              multiline
+              accessibilityLabel="New memory"
+            />
+            <Button
+              label="Keep"
+              size="sm"
+              disabled={!draft.trim()}
+              onPress={handleAdd}
+              style={{ marginTop: spacing.sm, alignSelf: 'flex-start' }}
+            />
+          </Card>
+        ) : null}
+
+        <View style={[styles.row, { marginBottom: spacing.sm }]}>
+          <Text style={[typography.subheading, { color: colors.text.primary }]}>Kept ({memories.length})</Text>
+          {memories.length > 0 ? <Button label="Forget all" variant="ghost" size="sm" onPress={confirmClear} /> : null}
         </View>
 
-        {memories.length > 0 ? (
-          memories.map((m) => (
-            <Card key={m.id} style={{ marginTop: spacing.sm }}>
-              <View style={styles.headerRow}>
-                <Badge label={m.source} variant="neutral" />
-                <Text style={[typography.caption, { color: colors.text.muted }]}>{m.date}</Text>
-              </View>
-              <Text style={[typography.body, { color: colors.text.primary, marginTop: 8, lineHeight: 22 }]}>
-                "{m.text}"
-              </Text>
-              <Button
-                label="Forget This Memory"
-                variant="outline"
-                size="sm"
-                style={{ marginTop: 10, alignSelf: 'flex-start' }}
-                onPress={() => handleDelete(m.id)}
-              />
-            </Card>
-          ))
-        ) : (
-          <Card style={{ padding: spacing.xl, alignItems: 'center', marginTop: spacing.md }}>
+        {memories.length === 0 ? (
+          <Card variant="surface1" style={{ padding: spacing.lg }}>
             <Text style={[typography.subbody, { color: colors.text.secondary }]}>
-              Memory vault is completely empty. No personal preferences are currently retained.
+              Nothing kept yet. Add a note above, or keep a pattern from Your Patterns. Journal entries are never
+              turned into memories automatically.
             </Text>
           </Card>
+        ) : (
+          memories.map((m) => (
+            <Card key={m.id} style={{ marginBottom: spacing.sm, opacity: aiMemoryEnabled ? 1 : 0.6 }}>
+              <View style={styles.row}>
+                <Badge label={m.source === 'insight' ? 'From a pattern' : 'Added by you'} variant="neutral" />
+                <Text style={[typography.caption, { color: colors.text.muted }]}>
+                  {new Date(m.updatedAt ?? m.createdAt).toLocaleDateString()}
+                </Text>
+              </View>
+              {editingId === m.id ? (
+                <>
+                  <TextField
+                    value={editText}
+                    onChangeText={setEditText}
+                    maxLength={MAX_LENGTH}
+                    multiline
+                    autoFocus
+                    accessibilityLabel="Edit memory"
+                    containerStyle={{ marginTop: spacing.sm }}
+                  />
+                  <View style={[styles.actions, { marginTop: spacing.sm }]}>
+                    <Button label="Save" size="sm" disabled={!editText.trim()} onPress={saveEdit} />
+                    <Button label="Cancel" size="sm" variant="ghost" onPress={() => setEditingId(null)} />
+                  </View>
+                </>
+              ) : (
+                <>
+                  <Text style={[typography.body, { color: colors.text.primary, marginTop: spacing.sm }]}>
+                    {m.content}
+                  </Text>
+                  {m.expiresAt ? (
+                    <Text style={[typography.caption, { color: colors.text.muted, marginTop: 4 }]}>
+                      Forgotten automatically on {new Date(m.expiresAt).toLocaleDateString()}
+                    </Text>
+                  ) : null}
+                  <View style={[styles.actions, { marginTop: spacing.sm }]}>
+                    <IconAction icon="create-outline" label="Edit" onPress={() => startEdit(m)} />
+                    <IconAction icon="trash-outline" label="Forget" onPress={() => confirmDelete(m.id)} />
+                  </View>
+                </>
+              )}
+            </Card>
+          ))
         )}
-      </ScrollView>
+      </View>
     </ScreenWrapper>
   );
 }
 
+function IconAction({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  onPress: () => void;
+}) {
+  const { colors, typography } = useTheme();
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={styles.iconAction}>
+      <Ionicons name={icon} size={16} color={colors.text.secondary} />
+      <Text style={[typography.captionBold, { color: colors.text.secondary, marginLeft: 4 }]}>{label}</Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-  },
-  headerRow: {
+  row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+  },
+  actions: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  iconAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 44,
+    paddingRight: 8,
   },
 });

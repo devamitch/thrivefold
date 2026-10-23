@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,155 +7,241 @@ import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { Header } from '../../../components/ui/Header';
+import { TextField } from '../../../components/ui/TextField';
 import { useTheme } from '../../../theme/useTheme';
-import { useRootStore } from '../../../stores/useRootStore';
-import { localMemoryVault } from '../../../services/memory/localMemoryVault';
-import { localAi } from '../../../services/local-ai/localAiService';
+import { useRootStore, useShallow } from '../../../stores/useRootStore';
+import { checkInsUntilInsights, computeInsights, type Insight } from '../../../domain/ai/insights';
+import { searchDocuments, type RetrievalDocument } from '../../../domain/ai/localRetrieval';
+import { activeMemories } from '../../../domain/ai/types';
 
-export default function AiVaultScreen() {
+const KIND_LABEL: Record<Insight['kind'], string> = {
+  trend: 'This week',
+  link: 'Connection',
+  pattern: 'Weekly rhythm',
+  symptom: 'Recurring',
+  cycle: 'Cycle',
+  consistency: 'Habit',
+};
+
+/** Same date convention the check-in screen uses when it saves records. */
+const todayKey = () => new Date().toISOString().split('T')[0];
+
+export default function InsightsScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
-  const showAlert = useRootStore((s) => s.showAlert);
-  const showToast = useRootStore((s) => s.showToast);
+  const { checkInHistory, periodHistory, journalEntries, aiMemories, aiMemoryEnabled, addAiMemory, showToast } =
+    useRootStore(
+      useShallow((s) => ({
+        checkInHistory: s.checkInHistory,
+        periodHistory: s.cycleData?.periodHistory,
+        journalEntries: s.journalEntries,
+        aiMemories: s.aiMemories,
+        aiMemoryEnabled: s.aiMemoryEnabled,
+        addAiMemory: s.addAiMemory,
+        showToast: s.showToast,
+      })),
+    );
 
-  const [memories, setMemories] = useState(localMemoryVault.getAllMemories());
-  const [isQuantizedLoaded, setIsQuantizedLoaded] = useState(localAi.isQuantizedModelLoaded());
+  const [query, setQuery] = useState('');
+  const today = todayKey();
 
-  const handleLoadModel = async () => {
-    await localAi.loadOnDeviceModel();
-    setIsQuantizedLoaded(true);
-    showToast({
-      type: 'success',
-      title: 'On-Device Model Active',
-      message: 'Lightweight quantized model weights ready on device. Operating 100% offline.',
+  const insights = useMemo(
+    () => computeInsights({ checkIns: checkInHistory, periods: periodHistory ?? [], today }),
+    [checkInHistory, periodHistory, today],
+  );
+  const daysToGo = useMemo(() => checkInsUntilInsights(checkInHistory, today), [checkInHistory, today]);
+
+  const memories = useMemo(() => activeMemories(aiMemories), [aiMemories]);
+  const keptRefs = useMemo(() => new Set(memories.map((m) => m.sourceRef).filter(Boolean)), [memories]);
+
+  const documents = useMemo<RetrievalDocument[]>(
+    () => [
+      ...journalEntries.map((j) => ({
+        id: j.id,
+        kind: 'journal' as const,
+        title: j.title,
+        text: j.content,
+        date: j.createdAt,
+      })),
+      // A paused vault is not used for anything, search included.
+      ...(aiMemoryEnabled ? memories : []).map((m) => ({
+        id: m.id,
+        kind: 'memory' as const,
+        title: '',
+        text: m.content,
+        date: m.createdAt,
+      })),
+    ],
+    [journalEntries, memories, aiMemoryEnabled],
+  );
+  const hits = useMemo(() => searchDocuments(documents, query, 6), [documents, query]);
+
+  const keep = (insight: Insight) => {
+    if (!insight.memoryCandidate) return;
+    addAiMemory({
+      content: insight.memoryCandidate,
+      category: 'pattern',
+      source: 'insight',
+      sourceRef: insight.id,
     });
-  };
-
-  const handleDeleteMemory = (id: string) => {
-    localMemoryVault.deleteMemory(id);
-    setMemories(localMemoryVault.getAllMemories());
-  };
-
-  const handleClearAll = () => {
-    showAlert({
-      title: 'Clear All Memories',
-      message: 'Erase all personal AI tokens stored on this device?',
-      confirmText: 'Clear All',
-      destructive: true,
-      onConfirm: () => {
-        localMemoryVault.clearAll();
-        setMemories([]);
-        showToast({ type: 'info', title: 'Memories Erased', message: 'All personal AI tokens were cleared.' });
-      },
-    });
+    showToast({ type: 'success', title: 'Kept in your memory', message: 'Stored on this device for 90 days.' });
   };
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="AI Memory Vault" subtitle="On-Device Sovereignty & Model State" showBack />
-      <View style={[styles.content, { paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }]}>
-        {/* Model Runtime State Card */}
-        <Card variant="tinted" style={{ marginBottom: spacing.md, padding: spacing.base }}>
-          <View style={styles.rowBetween}>
-            <View>
-              <Text style={[typography.subbodyBold, { color: colors.primary }]}>Local Model Runtime</Text>
-              <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                {isQuantizedLoaded ? 'On-Device Quantized Model Loaded' : 'Deterministic & Classifier Mode'}
-              </Text>
-            </View>
-            <Badge
-              label={isQuantizedLoaded ? 'Model Ready' : 'Heuristic Mode'}
-              variant={isQuantizedLoaded ? 'success' : 'neutral'}
-            />
-          </View>
-          <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.sm }]}>
-            Zero cloud AI keys shipped. Tasks execute locally on device with graceful fallback.
-          </Text>
-          {!isQuantizedLoaded && (
-            <Button
-              label="Initialize Local Weights"
-              size="sm"
-              onPress={handleLoadModel}
-              style={{ marginTop: spacing.md }}
-            />
-          )}
-        </Card>
-
-        {/* AI Management Sub-Navigation */}
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: spacing.md }}>
-          <Button
-            label="Memory Vault"
-            size="sm"
-            variant="outline"
-            icon={<Ionicons name="hardware-chip-outline" size={14} color={colors.primary} />}
-            onPress={() => router.push('/(app)/ai/memory')}
-          />
-          <Button
-            label="Privacy Guardrails"
-            size="sm"
-            variant="outline"
-            icon={<Ionicons name="shield-checkmark-outline" size={14} color={colors.primary} />}
-            onPress={() => router.push('/(app)/ai/privacy')}
-          />
-          <Button
-            label="Engine Status"
-            size="sm"
-            variant="ghost"
-            icon={<Ionicons name="stats-chart-outline" size={14} color={colors.text.secondary} />}
-            onPress={() => router.push('/(app)/ai/model-status')}
-          />
-        </View>
-
-        {/* Memory Vault Header */}
-        <View style={[styles.rowBetween, { marginVertical: spacing.sm }]}>
-          <Text style={[typography.subheading, { color: colors.text.primary }]}>
-            Stored Personal Memories ({memories.length})
-          </Text>
-          {memories.length > 0 && (
-            <Pressable onPress={handleClearAll}>
-              <Text style={[typography.captionBold, { color: colors.error }]}>Erase All</Text>
-            </Pressable>
-          )}
-        </View>
-
-        {memories.length === 0 ? (
-          <Card variant="surface1" style={{ alignItems: 'center', padding: spacing.xl }}>
-            <Ionicons name="lock-closed-outline" size={28} color={colors.text.muted} style={{ marginBottom: 8 }} />
-            <Text style={[typography.bodyBold, { color: colors.text.primary }]}>No Memories Stored</Text>
-            <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4, textAlign: 'center' }]}>
-              Your memory vault is clean. When enabled, only user-confirmed routine preferences are retained.
+      <Header title="Your Patterns" subtitle="Worked out on this device from your own records" showBack />
+      <View style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
+        {insights.length === 0 ? (
+          <Card variant="surface1" style={{ padding: spacing.lg, marginBottom: spacing.md }}>
+            <Ionicons name="analytics-outline" size={26} color={colors.text.muted} />
+            <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: spacing.sm }]}>
+              No patterns yet
             </Text>
+            <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>
+              {daysToGo > 0
+                ? `Patterns start appearing after ${daysToGo} more check-in ${daysToGo === 1 ? 'day' : 'days'}. Nothing is guessed before there is enough data.`
+                : 'Your check-ins look steady so far. Patterns appear here when something clear shows up.'}
+            </Text>
+            <Button
+              label="Check in now"
+              size="sm"
+              onPress={() => router.push('/(app)/check-in')}
+              style={{ marginTop: spacing.md, alignSelf: 'flex-start' }}
+            />
           </Card>
         ) : (
-          memories.map((mem) => (
-            <Card key={mem.id} style={{ marginBottom: spacing.sm }}>
-              <View style={styles.rowBetween}>
-                <Badge label={mem.category.toUpperCase()} variant="neutral" />
-                <Pressable onPress={() => handleDeleteMemory(mem.id)} style={{ padding: 4 }}>
-                  <Ionicons name="trash-outline" size={16} color={colors.text.muted} />
-                </Pressable>
-              </View>
-              <Text style={[typography.subbody, { color: colors.text.primary, marginTop: spacing.xs }]}>
-                {mem.content}
-              </Text>
-              <Text style={[typography.caption, { color: colors.text.muted, marginTop: 6 }]}>
-                Stored locally · {new Date(mem.createdAt).toLocaleDateString()}
-              </Text>
-            </Card>
-          ))
+          insights.map((insight) => {
+            const kept = keptRefs.has(insight.id);
+            return (
+              <Card key={insight.id} style={{ marginBottom: spacing.sm }}>
+                <View style={styles.rowBetween}>
+                  <Badge label={KIND_LABEL[insight.kind]} variant="neutral" />
+                  <Badge
+                    label={insight.strength === 'clear' ? 'Clear' : 'Emerging'}
+                    variant={insight.strength === 'clear' ? 'success' : 'info'}
+                  />
+                </View>
+                <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: spacing.sm }]}>
+                  {insight.title}
+                </Text>
+                <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>
+                  {insight.detail}
+                </Text>
+                {insight.suggestion ? (
+                  <Text style={[typography.subbody, { color: colors.text.primary, marginTop: spacing.sm }]}>
+                    {insight.suggestion}
+                  </Text>
+                ) : null}
+                <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.sm }]}>
+                  {insight.evidence}
+                </Text>
+                {insight.memoryCandidate && aiMemoryEnabled ? (
+                  <Button
+                    label={kept ? 'Kept in memory' : 'Keep in memory'}
+                    size="sm"
+                    variant="outline"
+                    disabled={kept}
+                    icon={
+                      <Ionicons
+                        name={kept ? 'checkmark' : 'bookmark-outline'}
+                        size={14}
+                        color={kept ? colors.text.muted : colors.primary}
+                      />
+                    }
+                    onPress={() => keep(insight)}
+                    style={{ marginTop: spacing.sm, alignSelf: 'flex-start' }}
+                  />
+                ) : null}
+              </Card>
+            );
+          })
         )}
+
+        <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg }]}>
+          Search your notes
+        </Text>
+        <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2, marginBottom: spacing.sm }]}>
+          Finds journal entries and kept memories on this device. Nothing is sent anywhere.
+        </Text>
+        <TextField
+          value={query}
+          onChangeText={setQuery}
+          placeholder="e.g. sleep, back pain, work"
+          returnKeyType="search"
+          autoCorrect={false}
+          accessibilityLabel="Search your notes"
+          leftIcon={<Ionicons name="search-outline" size={18} color={colors.text.muted} />}
+        />
+        {query.trim().length > 0 && hits.length === 0 ? (
+          <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: spacing.sm }]}>
+            {documents.length === 0
+              ? 'You have no journal entries or memories yet.'
+              : 'Nothing matches. Try a different word.'}
+          </Text>
+        ) : null}
+        {hits.map((hit) => (
+          <Card
+            key={`${hit.doc.kind}_${hit.doc.id}`}
+            onPress={
+              hit.doc.kind === 'journal'
+                ? () => router.push({ pathname: '/(app)/journal/[entryId]', params: { entryId: hit.doc.id } })
+                : () => router.push('/(app)/ai/memory')
+            }
+            style={{ marginTop: spacing.sm }}
+          >
+            <View style={styles.rowBetween}>
+              <Text style={[typography.subbodyBold, { color: colors.text.primary, flex: 1 }]} numberOfLines={1}>
+                {hit.doc.kind === 'journal' ? hit.doc.title || 'Journal entry' : 'Memory'}
+              </Text>
+              <Text style={[typography.caption, { color: colors.text.muted }]}>
+                {new Date(hit.doc.date).toLocaleDateString()}
+              </Text>
+            </View>
+            <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>{hit.snippet}</Text>
+          </Card>
+        ))}
+
+        <Card variant="surface1" style={{ marginTop: spacing.lg, padding: spacing.base }}>
+          <Text style={[typography.subbodyBold, { color: colors.text.primary }]}>How this works</Text>
+          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>
+            Patterns come from simple statistics on your own check-ins and logged periods, and only appear once
+            there is enough data. They describe your records; they are not medical advice or a diagnosis.
+          </Text>
+          <View style={styles.links}>
+            <LinkRow label={`Memory (${memories.length})`} icon="bookmark-outline" onPress={() => router.push('/(app)/ai/memory')} />
+            <LinkRow label="Privacy" icon="shield-checkmark-outline" onPress={() => router.push('/(app)/ai/privacy')} />
+            <LinkRow label="What runs on this device" icon="hardware-chip-outline" onPress={() => router.push('/(app)/ai/model-status')} />
+          </View>
+        </Card>
       </View>
     </ScreenWrapper>
   );
 }
 
+function LinkRow({ label, icon, onPress }: { label: string; icon: keyof typeof Ionicons.glyphMap; onPress: () => void }) {
+  const { colors, typography } = useTheme();
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" style={styles.linkRow} hitSlop={4}>
+      <Ionicons name={icon} size={18} color={colors.primary} />
+      <Text style={[typography.subbody, { color: colors.text.primary, flex: 1, marginLeft: 10 }]}>{label}</Text>
+      <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
-  content: {
-    flex: 1,
-  },
   rowBetween: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 8,
+  },
+  links: {
+    marginTop: 8,
+  },
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 44,
   },
 });

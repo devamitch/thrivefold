@@ -49,9 +49,23 @@ export interface CloudAiRequest {
 
 export interface MemoryItem {
   id: string;
-  category: 'preference' | 'routine' | 'goal' | 'limitation';
+  category: 'preference' | 'routine' | 'goal' | 'limitation' | 'pattern';
   content: string;
+  /** Where it came from: typed by the person, or an insight they chose to keep. */
+  source: 'user' | 'insight';
+  /** Insight id when source is 'insight', so the same pattern isn't saved twice. */
+  sourceRef?: string;
   createdAt: string;
+  updatedAt?: string;
+  /** Insight-derived memories expire so stale patterns don't linger. */
   expiresAt?: string;
   isSensitive: boolean;
+}
+
+/** Memories that have not expired, newest first. */
+export function activeMemories(items: MemoryItem[], now: Date = new Date()): MemoryItem[] {
+  const t = now.getTime();
+  return items
+    .filter((m) => !m.expiresAt || new Date(m.expiresAt).getTime() > t)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }

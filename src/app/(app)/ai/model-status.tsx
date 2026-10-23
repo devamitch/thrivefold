@@ -1,94 +1,90 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
 import { Header } from '../../../components/ui/Header';
-import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { useTheme } from '../../../theme/useTheme';
 
+type Status = 'active' | 'not_installed' | 'not_available';
+
+const COMPONENTS: { title: string; status: Status; body: string }[] = [
+  {
+    title: 'Safety and routine rules',
+    status: 'active',
+    body: "Picks today's suggestion from your check-in, and switches to rest and care guidance when you report severe pain.",
+  },
+  {
+    title: 'Pattern finder',
+    status: 'active',
+    body: 'Compares weeks, links sleep, stress, mood and energy, and spots recurring symptoms. It stays quiet until there are enough check-ins.',
+  },
+  {
+    title: 'Note search',
+    status: 'active',
+    body: 'Ranks your journal entries and memories by relevance to the words you search for.',
+  },
+  {
+    title: 'Wording classifier',
+    status: 'active',
+    body: 'Recognises tiredness, stress, pain and low mood in short text, ignoring negations like "not tired". Safety phrases always surface support options.',
+  },
+  {
+    title: 'On-device language model',
+    status: 'not_installed',
+    body: 'No language model ships with this build. Everything above works without one.',
+  },
+  {
+    title: 'Cloud AI',
+    status: 'not_available',
+    body: 'No server is configured, so nothing can be sent anywhere.',
+  },
+];
+
+const BADGE: Record<Status, { label: string; variant: 'success' | 'neutral' }> = {
+  active: { label: 'Running', variant: 'success' },
+  not_installed: { label: 'Not installed', variant: 'neutral' },
+  not_available: { label: 'Not available', variant: 'neutral' },
+};
+
 export default function ModelStatusScreen() {
   const { colors, typography, spacing } = useTheme();
-  const [activeRuntime, setActiveRuntime] = useState<'deterministic' | 'local_classifier' | 'cloud_proxy'>('deterministic');
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="AI Engine Runtime Status" subtitle="Multi-Tier Local & Serverless Architecture" showBack />
-      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
-        {/* Tier 1: Deterministic Engine (Always 100% Online) */}
-        <Card style={{ marginBottom: spacing.md, borderColor: colors.success }}>
-          <View style={styles.tierHeader}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="checkmark-circle" size={22} color={colors.success} />
-              <Text style={[typography.bodyBold, { color: colors.text.primary, marginLeft: 8 }]}>
-                Tier 1: Deterministic Rule Engine
-              </Text>
+      <Header title="On This Device" subtitle="What powers suggestions and patterns" showBack />
+      <View style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
+        {COMPONENTS.map((c) => (
+          <Card key={c.title} style={{ marginBottom: spacing.sm }}>
+            <View style={styles.row}>
+              <View style={[styles.row, { flex: 1 }]}>
+                <Ionicons
+                  name={c.status === 'active' ? 'checkmark-circle' : 'remove-circle-outline'}
+                  size={20}
+                  color={c.status === 'active' ? colors.success : colors.text.muted}
+                />
+                <Text style={[typography.bodyBold, { color: colors.text.primary, marginLeft: 8, flex: 1 }]}>
+                  {c.title}
+                </Text>
+              </View>
+              <Badge label={BADGE[c.status].label} variant={BADGE[c.status].variant} />
             </View>
-            <Badge label="Active & Online" variant="success" />
-          </View>
-          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 6, lineHeight: 18 }]}>
-            Executes all safety boundaries, age assurance checks, one-introduction quotas, block enforcement, and contraindication modifications without network connectivity.
-          </Text>
-        </Card>
-
-        {/* Tier 2: Local Intent Classifier */}
-        <Card style={{ marginBottom: spacing.md, borderColor: colors.primary }}>
-          <View style={styles.tierHeader}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="hardware-chip" size={22} color={colors.primary} />
-              <Text style={[typography.bodyBold, { color: colors.text.primary, marginLeft: 8 }]}>
-                Tier 2: On-Device Lightweight Classifier
-              </Text>
-            </View>
-            <Badge label="Ready (Local)" variant="primary" />
-          </View>
-          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 6, lineHeight: 18 }]}>
-            Identifies daily check-in sentiment and fatigue signals in &lt;15ms on device. Zero battery drain and no cloud round-trips.
-          </Text>
-        </Card>
-
-        {/* Tier 3: Cloud Provider Router */}
-        <Card style={{ marginBottom: spacing.md }}>
-          <View style={styles.tierHeader}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="cloud-outline" size={22} color={colors.text.muted} />
-              <Text style={[typography.bodyBold, { color: colors.text.primary, marginLeft: 8 }]}>
-                Tier 3: Cloud AI Gateway (Server-Side)
-              </Text>
-            </View>
-            <Badge label="Standby (Cost-Capped)" variant="neutral" />
-          </View>
-          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 6, lineHeight: 18 }]}>
-            Serverless Gemini proxy. Activated strictly for user-requested comprehensive educational synthesis with explicit consent.
-          </Text>
-        </Card>
-
-        {/* Test Diagnostics */}
-        <Card style={{ marginBottom: spacing.lg, backgroundColor: colors.surface1 }}>
-          <Text style={[typography.subbodyBold, { color: colors.text.primary, marginBottom: 4 }]}>
-            Offline Resilience Test
-          </Text>
-          <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: 12 }]}>
-            Simulate complete network loss to verify that all daily quests, check-ins, and health trackers continue operating seamlessly.
-          </Text>
-          <Button label="Run Offline Resilience Audit" variant="outline" size="sm" />
-        </Card>
-      </ScrollView>
+            <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 6 }]}>{c.body}</Text>
+          </Card>
+        ))}
+        <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.sm }]}>
+          All of these work offline. None of them diagnose; they describe your own records.
+        </Text>
+      </View>
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-  },
-  tierHeader: {
+  row: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 8,
   },
 });
