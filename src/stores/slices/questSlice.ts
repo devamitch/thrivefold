@@ -28,6 +28,11 @@ import {
 } from '../../domain/game/progression';
 import type { TaskAssignment, TaskDefinition, VerificationResult } from '../../domain/game/types';
 
+/** Reward events waiting to be confirmed by the server (only used with an account). */
+export type SyncItem =
+  | { kind: 'claim'; key: string; assignmentId: string; taskId: string; gameDate: string }
+  | { kind: 'unlock'; key: string; featureId: string };
+
 /** Screen-facing view of an assignment. */
 export interface Quest {
   id: string;
@@ -58,6 +63,7 @@ export interface QuestSlice {
   /** Target snapshot for `dailyTargetDate`; stable for the day. */
   dailyPointsTarget: number;
   dailyTargetDate: string | null;
+  pendingSync: SyncItem[];
 
   // Derived from the ledger and assignments, kept in state for cheap selectors.
   xp: number;
@@ -77,6 +83,7 @@ export interface QuestSlice {
   submitQuestEvidence: (assignmentId: string, evidence: ObjectiveEvidence) => VerificationResult;
   purchaseUnlock: (featureId: string) => { ok: boolean; block?: UnlockBlock };
   setEmblem: (emblem: string) => void;
+  resolveSync: (key: string) => void;
   unlockAchievement: (achievementId: string) => void;
 }
 
@@ -199,6 +206,7 @@ export const createQuestSlice: StateCreator<RootState, [['zustand/persist', unkn
     dailyAssignments: [],
     dailyPointsTarget: 0,
     dailyTargetDate: null,
+    pendingSync: [],
     xp: 0,
     level: 1,
     diamonds: 0,
@@ -342,6 +350,10 @@ export const createQuestSlice: StateCreator<RootState, [['zustand/persist', unkn
       });
       commit({
         rewardLedger: ledger,
+        pendingSync: [
+          ...state.pendingSync,
+          { kind: 'claim', key: `task:${assignmentId}`, assignmentId, taskId: task.id, gameDate: asg.assignedDate },
+        ],
         dailyAssignments: state.dailyAssignments.map((a) =>
           a.assignmentId === assignmentId
             ? {
@@ -383,13 +395,19 @@ export const createQuestSlice: StateCreator<RootState, [['zustand/persist', unkn
         featureId,
       );
       if (!result.ok) return { ok: false, block: result.block };
-      commit({ rewardLedger: result.ledger, entitlements: result.entitlements });
+      commit({
+        rewardLedger: result.ledger,
+        entitlements: result.entitlements,
+        pendingSync: [...state.pendingSync, { kind: 'unlock', key: `unlock:${featureId}`, featureId }],
+      });
       return { ok: true };
     },
 
     setEmblem: (emblem) => {
       if (ownedEmblems(get().entitlements).includes(emblem)) set({ selectedEmblem: emblem });
     },
+
+    resolveSync: (key) => set((st) => ({ pendingSync: st.pendingSync.filter((i) => i.key !== key) })),
 
     unlockAchievement: (achievementId) =>
       set((state) =>

@@ -17,6 +17,7 @@ import { Card } from '../../../components/ui/Card';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { buildLocalExport, eraseLocalData } from '../../../services/privacy/localData';
 import { useRootStore } from '../../../stores/useRootStore';
+import { signOutAccount } from '../../../services/account/accountService';
 import { useTheme } from '../../../theme/useTheme';
 
 const AVATAR_OPTIONS = [
@@ -414,6 +415,7 @@ export default function SettingsScreen() {
 
         <Card
           onPress={() => {
+            signOutAccount().catch(() => undefined);
             signOut();
             router.replace('/');
           }}

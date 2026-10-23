@@ -234,5 +234,48 @@ await as('A');
 r = await q(`insert into public.thrivefold_user_stamps (user_id, stamp_id) values ('${ids.A}','x')`);
 check('user cannot grant themselves stamps', !!r.error, r.error);
 
+// Progression (migration 5): rewards from the catalog, idempotent, atomic unlocks
+await as('A');
+r = await q(`select public.tf_claim_task_reward('asg_1', 'goal_define_one', current_date) as r`);
+check('user can claim a catalog task reward', r.rows?.[0]?.r?.status === 'recorded' && r.rows[0].r.xp === 15, r.error ?? JSON.stringify(r.rows));
+r = await q(`select public.tf_claim_task_reward('asg_1', 'goal_define_one', current_date) as r`);
+check('same assignment cannot pay twice', r.rows?.[0]?.r?.status === 'duplicate', r.error);
+r = await q(`select public.tf_claim_task_reward('asg_2', 'no_such_task', current_date) as r`);
+check('unknown task is rejected', /unknown task/.test(r.error ?? ''), r.error);
+r = await q(`select public.tf_claim_task_reward('asg_3', 'goal_define_one', current_date - 5) as r`);
+check('stale game date is rejected', /stale game date/.test(r.error ?? ''), r.error);
+r = await q(`insert into public.thrivefold_reward_ledger (user_id, key, kind, xp, diamonds, game_date, source_id, policy_version)
+             values ('${ids.A}', 'forged', 'level_clear', 0, 999, current_date, 'x', 'x')`);
+check('client cannot write the reward ledger directly', !!r.error, r.error);
+r = await q(`select public.tf_my_progress() as p`);
+check('progress summary reflects only server-granted rewards', r.rows?.[0]?.p?.xp === 15 && r.rows[0].p.diamonds === 0, JSON.stringify(r.rows));
+r = await q(`select public.tf_unlock_feature('emblem_set_nature') as u`);
+check('unlock refused below the level requirement', r.rows?.[0]?.u?.block === 'LEVEL_TOO_LOW', r.error ?? JSON.stringify(r.rows));
+for (let i = 4; i < 10; i++) await q(`select public.tf_claim_task_reward('asg_${i}', 'goal_define_one', current_date)`);
+r = await q(`select public.tf_claim_task_reward('asg_99', 'goal_define_one', current_date) as r`);
+check('daily quest claim limit is enforced', /limit/.test(r.error ?? ''), r.error);
+await as('service');
+await q(`insert into public.thrivefold_reward_ledger (user_id, key, kind, xp, game_date, source_id, policy_version)
+         values ('${ids.A}', 'test_xp', 'legacy_import', 200, current_date, 'test', 'test')`);
+await q(`select public.tf_settle_levels('${ids.A}', current_date)`);
+await as('A');
+r = await q(`select public.tf_my_progress() as p`);
+const prog = r.rows?.[0]?.p;
+check('level-clear diamonds are granted by the server', prog?.level >= 2 && prog?.diamonds > 0, JSON.stringify(prog));
+r = await q(`select public.tf_unlock_feature('emblem_set_nature') as u`);
+check('eligible unlock spends once and grants', r.rows?.[0]?.u?.ok === true, r.error ?? JSON.stringify(r.rows));
+r = await q(`select public.tf_unlock_feature('emblem_set_nature') as u`);
+check('second unlock does not spend again', r.rows?.[0]?.u?.block === 'OWNED', JSON.stringify(r.rows));
+r = await q(`select count(*)::int as n from public.thrivefold_reward_ledger where key = 'unlock:emblem_set_nature'`);
+check('exactly one spend row exists', r.rows?.[0]?.n === 1, JSON.stringify(r.rows));
+await as('B');
+r = await q(`select count(*)::int as n from public.thrivefold_reward_ledger`);
+check('other users cannot see A ledger', r.rows?.[0]?.n === 0, JSON.stringify(r.rows));
+r = await q(`select count(*)::int as n from public.thrivefold_feature_entitlements`);
+check('other users cannot see A entitlements', r.rows?.[0]?.n === 0, JSON.stringify(r.rows));
+await as('anon');
+r = await q(`select public.tf_claim_task_reward('x', 'goal_define_one', current_date)`);
+check('anon cannot claim rewards', !!r.error, r.error);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

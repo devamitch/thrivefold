@@ -33,6 +33,17 @@ const stateStorage: StateStorage = {
 
 export const localJSONStorage = createJSONStorage(() => stateStorage);
 
+/** Async key-value view of the same device store, for the Supabase auth session. */
+export const asyncKeyValueStorage = {
+  getItem: async (key: string) => stateStorage.getItem(key) as string | null,
+  setItem: async (key: string, value: string) => {
+    stateStorage.setItem(key, value);
+  },
+  removeItem: async (key: string) => {
+    stateStorage.removeItem(key);
+  },
+};
+
 /** Deletes every persisted Thrivefold store on this device. */
 export function wipeLocalData(): void {
   storage()?.clearAll();

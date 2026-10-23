@@ -10,6 +10,7 @@ import { Button } from '../../components/ui/Button';
 import { TextField } from '../../components/ui/TextField';
 import { newLocalId } from '../../stores/slices/authSlice';
 import { useRootStore } from '../../stores/useRootStore';
+import { accountsAvailable, requestEmailCode, verifyEmailCode } from '../../services/account/accountService';
 import { useTheme } from '../../theme/useTheme';
 
 const { width: SCREEN_W } = Dimensions.get('window');
@@ -78,6 +79,12 @@ export default function SignInScreen() {
   const [activeSlide, setActiveSlide] = useState(0);
   const [pseudonym, setPseudonym] = useState('');
   const [showForm, setShowForm] = useState(false);
+  // Optional account: email one-time code, offered only when a backend is configured.
+  const [emailMode, setEmailMode] = useState<'off' | 'email' | 'code'>('off');
+  const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const autoSlideRef = useRef<NodeJS.Timeout | null>(null);
 
   const name = pseudonym.trim();
@@ -113,6 +120,42 @@ export default function SignInScreen() {
       isAgeVerified: false,
       ageBand: null,
       createdAt: new Date().toISOString(),
+    });
+    router.replace('/');
+  };
+
+  const sendCode = async () => {
+    if (busy) return;
+    setBusy(true);
+    setAuthError(null);
+    const res = await requestEmailCode(email);
+    setBusy(false);
+    if (res.ok) setEmailMode('code');
+    else setAuthError(res.message);
+  };
+
+  const confirmCode = async () => {
+    if (busy) return;
+    setBusy(true);
+    setAuthError(null);
+    const res = await verifyEmailCode(email, code);
+    setBusy(false);
+    if (!res.ok) {
+      setAuthError(res.message);
+      return;
+    }
+    // Records already on this device stay; the account is attached to them.
+    const existing = useRootStore.getState().user;
+    setUser({
+      id: res.userId,
+      pseudonym: existing?.pseudonym && existing.pseudonym !== 'Guest' ? existing.pseudonym : name || 'Friend',
+      avatarSeed: existing?.avatarSeed ?? newLocalId('seed'),
+      age: existing?.age ?? null,
+      isAgeVerified: false,
+      ageBand: existing?.ageBand ?? null,
+      email: res.email,
+      isGuest: false,
+      createdAt: existing?.createdAt ?? new Date().toISOString(),
     });
     router.replace('/');
   };
@@ -237,7 +280,68 @@ export default function SignInScreen() {
                 variant="ghost"
                 onPress={guest}
               />
+              {accountsAvailable() ? (
+                <Button
+                  label="Sign in with email"
+                  variant="ghost"
+                  onPress={() => {
+                    setEmailMode('email');
+                    setShowForm(true);
+                  }}
+                />
+              ) : null}
             </>
+          ) : emailMode !== 'off' ? (
+            <Animated.View entering={FadeIn.duration(300)}>
+              {emailMode === 'email' ? (
+                <TextField
+                  label="Email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="email-address"
+                  textContentType="emailAddress"
+                  returnKeyType="send"
+                  onSubmitEditing={sendCode}
+                  error={authError ?? undefined}
+                />
+              ) : (
+                <TextField
+                  label={`Code sent to ${email.trim()}`}
+                  placeholder="6-digit code"
+                  value={code}
+                  onChangeText={(t) => setCode(t.replace(/[^0-9]/g, '').slice(0, 6))}
+                  keyboardType="number-pad"
+                  textContentType="oneTimeCode"
+                  returnKeyType="go"
+                  onSubmitEditing={confirmCode}
+                  error={authError ?? undefined}
+                />
+              )}
+              <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.xs }]}>
+                An account lets your rewards be confirmed by the server. Health records still stay on this device.
+              </Text>
+              <Button
+                label={emailMode === 'email' ? 'Send code' : 'Sign in'}
+                size="lg"
+                loading={busy}
+                disabled={busy}
+                onPress={emailMode === 'email' ? sendCode : confirmCode}
+                style={{ marginTop: spacing.md }}
+              />
+              <Button
+                label="Back"
+                variant="ghost"
+                onPress={() => {
+                  setEmailMode(emailMode === 'code' ? 'email' : 'off');
+                  if (emailMode === 'email') setShowForm(false);
+                  setAuthError(null);
+                }}
+                style={{ marginTop: spacing.xs }}
+              />
+            </Animated.View>
           ) : (
             <Animated.View entering={FadeIn.duration(300)}>
               <TextField

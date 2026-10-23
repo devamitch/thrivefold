@@ -3,20 +3,31 @@ import { AppState } from 'react-native';
 import { Stack } from 'expo-router';
 
 import { useRootStore } from '../../stores/useRootStore';
+import { flushProgressionSync } from '../../services/sync/progressionSync';
 
 export default function AppLayout() {
   const ensureDailyQuests = useRootStore((s) => s.ensureDailyQuests);
   const isOnboarded = useRootStore((s) => s.isOnboarded);
+  const pendingCount = useRootStore((s) => s.pendingSync.length);
 
   // A new day's quests are created on first open and whenever the app returns to the
   // foreground on a new date; the same day's set is kept as-is.
   useEffect(() => {
     ensureDailyQuests();
     const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') ensureDailyQuests();
+      if (state === 'active') {
+        ensureDailyQuests();
+        flushProgressionSync().catch(() => undefined);
+      }
     });
     return () => sub.remove();
   }, [ensureDailyQuests, isOnboarded]);
+
+  // Send queued rewards to the server whenever something new is queued (no-op offline or
+  // without an account).
+  useEffect(() => {
+    if (pendingCount > 0) flushProgressionSync().catch(() => undefined);
+  }, [pendingCount]);
 
   return (
     <Stack
