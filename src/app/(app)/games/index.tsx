@@ -292,7 +292,7 @@ export default function GamesScreen() {
                           </Text>
                         </>
                       ) : (
-                        <Ionicons name="sparkles-outline" size={20} color={colors.text.muted} />
+                        <Ionicons name="cube-outline" size={20} color={colors.text.muted} />
                       )}
                     </Pressable>
                   );

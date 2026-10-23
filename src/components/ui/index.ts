@@ -21,3 +21,4 @@ export * from './TaskVerificationModal';
 export * from './PeriodLoggerModal';
 export * from './PersonalEventModal';
 export * from './DatePickerModal';
+export * from './AnimatedTabBar';

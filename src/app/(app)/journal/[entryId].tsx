@@ -74,7 +74,7 @@ export default function JournalEntryDetailScreen() {
         {/* Local AI Reflection Prompt (Section 5.3) */}
         <Card style={{ marginBottom: spacing.lg, backgroundColor: colors.surface1 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-            <Ionicons name="sparkles" size={18} color={colors.primary} />
+            <Ionicons name="leaf-outline" size={18} color={colors.primary} />
             <Text style={[typography.subbodyBold, { color: colors.primary, marginLeft: 6 }]}>
               On-Device Gentle Insight
             </Text>

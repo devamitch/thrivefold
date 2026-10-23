@@ -118,7 +118,7 @@ export default function LetterComposeScreen() {
                     ? 'water'
                     : activeStamp.icon === 'mountain'
                     ? 'trail-sign'
-                    : 'sparkles'
+                    : 'sunny'
                 }
                 size={28}
                 color={activeStamp.color}
@@ -216,7 +216,7 @@ export default function LetterComposeScreen() {
                       ? 'water'
                       : stamp.icon === 'mountain'
                       ? 'trail-sign'
-                      : 'sparkles'
+                      : 'sunny'
                   }
                   size={24}
                   color={stamp.color}

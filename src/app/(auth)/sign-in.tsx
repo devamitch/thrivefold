@@ -28,7 +28,7 @@ const INTRO_SLIDES = [
     title: 'Rhythms Aligned to Your Body',
     subtitle:
       'Hormonal cycle & follicular insights for women; posture, structural mobility, stamina, and athletic recovery for men.',
-    icon: 'sparkles' as const,
+    icon: 'leaf' as const,
     iconColor: '#5E826D',
     iconBg: 'rgba(94, 130, 109, 0.14)',
   },

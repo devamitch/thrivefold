@@ -50,7 +50,7 @@ export const STAMP_CATALOG: Stamp[] = [
     id: 'stamp_rainbow_prism',
     name: 'Prism Radiance',
     category: 'cultural',
-    icon: 'sparkles',
+    icon: 'sunny',
     color: '#F59E0B',
     description: 'Celebrating diversity, affirmative love, and gentle self-expression.',
     unlocked: true,

@@ -98,7 +98,7 @@ export const EXPERIENCE_ICONS: Record<ProductExperience, ExperienceIcons> = {
       focus: 'planet-outline',
       journal: 'bookmark-outline',
       sleep: 'moon-outline',
-      mood: 'sparkles-outline',
+      mood: 'happy-outline',
       streak: 'star-outline',
       badge: 'ribbon-outline',
     },

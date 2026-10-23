@@ -498,7 +498,7 @@ export default function CycleScreen() {
               </Text>
               {activePhaseConfig.tips.slice(0, 3).map((tip) => (
                 <View key={tip} style={styles.tipRow}>
-                  <Ionicons name="sparkles" size={14} color={activePhaseConfig.color} />
+                  <Ionicons name="leaf-outline" size={14} color={activePhaseConfig.color} />
                   <Text style={[typography.caption, { color: colors.text.secondary, marginLeft: 8, flex: 1 }]}>
                     {tip}
                   </Text>

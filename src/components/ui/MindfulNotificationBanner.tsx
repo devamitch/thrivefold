@@ -121,7 +121,7 @@ export function MindfulNotificationBanner() {
         return {
           category: 'THRIVEFOLD UPDATE',
           pillColor: '#2E7D32',
-          iconName: 'sparkles' as const,
+          iconName: 'checkmark-circle-outline' as any,
           iconColor: '#2E7D32',
           iconBg: 'rgba(46, 125, 50, 0.12)',
           defaultTitle: 'Habit & Health Harmony',

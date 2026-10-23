@@ -38,7 +38,7 @@ export default function StampsAlbumScreen() {
                       ? 'water'
                       : stamp.icon === 'mountain'
                       ? 'trail-sign'
-                      : 'sparkles'
+                      : 'sunny'
                   }
                   size={30}
                   color={stamp.color}

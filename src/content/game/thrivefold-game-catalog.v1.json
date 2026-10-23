@@ -8937,6 +8937,493 @@
         "authored": true,
         "reviewed": true
       }
+    },
+    {
+      "id": "task_caregiver_ergonomic_reset",
+      "version": 1,
+      "title": "Caregiver Spine & Shoulder Tension Release",
+      "shortDescription": "Decompress neck, traps, and lumbar after lifting or supporting loved ones",
+      "purpose": "Counters postural fatigue from caregiving, carrying, or household chores by lengthening the lumbar spine and opening the chest.",
+      "instructions": [
+        {
+          "id": "s1",
+          "stepNumber": 1,
+          "title": "Levator Scapulae & Neck Floss",
+          "body": "Sit or stand tall, drop right ear toward right shoulder, gently tilt chin down toward right collarbone for 30s per side."
+        },
+        {
+          "id": "s2",
+          "stepNumber": 2,
+          "title": "Supported Ragdoll Lumbar Release",
+          "body": "Bend knees deeply, fold torso over thighs, and hold opposite elbows, allowing spine to decompress for 45s."
+        },
+        {
+          "id": "s3",
+          "stepNumber": 3,
+          "title": "Diaphragmatic Wall Grounding",
+          "body": "Place hands against wall at shoulder height, step back, and press chest gently downward for 5 slow breaths."
+        }
+      ],
+      "category": "movement",
+      "experienceScopes": [
+        "shared",
+        "men_health",
+        "women_health",
+        "pride_wellbeing"
+      ],
+      "skillOutcomes": [
+        {
+          "skillId": "movement",
+          "skillXp": 15
+        },
+        {
+          "skillId": "consistency",
+          "skillXp": 10
+        }
+      ],
+      "difficulty": "gentle",
+      "estimatedDurationMinutes": 6,
+      "levelEligibility": {
+        "minimumLevel": 1,
+        "maximumLevel": 1000
+      },
+      "prerequisiteTaskIds": [],
+      "verificationClass": "evidence_supported",
+      "verificationPolicyId": "activity-log-v1",
+      "verificationRequirements": [
+        {
+          "type": "activity_log_details",
+          "description": "Log completion of caregiver posture stations"
+        }
+      ],
+      "points": {
+        "taskPoints": 15,
+        "xp": 25,
+        "coins": 10
+      },
+      "availability": {
+        "assignmentTypes": [
+          "daily",
+          "special_quest"
+        ],
+        "canReplaceDaily": true
+      },
+      "contentProvenance": {
+        "authored": true,
+        "reviewed": true
+      }
+    },
+    {
+      "id": "task_seated_gentle_joint_flow",
+      "version": 1,
+      "title": "Chair-Based Somatic Joint Mobility",
+      "shortDescription": "Gentle seated spinal wave and ankle/wrist articulation",
+      "purpose": "Accessible mobility for low-energy days, joint sensitivity, injury recovery, or seated shifts without floor strain.",
+      "instructions": [
+        {
+          "id": "s1",
+          "stepNumber": 1,
+          "title": "Seated Cat-Cow Wave",
+          "body": "Hands on knees. Inhale lift sternum, exhale round spine tucking chin softly for 8 rhythmic cycles."
+        },
+        {
+          "id": "s2",
+          "stepNumber": 2,
+          "title": "Ankle & Wrist Articulation",
+          "body": "Lift feet slightly, circle wrists and ankles clockwise 10 times, then counter-clockwise 10 times."
+        },
+        {
+          "id": "s3",
+          "stepNumber": 3,
+          "title": "Seated Side Reach",
+          "body": "Reach left arm overhead toward the right, breathing into left ribs for 30s; repeat on opposite side."
+        }
+      ],
+      "category": "movement",
+      "experienceScopes": [
+        "shared",
+        "men_health",
+        "women_health",
+        "pride_wellbeing"
+      ],
+      "skillOutcomes": [
+        {
+          "skillId": "movement",
+          "skillXp": 10
+        },
+        {
+          "skillId": "consistency",
+          "skillXp": 10
+        }
+      ],
+      "difficulty": "starter",
+      "estimatedDurationMinutes": 5,
+      "levelEligibility": {
+        "minimumLevel": 1,
+        "maximumLevel": 1000
+      },
+      "prerequisiteTaskIds": [],
+      "verificationClass": "self_reported",
+      "verificationPolicyId": "self-declaration-v1",
+      "verificationRequirements": [
+        {
+          "type": "self_declaration",
+          "description": "Self-confirm chair mobility session"
+        }
+      ],
+      "points": {
+        "taskPoints": 10,
+        "xp": 20,
+        "coins": 5
+      },
+      "availability": {
+        "assignmentTypes": [
+          "daily",
+          "special_quest"
+        ],
+        "canReplaceDaily": true
+      },
+      "contentProvenance": {
+        "authored": true,
+        "reviewed": true
+      }
+    },
+    {
+      "id": "task_heavy_workload_recovery",
+      "version": 1,
+      "title": "Manual Labor & Standing Fatigue Flush",
+      "shortDescription": "Elevated legs and soleus release after long standing or physical labor",
+      "purpose": "Promotes venous return, eases lower limb edema, and downsizes sympathetic strain after heavy physical work.",
+      "instructions": [
+        {
+          "id": "s1",
+          "stepNumber": 1,
+          "title": "Elevated Leg Rest",
+          "body": "Lie on back with calves resting on a sofa or against a wall for 3 to 5 minutes."
+        },
+        {
+          "id": "s2",
+          "stepNumber": 2,
+          "title": "Plantar Fascia Pressure Point",
+          "body": "Roll bottom of each foot over a tennis ball or water bottle for 60 seconds per foot."
+        }
+      ],
+      "category": "routine",
+      "experienceScopes": [
+        "shared",
+        "men_health",
+        "women_health",
+        "pride_wellbeing"
+      ],
+      "skillOutcomes": [
+        {
+          "skillId": "consistency",
+          "skillXp": 15
+        },
+        {
+          "skillId": "movement",
+          "skillXp": 10
+        }
+      ],
+      "difficulty": "gentle",
+      "estimatedDurationMinutes": 6,
+      "levelEligibility": {
+        "minimumLevel": 1,
+        "maximumLevel": 1000
+      },
+      "prerequisiteTaskIds": [],
+      "verificationClass": "system_verified",
+      "verificationPolicyId": "in-app-timer-v1",
+      "verificationRequirements": [
+        {
+          "type": "in_app_timer",
+          "description": "Completed 3-minute restorative leg elevation",
+          "minDurationSeconds": 180
+        }
+      ],
+      "points": {
+        "taskPoints": 15,
+        "xp": 25,
+        "coins": 10
+      },
+      "availability": {
+        "assignmentTypes": [
+          "daily",
+          "special_quest"
+        ],
+        "canReplaceDaily": true
+      },
+      "contentProvenance": {
+        "authored": true,
+        "reviewed": true
+      }
+    },
+    {
+      "id": "task_relational_active_presence",
+      "version": 1,
+      "title": "Mindful Connection & Active Listening",
+      "shortDescription": "5 minutes of uninterrupted, screen-free presence with someone you care about",
+      "purpose": "Fosters social safety and co-regulation, activating the parasympathetic ventral vagal branch.",
+      "instructions": [
+        {
+          "id": "s1",
+          "stepNumber": 1,
+          "title": "Dock All Devices",
+          "body": "Turn off screens and put devices in another room or out of sight."
+        },
+        {
+          "id": "s2",
+          "stepNumber": 2,
+          "title": "Full Attentive Listening",
+          "body": "Engage in genuine, eye-contact conversation or gentle companionable quiet for 5 minutes without interrupting."
+        }
+      ],
+      "category": "social",
+      "experienceScopes": [
+        "shared",
+        "men_health",
+        "women_health",
+        "pride_wellbeing"
+      ],
+      "skillOutcomes": [
+        {
+          "skillId": "mindfulness",
+          "skillXp": 15
+        },
+        {
+          "skillId": "consistency",
+          "skillXp": 10
+        }
+      ],
+      "difficulty": "starter",
+      "estimatedDurationMinutes": 5,
+      "levelEligibility": {
+        "minimumLevel": 1,
+        "maximumLevel": 1000
+      },
+      "prerequisiteTaskIds": [],
+      "verificationClass": "self_reported",
+      "verificationPolicyId": "self-declaration-v1",
+      "verificationRequirements": [
+        {
+          "type": "self_declaration",
+          "description": "Self-confirm active listening check-in"
+        }
+      ],
+      "points": {
+        "taskPoints": 10,
+        "xp": 20,
+        "coins": 10
+      },
+      "availability": {
+        "assignmentTypes": [
+          "daily",
+          "special_quest"
+        ],
+        "canReplaceDaily": true
+      },
+      "contentProvenance": {
+        "authored": true,
+        "reviewed": true
+      }
+    },
+    {
+      "id": "task_cognitive_low_stimulation_reset",
+      "version": 1,
+      "title": "Sensory Grounding & Low-Stimulation Pause",
+      "shortDescription": "3 minutes in quiet, dim light to dissolve cognitive and sensory overload",
+      "purpose": "Clears attentional fatigue, prevents neurodivergent overwhelm, and grounds proprioceptive awareness.",
+      "instructions": [
+        {
+          "id": "s1",
+          "stepNumber": 1,
+          "title": "Palming Warm Hands Over Eyes",
+          "body": "Rub palms together until warm, gently cup hands over closed eyes blocking light without pressing eyeballs."
+        },
+        {
+          "id": "s2",
+          "stepNumber": 2,
+          "title": "Sensory Calibration",
+          "body": "Take 4 slow nasal breaths, focusing on the weight of your feet and the warmth on your eyelids."
+        }
+      ],
+      "category": "mindfulness",
+      "experienceScopes": [
+        "shared",
+        "men_health",
+        "women_health",
+        "pride_wellbeing"
+      ],
+      "skillOutcomes": [
+        {
+          "skillId": "mindfulness",
+          "skillXp": 15
+        }
+      ],
+      "difficulty": "starter",
+      "estimatedDurationMinutes": 3,
+      "levelEligibility": {
+        "minimumLevel": 1,
+        "maximumLevel": 1000
+      },
+      "prerequisiteTaskIds": [],
+      "verificationClass": "system_verified",
+      "verificationPolicyId": "in-app-timer-v1",
+      "verificationRequirements": [
+        {
+          "type": "in_app_timer",
+          "description": "Completed 2-minute quiet sensory pause",
+          "minDurationSeconds": 120
+        }
+      ],
+      "points": {
+        "taskPoints": 10,
+        "xp": 15,
+        "coins": 5
+      },
+      "availability": {
+        "assignmentTypes": [
+          "daily",
+          "special_quest"
+        ],
+        "canReplaceDaily": true
+      },
+      "contentProvenance": {
+        "authored": true,
+        "reviewed": true
+      }
+    },
+    {
+      "id": "task_women_follicular_energy_activation",
+      "version": 1,
+      "title": "Follicular Awakening: Dynamic Core & Hip Rhythm",
+      "shortDescription": "Fluid dynamic lunges and energizing breath for rising estrogen",
+      "purpose": "Channels rising stamina during follicular phase, building mitochondrial density and gentle strength.",
+      "instructions": [
+        {
+          "id": "s1",
+          "stepNumber": 1,
+          "title": "Dynamic Low Lunge Pulses",
+          "body": "Step forward into a low lunge, gently pulsing with inhales for 8 reps per side."
+        },
+        {
+          "id": "s2",
+          "stepNumber": 2,
+          "title": "Standing Sun Sweep Breath",
+          "body": "Inhale sweep arms wide overhead, exhale hinge hips and sweep arms back for 10 energizing breaths."
+        }
+      ],
+      "category": "cycle_care",
+      "experienceScopes": [
+        "women_health"
+      ],
+      "skillOutcomes": [
+        {
+          "skillId": "cycle_care",
+          "skillXp": 20
+        },
+        {
+          "skillId": "movement",
+          "skillXp": 10
+        }
+      ],
+      "difficulty": "standard",
+      "estimatedDurationMinutes": 8,
+      "levelEligibility": {
+        "minimumLevel": 1,
+        "maximumLevel": 1000
+      },
+      "prerequisiteTaskIds": [],
+      "verificationClass": "evidence_supported",
+      "verificationPolicyId": "activity-log-v1",
+      "verificationRequirements": [
+        {
+          "type": "activity_log_details",
+          "description": "Log completion of follicular dynamic flow"
+        }
+      ],
+      "points": {
+        "taskPoints": 15,
+        "xp": 30,
+        "coins": 10
+      },
+      "availability": {
+        "assignmentTypes": [
+          "daily",
+          "special_quest"
+        ],
+        "canReplaceDaily": true
+      },
+      "contentProvenance": {
+        "authored": true,
+        "reviewed": true
+      }
+    },
+    {
+      "id": "task_women_luteal_magnesium_serenity",
+      "version": 1,
+      "title": "Luteal Phase Serenity & Slow Restorative Stretch",
+      "shortDescription": "Grounding yin poses to soothe nervous system under progesterone dominance",
+      "purpose": "Lowers metabolic stress, mitigates premenstrual mood dips, and releases deep pelvic tension.",
+      "instructions": [
+        {
+          "id": "s1",
+          "stepNumber": 1,
+          "title": "Supported Butterfly Recline",
+          "body": "Recline with pillows under knees, allowing inner thighs and hips to soften for 3 minutes."
+        },
+        {
+          "id": "s2",
+          "stepNumber": 2,
+          "title": "Gentle Supine Spinal Twist",
+          "body": "Drop knees softly to right while looking left for 90s, then switch sides."
+        }
+      ],
+      "category": "cycle_care",
+      "experienceScopes": [
+        "women_health"
+      ],
+      "skillOutcomes": [
+        {
+          "skillId": "cycle_care",
+          "skillXp": 20
+        },
+        {
+          "skillId": "sleep",
+          "skillXp": 10
+        }
+      ],
+      "difficulty": "gentle",
+      "estimatedDurationMinutes": 7,
+      "levelEligibility": {
+        "minimumLevel": 1,
+        "maximumLevel": 1000
+      },
+      "prerequisiteTaskIds": [],
+      "verificationClass": "self_reported",
+      "verificationPolicyId": "self-declaration-v1",
+      "verificationRequirements": [
+        {
+          "type": "self_declaration",
+          "description": "Self-confirm luteal restorative stretching"
+        }
+      ],
+      "points": {
+        "taskPoints": 15,
+        "xp": 25,
+        "coins": 10
+      },
+      "availability": {
+        "assignmentTypes": [
+          "daily",
+          "special_quest"
+        ],
+        "canReplaceDaily": true
+      },
+      "contentProvenance": {
+        "authored": true,
+        "reviewed": true
+      }
     }
   ],
   "specialQuests": [

@@ -17,16 +17,75 @@ export interface DailyPointStatus {
   totalAssignedCount: number;
 }
 
+export interface PersonalizationOptions {
+  goals?: string[];
+  constraints?: string[];
+  routineMinutes?: number | null;
+  cyclePhase?: string;
+  energyLevel?: number;
+}
+
 /**
- * Generate initial daily assignments for a user based on cohort and date.
+ * Generate initial daily assignments for a user based on cohort, personalization, and date.
  */
 export const generateDailyAssignments = (
   experience: ProductExperience,
   dateStr: string,
+  options?: PersonalizationOptions,
 ): TaskAssignment[] => {
   const eligibleTasks = getTasksForExperience(experience);
-  // Pick up to 3 distinct tasks
-  const selected = eligibleTasks.slice(0, 3);
+
+  // Categorize available tasks
+  const movementTasks = eligibleTasks.filter(
+    (t) =>
+      t.category === 'movement' ||
+      t.category === 'cycle_care' ||
+      t.category === 'mens_vitality' ||
+      t.category === 'affirming_care',
+  );
+  const mindfulnessTasks = eligibleTasks.filter(
+    (t) =>
+      t.category === 'mindfulness' ||
+      t.category === 'breathing',
+  );
+  const lifestyleTasks = eligibleTasks.filter(
+    (t) =>
+      t.category === 'sleep' ||
+      t.category === 'nutrition' ||
+      t.category === 'routine' ||
+      t.category === 'social' ||
+      t.category === 'learning',
+  );
+
+  const selected: TaskDefinition[] = [];
+
+  // 1. Movement / Somatic / Cycle Care
+  if (movementTasks.length > 0) {
+    if (experience === 'women_health') {
+      const cycleCare = movementTasks.find((t) => t.category === 'cycle_care');
+      selected.push(cycleCare ?? movementTasks[0]);
+    } else {
+      selected.push(movementTasks[0]);
+    }
+  }
+
+  // 2. Mindfulness / Parasympathetic / Nervous System
+  if (mindfulnessTasks.length > 0) {
+    selected.push(mindfulnessTasks[0]);
+  }
+
+  // 3. Lifestyle / Nutrition / Sleep / Planning
+  if (lifestyleTasks.length > 0) {
+    selected.push(lifestyleTasks[0]);
+  }
+
+  // Fallback to fill up to 3 distinct tasks if any category was empty
+  for (const t of eligibleTasks) {
+    if (selected.length >= 3) break;
+    if (!selected.some((s) => s.id === t.id)) {
+      selected.push(t);
+    }
+  }
 
   return selected.map((task, idx) => ({
     assignmentId: `asg_${dateStr}_${task.id}_${idx}`,

@@ -34,6 +34,7 @@ export interface Quest {
   phaseRelevance?: string[];
   status?: string;
   taskPoints?: number;
+  taskId?: string;
 }
 
 export interface QuestSlice {
@@ -90,6 +91,7 @@ export const createQuestSlice: StateCreator<
       difficulty: (def?.difficulty as 'gentle' | 'standard' | 'advanced') ?? 'standard',
       status: 'assigned',
       taskPoints: def?.points.taskPoints ?? 15,
+      taskId: asg.taskId,
     };
   });
 
@@ -166,16 +168,32 @@ export const createQuestSlice: StateCreator<
       });
     },
 
-    joinSpecialQuest: (skippedAssignmentId, specialQuestId) => {
+    joinSpecialQuest: (arg1, arg2) => {
       const state = get();
       const specialQuests = getSpecialQuestsForExperience(state.experience);
-      const specialQuest = specialQuests.find((sq) => sq.id === specialQuestId);
+
+      // Support either (skippedAssignmentId, specialQuestId) or (specialQuestId, skippedAssignmentId)
+      let specialQuest = specialQuests.find((sq) => sq.id === arg2);
+      let skippedId = arg1;
+      if (!specialQuest) {
+        specialQuest = specialQuests.find((sq) => sq.id === arg1);
+        if (specialQuest) {
+          skippedId = arg2;
+        }
+      }
       if (!specialQuest) return;
+
+      const targetSkippedId =
+        state.dailyAssignments.find((a) => a.assignmentId === skippedId)?.assignmentId ??
+        state.dailyAssignments.find((a) => a.status === 'skipped')?.assignmentId ??
+        state.todayQuests.find((q) => q.status === 'skipped')?.id ??
+        state.dailyAssignments[0]?.assignmentId ??
+        skippedId;
 
       const today = new Date().toISOString().split('T')[0];
       const updatedAssignments = replaceWithSpecialQuest(
         state.dailyAssignments,
-        skippedAssignmentId,
+        targetSkippedId,
         specialQuest,
         today,
       );
@@ -192,13 +210,14 @@ export const createQuestSlice: StateCreator<
         difficulty: (specialQuest.difficulty as 'gentle' | 'standard' | 'advanced') ?? 'standard',
         status: 'assigned',
         taskPoints: specialQuest.points.taskPoints,
+        taskId: specialQuest.id,
       };
 
       set({
         dailyAssignments: updatedAssignments,
         todayQuests: [
           ...state.todayQuests.map((q) =>
-            q.id === skippedAssignmentId ? { ...q, status: 'replaced' } : q,
+            q.id === targetSkippedId ? { ...q, status: 'replaced' } : q,
           ),
           newQuestItem,
         ],
@@ -311,6 +330,7 @@ export const createQuestSlice: StateCreator<
           difficulty: (def?.difficulty as 'gentle' | 'standard' | 'advanced') ?? 'standard',
           status: 'assigned',
           taskPoints: def?.points.taskPoints ?? 15,
+          taskId: asg.taskId,
         };
       });
 
