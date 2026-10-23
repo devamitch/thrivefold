@@ -13,26 +13,18 @@ export default function CircleInvitationsScreen() {
   const { colors, typography, spacing } = useTheme();
   const showToast = useRootStore((s) => s.showToast);
 
-  const [invitations, setInvitations] = useState([
+  // Invitations arrive only from the server; none exist until real organizers send them.
+  const [invitations, setInvitations] = useState<
     {
-      id: 'inv_1',
-      communityName: 'Mindful Breathing & Nervous System Reset',
-      type: 'Peer Support Circle',
-      facilitator: 'Elena S. (Trained Peer Facilitator)',
-      membersCount: 14,
-      coarseRegion: 'Northern Europe',
-      description: 'A quiet circle meeting weekly to practice diaphragmatic breathing, polyvagal regulation, and supportive check-ins.',
-    },
-    {
-      id: 'inv_2',
-      communityName: 'Desk Worker Posture & Spinal Mobility',
-      type: 'Wellness Cohort',
-      facilitator: 'Dr. Marcus V. (PT Verified)',
-      membersCount: 28,
-      coarseRegion: 'Western Europe',
-      description: 'Equipment-free stretches and ergonomic self-care for engineers, writers, and remote workers.',
-    },
-  ]);
+      id: string;
+      communityName: string;
+      type: string;
+      facilitator: string;
+      membersCount: number;
+      coarseRegion: string;
+      description: string;
+    }[]
+  >([]);
 
   const handleAccept = (id: string, name: string) => {
     setInvitations((prev) => prev.filter((i) => i.id !== id));

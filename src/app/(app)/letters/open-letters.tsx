@@ -13,32 +13,12 @@ export default function OpenLettersScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
 
-  const [openPrompts] = useState([
-    {
-      id: 'ol_1',
-      author: 'WandererInMist',
-      stamp: 'Mountain Peak',
-      topic: 'How do you find quiet in a noisy city?',
-      reflection: 'Living in a bustling metropolis often feels overwhelming. I have started waking at 5:30 AM just to sit with steam rising from a kettle in silence. What is your anchor practice?',
-      replies: 16,
-    },
-    {
-      id: 'ol_2',
-      author: 'CloverLeaf',
-      stamp: 'Rose Petal',
-      topic: 'Books that healed a season of grief or transition',
-      reflection: 'Reading nature poetry and quiet memoirs helped me process a difficult loss last autumn. What books have served as gentle companions during your life transitions?',
-      replies: 24,
-    },
-    {
-      id: 'ol_3',
-      author: 'SeaGlassSeeker',
-      stamp: 'Ocean Wave',
-      topic: 'The art of not having an opinion on everything',
-      reflection: 'Stepping back from constant digital debates has dramatically lowered my physiological stress. Pacing my attention has become my greatest health commitment.',
-      replies: 9,
-    },
-  ]);
+  // Approved prompt cards. Letters from other people appear only once the server delivers them.
+  const openPrompts = [
+    { id: 'ol_quiet', topic: 'How do you find quiet in a noisy place?' },
+    { id: 'ol_books', topic: 'A book that helped you through a hard season' },
+    { id: 'ol_attention', topic: 'Something you stopped paying attention to, and why it helped' },
+  ];
 
   return (
     <ScreenWrapper scrollable>
@@ -58,24 +38,12 @@ export default function OpenLettersScreen() {
 
         {openPrompts.map((prompt) => (
           <Card key={prompt.id} style={{ marginBottom: spacing.md, padding: spacing.lg }}>
-            <View style={styles.headerRow}>
-              <Badge label={`Stamp: ${prompt.stamp}`} variant="neutral" />
-              <Text style={[typography.caption, { color: colors.text.muted }]}>{prompt.replies} Replies</Text>
-            </View>
-
-            <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 8 }]}>
-              "{prompt.topic}"
+            <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{prompt.topic}</Text>
+            <Text style={[typography.caption, { color: colors.text.muted, marginTop: 4 }]}>
+              No replies yet. Shared letters appear here once the letters server is connected.
             </Text>
-            <Text style={[typography.caption, { color: colors.primary, marginTop: 2 }]}>
-              Penned by {prompt.author}
-            </Text>
-
-            <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 10, lineHeight: 22 }]}>
-              {prompt.reflection}
-            </Text>
-
             <Button
-              label="Reply with Letter Cards"
+              label="Write with letter cards"
               size="sm"
               style={{ marginTop: 14, alignSelf: 'flex-start' }}
               onPress={() => router.push('/(app)/letters/compose')}

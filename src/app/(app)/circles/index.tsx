@@ -15,7 +15,6 @@ interface CircleItem {
   id: string;
   title: string;
   description: string;
-  memberCount: number;
   category: string;
 }
 
@@ -52,21 +51,18 @@ export default function CommunitiesScreen() {
           id: 'men_strength',
           title: 'Strength, Stamina & Recovery',
           description: 'Optimizing sleep, VO2 max endurance, and active longevity habits.',
-          memberCount: 142,
           category: "Men's Health",
         },
         {
           id: 'men_mindset',
           title: 'Mental Fortitude & Stress Grounding',
           description: 'Stoic practices, decompressing after high-stress days, and presence.',
-          memberCount: 98,
           category: 'Resilience',
         },
         {
           id: 'men_fatherhood',
           title: 'Fatherhood & Life Balance',
           description: 'Navigating family presence, work boundaries, and personal vitality.',
-          memberCount: 76,
           category: 'Fatherhood',
         },
       ];
@@ -77,14 +73,12 @@ export default function CommunitiesScreen() {
           id: 'pride_affirming',
           title: 'Affirming Care Navigation',
           description: 'Safe healthcare resources, provider recommendations, and hormone therapy care.',
-          memberCount: 118,
           category: 'Affirming Care',
         },
         {
           id: 'pride_chosen_family',
           title: 'Chosen Family & Mental Haven',
           description: 'Safe peer reflections, celebrating milestones, and unconditional community.',
-          memberCount: 204,
           category: 'Haven',
         },
       ];
@@ -94,21 +88,18 @@ export default function CommunitiesScreen() {
         id: 'women_cycle',
         title: 'Cycle Syncing & Hormonal Balance',
         description: 'Nutrition, energy alignment, and symptom management across menstrual phases.',
-        memberCount: 312,
         category: "Women's Health",
       },
       {
         id: 'women_pcos',
         title: 'PCOS & Endometriosis Resilience',
         description: 'Holistic approaches, dietary support, and shared compassionate experiences.',
-        memberCount: 187,
         category: 'Hormonal Wellness',
       },
       {
         id: 'women_matrescence',
         title: 'Matrescence & Postpartum Care',
         description: 'Gentle support for postpartum transitions, sleep shifts, and self-compassion.',
-        memberCount: 94,
         category: 'Maternal Care',
       },
     ];
@@ -180,7 +171,7 @@ export default function CommunitiesScreen() {
                     {circle.title}
                   </Text>
                   <Text style={[typography.caption, { color: colors.primary, marginTop: 2 }]}>
-                    {circle.category} · {circle.memberCount} members
+                    {circle.category}
                   </Text>
                 </View>
                 <Badge label={isJoined ? 'Member' : 'Private'} variant={isJoined ? 'success' : 'neutral'} />
