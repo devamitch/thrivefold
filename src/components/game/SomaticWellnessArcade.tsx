@@ -248,6 +248,8 @@ export const SomaticWellnessArcade: React.FC<SomaticWellnessArcadeProps> = React
   );
 });
 
+SomaticWellnessArcade.displayName = 'SomaticWellnessArcade';
+
 const styles = StyleSheet.create({
   rowBetween: {
     flexDirection: 'row',

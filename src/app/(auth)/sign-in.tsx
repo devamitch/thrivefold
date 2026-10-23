@@ -130,15 +130,6 @@ export default function SignInScreen() {
 
   const currentSlide = INTRO_SLIDES[activeSlide];
 
-  // Animated dot widths
-  const dotWidths = INTRO_SLIDES.map((_, idx) => {
-    const w = useSharedValue(idx === 0 ? 24 : 8);
-    useEffect(() => {
-      w.value = withSpring(idx === activeSlide ? 24 : 8, { damping: 15, stiffness: 150 });
-    }, [activeSlide]);
-    return useAnimatedStyle(() => ({ width: w.value }));
-  });
-
   return (
     <KeyboardAvoidingView
       style={[styles.root, { backgroundColor: colors.background }]}
@@ -212,13 +203,18 @@ export default function SignInScreen() {
             {/* Animated Dots */}
             <View style={styles.dotsRow}>
               {INTRO_SLIDES.map((slide, idx) => (
-                <Pressable key={slide.id} onPress={() => handleDotPress(idx)} hitSlop={8}>
-                  <Animated.View
-                    style={[
-                      styles.dot,
-                      { backgroundColor: idx === activeSlide ? colors.primary : colors.surface2 },
-                      dotWidths[idx],
-                    ]}
+                <Pressable
+                  key={slide.id}
+                  onPress={() => handleDotPress(idx)}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Slide ${idx + 1} of ${INTRO_SLIDES.length}`}
+                  accessibilityState={{ selected: idx === activeSlide }}
+                >
+                  <PaginationDot
+                    active={idx === activeSlide}
+                    activeColor={colors.primary}
+                    idleColor={colors.surface2}
                   />
                 </Pressable>
               ))}
@@ -374,3 +370,13 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   scroll: { flexGrow: 1, justifyContent: 'center' },
 });
+
+/** One intro pagination dot; widens when its slide is showing. */
+function PaginationDot({ active, activeColor, idleColor }: { active: boolean; activeColor: string; idleColor: string }) {
+  const width = useSharedValue(active ? 24 : 8);
+  useEffect(() => {
+    width.value = withSpring(active ? 24 : 8, { damping: 15, stiffness: 150 });
+  }, [active, width]);
+  const animatedStyle = useAnimatedStyle(() => ({ width: width.value }));
+  return <Animated.View style={[styles.dot, { backgroundColor: active ? activeColor : idleColor }, animatedStyle]} />;
+}
