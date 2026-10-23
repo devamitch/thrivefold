@@ -34,8 +34,17 @@ export const useRootStore = create<RootState>()(
       version: 2,
       storage: localJSONStorage,
       // v2: rewards moved onto an append-only ledger (see questSlice.migrateQuestState).
-      migrate: (persisted, version) =>
-        (version < 2 ? migrateQuestState((persisted ?? {}) as Record<string, unknown>) : persisted) as RootState,
+      migrate: (persisted, version) => {
+        if (version >= 2) return persisted as RootState;
+        const state = migrateQuestState((persisted ?? {}) as Record<string, unknown>);
+        // Earlier builds pre-filled a sample birthday and anniversary; drop those two only.
+        if (Array.isArray(state.personalEvents)) {
+          state.personalEvents = (state.personalEvents as { id: string }[]).filter(
+            (e) => e.id !== 'default_bday_user' && e.id !== 'default_anniversary',
+          );
+        }
+        return state as unknown as RootState;
+      },
       // Data only: actions are recreated, live toasts and alert dialogs are never persisted.
       partialize: (state) =>
         Object.fromEntries(

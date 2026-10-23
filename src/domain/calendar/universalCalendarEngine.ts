@@ -171,6 +171,8 @@ export function generateDayAgenda(
     hasReproductiveTracking?: boolean;
     cycleData?: CycleData | null;
     personalEvents?: PersonalCalendarEvent[];
+    /** Quest assignments to show on their dates. */
+    quests?: { id: string; title: string; date: string; status: string }[];
   }
 ): CalendarEvent[] {
   const events: CalendarEvent[] = [];
@@ -245,67 +247,8 @@ export function generateDayAgenda(
     }
   }
 
-  // 1. Men's Health: Performance, Recovery, Strength, Mental Grounding
-  if (options.experience === 'men_health') {
-    events.push({
-      id: `men_mobility_${dateStr}`,
-      title: 'Postural Spine & Hip Mobility',
-      date: dateStr,
-      startTime: '07:30',
-      endTime: '07:45',
-      kind: 'exercise',
-      status: 'predicted',
-      category: 'fitness',
-      privacy: 'private',
-      description: 'Thoracic openers, hip flexor stretch, gentle cat-cow decompression.',
-      recurrence: 'daily',
-    });
-
-    events.push({
-      id: `men_focus_hydrate_${dateStr}`,
-      title: 'Electrolyte & Hydration Check',
-      date: dateStr,
-      startTime: '12:30',
-      endTime: '12:35',
-      kind: 'habit',
-      status: 'predicted',
-      category: 'routine',
-      privacy: 'private',
-      description: '500ml water with minerals and 2-min posture reset.',
-      recurrence: 'daily',
-    });
-
-    events.push({
-      id: `men_training_${dateStr}`,
-      title: isWeekend ? 'Active Outdoor Recovery / Hike' : 'Strength Baseline & Core Resistance',
-      date: dateStr,
-      startTime: '18:00',
-      endTime: '18:40',
-      kind: 'exercise',
-      status: 'predicted',
-      category: 'fitness',
-      privacy: 'private',
-      description: isWeekend ? 'Low-heart-rate outdoor mobility.' : 'Push-ups, bodyweight squats, kettlebell hinges, and core endurance.',
-      recurrence: 'weekdays',
-    });
-
-    events.push({
-      id: `men_sleep_winddown_${dateStr}`,
-      title: 'Sleep Hygiene & Nervous System Decompression',
-      date: dateStr,
-      startTime: '22:00',
-      endTime: '22:20',
-      kind: 'sleep',
-      status: 'predicted',
-      category: 'health',
-      privacy: 'private',
-      description: 'Screen dimming, breathwork (4-7-8), dark room readiness.',
-      recurrence: 'daily',
-    });
-  }
-
-  // 2. Women's Health: Follicular Rhythm, Pelvic Floor, Restorative Movement
-  else if (options.experience === 'women_health') {
+  // Cycle estimates for women's health, only when the person has logged a period.
+  if (options.experience === 'women_health') {
     if (options.cycleData) {
       const cycle = getCyclePredictions(
         options.cycleData.lastPeriodDate,
@@ -348,77 +291,21 @@ export function generateDayAgenda(
       }
     }
 
-    events.push({
-      id: `women_pelvic_flow_${dateStr}`,
-      title: 'Pelvic Core & Breathwork',
-      date: dateStr,
-      startTime: '09:00',
-      endTime: '09:15',
-      kind: 'exercise',
-      status: 'predicted',
-      category: 'health',
-      privacy: 'private',
-      description: 'Gentle pelvic stabilization and diaphragmatic breathing.',
-      recurrence: 'daily',
-    });
-
-    events.push({
-      id: `women_rest_nourish_${dateStr}`,
-      title: 'Nourishing Meal & Mineral Check',
-      date: dateStr,
-      startTime: '13:00',
-      endTime: '13:30',
-      kind: 'habit',
-      status: 'predicted',
-      category: 'routine',
-      privacy: 'private',
-      description: 'Magnesium and iron rich foods aligned with your cycle recommendations.',
-      recurrence: 'daily',
-    });
   }
 
-  // 3. Pride Wellbeing: Affirming Care, Safe Grounding, HRT reminders
-  else {
+  // The person's own quests for this date. Nothing else is scheduled on their behalf.
+  for (const q of options.quests ?? []) {
+    if (q.date !== dateStr || q.status === 'replaced') continue;
     events.push({
-      id: `pride_grounding_${dateStr}`,
-      title: 'Morning Grounding & Intention',
+      id: q.id,
+      title: q.title,
       date: dateStr,
-      startTime: '08:00',
-      endTime: '08:15',
-      kind: 'focus_session',
-      status: 'predicted',
-      category: 'routine',
-      privacy: 'private',
-      description: 'Mindful breath, identity affirmation, body scan.',
-      recurrence: 'daily',
-    });
-
-    events.push({
-      id: `pride_movement_${dateStr}`,
-      title: 'Body Respect Movement Flow',
-      date: dateStr,
-      startTime: '17:30',
-      endTime: '18:00',
-      kind: 'exercise',
-      status: 'predicted',
-      category: 'fitness',
-      privacy: 'private',
-      description: 'Low-friction movement to connect with physical vitality without dysphoria triggers.',
-      recurrence: 'daily',
-    });
-
-    events.push({
-      id: `pride_reflection_${dateStr}`,
-      title: 'Private Vault Reflection',
-      date: dateStr,
-      startTime: '21:30',
-      endTime: '21:45',
       kind: 'task',
-      status: 'predicted',
+      status: q.status === 'verified' || q.status === 'self_reported' ? 'completed' : 'recorded',
       category: 'routine',
-      privacy: 'sensitive_encrypted',
-      description: 'Encrypted personal log and evening decompression.',
-      recurrence: 'daily',
+      privacy: 'private',
+      isAllDay: true,
+      description: q.status === 'skipped' ? 'Skipped for today.' : 'One of today\'s quests.',
     });
   }
 

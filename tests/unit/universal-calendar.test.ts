@@ -7,6 +7,12 @@ import {
   toggleEventStatus,
 } from '../../src/domain/calendar/universalCalendarEngine';
 
+const QUESTS = [
+  { id: 'asg_a', title: 'Choose one meaningful goal', date: '2026-10-23', status: 'assigned' },
+  { id: 'asg_b', title: 'Movement break', date: '2026-10-23', status: 'verified' },
+  { id: 'asg_c', title: 'Replaced quest', date: '2026-10-23', status: 'replaced' },
+];
+
 describe('Universal Calendar & Life Planner Engine', () => {
   describe('Local Date Formatting & Parsing (Timezone Resilience)', () => {
     it('formats dates consistently without UTC offset drift', () => {
@@ -51,26 +57,18 @@ describe('Universal Calendar & Life Planner Engine', () => {
 
   describe('Experience-Specific Agenda Segregation', () => {
     it("ensures Men's Health agenda contains zero menstrual or follicular cards", () => {
-      const agenda = generateDayAgenda('2026-10-23', {
-        experience: 'men_health',
-      });
-
-      expect(agenda.length).toBeGreaterThan(0);
+      const agenda = generateDayAgenda('2026-10-23', { experience: 'men_health', quests: QUESTS });
       const hasMenstrual = agenda.some(
-        (e) =>
-          e.kind === 'period' ||
-          e.kind === 'cycle_phase' ||
-          e.category === 'reproductive' ||
-          e.title.toLowerCase().includes('follicular') ||
-          e.title.toLowerCase().includes('cycle')
+        (e) => e.kind === 'period' || e.kind === 'cycle_phase' || e.category === 'reproductive',
       );
       expect(hasMenstrual).toBe(false);
+    });
 
-      // Verify Men's specific items exist
-      const hasMobility = agenda.some((e) => e.title.includes('Mobility'));
-      const hasTraining = agenda.some((e) => e.title.includes('Recovery') || e.title.includes('Strength'));
-      expect(hasMobility).toBe(true);
-      expect(hasTraining).toBe(true);
+    it('shows only the person\'s own quests, never invented routine events', () => {
+      expect(generateDayAgenda('2026-10-22', { experience: 'men_health' })).toEqual([]);
+      const agenda = generateDayAgenda('2026-10-23', { experience: 'pride_wellbeing', quests: QUESTS });
+      expect(agenda.map((e) => e.id)).toEqual(['asg_a', 'asg_b']);
+      expect(agenda[1].status).toBe('completed');
     });
 
     it("includes cycle rhythm and predicted period windows for Women's Health", () => {
@@ -92,25 +90,13 @@ describe('Universal Calendar & Life Planner Engine', () => {
       expect(hasCyclePhase).toBe(true);
     });
 
-    it('generates affirming self-care agenda for Pride Wellbeing', () => {
-      const agenda = generateDayAgenda('2026-10-23', {
-        experience: 'pride_wellbeing',
-      });
-
-      const hasGrounding = agenda.some((e) => e.title.includes('Grounding'));
-      const hasVault = agenda.some((e) => e.title.includes('Vault Reflection'));
-      expect(hasGrounding).toBe(true);
-      expect(hasVault).toBe(true);
-    });
   });
 
   describe('Event Status & Rescheduling Mechanics', () => {
     it('toggles completion status with timestamp', () => {
-      const agenda = generateDayAgenda('2026-10-23', {
-        experience: 'men_health',
-      });
+      const agenda = generateDayAgenda('2026-10-23', { experience: 'men_health', quests: QUESTS });
       const firstEvent = agenda[0];
-      expect(firstEvent.status).toBe('predicted');
+      expect(firstEvent.status).toBe('recorded');
 
       const completed = toggleEventStatus(firstEvent);
       expect(completed.status).toBe('completed');
@@ -122,9 +108,7 @@ describe('Universal Calendar & Life Planner Engine', () => {
     });
 
     it('records provenance when rescheduling an event', () => {
-      const agenda = generateDayAgenda('2026-10-23', {
-        experience: 'men_health',
-      });
+      const agenda = generateDayAgenda('2026-10-23', { experience: 'men_health', quests: QUESTS });
       const event = agenda[0];
       const rescheduled = rescheduleCalendarEvent(event, '2026-10-24', '09:00');
 

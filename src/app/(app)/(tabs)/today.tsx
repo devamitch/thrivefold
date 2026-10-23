@@ -202,8 +202,10 @@ export default function TodayScreen() {
 
   // Daily agenda calculation
   const agendaEvents = useMemo(() => {
-    return generateDayAgenda(selectedDateStr, { experience, cycleData, personalEvents });
-  }, [selectedDateStr, experience, cycleData, personalEvents]);
+    const todayKey = formatLocalDate(new Date());
+    const quests = todayQuests.map((q) => ({ id: q.id, title: q.title, status: q.status, date: todayKey }));
+    return generateDayAgenda(selectedDateStr, { experience, cycleData, personalEvents, quests });
+  }, [selectedDateStr, experience, cycleData, personalEvents, todayQuests]);
 
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null);
   const selectedDateHoliday = useMemo(() => getHolidayForDate(selectedDateStr), [selectedDateStr]);

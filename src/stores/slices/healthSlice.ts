@@ -237,28 +237,8 @@ export const createHealthSlice: StateCreator<
   todaySymptoms: [],
   checkInHistory: [],
   journalEntries: [],
-  personalEvents: [
-    {
-      id: 'default_bday_user',
-      title: 'My Birthday Celebration',
-      date: '2026-06-15',
-      category: 'birthday',
-      relationship: 'self',
-      emoji: '🎂',
-      notes: 'Personal birthday celebration & reflection',
-      recurrence: 'yearly',
-    },
-    {
-      id: 'default_anniversary',
-      title: 'Marriage & Relationship Anniversary',
-      date: '2026-11-20',
-      category: 'anniversary',
-      relationship: 'partner',
-      emoji: '💍',
-      notes: 'Celebrate love and shared journey together',
-      recurrence: 'yearly',
-    },
-  ],
+  // Only events the person adds; nothing is pre-filled.
+  personalEvents: [],
 
   addCheckIn: (record) =>
     set((state) => {
