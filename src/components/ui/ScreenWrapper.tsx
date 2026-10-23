@@ -1,37 +1,50 @@
-import React from 'react';
-import { View, StyleSheet, StatusBar, ViewStyle, StyleProp } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, {
-  useSharedValue,
-  useAnimatedScrollHandler,
-} from 'react-native-reanimated';
-import { useTheme } from '../../theme/useTheme';
-import {
-  useScrollAwareTabBar,
-  useTabBarInset,
-} from '../navigation/CustomTabBar';
-import { SanctuaryHeader, SanctuaryLargeTitle, Header } from './Header';
+import React, { Children, isValidElement, type ReactElement, type ReactNode } from 'react';
+import { ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+
+import { AppHeader } from './AppHeader';
+import { Header, SanctuaryHeader, type HeaderProps } from './Header';
+import { ScreenContainer } from './ScreenContainer';
 
 export interface ScreenWrapperProps {
-  children?: React.ReactNode;
-  /** Pinned or custom header node (Neev architecture) */
-  header?: React.ReactNode;
-  /** Enable scroll view with scroll-aware dock hide. Default: false */
+  children?: ReactNode;
+  /** Custom pinned header node. */
+  header?: ReactNode;
   scrollable?: boolean;
   style?: StyleProp<ViewStyle>;
   contentContainerStyle?: StyleProp<ViewStyle>;
-  /** Disable scroll-aware dock hide (e.g. for screens without tabs). Default: false */
   disableScrollAwareDock?: boolean;
-  /** Optional header title */
   title?: string;
   subtitle?: string;
   eyebrow?: string;
   showBack?: boolean;
-  rightAction?: React.ReactNode;
+  rightAction?: ReactNode;
   useLargeTitle?: boolean;
-  footer?: React.ReactNode;
+  footer?: ReactNode;
 }
 
+const isHeaderElement = (node: ReactNode): node is ReactElement<HeaderProps> =>
+  isValidElement(node) && (node.type === Header || node.type === SanctuaryHeader);
+
+/** Removes horizontal padding: the shared screen column already provides the gutter. */
+function withoutSidePadding(style: StyleProp<ViewStyle>): ViewStyle {
+  const flat = { ...((StyleSheet.flatten(style) ?? {}) as ViewStyle) };
+  if (flat.padding !== undefined) {
+    flat.paddingVertical = flat.paddingVertical ?? flat.padding;
+    delete flat.padding;
+  }
+  delete flat.paddingHorizontal;
+  delete flat.paddingLeft;
+  delete flat.paddingRight;
+  delete flat.flex;
+  return flat;
+}
+
+/**
+ * Adapter that gives every older screen the shared ScreenContainer layout: a `<Header>`
+ * child becomes the collapsing large-title header, a nested vertical ScrollView is unwrapped
+ * into the single screen scroll (so the header collapses and the dock hides), and side
+ * padding is normalised to the shared gutter.
+ */
 export const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
   children,
   header,
@@ -44,146 +57,58 @@ export const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
   eyebrow,
   showBack = false,
   rightAction,
-  useLargeTitle = false,
   footer,
 }) => {
-  const insets = useSafeAreaInsets();
-  const { colors, isDark } = useTheme();
-  const tabBarInset = useTabBarInset();
-  const scrollProps = useScrollAwareTabBar();
-  const scrollY = useSharedValue(0);
+  let headerProps: HeaderProps | null = title ? { title, subtitle, eyebrow, showBack, rightAction } : null;
+  const body: ReactNode[] = [];
 
-  const onScroll = useAnimatedScrollHandler({
-    onScroll: (event) => {
-      scrollY.value = event.contentOffset.y;
-    },
+  Children.forEach(children, (child) => {
+    if (!headerProps && isHeaderElement(child)) {
+      headerProps = child.props;
+      return;
+    }
+    if (isValidElement(child) && child.type === ScrollView && !(child.props as { horizontal?: boolean }).horizontal) {
+      const props = child.props as { contentContainerStyle?: StyleProp<ViewStyle>; children?: ReactNode };
+      body.push(
+        <View key={child.key ?? 'unwrapped-scroll'} style={withoutSidePadding(props.contentContainerStyle)}>
+          {props.children}
+        </View>,
+      );
+      return;
+    }
+    if (isValidElement(child) && child.type === View) {
+      const props = child.props as { style?: StyleProp<ViewStyle>; children?: ReactNode };
+      body.push(React.cloneElement(child as ReactElement<{ style?: StyleProp<ViewStyle> }>, { style: withoutSidePadding(props.style) }));
+      return;
+    }
+    body.push(child);
   });
 
-  const hasTitleHeader = Boolean(title || showBack || rightAction);
-
-  const containerStyle: ViewStyle = {
-    flex: 1,
-    backgroundColor: colors.background,
-    paddingLeft: insets.left,
-    paddingRight: insets.right,
-    elevation: 0,
-    shadowColor: 'transparent',
-    shadowOpacity: 0,
-    borderWidth: 0,
-  };
-
-  const renderedHeader = header ? (
-    <View style={[styles.pinnedHeaderContainer, { paddingTop: insets.top, backgroundColor: colors.background }]}>
-      {header}
-    </View>
-  ) : hasTitleHeader ? (
-    <SanctuaryHeader
-      title={title ?? ''}
-      subtitle={subtitle}
-      eyebrow={eyebrow}
-      showBack={showBack}
-      rightAction={rightAction}
-      scrollY={scrollY}
+  const resolved = headerProps as HeaderProps | null;
+  const appHeader = resolved ? (
+    <AppHeader
+      title={resolved.title}
+      subtitle={resolved.subtitle}
+      eyebrow={resolved.eyebrow}
+      showBack={resolved.showBack}
+      rightAction={resolved.rightAction}
     />
-  ) : null;
-
-  const headerPresent = Boolean(renderedHeader);
+  ) : (
+    header
+  );
 
   return (
-    <View style={[styles.wrapper, containerStyle, style]}>
-      <StatusBar
-        barStyle={isDark ? 'light-content' : 'dark-content'}
-        backgroundColor="transparent"
-        translucent
-      />
-
-      {renderedHeader}
-
-      {scrollable ? (
-        <Animated.ScrollView
-          style={styles.scroll}
-          contentContainerStyle={[
-            styles.content,
-            {
-              paddingTop: headerPresent ? 8 : insets.top + 8,
-              paddingBottom: tabBarInset + (footer ? 80 : 0),
-            },
-            contentContainerStyle,
-          ]}
-          showsVerticalScrollIndicator={false}
-          onScroll={!disableScrollAwareDock ? scrollProps.onScroll : onScroll}
-          scrollEventThrottle={16}
-          keyboardShouldPersistTaps="handled"
-        >
-          {hasTitleHeader && useLargeTitle && title ? (
-            <SanctuaryLargeTitle
-              title={title}
-              subtitle={subtitle}
-              eyebrow={eyebrow}
-              rightAction={rightAction}
-            />
-          ) : null}
-          {children}
-        </Animated.ScrollView>
-      ) : (
-        <View
-          style={[
-            styles.content,
-            {
-              paddingTop: headerPresent ? 8 : insets.top + 8,
-              paddingBottom: tabBarInset + (footer ? 80 : 0),
-            },
-            contentContainerStyle,
-          ]}
-        >
-          {children}
-        </View>
-      )}
-
-      {footer ? (
-        <View
-          style={[
-            styles.footerWrapper,
-            {
-              backgroundColor: colors.background,
-              paddingBottom: insets.bottom + 8,
-            },
-          ]}
-        >
-          {footer}
-        </View>
-      ) : null}
-    </View>
+    <ScreenContainer
+      header={appHeader}
+      style={style}
+      contentContainerStyle={contentContainerStyle}
+      scrollMode={scrollable ? 'shell-scroll-view' : 'none'}
+      autoHideTabBar={!disableScrollAwareDock}
+      footer={footer}
+    >
+      {body}
+    </ScreenContainer>
   );
 };
-
-const styles = StyleSheet.create({
-  wrapper: {
-    flex: 1,
-    elevation: 0,
-    shadowColor: 'transparent',
-    shadowOpacity: 0,
-    borderWidth: 0,
-  },
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    flexGrow: 1,
-  },
-  pinnedHeaderContainer: {
-    width: '100%',
-    zIndex: 10,
-  },
-  footerWrapper: {
-    bottom: 0,
-    left: 0,
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    position: 'absolute',
-    right: 0,
-    zIndex: 20,
-  },
-});
 
 export default ScreenWrapper;

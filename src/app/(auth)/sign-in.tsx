@@ -1,9 +1,27 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Dimensions, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeIn, FadeInDown, FadeInUp, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+} from 'react-native';
+import Animated, {
+  FadeIn,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '../../components/ui/Button';
@@ -13,102 +31,87 @@ import { useRootStore } from '../../stores/useRootStore';
 import { accountsAvailable, requestEmailCode, verifyEmailCode } from '../../services/account/accountService';
 import { useTheme } from '../../theme/useTheme';
 
-const { width: SCREEN_W } = Dimensions.get('window');
-
-const INTRO_SLIDES = [
+const SLIDES = [
   {
-    id: 'cycle',
-    badge: 'BIOLOGY & HORMONES',
-    title: 'Private Cycle & Natural Rhythm',
-    subtitle:
-      'Local-first cycle tracking without cloud surveillance. Aligned to your biological phases.',
+    id: 'health',
+    icon: 'water-outline' as const,
+    title: 'Your health, kept on your phone',
+    body: 'Track check-ins, sleep, symptoms and your cycle. Records stay on this device unless you choose otherwise.',
     image: require('../../../assets/illustrations/intro-cycle.jpg'),
-    icon: 'leaf' as const,
-    iconColor: '#5E826D',
-    iconBg: 'rgba(94, 130, 109, 0.14)',
   },
   {
     id: 'quests',
-    badge: 'VERIFIED MILESTONES',
-    title: 'Verified Daily Health Quests',
-    subtitle:
-      'Meaningful wellness routines, athletic conditioning, and streaks that prove real progress.',
+    icon: 'trophy-outline' as const,
+    title: 'Three small quests a day',
+    body: 'Short, practical tasks. Each asks for what it actually needs, and points count only when it is done.',
     image: require('../../../assets/illustrations/intro-quests.jpg'),
-    icon: 'trophy' as const,
-    iconColor: '#B85D3E',
-    iconBg: 'rgba(184, 93, 62, 0.12)',
+  },
+  {
+    id: 'patterns',
+    icon: 'analytics-outline' as const,
+    title: 'Patterns from your own data',
+    body: 'See how sleep, stress and energy connect for you. Worked out on your phone; nothing is sent anywhere.',
+    image: require('../../../assets/illustrations/intro-vault.jpg'),
   },
   {
     id: 'letters',
-    badge: 'SLOW CORRESPONDENCE',
-    title: 'Reflective Letters & Wax Seals',
-    subtitle:
-      'Mindful timestamped personal reflections sealed with collectible artisanal wax stamps.',
+    icon: 'mail-outline' as const,
+    title: 'Letters and circles, later',
+    body: 'Slow letters and private support circles open for verified adults when they are ready. Always optional.',
     image: require('../../../assets/illustrations/intro-letters.jpg'),
-    icon: 'mail' as const,
-    iconColor: '#C47D33',
-    iconBg: 'rgba(196, 125, 51, 0.14)',
-  },
-  {
-    id: 'vault',
-    badge: '100% PRIVATE & ON-DEVICE',
-    title: 'On-Device Memory Vault',
-    subtitle:
-      'Zero-knowledge AI coaching stored encrypted on your device. Zero trackers, zero cloud selling.',
-    image: require('../../../assets/illustrations/intro-vault.jpg'),
-    icon: 'shield-checkmark' as const,
-    iconColor: '#5E826D',
-    iconBg: 'rgba(94, 130, 109, 0.14)',
   },
 ];
 
-const PROMISES = [
-  { icon: 'phone-portrait-outline' as const, text: 'Health records stay on this device' },
-  { icon: 'eye-off-outline' as const, text: 'Nothing is shared or sold' },
-  { icon: 'trash-outline' as const, text: 'Export or erase any time in Settings' },
-];
+const AUTO_ADVANCE_MS = 4500;
 
-const AUTO_SLIDE_INTERVAL = 4000;
+type Step = 'intro' | 'name' | 'email' | 'code';
 
 export default function SignInScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const { colors, typography, spacing } = useTheme();
+  const reduceMotion = useReducedMotion();
   const setUser = useRootStore((s) => s.setUser);
   const continueAsGuest = useRootStore((s) => s.continueAsGuest);
-  const [activeSlide, setActiveSlide] = useState(0);
+
+  const [step, setStep] = useState<Step>('intro');
+  const [slide, setSlide] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const listRef = useRef<FlatList<(typeof SLIDES)[number]>>(null);
+
   const [pseudonym, setPseudonym] = useState('');
-  const [showForm, setShowForm] = useState(false);
-  // Optional account: email one-time code, offered only when a backend is configured.
-  const [emailMode, setEmailMode] = useState<'off' | 'email' | 'code'>('off');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
-  const autoSlideRef = useRef<NodeJS.Timeout | null>(null);
 
   const name = pseudonym.trim();
   const tooLong = name.length > 24;
 
-  // Auto-advancing intro slides
+  // Auto-advance, paused while the person is swiping and off with reduced motion.
   useEffect(() => {
-    autoSlideRef.current = setInterval(() => {
-      setActiveSlide((prev) => (prev + 1) % INTRO_SLIDES.length);
-    }, AUTO_SLIDE_INTERVAL);
-    return () => {
-      if (autoSlideRef.current) clearInterval(autoSlideRef.current);
-    };
-  }, []);
+    if (step !== 'intro' || paused || reduceMotion) return;
+    const id = setTimeout(() => {
+      const next = (slide + 1) % SLIDES.length;
+      listRef.current?.scrollToIndex({ index: next, animated: true });
+      setSlide(next);
+    }, AUTO_ADVANCE_MS);
+    return () => clearTimeout(id);
+  }, [slide, paused, step, reduceMotion]);
 
-  const handleDotPress = useCallback((idx: number) => {
-    setActiveSlide(idx);
-    if (autoSlideRef.current) {
-      clearInterval(autoSlideRef.current);
-      autoSlideRef.current = setInterval(() => {
-        setActiveSlide((prev) => (prev + 1) % INTRO_SLIDES.length);
-      }, AUTO_SLIDE_INTERVAL);
-    }
-  }, []);
+  const onMomentumEnd = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      setSlide(Math.round(e.nativeEvent.contentOffset.x / width));
+      setPaused(false);
+    },
+    [width],
+  );
+
+  const goTo = (index: number) => {
+    listRef.current?.scrollToIndex({ index, animated: !reduceMotion });
+    setSlide(index);
+  };
 
   const createProfile = () => {
     if (tooLong) return;
@@ -124,13 +127,18 @@ export default function SignInScreen() {
     router.replace('/');
   };
 
+  const guest = () => {
+    continueAsGuest();
+    router.replace('/');
+  };
+
   const sendCode = async () => {
     if (busy) return;
     setBusy(true);
     setAuthError(null);
     const res = await requestEmailCode(email);
     setBusy(false);
-    if (res.ok) setEmailMode('code');
+    if (res.ok) setStep('code');
     else setAuthError(res.message);
   };
 
@@ -160,327 +168,217 @@ export default function SignInScreen() {
     router.replace('/');
   };
 
-  const guest = () => {
-    continueAsGuest();
-    router.replace('/');
-  };
-
-  const link = (label: string, href: '/(public)/legal/terms' | '/(public)/legal/privacy' | '/(public)/legal/health-disclaimer') => (
-    <Pressable onPress={() => router.push(href)} hitSlop={10} accessibilityRole="link">
-      <Text style={[typography.caption, { color: colors.text.muted }]}>{label}</Text>
-    </Pressable>
+  const legal = (
+    <View style={[styles.links, { marginTop: spacing.md }]}>
+      {(
+        [
+          ['Terms', '/(public)/legal/terms'],
+          ['Privacy', '/(public)/legal/privacy'],
+          ['Not medical advice', '/(public)/legal/health-disclaimer'],
+        ] as const
+      ).map(([label, href], i) => (
+        <React.Fragment key={href}>
+          {i > 0 ? <Text style={[typography.caption, { color: colors.text.muted }]}> · </Text> : null}
+          <Pressable onPress={() => router.push(href)} hitSlop={10} accessibilityRole="link">
+            <Text style={[typography.caption, { color: colors.text.muted }]}>{label}</Text>
+          </Pressable>
+        </React.Fragment>
+      ))}
+    </View>
   );
 
-  const currentSlide = INTRO_SLIDES[activeSlide];
+  if (step === 'intro') {
+    return (
+      <View style={[styles.root, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+        <View style={[styles.brandRow, { paddingHorizontal: spacing.lg }]}>
+          <Image
+            source={require('../../../assets/brand/Minimalist-Terracotta-T-and-Leaf-Emblem.png')}
+            style={styles.brandMark}
+            contentFit="contain"
+            accessibilityLabel="Thrivefold"
+          />
+          <Text style={[typography.subheading, { color: colors.text.primary, marginLeft: 10 }]}>Thrivefold</Text>
+        </View>
+
+        <FlatList
+          ref={listRef}
+          data={SLIDES}
+          keyExtractor={(s) => s.id}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onScrollBeginDrag={() => setPaused(true)}
+          onMomentumScrollEnd={onMomentumEnd}
+          getItemLayout={(_, index) => ({ length: width, offset: width * index, index })}
+          style={styles.slides}
+          renderItem={({ item }) => (
+            <View style={{ width, paddingHorizontal: spacing.lg }} accessible accessibilityLabel={`${item.title}. ${item.body}`}>
+              <View style={[styles.imageWrap, { backgroundColor: colors.surface1 }]}>
+                <Image source={item.image} style={styles.image} contentFit="cover" />
+              </View>
+              <View style={[styles.slideIcon, { backgroundColor: colors.primaryAlpha, marginTop: spacing.lg }]}>
+                <Ionicons name={item.icon} size={20} color={colors.primary} />
+              </View>
+              <Text style={[typography.heading, { color: colors.text.primary, marginTop: spacing.sm }]}>{item.title}</Text>
+              <Text style={[typography.body, { color: colors.text.secondary, marginTop: spacing.xs }]}>{item.body}</Text>
+            </View>
+          )}
+        />
+
+        <View style={[styles.dotsRow, { marginTop: spacing.sm }]}>
+          {SLIDES.map((s, i) => (
+            <Pressable
+              key={s.id}
+              onPress={() => goTo(i)}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel={`Slide ${i + 1} of ${SLIDES.length}`}
+              accessibilityState={{ selected: i === slide }}
+            >
+              <Dot active={i === slide} activeColor={colors.primary} idleColor={colors.surface2} />
+            </Pressable>
+          ))}
+        </View>
+
+        <View style={styles.flex} />
+
+        <View style={{ paddingHorizontal: spacing.lg, paddingBottom: insets.bottom + spacing.md }}>
+          <Button label="Get started" size="lg" onPress={() => setStep('name')} />
+          <View style={[styles.secondaryRow, { marginTop: spacing.xs }]}>
+            <Button label="Explore as guest" variant="ghost" onPress={guest} style={styles.flex} />
+            {accountsAvailable() ? (
+              <Button label="Sign in" variant="ghost" onPress={() => setStep('email')} style={styles.flex} />
+            ) : null}
+          </View>
+          {legal}
+        </View>
+      </View>
+    );
+  }
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.root, { backgroundColor: colors.background }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <KeyboardAvoidingView style={[styles.root, { backgroundColor: colors.background }]} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView
-        contentContainerStyle={[
-          styles.scroll,
-          {
-            paddingTop: insets.top + spacing.lg,
-            paddingBottom: insets.bottom + spacing.lg,
-            paddingHorizontal: spacing.lg,
-          },
-        ]}
+        contentContainerStyle={{
+          paddingTop: insets.top + spacing.md,
+          paddingBottom: insets.bottom + spacing.lg,
+          paddingHorizontal: spacing.lg,
+          flexGrow: 1,
+        }}
         keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
       >
-        {/* Brand Header */}
-        <Animated.View entering={FadeInDown.delay(100).duration(500)} style={styles.hero}>
-          <View style={[styles.mark, { backgroundColor: colors.surface, borderColor: colors.borderStrong }]}>
-            <Image
-              source={require('../../../assets/brand/Minimalist-Terracotta-T-and-Leaf-Emblem.png')}
-              style={styles.markImage}
-              contentFit="contain"
-              accessibilityIgnoresInvertColors
-              accessible
-              accessibilityLabel="Thrivefold"
-            />
-          </View>
-          <Text
-            style={[typography.display, styles.center, { color: colors.text.primary, marginTop: spacing.md }]}
-            accessibilityRole="header"
-          >
-            Thrivefold
+        <Pressable
+          onPress={() => {
+            setAuthError(null);
+            setStep(step === 'code' ? 'email' : 'intro');
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+          style={[styles.back, { backgroundColor: colors.surface1 }]}
+        >
+          <Ionicons name="chevron-back" size={20} color={colors.text.primary} />
+        </Pressable>
+
+        <Animated.View entering={reduceMotion ? undefined : FadeIn.duration(250)} style={{ marginTop: spacing.xl }}>
+          <Text style={[typography.display, { color: colors.text.primary }]} accessibilityRole="header">
+            {step === 'name' ? 'What should we call you?' : step === 'email' ? 'Sign in with email' : 'Enter your code'}
           </Text>
-          <Text style={[typography.body, styles.center, { color: colors.text.secondary, marginTop: 4 }]}>
-            Small, steady routines for your health
+          <Text style={[typography.body, { color: colors.text.secondary, marginTop: spacing.xs }]}>
+            {step === 'name'
+              ? 'A first name or nickname. You can change it later. No email or password needed.'
+              : step === 'email'
+                ? 'We will send a 6-digit code. Your health records still stay on this phone.'
+                : `We sent a code to ${email.trim()}.`}
           </Text>
-        </Animated.View>
 
-        {/* Auto-sliding Intro Card */}
-        <Animated.View entering={FadeInDown.delay(250).duration(500)}>
-          <View style={[styles.slideCard, { backgroundColor: colors.surface, borderColor: colors.borderStrong, marginTop: spacing.lg }]}>
-            {/* Slide Hero Illustration */}
-            <View style={styles.slideImageContainer}>
-              <Image
-                source={currentSlide.image}
-                style={styles.slideImage}
-                contentFit="cover"
-                transition={200}
-              />
-            </View>
-
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 14 }}>
-              <View style={[styles.slideIconBox, { backgroundColor: currentSlide.iconBg }]}>
-                <Ionicons name={currentSlide.icon} size={20} color={currentSlide.iconColor} />
-              </View>
-              <View style={[styles.badgePill, { backgroundColor: currentSlide.iconBg, marginLeft: 10 }]}>
-                <Text style={[typography.captionBold, { color: currentSlide.iconColor, fontSize: 10, letterSpacing: 0.5 }]}>
-                  {currentSlide.badge}
-                </Text>
-              </View>
-            </View>
-            <Text style={[typography.heading, { color: colors.text.primary, marginTop: spacing.sm, fontSize: 18 }]}>
-              {currentSlide.title}
-            </Text>
-            <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4, lineHeight: 20 }]}>
-              {currentSlide.subtitle}
-            </Text>
-
-            {/* Animated Dots */}
-            <View style={styles.dotsRow}>
-              {INTRO_SLIDES.map((slide, idx) => (
-                <Pressable
-                  key={slide.id}
-                  onPress={() => handleDotPress(idx)}
-                  hitSlop={8}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Slide ${idx + 1} of ${INTRO_SLIDES.length}`}
-                  accessibilityState={{ selected: idx === activeSlide }}
-                >
-                  <PaginationDot
-                    active={idx === activeSlide}
-                    activeColor={colors.primary}
-                    idleColor={colors.surface2}
-                  />
-                </Pressable>
-              ))}
-            </View>
-          </View>
-        </Animated.View>
-
-        {/* CTA Section */}
-        <Animated.View entering={FadeInDown.delay(400).duration(500)} style={{ marginTop: spacing.lg }}>
-          {!showForm ? (
-            <>
-              <Button
-                label="Get Started"
-                size="lg"
-                onPress={() => setShowForm(true)}
-                style={{ marginBottom: spacing.sm }}
-              />
-              <Button
-                label="Continue as Guest"
-                variant="ghost"
-                onPress={guest}
-              />
-              {accountsAvailable() ? (
-                <Button
-                  label="Sign in with email"
-                  variant="ghost"
-                  onPress={() => {
-                    setEmailMode('email');
-                    setShowForm(true);
-                  }}
-                />
-              ) : null}
-            </>
-          ) : emailMode !== 'off' ? (
-            <Animated.View entering={FadeIn.duration(300)}>
-              {emailMode === 'email' ? (
-                <TextField
-                  label="Email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChangeText={setEmail}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  keyboardType="email-address"
-                  textContentType="emailAddress"
-                  returnKeyType="send"
-                  onSubmitEditing={sendCode}
-                  error={authError ?? undefined}
-                />
-              ) : (
-                <TextField
-                  label={`Code sent to ${email.trim()}`}
-                  placeholder="6-digit code"
-                  value={code}
-                  onChangeText={(t) => setCode(t.replace(/[^0-9]/g, '').slice(0, 6))}
-                  keyboardType="number-pad"
-                  textContentType="oneTimeCode"
-                  returnKeyType="go"
-                  onSubmitEditing={confirmCode}
-                  error={authError ?? undefined}
-                />
-              )}
-              <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.xs }]}>
-                An account lets your rewards be confirmed by the server. Health records still stay on this device.
-              </Text>
-              <Button
-                label={emailMode === 'email' ? 'Send code' : 'Sign in'}
-                size="lg"
-                loading={busy}
-                disabled={busy}
-                onPress={emailMode === 'email' ? sendCode : confirmCode}
-                style={{ marginTop: spacing.md }}
-              />
-              <Button
-                label="Back"
-                variant="ghost"
-                onPress={() => {
-                  setEmailMode(emailMode === 'code' ? 'email' : 'off');
-                  if (emailMode === 'email') setShowForm(false);
-                  setAuthError(null);
-                }}
-                style={{ marginTop: spacing.xs }}
-              />
-            </Animated.View>
-          ) : (
-            <Animated.View entering={FadeIn.duration(300)}>
+          <View style={{ marginTop: spacing.lg }}>
+            {step === 'name' ? (
               <TextField
-                label="What should we call you?"
-                placeholder="A first name or nickname (e.g. Alex)"
+                label="Name or nickname"
+                placeholder="e.g. Alex"
                 value={pseudonym}
                 onChangeText={setPseudonym}
                 autoCapitalize="words"
                 autoCorrect={false}
+                autoFocus
                 returnKeyType="go"
                 onSubmitEditing={createProfile}
                 error={tooLong ? 'Keep it under 25 characters' : undefined}
                 maxLength={40}
               />
-              <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.xs }]}>
-                Optional. No email or password needed.
-              </Text>
-              <Button
-                label="Enter Sanctuary"
-                size="lg"
-                onPress={createProfile}
-                disabled={tooLong}
-                style={{ marginTop: spacing.md }}
+            ) : step === 'email' ? (
+              <TextField
+                label="Email"
+                placeholder="you@example.com"
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoFocus
+                keyboardType="email-address"
+                textContentType="emailAddress"
+                returnKeyType="send"
+                onSubmitEditing={sendCode}
+                error={authError ?? undefined}
               />
-              <Button
-                label="Back"
-                variant="ghost"
-                onPress={() => setShowForm(false)}
-                style={{ marginTop: spacing.xs }}
+            ) : (
+              <TextField
+                label="6-digit code"
+                placeholder="123456"
+                value={code}
+                onChangeText={(t) => setCode(t.replace(/[^0-9]/g, '').slice(0, 6))}
+                keyboardType="number-pad"
+                textContentType="oneTimeCode"
+                autoFocus
+                returnKeyType="go"
+                onSubmitEditing={confirmCode}
+                error={authError ?? undefined}
               />
-            </Animated.View>
-          )}
-        </Animated.View>
-
-        {/* On-device Promises */}
-        <Animated.View entering={FadeInUp.delay(500).duration(400)}>
-          <View
-            style={[
-              styles.promise,
-              { backgroundColor: colors.surface, borderColor: colors.borderStrong, marginTop: spacing.lg },
-            ]}
-          >
-            {PROMISES.map((row) => (
-              <View key={row.text} style={styles.promiseRow}>
-                <Ionicons name={row.icon} size={16} color={colors.primary} />
-                <Text style={[typography.caption, styles.promiseText, { color: colors.text.secondary }]}>
-                  {row.text}
-                </Text>
-              </View>
-            ))}
+            )}
           </View>
         </Animated.View>
 
-        {/* Legal Links */}
-        <View style={[styles.links, { marginTop: spacing.md }]}>
-          {link('Terms', '/(public)/legal/terms')}
-          <Text style={[typography.caption, { color: colors.text.muted }]}>  ·  </Text>
-          {link('Privacy', '/(public)/legal/privacy')}
-          <Text style={[typography.caption, { color: colors.text.muted }]}>  ·  </Text>
-          {link('Not medical advice', '/(public)/legal/health-disclaimer')}
-        </View>
+        <View style={styles.flex} />
+
+        <Button
+          label={step === 'name' ? 'Continue' : step === 'email' ? 'Send code' : 'Sign in'}
+          size="lg"
+          loading={busy}
+          disabled={busy || (step === 'name' && tooLong) || (step === 'code' && code.length !== 6)}
+          onPress={step === 'name' ? createProfile : step === 'email' ? sendCode : confirmCode}
+          style={{ marginTop: spacing.lg }}
+        />
+        {step === 'code' ? (
+          <Button label="Send a new code" variant="ghost" onPress={sendCode} disabled={busy} style={{ marginTop: spacing.xs }} />
+        ) : null}
+        {legal}
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
-  center: { textAlign: 'center' },
-  hero: { alignItems: 'center' },
-  links: { alignItems: 'center', flexDirection: 'row', justifyContent: 'center' },
-  mark: {
-    alignItems: 'center',
-    borderCurve: 'continuous',
-    borderRadius: 28,
-    borderWidth: 1,
-    height: 88,
-    justifyContent: 'center',
-    width: 88,
-  },
-  markImage: { height: 72, width: 72 },
-  slideCard: {
-    borderCurve: 'continuous',
-    borderRadius: 22,
-    borderWidth: 1,
-    padding: 16,
-  },
-  slideImageContainer: {
-    width: '100%',
-    height: 150,
-    borderRadius: 16,
-    overflow: 'hidden',
-    backgroundColor: '#F3EFEA',
-  },
-  slideImage: {
-    width: '100%',
-    height: '100%',
-  },
-  slideIconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  badgePill: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    alignSelf: 'flex-start',
-  },
-  dotsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 16,
-  },
-  dot: {
-    height: 6,
-    borderRadius: 3,
-  },
-  promise: {
-    borderCurve: 'continuous',
-    borderRadius: 18,
-    borderWidth: 1,
-    gap: 8,
-    padding: 14,
-  },
-  promiseRow: { alignItems: 'center', flexDirection: 'row' },
-  promiseText: { flex: 1, marginLeft: 8 },
-  root: { flex: 1 },
-  scroll: { flexGrow: 1, justifyContent: 'center' },
-});
-
-/** One intro pagination dot; widens when its slide is showing. */
-function PaginationDot({ active, activeColor, idleColor }: { active: boolean; activeColor: string; idleColor: string }) {
-  const width = useSharedValue(active ? 24 : 8);
+/** Pagination dot that widens when its slide is showing. */
+function Dot({ active, activeColor, idleColor }: { active: boolean; activeColor: string; idleColor: string }) {
+  const width = useSharedValue(active ? 22 : 8);
   useEffect(() => {
-    width.value = withSpring(active ? 24 : 8, { damping: 15, stiffness: 150 });
+    width.value = withTiming(active ? 22 : 8, { duration: 200 });
   }, [active, width]);
-  const animatedStyle = useAnimatedStyle(() => ({ width: width.value }));
-  return <Animated.View style={[styles.dot, { backgroundColor: active ? activeColor : idleColor }, animatedStyle]} />;
+  const style = useAnimatedStyle(() => ({ width: width.value }));
+  return <Animated.View style={[styles.dot, { backgroundColor: active ? activeColor : idleColor }, style]} />;
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+  flex: { flex: 1 },
+  brandRow: { flexDirection: 'row', alignItems: 'center', height: 56 },
+  brandMark: { width: 32, height: 32 },
+  slides: { flexGrow: 0 },
+  imageWrap: { width: '100%', aspectRatio: 1.3, borderRadius: 24, borderCurve: 'continuous', overflow: 'hidden' },
+  image: { width: '100%', height: '100%' },
+  slideIcon: { width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  dotsRow: { flexDirection: 'row', justifyContent: 'center', gap: 6, alignItems: 'center', height: 20 },
+  dot: { height: 8, borderRadius: 4 },
+  secondaryRow: { flexDirection: 'row', gap: 8 },
+  links: { alignItems: 'center', flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap' },
+  back: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+});

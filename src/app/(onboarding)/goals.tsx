@@ -7,46 +7,23 @@ import { Chip } from '../../components/ui/Chip';
 import { useRootStore, useShallow } from '../../stores/useRootStore';
 import { ProductExperience } from '../../theme/tokens';
 
+// Plain goals; each one steers which kinds of quests come first (see GOAL_FAMILIES).
 const SHARED_GOALS = [
   'More energy',
   'Better sleep',
   'Less stress',
-  'Gentle movement',
-  'Mobility & posture',
-  'Daily habits',
+  'Move more',
+  'Mobility and posture',
+  'Steady daily habits',
   'Emotional support',
-  'Learning about my body',
+  'Eat well',
+  'Learn about my health',
 ];
 
 const GOALS_BY_EXPERIENCE: Record<ProductExperience, string[]> = {
-  women_health: [
-    'Sacred Cycle & Hormonal Rhythm',
-    'Follicular Energy & Vitality',
-    'Ovulatory Glow & Confidence',
-    'Luteal PMS & Mood Harmony',
-    'Gentle Menstrual Comfort',
-    'Restful Deep Sleep',
-    'Pelvic Core Balance',
-    'Mindful Nourishment',
-  ],
-  men_health: [
-    'Desk Worker Spine Decompression',
-    'Hip Mobility & Longevity',
-    'Functional Strength Without Strain',
-    'Athletic Stamina & Endurance',
-    'Deep Stress Decompression',
-    'Daily Discipline & Consistency',
-    'Restorative Sleep & Recovery',
-    'Focus & Cognitive Clarity',
-  ],
-  pride_wellbeing: [
-    'Affirming Self-Care',
-    'Chest & Posture Tension Relief',
-    'Safe Grounding & Body Respect',
-    'Somatic Breathwork & Calm',
-    'Emotional Resilience',
-    'Consistent Daily Rituals',
-  ],
+  women_health: ['Understand my cycle', 'Period comfort', 'PMS and mood'],
+  men_health: ['Strength training', 'Desk-work aches', 'Focus'],
+  pride_wellbeing: ['Affirming self-care', 'Body ease'],
 };
 
 export default function GoalsScreen() {
@@ -69,13 +46,13 @@ export default function GoalsScreen() {
     <OnboardingScaffold
       step="goals"
       title="What would you like help with?"
-      subtitle="Pick any that fit. This shapes your daily suggestions — change it any time."
+      subtitle="Pick any that fit. Your daily quests start with these; change them any time."
       primaryLabel={goals.length ? 'Continue' : 'Continue without choosing'}
       onPrimary={next}
       onSkip={next}
     >
       <View style={styles.chips}>
-        {GOALS_BY_EXPERIENCE[experience].map((goal) => (
+        {[...GOALS_BY_EXPERIENCE[experience], ...SHARED_GOALS].map((goal) => (
           <Chip key={goal} label={goal} selected={goals.includes(goal)} onPress={() => toggle(goal)} />
         ))}
       </View>

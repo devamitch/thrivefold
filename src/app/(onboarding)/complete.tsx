@@ -36,12 +36,12 @@ export default function CompleteOnboardingScreen() {
 
   const rows = [
     { label: 'Focus', value: EXPERIENCE_LABEL[experience] },
-    { label: 'Goals', value: onboarding.goals.length ? onboarding.goals.join(', ') : 'General vitality & energy' },
+    { label: 'Goals', value: onboarding.goals.length ? onboarding.goals.join(', ') : 'None chosen' },
     {
       label: 'Go easy on',
-      value: onboarding.constraints.length ? onboarding.constraints.join(', ') : 'No constraints reported',
+      value: onboarding.constraints.length ? onboarding.constraints.join(', ') : 'Nothing noted',
     },
-    { label: 'Routine', value: onboarding.routineMinutes ? `${onboarding.routineMinutes} minutes` : 'Flexible duration' },
+    { label: 'Routine', value: onboarding.routineMinutes ? `${onboarding.routineMinutes} minutes` : 'No preference' },
     { label: 'Food & diet', value: onboarding.diet ? onboarding.diet : 'No preference' },
     ...(onboarding.observances && onboarding.observances.length > 0
       ? [{ label: 'Reminders', value: onboarding.observances.join(', ') }]

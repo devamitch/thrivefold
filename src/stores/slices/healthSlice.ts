@@ -297,7 +297,11 @@ export const createHealthSlice: StateCreator<
 
   addCheckIn: (record) =>
     set((state) => {
-      const checkInHistory = [{ ...record, id: `chk_${Date.now()}` }, ...state.checkInHistory];
+      // One check-in per day: saving again updates that day's record.
+      const checkInHistory = [
+        { ...record, id: `chk_${Date.now()}` },
+        ...state.checkInHistory.filter((r) => r.date !== record.date),
+      ];
       return {
         checkInHistory,
         completedCheckInDaysCount: new Set(checkInHistory.map((r) => r.date)).size,

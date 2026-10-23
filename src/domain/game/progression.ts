@@ -233,6 +233,33 @@ export interface AssignmentContext {
   completedTaskIds: ReadonlySet<string>;
   /** Task ids assigned on recent days, avoided when there are alternatives. */
   recentTaskIds: ReadonlySet<string>;
+  /** Families the person asked for help with in onboarding, most wanted first. */
+  preferredFamilies?: QuestFamily[];
+}
+
+/** Onboarding goals and the quest family each one asks for. */
+export const GOAL_FAMILIES: Record<string, QuestFamily> = {
+  'More energy': 'movement',
+  'Better sleep': 'rhythm',
+  'Less stress': 'mind',
+  'Move more': 'movement',
+  'Mobility and posture': 'movement',
+  'Steady daily habits': 'rhythm',
+  'Emotional support': 'mind',
+  'Eat well': 'nutrition',
+  'Learn about my health': 'growth',
+  'Understand my cycle': 'growth',
+  'Period comfort': 'movement',
+  'PMS and mood': 'mind',
+  'Strength training': 'movement',
+  'Desk-work aches': 'movement',
+  'Focus': 'mind',
+  'Affirming self-care': 'mind',
+  'Body ease': 'movement',
+};
+
+export function familiesForGoals(goals: readonly string[]): QuestFamily[] {
+  return [...new Set(goals.map((g) => GOAL_FAMILIES[g]).filter((f): f is QuestFamily => Boolean(f)))];
 }
 
 const AUTO_SENSITIVITY = new Set(['ordinary', 'personal']);
@@ -285,6 +312,13 @@ export function selectDailyTasks(tasks: TaskDefinition[], ctx: AssignmentContext
   // One quest from the person's current chapter, the rest spread across families.
   const inChapter = pool.find((t) => t.levelEligibility.minimumLevel <= ctx.level);
   if (inChapter) picked.push(inChapter);
+  // Then the families the person asked for, one each, before filling the rest.
+  for (const family of ctx.preferredFamilies ?? []) {
+    if (picked.length >= slots) break;
+    if (picked.some((p) => questFamily(p.category) === family)) continue;
+    const match = pool.find((t) => !picked.includes(t) && questFamily(t.category) === family);
+    if (match) picked.push(match);
+  }
   for (const t of pool) {
     if (picked.length >= slots) break;
     if (picked.includes(t)) continue;

@@ -5,13 +5,11 @@ import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { AppHeader } from '../../../components/ui/AppHeader';
 import { QuestsSection } from '../../../components/game/QuestsSection';
 import { QuestSheet } from '../../../components/game/QuestSheet';
-import { useTheme } from '../../../theme/useTheme';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { currentLevelProgress } from '../../../domain/game/gameCatalogService';
 
 /** Today's quest board: level, points toward the daily goal and the day's quests. */
 export default function QuestsScreen() {
-  const { spacing } = useTheme();
   const s = useRootStore(
     useShallow((st) => ({
       xp: st.xp,
@@ -33,9 +31,8 @@ export default function QuestsScreen() {
   }, [s.ensureDailyQuests]);
 
   return (
-    <ScreenContainer scrollable>
-      <AppHeader title="Quests" showBack />
-      <View style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
+    <ScreenContainer header={<AppHeader title="Quests" subtitle="Today's quests and your level" showBack />} scrollMode="shell-scroll-view">
+      <View>
         <QuestsSection
           progress={progress}
           xp={s.xp}

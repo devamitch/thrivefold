@@ -13,6 +13,7 @@ import {
   dailyPointsFor,
   dailySlotsFor,
   dailyTargetFor,
+  familiesForGoals,
   ECONOMY_VERSION,
   ledgerTotals,
   levelProgress,
@@ -163,6 +164,7 @@ function assignmentContext(state: RootState, date: string): AssignmentContext {
     recentTaskIds: new Set(
       state.assignmentHistory.filter((h) => recentDates.has(h.date)).flatMap((h) => h.taskIds),
     ),
+    preferredFamilies: familiesForGoals(state.onboarding?.goals ?? []),
   };
 }
 
@@ -221,7 +223,14 @@ export const createQuestSlice: StateCreator<RootState, [['zustand/persist', unkn
       const state = get();
       const date = today();
       if (!state.isOnboarded) return;
-      if (state.dailyAssignments.some((a) => a.assignedDate === date)) {
+      const todays = state.dailyAssignments.filter((a) => a.assignedDate === date);
+      // A set saved by an older build can point at tasks that no longer exist in the catalog;
+      // it is replaced when nothing in it has been completed yet.
+      const stale =
+        todays.length > 0 &&
+        todays.some((a) => !getTaskById(a.taskId) || !objectiveFormFor(getTaskById(a.taskId)!)) &&
+        !todays.some((a) => DONE_STATUSES.includes(a.status));
+      if (todays.length > 0 && !stale) {
         // Same day: keep the saved set; only re-derive (e.g. after a restart).
         commit({});
         return;
