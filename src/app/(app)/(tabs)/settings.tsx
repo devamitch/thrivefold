@@ -261,14 +261,14 @@ export default function SettingsScreen() {
           <View style={styles.rowBetween}>
             <View style={styles.hubIconRow}>
               <View style={[styles.iconWrap, { backgroundColor: colors.surface1 }]}>
-                <Ionicons name="shield-checkmark-outline" size={20} color={colors.primary} />
+                <Ionicons name="analytics-outline" size={20} color={colors.primary} />
               </View>
               <View style={{ marginLeft: 12 }}>
                 <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                  On-Device AI Memory Vault
+                  Your Patterns & Memory
                 </Text>
                 <Text style={[typography.caption, { color: colors.text.secondary }]}>
-                  Audit, inspect, or wipe local AI context memory
+                  Insights from your check-ins, note search, memory
                 </Text>
               </View>
             </View>

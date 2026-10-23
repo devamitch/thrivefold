@@ -15,6 +15,7 @@ import { AppHeader } from '../../../components/ui/AppHeader';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { TaskVerificationModal } from '../../../components/ui/TaskVerificationModal';
 import { evaluateDeterministicRoutine } from '../../../domain/ai/deterministicRules';
+import { computeInsights, recentLoad } from '../../../domain/ai/insights';
 import { getCyclePredictions } from '../../../domain/health/cycleCalculations';
 import { getLevelDefinition } from '../../../domain/game/gameCatalogService';
 import type { CalendarEvent } from '../../../domain/calendar/universalCalendarEngine';
@@ -22,6 +23,7 @@ import type { Quest } from '../../../stores/slices/questSlice';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import type { ProductExperience } from '../../../theme/tokens';
 import { useTheme } from '../../../theme/useTheme';
+import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngine';
 
 type Shortcut = { icon: keyof typeof Ionicons.glyphMap; label: string; route: Href };
 
@@ -52,7 +54,7 @@ const greeting = () => {
   return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
 };
 
-const today = () => new Date().toISOString().split('T')[0];
+const today = () => formatLocalDate(new Date());
 
 type QuestCategoryFilter = 'all' | 'physical' | 'mind' | 'rhythm' | 'nutrition';
 
@@ -106,11 +108,23 @@ export default function HomeScreen() {
 
   const todaysCheckIn = checkInHistory.find((c) => c.date === today());
   const latest = checkInHistory[0];
+  const load = useMemo(() => recentLoad(checkInHistory, today()), [checkInHistory]);
+  // The most actionable pattern from the person's own check-ins, if there is one yet.
+  const topInsight = useMemo(
+    () =>
+      computeInsights({
+        checkIns: checkInHistory,
+        periods: cycleData?.periodHistory ?? [],
+        today: today(),
+      }).find((i) => i.kind !== 'consistency'),
+    [checkInHistory, cycleData],
+  );
   const recommendation = evaluateDeterministicRoutine({
     energy: latest?.energy ?? 5,
     mood: latest?.mood ?? 5,
     stress: latest?.stress ?? 5,
     experience,
+    recentLoad: load,
   });
 
   const questsDone = quests.filter((q) => q.isCompleted).length;
@@ -302,6 +316,20 @@ export default function HomeScreen() {
                   </View>
                 ))}
               </View>
+              {topInsight ? (
+                <Pressable
+                  onPress={() => router.push('/(app)/ai')}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Your pattern: ${topInsight.title}`}
+                  style={[styles.rowBetween, { marginTop: spacing.md, minHeight: 44 }]}
+                >
+                  <Ionicons name="analytics-outline" size={18} color={colors.primary} />
+                  <Text style={[typography.subbody, { color: colors.text.primary, flex: 1, marginLeft: 8 }]} numberOfLines={2}>
+                    {topInsight.title}
+                  </Text>
+                  <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
+                </Pressable>
+              ) : null}
             </>
           ) : (
             <>
@@ -500,6 +528,11 @@ export default function HomeScreen() {
             <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: spacing.sm }]}>
               {recommendation.description}
             </Text>
+            {recommendation.taskId === 'rec_recovery_reset' ? (
+              <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.sm }]}>
+                {recommendation.aiExplanation.text}
+              </Text>
+            ) : null}
             <View style={[styles.actions, { marginTop: spacing.md }]}>
               <Button label="Start" onPress={() => router.push('/(app)/(tabs)/today')} style={styles.flex} />
               <Button
