@@ -18,7 +18,6 @@ import { useTheme } from '../../theme/useTheme';
 import { Button } from './Button';
 import { Badge } from './Badge';
 import { PressableScale } from './PressableScale';
-import { Card } from './Card';
 import type { CalendarEvent } from '../../domain/calendar/universalCalendarEngine';
 import { getTaskById } from '../../domain/game/gameCatalogService';
 import type { TaskDefinition } from '../../domain/game/types';
@@ -57,86 +56,30 @@ function getContextualInstructions(
     titleLower.includes('parasympathetic')
   ) {
     return [
-      {
-        id: 'ctx-step-1',
-        stepNumber: 1,
-        title: 'Centering Posture',
-        body: 'Find a calm, upright seating position. Relax your shoulders away from your ears and soften your gaze.',
-      },
-      {
-        id: 'ctx-step-2',
-        stepNumber: 2,
-        title: 'Diaphragmatic Rhythm',
-        body: 'Inhale gently through your nose into your lower abdomen for 4 seconds, pause softly, then exhale for 6 seconds.',
-      },
-      {
-        id: 'ctx-step-3',
-        stepNumber: 3,
-        title: 'Mindful Grounding',
-        body: 'Observe current sensations without resistance. Allow mental static to settle naturally with each out-breath.',
-      },
+      { id: 'ctx-1', stepNumber: 1, title: 'Centering Posture', body: 'Find a calm, upright position. Relax your shoulders and soften your gaze.' },
+      { id: 'ctx-2', stepNumber: 2, title: 'Diaphragmatic Rhythm', body: 'Inhale through your nose for 4s, pause, exhale for 6s.' },
+      { id: 'ctx-3', stepNumber: 3, title: 'Mindful Grounding', body: 'Observe sensations without resistance. Let each out-breath settle your mind.' },
     ];
   }
 
   if (cat === 'sleep' || titleLower.includes('sleep') || titleLower.includes('wind down')) {
     return [
-      {
-        id: 'ctx-step-1',
-        stepNumber: 1,
-        title: 'Circadian Dimming',
-        body: 'Lower ambient lighting and put digital screens away to support natural melatonin synthesis.',
-      },
-      {
-        id: 'ctx-step-2',
-        stepNumber: 2,
-        title: 'Somatic Body Scan',
-        body: 'Scan through your body from crown to toes, releasing tension in your jaw, neck, and lower back.',
-      },
+      { id: 'ctx-1', stepNumber: 1, title: 'Circadian Dimming', body: 'Lower ambient lighting and put screens away.' },
+      { id: 'ctx-2', stepNumber: 2, title: 'Body Scan', body: 'Scan from crown to toes, releasing tension in jaw, neck, and lower back.' },
     ];
   }
 
-  if (
-    cat === 'nutrition' ||
-    titleLower.includes('water') ||
-    titleLower.includes('hydrat') ||
-    titleLower.includes('fuel')
-  ) {
+  if (cat === 'nutrition' || titleLower.includes('water') || titleLower.includes('hydrat') || titleLower.includes('fuel')) {
     return [
-      {
-        id: 'ctx-step-1',
-        stepNumber: 1,
-        title: 'Mindful Hydration',
-        body: 'Drink a glass of clean water slowly, focusing on the sensory feeling of replenishment.',
-      },
-      {
-        id: 'ctx-step-2',
-        stepNumber: 2,
-        title: 'Nutritional Awareness',
-        body: 'Choose wholesome, nutrient-dense ingredients that give sustained physical vitality.',
-      },
+      { id: 'ctx-1', stepNumber: 1, title: 'Mindful Hydration', body: 'Drink a glass of water slowly, focusing on replenishment.' },
+      { id: 'ctx-2', stepNumber: 2, title: 'Nutritional Awareness', body: 'Choose nutrient-dense ingredients for sustained vitality.' },
     ];
   }
 
-  // Default general wellness/movement steps (never cat-cow for non-desk decompression)
   return [
-    {
-      id: 'ctx-step-1',
-      stepNumber: 1,
-      title: 'Initial Setup',
-      body: 'Clear your space and take a steady breath to arrive fully in the moment.',
-    },
-    {
-      id: 'ctx-step-2',
-      stepNumber: 2,
-      title: 'Engaged Execution',
-      body: 'Perform the practice with gentle control, keeping within your body’s comfortable range of motion.',
-    },
-    {
-      id: 'ctx-step-3',
-      stepNumber: 3,
-      title: 'Grounding Reflection',
-      body: 'Pause for a moment, notice how your body and mind feel, and acknowledge your effort.',
-    },
+    { id: 'ctx-1', stepNumber: 1, title: 'Setup', body: 'Clear your space and take a steady breath.' },
+    { id: 'ctx-2', stepNumber: 2, title: 'Execute', body: 'Perform the practice with gentle control within your comfortable range.' },
+    { id: 'ctx-3', stepNumber: 3, title: 'Reflect', body: 'Pause, notice how you feel, and acknowledge your effort.' },
   ];
 }
 
@@ -157,8 +100,6 @@ export function TaskVerificationModal({
   const [timerActive, setTimerActive] = useState(false);
   const [secondsRemaining, setSecondsRemaining] = useState(180);
   const [timerDuration, setTimerDuration] = useState(180);
-  const [aiCoachingFeedback, setAiCoachingFeedback] = useState<string | null>(null);
-  const [isAiEvaluating, setIsAiEvaluating] = useState(false);
 
   // Preserve event across dismissal to prevent flash on close
   const lastEventRef = useRef<CalendarEvent | null>(event);
@@ -176,7 +117,6 @@ export function TaskVerificationModal({
     : undefined;
 
   const instructions = displayEvent ? getContextualInstructions(displayEvent, taskDef) : [];
-
   const defaultDuration = (taskDef?.estimatedDurationMinutes ?? 3) * 60;
 
   useEffect(() => {
@@ -187,8 +127,6 @@ export function TaskVerificationModal({
       setTimerDuration(dur);
       setSelfDeclaredHonest(true);
       setReflectionNotes('');
-      setAiCoachingFeedback(null);
-      setIsAiEvaluating(false);
     }
   }, [visible, displayEvent?.id, taskDef?.estimatedDurationMinutes]);
 
@@ -199,9 +137,7 @@ export function TaskVerificationModal({
         if (prev <= 1) {
           clearInterval(interval);
           setTimerActive(false);
-          try {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          } catch {}
+          try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch {}
           return 0;
         }
         return prev - 1;
@@ -221,12 +157,9 @@ export function TaskVerificationModal({
 
   const taskPointsReward = taskDef?.points.taskPoints ?? 15;
   const xpReward = taskDef?.points.xp ?? 25;
-  const coinsReward = taskDef?.points.coins ?? 10;
 
   const handleVerify = () => {
-    try {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch {}
+    try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch {}
     onVerifyAndComplete(displayEvent, {
       selfDeclaredHonest,
       elapsedSeconds: timerDuration - secondsRemaining || 60,
@@ -235,41 +168,8 @@ export function TaskVerificationModal({
     onClose();
   };
 
-  const handleRequestAiCoaching = () => {
-    if (!reflectionNotes.trim()) {
-      try {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      } catch {}
-      return;
-    }
-    setIsAiEvaluating(true);
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    } catch {}
-
-    // Genuine, honest local reflection coach (deterministic, private, no fabricated biometric data)
-    setTimeout(() => {
-      setIsAiEvaluating(false);
-      const noteLower = reflectionNotes.toLowerCase();
-      let feedback = 'Mindful effort recorded. Acknowledging your body with honest awareness builds sustainable vitality.';
-      if (noteLower.includes('tired') || noteLower.includes('fatigue') || noteLower.includes('sore')) {
-        feedback = 'Gentle awareness noted: honoring fatigue is active biological recovery. Prioritize hydration and restorative stillness tonight.';
-      } else if (noteLower.includes('calm') || noteLower.includes('peace') || noteLower.includes('relaxed')) {
-        feedback = 'Vagus nerve regulation successful: your autonomic system responded positively to this somatic practice.';
-      } else if (noteLower.includes('tight') || noteLower.includes('stiff') || noteLower.includes('back')) {
-        feedback = 'Tension release recognized: continue gentle breathwork to ease the lumbosacral fascia without straining.';
-      }
-      setAiCoachingFeedback(feedback);
-    }, 450);
-  };
-
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.keyboardRoot}
@@ -279,79 +179,70 @@ export function TaskVerificationModal({
             style={StyleSheet.absoluteFill}
             onPress={onClose}
             accessibilityRole="button"
-            accessibilityLabel="Close verification modal"
+            accessibilityLabel="Close"
           />
 
           <View
             style={[
-              styles.sheetContainer,
+              styles.sheet,
               {
-                backgroundColor: colors.surface,
+                backgroundColor: colors.background,
                 paddingBottom: Math.max(insets.bottom, 20) + 12,
               },
             ]}
           >
-            {/* Drag Handle Bar */}
+            {/* Handle */}
             <View style={styles.handleBar}>
-              <View style={styles.handlePill} />
+              <View style={[styles.handlePill, { backgroundColor: colors.border }]} />
             </View>
 
-            {/* Header Row */}
-            <View style={[styles.headerRow, { paddingHorizontal: spacing.lg }]}>
+            {/* Header */}
+            <View style={[styles.header, { paddingHorizontal: spacing.lg }]}>
               <View style={styles.flex}>
-                <View style={styles.badgeRow}>
+                <Text style={[typography.heading, { color: colors.text.primary }]}>
+                  {taskDef?.title ?? displayEvent.title}
+                </Text>
+                <View style={[styles.metaRow, { marginTop: 6 }]}>
                   <Badge
                     label={(taskDef?.category ?? displayEvent.category).toUpperCase()}
                     variant={isCompleted ? 'success' : 'primary'}
                   />
-                  <Badge
-                    label={`${taskDef?.estimatedDurationMinutes ?? 5} MIN`}
-                    variant="neutral"
-                    style={{ marginLeft: 6 }}
-                  />
-                  <View style={[styles.pointsBadge, { backgroundColor: colors.surface1, marginLeft: 6 }]}>
-                    <Ionicons name="ribbon-outline" size={13} color={colors.primary} />
-                    <Text style={[typography.captionBold, { color: colors.text.primary, marginLeft: 4 }]}>
-                      +{taskPointsReward} pts • +{xpReward} XP
-                    </Text>
-                  </View>
+                  <Text style={[typography.captionBold, { color: colors.text.secondary, marginLeft: 8 }]}>
+                    {taskDef?.estimatedDurationMinutes ?? 5} min
+                  </Text>
+                  <Text style={[typography.captionBold, { color: colors.primary, marginLeft: 8 }]}>
+                    +{taskPointsReward} pts · +{xpReward} XP
+                  </Text>
                 </View>
-
-                <Text style={[typography.heading, { color: colors.text.primary, marginTop: 8 }]}>
-                  {taskDef?.title ?? displayEvent.title}
-                </Text>
-                <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                  {taskDef?.purpose ?? displayEvent.description ?? 'Complete with mindful presence.'}
-                </Text>
               </View>
-
               <PressableScale
                 onPress={onClose}
                 style={[styles.closeBtn, { backgroundColor: colors.surface1 }]}
                 accessibilityRole="button"
                 accessibilityLabel="Close"
               >
-                <Ionicons name="close" size={20} color={colors.text.secondary} />
+                <Ionicons name="close" size={18} color={colors.text.secondary} />
               </PressableScale>
             </View>
 
             <ScrollView
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingTop: spacing.md }}
+              contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: 8 }}
             >
+              {/* Purpose */}
+              {(taskDef?.purpose || displayEvent.description) && (
+                <Text style={[typography.subbody, { color: colors.text.secondary, marginBottom: spacing.sm, lineHeight: 20 }]}>
+                  {taskDef?.purpose ?? displayEvent.description}
+                </Text>
+              )}
+
               {/* Step-by-Step Instructions */}
-              {instructions && instructions.length > 0 ? (
-                <View style={{ marginTop: spacing.xs }}>
-                  <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 8 }]}>
-                    STEP-BY-STEP GUIDANCE
-                  </Text>
-                  {instructions.map((step) => (
-                    <View
-                      key={step.id}
-                      style={[styles.stepItem, { backgroundColor: colors.surface1 }]}
-                    >
-                      <View style={[styles.stepNumberBadge, { backgroundColor: colors.primary }]}>
-                        <Text style={[typography.captionBold, { color: colors.onPrimary }]}>
+              {instructions.length > 0 && (
+                <View style={[styles.instructionsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                  {instructions.map((step, idx) => (
+                    <View key={step.id} style={[styles.stepRow, idx > 0 && { marginTop: 10 }]}>
+                      <View style={[styles.stepBadge, { backgroundColor: colors.primaryAlpha }]}>
+                        <Text style={[typography.captionBold, { color: colors.primary }]}>
                           {step.stepNumber}
                         </Text>
                       </View>
@@ -359,162 +250,96 @@ export function TaskVerificationModal({
                         <Text style={[typography.subbodyBold, { color: colors.text.primary }]}>
                           {step.title}
                         </Text>
-                        <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2, lineHeight: 18 }]}>
+                        <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2, lineHeight: 17 }]}>
                           {step.body}
                         </Text>
                       </View>
                     </View>
                   ))}
                 </View>
-              ) : null}
+              )}
 
-              {/* Safety Constraints / Cautions if present */}
-              {taskDef?.safetyConstraints && taskDef.safetyConstraints.length > 0 ? (
-                <View style={[styles.safetyCard, { backgroundColor: colors.surface1, marginTop: spacing.sm }]}>
-                  <Ionicons name="shield-checkmark-outline" size={16} color={colors.primary} />
+              {/* Safety Constraints */}
+              {taskDef?.safetyConstraints && taskDef.safetyConstraints.length > 0 && (
+                <View style={[styles.safetyCard, { backgroundColor: colors.warningSurface, marginTop: spacing.sm }]}>
+                  <Ionicons name="shield-checkmark-outline" size={15} color={colors.warning} />
                   <View style={{ marginLeft: 8, flex: 1 }}>
-                    <Text style={[typography.captionBold, { color: colors.text.primary }]}>
-                      Mindful Safety & Comfort
-                    </Text>
                     {taskDef.safetyConstraints.map((sc, i) => (
-                      <Text key={i} style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                      <Text key={i} style={[typography.caption, { color: colors.text.secondary }]}>
                         • {sc}
                       </Text>
                     ))}
                   </View>
                 </View>
-              ) : null}
+              )}
 
-              {/* Status Banner if Completed */}
+              {/* Completed State */}
               {isCompleted ? (
-                <View style={[styles.completedBanner, { backgroundColor: colors.primaryAlpha, marginTop: spacing.md }]}>
-                  <Ionicons name="checkmark-circle" size={24} color={colors.primary} />
-                  <View style={{ marginLeft: 12, flex: 1 }}>
-                    <Text style={[typography.subbodyBold, { color: colors.primary }]}>
-                      Verified & Completed
+                <View style={[styles.completedBanner, { backgroundColor: colors.successSurface, marginTop: spacing.md }]}>
+                  <Ionicons name="checkmark-circle" size={22} color={colors.success} />
+                  <View style={{ marginLeft: 10, flex: 1 }}>
+                    <Text style={[typography.subbodyBold, { color: colors.success }]}>
+                      Verified & Complete
                     </Text>
                     <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                      +{taskPointsReward} Daily Points & +{xpReward} XP logged to your sanctuary record.
+                      +{taskPointsReward} pts & +{xpReward} XP logged.
                     </Text>
                   </View>
                 </View>
               ) : (
                 <>
-                  {/* Mindful Practice Timer */}
-                  <View style={[styles.timerCard, { backgroundColor: colors.surface1, marginTop: spacing.md }]}>
-                    <View style={styles.timerHeader}>
-                      <View style={styles.row}>
-                        <Ionicons name="timer-outline" size={16} color={colors.primary} />
-                        <Text style={[typography.captionBold, { color: colors.primary, marginLeft: 6 }]}>
-                          MINDFUL PRACTICE TIMER
-                        </Text>
-                      </View>
-
-                      <Text style={[typography.captionBold, { color: colors.text.muted }]}>
-                        {timerDuration / 60}m Practice
-                      </Text>
-                    </View>
-
-                    <Text style={[typography.display, { color: colors.text.primary, textAlign: 'center', marginVertical: 8 }]}>
+                  {/* Timer */}
+                  <View style={[styles.timerCard, { backgroundColor: colors.surface, borderColor: colors.border, marginTop: spacing.md }]}>
+                    <Text style={[typography.display, { color: colors.text.primary, textAlign: 'center' }]}>
                       {timerDisplay}
                     </Text>
-
-                    {/* Progress Track */}
-                    <View style={[styles.timerTrack, { backgroundColor: colors.background }]}>
+                    <View style={[styles.timerTrack, { backgroundColor: colors.surface1, marginTop: 8 }]}>
                       <View
-                        style={[
-                          styles.timerFill,
-                          {
-                            backgroundColor: colors.primary,
-                            width: `${timerProgress}%`,
-                          },
-                        ]}
+                        style={[styles.timerFill, { backgroundColor: colors.primary, width: `${timerProgress}%` }]}
                       />
                     </View>
-
-                    <View style={[styles.timerActions, { marginTop: 10 }]}>
-                      <Button
-                        label={timerActive ? 'Pause Timer' : secondsRemaining === 0 ? 'Restart Timer' : 'Start Focus Timer'}
-                        variant={timerActive ? 'outline' : 'primary'}
-                        size="sm"
-                        onPress={() => {
-                          try {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                          } catch {}
-                          if (secondsRemaining === 0) {
-                            setSecondsRemaining(timerDuration);
-                            setTimerActive(false);
-                          } else {
-                            setTimerActive(!timerActive);
-                          }
-                        }}
-                        style={{ flex: 1 }}
-                      />
-                    </View>
-                  </View>
-
-                  {/* Private Personal Reflection (Evidence) */}
-                  <View style={{ marginTop: spacing.md }}>
-                    <View style={styles.rowBetween}>
-                      <Text style={[typography.captionBold, { color: colors.text.muted }]}>
-                        PRIVATE REFLECTION & SHIFTS
-                      </Text>
-                      {reflectionNotes.trim().length > 3 && (
-                        <PressableScale
-                          onPress={handleRequestAiCoaching}
-                          scaleTo={0.94}
-                          accessibilityRole="button"
-                          accessibilityLabel="Reflect with AI Coach"
-                        >
-                          <Text style={[typography.captionBold, { color: colors.primary }]}>
-                            {isAiEvaluating ? 'Reflecting...' : 'AI Coach Insight'}
-                          </Text>
-                        </PressableScale>
-                      )}
-                    </View>
-
-                    <TextInput
-                      value={reflectionNotes}
-                      onChangeText={setReflectionNotes}
-                      placeholder="How did your body and mind feel? Any tensions, relief, or energy shifts..."
-                      placeholderTextColor={colors.text.muted}
-                      multiline
-                      style={[
-                        styles.notesInput,
-                        {
-                          backgroundColor: colors.surface1,
-                          color: colors.text.primary,
-                          borderColor: colors.primary + '20',
-                        },
-                      ]}
+                    <Button
+                      label={timerActive ? 'Pause' : secondsRemaining === 0 ? 'Restart' : 'Start Timer'}
+                      variant={timerActive ? 'outline' : 'primary'}
+                      size="sm"
+                      onPress={() => {
+                        try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+                        if (secondsRemaining === 0) {
+                          setSecondsRemaining(timerDuration);
+                          setTimerActive(false);
+                        } else {
+                          setTimerActive(!timerActive);
+                        }
+                      }}
+                      style={{ marginTop: 10 }}
                     />
-
-                    {/* AI Coach Feedback Callout */}
-                    {aiCoachingFeedback ? (
-                      <View style={[styles.aiFeedbackCard, { backgroundColor: colors.surface1, borderColor: colors.primary + '30' }]}>
-                        <Ionicons name="chatbubble-ellipses-outline" size={16} color={colors.primary} />
-                        <Text style={[typography.caption, { color: colors.text.primary, marginLeft: 8, flex: 1, lineHeight: 18 }]}>
-                          {aiCoachingFeedback}
-                        </Text>
-                      </View>
-                    ) : null}
                   </View>
 
-                  {/* Honest Self-Declaration Check */}
-                  <Pressable
-                    onPress={() => {
-                      try {
-                        Haptics.selectionAsync();
-                      } catch {}
-                      setSelfDeclaredHonest(!selfDeclaredHonest);
-                    }}
+                  {/* Reflection (optional) */}
+                  <TextInput
+                    value={reflectionNotes}
+                    onChangeText={setReflectionNotes}
+                    placeholder="How did it feel? (optional)"
+                    placeholderTextColor={colors.text.muted}
+                    multiline
                     style={[
-                      styles.declarationRow,
+                      styles.notesInput,
                       {
-                        backgroundColor: colors.surface1,
+                        backgroundColor: colors.surface,
+                        color: colors.text.primary,
+                        borderColor: colors.border,
                         marginTop: spacing.sm,
                       },
                     ]}
+                  />
+
+                  {/* Self-Declaration */}
+                  <Pressable
+                    onPress={() => {
+                      try { Haptics.selectionAsync(); } catch {}
+                      setSelfDeclaredHonest(!selfDeclaredHonest);
+                    }}
+                    style={[styles.declarationRow, { backgroundColor: colors.surface, marginTop: spacing.sm }]}
                   >
                     <View
                       style={[
@@ -525,21 +350,14 @@ export function TaskVerificationModal({
                         },
                       ]}
                     >
-                      {selfDeclaredHonest ? (
-                        <Ionicons name="checkmark" size={14} color={colors.onPrimary} />
-                      ) : null}
+                      {selfDeclaredHonest && <Ionicons name="checkmark" size={14} color={colors.onPrimary} />}
                     </View>
-                    <View style={{ flex: 1, marginLeft: 12 }}>
-                      <Text style={[typography.subbodyBold, { color: colors.text.primary }]}>
-                        Honest Mindful Self-Declaration
-                      </Text>
-                      <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                        I confirm with calm presence that I completed this wellness practice.
-                      </Text>
-                    </View>
+                    <Text style={[typography.subbody, { color: colors.text.primary, marginLeft: 10, flex: 1 }]}>
+                      I honestly completed this practice
+                    </Text>
                   </Pressable>
 
-                  {/* Primary Verification Action */}
+                  {/* Actions */}
                   <Button
                     label={`Verify & Complete (+${taskPointsReward} pts)`}
                     variant="primary"
@@ -547,38 +365,31 @@ export function TaskVerificationModal({
                     style={{ marginTop: spacing.md }}
                   />
 
-                  {/* Adaptive Alternatives Row: Replace from Vault or Skip */}
-                  <View style={[styles.alternativesRow, { marginTop: 10 }]}>
-                    <Button
-                      label="Replace from Vault"
-                      variant="ghost"
-                      size="sm"
-                      onPress={() => {
-                        try {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        } catch {}
-                        if (onReplaceWithSpecialQuest) {
+                  <View style={[styles.altRow, { marginTop: 8 }]}>
+                    {onReplaceWithSpecialQuest && (
+                      <Button
+                        label="Replace"
+                        variant="ghost"
+                        size="sm"
+                        onPress={() => {
                           onReplaceWithSpecialQuest(displayEvent);
-                        } else if (onSkip) {
+                          onClose();
+                        }}
+                        style={{ flex: 1, marginRight: 4 }}
+                      />
+                    )}
+                    {onSkip && (
+                      <Button
+                        label="Skip (0 pts)"
+                        variant="ghost"
+                        size="sm"
+                        onPress={() => {
                           onSkip(displayEvent);
-                        }
-                        onClose();
-                      }}
-                      style={{ flex: 1, marginRight: 6 }}
-                    />
-                    <Button
-                      label="Skip Today (0 pts)"
-                      variant="ghost"
-                      size="sm"
-                      onPress={() => {
-                        try {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        } catch {}
-                        if (onSkip) onSkip(displayEvent);
-                        onClose();
-                      }}
-                      style={{ flex: 1 }}
-                    />
+                          onClose();
+                        }}
+                        style={{ flex: 1 }}
+                      />
+                    )}
                   </View>
                 </>
               )}
@@ -591,74 +402,44 @@ export function TaskVerificationModal({
 }
 
 const styles = StyleSheet.create({
-  keyboardRoot: {
-    flex: 1,
+  keyboardRoot: { flex: 1 },
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  sheet: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '85%',
+    paddingTop: 6,
   },
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'flex-end',
-  },
-  sheetContainer: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    maxHeight: '90%',
-    paddingTop: 8,
-  },
-  handleBar: {
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  handlePill: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#D1CAC2',
-  },
-  headerRow: {
+  handleBar: { alignItems: 'center', paddingVertical: 8 },
+  handlePill: { width: 36, height: 4, borderRadius: 2 },
+  header: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
     paddingBottom: 8,
   },
-  flex: {
-    flex: 1,
-    paddingRight: 8,
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 4,
-  },
-  pointsBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
+  flex: { flex: 1, paddingRight: 8 },
+  metaRow: { flexDirection: 'row', alignItems: 'center' },
   closeBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stepItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    padding: 10,
+  instructionsCard: {
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  stepRow: { flexDirection: 'row', alignItems: 'flex-start' },
+  stepBadge: {
+    width: 24,
+    height: 24,
     borderRadius: 12,
-    marginBottom: 6,
-  },
-  stepNumberBadge: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 2,
+    marginTop: 1,
   },
   safetyCard: {
     flexDirection: 'row',
@@ -673,52 +454,19 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   timerCard: {
-    padding: 12,
-    borderRadius: 14,
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1,
   },
-  timerHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  rowBetween: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-  },
-  timerTrack: {
-    height: 6,
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  timerFill: {
-    height: '100%',
-    borderRadius: 3,
-  },
-  timerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
+  timerTrack: { height: 5, borderRadius: 3, overflow: 'hidden' },
+  timerFill: { height: '100%', borderRadius: 3 },
   notesInput: {
     borderRadius: 14,
     borderWidth: 1,
     padding: 12,
     fontSize: 14,
-    minHeight: 70,
+    minHeight: 56,
     textAlignVertical: 'top',
-  },
-  aiFeedbackCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginTop: 8,
   },
   declarationRow: {
     flexDirection: 'row',
@@ -734,8 +482,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  alternativesRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
+  altRow: { flexDirection: 'row', alignItems: 'center' },
 });

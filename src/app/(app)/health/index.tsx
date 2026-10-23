@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
 import { Header } from '../../../components/ui/Header';
@@ -33,9 +34,25 @@ export default function HealthIndexScreen() {
         }}
         showsVerticalScrollIndicator={false}
       >
+        <Card style={{ marginTop: spacing.md, padding: 14, backgroundColor: colors.surface }}>
+          <View style={styles.heroWrap}>
+            <Image
+              source={require('../../../../assets/illustrations/health-holistic.jpg')}
+              style={styles.heroImage}
+              contentFit="cover"
+            />
+          </View>
+          <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 12 }]}>
+            Holistic Daily Harmony
+          </Text>
+          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4, lineHeight: 18 }]}>
+            Biological rhythm synchronization, hormonal cycle phases, and gentle natural wellness tracking.
+          </Text>
+        </Card>
+
         <Card
           onPress={() => router.push('/(app)/health/cycle')}
-          style={{ marginTop: spacing.md, padding: spacing.base }}
+          style={{ marginTop: spacing.sm, padding: spacing.base }}
         >
           <View style={styles.rowBetween}>
             <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
@@ -129,5 +146,16 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  heroWrap: {
+    width: '100%',
+    height: 140,
+    borderRadius: 14,
+    overflow: 'hidden',
+    backgroundColor: '#F3EFEA',
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
   },
 });

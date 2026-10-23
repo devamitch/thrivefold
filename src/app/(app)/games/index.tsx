@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import React, { useEffect, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 
 import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
@@ -161,8 +162,15 @@ export default function GamesScreen() {
     <ScreenWrapper scrollable>
       <Header title="Restorative Arcade" subtitle="Somatic & Rhythm Mini-Games" showBack />
       <View style={[styles.content, { paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }]}>
-        <Card style={{ marginBottom: spacing.md, padding: spacing.base, backgroundColor: colors.surface1 }}>
-          <Text style={[typography.captionBold, { color: colors.primary }]}>
+        <Card style={{ marginBottom: spacing.md, padding: 14, backgroundColor: colors.surface }}>
+          <View style={styles.heroWrap}>
+            <Image
+              source={require('../../../../assets/illustrations/games-focus.jpg')}
+              style={styles.heroImage}
+              contentFit="cover"
+            />
+          </View>
+          <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 12 }]}>
             Gentle Cognitive Rhythm
           </Text>
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4, lineHeight: 18 }]}>
@@ -437,5 +445,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 24,
+  },
+  heroWrap: {
+    width: '100%',
+    height: 140,
+    borderRadius: 14,
+    overflow: 'hidden',
+    backgroundColor: '#F3EFEA',
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
   },
 });

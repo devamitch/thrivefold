@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import { ScreenContainer } from '../../../../components/ui/ScreenContainer';
 import { AppHeader } from '../../../../components/ui/AppHeader';
 import { Card } from '../../../../components/ui/Card';
@@ -23,7 +24,7 @@ export default function MenHealthScreen() {
     >
       <View style={[styles.content, { paddingBottom: 32 }]}>
         {/* Today's Status */}
-        <Card style={{ marginBottom: 16, padding: 24 }}>
+        <Card style={{ marginBottom: 16, padding: 20 }}>
           <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: 12 }]}>
             Today's Focus
           </Text>
@@ -44,36 +45,50 @@ export default function MenHealthScreen() {
         </Card>
 
         {/* Strength Training */}
-        <Card style={{ marginBottom: 16, padding: 24 }}>
-          <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: 12 }]}>
+        <Card style={{ marginBottom: 16, padding: 16 }}>
+          <View style={styles.imageWrap}>
+            <Image
+              source={require('../../../../../assets/illustrations/workout-strength.jpg')}
+              style={styles.cardImage}
+              contentFit="cover"
+            />
+          </View>
+          <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 14, marginBottom: 4 }]}>
             Strength & Stamina
           </Text>
           <Text style={[typography.subbody, { color: colors.text.secondary, marginBottom: 16 }]}>
-            Equipment-free mobility, bodyweight basics, progressive routines
+            Equipment-free mobility, bodyweight basics, and progressive conditioning routines.
           </Text>
           <Button label="Start Workout" size="sm" />
         </Card>
 
-        {/* Mental Wellness */}
-        <Card style={{ marginBottom: 16, padding: 24 }}>
-          <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: 12 }]}>
+        {/* Recovery & Mobility Habits */}
+        <Card style={{ marginBottom: 16, padding: 16 }}>
+          <View style={styles.imageWrap}>
+            <Image
+              source={require('../../../../../assets/illustrations/workout-mobility.jpg')}
+              style={styles.cardImage}
+              contentFit="cover"
+            />
+          </View>
+          <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 14, marginBottom: 4 }]}>
+            Mobility & Recovery Habits
+          </Text>
+          <Text style={[typography.subbody, { color: colors.text.secondary, marginBottom: 16 }]}>
+            Somatic stretching, decompression, nervous system reset, and hydration.
+          </Text>
+          <Button label="Log Recovery" size="sm" variant="outline" />
+        </Card>
+
+        {/* Mental Grounding */}
+        <Card style={{ marginBottom: 16, padding: 20 }}>
+          <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: 8 }]}>
             Mental Grounding
           </Text>
           <Text style={[typography.subbody, { color: colors.text.secondary, marginBottom: 16 }]}>
-            Stoic reflection, stress decompression, emotional regulation
+            Stoic reflection, workplace decompression, emotional regulation, and mindful focus.
           </Text>
           <Button label="Reflection Exercise" size="sm" variant="outline" />
-        </Card>
-
-        {/* Recovery Habits */}
-        <Card style={{ marginBottom: 16, padding: 24 }}>
-          <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: 12 }]}>
-            Recovery Habits
-          </Text>
-          <Text style={[typography.subbody, { color: colors.text.secondary, marginBottom: 16 }]}>
-            Sleep tracking, cold exposure, hydration reminders
-          </Text>
-          <Button label="Log Recovery" size="sm" variant="outline" />
         </Card>
 
         {/* Health Education */}
@@ -101,5 +116,16 @@ const styles = StyleSheet.create({
   },
   statusItem: {
     alignItems: 'center',
+  },
+  imageWrap: {
+    width: '100%',
+    height: 140,
+    borderRadius: 14,
+    overflow: 'hidden',
+    backgroundColor: '#F3EFEA',
+  },
+  cardImage: {
+    width: '100%',
+    height: '100%',
   },
 });

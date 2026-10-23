@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Dimensions, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeIn, FadeInDown, FadeInUp, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '../../components/ui/Button';
@@ -11,44 +12,62 @@ import { newLocalId } from '../../stores/slices/authSlice';
 import { useRootStore } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
 
+const { width: SCREEN_W } = Dimensions.get('window');
+
 const INTRO_SLIDES = [
   {
-    id: 'privacy',
-    badge: '100% PRIVATE & ON-DEVICE',
-    title: 'Your Private Health Sanctuary',
+    id: 'cycle',
+    badge: 'BIOLOGY & HORMONES',
+    title: 'Private Cycle & Natural Rhythm',
     subtitle:
-      'Zero trackers. Zero cloud selling. Every cycle note, physical log, and wellness habit stays encrypted right on your phone.',
-    icon: 'shield-checkmark' as const,
-    iconColor: '#B85D3E',
-    iconBg: 'rgba(184, 93, 62, 0.12)',
-  },
-  {
-    id: 'biology',
-    badge: 'PHASE & BIOLOGY AWARE',
-    title: 'Rhythms Aligned to Your Body',
-    subtitle:
-      'Hormonal cycle & follicular insights for women; posture, structural mobility, stamina, and athletic recovery for men.',
+      'Local-first cycle tracking without cloud surveillance. Aligned to your biological phases.',
+    image: require('../../../assets/illustrations/intro-cycle.jpg'),
     icon: 'leaf' as const,
     iconColor: '#5E826D',
     iconBg: 'rgba(94, 130, 109, 0.14)',
   },
   {
-    id: 'habits',
-    badge: 'VERIFIED RITUALS & GAMES',
-    title: 'Habits That Feel Like Play',
+    id: 'quests',
+    badge: 'VERIFIED MILESTONES',
+    title: 'Verified Daily Health Quests',
     subtitle:
-      'Somatic breathwork, decompression flows, and daily quests verified with honest self-declaration, streak milestones, and XP progression.',
+      'Meaningful wellness routines, athletic conditioning, and streaks that prove real progress.',
+    image: require('../../../assets/illustrations/intro-quests.jpg'),
     icon: 'trophy' as const,
+    iconColor: '#B85D3E',
+    iconBg: 'rgba(184, 93, 62, 0.12)',
+  },
+  {
+    id: 'letters',
+    badge: 'SLOW CORRESPONDENCE',
+    title: 'Reflective Letters & Wax Seals',
+    subtitle:
+      'Mindful timestamped personal reflections sealed with collectible artisanal wax stamps.',
+    image: require('../../../assets/illustrations/intro-letters.jpg'),
+    icon: 'mail' as const,
     iconColor: '#C47D33',
     iconBg: 'rgba(196, 125, 51, 0.14)',
+  },
+  {
+    id: 'vault',
+    badge: '100% PRIVATE & ON-DEVICE',
+    title: 'On-Device Memory Vault',
+    subtitle:
+      'Zero-knowledge AI coaching stored encrypted on your device. Zero trackers, zero cloud selling.',
+    image: require('../../../assets/illustrations/intro-vault.jpg'),
+    icon: 'shield-checkmark' as const,
+    iconColor: '#5E826D',
+    iconBg: 'rgba(94, 130, 109, 0.14)',
   },
 ];
 
 const PROMISES = [
-  { icon: 'phone-portrait-outline' as const, text: 'Your health records stay on this device.' },
-  { icon: 'eye-off-outline' as const, text: 'Nothing about your health is shared or sold.' },
-  { icon: 'trash-outline' as const, text: 'Export or erase everything any time in Settings.' },
+  { icon: 'phone-portrait-outline' as const, text: 'Health records stay on this device' },
+  { icon: 'eye-off-outline' as const, text: 'Nothing is shared or sold' },
+  { icon: 'trash-outline' as const, text: 'Export or erase any time in Settings' },
 ];
+
+const AUTO_SLIDE_INTERVAL = 4000;
 
 export default function SignInScreen() {
   const router = useRouter();
@@ -58,9 +77,31 @@ export default function SignInScreen() {
   const continueAsGuest = useRootStore((s) => s.continueAsGuest);
   const [activeSlide, setActiveSlide] = useState(0);
   const [pseudonym, setPseudonym] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const autoSlideRef = useRef<NodeJS.Timeout | null>(null);
 
   const name = pseudonym.trim();
   const tooLong = name.length > 24;
+
+  // Auto-advancing intro slides
+  useEffect(() => {
+    autoSlideRef.current = setInterval(() => {
+      setActiveSlide((prev) => (prev + 1) % INTRO_SLIDES.length);
+    }, AUTO_SLIDE_INTERVAL);
+    return () => {
+      if (autoSlideRef.current) clearInterval(autoSlideRef.current);
+    };
+  }, []);
+
+  const handleDotPress = useCallback((idx: number) => {
+    setActiveSlide(idx);
+    if (autoSlideRef.current) {
+      clearInterval(autoSlideRef.current);
+      autoSlideRef.current = setInterval(() => {
+        setActiveSlide((prev) => (prev + 1) % INTRO_SLIDES.length);
+      }, AUTO_SLIDE_INTERVAL);
+    }
+  }, []);
 
   const createProfile = () => {
     if (tooLong) return;
@@ -89,6 +130,15 @@ export default function SignInScreen() {
 
   const currentSlide = INTRO_SLIDES[activeSlide];
 
+  // Animated dot widths
+  const dotWidths = INTRO_SLIDES.map((_, idx) => {
+    const w = useSharedValue(idx === 0 ? 24 : 8);
+    useEffect(() => {
+      w.value = withSpring(idx === activeSlide ? 24 : 8, { damping: 15, stiffness: 150 });
+    }, [activeSlide]);
+    return useAnimatedStyle(() => ({ width: w.value }));
+  });
+
   return (
     <KeyboardAvoidingView
       style={[styles.root, { backgroundColor: colors.background }]}
@@ -107,7 +157,7 @@ export default function SignInScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Brand Header */}
-        <View style={styles.hero}>
+        <Animated.View entering={FadeInDown.delay(100).duration(500)} style={styles.hero}>
           <View style={[styles.mark, { backgroundColor: colors.surface, borderColor: colors.borderStrong }]}>
             <Image
               source={require('../../../assets/brand/Minimalist-Terracotta-T-and-Leaf-Emblem.png')}
@@ -125,103 +175,125 @@ export default function SignInScreen() {
             Thrivefold
           </Text>
           <Text style={[typography.body, styles.center, { color: colors.text.secondary, marginTop: 4 }]}>
-            Small, steady routines for your health — kept on your phone.
+            Small, steady routines for your health
           </Text>
-        </View>
+        </Animated.View>
 
-        {/* Interactive Intro Walkthrough Card */}
-        <View style={[styles.slideCard, { backgroundColor: colors.surface, borderColor: colors.borderStrong, marginTop: spacing.lg }]}>
-          <View style={styles.slideHeader}>
-            <View style={[styles.slideIconBox, { backgroundColor: currentSlide.iconBg }]}>
-              <Ionicons name={currentSlide.icon} size={22} color={currentSlide.iconColor} />
+        {/* Auto-sliding Intro Card */}
+        <Animated.View entering={FadeInDown.delay(250).duration(500)}>
+          <View style={[styles.slideCard, { backgroundColor: colors.surface, borderColor: colors.borderStrong, marginTop: spacing.lg }]}>
+            {/* Slide Hero Illustration */}
+            <View style={styles.slideImageContainer}>
+              <Image
+                source={currentSlide.image}
+                style={styles.slideImage}
+                contentFit="cover"
+                transition={200}
+              />
             </View>
-            <View style={[styles.badgePill, { backgroundColor: currentSlide.iconBg }]}>
-              <Text style={[typography.captionBold, { color: currentSlide.iconColor, fontSize: 10, letterSpacing: 0.5 }]}>
-                {currentSlide.badge}
+
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 14 }}>
+              <View style={[styles.slideIconBox, { backgroundColor: currentSlide.iconBg }]}>
+                <Ionicons name={currentSlide.icon} size={20} color={currentSlide.iconColor} />
+              </View>
+              <View style={[styles.badgePill, { backgroundColor: currentSlide.iconBg, marginLeft: 10 }]}>
+                <Text style={[typography.captionBold, { color: currentSlide.iconColor, fontSize: 10, letterSpacing: 0.5 }]}>
+                  {currentSlide.badge}
+                </Text>
+              </View>
+            </View>
+            <Text style={[typography.heading, { color: colors.text.primary, marginTop: spacing.sm, fontSize: 18 }]}>
+              {currentSlide.title}
+            </Text>
+            <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4, lineHeight: 20 }]}>
+              {currentSlide.subtitle}
+            </Text>
+
+            {/* Animated Dots */}
+            <View style={styles.dotsRow}>
+              {INTRO_SLIDES.map((slide, idx) => (
+                <Pressable key={slide.id} onPress={() => handleDotPress(idx)} hitSlop={8}>
+                  <Animated.View
+                    style={[
+                      styles.dot,
+                      { backgroundColor: idx === activeSlide ? colors.primary : colors.surface2 },
+                      dotWidths[idx],
+                    ]}
+                  />
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        </Animated.View>
+
+        {/* CTA Section */}
+        <Animated.View entering={FadeInDown.delay(400).duration(500)} style={{ marginTop: spacing.lg }}>
+          {!showForm ? (
+            <>
+              <Button
+                label="Get Started"
+                size="lg"
+                onPress={() => setShowForm(true)}
+                style={{ marginBottom: spacing.sm }}
+              />
+              <Button
+                label="Continue as Guest"
+                variant="ghost"
+                onPress={guest}
+              />
+            </>
+          ) : (
+            <Animated.View entering={FadeIn.duration(300)}>
+              <TextField
+                label="What should we call you?"
+                placeholder="A first name or nickname (e.g. Alex)"
+                value={pseudonym}
+                onChangeText={setPseudonym}
+                autoCapitalize="words"
+                autoCorrect={false}
+                returnKeyType="go"
+                onSubmitEditing={createProfile}
+                error={tooLong ? 'Keep it under 25 characters' : undefined}
+                maxLength={40}
+              />
+              <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.xs }]}>
+                Optional. No email or password needed.
               </Text>
-            </View>
-          </View>
-
-          <Text style={[typography.heading, { color: colors.text.primary, marginTop: spacing.sm }]}>
-            {currentSlide.title}
-          </Text>
-          <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 6, lineHeight: 20 }]}>
-            {currentSlide.subtitle}
-          </Text>
-
-          {/* Dots Indicator */}
-          <View style={styles.dotsRow}>
-            {INTRO_SLIDES.map((slide, idx) => {
-              const isActive = idx === activeSlide;
-              return (
-                <Pressable
-                  key={slide.id}
-                  onPress={() => setActiveSlide(idx)}
-                  hitSlop={8}
-                  style={[
-                    styles.dot,
-                    {
-                      width: isActive ? 24 : 8,
-                      backgroundColor: isActive ? colors.primary : colors.surface2,
-                    },
-                  ]}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Slide ${idx + 1}`}
-                />
-              );
-            })}
-          </View>
-        </View>
-
-        {/* Profile Creation / Nickname */}
-        <View style={{ marginTop: spacing.lg }}>
-          <TextField
-            label="What should we call you?"
-            placeholder="A first name or nickname (e.g. Alex, Sam)"
-            value={pseudonym}
-            onChangeText={setPseudonym}
-            autoCapitalize="words"
-            autoCorrect={false}
-            returnKeyType="go"
-            onSubmitEditing={createProfile}
-            error={tooLong ? 'Keep it under 25 characters' : undefined}
-            maxLength={40}
-          />
-          <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.xs }]}>
-            Optional. No phone number, email or password needed.
-          </Text>
-
-          <Button
-            label="Enter Sanctuary"
-            size="lg"
-            onPress={createProfile}
-            disabled={tooLong}
-            style={{ marginTop: spacing.md }}
-          />
-          <Button
-            label="Continue as Guest Tester"
-            variant="ghost"
-            onPress={guest}
-            style={{ marginTop: spacing.xs }}
-          />
-        </View>
+              <Button
+                label="Enter Sanctuary"
+                size="lg"
+                onPress={createProfile}
+                disabled={tooLong}
+                style={{ marginTop: spacing.md }}
+              />
+              <Button
+                label="Back"
+                variant="ghost"
+                onPress={() => setShowForm(false)}
+                style={{ marginTop: spacing.xs }}
+              />
+            </Animated.View>
+          )}
+        </Animated.View>
 
         {/* On-device Promises */}
-        <View
-          style={[
-            styles.promise,
-            { backgroundColor: colors.surface, borderColor: colors.borderStrong, marginTop: spacing.lg },
-          ]}
-        >
-          {PROMISES.map((row) => (
-            <View key={row.text} style={styles.promiseRow}>
-              <Ionicons name={row.icon} size={17} color={colors.primary} />
-              <Text style={[typography.caption, styles.promiseText, { color: colors.text.secondary }]}>
-                {row.text}
-              </Text>
-            </View>
-          ))}
-        </View>
+        <Animated.View entering={FadeInUp.delay(500).duration(400)}>
+          <View
+            style={[
+              styles.promise,
+              { backgroundColor: colors.surface, borderColor: colors.borderStrong, marginTop: spacing.lg },
+            ]}
+          >
+            {PROMISES.map((row) => (
+              <View key={row.text} style={styles.promiseRow}>
+                <Ionicons name={row.icon} size={16} color={colors.primary} />
+                <Text style={[typography.caption, styles.promiseText, { color: colors.text.secondary }]}>
+                  {row.text}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </Animated.View>
 
         {/* Legal Links */}
         <View style={[styles.links, { marginTop: spacing.md }]}>
@@ -245,25 +317,31 @@ const styles = StyleSheet.create({
     borderCurve: 'continuous',
     borderRadius: 28,
     borderWidth: 1,
-    height: 96,
+    height: 88,
     justifyContent: 'center',
-    width: 96,
+    width: 88,
   },
-  markImage: { height: 80, width: 80 },
+  markImage: { height: 72, width: 72 },
   slideCard: {
     borderCurve: 'continuous',
     borderRadius: 22,
     borderWidth: 1,
-    padding: 18,
+    padding: 16,
   },
-  slideHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  slideImageContainer: {
+    width: '100%',
+    height: 150,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: '#F3EFEA',
+  },
+  slideImage: {
+    width: '100%',
+    height: '100%',
   },
   slideIconBox: {
-    width: 42,
-    height: 42,
+    width: 44,
+    height: 44,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
@@ -272,6 +350,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
+    alignSelf: 'flex-start',
   },
   dotsRow: {
     flexDirection: 'row',
@@ -287,7 +366,7 @@ const styles = StyleSheet.create({
     borderCurve: 'continuous',
     borderRadius: 18,
     borderWidth: 1,
-    gap: 10,
+    gap: 8,
     padding: 14,
   },
   promiseRow: { alignItems: 'center', flexDirection: 'row' },

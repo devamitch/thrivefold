@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Linking, ScrollView, StyleSheet, Text, View, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
@@ -99,6 +100,23 @@ export default function SafetyScreen() {
             onPress={() => router.push('/(app)/safety/appeal')}
           />
         </View>
+        {/* Safety Sanctuary Hero */}
+        <Card style={{ marginBottom: spacing.md, padding: 14, backgroundColor: colors.surface }}>
+          <View style={styles.heroWrap}>
+            <Image
+              source={require('../../../../assets/illustrations/safety-sanctuary.jpg')}
+              style={styles.heroImage}
+              contentFit="cover"
+            />
+          </View>
+          <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 12 }]}>
+            Protected Health Sanctuary
+          </Text>
+          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4, lineHeight: 18 }]}>
+            You have full sovereignty over your privacy, contacts, and personal boundaries. 24/7 hotlines and moderation appeals are always available.
+          </Text>
+        </Card>
+
         {/* Emergency Resources */}
         <Card style={{ marginBottom: spacing.md, backgroundColor: colors.errorSurface, borderColor: colors.error }}>
           <View style={styles.emergencyHeader}>
@@ -241,6 +259,17 @@ const styles = StyleSheet.create({
   emergencyHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  heroWrap: {
+    width: '100%',
+    height: 140,
+    borderRadius: 14,
+    overflow: 'hidden',
+    backgroundColor: '#F3EFEA',
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
   },
   resourceRow: {
     flexDirection: 'row',

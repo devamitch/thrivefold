@@ -2,6 +2,7 @@ import React from 'react';
 import { ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
@@ -46,14 +47,21 @@ export default function LettersInboxScreen() {
 
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: spacing.xxl }]}>
         {/* Write Letter CTA Card */}
-        <Card style={{ marginBottom: spacing.lg, backgroundColor: colors.primaryAlpha, borderColor: colors.primary }}>
-          <View style={styles.ctaRow}>
+        <Card style={{ marginBottom: spacing.lg, backgroundColor: colors.surface, padding: 14 }}>
+          <View style={styles.heroWrap}>
+            <Image
+              source={require('../../../../assets/illustrations/letters-collection.jpg')}
+              style={styles.heroImage}
+              contentFit="cover"
+            />
+          </View>
+          <View style={[styles.ctaRow, { marginTop: 12 }]}>
             <View style={{ flex: 1, paddingRight: 12 }}>
-              <Text style={[typography.subheading, { color: colors.primary }]}>
+              <Text style={[typography.subheading, { color: colors.text.primary }]}>
                 Compose a Slow Letter
               </Text>
               <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>
-                Share gentle wellness reflections using our safe, card-only postal composer.
+                Share gentle reflections sealed with collectible artisanal wax stamps.
               </Text>
             </View>
             <Button
@@ -229,6 +237,17 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 14,
     borderWidth: 1,
+  },
+  heroWrap: {
+    width: '100%',
+    height: 140,
+    borderRadius: 14,
+    overflow: 'hidden',
+    backgroundColor: '#F3EFEA',
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
   },
   ctaRow: {
     flexDirection: 'row',

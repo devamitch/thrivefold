@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
@@ -88,6 +89,23 @@ export default function CalendarScreen() {
       />
 
       <View style={[styles.content, { paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }]}>
+        {/* Cyclical Rhythm & Life Flow Hero */}
+        <Card style={{ marginBottom: spacing.md, padding: 14, backgroundColor: colors.surface }}>
+          <View style={styles.heroWrap}>
+            <Image
+              source={require('../../../../assets/illustrations/calendar-rhythm.jpg')}
+              style={styles.heroImage}
+              contentFit="cover"
+            />
+          </View>
+          <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 12 }]}>
+            Cyclical Rhythm & Life Flow
+          </Text>
+          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4, lineHeight: 18 }]}>
+            Universal alignment across lunar rhythms, cycle phases, and personal health milestones.
+          </Text>
+        </Card>
+
         {/* Month Navigation Header (Zero shadow, clean Neev style) */}
         <Card style={[styles.navCard, { backgroundColor: colors.surface, marginBottom: spacing.md }]}>
           <View style={styles.navRow}>
@@ -293,5 +311,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  heroWrap: {
+    width: '100%',
+    height: 140,
+    borderRadius: 14,
+    overflow: 'hidden',
+    backgroundColor: '#F3EFEA',
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
   },
 });

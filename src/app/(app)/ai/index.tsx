@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
@@ -89,8 +90,25 @@ export default function InsightsScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Your Patterns" subtitle="Worked out on this device from your own records" showBack />
+      <Header title="Your Patterns & Vault" subtitle="Private on-device intelligence from your own records" showBack />
       <View style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
+        {/* On-Device Vault Hero */}
+        <Card style={{ marginBottom: spacing.md, padding: 14, backgroundColor: colors.surface }}>
+          <View style={styles.heroWrap}>
+            <Image
+              source={require('../../../../assets/illustrations/intro-vault.jpg')}
+              style={styles.heroImage}
+              contentFit="cover"
+            />
+          </View>
+          <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 12 }]}>
+            On-Device Cryptographic Memory
+          </Text>
+          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4, lineHeight: 18 }]}>
+            All memories, journal retrieval vectors, and hormonal patterns are processed locally on your phone.
+          </Text>
+        </Card>
+
         {insights.length === 0 ? (
           <Card variant="surface1" style={{ padding: spacing.lg, marginBottom: spacing.md }}>
             <Ionicons name="analytics-outline" size={26} color={colors.text.muted} />
@@ -243,5 +261,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     minHeight: 44,
+  },
+  heroWrap: {
+    width: '100%',
+    height: 140,
+    borderRadius: 14,
+    overflow: 'hidden',
+    backgroundColor: '#F3EFEA',
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
   },
 });

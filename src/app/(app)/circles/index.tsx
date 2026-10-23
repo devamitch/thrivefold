@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Image } from 'expo-image';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
@@ -148,8 +149,18 @@ export default function CommunitiesScreen() {
         )}
 
         {/* Safe Circles Info */}
-        <Card style={{ marginBottom: spacing.md }}>
-          <Text style={[typography.subbody, { color: colors.text.secondary }]}>
+        <Card style={{ marginBottom: spacing.md, padding: 14, backgroundColor: colors.surface }}>
+          <View style={styles.heroWrap}>
+            <Image
+              source={require('../../../../assets/illustrations/circles-sanctuary.jpg')}
+              style={styles.heroImage}
+              contentFit="cover"
+            />
+          </View>
+          <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 12 }]}>
+            Affinity Circles Sanctuary
+          </Text>
+          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4, lineHeight: 18 }]}>
             All circles are private and segmented by health journey. Conversations are conducted exclusively through curated topic prompts to ensure a zero-harassment sanctuary.
           </Text>
         </Card>
@@ -215,5 +226,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+  },
+  heroWrap: {
+    width: '100%',
+    height: 140,
+    borderRadius: 14,
+    overflow: 'hidden',
+    backgroundColor: '#F3EFEA',
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
   },
 });
