@@ -81,6 +81,17 @@ export interface TaskDefinition {
     authored: boolean;
     reviewed: boolean;
   };
+  /** Catalog objective with its completion criteria (v3); absent for v1 tasks. */
+  objective?: { type?: string; completionCriteria?: Record<string, unknown> } | null;
+  /** Catalog sensitivity class; sensitive tasks are never auto-assigned. */
+  sensitivity?: string;
+  /** Catalog age gate such as '18_plus'; gated tasks need verified eligibility. */
+  ageGate?: string | null;
+  /** False when the catalog says completing it must not count toward the daily goal. */
+  dailyGoalEligible?: boolean;
+  catalogSource?: 'v1' | 'v3';
+  /** 'authored' is released; anything else still awaits review and is not assigned. */
+  contentStatus?: string;
 }
 
 export interface SpecialQuestDefinition extends TaskDefinition {
@@ -93,8 +104,13 @@ export interface LevelDefinition {
   chapterNumber: number;
   title: string;
   arc: string;
+  /** Cumulative XP needed to reach this level. */
   requiredCumulativeXp: number;
   unlockedFeatures: string[];
+  /** XP needed to advance from this level to the next. */
+  xpRequiredToAdvance?: number;
+  /** A chapter checkpoint that must be completed to advance past this level. */
+  checkpointId?: string | null;
 }
 
 export interface ChapterDefinition {
@@ -152,6 +168,12 @@ export interface TaskAssignment {
   earnedXp: number;
   earnedCoins: number;
   verificationClass?: VerificationClass;
+  /** v3 special quest that offered this replacement task. */
+  specialQuestId?: string | null;
+  /** Reason codes from the last rejected attempt, for the evidence form. */
+  lastRejectionCodes?: string[];
+  /** The person's own answers, kept on this device with the assignment. */
+  evidenceAnswers?: Record<string, string | number | boolean | undefined>;
 }
 
 export interface EvidenceSubmission {
@@ -172,4 +194,14 @@ export interface VerificationResult {
   earnedXp: number;
   earnedCoins: number;
   verifiedAt: string;
+}
+
+/** A v3 special quest: a parent that offers child tasks; only the child task is rewarded. */
+export interface SpecialQuestParent {
+  id: string;
+  title: string;
+  purpose: string;
+  replacesCategories: string[];
+  taskIds: string[];
+  eligibleLevelRange: [number, number];
 }

@@ -1,0 +1,38 @@
+{
+  "version": "thrivefold-economy-v1",
+  "note": "The v3 catalog defines task points, XP and levels but no diamond amounts. These diamond rules are the product decision recorded in docs/requirements/DECISIONS_AND_CONFLICTS.md. Diamonds are earned only; there is no purchase path.",
+  "diamonds": {
+    "levelClear": { "default": 5, "everyTenthLevel": 15, "chapterCheckpointLevel": 50 },
+    "dailyGoal": 2
+  },
+  "baseDailyQuestSlots": 3,
+  "unlocks": [
+    {
+      "id": "extra_daily_quest",
+      "kind": "quest_slot",
+      "title": "Fourth daily quest",
+      "description": "Adds a fourth quest to each day's set, starting with the next new day.",
+      "cost": 30,
+      "minLevel": 3
+    },
+    {
+      "id": "emblem_set_nature",
+      "kind": "emblem_set",
+      "title": "Nature emblems",
+      "description": "Flower, moon and planet emblems for your profile.",
+      "cost": 15,
+      "minLevel": 2,
+      "emblems": ["flower", "moon", "planet"]
+    },
+    {
+      "id": "emblem_set_milestone",
+      "kind": "emblem_set",
+      "title": "Milestone emblems",
+      "description": "Compass, ribbon and trophy emblems for your profile.",
+      "cost": 40,
+      "minLevel": 6,
+      "emblems": ["compass", "ribbon", "trophy"]
+    }
+  ],
+  "freeEmblems": ["leaf", "sunny", "water"]
+}

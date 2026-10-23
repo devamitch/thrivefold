@@ -60,8 +60,6 @@ export default function DevToolsScreen() {
       addJournalEntry: st.addJournalEntry,
       updateCycleData: st.updateCycleData,
       clearCycleData: st.clearCycleData,
-      addXP: st.addXP,
-      resetStreak: st.resetStreak,
       resetDailyQuotaIfNewDay: st.resetDailyQuotaIfNewDay,
     })),
   );
@@ -118,16 +116,13 @@ export default function DevToolsScreen() {
       9,
     );
 
-    // Seed XP
-    store.addXP(250);
-
     try {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch {}
     store.showToast({
       type: 'success',
       title: 'Mock Data Injected',
-      message: '7 check-ins, cycle metrics, journal entries & XP seeded.',
+      message: '7 check-ins, cycle metrics, and journal entries seeded (development build only).',
     });
   };
 

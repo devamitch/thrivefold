@@ -17,7 +17,6 @@ export * from './TextField';
 export * from './Toast';
 export * from './MindfulNotificationBanner';
 export * from './CustomAlert';
-export * from './TaskVerificationModal';
 export * from './PeriodLoggerModal';
 export * from './PersonalEventModal';
 export * from './DatePickerModal';

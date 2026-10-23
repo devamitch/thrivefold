@@ -13,7 +13,8 @@ import { AppHeader } from '../../../components/ui/AppHeader';
 import { Badge } from '../../../components/ui/Badge';
 import { Card } from '../../../components/ui/Card';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
-import { useRootStore, useShallow, xpForLevel } from '../../../stores/useRootStore';
+import { useRootStore, useShallow } from '../../../stores/useRootStore';
+import { ProgressionPanel } from '../../../components/game/ProgressionPanel';
 import { useTheme } from '../../../theme/useTheme';
 
 interface RoadmapStep {
@@ -174,13 +175,11 @@ export default function ProgressScreen() {
   const currentStreak = useRootStore((s) => s.currentStreak);
   const daysActive = useRootStore((s) => s.completedCheckInDaysCount);
   const journalCount = useRootStore((s) => s.journalEntries.length);
-  const { xp: LEVEL_XP, level: LEVEL, questsCompleted, achievements } = useRootStore(
-    useShallow((s) => ({ xp: s.xp, level: s.level, questsCompleted: s.questsCompleted, achievements: s.achievements })),
+  const { level: LEVEL, questsCompleted, achievements } = useRootStore(
+    useShallow((s) => ({ level: s.level, questsCompleted: s.questsCompleted, achievements: s.achievements })),
   );
 
-  const NEXT_LEVEL_XP = xpForLevel(LEVEL);
   const unlocked = new Set(achievements);
-  const xpPct = Math.min((LEVEL_XP / NEXT_LEVEL_XP) * 100, 100);
 
   const stats = {
     questsCompleted,
@@ -208,36 +207,7 @@ export default function ProgressScreen() {
       scrollMode="shell-scroll-view"
     >
       <View style={{ paddingBottom: spacing.xxl }}>
-        {/* Level & XP Overview Card */}
-        <Animated.View entering={FadeInDown.delay(30).duration(280)}>
-          <Card style={[styles.levelCard, { backgroundColor: colors.surface, marginTop: spacing.sm }]}>
-            <View style={styles.levelRow}>
-              <View style={[styles.levelBadge, { backgroundColor: colors.primaryAlpha }]}>
-                <Ionicons name="flash" size={24} color={colors.primary} />
-                <Text style={[typography.heading, { color: colors.primary, marginTop: 2 }]}>{LEVEL}</Text>
-              </View>
-              <View style={{ flex: 1, marginLeft: 16 }}>
-                <View style={styles.rowBetween}>
-                  <Text style={[typography.subheading, { color: colors.text.primary }]}>
-                    {isMen ? `Tier ${LEVEL} Conditioning` : `Level ${LEVEL} Thriver`}
-                  </Text>
-                  <Badge label={`${Math.round(xpPct)}%`} variant="primary" />
-                </View>
-                <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 3 }]}>
-                  {LEVEL_XP} / {NEXT_LEVEL_XP} XP to Level {LEVEL + 1}
-                </Text>
-                <View style={[styles.xpTrack, { backgroundColor: colors.surface1, marginTop: 10 }]}>
-                  <View
-                    style={[
-                      styles.xpFill,
-                      { backgroundColor: colors.primary, width: `${xpPct}%` },
-                    ]}
-                  />
-                </View>
-              </View>
-            </View>
-          </Card>
-        </Animated.View>
+        <ProgressionPanel />
 
         {/* View Switcher Tabs (Roadmap vs Badges) */}
         <View style={[styles.tabBar, { backgroundColor: colors.surface1, marginTop: spacing.md }]}>

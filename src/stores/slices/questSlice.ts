@@ -1,26 +1,34 @@
 import type { StateCreator } from 'zustand';
 
 import type { RootState } from '../rootTypes';
-import {
-  calculateDailyPointProgress,
-  calculateLevelFromXp,
-  completeAndVerifyAssignment,
-  generateDailyAssignments,
-  replaceWithSpecialQuest,
-  skipTaskAssignment,
-} from '../../domain/game/questEngine';
-import {
-  getSpecialQuestsForExperience,
-  getTaskById,
-  getTasksForExperience,
-} from '../../domain/game/gameCatalogService';
-import type {
-  EvidenceSubmission,
-  TaskAssignment,
-  VerificationResult,
-} from '../../domain/game/types';
 import { formatLocalDate } from '../../domain/calendar/universalCalendarEngine';
+import {
+  getGameCatalog,
+  getSpecialQuestParents,
+  getTaskById,
+} from '../../domain/game/gameCatalogService';
+import { evaluateObjective, objectiveFormFor, type ObjectiveEvidence } from '../../domain/game/objectives';
+import {
+  appendLedger,
+  dailyPointsFor,
+  dailySlotsFor,
+  dailyTargetFor,
+  ECONOMY_VERSION,
+  ledgerTotals,
+  levelProgress,
+  ownedEmblems,
+  purchaseUnlock as purchaseUnlockPure,
+  replacementOptions,
+  selectDailyTasks,
+  settleMilestones,
+  type AssignmentContext,
+  type LedgerEntry,
+  type ReplacementOption,
+  type UnlockBlock,
+} from '../../domain/game/progression';
+import type { TaskAssignment, TaskDefinition, VerificationResult } from '../../domain/game/types';
 
+/** Screen-facing view of an assignment. */
 export interface Quest {
   id: string;
   title: string;
@@ -28,321 +36,396 @@ export interface Quest {
   category: string;
   durationMinutes: number;
   xpReward: number;
-  coinsReward: number;
   isCompleted: boolean;
   completedAt?: string;
-  difficulty: 'gentle' | 'standard' | 'advanced';
-  phaseRelevance?: string[];
-  status?: string;
-  taskPoints?: number;
-  taskId?: string;
+  difficulty: string;
+  status: TaskAssignment['status'];
+  taskPoints: number;
+  taskId: string;
+  isReplacement: boolean;
 }
 
 export interface QuestSlice {
+  /** Append-only reward ledger; every balance below is derived from it. */
+  rewardLedger: LedgerEntry[];
+  entitlements: string[];
+  /** Chapter checkpoints completed (capstones); required to advance past chapter ends. */
+  completedCheckpoints: string[];
+  selectedEmblem: string;
+  /** Task ids assigned per recent date, so tomorrow's set avoids repeats. */
+  assignmentHistory: { date: string; taskIds: string[] }[];
+  dailyAssignments: TaskAssignment[];
+  /** Target snapshot for `dailyTargetDate`; stable for the day. */
+  dailyPointsTarget: number;
+  dailyTargetDate: string | null;
+
+  // Derived from the ledger and assignments, kept in state for cheap selectors.
   xp: number;
   level: number;
-  coins: number;
+  diamonds: number;
   streak: number;
   questsCompleted: number;
   achievements: string[];
   todayQuests: Quest[];
-  dailyAssignments: TaskAssignment[];
   dailyPoints: number;
-  dailyPointsTarget: number;
   dailyGoalReached: boolean;
-  completeQuest: (questId: string) => void;
-  addXP: (amount: number) => void;
-  addCoins: (amount: number) => void;
-  incrementStreak: () => void;
-  resetStreak: () => void;
+
+  ensureDailyQuests: () => void;
+  skipDailyTask: (assignmentId: string, reason?: string) => boolean;
+  getReplacementOptions: (assignmentId: string) => ReplacementOption[];
+  acceptReplacement: (skippedAssignmentId: string, taskId: string) => boolean;
+  submitQuestEvidence: (assignmentId: string, evidence: ObjectiveEvidence) => VerificationResult;
+  purchaseUnlock: (featureId: string) => { ok: boolean; block?: UnlockBlock };
+  setEmblem: (emblem: string) => void;
   unlockAchievement: (achievementId: string) => void;
-  refreshDailyQuests: () => void;
-  skipDailyTask: (assignmentId: string, reason?: string) => void;
-  joinSpecialQuest: (skippedAssignmentId: string, specialQuestId: string) => void;
-  verifyAndCompleteTask: (
-    assignmentId: string,
-    submission: EvidenceSubmission,
-  ) => VerificationResult;
 }
 
-export const xpForLevel = (level: number): number => {
-  return Math.floor(100 * Math.pow(level, 1.25));
-};
+const today = () => formatLocalDate(new Date());
 
-export const createQuestSlice: StateCreator<
-  RootState,
-  [['zustand/persist', unknown]],
-  [],
-  QuestSlice
-> = (set, get) => {
-  const todayStr = formatLocalDate(new Date());
-  const initialAssignments = generateDailyAssignments('men_health', todayStr);
+const ACTIVE_STATUSES: TaskAssignment['status'][] = ['assigned', 'in_progress', 'rejected'];
+const DONE_STATUSES: TaskAssignment['status'][] = ['verified', 'self_reported'];
 
-  const initialQuests: Quest[] = initialAssignments.map((asg) => {
-    const def = getTaskById(asg.taskId);
-    return {
-      id: asg.assignmentId,
-      title: def?.title ?? 'Daily Wellness Anchor',
-      description: def?.shortDescription ?? 'Complete mindful practice',
-      category: def?.category ?? 'movement',
-      durationMinutes: def?.estimatedDurationMinutes ?? 5,
-      xpReward: def?.points.xp ?? 25,
-      coinsReward: def?.points.coins ?? 10,
-      isCompleted: false,
-      difficulty: (def?.difficulty as 'gentle' | 'standard' | 'advanced') ?? 'standard',
-      status: 'assigned',
-      taskPoints: def?.points.taskPoints ?? 15,
-      taskId: asg.taskId,
-    };
-  });
+function projectQuest(asg: TaskAssignment): Quest {
+  const def = getTaskById(asg.taskId);
+  return {
+    id: asg.assignmentId,
+    title: def?.title ?? 'Quest',
+    description: def?.shortDescription ?? '',
+    category: def?.category ?? 'growth',
+    durationMinutes: def?.estimatedDurationMinutes ?? 5,
+    xpReward: def?.points.xp ?? 0,
+    isCompleted: DONE_STATUSES.includes(asg.status),
+    completedAt: asg.completedAt,
+    difficulty: def?.difficulty ?? 'standard',
+    status: asg.status,
+    taskPoints: def?.points.taskPoints ?? 0,
+    taskId: asg.taskId,
+    isReplacement: asg.isSpecialQuestReplacement,
+  };
+}
+
+/** Consecutive game dates (ending today or yesterday) on which the daily goal was reached. */
+function goalStreak(ledger: LedgerEntry[], date: string): number {
+  const days = new Set(ledger.filter((e) => e.kind === 'daily_goal').map((e) => e.gameDate));
+  const cursor = new Date(`${date}T12:00:00`);
+  if (!days.has(formatLocalDate(cursor))) cursor.setDate(cursor.getDate() - 1);
+  let n = 0;
+  while (days.has(formatLocalDate(cursor))) {
+    n += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return n;
+}
+
+/** Recomputes every derived field from the ledger and today's assignments. */
+function derive(
+  state: Pick<QuestSlice, 'rewardLedger' | 'dailyAssignments' | 'dailyPointsTarget' | 'completedCheckpoints'>,
+): Pick<
+  QuestSlice,
+  'xp' | 'level' | 'diamonds' | 'streak' | 'questsCompleted' | 'todayQuests' | 'dailyPoints' | 'dailyGoalReached'
+> {
+  const date = today();
+  const totals = ledgerTotals(state.rewardLedger);
+  const progress = levelProgress(totals.xp, getGameCatalog().levels, new Set(state.completedCheckpoints));
+  const dailyPoints = dailyPointsFor(state.rewardLedger, date);
+  return {
+    xp: totals.xp,
+    level: progress.level,
+    diamonds: totals.diamonds,
+    streak: goalStreak(state.rewardLedger, date),
+    questsCompleted: state.rewardLedger.filter((e) => e.kind === 'task_reward').length,
+    todayQuests: state.dailyAssignments.filter((a) => a.assignedDate === date).map(projectQuest),
+    dailyPoints,
+    dailyGoalReached: state.dailyPointsTarget > 0 && dailyPoints >= state.dailyPointsTarget,
+  };
+}
+
+function assignmentContext(state: RootState, date: string): AssignmentContext {
+  const recentDates = new Set<string>();
+  for (let i = 1; i <= 3; i++) {
+    const d = new Date(`${date}T12:00:00`);
+    d.setDate(d.getDate() - i);
+    recentDates.add(formatLocalDate(d));
+  }
+  return {
+    experience: state.experience,
+    gameDate: date,
+    level: state.level,
+    seed: state.user?.id ?? 'local',
+    completedTaskIds: new Set(state.rewardLedger.filter((e) => e.kind === 'task_reward').map((e) => e.sourceId)),
+    recentTaskIds: new Set(
+      state.assignmentHistory.filter((h) => recentDates.has(h.date)).flatMap((h) => h.taskIds),
+    ),
+  };
+}
+
+function rejection(assignmentId: string, taskId: string, reasonCodes: string[]): VerificationResult {
+  return {
+    success: false,
+    status: 'rejected',
+    assignmentId,
+    taskId,
+    reasonCodes,
+    earnedTaskPoints: 0,
+    earnedXp: 0,
+    earnedCoins: 0,
+    verifiedAt: new Date().toISOString(),
+  };
+}
+
+export const createQuestSlice: StateCreator<RootState, [['zustand/persist', unknown]], [], QuestSlice> = (
+  set,
+  get,
+) => {
+  /** Applies a ledger/assignment change, settles level and daily-goal rewards, re-derives. */
+  const commit = (patch: Partial<QuestSlice>) => {
+    const s = { ...get(), ...patch };
+    const ledger = settleMilestones(s.rewardLedger, {
+      levels: getGameCatalog().levels,
+      completedCheckpoints: new Set(s.completedCheckpoints),
+      gameDate: today(),
+      dailyTarget: s.dailyTargetDate === today() ? s.dailyPointsTarget : 0,
+      now: new Date().toISOString(),
+    });
+    set({ ...patch, rewardLedger: ledger, ...derive({ ...s, rewardLedger: ledger }) });
+  };
 
   return {
+    rewardLedger: [],
+    entitlements: [],
+    completedCheckpoints: [],
+    selectedEmblem: 'leaf',
+    assignmentHistory: [],
+    dailyAssignments: [],
+    dailyPointsTarget: 0,
+    dailyTargetDate: null,
     xp: 0,
     level: 1,
-    coins: 0,
+    diamonds: 0,
     streak: 0,
     questsCompleted: 0,
     achievements: [],
-    todayQuests: initialQuests,
-    dailyAssignments: initialAssignments,
+    todayQuests: [],
     dailyPoints: 0,
-    dailyPointsTarget: 40,
     dailyGoalReached: false,
 
-    completeQuest: (questId) => {
+    ensureDailyQuests: () => {
       const state = get();
-      const assignment = state.dailyAssignments.find(
-        (a) => a.assignmentId === questId || a.taskId === questId,
-      );
-
-      if (assignment) {
-        const taskDef = getTaskById(assignment.taskId);
-        if (taskDef) {
-          state.verifyAndCompleteTask(assignment.assignmentId, {
-            assignmentId: assignment.assignmentId,
-            elapsedSeconds: taskDef.estimatedDurationMinutes * 60,
-            notes: 'Completed in session',
-            selfDeclaredHonest: true,
-          });
-          return;
-        }
+      const date = today();
+      if (!state.isOnboarded) return;
+      if (state.dailyAssignments.some((a) => a.assignedDate === date)) {
+        // Same day: keep the saved set; only re-derive (e.g. after a restart).
+        commit({});
+        return;
       }
-
-      // Legacy fallback
-      set((s) => {
-        const q = s.todayQuests.find((item) => item.id === questId);
-        if (!q || q.isCompleted) return s;
-
-        const newXp = s.xp + q.xpReward;
-        const newCoins = s.coins + q.coinsReward;
-        const newLevel = calculateLevelFromXp(newXp);
-        const newPoints = s.dailyPoints + (q.taskPoints ?? 15);
-        const goalReached = newPoints >= s.dailyPointsTarget;
-
-        return {
-          todayQuests: s.todayQuests.map((item) =>
-            item.id === questId
-              ? { ...item, isCompleted: true, completedAt: new Date().toISOString() }
-              : item,
-          ),
-          xp: newXp,
-          coins: newCoins,
-          level: newLevel,
-          dailyPoints: newPoints,
-          dailyGoalReached: goalReached,
-          questsCompleted: s.questsCompleted + 1,
-          streak: goalReached && !s.dailyGoalReached ? s.streak + 1 : s.streak,
-        };
+      const tasks = selectDailyTasks(getGameCatalog().tasks, assignmentContext(state, date), dailySlotsFor(state.entitlements));
+      const assignments: TaskAssignment[] = tasks.map((task, idx) => ({
+        assignmentId: `asg_${date}_${task.id}_${idx}`,
+        taskId: task.id,
+        assignedDate: date,
+        status: 'assigned',
+        isSpecialQuestReplacement: false,
+        earnedTaskPoints: 0,
+        earnedXp: 0,
+        earnedCoins: 0,
+      }));
+      const assignedPoints = tasks.reduce((sum, t) => sum + t.points.taskPoints, 0);
+      commit({
+        dailyAssignments: assignments,
+        dailyPointsTarget: dailyTargetFor(assignedPoints),
+        dailyTargetDate: date,
+        assignmentHistory: [{ date, taskIds: tasks.map((t) => t.id) }, ...state.assignmentHistory].slice(0, 14),
       });
     },
 
     skipDailyTask: (assignmentId, reason) => {
-      set((s) => {
-        const updatedAssignments = skipTaskAssignment(s.dailyAssignments, assignmentId, reason);
-        const updatedQuests = s.todayQuests.map((q) =>
-          q.id === assignmentId ? { ...q, status: 'skipped' } : q,
-        );
-        return {
-          dailyAssignments: updatedAssignments,
-          todayQuests: updatedQuests,
-        };
+      const state = get();
+      const asg = state.dailyAssignments.find((a) => a.assignmentId === assignmentId);
+      if (!asg || asg.assignedDate !== today() || !ACTIVE_STATUSES.includes(asg.status)) return false;
+      commit({
+        dailyAssignments: state.dailyAssignments.map((a) =>
+          a.assignmentId === assignmentId ? { ...a, status: 'skipped', skipReason: reason ?? 'Skipped' } : a,
+        ),
+      });
+      return true;
+    },
+
+    getReplacementOptions: (assignmentId) => {
+      const state = get();
+      const asg = state.dailyAssignments.find((a) => a.assignmentId === assignmentId);
+      if (!asg || asg.assignedDate !== today()) return [];
+      if (state.dailyAssignments.some((a) => a.replacedAssignmentId === assignmentId)) return [];
+      const skipped = getTaskById(asg.taskId);
+      if (!skipped) return [];
+      const catalog = getGameCatalog();
+      return replacementOptions(skipped, {
+        tasks: catalog.tasks,
+        legacySpecialQuests: catalog.specialQuests as TaskDefinition[],
+        parents: getSpecialQuestParents(),
+        assignedTodayTaskIds: new Set(
+          state.dailyAssignments.filter((a) => a.assignedDate === asg.assignedDate).map((a) => a.taskId),
+        ),
+        ctx: assignmentContext(state, asg.assignedDate),
       });
     },
 
-    joinSpecialQuest: (arg1, arg2) => {
+    acceptReplacement: (skippedAssignmentId, taskId) => {
       const state = get();
-      const specialQuests = getSpecialQuestsForExperience(state.experience);
-
-      // Support either (skippedAssignmentId, specialQuestId) or (specialQuestId, skippedAssignmentId)
-      let specialQuest = specialQuests.find((sq) => sq.id === arg2);
-      let skippedId = arg1;
-      if (!specialQuest) {
-        specialQuest = specialQuests.find((sq) => sq.id === arg1);
-        if (specialQuest) {
-          skippedId = arg2;
-        }
-      }
-      if (!specialQuest) return;
-
-      const targetSkippedId =
-        state.dailyAssignments.find((a) => a.assignmentId === skippedId)?.assignmentId ??
-        state.dailyAssignments.find((a) => a.status === 'skipped')?.assignmentId ??
-        state.todayQuests.find((q) => q.status === 'skipped')?.id ??
-        state.dailyAssignments[0]?.assignmentId ??
-        skippedId;
-
-      const today = formatLocalDate(new Date());
-      const updatedAssignments = replaceWithSpecialQuest(
-        state.dailyAssignments,
-        targetSkippedId,
-        specialQuest,
-        today,
-      );
-
-      const newQuestItem: Quest = {
-        id: updatedAssignments[updatedAssignments.length - 1].assignmentId,
-        title: specialQuest.title,
-        description: specialQuest.shortDescription,
-        category: specialQuest.category,
-        durationMinutes: specialQuest.estimatedDurationMinutes,
-        xpReward: specialQuest.points.xp,
-        coinsReward: specialQuest.points.coins,
-        isCompleted: false,
-        difficulty: (specialQuest.difficulty as 'gentle' | 'standard' | 'advanced') ?? 'standard',
+      // Replacing implies skipping; skipping awards nothing and keeps earlier points.
+      const original = state.dailyAssignments.find((a) => a.assignmentId === skippedAssignmentId);
+      if (!original || original.assignedDate !== today()) return false;
+      if (ACTIVE_STATUSES.includes(original.status)) get().skipDailyTask(skippedAssignmentId, 'Replaced');
+      const option = get()
+        .getReplacementOptions(skippedAssignmentId)
+        .find((o) => o.task.id === taskId);
+      const current = get();
+      const skipped = current.dailyAssignments.find((a) => a.assignmentId === skippedAssignmentId);
+      if (!option || !skipped || skipped.status !== 'skipped') return false;
+      const replacement: TaskAssignment = {
+        assignmentId: `asg_${skipped.assignedDate}_${option.task.id}_r${current.dailyAssignments.length}`,
+        taskId: option.task.id,
+        assignedDate: skipped.assignedDate,
         status: 'assigned',
-        taskPoints: specialQuest.points.taskPoints,
-        taskId: specialQuest.id,
+        isSpecialQuestReplacement: true,
+        replacedAssignmentId: skippedAssignmentId,
+        specialQuestId: option.specialQuestId,
+        earnedTaskPoints: 0,
+        earnedXp: 0,
+        earnedCoins: 0,
       };
-
-      set({
-        dailyAssignments: updatedAssignments,
-        todayQuests: [
-          ...state.todayQuests.map((q) =>
-            q.id === targetSkippedId ? { ...q, status: 'replaced' } : q,
+      commit({
+        dailyAssignments: [
+          ...current.dailyAssignments.map((a) =>
+            a.assignmentId === skippedAssignmentId ? { ...a, status: 'replaced' as const } : a,
           ),
-          newQuestItem,
+          replacement,
         ],
       });
+      return true;
     },
 
-    verifyAndCompleteTask: (assignmentId, submission) => {
+    submitQuestEvidence: (assignmentId, evidence) => {
       const state = get();
-      let assignment = state.dailyAssignments.find(
-        (a) => a.assignmentId === assignmentId || a.taskId === assignmentId,
-      );
-      if (!assignment) {
-        const fallbackTask =
-          getTaskById(assignmentId) ?? getTasksForExperience(state.experience)[0];
-        assignment = {
-          assignmentId,
-          taskId: fallbackTask.id,
-          assignedDate: formatLocalDate(new Date()),
-          status: 'assigned',
-          isSpecialQuestReplacement: false,
-          earnedTaskPoints: 0,
-          earnedXp: 0,
-          earnedCoins: 0,
-        };
-        set({ dailyAssignments: [...state.dailyAssignments, assignment] });
-      }
+      const asg = state.dailyAssignments.find((a) => a.assignmentId === assignmentId);
+      if (!asg) return rejection(assignmentId, '', ['UNKNOWN_ASSIGNMENT']);
+      if (DONE_STATUSES.includes(asg.status)) return rejection(assignmentId, asg.taskId, ['ALREADY_COMPLETED']);
+      if (!ACTIVE_STATUSES.includes(asg.status)) return rejection(assignmentId, asg.taskId, ['ASSIGNMENT_NOT_ACTIVE']);
+      if (asg.assignedDate !== today()) return rejection(assignmentId, asg.taskId, ['STALE_ASSIGNMENT']);
+      const task = getTaskById(asg.taskId);
+      const form = task ? objectiveFormFor(task) : null;
+      if (!task || !form) return rejection(assignmentId, asg.taskId, ['UNSUPPORTED_OBJECTIVE']);
 
-      const taskDef =
-        getTaskById(assignment.taskId) ??
-        getTaskById(assignmentId) ??
-        getTasksForExperience(state.experience)[0];
-
-      const { updatedAssignments, result } = completeAndVerifyAssignment(
-        state.dailyAssignments,
-        assignmentId,
-        taskDef,
-        submission,
-      );
-
-      if (result.success) {
-        const pointStatus = calculateDailyPointProgress(
-          updatedAssignments,
-          state.dailyPointsTarget,
-        );
-        const newXp = state.xp + result.earnedXp;
-        const newCoins = state.coins + result.earnedCoins;
-        const newLevel = calculateLevelFromXp(newXp);
-        const newlyReachedGoal = pointStatus.goalReached && !state.dailyGoalReached;
-
-        set({
-          dailyAssignments: updatedAssignments,
-          todayQuests: state.todayQuests.map((q) =>
-            q.id === assignmentId
-              ? {
-                  ...q,
-                  isCompleted: true,
-                  completedAt: result.verifiedAt,
-                  status: result.status,
-                }
-              : q,
+      const reasons = evaluateObjective(form, evidence, task.instructions);
+      if (reasons.length > 0) {
+        commit({
+          dailyAssignments: state.dailyAssignments.map((a) =>
+            a.assignmentId === assignmentId ? { ...a, status: 'rejected', lastRejectionCodes: reasons } : a,
           ),
-          xp: newXp,
-          coins: newCoins,
-          level: newLevel,
-          dailyPoints: pointStatus.dailyPoints,
-          dailyGoalReached: pointStatus.goalReached,
-          questsCompleted: state.questsCompleted + 1,
-          streak: newlyReachedGoal ? state.streak + 1 : state.streak,
         });
+        return rejection(assignmentId, task.id, reasons);
       }
 
-      return result;
+      const now = new Date().toISOString();
+      const status: TaskAssignment['status'] = task.verificationClass === 'self_reported' ? 'self_reported' : 'verified';
+      const skillXp = Object.fromEntries(task.skillOutcomes.map((o) => [o.skillId, o.skillXp]));
+      const ledger = appendLedger(state.rewardLedger, {
+        key: `task:${assignmentId}`,
+        kind: 'task_reward',
+        xp: task.points.xp,
+        diamonds: 0,
+        taskPoints: task.dailyGoalEligible === false ? 0 : task.points.taskPoints,
+        skillXp,
+        gameDate: asg.assignedDate,
+        sourceId: task.id,
+        policyVersion: `${task.verificationPolicyId}@${ECONOMY_VERSION}`,
+        createdAt: now,
+      });
+      commit({
+        rewardLedger: ledger,
+        dailyAssignments: state.dailyAssignments.map((a) =>
+          a.assignmentId === assignmentId
+            ? {
+                ...a,
+                status,
+                completedAt: now,
+                earnedTaskPoints: task.points.taskPoints,
+                earnedXp: task.points.xp,
+                verificationClass: task.verificationClass,
+                lastRejectionCodes: [],
+                evidenceAnswers: evidence.answers,
+              }
+            : a,
+        ),
+      });
+      return {
+        success: true,
+        status,
+        assignmentId,
+        taskId: task.id,
+        reasonCodes: [status === 'verified' ? 'OBJECTIVE_EVIDENCE_ACCEPTED' : 'SELF_REPORT_ACCEPTED'],
+        earnedTaskPoints: task.points.taskPoints,
+        earnedXp: task.points.xp,
+        earnedCoins: 0,
+        verifiedAt: now,
+      };
     },
 
-    addXP: (amount) =>
-      set((state) => {
-        const newXp = state.xp + amount;
-        const newLevel = calculateLevelFromXp(newXp);
-        return { xp: newXp, level: newLevel };
-      }),
+    purchaseUnlock: (featureId) => {
+      const state = get();
+      const result = purchaseUnlockPure(
+        {
+          ledger: state.rewardLedger,
+          entitlements: state.entitlements,
+          level: state.level,
+          gameDate: today(),
+          now: new Date().toISOString(),
+        },
+        featureId,
+      );
+      if (!result.ok) return { ok: false, block: result.block };
+      commit({ rewardLedger: result.ledger, entitlements: result.entitlements });
+      return { ok: true };
+    },
 
-    addCoins: (amount) => set((state) => ({ coins: state.coins + amount })),
-
-    incrementStreak: () => set((state) => ({ streak: state.streak + 1 })),
-
-    resetStreak: () => set({ streak: 0 }),
+    setEmblem: (emblem) => {
+      if (ownedEmblems(get().entitlements).includes(emblem)) set({ selectedEmblem: emblem });
+    },
 
     unlockAchievement: (achievementId) =>
-      set((state) => {
-        if (state.achievements.includes(achievementId)) return state;
-        return { achievements: [...state.achievements, achievementId] };
-      }),
-
-    refreshDailyQuests: () => {
-      const state = get();
-      const today = formatLocalDate(new Date());
-      const newAssignments = generateDailyAssignments(state.experience, today);
-
-      const newQuests: Quest[] = newAssignments.map((asg) => {
-        const def = getTaskById(asg.taskId);
-        return {
-          id: asg.assignmentId,
-          title: def?.title ?? 'Daily Wellness Anchor',
-          description: def?.shortDescription ?? 'Complete mindful practice',
-          category: def?.category ?? 'movement',
-          durationMinutes: def?.estimatedDurationMinutes ?? 5,
-          xpReward: def?.points.xp ?? 25,
-          coinsReward: def?.points.coins ?? 10,
-          isCompleted: false,
-          difficulty: (def?.difficulty as 'gentle' | 'standard' | 'advanced') ?? 'standard',
-          status: 'assigned',
-          taskPoints: def?.points.taskPoints ?? 15,
-          taskId: asg.taskId,
-        };
-      });
-
-      const pointStatus = calculateDailyPointProgress(newAssignments, state.dailyPointsTarget);
-
-      set({
-        dailyAssignments: newAssignments,
-        todayQuests: newQuests,
-        dailyPoints: pointStatus.dailyPoints,
-        dailyGoalReached: pointStatus.goalReached,
-      });
-    },
+      set((state) =>
+        state.achievements.includes(achievementId) ? state : { achievements: [...state.achievements, achievementId] },
+      ),
   };
 };
+
+/** Cumulative XP needed to reach `level`, from the catalog. */
+export const xpForLevel = (level: number): number =>
+  getGameCatalog().levels.find((l) => l.level === level)?.requiredCumulativeXp ?? 0;
+
+/**
+ * Moves pre-ledger saves onto the ledger: XP already earned is imported once as a single
+ * legacy entry; the old invented coin balance is not converted into diamonds.
+ */
+export function migrateQuestState(persisted: Record<string, unknown>): Record<string, unknown> {
+  const xp = typeof persisted.xp === 'number' ? persisted.xp : 0;
+  const ledger: LedgerEntry[] = Array.isArray(persisted.rewardLedger) ? (persisted.rewardLedger as LedgerEntry[]) : [];
+  const now = new Date().toISOString();
+  const migrated = { ...persisted };
+  delete migrated.coins;
+  delete migrated.todayQuests;
+  migrated.rewardLedger =
+    xp > 0
+      ? appendLedger(ledger, {
+          key: 'legacy_import:xp',
+          kind: 'legacy_import',
+          xp,
+          diamonds: 0,
+          taskPoints: 0,
+          gameDate: formatLocalDate(new Date()),
+          sourceId: 'pre-ledger-save',
+          policyVersion: ECONOMY_VERSION,
+          createdAt: now,
+        })
+      : ledger;
+  return migrated;
+}

@@ -13,7 +13,7 @@ import { createAuthSlice } from './slices/authSlice';
 import { createHealthSlice } from './slices/healthSlice';
 import { createLetterSlice } from './slices/letterSlice';
 import { createPolicySlice } from './slices/policySlice';
-import { createQuestSlice } from './slices/questSlice';
+import { createQuestSlice, migrateQuestState } from './slices/questSlice';
 
 export { useShallow } from 'zustand/react/shallow';
 export type { RootState };
@@ -31,13 +31,18 @@ export const useRootStore = create<RootState>()(
     }),
     {
       name: 'thrivefold-root',
-      version: 1,
+      version: 2,
       storage: localJSONStorage,
+      // v2: rewards moved onto an append-only ledger (see questSlice.migrateQuestState).
+      migrate: (persisted, version) =>
+        (version < 2 ? migrateQuestState((persisted ?? {}) as Record<string, unknown>) : persisted) as RootState,
       // Data only: actions are recreated, live toasts and alert dialogs are never persisted.
       partialize: (state) =>
         Object.fromEntries(
           Object.entries(state).filter(
-            ([key, value]) => typeof value !== 'function' && key !== 'toasts' && key !== 'alert'
+            // todayQuests is a projection of dailyAssignments and is rebuilt on load.
+            ([key, value]) =>
+              typeof value !== 'function' && key !== 'toasts' && key !== 'alert' && key !== 'todayQuests',
           ),
         ) as Partial<RootState>,
     },

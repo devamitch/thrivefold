@@ -36,7 +36,6 @@ import {
   AppHeader,
   PeriodLoggerModal,
   PersonalEventModal,
-  TaskVerificationModal,
   AnimatedTabBar,
   TabItem,
   Button,
@@ -50,6 +49,7 @@ import {
 } from '../../../components/calendar';
 import {
   QuestsSection,
+  QuestSheet,
   SomaticWellnessArcade,
 } from '../../../components/game';
 import {
@@ -67,14 +67,8 @@ import {
   formatLocalDate,
   parseLocalDate,
   CalendarEvent,
-  toggleEventStatus,
-  rescheduleCalendarEvent,
 } from '../../../domain/calendar/universalCalendarEngine';
-import {
-  getLevelDefinition,
-  getSpecialQuestsForExperience,
-  getTaskById,
-} from '../../../domain/game/gameCatalogService';
+import { currentLevelProgress } from '../../../domain/game/gameCatalogService';
 import {
   PHASE_CONFIG,
   computeAdvancedCycleMetrics,
@@ -109,12 +103,10 @@ export default function TodayScreen() {
     dailyPointsTarget,
     dailyGoalReached,
     xp,
-    level,
-    coins,
+    diamonds,
+    completedCheckpoints,
     streak,
-    skipDailyTask,
-    joinSpecialQuest,
-    verifyAndCompleteTask,
+    checkInHistory,
     deletePeriod,
     deletePersonalEvent,
     showAlert,
@@ -130,12 +122,10 @@ export default function TodayScreen() {
       dailyPointsTarget: s.dailyPointsTarget,
       dailyGoalReached: s.dailyGoalReached,
       xp: s.xp,
-      level: s.level,
-      coins: s.coins,
+      diamonds: s.diamonds,
+      completedCheckpoints: s.completedCheckpoints,
       streak: s.streak,
-      skipDailyTask: s.skipDailyTask,
-      joinSpecialQuest: s.joinSpecialQuest,
-      verifyAndCompleteTask: s.verifyAndCompleteTask,
+      checkInHistory: s.checkInHistory,
       deletePeriod: s.deletePeriod,
       deletePersonalEvent: s.deletePersonalEvent,
       showAlert: s.showAlert,
@@ -150,15 +140,18 @@ export default function TodayScreen() {
   const [selectedDateStr, setSelectedDateStr] = useState(() => formatLocalDate(new Date()));
   const [currentMonthDate, setCurrentMonthDate] = useState(() => new Date());
 
-  // Check-in state
-  const [waterGlasses, setWaterGlasses] = useState(5);
-  const [energy, setEnergy] = useState(7);
-  const [mood, setMood] = useState(8);
-  const [checkedInToday, setCheckedInToday] = useState(false);
+  // Quick check-in starts from today's saved check-in (neutral 5 when there is none).
+  const todaysCheckIn = checkInHistory.find((c) => c.date === formatLocalDate(new Date()));
+  const [waterGlasses, setWaterGlasses] = useState(0);
+  const [energy, setEnergy] = useState(todaysCheckIn?.energy ?? 5);
+  const [mood, setMood] = useState(todaysCheckIn?.mood ?? 5);
+  const checkedInToday = Boolean(todaysCheckIn);
   const [activeStageIndex, setActiveStageIndex] = useState(0);
 
-  const levelDef = useMemo(() => getLevelDefinition(level), [level]);
-  const specialQuests = useMemo(() => getSpecialQuestsForExperience(experience), [experience]);
+  const progress = useMemo(
+    () => currentLevelProgress(xp, completedCheckpoints),
+    [xp, completedCheckpoints],
+  );
 
   // Calendar Grid generation
   const monthGrid = useMemo(() => {
@@ -175,9 +168,9 @@ export default function TodayScreen() {
     const cycleLength = cycleData?.cycleLengthDays ?? 28;
     const periodDuration = cycleData?.periodLengthDays ?? 5;
     const lutealDays = 14;
-    const baselineDate = cycleData?.lastPeriodDate
-      ? parseLocalDate(cycleData.lastPeriodDate)
-      : new Date(2026, 9, 2);
+    // No logged period means no forecast; a start date is never assumed.
+    if (!cycleData?.lastPeriodDate) return [];
+    const baselineDate = parseLocalDate(cycleData.lastPeriodDate);
 
     for (let c = 0; c < 12; c++) {
       const cycleStart = new Date(baselineDate.getTime() + c * cycleLength * 86400000);
@@ -212,7 +205,7 @@ export default function TodayScreen() {
     return generateDayAgenda(selectedDateStr, { experience, cycleData, personalEvents });
   }, [selectedDateStr, experience, cycleData, personalEvents]);
 
-  const [selectedTaskForVerification, setSelectedTaskForVerification] = useState<CalendarEvent | null>(null);
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null);
   const selectedDateHoliday = useMemo(() => getHolidayForDate(selectedDateStr), [selectedDateStr]);
 
   // Existing period log record for selected date
@@ -295,61 +288,13 @@ export default function TodayScreen() {
     setCurrentMonthDate(now);
   }, []);
 
-  const handleToggleEvent = useCallback((event: CalendarEvent) => {
-    const updated = toggleEventStatus(event);
-
-    if (updated.status === 'completed') {
-      try {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      } catch {}
-      const res = verifyAndCompleteTask(event.id, {
-        assignmentId: event.id,
-        elapsedSeconds: 60,
-        selfDeclaredHonest: true,
-      });
-      showToast({
-        type: 'success',
-        message: `Task marked complete! +${res.earnedTaskPoints || 10} points logged.`,
-      });
-    }
-  }, [verifyAndCompleteTask, showToast]);
-
-  const handleTaskVerificationComplete = useCallback(
-    (
-      event: CalendarEvent,
-      options: { selfDeclaredHonest: boolean; elapsedSeconds: number; notes?: string }
-    ) => {
-      const res = verifyAndCompleteTask(event.id, {
-        assignmentId: event.id,
-        elapsedSeconds: options.elapsedSeconds,
-        notes: options.notes,
-        selfDeclaredHonest: options.selfDeclaredHonest,
-      });
-
-      if (res.success) {
-        showToast({
-          type: 'success',
-          message: `Verified! +${res.earnedTaskPoints} Points and +${res.earnedXp} XP added to your sanctuary record.`,
-        });
-      } else {
-        showToast({
-          type: 'warning',
-          message: `Verification incomplete: ${res.reasonCodes.join(', ')}`,
-        });
-      }
+  // Agenda items that are today's quests open the quest sheet; nothing is completed by a tap.
+  const handleToggleEvent = useCallback(
+    (event: CalendarEvent) => {
+      if (todayQuests.some((q) => q.id === event.id)) setSelectedAssignmentId(event.id);
     },
-    [verifyAndCompleteTask, showToast]
+    [todayQuests],
   );
-
-  const handleTaskReschedule = useCallback((event: CalendarEvent, newDate: string, newTime?: string) => {
-    rescheduleCalendarEvent(event, newDate, newTime);
-    showToast({ type: 'info', message: `Rescheduled to ${newDate}` });
-  }, [showToast]);
-
-  const handleTaskSkip = useCallback((event: CalendarEvent) => {
-    skipDailyTask(event.id, 'User skipped');
-    showToast({ type: 'info', message: 'Task skipped (0 points). You can pick a Special Quest from the Vault.' });
-  }, [skipDailyTask, showToast]);
 
   const handleLogPeriodBleeding = useCallback(() => {
     try {
@@ -400,34 +345,25 @@ export default function TodayScreen() {
     });
   }, [showAlert, deletePersonalEvent, showToast]);
 
+  // Updates today's check-in with the new energy and mood; the first check-in of the day goes
+  // through the full check-in screen so stress, sleep and symptoms are the person's own.
   const handleSaveCheckIn = useCallback(() => {
+    if (!todaysCheckIn) {
+      router.push('/(app)/check-in');
+      return;
+    }
     try {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch {}
-    addCheckIn({
-      date: formatLocalDate(new Date()),
-      energy,
-      mood,
-      stress: 4,
-      sleepHours: 7.5,
-      symptoms: isWomen ? ['Gentle energy', 'Natural flow'] : ['Athletic recovery'],
-    });
-    setCheckedInToday(true);
-    showToast({ type: 'success', message: 'Check-in saved securely on device' });
-  }, [addCheckIn, energy, mood, isWomen, showToast]);
+    const { id: _id, ...rest } = todaysCheckIn;
+    addCheckIn({ ...rest, energy, mood });
+    showToast({ type: 'success', message: "Today's check-in updated on this device." });
+  }, [todaysCheckIn, addCheckIn, energy, mood, router, showToast]);
 
-  const handleExerciseComplete = useCallback((exerciseType: 'breath' | 'pelvic' | 'zen', points: number, xpReward: number) => {
-    const taskId = exerciseType === 'breath' ? 'task_men_box_breathing' : exerciseType === 'pelvic' ? 'task_women_bloom_pelvic_flow' : 'goal_define_one';
-    verifyAndCompleteTask(taskId, {
-      assignmentId: taskId,
-      elapsedSeconds: 60,
-      selfDeclaredHonest: true,
-    });
-    showToast({
-      type: 'success',
-      message: `${exerciseType.toUpperCase()} complete! +${points} Daily Points & +${xpReward} XP earned.`,
-    });
-  }, [verifyAndCompleteTask, showToast]);
+  // Arcade games are practice: they are not catalog quests and award nothing.
+  const handleExerciseComplete = useCallback(() => {
+    showToast({ type: 'success', message: 'Practice complete. Nice work.' });
+  }, [showToast]);
 
   const activeDiet = onboarding.diet && onboarding.diet !== 'No preference' ? onboarding.diet : null;
   const phaseConfig = PHASE_CONFIG[selectedDatePhase];
@@ -479,47 +415,15 @@ export default function TodayScreen() {
       {activeTab === 'quests' && (
         <Animated.View entering={FadeInDown.duration(220)}>
           <QuestsSection
-            levelDef={levelDef}
-            level={level}
+            progress={progress}
             xp={xp}
-            coins={coins}
+            diamonds={diamonds}
             streak={streak}
             dailyPoints={dailyPoints}
             dailyPointsTarget={dailyPointsTarget}
             dailyGoalReached={dailyGoalReached}
             todayQuests={todayQuests}
-            specialQuests={specialQuests}
-            onExecuteQuest={(id) => {
-              // Open TaskVerificationModal directly for seamless execution!
-              const target = todayQuests.find((q) => q.id === id);
-              if (target) {
-                const asEvent: CalendarEvent = {
-                  id: target.id,
-                  title: target.title,
-                  category: (target.category as any) ?? 'routine',
-                  privacy: 'private',
-                  date: selectedDateStr,
-                  status: target.isCompleted ? 'completed' : 'recorded',
-                  description: target.description,
-                  kind: 'task',
-                  metadata: {
-                    taskId: target.taskId,
-                  },
-                };
-                setSelectedTaskForVerification(asEvent);
-              } else {
-                router.push(`/(app)/quests/${id}`);
-              }
-            }}
-            onSkipQuest={(id) => skipDailyTask(id, 'User skipped')}
-            onJoinSpecialQuest={(skippedId, sqId) => {
-              joinSpecialQuest(skippedId, sqId);
-              const sq = (specialQuests as any[]).find((q: any) => q.id === sqId);
-              showToast({
-                type: 'success',
-                message: `Accepted ${sq?.title ?? 'Special Quest'} as replacement quest!`,
-              });
-            }}
+            onOpenQuest={setSelectedAssignmentId}
           />
         </Animated.View>
       )}
@@ -579,10 +483,7 @@ export default function TodayScreen() {
             onLogPeriod={handleLogPeriodBleeding}
             onAddMilestone={handleOpenMilestoneModal}
             onToggleEvent={handleToggleEvent}
-            onSelectTask={(ev) => {
-              if (ev.kind === 'holiday') return;
-              setSelectedTaskForVerification(ev);
-            }}
+            onSelectTask={handleToggleEvent}
           />
         </Animated.View>
       )}
@@ -635,19 +536,7 @@ export default function TodayScreen() {
         </Animated.View>
       )}
 
-      {/* Task Verification Modal */}
-      <TaskVerificationModal
-        visible={Boolean(selectedTaskForVerification)}
-        event={selectedTaskForVerification}
-        onClose={() => setSelectedTaskForVerification(null)}
-        onVerifyAndComplete={handleTaskVerificationComplete}
-        onReschedule={handleTaskReschedule}
-        onSkip={handleTaskSkip}
-        onReplaceWithSpecialQuest={() => {
-          setActiveTab('quests');
-          showToast({ type: 'info', message: 'Select an alternative from the Special Quests Vault.' });
-        }}
-      />
+      <QuestSheet assignmentId={selectedAssignmentId} onClose={() => setSelectedAssignmentId(null)} />
 
       {/* Period & Cycle Logger Modal */}
       <PeriodLoggerModal

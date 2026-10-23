@@ -13,7 +13,7 @@ import { Chip } from '../../../components/ui/Chip';
 import { PressableScale } from '../../../components/ui/PressableScale';
 import { AppHeader } from '../../../components/ui/AppHeader';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
-import { TaskVerificationModal } from '../../../components/ui/TaskVerificationModal';
+import { QuestSheet } from '../../../components/game/QuestSheet';
 import { evaluateDeterministicRoutine } from '../../../domain/ai/deterministicRules';
 import { computeInsights, recentLoad } from '../../../domain/ai/insights';
 import { getCyclePredictions } from '../../../domain/health/cycleCalculations';
@@ -73,13 +73,11 @@ export default function HomeScreen() {
     quests,
     onboarding,
     xp,
-    coins,
+    diamonds,
     dailyPoints,
     dailyPointsTarget,
     dailyGoalReached,
     dailyAssignments,
-    completeQuest,
-    verifyAndCompleteTask,
     showToast,
   } = useRootStore(
     useShallow((s) => ({
@@ -91,19 +89,17 @@ export default function HomeScreen() {
       quests: s.todayQuests,
       onboarding: s.onboarding,
       xp: s.xp,
-      coins: s.coins,
+      diamonds: s.diamonds,
       dailyPoints: s.dailyPoints,
       dailyPointsTarget: s.dailyPointsTarget,
       dailyGoalReached: s.dailyGoalReached,
       dailyAssignments: s.dailyAssignments,
-      completeQuest: s.completeQuest,
-      verifyAndCompleteTask: s.verifyAndCompleteTask,
       showToast: s.showToast,
     })),
   );
 
   const [questFilter, setQuestFilter] = useState<QuestCategoryFilter>('all');
-  const [selectedQuestForModal, setSelectedQuestForModal] = useState<Quest | null>(null);
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null);
   const [showClearedQuests, setShowClearedQuests] = useState(false);
 
   const todaysCheckIn = checkInHistory.find((c) => c.date === today());
@@ -282,8 +278,8 @@ export default function HomeScreen() {
             </View>
             <View style={[styles.divider, { backgroundColor: colors.border }]} />
             <View style={styles.statItem}>
-              <Text style={[typography.subbodyBold, { color: colors.text.primary }]}>{coins}</Text>
-              <Text style={[typography.caption, { color: colors.text.muted }]}>Coins</Text>
+              <Text style={[typography.subbodyBold, { color: colors.text.primary }]}>{diamonds}</Text>
+              <Text style={[typography.caption, { color: colors.text.muted }]}>Diamonds</Text>
             </View>
           </View>
         </Card>
@@ -452,7 +448,7 @@ export default function HomeScreen() {
           filteredQuests.map((quest) => (
             <Card
               key={quest.id}
-              onPress={() => setSelectedQuestForModal(quest)}
+              onPress={() => setSelectedAssignmentId(quest.id)}
               style={{ marginBottom: spacing.sm, padding: spacing.md, backgroundColor: colors.surface }}
             >
               <View style={styles.rowBetween}>
@@ -495,9 +491,9 @@ export default function HomeScreen() {
                   </View>
                 </View>
                 <Button
-                  label="Verify & Claim"
+                  label={quest.status === 'rejected' ? 'Continue' : 'Start'}
                   size="sm"
-                  onPress={() => setSelectedQuestForModal(quest)}
+                  onPress={() => setSelectedAssignmentId(quest.id)}
                 />
               </View>
             </Card>
@@ -652,59 +648,7 @@ export default function HomeScreen() {
         </PressableScale>
       </Animated.View>
 
-      {/* Task Verification Modal */}
-      <TaskVerificationModal
-        visible={Boolean(selectedQuestForModal)}
-        event={
-          selectedQuestForModal
-            ? {
-                id: selectedQuestForModal.id,
-                title: selectedQuestForModal.title,
-                category: (selectedQuestForModal.category as any) ?? 'routine',
-                privacy: 'private',
-                date: today(),
-                status: selectedQuestForModal.isCompleted ? 'completed' : 'recorded',
-                description: selectedQuestForModal.description,
-                kind: 'task',
-                metadata: {
-                  taskId: selectedQuestForModal.taskId,
-                },
-              }
-            : null
-        }
-        onClose={() => setSelectedQuestForModal(null)}
-        onVerifyAndComplete={(event, opts) => {
-          if (selectedQuestForModal) {
-            const targetQuest = selectedQuestForModal;
-            const assignment = dailyAssignments.find(
-              (a) => a.taskId === targetQuest.taskId || a.assignmentId === targetQuest.id
-            );
-            if (assignment) {
-              verifyAndCompleteTask(assignment.assignmentId, {
-                assignmentId: assignment.assignmentId,
-                elapsedSeconds: opts.elapsedSeconds,
-                notes: opts.notes,
-                selfDeclaredHonest: opts.selfDeclaredHonest,
-              });
-            } else {
-              completeQuest(targetQuest.id);
-            }
-            showToast({
-              type: 'success',
-              message: `+${targetQuest.xpReward} XP earned! Quest verified.`,
-            });
-          }
-          setSelectedQuestForModal(null);
-        }}
-        onSkip={() => {
-          setSelectedQuestForModal(null);
-          showToast({ type: 'info', message: 'Quest skipped' });
-        }}
-        onReplaceWithSpecialQuest={() => {
-          setSelectedQuestForModal(null);
-          router.push('/(app)/(tabs)/today');
-        }}
-      />
+      <QuestSheet assignmentId={selectedAssignmentId} onClose={() => setSelectedAssignmentId(null)} />
     </ScreenContainer>
   );
 }

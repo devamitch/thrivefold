@@ -1,11 +1,12 @@
-import catalogV1Json from '../../content/game/thrivefold-game-catalog.v1.json';
 import catalogV3Json from '../../content/game/thrivefold_real_game_catalog_v3.json';
 import { ProductExperience } from '../../theme/tokens';
+import { levelProgress, type LevelProgress } from './progression';
 import {
   ChapterDefinition,
   GameCatalog,
   LevelDefinition,
   SpecialQuestDefinition,
+  SpecialQuestParent,
   TaskDefinition,
 } from './types';
 
@@ -70,10 +71,12 @@ function normalizeTask(rawTask: any, policies: any[]): TaskDefinition {
     verificationClass,
     verificationPolicyId: policyId,
     verificationRequirements,
+    // Rewards exactly as the catalog states them. Some tasks deliberately award nothing
+    // (private tracking must not be incentivised); those are kept at zero.
     points: {
-      taskPoints: Math.max(10, rawTask.points?.taskPoints || 10),
-      xp: Math.max(15, rawTask.points?.xp || 15),
-      coins: Math.max(5, rawTask.points?.coins || 5),
+      taskPoints: Number(rawTask.points?.taskPoints) || 0,
+      xp: Number(rawTask.points?.xp) || 0,
+      coins: 0,
     },
     availability: rawTask.availability ?? {
       assignmentTypes: ['daily', 'special_quest'],
@@ -84,83 +87,81 @@ function normalizeTask(rawTask: any, policies: any[]): TaskDefinition {
       authored: true,
       reviewed: true,
     },
+    objective: rawTask.objective ?? null,
+    sensitivity: rawTask.sensitivity ?? 'ordinary',
+    ageGate: rawTask.ageGate ?? null,
+    dailyGoalEligible: rawTask.points?.dailyGoalEligible ?? true,
+    catalogSource: rawTask.objective ? 'v3' : 'v1',
+    contentStatus: rawTask.contentStatus ?? 'authored',
   };
 }
 
-function normalizeSpecialQuest(rawSq: any, policies: any[]): SpecialQuestDefinition {
-  const base = normalizeTask(rawSq, policies);
-  return {
-    ...base,
-    replacesAssignmentType: 'daily',
-    vaultCategory: rawSq.vaultCategory ?? 'restorative',
-  };
-}
-
-// Build unified catalog merging v3 and v1
-const rawPolicies = [
-  ...(catalogV1Json.verificationPolicies ?? []),
-  ...((catalogV3Json as any).verificationPolicies ?? []),
-];
-const policyMap = new Map<string, any>();
-for (const p of rawPolicies) {
-  if (p && p.id && !policyMap.has(p.id)) {
-    policyMap.set(p.id, p);
-  }
-}
-const unifiedPolicies = Array.from(policyMap.values());
+// The canonical v3 catalog is the only source of tasks, levels and policies.
+const unifiedPolicies: any[] = (catalogV3Json as any).verificationPolicies ?? [];
 
 const taskMap = new Map<string, TaskDefinition>();
-// Add V1 tasks first
-for (const t of catalogV1Json.tasks ?? []) {
-  taskMap.set(t.id, normalizeTask(t, unifiedPolicies));
-}
-// Add/enrich with V3 tasks
 for (const t of (catalogV3Json as any).taskDefinitions ?? []) {
-  if (!taskMap.has(t.id)) {
-    taskMap.set(t.id, normalizeTask(t, unifiedPolicies));
-  }
+  if (!taskMap.has(t.id)) taskMap.set(t.id, normalizeTask(t, unifiedPolicies));
 }
 const unifiedTasks = Array.from(taskMap.values());
 
-const sqMap = new Map<string, SpecialQuestDefinition>();
-for (const sq of catalogV1Json.specialQuests ?? []) {
-  sqMap.set(sq.id, normalizeSpecialQuest(sq, unifiedPolicies));
-}
-for (const sq of (catalogV3Json as any).specialQuestDefinitions ?? []) {
-  if (!sqMap.has(sq.id)) {
-    sqMap.set(sq.id, normalizeSpecialQuest(sq, unifiedPolicies));
-  }
-}
-const unifiedSpecialQuests = Array.from(sqMap.values());
+// Standalone special-quest tasks (none in v3; kept for catalogs that define them).
+const unifiedSpecialQuests: SpecialQuestDefinition[] = [];
 
-// Levels: Use V1 or V3
-const unifiedLevels: LevelDefinition[] = (catalogV1Json.levels ?? []).map((l: any) => ({
+// v3 special quests are parents that point at child tasks (child-task reward only), so
+// they are exposed separately instead of being treated as tasks themselves.
+const specialQuestParents: SpecialQuestParent[] = ((catalogV3Json as any).specialQuestDefinitions ?? [])
+  .filter((sq: any) => Array.isArray(sq.replacesCategories) && sq.replacesCategories.length > 0)
+  .map((sq: any) => ({
+    id: sq.id,
+    title: sq.title,
+    purpose: sq.purpose ?? sq.description ?? '',
+    replacesCategories: sq.replacesCategories,
+    taskIds: sq.taskIds ?? [],
+    eligibleLevelRange: (sq.eligibleLevelRange ?? [1, 1000]) as [number, number],
+  }));
+
+export const getSpecialQuestParents = (): SpecialQuestParent[] => specialQuestParents;
+
+// Levels and chapters come from the canonical v3 catalog: 1,000 authored level records with
+// their own XP thresholds and chapter checkpoints.
+const v3Chapters: any[] = (catalogV3Json as any).chapterDefinitions ?? [];
+const chapterOrderById = new Map<string, number>(v3Chapters.map((ch) => [ch.id, ch.order]));
+
+const unifiedLevels: LevelDefinition[] = ((catalogV3Json as any).levelDefinitions ?? []).map((l: any) => ({
   level: l.level,
-  chapterNumber: l.chapterNumber,
+  chapterNumber: chapterOrderById.get(l.chapterId) ?? Math.floor((l.level - 1) / 50) + 1,
   title: l.title,
-  arc: l.arc,
-  requiredCumulativeXp: l.requiredCumulativeXp,
-  unlockedFeatures: l.unlockedFeatures ?? [],
+  arc: l.primaryOutcome ?? l.purpose ?? '',
+  requiredCumulativeXp: l.minimumCumulativeXp,
+  unlockedFeatures: [],
+  xpRequiredToAdvance: l.xpRequiredToAdvance,
+  checkpointId: l.checkpointId ?? null,
 }));
 
-const unifiedChapters: ChapterDefinition[] = (catalogV1Json.chapters ?? []).map((ch: any) => ({
-  chapterNumber: ch.chapterNumber,
+const unifiedChapters: ChapterDefinition[] = v3Chapters.map((ch) => ({
+  chapterNumber: ch.order,
   title: ch.title,
-  theme: ch.theme,
-  levelRange: ch.levelRange,
+  theme: ch.description,
+  levelRange: [ch.levels.start, ch.levels.end] as [number, number],
 }));
 
 const catalog: GameCatalog = {
   catalogMeta: {
     id: 'thrivefold-real-game-catalog-v3',
     version: 3,
-    updatedAt: new Date().toISOString(),
+    updatedAt: (catalogV3Json as any).catalogMeta?.generatedAt ?? '',
     totalLevels: unifiedLevels.length,
-    author: 'Google Antigravity Team',
+    author: 'Thrivefold catalog v3',
   },
   experienceScopes: ['shared', 'men_health', 'women_health', 'pride_wellbeing'],
-  skillDefinitions: (catalogV1Json.skillDefinitions ?? []) as any,
-  difficultyDefinitions: (catalogV1Json.difficultyDefinitions ?? []) as any,
+  skillDefinitions: ((catalogV3Json as any).skillDefinitions ?? []).map((sk: any) => ({
+    id: sk.id,
+    name: sk.title ?? sk.name ?? sk.id,
+    description: sk.description ?? '',
+    experienceScope: 'shared',
+  })),
+  difficultyDefinitions: ((catalogV3Json as any).difficultyDefinitions ?? []).map((d: any) => d.id),
   verificationPolicies: unifiedPolicies,
   chapters: unifiedChapters,
   levels: unifiedLevels,
@@ -282,8 +283,9 @@ export const validateCatalogIntegrity = (): CatalogValidationReport => {
     if (!t.title || !t.instructions || t.instructions.length === 0) {
       errors.push(`Task ${t.id} missing title or instructions`);
     }
-    if (!t.points || t.points.taskPoints <= 0 || t.points.xp <= 0) {
-      errors.push(`Task ${t.id} has invalid or zero points`);
+    // Zero is valid: the catalog deliberately leaves private tracking unrewarded.
+    if (!t.points || t.points.taskPoints < 0 || t.points.xp < 0) {
+      errors.push(`Task ${t.id} has invalid points`);
     }
   }
 
@@ -301,3 +303,7 @@ export const validateCatalogIntegrity = (): CatalogValidationReport => {
     errors,
   };
 };
+
+/** Level, next level and XP progress for a total, using the catalog's level records. */
+export const currentLevelProgress = (totalXp: number, completedCheckpoints: readonly string[] = []): LevelProgress =>
+  levelProgress(totalXp, catalog.levels, new Set(completedCheckpoints));
