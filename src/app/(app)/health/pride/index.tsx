@@ -1,91 +1,104 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text } from 'react-native';
+import { useRouter } from 'expo-router';
+
 import { ScreenWrapper } from '../../../../components/ui/ScreenWrapper';
+import { Header } from '../../../../components/ui/Header';
 import { Card } from '../../../../components/ui/Card';
 import { Button } from '../../../../components/ui/Button';
-import { Header } from '../../../../components/ui/Header';
+import { TextField } from '../../../../components/ui/TextField';
+import { GuidedTimer } from '../../../../components/ui/GuidedTimer';
 import { useTheme } from '../../../../theme/useTheme';
-import { spacing } from '../../../../theme/spacing';
+import { useRootStore, useShallow } from '../../../../stores/useRootStore';
 
-export default function PrideHealthScreen() {
-  const { colors, typography } = useTheme();
+/** LGBTQ+ wellbeing hub: private identity settings, care tracking, support and community. */
+export default function PrideWellbeingScreen() {
+  const router = useRouter();
+  const { colors, typography, spacing } = useTheme();
+  const { identity, setPrivateIdentity, showToast } = useRootStore(
+    useShallow((s) => ({ identity: s.privateIdentity, setPrivateIdentity: s.setPrivateIdentity, showToast: s.showToast })),
+  );
+  const [editing, setEditing] = useState(false);
+  const [pronouns, setPronouns] = useState(identity.pronouns);
+  const [gender, setGender] = useState(identity.genderDescription);
+
+  const saveIdentity = () => {
+    setPrivateIdentity({ pronouns, genderDescription: gender });
+    setEditing(false);
+    showToast({ type: 'success', message: 'Saved privately on this device.' });
+  };
+
+  const section = (title: string, body: string, children: React.ReactNode) => (
+    <Card style={{ marginBottom: spacing.md, padding: spacing.lg }}>
+      <Text style={[typography.subheading, { color: colors.text.primary }]}>{title}</Text>
+      <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>{body}</Text>
+      <View style={{ marginTop: spacing.md }}>{children}</View>
+    </Card>
+  );
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Pride Wellbeing" subtitle="Affirming Care, Safe Space" showBack />
-      <ScrollView style={[styles.content, { paddingHorizontal: 16, paddingBottom: 32 }]}>
-        {/* Identity Affirmation */}
-        <Card style={{ marginBottom: 16, padding: 24 }}>
-          <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: 12 }]}>
-            Identity Affirmation
-          </Text>
-          <Text style={[typography.subbody, { color: colors.text.secondary, marginBottom: 16 }]}>
-            Pronouns, gender description, identity-safe reflections
-          </Text>
-          <Button label="Update Profile" size="sm" />
-        </Card>
+      <Header title="Pride Wellbeing" subtitle="Affirming care, on your terms" showBack />
+      <View style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
+        {section(
+          'Your identity',
+          identity.pronouns || identity.genderDescription
+            ? [identity.pronouns, identity.genderDescription].filter(Boolean).join(' · ')
+            : 'Optional. Kept only on this device, never shown to anyone and never used to decide what you can access.',
+          editing ? (
+            <>
+              <TextField label="Pronouns" value={pronouns} onChangeText={setPronouns} placeholder="e.g. they/them" maxLength={40} />
+              <TextField label="Gender, in your words" value={gender} onChangeText={setGender} maxLength={80} containerStyle={{ marginTop: spacing.sm }} />
+              <View style={{ flexDirection: 'row', gap: 8, marginTop: spacing.md }}>
+                <Button label="Save" size="sm" onPress={saveIdentity} />
+                <Button label="Cancel" size="sm" variant="ghost" onPress={() => setEditing(false)} />
+              </View>
+            </>
+          ) : (
+            <Button label={identity.pronouns || identity.genderDescription ? 'Edit' : 'Add'} size="sm" variant="outline" onPress={() => setEditing(true)} style={{ alignSelf: 'flex-start' }} />
+          ),
+        )}
 
-        {/* HRT Tracking */}
-        <Card style={{ marginBottom: 16, padding: 24 }}>
-          <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: 12 }]}>
-            HRT Schedule
-          </Text>
-          <Text style={[typography.subbody, { color: colors.text.secondary, marginBottom: 16 }]}>
-            Dose tracking, injection site rotation, schedule reminders
-          </Text>
-          <Button label="View Schedule" size="sm" />
-        </Card>
+        {section(
+          'Hormones and medications',
+          'Track doses and times privately, and tick them off each day. Thrivefold never doses or changes a prescription.',
+          <Button label="Open tracker" size="sm" variant="outline" onPress={() => router.push('/(app)/health/medications')} style={{ alignSelf: 'flex-start' }} />,
+        )}
 
-        {/* Dysphoria Support */}
-        <Card style={{ marginBottom: 16, padding: 24 }}>
-          <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: 12 }]}>
-            Dysphoria Support
-          </Text>
-          <Text style={[typography.subbody, { color: colors.text.secondary, marginBottom: 16 }]}>
-            Symptom logging, coping tools, crisis resources
-          </Text>
-          <Button label="Access Tools" size="sm" variant="outline" />
-        </Card>
+        {section(
+          'When things feel heavy',
+          'A short grounding exercise, a private note, or immediate support options.',
+          <>
+            <GuidedTimer
+              minutes={3}
+              startLabel="3-minute grounding"
+              cues={['Name 5 things you can see.', 'Name 4 things you can feel.', 'Name 3 things you can hear.', 'Take slow breaths, longer out than in.']}
+            />
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: spacing.sm }}>
+              <Button label="Write a private note" size="sm" variant="outline" onPress={() => router.push('/(app)/journal/new')} />
+              <Button label="Urgent support" size="sm" variant="ghost" onPress={() => router.push('/(app)/safety/urgent-support')} />
+            </View>
+          </>,
+        )}
 
-        {/* Panic Lock */}
-        <Card style={{ marginBottom: 16, padding: 24, backgroundColor: colors.errorSurface }}>
-          <Text style={[typography.subheading, { color: colors.error, marginBottom: 12 }]}>
-            Quick Panic Lock
-          </Text>
-          <Text style={[typography.subbody, { color: colors.text.secondary, marginBottom: 16 }]}>
-            Instant privacy protection, emergency contacts
-          </Text>
-          <Button label="Activate Safe Mode" size="sm" variant="outline" />
-        </Card>
+        {section(
+          'Quick exit',
+          'Leaves this screen straight away and goes back to the main home screen.',
+          <Button label="Exit now" size="sm" variant="outline" onPress={() => router.replace('/(app)/(tabs)')} style={{ alignSelf: 'flex-start' }} />,
+        )}
 
-        {/* General Health */}
-        <Card style={{ marginBottom: 16, padding: 24 }}>
-          <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: 12 }]}>
-            General Health
-          </Text>
-          <Text style={[typography.subbody, { color: colors.text.secondary, marginBottom: 16 }]}>
-            Exercise, nutrition, sleep, mental wellness
-          </Text>
-          <Button label="View Health" size="sm" variant="outline" />
-        </Card>
+        {section(
+          'Everyday health',
+          'Check-ins, sleep, movement, nutrition and your patterns.',
+          <Button label="Open health" size="sm" variant="outline" onPress={() => router.push('/(app)/health')} style={{ alignSelf: 'flex-start' }} />,
+        )}
 
-        {/* Community */}
-        <Card style={{ marginBottom: 16, padding: 24 }}>
-          <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: 12 }]}>
-            Private Community
-          </Text>
-          <Text style={[typography.subbody, { color: colors.text.secondary, marginBottom: 16 }]}>
-            LGBTQ+ peer support, safe spaces, local groups
-          </Text>
-          <Button label="Explore Communities" size="sm" />
-        </Card>
-      </ScrollView>
+        {section(
+          'Private community',
+          'Peer support spaces open once communities are available to you; membership is never shown outside the group.',
+          <Button label="Circles" size="sm" variant="outline" onPress={() => router.push('/(app)/circles')} style={{ alignSelf: 'flex-start' }} />,
+        )}
+      </View>
     </ScreenWrapper>
   );
 }
-
-const styles = StyleSheet.create({
-  content: {
-    flex: 1,
-  },
-});

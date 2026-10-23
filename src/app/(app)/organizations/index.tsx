@@ -65,7 +65,7 @@ export default function OrganizationsScreen() {
           <Text style={[typography.subbody, { color: colors.text.secondary, marginBottom: 16 }]}>
             Organizations must provide proof of registration, representative identity, and purpose documentation
           </Text>
-          <Button label="Learn More" size="sm" variant="outline" />
+          <Button label="Start an application" size="sm" variant="outline" onPress={() => router.push('/(app)/organizations/apply')} />
         </Card>
       </ScrollView>
     </ScreenWrapper>

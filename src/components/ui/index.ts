@@ -21,3 +21,4 @@ export * from './PeriodLoggerModal';
 export * from './PersonalEventModal';
 export * from './DatePickerModal';
 export * from './AnimatedTabBar';
+export * from './GuidedTimer';

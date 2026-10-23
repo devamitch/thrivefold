@@ -6,6 +6,7 @@ import { Card } from '../../../components/ui/Card';
 import { Header } from '../../../components/ui/Header';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
+import { GuidedTimer } from '../../../components/ui/GuidedTimer';
 import { useTheme } from '../../../theme/useTheme';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 
@@ -64,13 +65,22 @@ export default function SleepScreen() {
 
         {/* Wind-Down Practice */}
         <Card style={{ marginBottom: spacing.md, backgroundColor: colors.surface1 }}>
-          <Text style={[typography.subbodyBold, { color: colors.text.primary }]}>
-            Tonight's Wind-Down Audio Anchor
-          </Text>
+          <Text style={[typography.subbodyBold, { color: colors.text.primary }]}>Tonight&apos;s wind-down</Text>
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>
-            8-minute delta-frequency body scan to quiet somatic tension.
+            An 8-minute guided body scan. Lie down, dim the lights and follow the prompts.
           </Text>
-          <Button label="Begin Wind-Down" size="sm" style={{ marginTop: 12, alignSelf: 'flex-start' }} />
+          <GuidedTimer
+            minutes={8}
+            startLabel="Begin wind-down"
+            cues={[
+              'Breathe in for 4, out for 6. Let your body get heavy.',
+              'Relax your forehead, jaw and tongue.',
+              'Let your shoulders drop away from your ears.',
+              'Soften your chest and stomach with each breath out.',
+              'Release your hips, legs and feet.',
+              'Notice the whole body resting. Keep breathing slowly.',
+            ]}
+          />
         </Card>
       </ScrollView>
     </ScreenWrapper>

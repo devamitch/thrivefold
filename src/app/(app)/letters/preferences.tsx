@@ -5,14 +5,18 @@ import { Card } from '../../../components/ui/Card';
 import { Header } from '../../../components/ui/Header';
 import { Button } from '../../../components/ui/Button';
 import { Chip } from '../../../components/ui/Chip';
+import { useRootStore } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
 
 export default function LetterPreferencesScreen() {
   const { colors, typography, spacing } = useTheme();
 
-  const [acceptingLetters, setAcceptingLetters] = useState(true);
-  const [distanceBand, setDistanceBand] = useState('Worldwide (Any Distance)');
-  const [deliveryPacing, setDeliveryPacing] = useState('Realistic Postal (~1h per 200km)');
+  const saved = useRootStore((s) => s.letterPreferences);
+  const setLetterPreferences = useRootStore((s) => s.setLetterPreferences);
+  const showToast = useRootStore((s) => s.showToast);
+  const [acceptingLetters, setAcceptingLetters] = useState(saved.acceptingLetters);
+  const [distanceBand, setDistanceBand] = useState(saved.distanceBand);
+  const [deliveryPacing, setDeliveryPacing] = useState(saved.pacing);
 
   const distanceBands = ['Same Country Only', 'Same Continent', 'Worldwide (Any Distance)'];
   const pacingOptions = ['Realistic Postal (~1h per 200km)', 'Extra Slow (Reflection Mode)'];
@@ -75,7 +79,13 @@ export default function LetterPreferencesScreen() {
           </View>
         </Card>
 
-        <Button label="Save Preferences" />
+        <Button
+          label="Save preferences"
+          onPress={() => {
+            setLetterPreferences({ acceptingLetters, distanceBand, pacing: deliveryPacing });
+            showToast({ type: 'success', message: 'Letter preferences saved on this device.' });
+          }}
+        />
       </ScrollView>
     </ScreenWrapper>
   );

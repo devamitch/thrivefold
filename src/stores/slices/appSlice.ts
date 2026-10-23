@@ -45,6 +45,9 @@ export interface AlertOptions {
 
 export interface AppSlice {
   experience: ProductExperience;
+  /** Optional, private, never shared or used for eligibility. */
+  privateIdentity: { pronouns: string; genderDescription: string };
+  setPrivateIdentity: (identity: { pronouns: string; genderDescription: string }) => void;
   themeMode: ThemeMode;
   isOnboarded: boolean;
   onboarding: OnboardingAnswers;
@@ -80,6 +83,7 @@ export const createAppSlice: StateCreator<
   AppSlice
 > = (set) => ({
   experience: 'women_health',
+  privateIdentity: { pronouns: '', genderDescription: '' },
   themeMode: 'system',
   isOnboarded: false,
   onboarding: EMPTY_ONBOARDING,
@@ -92,6 +96,8 @@ export const createAppSlice: StateCreator<
   toasts: [],
   alert: null,
   setExperience: (experience) => set({ experience }),
+  setPrivateIdentity: (privateIdentity) =>
+    set({ privateIdentity: { pronouns: privateIdentity.pronouns.trim().slice(0, 40), genderDescription: privateIdentity.genderDescription.trim().slice(0, 80) } }),
   setThemeMode: (themeMode) => set({ themeMode }),
   setIsOnboarded: (isOnboarded) =>
     set(isOnboarded ? { isOnboarded, onboardingStep: null } : { isOnboarded }),

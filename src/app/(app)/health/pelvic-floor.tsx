@@ -6,6 +6,7 @@ import { Card } from '../../../components/ui/Card';
 import { Header } from '../../../components/ui/Header';
 import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
+import { GuidedTimer } from '../../../components/ui/GuidedTimer';
 import { useTheme } from '../../../theme/useTheme';
 
 export default function PelvicFloorScreen() {
@@ -72,7 +73,11 @@ export default function PelvicFloorScreen() {
               <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4, lineHeight: 20 }]}>
                 Encourages gentle lengthening of the pubococcygeus and obturator internus muscles without intra-abdominal pressure.
               </Text>
-              <Button label="Start 4-Minute Session" size="sm" style={{ marginTop: 12, alignSelf: 'flex-start' }} />
+              <GuidedTimer
+                minutes={4}
+                startLabel="Start 4-minute session"
+                cues={['Settle into the position with support under you.', 'Breathe into your belly and let the pelvic floor soften.', 'Keep breathing slowly; no pushing or straining.', 'Ease out of the position gently.']}
+              />
             </Card>
 
             <Card style={{ marginBottom: spacing.md }}>
@@ -83,7 +88,11 @@ export default function PelvicFloorScreen() {
               <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4, lineHeight: 20 }]}>
                 Subtle gluteal and hamstrings activation while maintaining neutral lumbar curvature and pelvic floor synchrony.
               </Text>
-              <Button label="Start 5-Minute Session" size="sm" style={{ marginTop: 12, alignSelf: 'flex-start' }} />
+              <GuidedTimer
+                minutes={5}
+                startLabel="Start 5-minute session"
+                cues={['Lie on your back, knees bent, feet flat.', 'Breathe out and lift your hips slowly.', 'Breathe in as you lower with control.', 'Rest a moment between lifts; stop if anything hurts.']}
+              />
             </Card>
           </View>
         )}

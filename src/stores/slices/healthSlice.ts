@@ -55,6 +55,14 @@ export interface PersonalCalendarEvent {
   time?: string; // HH:mm
 }
 
+/** A medication or supplement the person tracks. Thrivefold never suggests or doses one. */
+export interface MedicationEntry {
+  id: string;
+  name: string;
+  dose: string;
+  time: string; // HH:mm
+}
+
 export interface DailyCheckInRecord {
   id: string;
   date: string;
@@ -95,6 +103,12 @@ export interface HealthSlice {
   journalEntries: JournalEntry[];
   personalEvents: PersonalCalendarEvent[];
   workoutSessions: WorkoutSession[];
+  medications: MedicationEntry[];
+  /** "YYYY-MM-DD|medicationId" for each dose marked taken. */
+  medicationTaken: string[];
+  addMedication: (entry: Omit<MedicationEntry, 'id'>) => void;
+  deleteMedication: (id: string) => void;
+  toggleMedicationTaken: (id: string, date: string) => void;
   saveWorkoutSession: (session: Omit<WorkoutSession, 'id'>) => void;
   deleteWorkoutSession: (id: string) => void;
   // Mood and check-in tracking fields
@@ -244,6 +258,31 @@ export const createHealthSlice: StateCreator<
   // Only events the person adds; nothing is pre-filled.
   personalEvents: [],
   workoutSessions: [],
+  medications: [],
+  medicationTaken: [],
+
+  addMedication: (entry) =>
+    set((state) => ({
+      medications: [...state.medications, { ...entry, id: `med_${Date.now()}_${Math.random().toString(36).slice(2, 6)}` }].sort(
+        (a, b) => a.time.localeCompare(b.time),
+      ),
+    })),
+
+  deleteMedication: (id) =>
+    set((state) => ({
+      medications: state.medications.filter((m) => m.id !== id),
+      medicationTaken: state.medicationTaken.filter((k) => !k.endsWith(`|${id}`)),
+    })),
+
+  toggleMedicationTaken: (id, date) =>
+    set((state) => {
+      const key = `${date}|${id}`;
+      return {
+        medicationTaken: state.medicationTaken.includes(key)
+          ? state.medicationTaken.filter((k) => k !== key)
+          : [...state.medicationTaken, key].slice(-2000),
+      };
+    }),
 
   saveWorkoutSession: (session) =>
     set((state) => ({

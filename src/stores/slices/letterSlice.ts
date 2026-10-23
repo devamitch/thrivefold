@@ -48,6 +48,8 @@ export interface LetterSlice {
   connections: Connection[];
   stamps: Stamp[];
   unlockedStamps: string[];
+  letterPreferences: { acceptingLetters: boolean; distanceBand: string; pacing: string };
+  setLetterPreferences: (prefs: LetterSlice['letterPreferences']) => void;
   createDraft: (chipIds: string[], stampId: string) => string;
   sendLetter: (letterId: string, recipientId: string) => void;
   acceptConnection: (connectionId: string) => void;
@@ -114,6 +116,8 @@ export const createLetterSlice: StateCreator<
   connections: [],
   stamps: STAMP_CATALOG,
   unlockedStamps: ['stamp_rose', 'stamp_wave'],
+  letterPreferences: { acceptingLetters: true, distanceBand: 'Worldwide (Any Distance)', pacing: 'Realistic Postal (~1h per 200km)' },
+  setLetterPreferences: (letterPreferences) => set({ letterPreferences }),
 
   createDraft: (chipIds, stampId) => {
     const draftId = `draft_${Date.now()}`;
