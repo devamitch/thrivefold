@@ -1,0 +1,204 @@
+{
+  "reportMeta": {
+    "id": "thrivefold-catalog-v3-validation-report",
+    "catalogId": "thrivefold-real-game-catalog",
+    "catalogVersion": 3,
+    "schemaVersion": "3.0.0",
+    "generatedAt": "2026-10-23",
+    "status": "static_catalog_validated_runtime_not_integrated"
+  },
+  "validation": {
+    "strictJsonParsing": {
+      "passed": true,
+      "method": "Final file reopened successfully with json.load"
+    },
+    "jsonSchema": {
+      "passed": true,
+      "draft": "2020-12",
+      "schemaFile": "thrivefold_real_game_catalog_v3.schema.json",
+      "method": "jsonschema.Draft202012Validator.check_schema and validate"
+    },
+    "catalogCrossReferences": {
+      "passed": true,
+      "checks": {
+        "all_levels_1_to_1000": true,
+        "unique_task_ids": true,
+        "unique_special_quest_ids": true,
+        "unique_capstone_ids": true,
+        "unique_score_dimension_ids": true,
+        "unique_profile_field_ids": true,
+        "unique_acceptance_test_ids": true,
+        "all_task_objective_refs_resolve": true,
+        "all_task_verification_refs_resolve": true,
+        "all_skill_refs_resolve": true,
+        "all_task_score_dimensions_resolve": true,
+        "all_task_rubrics_resolve": true,
+        "all_task_reward_policies_resolve": true,
+        "all_level_chapters_resolve": true,
+        "all_level_stages_resolve": true,
+        "all_level_checkpoint_refs_resolve": true,
+        "all_level_task_refs_resolve": true,
+        "all_level_tasks_within_level_range": true,
+        "all_chapter_task_refs_resolve": true,
+        "all_chapter_capstone_refs_resolve": true,
+        "all_quest_task_refs_resolve": true,
+        "all_quest_policy_refs_resolve": true,
+        "all_quest_reward_refs_resolve": true,
+        "all_quest_tasks_have_intersecting_level_ranges": true,
+        "all_capstone_task_policy_reward_refs_resolve": true,
+        "all_capstone_tasks_eligible_at_milestone": true,
+        "all_dimensions_referenced_in_tasks": true,
+        "all_dimensions_referenced_in_levels": true,
+        "no_setup_only_task_has_grace": true,
+        "grace_bonus_bounded_and_registered": true,
+        "all_score_binding_profile_fields_resolve": true
+      },
+      "failedCheckCount": 0
+    },
+    "scoreDimensionCoverage": {
+      "passed": true,
+      "count": 44,
+      "dimensions": [
+        "accessibility_effort_and_adapted_progress",
+        "adult_intimacy_wellbeing",
+        "adult_sexual_history_trends",
+        "age_life_stage_adaptation",
+        "ai_tool_proficiency",
+        "beauty_and_aesthetic_self_goal",
+        "beauty_or_attractiveness",
+        "body_and_measurement_progress",
+        "body_fat_and_composition",
+        "body_shape",
+        "character_in_action",
+        "communication_and_learning",
+        "disability_and_accessibility",
+        "education_and_learning_path",
+        "face_shape_and_features",
+        "financial_self_management",
+        "gender_identity",
+        "gender_identity_and_expression",
+        "habit_execution",
+        "health_and_function",
+        "household_and_caregiving_load",
+        "identity_and_self_discovery",
+        "mental_worth_and_mindset",
+        "mindset_and_self_awareness",
+        "moral_character_and_repair",
+        "movement_and_total_load",
+        "nutrition_goal_alignment",
+        "oral_care",
+        "personal_presentation",
+        "personality_and_behavior_goals",
+        "posture_and_movement_technique",
+        "public_presence_communication",
+        "relationships_and_social_confidence",
+        "religion_or_faith",
+        "sex_assigned_at_birth",
+        "sex_related_health_context",
+        "sexual_activity",
+        "sexual_orientation",
+        "sexual_orientation_self_discovery",
+        "skin_tone",
+        "skin_tone_and_colour_style_preferences",
+        "social_confidence_and_dating",
+        "tooth_whiteness_and_oral_appearance",
+        "values_and_faith_practice"
+      ],
+      "allDimensionsReferencedByTasks": true,
+      "allDimensionsReferencedByLevels": true
+    }
+  },
+  "inventory": {
+    "taskDefinitions": 151,
+    "taskContentStatusCounts": {
+      "authored": 117,
+      "authored_requires_product_and_domain_review": 34
+    },
+    "specialQuestDefinitions": 49,
+    "levelDefinitions": 1000,
+    "chapterDefinitions": 20,
+    "capstoneDefinitions": 20,
+    "verificationPolicies": 32,
+    "objectiveTypes": 60,
+    "skillDefinitions": 22,
+    "scoreDimensions": 44,
+    "scoreRubrics": 8,
+    "rewardPolicies": 6,
+    "profileContextFields": 37,
+    "acceptanceTests": 40
+  },
+  "scoringModelCorrections": {
+    "blanketNeverScoreOrRankFieldPresent": false,
+    "blanketNeverInferFieldPresent": false,
+    "supportsUserSelectedSensitiveDimensions": true,
+    "explicitContextScoreBindings": 14,
+    "dimensionsAddedInV3": [
+      "religion_or_faith",
+      "gender_identity",
+      "sex_assigned_at_birth",
+      "sexual_orientation",
+      "sexual_activity",
+      "mental_worth_and_mindset",
+      "moral_character_and_repair",
+      "beauty_or_attractiveness",
+      "face_shape_and_features",
+      "body_shape",
+      "skin_tone",
+      "tooth_whiteness_and_oral_appearance",
+      "body_fat_and_composition",
+      "disability_and_accessibility"
+    ],
+    "valuesAlignedBonus": {
+      "baseEncouragementBonusPercent": 10,
+      "additionalEffortBonusPercentRange": [
+        0,
+        15
+      ],
+      "maximumCombinedBonusPercent": 25,
+      "sameEventBonusStackingCapPercent": 25,
+      "rule": "Awarded after an eligible selected task passes verification, not for profile disclosure alone."
+    },
+    "contextualGrace": {
+      "maximumBonusPercent": 25,
+      "maximumCombinedTaskBonusPercent": 25,
+      "eligibleTaskIds": [
+        "focus_session",
+        "movement_break",
+        "walk_or_wheel_log",
+        "strength_session_record",
+        "mobility_routine",
+        "pose_landmark_movement_checkpoint",
+        "language_confidence_baseline_and_practice",
+        "relative_movement_achievement_checkpoint"
+      ],
+      "rule": "Requires a registered adapted objective, task-specific eligibility, passing evidence and a reason code; setup/disclosure-only tasks cannot trigger it."
+    }
+  },
+  "privacyAndRuntimeLimitations": {
+    "selfDeclaredSensitiveContext": "Supported as an opt-in, private, user-configured scorecard dimension with explicit source and rubric.",
+    "ProxyInference": "The catalog does not claim religion, gender identity, orientation, diagnosis, body-fat percentage, bone density, personality or morality can be accurately inferred from a meal, face, name, photo or behavior. Users may explicitly self-declare sensitive context and choose a rubric.",
+    "AdultIntimacy": "Optional adult-only, self-reported and private; sensitive entries are not sent to AI by default. The storage/encryption and sync implementation still require verification.",
+    "AIProviderAdapters": "Not runtime-verified; AI output is advisory and cannot independently grant authoritative rewards.",
+    "BYOKStorage": "Not runtime-verified; keep keys out of catalog, task evidence, logs, telemetry and client-visible server records.",
+    "MediaPipePose": "Not runtime-verified; pose tasks must remain unavailable until the model/runtime adapter, camera consent, no-raw-frame-retention behavior and task validator pass.",
+    "PhotoAnalysis": "Not runtime-verified; use selected assets only, honest local processing and no unvalidated clinical/body-composition inference.",
+    "AddressesAndFamilyMedia": "Optional, user-initiated and audience-reviewed; not mandatory task evidence.",
+    "BackendAuthorizationAndRewardLedger": "Not verified by JSON checks; database RLS, atomic reward operations and idempotency still require implementation/testing."
+  },
+  "notVerified": [
+    "Runtime integration",
+    "Database migrations, RLS and backend reward transactions",
+    "AI provider connectivity and BYOK secure storage",
+    "MediaPipe native/runtime installation and model validation",
+    "Local photo-processing adapters",
+    "Encrypted private-record storage and optional cloud sync",
+    "Clinical/editorial/privacy/security production review",
+    "Authenticity of real-world self-reported events"
+  ],
+  "artifactFiles": {
+    "catalog": "thrivefold_real_game_catalog_v3.json",
+    "schema": "thrivefold_real_game_catalog_v3.schema.json",
+    "serverOnlyAssessmentKeys": "thrivefold_server_assessment_keys_v3.json",
+    "validationReport": "thrivefold_catalog_v3_validation_report.json"
+  }
+}

@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
-import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
+import { ScreenContainer } from '../../../components/ui/ScreenContainer';
+import { AppHeader } from '../../../components/ui/AppHeader';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
-import { Header } from '../../../components/ui/Header';
 import { useTheme } from '../../../theme/useTheme';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { getTaskById } from '../../../domain/game/gameCatalogService';
@@ -17,11 +17,13 @@ export default function QuestDetailScreen() {
   const { questId } = useLocalSearchParams<{ questId: string }>();
   const { colors, typography, spacing } = useTheme();
 
-  const { todayQuests, verifyAndCompleteTask, skipDailyTask } = useRootStore(
+  const { todayQuests, verifyAndCompleteTask, skipDailyTask, showAlert, showToast } = useRootStore(
     useShallow((s) => ({
       todayQuests: s.todayQuests,
       verifyAndCompleteTask: s.verifyAndCompleteTask,
       skipDailyTask: s.skipDailyTask,
+      showAlert: s.showAlert,
+      showToast: s.showToast,
     })),
   );
 
@@ -34,12 +36,14 @@ export default function QuestDetailScreen() {
 
   if (!quest) {
     return (
-      <ScreenWrapper>
-        <Header title="Quest" showBack />
+      <ScreenContainer
+        header={<AppHeader title="Quest" showBack />}
+        scrollMode="shell-scroll-view"
+      >
         <View style={{ padding: spacing.base }}>
           <Text style={[typography.body, { color: colors.text.secondary }]}>Quest not found.</Text>
         </View>
-      </ScreenWrapper>
+      </ScreenContainer>
     );
   }
 
@@ -62,17 +66,20 @@ export default function QuestDetailScreen() {
       try {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } catch {}
-      Alert.alert(
-        'Quest Verified!',
-        `Earned +${result.earnedTaskPoints} Daily Goal Points and +${result.earnedXp} XP!\n\nVerification: ${result.status.toUpperCase()}`,
-        [{ text: 'Great', onPress: () => router.back() }],
-      );
+      showAlert({
+        title: 'Quest Verified!',
+        message: `Earned +${result.earnedTaskPoints} Daily Goal Points and +${result.earnedXp} XP!\n\nVerification: ${result.status.toUpperCase()}`,
+        confirmText: 'Great',
+        cancelText: null,
+        onConfirm: () => router.back(),
+      });
     } else {
-      Alert.alert(
-        'Verification Incomplete',
-        `Evidence check failed: ${result.reasonCodes.join(', ')}`,
-        [{ text: 'Review' }],
-      );
+      showAlert({
+        title: 'Verification Incomplete',
+        message: `Evidence check failed: ${result.reasonCodes.join(', ')}`,
+        confirmText: 'Review',
+        cancelText: null,
+      });
     }
   };
 
@@ -85,12 +92,18 @@ export default function QuestDetailScreen() {
   };
 
   return (
-    <ScreenWrapper scrollable>
-      <Header title="Quest Session" subtitle={quest.category.toUpperCase()} showBack />
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[styles.content, { paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }]}
-      >
+    <ScreenContainer
+      header={
+        <AppHeader
+          eyebrow="QUEST CHALLENGE"
+          title={quest.title}
+          subtitle={quest.category.toUpperCase()}
+          showBack
+        />
+      }
+      scrollMode="shell-scroll-view"
+    >
+      <View style={{ paddingBottom: spacing.xxl }}>
         {/* Banner Card */}
         <Card variant="tinted" style={{ marginBottom: spacing.md, padding: spacing.lg }}>
           <View style={styles.rowBetween}>
@@ -216,8 +229,8 @@ export default function QuestDetailScreen() {
             </Text>
           </Card>
         )}
-      </ScrollView>
-    </ScreenWrapper>
+      </View>
+    </ScreenContainer>
   );
 }
 

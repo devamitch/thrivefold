@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
@@ -8,10 +8,12 @@ import { Header } from '../../../components/ui/Header';
 import { Button } from '../../../components/ui/Button';
 import { Chip } from '../../../components/ui/Chip';
 import { useTheme } from '../../../theme/useTheme';
+import { useRootStore } from '../../../stores/useRootStore';
 
 export default function OrganizationApplyScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
+  const showAlert = useRootStore((s) => s.showAlert);
 
   const [orgName, setOrgName] = useState('');
   const [repName, setRepName] = useState('');
@@ -22,15 +24,22 @@ export default function OrganizationApplyScreen() {
 
   const handleSubmit = () => {
     if (!orgName.trim() || !repName.trim()) {
-      Alert.alert('Required Fields', 'Please specify the organization name and verified representative.');
+      showAlert({
+        title: 'Required Fields',
+        message: 'Please specify the organization name and verified representative.',
+        confirmText: 'OK',
+        cancelText: null,
+      });
       return;
     }
 
-    Alert.alert(
-      'Application Submitted',
-      'Your organization credentials will be audited by Thrivefold administrators before role issuance.',
-      [{ text: 'Done', onPress: () => router.back() }]
-    );
+    showAlert({
+      title: 'Application Submitted',
+      message: 'Your organization credentials will be audited by Thrivefold administrators before role issuance.',
+      confirmText: 'Done',
+      cancelText: null,
+      onConfirm: () => router.back(),
+    });
   };
 
   return (

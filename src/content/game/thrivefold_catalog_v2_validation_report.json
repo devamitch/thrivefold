@@ -1,0 +1,38 @@
+{
+  "catalogId": "thrivefold-real-game-catalog",
+  "version": 2,
+  "validationStatus": "PASS_CUSTOM_STRUCTURAL_AND_CROSS_REFERENCE_CHECKS",
+  "checks": [
+    "strict JSON parse for main catalog and server answer-key companion",
+    "117 unique tasks with instructions, purpose, reward values, objective and verification policy references",
+    "39 special quests and all child task/policy references resolve",
+    "level records cover each integer level from 1 to 1000 and reference known chapters/tasks",
+    "all 12 server-only assessment answer keysets match their question IDs and option IDs",
+    "server-only answer keys are not embedded in the main client catalog",
+    "requested AI/BYOK, pose landmark, open letter, selected media, adult-private health and social task IDs exist"
+  ],
+  "counts": {
+    "tasks": 117,
+    "specialQuests": 39,
+    "levels": 1000,
+    "chapters": 20,
+    "verificationPolicies": 23,
+    "objectiveTypes": 49,
+    "assessments": 12,
+    "assessmentQuestions": 60,
+    "serverOnlyAnswerKeySets": 12
+  },
+  "notVerified": [
+    "Formal JSON Schema validation",
+    "Application/runtime integration",
+    "Database/backend deployment",
+    "AI provider connection adapters",
+    "MediaPipe pose adapter/model packaging",
+    "Production privacy/security review",
+    "Editorial/clinical review of relevant health content"
+  ],
+  "files": {
+    "thrivefold_real_game_catalog_v2.json": "3d2b4234f9f03a3e97f35f69af53c63709ef8cfd0c7172fb5eb5879541ec8c35",
+    "thrivefold_server_assessment_keys_v2.json": "9f8282f5e20c45d4992be698133f5a388cb1fd85c06b1396578b8940f28db62c"
+  }
+}

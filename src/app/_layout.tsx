@@ -7,7 +7,8 @@ import { useTheme } from '../theme/useTheme';
 import { useRootStore } from '../stores/useRootStore';
 
 import { ErrorBoundary } from '../components/ErrorBoundary';
-import { Toast } from '../components/ui/Toast';
+import { MindfulNotificationBanner } from '../components/ui/MindfulNotificationBanner';
+import { CustomAlert } from '../components/ui/CustomAlert';
 
 export default function RootLayout() {
   const resetDailyQuotaIfNewDay = useRootStore((s) => s.resetDailyQuotaIfNewDay);
@@ -33,7 +34,8 @@ export default function RootLayout() {
             <Stack.Screen name="(onboarding)" />
             <Stack.Screen name="(app)" />
           </Stack>
-          <Toast />
+          <MindfulNotificationBanner />
+          <CustomAlert />
         </ErrorBoundary>
       </SafeAreaProvider>
     </GestureHandlerRootView>

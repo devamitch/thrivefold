@@ -31,17 +31,28 @@ export const useRootStore = create<RootState>()(
       name: 'thrivefold-root',
       version: 1,
       storage: localJSONStorage,
-      // Data only: actions are recreated, live toasts are never persisted.
+      // Data only: actions are recreated, live toasts and alert dialogs are never persisted.
       partialize: (state) =>
         Object.fromEntries(
-          Object.entries(state).filter(([key, value]) => typeof value !== 'function' && key !== 'toasts'),
+          Object.entries(state).filter(
+            ([key, value]) => typeof value !== 'function' && key !== 'toasts' && key !== 'alert'
+          ),
         ) as Partial<RootState>,
     },
   ),
 );
 
 export type { UserProfile } from './slices/authSlice';
-export type { ToastItem, ThemeMode } from './slices/appSlice';
-export type { DailyCheckInRecord, CycleData, JournalEntry } from './slices/healthSlice';
+export type { ToastItem, ThemeMode, AlertOptions } from './slices/appSlice';
+export type {
+  DailyCheckInRecord,
+  CycleData,
+  JournalEntry,
+  PeriodLogRecord,
+  FlowIntensity,
+  ReproductiveContext,
+  PregnancyDetails,
+  PersonalCalendarEvent,
+} from './slices/healthSlice';
 export type { Quest } from './slices/questSlice';
 export { xpForLevel } from './slices/questSlice';

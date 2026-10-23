@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
@@ -10,15 +10,25 @@ import { useRootStore, useShallow } from '../../../stores/useRootStore';
 
 export default function BlockedUsersScreen() {
   const { colors, typography, spacing } = useTheme();
-  const { blockedUserIds, unblockUser } = useRootStore(
-    useShallow((s) => ({ blockedUserIds: s.blockedUserIds, unblockUser: s.unblockUser })),
+  const { blockedUserIds, unblockUser, showAlert, showToast } = useRootStore(
+    useShallow((s) => ({
+      blockedUserIds: s.blockedUserIds,
+      unblockUser: s.unblockUser,
+      showAlert: s.showAlert,
+      showToast: s.showToast,
+    })),
   );
 
   const handleUnblock = (id: string) => {
-    Alert.alert('Unblock User', 'Allow this user to be eligible for future correspondence and discovery?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Unblock', onPress: () => unblockUser(id) },
-    ]);
+    showAlert({
+      title: 'Unblock User',
+      message: 'Allow this user to be eligible for future correspondence and discovery?',
+      confirmText: 'Unblock',
+      onConfirm: () => {
+        unblockUser(id);
+        showToast({ type: 'info', message: 'User unblocked.' });
+      },
+    });
   };
 
   return (

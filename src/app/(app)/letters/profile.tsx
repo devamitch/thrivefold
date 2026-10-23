@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
@@ -11,8 +11,8 @@ import { useRootStore, useShallow } from '../../../stores/useRootStore';
 
 export default function LetterProfileScreen() {
   const { colors, typography, spacing } = useTheme();
-  const { user, setUser } = useRootStore(
-    useShallow((s) => ({ user: s.user, setUser: s.setUser })),
+  const { user, setUser, showToast } = useRootStore(
+    useShallow((s) => ({ user: s.user, setUser: s.setUser, showToast: s.showToast })),
   );
 
   const [pseudonym, setPseudonym] = useState(user?.pseudonym ?? 'SolsticeSeeker');
@@ -41,7 +41,7 @@ export default function LetterProfileScreen() {
         pseudonym: pseudonym.trim() || user.pseudonym,
       });
     }
-    Alert.alert('Profile Updated', 'Your pseudonymous correspondence card has been saved.');
+    showToast({ type: 'success', title: 'Profile Updated', message: 'Your pseudonymous card has been saved.' });
   };
 
   return (

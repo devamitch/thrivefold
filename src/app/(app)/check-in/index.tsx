@@ -96,9 +96,13 @@ export default function CheckInScreen() {
       sleepHours: sleep,
       symptoms: todaySymptoms,
     });
-    Alert.alert('Check-in saved', 'Saved on this device. Your streak and today\'s suggestion are updated.', [
-      { text: 'Done', onPress: () => router.back() },
-    ]);
+    const showToast = useRootStore.getState().showToast;
+    showToast({
+      type: 'success',
+      title: 'Check-in Saved',
+      message: 'Saved on this device. Your streak and daily recommendations are updated.',
+    });
+    router.back();
   };
 
   const Slider = ({ value, onChange, label, color }: { value: number; onChange: (v: number) => void; label: string; color: string }) => (

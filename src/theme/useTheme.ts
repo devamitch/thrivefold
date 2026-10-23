@@ -14,12 +14,12 @@ export interface ThemeContextValue {
 }
 
 export function useTheme(): ThemeContextValue {
-  const systemScheme = useColorScheme();
   const themeMode = useRootStore((s) => s.themeMode);
   const experience = useRootStore((s) => s.experience);
 
-  const isDark = themeMode === 'system' ? systemScheme === 'dark' : themeMode === 'dark';
-  const scheme = isDark ? 'dark' : 'light';
+  // Dark theme explicitly disabled for homely, calm, eye-friendly aesthetics
+  const isDark = false;
+  const scheme = 'light';
   const colors = getThemeColors(experience, scheme);
 
   return {

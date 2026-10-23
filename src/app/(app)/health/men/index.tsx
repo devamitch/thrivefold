@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { ScreenWrapper } from '../../../../components/ui/ScreenWrapper';
+import { View, Text, StyleSheet } from 'react-native';
+import { ScreenContainer } from '../../../../components/ui/ScreenContainer';
+import { AppHeader } from '../../../../components/ui/AppHeader';
 import { Card } from '../../../../components/ui/Card';
 import { Button } from '../../../../components/ui/Button';
-import { Header } from '../../../../components/ui/Header';
 import { useTheme } from '../../../../theme/useTheme';
 import { spacing } from '../../../../theme/spacing';
 
@@ -11,9 +11,17 @@ export default function MenHealthScreen() {
   const { colors, typography } = useTheme();
 
   return (
-    <ScreenWrapper scrollable>
-      <Header title="Men's Health" subtitle="Strength, Stamina, Resilience" showBack />
-      <ScrollView style={[styles.content, { paddingHorizontal: 16, paddingBottom: 32 }]}>
+    <ScreenContainer
+      header={
+        <AppHeader
+          title="Men's Health"
+          subtitle="Strength, Stamina, Resilience"
+          showBack
+        />
+      }
+      scrollMode="shell-scroll-view"
+    >
+      <View style={[styles.content, { paddingBottom: 32 }]}>
         {/* Today's Status */}
         <Card style={{ marginBottom: 16, padding: 24 }}>
           <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: 12 }]}>
@@ -78,8 +86,8 @@ export default function MenHealthScreen() {
           </Text>
           <Button label="Learn More" size="sm" variant="outline" />
         </Card>
-      </ScrollView>
-    </ScreenWrapper>
+      </View>
+    </ScreenContainer>
   );
 }
 

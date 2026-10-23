@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Linking, ScrollView, StyleSheet, Text, View, Alert, TextInput } from 'react-native';
+import { Linking, ScrollView, StyleSheet, Text, View, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -17,6 +17,8 @@ export default function SafetyScreen() {
   const blockedUserIds = useRootStore((s) => s.blockedUserIds);
   const blockUser = useRootStore((s) => s.blockUser);
   const unblockUser = useRootStore((s) => s.unblockUser);
+  const showAlert = useRootStore((s) => s.showAlert);
+  const showToast = useRootStore((s) => s.showToast);
 
   const [reportText, setReportText] = useState('');
   const [showReportCard, setShowReportCard] = useState(false);
@@ -42,13 +44,22 @@ export default function SafetyScreen() {
 
   const handleReportSubmit = () => {
     if (!reportText.trim()) {
-      Alert.alert('Details Needed', 'Please provide a brief explanation of the violation.');
+      showAlert({
+        title: 'Details Needed',
+        message: 'Please provide a brief explanation of the violation.',
+        confirmText: 'OK',
+        cancelText: null,
+      });
       return;
     }
     try {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch {}
-    Alert.alert('Report saved', 'Saved on this device. Reports reach a human reviewer once community features are live. If you are in danger, use Urgent support.');
+    showToast({
+      type: 'info',
+      title: 'Report saved',
+      message: 'Saved on this device. Reports reach a human reviewer once community features are live.',
+    });
     setReportText('');
     setShowReportCard(false);
   };

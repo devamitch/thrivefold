@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
-import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
+import { AppHeader } from '../../../components/ui/AppHeader';
+import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
-import { Header } from '../../../components/ui/Header';
 import { useTheme } from '../../../theme/useTheme';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { getLevelDefinition, getSpecialQuestsForExperience } from '../../../domain/game/gameCatalogService';
@@ -72,12 +72,17 @@ export default function QuestsScreen() {
   const progressRatio = Math.min(1, dailyPoints / Math.max(1, dailyPointsTarget));
 
   return (
-    <ScreenWrapper scrollable>
-      <Header title="Daily Quests & Game" subtitle={levelDef.arc} showBack />
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[styles.content, { paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }]}
-      >
+    <ScreenContainer
+      header={
+        <AppHeader
+          eyebrow={`CHAPTER ${levelDef.chapterNumber} • ${levelDef.arc.toUpperCase()}`}
+          title="Daily Quests & Game"
+          subtitle="Daily health quests, points target, and special missions."
+          showBack
+        />
+      }
+      scrollMode="shell-scroll-view"
+    >
         {/* Level & Arc Header Card */}
         <Card style={{ marginBottom: spacing.md, padding: spacing.lg }}>
           <View style={styles.levelRow}>
@@ -276,8 +281,7 @@ export default function QuestsScreen() {
           onPress={() => refreshDailyQuests()}
           style={{ marginTop: spacing.md }}
         />
-      </ScrollView>
-    </ScreenWrapper>
+    </ScreenContainer>
   );
 }
 

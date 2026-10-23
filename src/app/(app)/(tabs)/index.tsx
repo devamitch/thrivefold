@@ -9,6 +9,8 @@ import { useScrollAwareTabBar, useTabBarInset } from '../../../components/naviga
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { PressableScale } from '../../../components/ui/PressableScale';
+import { AppHeader } from '../../../components/ui/AppHeader';
+import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { evaluateDeterministicRoutine } from '../../../domain/ai/deterministicRules';
 import { getCyclePredictions } from '../../../domain/health/cycleCalculations';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
@@ -58,7 +60,7 @@ export default function HomeScreen() {
   const tabBarInset = useTabBarInset();
   const { onScroll, scrollEventThrottle } = useScrollAwareTabBar();
 
-  const { user, cycleData, checkInHistory, streak, level, quests } = useRootStore(
+  const { user, cycleData, checkInHistory, streak, level, quests, onboarding } = useRootStore(
     useShallow((s) => ({
       user: s.user,
       cycleData: s.cycleData,
@@ -66,6 +68,7 @@ export default function HomeScreen() {
       streak: s.currentStreak,
       level: s.level,
       quests: s.todayQuests,
+      onboarding: s.onboarding,
     })),
   );
 
@@ -92,39 +95,26 @@ export default function HomeScreen() {
   const fade = (i: number) => FadeInDown.delay(40 * i).duration(320);
 
   return (
-    <View style={[styles.root, { backgroundColor: colors.background }]}>
-      <ScrollView
-        contentContainerStyle={{
-          paddingTop: insets.top + spacing.md,
-          paddingBottom: tabBarInset + spacing.lg,
-          paddingHorizontal: spacing.base,
-        }}
-        showsVerticalScrollIndicator={false}
-        onScroll={onScroll}
-        scrollEventThrottle={scrollEventThrottle}
-      >
-        {/* Header: date, greeting, account */}
-        <View style={styles.header}>
-          <View style={styles.flex}>
-            <Text style={[typography.label, { color: colors.text.muted }]}>{dateLabel}</Text>
-            <Text
-              style={[typography.display, { color: colors.text.primary, marginTop: 4 }]}
-              numberOfLines={2}
-              accessibilityRole="header"
+    <ScreenContainer
+      header={
+        <AppHeader
+          eyebrow={dateLabel}
+          title={name ? `${greeting()},\n${name}` : greeting()}
+          subtitle="Today's check-in, priority task, and health rhythm."
+          rightAction={
+            <PressableScale
+              onPress={() => router.push('/(app)/(tabs)/settings')}
+              accessibilityRole="button"
+              accessibilityLabel="Settings"
+              style={[styles.round, { backgroundColor: colors.surface1 }]}
             >
-              {name ? `${greeting()},\n${name}` : greeting()}
-            </Text>
-          </View>
-          <PressableScale
-            onPress={() => router.push('/(app)/(tabs)/settings')}
-            accessibilityRole="button"
-            accessibilityLabel="You"
-            style={[styles.round, { backgroundColor: colors.surface1 }]}
-          >
-            <Ionicons name="person-outline" size={20} color={colors.text.primary} />
-          </PressableScale>
-        </View>
-
+              <Ionicons name="person-outline" size={20} color={colors.text.primary} />
+            </PressableScale>
+          }
+        />
+      }
+      scrollMode="shell-scroll-view"
+    >
         {/* Today's check-in */}
         <Animated.View entering={fade(1)}>
           <Card style={{ marginTop: spacing.lg, padding: spacing.base }}>
@@ -323,8 +313,7 @@ export default function HomeScreen() {
             <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
           </PressableScale>
         </Animated.View>
-      </ScrollView>
-    </View>
+    </ScreenContainer>
   );
 }
 

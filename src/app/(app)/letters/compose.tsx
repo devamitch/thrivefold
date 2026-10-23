@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View, Pressable, Alert } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -18,8 +18,13 @@ import { useTheme } from '../../../theme/useTheme';
 export default function LetterComposeScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
-  const { createDraft, sendLetter } = useRootStore(
-    useShallow((s) => ({ createDraft: s.createDraft, sendLetter: s.sendLetter })),
+  const { createDraft, sendLetter, showAlert, showToast } = useRootStore(
+    useShallow((s) => ({
+      createDraft: s.createDraft,
+      sendLetter: s.sendLetter,
+      showAlert: s.showAlert,
+      showToast: s.showToast,
+    })),
   );
 
   const [selectedChips, setSelectedChips] = useState<string[]>([]);
@@ -51,7 +56,12 @@ export default function LetterComposeScreen() {
       setSelectedChips((prev) => prev.filter((id) => id !== chipId));
     } else {
       if (selectedChips.length >= 5) {
-        Alert.alert('Maximum Cards Reached', 'Slow letters hold up to 5 curated cards to preserve thoughtful pacing.');
+        showAlert({
+          title: 'Maximum Cards Reached',
+          message: 'Slow letters hold up to 5 curated cards to preserve thoughtful pacing.',
+          confirmText: 'Understood',
+          cancelText: null,
+        });
         return;
       }
       setSelectedChips((prev) => [...prev, chipId]);
@@ -66,16 +76,13 @@ export default function LetterComposeScreen() {
     const draftId = createDraft(selectedChips, selectedStamp);
     sendLetter(draftId, 'penpal_aurora_seeker');
 
-    Alert.alert(
-      'Letter Sealed & Sent',
-      `Your letter is traveling with the ${activeStamp.name} stamp. Estimated transit time is ${estimatedDelayHours} hours (${estimatedDistanceKm.toLocaleString()} km).`,
-      [
-        {
-          text: 'Return to Mailbox',
-          onPress: () => router.replace('/(app)/letters'),
-        },
-      ]
-    );
+    showAlert({
+      title: 'Letter Sealed & Sent',
+      message: `Your letter is traveling with the ${activeStamp.name} stamp. Estimated transit time is ${estimatedDelayHours} hours (${estimatedDistanceKm.toLocaleString()} km).`,
+      confirmText: 'Return to Mailbox',
+      cancelText: null,
+      onConfirm: () => router.replace('/(app)/letters'),
+    });
   };
 
   return (

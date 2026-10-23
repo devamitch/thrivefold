@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
 import { Header } from '../../../components/ui/Header';
@@ -10,12 +10,21 @@ import { useRootStore, useShallow } from '../../../stores/useRootStore';
 
 export default function HealthHistoryScreen() {
   const { colors, typography, spacing } = useTheme();
-  const { checkInHistory, completedCheckInDaysCount, currentStreak } = useRootStore(
-    useShallow((s) => ({ checkInHistory: s.checkInHistory, completedCheckInDaysCount: s.completedCheckInDaysCount, currentStreak: s.currentStreak })),
+  const { checkInHistory, completedCheckInDaysCount, currentStreak, showToast } = useRootStore(
+    useShallow((s) => ({
+      checkInHistory: s.checkInHistory,
+      completedCheckInDaysCount: s.completedCheckInDaysCount,
+      currentStreak: s.currentStreak,
+      showToast: s.showToast,
+    })),
   );
 
   const handleExport = () => {
-    Alert.alert('Export Ready', 'Your encrypted health logs have been prepared as a private, redacted JSON file on your device.');
+    showToast({
+      type: 'success',
+      title: 'Export Ready',
+      message: 'Your encrypted health logs have been prepared as a private, redacted file.',
+    });
   };
 
   return (

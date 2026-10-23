@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../../components/ui/ScreenWrapper';
@@ -8,11 +8,13 @@ import { Header } from '../../../../components/ui/Header';
 import { Button } from '../../../../components/ui/Button';
 import { Badge } from '../../../../components/ui/Badge';
 import { useTheme } from '../../../../theme/useTheme';
+import { useRootStore } from '../../../../stores/useRootStore';
 
 export default function CommunityDetailScreen() {
   const router = useRouter();
   const { communityId } = useLocalSearchParams<{ communityId: string }>();
   const { colors, typography, spacing } = useTheme();
+  const showAlert = useRootStore((s) => s.showAlert);
 
   const [activeTab, setActiveTab] = useState<'discussions' | 'events' | 'about'>('discussions');
 
@@ -36,14 +38,13 @@ export default function CommunityDetailScreen() {
   ];
 
   const handleLeave = () => {
-    Alert.alert('Leave Circle', 'Are you sure you want to quietly leave this support group?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Leave',
-        style: 'destructive',
-        onPress: () => router.replace('/(app)/circles'),
-      },
-    ]);
+    showAlert({
+      title: 'Leave Circle',
+      message: 'Are you sure you want to quietly leave this support group?',
+      confirmText: 'Leave',
+      destructive: true,
+      onConfirm: () => router.replace('/(app)/circles'),
+    });
   };
 
   return (

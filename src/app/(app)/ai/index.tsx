@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
@@ -8,12 +8,15 @@ import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { Header } from '../../../components/ui/Header';
 import { useTheme } from '../../../theme/useTheme';
+import { useRootStore } from '../../../stores/useRootStore';
 import { localMemoryVault } from '../../../services/memory/localMemoryVault';
 import { localAi } from '../../../services/local-ai/localAiService';
 
 export default function AiVaultScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
+  const showAlert = useRootStore((s) => s.showAlert);
+  const showToast = useRootStore((s) => s.showToast);
 
   const [memories, setMemories] = useState(localMemoryVault.getAllMemories());
   const [isQuantizedLoaded, setIsQuantizedLoaded] = useState(localAi.isQuantizedModelLoaded());
@@ -21,7 +24,11 @@ export default function AiVaultScreen() {
   const handleLoadModel = async () => {
     await localAi.loadOnDeviceModel();
     setIsQuantizedLoaded(true);
-    Alert.alert('On-Device Model Active', 'Lightweight quantized model weights ready on device. Operating 100% offline.');
+    showToast({
+      type: 'success',
+      title: 'On-Device Model Active',
+      message: 'Lightweight quantized model weights ready on device. Operating 100% offline.',
+    });
   };
 
   const handleDeleteMemory = (id: string) => {
@@ -30,17 +37,17 @@ export default function AiVaultScreen() {
   };
 
   const handleClearAll = () => {
-    Alert.alert('Clear All Memories', 'Erase all personal AI tokens stored on this device?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Clear All',
-        style: 'destructive',
-        onPress: () => {
-          localMemoryVault.clearAll();
-          setMemories([]);
-        },
+    showAlert({
+      title: 'Clear All Memories',
+      message: 'Erase all personal AI tokens stored on this device?',
+      confirmText: 'Clear All',
+      destructive: true,
+      onConfirm: () => {
+        localMemoryVault.clearAll();
+        setMemories([]);
+        showToast({ type: 'info', title: 'Memories Erased', message: 'All personal AI tokens were cleared.' });
       },
-    ]);
+    });
   };
 
   return (

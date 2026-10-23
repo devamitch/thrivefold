@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
@@ -14,24 +14,29 @@ export default function JournalEntryDetailScreen() {
   const router = useRouter();
   const { entryId } = useLocalSearchParams<{ entryId: string }>();
   const { colors, typography, spacing } = useTheme();
-  const { journalEntries, deleteJournalEntry } = useRootStore(
-    useShallow((s) => ({ journalEntries: s.journalEntries, deleteJournalEntry: s.deleteJournalEntry })),
+  const { journalEntries, deleteJournalEntry, showAlert, showToast } = useRootStore(
+    useShallow((s) => ({
+      journalEntries: s.journalEntries,
+      deleteJournalEntry: s.deleteJournalEntry,
+      showAlert: s.showAlert,
+      showToast: s.showToast,
+    })),
   );
 
   const entry = journalEntries.find((e) => e.id === entryId) ?? journalEntries[0];
 
   const handleDelete = () => {
-    Alert.alert('Delete Reflection', 'Are you sure you want to permanently erase this entry from your device?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => {
-          if (entry) deleteJournalEntry(entry.id);
-          router.back();
-        },
+    showAlert({
+      title: 'Delete Reflection',
+      message: 'Are you sure you want to permanently erase this entry from your device?',
+      confirmText: 'Delete',
+      destructive: true,
+      onConfirm: () => {
+        if (entry) deleteJournalEntry(entry.id);
+        showToast({ type: 'info', title: 'Deleted', message: 'Reflection removed from encrypted vault.' });
+        router.back();
       },
-    ]);
+    });
   };
 
   if (!entry) {

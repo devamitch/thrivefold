@@ -32,6 +32,17 @@ export const EMPTY_ONBOARDING: OnboardingAnswers = {
   observances: [],
 };
 
+export interface AlertOptions {
+  title: string;
+  message?: string;
+  confirmText?: string;
+  /** null hides the cancel button. */
+  cancelText?: string | null;
+  onConfirm?: () => void;
+  onCancel?: () => void;
+  destructive?: boolean;
+}
+
 export interface AppSlice {
   experience: ProductExperience;
   themeMode: ThemeMode;
@@ -46,6 +57,7 @@ export interface AppSlice {
   quietHoursEnd: string; // e.g. "07:00"
   offlineModeForced: boolean;
   toasts: ToastItem[];
+  alert: AlertOptions | null;
   setExperience: (exp: ProductExperience) => void;
   setThemeMode: (mode: ThemeMode) => void;
   setIsOnboarded: (val: boolean) => void;
@@ -57,6 +69,8 @@ export interface AppSlice {
   toggleOfflineMode: () => void;
   showToast: (toast: Omit<ToastItem, 'id'> & { id?: string }) => void;
   hideToast: (id: string) => void;
+  showAlert: (options: AlertOptions) => void;
+  hideAlert: () => void;
 }
 
 export const createAppSlice: StateCreator<
@@ -76,6 +90,7 @@ export const createAppSlice: StateCreator<
   quietHoursEnd: '07:00',
   offlineModeForced: false,
   toasts: [],
+  alert: null,
   setExperience: (experience) => set({ experience }),
   setThemeMode: (themeMode) => set({ themeMode }),
   setIsOnboarded: (isOnboarded) =>
@@ -103,4 +118,6 @@ export const createAppSlice: StateCreator<
     set((state) => ({
       toasts: state.toasts.filter((t) => t.id !== id),
     })),
+  showAlert: (options) => set({ alert: options }),
+  hideAlert: () => set({ alert: null }),
 });

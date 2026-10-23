@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView, Alert, Switch } from 'react-native';
+import { View, Text, StyleSheet, TextInput, ScrollView, Switch } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
@@ -13,8 +13,8 @@ import { useRootStore, useShallow } from '../../../stores/useRootStore';
 export default function SafetyReportScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
-  const { submitReport, blockUser } = useRootStore(
-    useShallow((s) => ({ submitReport: s.submitReport, blockUser: s.blockUser })),
+  const { submitReport, blockUser, showAlert } = useRootStore(
+    useShallow((s) => ({ submitReport: s.submitReport, blockUser: s.blockUser, showAlert: s.showAlert })),
   );
 
   const [targetId, setTargetId] = useState('');
@@ -32,7 +32,12 @@ export default function SafetyReportScreen() {
 
   const handleSubmit = () => {
     if (!evidenceSummary.trim()) {
-      Alert.alert('Evidence Summary Required', 'Please provide a brief explanation of the incident.');
+      showAlert({
+        title: 'Evidence Summary Required',
+        message: 'Please provide a brief explanation of the incident.',
+        confirmText: 'OK',
+        cancelText: null,
+      });
       return;
     }
 
@@ -46,11 +51,13 @@ export default function SafetyReportScreen() {
       blockUser(targetId.trim() || 'reported_participant');
     }
 
-    Alert.alert(
-      'Report Submitted',
-      'Our moderation engine and safety reviewers will inspect the evidence according to community standards. The user has been blocked from contacting you.',
-      [{ text: 'Done', onPress: () => router.back() }]
-    );
+    showAlert({
+      title: 'Report Submitted',
+      message: 'Our moderation engine and safety reviewers will inspect the evidence according to community standards. The user has been blocked from contacting you.',
+      confirmText: 'Done',
+      cancelText: null,
+      onConfirm: () => router.back(),
+    });
   };
 
   return (

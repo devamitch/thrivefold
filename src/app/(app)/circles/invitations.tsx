@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
@@ -7,9 +7,11 @@ import { Header } from '../../../components/ui/Header';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { useTheme } from '../../../theme/useTheme';
+import { useRootStore } from '../../../stores/useRootStore';
 
 export default function CircleInvitationsScreen() {
   const { colors, typography, spacing } = useTheme();
+  const showToast = useRootStore((s) => s.showToast);
 
   const [invitations, setInvitations] = useState([
     {
@@ -34,7 +36,7 @@ export default function CircleInvitationsScreen() {
 
   const handleAccept = (id: string, name: string) => {
     setInvitations((prev) => prev.filter((i) => i.id !== id));
-    Alert.alert('Invitation Accepted', `You have joined "${name}". Remember that group interactions are confidential and safe.`);
+    showToast({ type: 'success', title: 'Invitation Accepted', message: `You have joined "${name}".` });
   };
 
   const handleDecline = (id: string) => {

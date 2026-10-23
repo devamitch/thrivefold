@@ -1,0 +1,160 @@
+{
+  "assetMeta": {
+    "id": "thrivefold-server-assessment-keys",
+    "version": 2,
+    "schemaVersion": "1.0.0",
+    "accessClass": "backend_only_secret_content",
+    "assessmentKeyCount": 12,
+    "sourceCatalogId": "thrivefold-real-game-catalog",
+    "sourceCatalogVersion": 2,
+    "clientBundleAllowed": false,
+    "publicHostingAllowed": false,
+    "handlingRule": "Load only in a trusted backend/test environment. Never import into mobile/web source, serve from a public static asset path, or include correctOptionIds in task evidence, telemetry, API responses, or client bundles."
+  },
+  "answerKeys": [
+    {
+      "assessmentId": "goal_habit_basics_v1",
+      "version": 1,
+      "accessClass": "server_only",
+      "correctOptionIds": {
+        "gh1": "a",
+        "gh2": "b",
+        "gh3": "c",
+        "gh4": "b",
+        "gh5": "c"
+      }
+    },
+    {
+      "assessmentId": "nutrition_label_literacy_v1",
+      "version": 1,
+      "accessClass": "server_only",
+      "correctOptionIds": {
+        "nl1": "a",
+        "nl2": "b",
+        "nl3": "c",
+        "nl4": "b",
+        "nl5": "b"
+      }
+    },
+    {
+      "assessmentId": "bmi_limits_v1",
+      "version": 1,
+      "accessClass": "server_only",
+      "correctOptionIds": {
+        "bm1": "a",
+        "bm2": "b",
+        "bm3": "c",
+        "bm4": "b",
+        "bm5": "b"
+      }
+    },
+    {
+      "assessmentId": "bone_health_basics_v1",
+      "version": 1,
+      "accessClass": "server_only",
+      "correctOptionIds": {
+        "bh1": "c",
+        "bh2": "a",
+        "bh3": "b",
+        "bh4": "c",
+        "bh5": "b"
+      }
+    },
+    {
+      "assessmentId": "oral_health_basics_v1",
+      "version": 1,
+      "accessClass": "server_only",
+      "correctOptionIds": {
+        "oh1": "b",
+        "oh2": "b",
+        "oh3": "a",
+        "oh4": "b",
+        "oh5": "a"
+      }
+    },
+    {
+      "assessmentId": "sexual_health_basics_v1",
+      "version": 1,
+      "accessClass": "server_only",
+      "correctOptionIds": {
+        "sh1": "a",
+        "sh2": "b",
+        "sh3": "b",
+        "sh4": "c",
+        "sh5": "b"
+      }
+    },
+    {
+      "assessmentId": "consent_boundaries_v1",
+      "version": 1,
+      "accessClass": "server_only",
+      "correctOptionIds": {
+        "cb1": "b",
+        "cb2": "c",
+        "cb3": "c",
+        "cb4": "b",
+        "cb5": "a"
+      }
+    },
+    {
+      "assessmentId": "health_record_provenance_v1",
+      "version": 1,
+      "accessClass": "server_only",
+      "correctOptionIds": {
+        "hp1": "b",
+        "hp2": "c",
+        "hp3": "a",
+        "hp4": "b",
+        "hp5": "b"
+      }
+    },
+    {
+      "assessmentId": "source_literacy_v1",
+      "version": 1,
+      "accessClass": "server_only",
+      "correctOptionIds": {
+        "sl1": "a",
+        "sl2": "b",
+        "sl3": "b",
+        "sl4": "a",
+        "sl5": "b"
+      }
+    },
+    {
+      "assessmentId": "body_measurement_limits_v1",
+      "version": 1,
+      "accessClass": "server_only",
+      "correctOptionIds": {
+        "ml1": "b",
+        "ml2": "b",
+        "ml3": "a",
+        "ml4": "c",
+        "ml5": "b"
+      }
+    },
+    {
+      "assessmentId": "respectful_flirting_consent_v1",
+      "version": 1,
+      "accessClass": "server_only",
+      "correctOptionIds": {
+        "rfc1": "a",
+        "rfc2": "b",
+        "rfc3": "a",
+        "rfc4": "c",
+        "rfc5": "c"
+      }
+    },
+    {
+      "assessmentId": "pose_landmark_limits_v1",
+      "version": 1,
+      "accessClass": "server_only",
+      "correctOptionIds": {
+        "pll1": "a",
+        "pll2": "b",
+        "pll3": "c",
+        "pll4": "b",
+        "pll5": "c"
+      }
+    }
+  ]
+}

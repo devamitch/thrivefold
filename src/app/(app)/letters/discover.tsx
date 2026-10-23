@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
@@ -14,8 +14,12 @@ import { useRootStore, useShallow } from '../../../stores/useRootStore';
 export default function DiscoverPenPalsScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
-  const { introsSentToday, incrementIntroQuota } = useRootStore(
-    useShallow((s) => ({ introsSentToday: s.introsSentToday, incrementIntroQuota: s.incrementIntroQuota })),
+  const { introsSentToday, incrementIntroQuota, showAlert } = useRootStore(
+    useShallow((s) => ({
+      introsSentToday: s.introsSentToday,
+      incrementIntroQuota: s.incrementIntroQuota,
+      showAlert: s.showAlert,
+    })),
   );
 
   const [selectedTopic, setSelectedTopic] = useState('All Topics');
@@ -34,27 +38,24 @@ export default function DiscoverPenPalsScreen() {
 
   const handleSendIntroduction = (cand: typeof candidates[0]) => {
     if (introsSentToday >= 1) {
-      Alert.alert(
-        'Daily Introduction Limit Reached (Section 8.4)',
-        'To foster mindful, high-quality correspondence, Thrivefold limits users to 1 new introduction per day. You can continue sending letters to existing connections!'
-      );
+      showAlert({
+        title: 'Daily Introduction Limit Reached',
+        message: 'To foster mindful, high-quality correspondence, Thrivefold limits users to 1 new introduction per day. You can continue sending letters to existing connections!',
+        confirmText: 'Understood',
+        cancelText: null,
+      });
       return;
     }
 
-    Alert.alert(
-      `Send Letter to ${cand.pseudonym}`,
-      `Would you like to open the postal composer? Letters travel with realistic distance-delayed delivery (~${Math.round(2100 / 200)} hours).`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Compose Letter',
-          onPress: () => {
-            incrementIntroQuota();
-            router.push('/(app)/letters/compose');
-          },
-        },
-      ]
-    );
+    showAlert({
+      title: `Send Letter to ${cand.pseudonym}`,
+      message: `Would you like to open the postal composer? Letters travel with realistic distance-delayed delivery (~${Math.round(2100 / 200)} hours).`,
+      confirmText: 'Compose Letter',
+      onConfirm: () => {
+        incrementIntroQuota();
+        router.push('/(app)/letters/compose');
+      },
+    });
   };
 
   return (

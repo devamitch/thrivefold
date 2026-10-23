@@ -1,29 +1,38 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
 import { Header } from '../../../components/ui/Header';
 import { Button } from '../../../components/ui/Button';
 import { useTheme } from '../../../theme/useTheme';
+import { useRootStore } from '../../../stores/useRootStore';
 
 export default function SafetyAppealScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
+  const showAlert = useRootStore((s) => s.showAlert);
 
   const [statement, setStatement] = useState('');
 
   const handleAppeal = () => {
     if (!statement.trim()) {
-      Alert.alert('Statement Required', 'Please explain why you believe the moderation restriction was in error.');
+      showAlert({
+        title: 'Statement Required',
+        message: 'Please explain why you believe the moderation restriction was in error.',
+        confirmText: 'OK',
+        cancelText: null,
+      });
       return;
     }
 
-    Alert.alert(
-      'Appeal Submitted',
-      'Your appeal has been queued for human review. Our safety team will evaluate the decision.',
-      [{ text: 'Done', onPress: () => router.back() }]
-    );
+    showAlert({
+      title: 'Appeal Submitted',
+      message: 'Your appeal has been queued for human review. Our safety team will evaluate the decision.',
+      confirmText: 'Done',
+      cancelText: null,
+      onConfirm: () => router.back(),
+    });
   };
 
   return (

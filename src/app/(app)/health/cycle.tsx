@@ -9,28 +9,53 @@ import { Card } from '../../../components/ui/Card';
 import { Chip } from '../../../components/ui/Chip';
 import { Header } from '../../../components/ui/Header';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
+import { PeriodLoggerModal } from '../../../components/ui/PeriodLoggerModal';
 import {
   CyclePhase,
   getCyclePredictions,
   getPhaseEnergyProfile,
   PHASE_CONFIG,
+  computeAdvancedCycleMetrics,
+  calculatePregnancyProgress,
 } from '../../../domain/health/cycleCalculations';
 import { useRootStore } from '../../../stores/useRootStore';
+import type { PeriodLogRecord, ReproductiveContext } from '../../../stores/slices/healthSlice';
 import { useTheme } from '../../../theme/useTheme';
+
+const CONTEXT_OPTIONS: { id: ReproductiveContext; label: string; icon: string; desc: string }[] = [
+  { id: 'regular', label: 'Regular (21–35d)', icon: 'checkmark-circle-outline', desc: 'Consistent cycle duration' },
+  { id: 'irregular', label: 'Irregular Cycles', icon: 'shuffle-outline', desc: 'Variability > 7 days between periods' },
+  { id: 'pcos_pcod', label: 'PCOS / PCOD', icon: 'medical-outline', desc: 'Widened forecast; non-assumed ovulation' },
+  { id: 'contraception', label: 'Hormonal Birth Control', icon: 'shield-checkmark-outline', desc: 'Withdrawal bleeds; suppressed ovulation' },
+  { id: 'pregnant', label: 'Pregnant', icon: 'heart-outline', desc: 'Gestational tracking & due date calculator' },
+  { id: 'postpartum', label: 'Postpartum Recovery', icon: 'flower-outline', desc: 'Physical healing; cycles may be absent' },
+  { id: 'breastfeeding', label: 'Nursing / Breastfeeding', icon: 'water-outline', desc: 'Lactational amenorrhea support' },
+  { id: 'perimenopause', label: 'Perimenopause', icon: 'thermometer-outline', desc: 'Vasomotor tracking & hormonal shifts' },
+  { id: 'menopause', label: 'Menopause', icon: 'sunny-outline', desc: 'Sustained transition & bone vitality' },
+  { id: 'paused', label: 'Paused', icon: 'pause-circle-outline', desc: 'Reproductive predictions temporarily muted' },
+];
 
 export default function CycleScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
   const cycleData = useRootStore((s) => s.cycleData);
   const updateCycleData = useRootStore((s) => s.updateCycleData);
+  const setReproductiveContext = useRootStore((s) => s.setReproductiveContext);
   const todaySymptoms = useRootStore((s) => s.todaySymptoms);
   const addTodaySymptom = useRootStore((s) => s.addTodaySymptom);
   const removeTodaySymptom = useRootStore((s) => s.removeTodaySymptom);
   const showToast = useRootStore((s) => s.showToast);
 
-  // Fallback to 14 days ago if no data yet so the user sees a rich follicular calendar
+  const [periodLoggerOpen, setPeriodLoggerOpen] = useState(false);
+  const [selectedRecordToEdit, setSelectedRecordToEdit] = useState<PeriodLogRecord | null>(null);
+
+  const currentContext: ReproductiveContext = cycleData?.reproductiveContext ?? 'regular';
+
   const effectiveLastPeriod = useMemo(() => {
     if (cycleData?.lastPeriodDate) return cycleData.lastPeriodDate;
+    if (cycleData?.periodHistory && cycleData.periodHistory.length > 0) {
+      return cycleData.periodHistory[0].startDate;
+    }
     const d = new Date();
     d.setDate(d.getDate() - 10);
     return d.toISOString().split('T')[0];
@@ -46,20 +71,36 @@ export default function CycleScreen() {
     [effectiveLastPeriod, cycleData],
   );
 
-  const [editing, setEditing] = useState(false);
-  const [daysAgo, setDaysAgo] = useState(10);
+  const advancedMetrics = useMemo(
+    () =>
+      computeAdvancedCycleMetrics(
+        effectiveLastPeriod,
+        cycleData?.periodHistory ?? [],
+        cycleData?.cycleLengthDays ?? 28,
+        cycleData?.periodLengthDays ?? 5,
+        currentContext
+      ),
+    [effectiveLastPeriod, cycleData, currentContext]
+  );
+
+  const pregnancyProgress = useMemo(() => {
+    if (currentContext !== 'pregnant') return null;
+    return calculatePregnancyProgress(
+      cycleData?.pregnancyDetails?.conceptionDate ?? effectiveLastPeriod,
+      cycleData?.pregnancyDetails?.estimatedDueDate
+    );
+  }, [currentContext, cycleData, effectiveLastPeriod]);
+
+  const [editingParams, setEditingParams] = useState(false);
   const [cycleLength, setCycleLength] = useState(cycleData?.cycleLengthDays ?? 28);
   const [periodLength, setPeriodLength] = useState(cycleData?.periodLengthDays ?? 5);
   const [loggedSymptoms, setLoggedSymptoms] = useState<string[]>(todaySymptoms);
   const [selectedDayOffset, setSelectedDayOffset] = useState<number>(0);
 
-  const saveCycle = () => {
-    const start = new Date();
-    start.setDate(start.getDate() - daysAgo);
-    const lastPeriodDate = start.toISOString().split('T')[0];
-    const next = getCyclePredictions(lastPeriodDate, cycleLength, periodLength);
+  const saveCycleParams = () => {
+    const next = getCyclePredictions(effectiveLastPeriod, cycleLength, periodLength);
     updateCycleData({
-      lastPeriodDate,
+      lastPeriodDate: effectiveLastPeriod,
       cycleLengthDays: cycleLength,
       periodLengthDays: periodLength,
       ...(next
@@ -69,14 +110,14 @@ export default function CycleScreen() {
           }
         : {}),
     });
-    setEditing(false);
-    showToast({ type: 'success', message: 'Cycle details saved securely on device' });
+    setEditingParams(false);
+    showToast({ type: 'success', message: 'Cycle parameters saved securely on device' });
   };
 
   const saveSymptoms = () => {
     todaySymptoms.filter((s) => !loggedSymptoms.includes(s)).forEach(removeTodaySymptom);
     loggedSymptoms.forEach(addTodaySymptom);
-    showToast({ type: 'success', message: "Today's symptoms recorded" });
+    showToast({ type: 'success', message: "Today's sensations recorded" });
   };
 
   const symptomsList = [
@@ -90,6 +131,8 @@ export default function CycleScreen() {
     'Deep Rest Needed',
     'Glowing Skin',
     'Restless Sleep',
+    'Back Tension',
+    'Cravings',
   ];
 
   const toggleSymptom = (sym: string) => {
@@ -98,7 +141,7 @@ export default function CycleScreen() {
     );
   };
 
-  // Build a 14-day calendar window (-3 to +10 days)
+  // Build a 14-day calendar window (-2 to +11 days)
   const calendarDays = useMemo(() => {
     const days = [];
     const today = new Date();
@@ -127,162 +170,389 @@ export default function CycleScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Follicular & Cycle Rhythm" subtitle="Hormone & Phase Calendar" showBack />
+      <Header
+        title="Cycle Sanctuary"
+        subtitle="Clinical & Hormonal Intelligence"
+        showBack
+      />
+
       <View style={[styles.content, { paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }]}>
-        {/* Follicular Calendar Strip */}
+        {/* ACTION BAR: Log Bleeding / Period */}
+        <Card style={{ marginBottom: spacing.md, padding: spacing.md, backgroundColor: colors.surface }}>
+          <View style={styles.rowBetween}>
+            <View style={{ flex: 1, paddingRight: 8 }}>
+              <Text style={[typography.subheading, { color: colors.text.primary }]}>
+                Real Period Logging
+              </Text>
+              <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                Record start/end dates, flow volume, cramps, and symptoms without synthetic fabrication.
+              </Text>
+            </View>
+            <Button
+              label="Log Bleeding"
+              size="sm"
+              onPress={() => {
+                setSelectedRecordToEdit(null);
+                setPeriodLoggerOpen(true);
+              }}
+              style={{ alignSelf: 'center' }}
+            />
+          </View>
+        </Card>
+
+        {/* PREGNANCY PROGRESS (OPT-IN CONTEXT) */}
+        {currentContext === 'pregnant' && pregnancyProgress && (
+          <Card style={{ marginBottom: spacing.md, padding: spacing.lg, backgroundColor: '#FFF9F5', borderColor: '#DA7756' }}>
+            <View style={styles.rowBetween}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="heart" size={20} color="#DA7756" />
+                <Text style={[typography.heading, { color: colors.text.primary, marginLeft: 8 }]}>
+                  Week {pregnancyProgress.gestationalWeeks} + {pregnancyProgress.gestationalDays} Days
+                </Text>
+              </View>
+              <Badge label={`Trimester ${pregnancyProgress.trimester}`} variant="primary" />
+            </View>
+            <Text style={[typography.bodyBold, { color: '#DA7756', marginTop: 10 }]}>
+              Estimated Due Date: {pregnancyProgress.estimatedDueDate.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
+            </Text>
+            <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>
+              {pregnancyProgress.daysUntilDelivery} days remaining until delivery window.
+            </Text>
+            <View style={{ marginTop: 12, backgroundColor: colors.surface, padding: 12, borderRadius: 12 }}>
+              <Text style={[typography.captionBold, { color: colors.text.primary }]}>
+                Fetal Development Milestone
+              </Text>
+              <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4, lineHeight: 18 }]}>
+                {pregnancyProgress.developmentMilestone}
+              </Text>
+            </View>
+            <Text style={[typography.caption, { color: colors.text.muted, marginTop: 10, fontStyle: 'italic' }]}>
+              {pregnancyProgress.clinicalGuidance}
+            </Text>
+          </Card>
+        )}
+
+        {/* PCOS / IRREGULAR CLINICAL GUIDANCE */}
+        {(currentContext === 'pcos_pcod' || currentContext === 'irregular') && (
+          <Card style={{ marginBottom: spacing.md, padding: spacing.md, backgroundColor: colors.surface1 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+              <Ionicons name="information-circle-outline" size={20} color={colors.primary} />
+              <Text style={[typography.subbodyBold, { color: colors.text.primary, marginLeft: 6 }]}>
+                {currentContext === 'pcos_pcod' ? 'PCOS / PCOD Context Active' : 'Irregular Cycle Window Active'}
+              </Text>
+            </View>
+            <Text style={[typography.caption, { color: colors.text.secondary, lineHeight: 18 }]}>
+              Standard ovulation calculations are widened or suppressed because follicular phases vary significantly. Thrivefold statistical estimates cannot diagnose endocrinological conditions or be used as contraception.
+            </Text>
+          </Card>
+        )}
+
+        {/* REPRODUCTIVE CONTEXT SELECTOR (PRIVATE) */}
         <Card style={{ marginBottom: spacing.md, padding: spacing.md }}>
           <View style={styles.rowBetween}>
             <Text style={[typography.subheading, { color: colors.text.primary }]}>
-              Cycle Rhythm Strip
+              Reproductive Health Context
             </Text>
-            <Badge label={activeDay.isToday ? 'Today' : activeDay.weekday} variant="primary" />
+            <Badge label={currentContext.replace('_', ' ').toUpperCase()} variant="neutral" />
           </View>
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2, marginBottom: spacing.sm }]}>
-            Tap any day to preview hormonal phase, energy levels, and restorative suggestions.
+            Stored privately on this device. Adapts predictions without guessing sensitive facts.
           </Text>
 
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.calendarStrip}>
-            {calendarDays.map((d) => {
-              const isSelected = d.offset === selectedDayOffset;
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 4 }}>
+            {CONTEXT_OPTIONS.map((opt) => {
+              const isSelected = currentContext === opt.id;
               return (
                 <Pressable
-                  key={d.dateKey}
-                  onPress={() => setSelectedDayOffset(d.offset)}
+                  key={opt.id}
+                  onPress={() => {
+                    setReproductiveContext(opt.id);
+                    showToast({ type: 'info', message: `Reproductive context updated to ${opt.label}` });
+                  }}
                   style={[
-                    styles.dayPill,
+                    styles.contextPill,
                     {
-                      backgroundColor: isSelected ? d.cfg.color : colors.surface1,
+                      backgroundColor: isSelected ? colors.primary : colors.surface1,
+                      borderColor: isSelected ? colors.primary : colors.border,
                     },
                   ]}
                   accessibilityRole="button"
-                  accessibilityLabel={`${d.weekday} ${d.dayNumber}, ${d.cfg.label} phase`}
+                  accessibilityLabel={`Set context to ${opt.label}`}
                 >
-                  <Text
-                    style={[
-                      typography.caption,
-                      { color: isSelected ? '#FFFFFF' : colors.text.muted, fontSize: 11 },
-                    ]}
-                  >
-                    {d.weekday}
-                  </Text>
-                  <Text
-                    style={[
-                      typography.bodyBold,
-                      { color: isSelected ? '#FFFFFF' : colors.text.primary, marginVertical: 2 },
-                    ]}
-                  >
-                    {d.dayNumber}
-                  </Text>
-                  <View
-                    style={[
-                      styles.phaseDot,
-                      { backgroundColor: isSelected ? '#FFFFFF' : d.cfg.color },
-                    ]}
+                  <Ionicons
+                    name={opt.icon as any}
+                    size={16}
+                    color={isSelected ? colors.onPrimary : colors.text.secondary}
+                    style={{ marginBottom: 4 }}
                   />
+                  <Text
+                    style={[
+                      typography.captionBold,
+                      { color: isSelected ? colors.onPrimary : colors.text.primary, fontSize: 11 },
+                    ]}
+                  >
+                    {opt.label}
+                  </Text>
                 </Pressable>
               );
             })}
           </ScrollView>
         </Card>
 
-        {/* Selected Phase Vitality Card */}
-        <Card style={{ marginBottom: spacing.md, padding: spacing.lg, backgroundColor: colors.surface }}>
-          <View style={styles.rowBetween}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View style={[styles.phaseIndicator, { backgroundColor: activePhaseConfig.color }]} />
-              <Text style={[typography.heading, { color: colors.text.primary, marginLeft: 8 }]}>
-                {activePhaseConfig.label} Phase
+        {/* ADVANCED CYCLE METRICS (WHEN NOT PREGNANT) */}
+        {currentContext !== 'pregnant' && (
+          <Card style={{ marginBottom: spacing.md, padding: spacing.md }}>
+            <View style={styles.rowBetween}>
+              <Text style={[typography.subheading, { color: colors.text.primary }]}>
+                Deterministic Cycle Statistics
               </Text>
+              <Badge
+                label={`${advancedMetrics.confidenceScore.toUpperCase()} CONFIDENCE`}
+                variant={advancedMetrics.confidenceScore === 'high' ? 'primary' : 'neutral'}
+              />
             </View>
-            <Badge label={`Day ${predictions?.currentPhase.day ?? 12}`} variant="primary" />
-          </View>
 
-          <Text style={[typography.body, { color: colors.text.secondary, marginTop: 10, lineHeight: 22 }]}>
-            {activePhaseConfig.description}
-          </Text>
-
-          <Text style={[typography.caption, { color: colors.text.muted, marginTop: 8 }]}>
-            {activePhaseConfig.energyDesc}
-          </Text>
-
-          {/* Energy Profile Meters */}
-          <View style={{ marginTop: spacing.md }}>
-            <Text style={[typography.captionBold, { color: colors.text.primary, marginBottom: 8 }]}>
-              Hormonal Vitality Profile
-            </Text>
-            <EnergyBar label="Physical Stamina" value={energy.physicalEnergy} color={activePhaseConfig.color} />
-            <EnergyBar label="Cognitive Focus" value={energy.cognitiveSharpness} color={colors.primary} />
-            <EnergyBar label="Social Battery" value={energy.socialBattery} color={colors.accent} />
-            <EnergyBar label="Emotional Sensitivity" value={energy.emotionalSensitivity} color={colors.text.muted} />
-          </View>
-
-          {/* Tips for this phase */}
-          <View style={{ marginTop: spacing.md }}>
-            <Text style={[typography.captionBold, { color: colors.text.primary, marginBottom: 6 }]}>
-              Nutritional & Movement Guidance
-            </Text>
-            {activePhaseConfig.tips.slice(0, 3).map((tip) => (
-              <View key={tip} style={styles.tipRow}>
-                <Ionicons name="sparkles" size={14} color={activePhaseConfig.color} />
-                <Text style={[typography.caption, { color: colors.text.secondary, marginLeft: 8, flex: 1 }]}>
-                  {tip}
+            <View style={styles.metricRow}>
+              <View style={styles.metricItem}>
+                <Text style={[typography.caption, { color: colors.text.muted }]}>Average Cycle</Text>
+                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                  {advancedMetrics.averageCycleLength} Days
                 </Text>
               </View>
-            ))}
+              <View style={styles.metricItem}>
+                <Text style={[typography.caption, { color: colors.text.muted }]}>Bleed Duration</Text>
+                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                  {advancedMetrics.averagePeriodDuration} Days
+                </Text>
+              </View>
+              <View style={styles.metricItem}>
+                <Text style={[typography.caption, { color: colors.text.muted }]}>Variability</Text>
+                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                  ±{advancedMetrics.cycleLengthVariabilityDays} Days
+                </Text>
+              </View>
+              <View style={styles.metricItem}>
+                <Text style={[typography.caption, { color: colors.text.muted }]}>Logged Cycles</Text>
+                <Text style={[typography.bodyBold, { color: colors.primary }]}>
+                  {advancedMetrics.recordedCyclesCount} Recorded
+                </Text>
+              </View>
+            </View>
+
+            {advancedMetrics.isLate && (
+              <View style={{ marginTop: 12, backgroundColor: '#FFF5F0', padding: 10, borderRadius: 10 }}>
+                <Text style={[typography.captionBold, { color: '#DA7756' }]}>
+                  {advancedMetrics.isConfirmedMissed
+                    ? `Confirmed Missed Period (${advancedMetrics.daysLate}d late)`
+                    : `Period Late by ${advancedMetrics.daysLate} Days`}
+                </Text>
+                <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                  {advancedMetrics.explanationText}
+                </Text>
+              </View>
+            )}
+          </Card>
+        )}
+
+        {/* CONFIRMED PERIOD HISTORY LIST */}
+        <Card style={{ marginBottom: spacing.md, padding: spacing.md }}>
+          <View style={styles.rowBetween}>
+            <Text style={[typography.subheading, { color: colors.text.primary }]}>
+              Confirmed Bleed Records
+            </Text>
+            <Text style={[typography.caption, { color: colors.text.muted }]}>
+              {cycleData?.periodHistory?.length ?? 0} saved
+            </Text>
           </View>
+
+          {(!cycleData?.periodHistory || cycleData.periodHistory.length === 0) ? (
+            <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 8 }]}>
+              No confirmed periods logged yet. Tap "Log Bleeding" above to record your first real period dates.
+            </Text>
+          ) : (
+            cycleData.periodHistory.map((rec) => (
+              <Pressable
+                key={rec.id}
+                onPress={() => {
+                  setSelectedRecordToEdit(rec);
+                  setPeriodLoggerOpen(true);
+                }}
+                style={[
+                  styles.historyRow,
+                  { backgroundColor: colors.surface1, marginTop: 8, borderColor: colors.border },
+                ]}
+              >
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Ionicons name="water" size={14} color="#DA7756" style={{ marginRight: 6 }} />
+                    <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                      {new Date(rec.startDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                      {rec.endDate ? ` → ${new Date(rec.endDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}` : ' (Ongoing)'}
+                    </Text>
+                  </View>
+                  <Text style={[typography.caption, { color: colors.text.muted, marginTop: 2 }]}>
+                    Flow: {rec.flowIntensity.toUpperCase()} {rec.painLevel !== undefined ? `• Cramps: ${rec.painLevel}/10` : ''}
+                    {rec.symptoms && rec.symptoms.length > 0 ? ` • ${rec.symptoms.join(', ')}` : ''}
+                  </Text>
+                </View>
+                <Text style={[typography.captionBold, { color: colors.primary }]}>Edit</Text>
+              </Pressable>
+            ))
+          )}
         </Card>
 
-        {/* Edit or Set Up Cycle */}
-        {(!cycleData || editing) ? (
+        {/* FOLLICULAR & CYCLE RHYTHM STRIP */}
+        {currentContext !== 'pregnant' && (
+          <Card style={{ marginBottom: spacing.md, padding: spacing.md }}>
+            <View style={styles.rowBetween}>
+              <Text style={[typography.subheading, { color: colors.text.primary }]}>
+                Cycle Rhythm Strip
+              </Text>
+              <Badge label={activeDay.isToday ? 'Today' : activeDay.weekday} variant="primary" />
+            </View>
+            <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2, marginBottom: spacing.sm }]}>
+              Menstruation overlaps the early follicular phase. Tap any day to inspect hormonal phase guidance.
+            </Text>
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.calendarStrip}>
+              {calendarDays.map((d) => {
+                const isSelected = d.offset === selectedDayOffset;
+                return (
+                  <Pressable
+                    key={d.dateKey}
+                    onPress={() => setSelectedDayOffset(d.offset)}
+                    style={[
+                      styles.dayPill,
+                      {
+                        backgroundColor: isSelected ? d.cfg.color : colors.surface1,
+                      },
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${d.weekday} ${d.dayNumber}, ${d.cfg.label} phase`}
+                  >
+                    <Text
+                      style={[
+                        typography.caption,
+                        { color: isSelected ? '#FFFFFF' : colors.text.muted, fontSize: 11 },
+                      ]}
+                    >
+                      {d.weekday}
+                    </Text>
+                    <Text
+                      style={[
+                        typography.bodyBold,
+                        { color: isSelected ? '#FFFFFF' : colors.text.primary, marginVertical: 2 },
+                      ]}
+                    >
+                      {d.dayNumber}
+                    </Text>
+                    <View
+                      style={[
+                        styles.phaseDot,
+                        { backgroundColor: isSelected ? '#FFFFFF' : d.cfg.color },
+                      ]}
+                    />
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </Card>
+        )}
+
+        {/* Selected Phase Vitality Card */}
+        {currentContext !== 'pregnant' && (
+          <Card style={{ marginBottom: spacing.md, padding: spacing.lg, backgroundColor: colors.surface }}>
+            <View style={styles.rowBetween}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={[styles.phaseIndicator, { backgroundColor: activePhaseConfig.color }]} />
+                <Text style={[typography.heading, { color: colors.text.primary, marginLeft: 8 }]}>
+                  {activePhaseConfig.label} Phase
+                </Text>
+              </View>
+              <Badge label={`Day ${predictions?.currentPhase.day ?? 12}`} variant="primary" />
+            </View>
+
+            <Text style={[typography.body, { color: colors.text.secondary, marginTop: 10, lineHeight: 22 }]}>
+              {activePhaseConfig.description}
+            </Text>
+
+            <Text style={[typography.caption, { color: colors.text.muted, marginTop: 8 }]}>
+              {activePhaseConfig.energyDesc}
+            </Text>
+
+            {/* Energy Profile Meters */}
+            <View style={{ marginTop: spacing.md }}>
+              <Text style={[typography.captionBold, { color: colors.text.primary, marginBottom: 8 }]}>
+                Hormonal Vitality Profile
+              </Text>
+              <EnergyBar label="Physical Stamina" value={energy.physicalEnergy} color={activePhaseConfig.color} />
+              <EnergyBar label="Cognitive Focus" value={energy.cognitiveSharpness} color={colors.primary} />
+              <EnergyBar label="Social Battery" value={energy.socialBattery} color={colors.accent} />
+              <EnergyBar label="Emotional Sensitivity" value={energy.emotionalSensitivity} color={colors.text.muted} />
+            </View>
+
+            {/* Tips for this phase */}
+            <View style={{ marginTop: spacing.md }}>
+              <Text style={[typography.captionBold, { color: colors.text.primary, marginBottom: 6 }]}>
+                Nutritional & Movement Guidance
+              </Text>
+              {activePhaseConfig.tips.slice(0, 3).map((tip) => (
+                <View key={tip} style={styles.tipRow}>
+                  <Ionicons name="sparkles" size={14} color={activePhaseConfig.color} />
+                  <Text style={[typography.caption, { color: colors.text.secondary, marginLeft: 8, flex: 1 }]}>
+                    {tip}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </Card>
+        )}
+
+        {/* Edit or Set Up Cycle Baseline Parameters */}
+        {editingParams ? (
           <Card style={{ marginBottom: spacing.md, padding: spacing.md }}>
             <Text style={[typography.subheading, { color: colors.text.primary }]}>
-              {cycleData ? 'Adjust cycle cadence' : 'Personalize cycle dates'}
+              Adjust Baseline Cycle Cadence
             </Text>
             <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4, marginBottom: 12 }]}>
-              Private on this device. Statistical estimates, not contraception or diagnosis.
+              Statistical baseline parameters for standard calculations.
             </Text>
-            <Stepper
-              label="Last period start"
-              value={daysAgo === 0 ? 'Today' : daysAgo === 1 ? 'Yesterday' : `${daysAgo} days ago`}
-              onMinus={() => setDaysAgo((d) => Math.max(0, d - 1))}
-              onPlus={() => setDaysAgo((d) => Math.min(90, d + 1))}
-            />
             <Stepper
               label="Average cycle length"
               value={`${cycleLength} days`}
               onMinus={() => setCycleLength((d) => Math.max(18, d - 1))}
-              onPlus={() => setCycleLength((d) => Math.min(45, d + 1))}
+              onPlus={() => setCycleLength((d) => Math.min(60, d + 1))}
             />
             <Stepper
               label="Average bleed duration"
               value={`${periodLength} days`}
               onMinus={() => setPeriodLength((d) => Math.max(1, d - 1))}
-              onPlus={() => setPeriodLength((d) => Math.min(10, d + 1))}
+              onPlus={() => setPeriodLength((d) => Math.min(12, d + 1))}
             />
-            <Button label="Save cycle parameters" size="sm" onPress={saveCycle} style={{ marginTop: 12 }} />
+            <Button label="Save Parameters" size="sm" onPress={saveCycleParams} style={{ marginTop: 12 }} />
           </Card>
         ) : (
-          <Card style={{ marginBottom: spacing.md, padding: spacing.md }} onPress={() => setEditing(true)}>
+          <Card style={{ marginBottom: spacing.md, padding: spacing.md }} onPress={() => setEditingParams(true)}>
             <View style={styles.rowBetween}>
               <Text style={[typography.subheading, { color: colors.text.primary }]}>
-                Cycle Parameters
+                Baseline Parameters
               </Text>
               <Text style={[typography.caption, { color: colors.primary }]}>Edit</Text>
             </View>
             <View style={styles.metricRow}>
-              <View>
+              <View style={styles.metricItem}>
                 <Text style={[typography.caption, { color: colors.text.muted }]}>Cycle Length</Text>
                 <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                  {cycleData.cycleLengthDays} Days
+                  {cycleData?.cycleLengthDays ?? 28} Days
                 </Text>
               </View>
-              <View>
+              <View style={styles.metricItem}>
                 <Text style={[typography.caption, { color: colors.text.muted }]}>Bleed Length</Text>
                 <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                  {cycleData.periodLengthDays} Days
+                  {cycleData?.periodLengthDays ?? 5} Days
                 </Text>
               </View>
-              <View>
+              <View style={styles.metricItem}>
                 <Text style={[typography.caption, { color: colors.text.muted }]}>Next Period</Text>
                 <Text style={[typography.bodyBold, { color: colors.primary }]}>
                   {predictions ? new Date(predictions.nextPeriodDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Estimated'}
@@ -307,30 +577,20 @@ export default function CycleScreen() {
               />
             ))}
           </View>
-          <Button label="Save logged sensations" size="sm" onPress={saveSymptoms} style={{ marginTop: 14 }} />
-        </Card>
-
-        {/* Harmony Bloom Somatic Games Link */}
-        <Card
-          style={{ marginBottom: spacing.md, padding: spacing.md, backgroundColor: colors.surface1 }}
-          onPress={() => router.push('/(app)/games')}
-        >
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <View style={[styles.gameIconBox, { backgroundColor: colors.surface }]}>
-              <Ionicons name="game-controller-outline" size={24} color={colors.primary} />
-            </View>
-            <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={[typography.subheading, { color: colors.text.primary }]}>
-                Restorative Mini-Games
-              </Text>
-              <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                Harmonic breathing, sensory grounding, and soothing rhythms.
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
-          </View>
+          <Button label="Save Sensations" size="sm" onPress={saveSymptoms} style={{ marginTop: 14 }} />
         </Card>
       </View>
+
+      {/* Period Logger Modal */}
+      <PeriodLoggerModal
+        visible={periodLoggerOpen}
+        initialDateStr={selectedRecordToEdit?.startDate ?? effectiveLastPeriod}
+        onClose={() => {
+          setPeriodLoggerOpen(false);
+          setSelectedRecordToEdit(null);
+        }}
+        existingRecord={selectedRecordToEdit}
+      />
     </ScreenWrapper>
   );
 }
@@ -388,6 +648,14 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
+  contextPill: {
+    alignItems: 'center',
+    borderRadius: 14,
+    borderWidth: 1,
+    minWidth: 100,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
   dayPill: {
     alignItems: 'center',
     borderRadius: 14,
@@ -410,12 +678,16 @@ const styles = StyleSheet.create({
     height: 6,
     overflow: 'hidden',
   },
-  gameIconBox: {
+  historyRow: {
     alignItems: 'center',
-    borderRadius: 14,
-    height: 44,
-    justifyContent: 'center',
-    width: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 12,
+  },
+  metricItem: {
+    flex: 1,
   },
   metricRow: {
     flexDirection: 'row',

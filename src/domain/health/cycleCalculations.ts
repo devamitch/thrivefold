@@ -272,6 +272,196 @@ export function getUpcomingPeriods(
   );
 }
 
+export interface AdvancedCycleMetrics {
+  averageCycleLength: number;
+  medianCycleLength: number;
+  cycleLengthVariabilityDays: number;
+  averagePeriodDuration: number;
+  recordedCyclesCount: number;
+  nextPeriodRangeStart: Date;
+  nextPeriodRangeEnd: Date;
+  isLate: boolean;
+  daysLate: number;
+  isConfirmedMissed: boolean;
+  isIrregular: boolean;
+  confidenceScore: 'high' | 'moderate' | 'tentative';
+  explanationText: string;
+}
+
+export interface PregnancyProgress {
+  gestationalWeeks: number;
+  gestationalDays: number;
+  trimester: 1 | 2 | 3;
+  estimatedDueDate: Date;
+  daysUntilDelivery: number;
+  developmentMilestone: string;
+  clinicalGuidance: string;
+}
+
+/**
+ * Calculates pregnancy gestational timeline from LPD or confirmed conception date
+ */
+export function calculatePregnancyProgress(
+  lastPeriodDate: string,
+  customDueDate?: string
+): PregnancyProgress {
+  const lpd = startOfDay(parseISO(lastPeriodDate));
+  const today = startOfDay(new Date());
+
+  let edd: Date;
+  if (customDueDate) {
+    edd = startOfDay(parseISO(customDueDate));
+  } else {
+    // Naegele's rule: LPD + 280 days (40 weeks)
+    edd = addDays(lpd, 280);
+  }
+
+  const daysPregnant = Math.max(0, differenceInDays(today, lpd));
+  const gestationalWeeks = Math.floor(daysPregnant / 7);
+  const gestationalDays = daysPregnant % 7;
+  const daysUntilDelivery = Math.max(0, differenceInDays(edd, today));
+
+  let trimester: 1 | 2 | 3 = 1;
+  if (gestationalWeeks >= 28) trimester = 3;
+  else if (gestationalWeeks >= 13) trimester = 2;
+
+  let developmentMilestone = 'Embryonic foundations forming; neural tube development.';
+  if (gestationalWeeks >= 37) {
+    developmentMilestone = 'Full term readiness; lungs mature; awaiting labor onset.';
+  } else if (gestationalWeeks >= 28) {
+    developmentMilestone = 'Rapid fetal brain and body growth; active sleep cycles.';
+  } else if (gestationalWeeks >= 20) {
+    developmentMilestone = 'Mid-pregnancy anatomy milestone; flutter sensations felt.';
+  } else if (gestationalWeeks >= 12) {
+    developmentMilestone = 'First trimester close; vital organs formed and functioning.';
+  }
+
+  const clinicalGuidance =
+    'Gentle daily hydration, prenatal vitamins with folate, and personalized medical check-ins. Non-diagnostic estimation.';
+
+  return {
+    gestationalWeeks,
+    gestationalDays,
+    trimester,
+    estimatedDueDate: edd,
+    daysUntilDelivery,
+    developmentMilestone,
+    clinicalGuidance,
+  };
+}
+
+/**
+ * Computes deep cycle analytics from recorded period logs and user context
+ */
+export function computeAdvancedCycleMetrics(
+  lastPeriodDate: string | null | undefined,
+  periodHistory: Array<{ startDate: string; endDate?: string }> = [],
+  cycleLength: number = 28,
+  periodLength: number = 5,
+  context: string = 'regular'
+): AdvancedCycleMetrics {
+  const today = startOfDay(new Date());
+
+  if (!lastPeriodDate) {
+    return {
+      averageCycleLength: cycleLength,
+      medianCycleLength: cycleLength,
+      cycleLengthVariabilityDays: 0,
+      averagePeriodDuration: periodLength,
+      recordedCyclesCount: 0,
+      nextPeriodRangeStart: today,
+      nextPeriodRangeEnd: addDays(today, 28),
+      isLate: false,
+      daysLate: 0,
+      isConfirmedMissed: false,
+      isIrregular: context === 'irregular' || context === 'pcos_pcod',
+      confidenceScore: 'tentative',
+      explanationText: 'Log your first period start date to calculate personalized forecasts.',
+    };
+  }
+
+  const lpd = startOfDay(parseISO(lastPeriodDate));
+  const isPcosOrIrregular = context === 'irregular' || context === 'pcos_pcod';
+
+  // Calculate real intervals from history
+  const intervals: number[] = [];
+  if (periodHistory.length >= 2) {
+    const sorted = [...periodHistory].sort(
+      (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+    );
+    for (let i = 0; i < sorted.length - 1; i++) {
+      const d1 = new Date(sorted[i].startDate);
+      const d2 = new Date(sorted[i + 1].startDate);
+      const diff = Math.round((d1.getTime() - d2.getTime()) / 86400000);
+      if (diff >= 18 && diff <= 100) {
+        intervals.push(diff);
+      }
+    }
+  }
+
+  let avgCycle = cycleLength;
+  let medCycle = cycleLength;
+  let variability = isPcosOrIrregular ? 7 : 2;
+
+  if (intervals.length > 0) {
+    const sum = intervals.reduce((a, b) => a + b, 0);
+    avgCycle = Math.round((sum / intervals.length) * 10) / 10;
+    const sortedIntervals = [...intervals].sort((a, b) => a - b);
+    const mid = Math.floor(sortedIntervals.length / 2);
+    medCycle =
+      sortedIntervals.length % 2 !== 0
+        ? sortedIntervals[mid]
+        : Math.round((sortedIntervals[mid - 1] + sortedIntervals[mid]) / 2);
+
+    const min = Math.min(...intervals);
+    const max = Math.max(...intervals);
+    variability = Math.max(variability, Math.round((max - min) / 2));
+  }
+
+  // Next period projection and late calculation
+  const daysSinceLPD = differenceInDays(today, lpd);
+  const expectedPeriodStart = addDays(lpd, Math.round(medCycle));
+  const daysLate = Math.max(0, differenceInDays(today, expectedPeriodStart));
+  const isLate = daysLate > 0;
+  const isConfirmedMissed = daysLate >= 14;
+
+  const uncertaintyDays = isPcosOrIrregular ? Math.max(6, variability) : Math.max(2, variability);
+  const nextPeriodRangeStart = addDays(expectedPeriodStart, -uncertaintyDays);
+  const nextPeriodRangeEnd = addDays(expectedPeriodStart, uncertaintyDays);
+
+  let confidenceScore: 'high' | 'moderate' | 'tentative' = 'tentative';
+  if (intervals.length >= 3 && variability <= 3 && !isPcosOrIrregular) {
+    confidenceScore = 'high';
+  } else if (intervals.length >= 1) {
+    confidenceScore = 'moderate';
+  }
+
+  let explanationText = `Forecast based on ${intervals.length > 0 ? `${intervals.length} logged intervals` : 'your initial baseline'}. Natural biological variance is ±${uncertaintyDays} days.`;
+  if (isPcosOrIrregular) {
+    explanationText = 'PCOS / Irregular context active: prediction window widened to accommodate natural hormonal variability.';
+  } else if (isConfirmedMissed) {
+    explanationText = `Period is ${daysLate} days past expected date. You can log an updated period start date or record a wellness observation.`;
+  } else if (isLate) {
+    explanationText = `Day ${daysSinceLPD + 1} of cycle (${daysLate} days past median estimate). Rest, hydrate, and log when flow starts.`;
+  }
+
+  return {
+    averageCycleLength: avgCycle,
+    medianCycleLength: medCycle,
+    cycleLengthVariabilityDays: variability,
+    averagePeriodDuration: periodLength,
+    recordedCyclesCount: intervals.length + 1,
+    nextPeriodRangeStart,
+    nextPeriodRangeEnd,
+    isLate,
+    daysLate,
+    isConfirmedMissed,
+    isIrregular: isPcosOrIrregular,
+    confidenceScore,
+    explanationText,
+  };
+}
+
 // Legacy compat for existing code
 export function getCyclePhase(
   lastPeriodDate: string | null,

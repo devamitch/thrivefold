@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, StatusBar, ViewStyle, ScrollView, StyleProp } from 'react-native';
+import { View, StyleSheet, StatusBar, ViewStyle, StyleProp } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue,
@@ -10,27 +10,31 @@ import {
   useScrollAwareTabBar,
   useTabBarInset,
 } from '../navigation/CustomTabBar';
-import { SanctuaryHeader, SanctuaryLargeTitle } from './Header';
+import { SanctuaryHeader, SanctuaryLargeTitle, Header } from './Header';
 
 export interface ScreenWrapperProps {
   children?: React.ReactNode;
+  /** Pinned or custom header node (Neev architecture) */
+  header?: React.ReactNode;
   /** Enable scroll view with scroll-aware dock hide. Default: false */
   scrollable?: boolean;
   style?: StyleProp<ViewStyle>;
   contentContainerStyle?: StyleProp<ViewStyle>;
   /** Disable scroll-aware dock hide (e.g. for screens without tabs). Default: false */
   disableScrollAwareDock?: boolean;
-  /** Optional large title for Neev Apple Large Title header architecture */
+  /** Optional header title */
   title?: string;
   subtitle?: string;
   eyebrow?: string;
   showBack?: boolean;
   rightAction?: React.ReactNode;
   useLargeTitle?: boolean;
+  footer?: React.ReactNode;
 }
 
 export const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
   children,
+  header,
   scrollable = false,
   style,
   contentContainerStyle,
@@ -41,6 +45,7 @@ export const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
   showBack = false,
   rightAction,
   useLargeTitle = false,
+  footer,
 }) => {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
@@ -54,7 +59,7 @@ export const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
     },
   });
 
-  const hasHeader = Boolean(title || showBack || rightAction);
+  const hasTitleHeader = Boolean(title || showBack || rightAction);
 
   const containerStyle: ViewStyle = {
     flex: 1,
@@ -67,6 +72,23 @@ export const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
     borderWidth: 0,
   };
 
+  const renderedHeader = header ? (
+    <View style={[styles.pinnedHeaderContainer, { paddingTop: insets.top, backgroundColor: colors.background }]}>
+      {header}
+    </View>
+  ) : hasTitleHeader ? (
+    <SanctuaryHeader
+      title={title ?? ''}
+      subtitle={subtitle}
+      eyebrow={eyebrow}
+      showBack={showBack}
+      rightAction={rightAction}
+      scrollY={scrollY}
+    />
+  ) : null;
+
+  const headerPresent = Boolean(renderedHeader);
+
   return (
     <View style={[styles.wrapper, containerStyle, style]}>
       <StatusBar
@@ -75,26 +97,7 @@ export const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
         translucent
       />
 
-      {hasHeader && !useLargeTitle ? (
-        <SanctuaryHeader
-          title={title ?? ''}
-          subtitle={subtitle}
-          eyebrow={eyebrow}
-          showBack={showBack}
-          rightAction={rightAction}
-          scrollY={scrollY}
-        />
-      ) : null}
-
-      {hasHeader && useLargeTitle ? (
-        <SanctuaryHeader
-          title={title ?? ''}
-          eyebrow={eyebrow}
-          showBack={showBack}
-          rightAction={rightAction}
-          scrollY={scrollY}
-        />
-      ) : null}
+      {renderedHeader}
 
       {scrollable ? (
         <Animated.ScrollView
@@ -102,16 +105,17 @@ export const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
           contentContainerStyle={[
             styles.content,
             {
-              paddingTop: hasHeader ? 0 : insets.top,
-              paddingBottom: tabBarInset,
+              paddingTop: headerPresent ? 8 : insets.top + 8,
+              paddingBottom: tabBarInset + (footer ? 80 : 0),
             },
             contentContainerStyle,
           ]}
           showsVerticalScrollIndicator={false}
           onScroll={!disableScrollAwareDock ? scrollProps.onScroll : onScroll}
           scrollEventThrottle={16}
+          keyboardShouldPersistTaps="handled"
         >
-          {hasHeader && useLargeTitle && title ? (
+          {hasTitleHeader && useLargeTitle && title ? (
             <SanctuaryLargeTitle
               title={title}
               subtitle={subtitle}
@@ -126,8 +130,8 @@ export const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
           style={[
             styles.content,
             {
-              paddingTop: hasHeader ? 0 : insets.top,
-              paddingBottom: tabBarInset,
+              paddingTop: headerPresent ? 8 : insets.top + 8,
+              paddingBottom: tabBarInset + (footer ? 80 : 0),
             },
             contentContainerStyle,
           ]}
@@ -135,11 +139,23 @@ export const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
           {children}
         </View>
       )}
+
+      {footer ? (
+        <View
+          style={[
+            styles.footerWrapper,
+            {
+              backgroundColor: colors.background,
+              paddingBottom: insets.bottom + 8,
+            },
+          ]}
+        >
+          {footer}
+        </View>
+      ) : null}
     </View>
   );
 };
-
-export const ScreenContainer = ScreenWrapper;
 
 const styles = StyleSheet.create({
   wrapper: {
@@ -154,6 +170,19 @@ const styles = StyleSheet.create({
   },
   content: {
     flexGrow: 1,
+  },
+  pinnedHeaderContainer: {
+    width: '100%',
+    zIndex: 10,
+  },
+  footerWrapper: {
+    bottom: 0,
+    left: 0,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    position: 'absolute',
+    right: 0,
+    zIndex: 20,
   },
 });
 

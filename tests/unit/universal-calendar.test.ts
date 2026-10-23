@@ -80,6 +80,7 @@ describe('Universal Calendar & Life Planner Engine', () => {
         periodLengthDays: 5,
         currentPhase: 'follicular' as const,
         estimatedNextPeriodDate: '2026-10-29',
+        periodHistory: [],
       };
 
       const agenda = generateDayAgenda('2026-10-23', {

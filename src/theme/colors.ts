@@ -206,12 +206,13 @@ export const prideDarkColors = palette({
   dockActive: '#B682F2',
 });
 
-export function getThemeColors(experience: ProductExperience, scheme: ColorScheme): ThemeColors {
+export function getThemeColors(experience: ProductExperience, _scheme: ColorScheme): ThemeColors {
+  // Dark theme disabled for now per user aesthetic requirements
   if (experience === 'men_health') {
-    return scheme === 'dark' ? menDarkColors : menLightColors;
+    return menLightColors;
   }
   if (experience === 'pride_wellbeing') {
-    return scheme === 'dark' ? prideDarkColors : prideLightColors;
+    return prideLightColors;
   }
-  return scheme === 'dark' ? womenDarkColors : womenLightColors;
+  return womenLightColors;
 }

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
@@ -13,8 +13,12 @@ import { useRootStore, useShallow } from '../../../stores/useRootStore';
 export default function NewJournalEntryScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
-  const { addJournalEntry } = useRootStore(
-    useShallow((s) => ({ addJournalEntry: s.addJournalEntry })),
+  const { addJournalEntry, showAlert, showToast } = useRootStore(
+    useShallow((s) => ({
+      addJournalEntry: s.addJournalEntry,
+      showAlert: s.showAlert,
+      showToast: s.showToast,
+    })),
   );
 
   const [title, setTitle] = useState('');
@@ -25,14 +29,18 @@ export default function NewJournalEntryScreen() {
 
   const handleSave = () => {
     if (!title.trim() || !content.trim()) {
-      Alert.alert('Incomplete Entry', 'Please provide a title and your reflection notes.');
+      showAlert({
+        title: 'Incomplete Entry',
+        message: 'Please provide a title and your reflection notes.',
+        confirmText: 'Understood',
+        cancelText: null,
+      });
       return;
     }
 
     addJournalEntry(title.trim(), content.trim(), moodTag);
-    Alert.alert('Saved to Encrypted Vault', 'Your private entry was saved locally on your device.', [
-      { text: 'Done', onPress: () => router.back() },
-    ]);
+    showToast({ type: 'success', title: 'Saved to Encrypted Vault', message: 'Your private entry was saved locally.' });
+    router.back();
   };
 
   return (

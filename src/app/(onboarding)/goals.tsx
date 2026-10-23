@@ -19,9 +19,34 @@ const SHARED_GOALS = [
 ];
 
 const GOALS_BY_EXPERIENCE: Record<ProductExperience, string[]> = {
-  women_health: ['Cycle & reproductive health', ...SHARED_GOALS],
-  men_health: ['Strength without strain', ...SHARED_GOALS],
-  pride_wellbeing: ['Affirming self-care', ...SHARED_GOALS],
+  women_health: [
+    'Sacred Cycle & Hormonal Rhythm',
+    'Follicular Energy & Vitality',
+    'Ovulatory Glow & Confidence',
+    'Luteal PMS & Mood Harmony',
+    'Gentle Menstrual Comfort',
+    'Restful Deep Sleep',
+    'Pelvic Core Balance',
+    'Mindful Nourishment',
+  ],
+  men_health: [
+    'Desk Worker Spine Decompression',
+    'Hip Mobility & Longevity',
+    'Functional Strength Without Strain',
+    'Athletic Stamina & Endurance',
+    'Deep Stress Decompression',
+    'Daily Discipline & Consistency',
+    'Restorative Sleep & Recovery',
+    'Focus & Cognitive Clarity',
+  ],
+  pride_wellbeing: [
+    'Affirming Self-Care',
+    'Chest & Posture Tension Relief',
+    'Safe Grounding & Body Respect',
+    'Somatic Breathwork & Calm',
+    'Emotional Resilience',
+    'Consistent Daily Rituals',
+  ],
 };
 
 export default function GoalsScreen() {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, ViewStyle, StyleProp, TextStyle } from 'react-native';
+import { View, Text, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../theme/useTheme';
 import { PressableScale } from './PressableScale';
 import * as Haptics from 'expo-haptics';
+import { HeaderBackButton, HeaderIconButton, HeaderLargeTitle, AppHeader, type AppHeaderProps } from './AppHeader';
 
 export interface HeaderProps {
   title: string;
@@ -26,7 +27,7 @@ export interface HeaderProps {
 /**
  * SanctuaryHeader: Neev Apple Large Title fixed header bar.
  * Pinned at top under safe-area insets.
- * At rest: shows uppercase eyebrow / mascot / back button.
+ * At rest: shows uppercase eyebrow / back button.
  * On scroll: eyebrow dissolves, compact title slides into view.
  * Zero borders, zero shadows.
  */
@@ -47,7 +48,8 @@ export const SanctuaryHeader: React.FC<HeaderProps> = ({
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch {}
-    router.back();
+    if (router.canGoBack()) router.back();
+    else router.replace('/(app)/(tabs)');
   };
 
   const animatedEyebrowStyle = useAnimatedStyle(() => {
@@ -87,15 +89,7 @@ export const SanctuaryHeader: React.FC<HeaderProps> = ({
     >
       <View style={styles.barRow}>
         {showBack ? (
-          <PressableScale
-            onPress={handleBack}
-            style={[styles.backButton, { backgroundColor: colors.surface1 }]}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-            scaleTo={0.92}
-          >
-            <Ionicons name="chevron-back" size={20} color={colors.text.primary} />
-          </PressableScale>
+          <HeaderBackButton />
         ) : null}
 
         <View style={styles.centerSlot}>
@@ -124,7 +118,11 @@ export const SanctuaryHeader: React.FC<HeaderProps> = ({
           </Animated.Text>
         </View>
 
-        {rightAction ? <View style={styles.rightSlot}>{rightAction}</View> : <View style={styles.emptySlot} />}
+        {rightAction ? (
+          <View style={styles.rightSlot}>{rightAction}</View>
+        ) : showBack ? (
+          <View style={styles.emptySlot} />
+        ) : null}
       </View>
     </View>
   );
@@ -181,41 +179,47 @@ export const SanctuaryLargeTitle: React.FC<SanctuaryLargeTitleProps> = ({
 export const Header: React.FC<HeaderProps> = ({
   title,
   subtitle,
+  eyebrow,
   showBack = false,
   rightAction,
   style,
 }) => {
-  const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { colors, typography, spacing } = useTheme();
 
-  const handleBack = () => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    } catch {}
-    router.back();
-  };
-
   return (
-    <View style={[styles.container, { paddingHorizontal: spacing.base, paddingVertical: spacing.md }, style]}>
+    <View
+      style={[
+        styles.container,
+        {
+          paddingHorizontal: spacing.base,
+          paddingTop: Math.max(insets.top, 8) + 4,
+          paddingBottom: spacing.sm,
+        },
+        style,
+      ]}
+    >
       <View style={styles.leftRow}>
         {showBack && (
-          <Pressable
-            onPress={handleBack}
-            style={({ pressed }) => [
-              styles.backButton,
-              { backgroundColor: colors.surface1, marginRight: spacing.sm },
-              pressed && { opacity: 0.7 },
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-          >
-            <Ionicons name="chevron-back" size={20} color={colors.text.primary} />
-          </Pressable>
+          <HeaderBackButton />
         )}
-        <View style={styles.titleCol}>
-          <Text style={[typography.heading, { color: colors.text.primary }]}>{title}</Text>
+        <View style={[styles.titleCol, showBack && { marginLeft: spacing.sm }]}>
+          {eyebrow ? (
+            <Text
+              style={[
+                typography.label,
+                { color: colors.primary, fontSize: 10, letterSpacing: 0.8, marginBottom: 1 },
+              ]}
+              numberOfLines={1}
+            >
+              {eyebrow.toUpperCase()}
+            </Text>
+          ) : null}
+          <Text style={[typography.heading, { color: colors.text.primary }]} numberOfLines={1}>
+            {title}
+          </Text>
           {subtitle && (
-            <Text style={[typography.caption, { color: colors.text.muted, marginTop: 2 }]}>
+            <Text style={[typography.caption, { color: colors.text.muted, marginTop: 2 }]} numberOfLines={1}>
               {subtitle}
             </Text>
           )}
@@ -235,6 +239,7 @@ const styles = StyleSheet.create({
     shadowColor: 'transparent',
     shadowOpacity: 0,
     borderWidth: 0,
+    minHeight: 52,
   },
   fixedBar: {
     width: '100%',
@@ -248,7 +253,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    minHeight: 40,
+    minHeight: 48,
   },
   centerSlot: {
     flex: 1,
@@ -260,16 +265,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
-  backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 0,
-    elevation: 0,
-    shadowOpacity: 0,
-  },
   titleCol: {
     flex: 1,
   },
@@ -277,7 +272,7 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   emptySlot: {
-    width: 36,
+    minWidth: 40,
   },
   largeTitleContainer: {
     width: '100%',

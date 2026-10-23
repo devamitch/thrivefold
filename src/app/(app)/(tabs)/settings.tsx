@@ -1,12 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, Alert, Share } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Share } from 'react-native';
 import { buildLocalExport, eraseLocalData } from '../../../services/privacy/localData';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
+import { AppHeader } from '../../../components/ui/AppHeader';
+import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { Card } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
-import { Header } from '../../../components/ui/Header';
 import { useTheme } from '../../../theme/useTheme';
 import { useRootStore } from '../../../stores/useRootStore';
 export default function SettingsScreen() {
@@ -17,6 +17,7 @@ export default function SettingsScreen() {
   const user = useRootStore((s) => s.user);
   const signOut = useRootStore((s) => s.signOut);
   const resetOnboarding = useRootStore((s) => s.resetOnboarding);
+  const showAlert = useRootStore((s) => s.showAlert);
 
   const rows: { icon: keyof typeof Ionicons.glyphMap; title: string; body: string; onPress: () => void }[] = [
     {
@@ -58,32 +59,40 @@ export default function SettingsScreen() {
     try {
       await Share.share({ title: 'Thrivefold data export', message: buildLocalExport() });
     } catch {
-      Alert.alert("Couldn't export", 'Please try again.');
+      showAlert({
+        title: "Couldn't export",
+        message: 'Please try again.',
+        confirmText: 'OK',
+        cancelText: null,
+      });
     }
   };
 
   const handleDeleteAccount = () => {
-    Alert.alert(
-      'Delete Account & Local Vault',
-      'This will erase all locally stored cycle metrics, private journals, AI memory tokens, and account keys. This action is irreversible.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Erase Everything',
-          style: 'destructive',
-          onPress: () => {
-            eraseLocalData();
-            router.replace('/(auth)/sign-in');
-          },
-        },
-      ]
-    );
+    showAlert({
+      title: 'Delete Account & Local Vault',
+      message: 'This will erase all locally stored cycle metrics, private journals, AI memory tokens, and account keys. This action is irreversible.',
+      confirmText: 'Erase Everything',
+      destructive: true,
+      onConfirm: () => {
+        eraseLocalData();
+        router.replace('/(auth)/sign-in');
+      },
+    });
   };
 
   return (
-    <ScreenWrapper scrollable>
-      <Header title="Settings & Privacy" subtitle="Account & Experience Controls" />
-      <View style={[styles.content, { paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }]}>
+    <ScreenContainer
+      header={
+        <AppHeader
+          eyebrow="PREFERENCES & PRIVACY"
+          title="Settings & Vault"
+          subtitle="Account, private on-device controls, theme mode, and developer tools."
+        />
+      }
+      scrollMode="shell-scroll-view"
+    >
+      <View style={[styles.content, { paddingBottom: spacing.xxl }]}>
         {/* User Card */}
         <Card style={{ marginBottom: spacing.md }}>
           <View style={styles.rowBetween}>
@@ -201,7 +210,7 @@ export default function SettingsScreen() {
           </View>
         </Card>
       </View>
-    </ScreenWrapper>
+    </ScreenContainer>
   );
 }
 

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Alert,
   Share,
   StyleSheet,
   Text,
@@ -67,10 +66,13 @@ export default function DevToolsScreen() {
   );
 
   const confirmAction = (title: string, message: string, onConfirm: () => void) => {
-    Alert.alert(title, message, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Proceed', style: 'destructive', onPress: onConfirm },
-    ]);
+    useRootStore.getState().showAlert({
+      title,
+      message,
+      confirmText: 'Proceed',
+      destructive: true,
+      onConfirm,
+    });
   };
 
   // ── Seed realistic mock data for UI testing ──
@@ -426,7 +428,7 @@ export default function DevToolsScreen() {
                 try {
                   await Share.share({ title: 'Thrivefold Device Export', message: buildLocalExport() });
                 } catch {
-                  Alert.alert('Export failed');
+                  useRootStore.getState().showToast({ type: 'error', message: 'Export failed' });
                 }
               }}
             />

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
@@ -7,9 +7,12 @@ import { Header } from '../../../components/ui/Header';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { useTheme } from '../../../theme/useTheme';
+import { useRootStore } from '../../../stores/useRootStore';
 
 export default function AiMemoryScreen() {
   const { colors, typography, spacing } = useTheme();
+  const showAlert = useRootStore((s) => s.showAlert);
+  const showToast = useRootStore((s) => s.showToast);
 
   const [memories, setMemories] = useState([
     { id: 'mem_1', text: 'Prefers gentle morning mobility over high-intensity cardio due to desk work stiffness.', source: 'Onboarding Goals', date: 'Yesterday' },
@@ -18,21 +21,29 @@ export default function AiMemoryScreen() {
   ]);
 
   const handleDelete = (id: string) => {
-    Alert.alert('Erase Memory', 'Remove this learned preference from your device-local vault?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Erase',
-        style: 'destructive',
-        onPress: () => setMemories((prev) => prev.filter((m) => m.id !== id)),
+    showAlert({
+      title: 'Erase Memory',
+      message: 'Remove this learned preference from your device-local vault?',
+      confirmText: 'Erase',
+      destructive: true,
+      onConfirm: () => {
+        setMemories((prev) => prev.filter((m) => m.id !== id));
+        showToast({ type: 'info', message: 'Memory erased.' });
       },
-    ]);
+    });
   };
 
   const handleClearAll = () => {
-    Alert.alert('Reset All Memories', 'This clears all on-device learned context for task personalization.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Reset All', style: 'destructive', onPress: () => setMemories([]) },
-    ]);
+    showAlert({
+      title: 'Reset All Memories',
+      message: 'This clears all on-device learned context for task personalization.',
+      confirmText: 'Reset All',
+      destructive: true,
+      onConfirm: () => {
+        setMemories([]);
+        showToast({ type: 'info', message: 'All memories reset.' });
+      },
+    });
   };
 
   return (

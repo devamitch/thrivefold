@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View, Alert } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
@@ -23,6 +23,7 @@ export default function CommunitiesScreen() {
   const { colors, typography, spacing, experience } = useTheme();
   const user = useRootStore((s) => s.user);
   const activeTrialStartDate = useRootStore((s) => s.activeTrialStartDate);
+  const showToast = useRootStore((s) => s.showToast);
   const introsSentToday = useRootStore((s) => s.introsSentToday);
   const consentedFeatures = useRootStore((s) => s.consentedFeatures);
   const blockedUserIds = useRootStore((s) => s.blockedUserIds);
@@ -117,10 +118,10 @@ export default function CommunitiesScreen() {
   const handleToggleJoin = (circleId: string, title: string) => {
     if (joinedCircleIds.includes(circleId)) {
       setJoinedCircleIds((prev) => prev.filter((id) => id !== circleId));
-      Alert.alert('Left Circle', `You have left ${title}.`);
+      showToast({ type: 'info', title: 'Left Circle', message: `You have left ${title}.` });
     } else {
       setJoinedCircleIds((prev) => [...prev, circleId]);
-      Alert.alert('Saved for later', `${title} will open when community features launch. You'll need a quick age check first.`);
+      showToast({ type: 'info', title: 'Saved for later', message: `${title} will open when community features launch.` });
     }
   };
 

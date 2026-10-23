@@ -38,7 +38,7 @@ export const EXPERIENCE_ICONS: Record<ProductExperience, ExperienceIcons> = {
     experience: 'women_health',
     tabs: {
       index: { active: 'home', inactive: 'home-outline', label: 'Home' },
-      today: { active: 'sparkles', inactive: 'sparkles-outline', label: 'Today' },
+      today: { active: 'calendar', inactive: 'calendar-outline', label: 'Cycle' },
       progress: { active: 'trending-up', inactive: 'trending-up-outline', label: 'Progress' },
       settings: { active: 'person-circle', inactive: 'person-circle-outline', label: 'You' },
     },

@@ -7,7 +7,12 @@
 
 import { ProductExperience } from '../../theme/tokens';
 import { getCyclePredictions } from '../health/cycleCalculations';
-import type { CycleData } from '../../stores/useRootStore';
+import type {
+  CycleData,
+  FlowIntensity,
+  PeriodLogRecord,
+  PersonalCalendarEvent,
+} from '../../stores/useRootStore';
 
 export type CalendarEventKind =
   | 'period'
@@ -165,12 +170,80 @@ export function generateDayAgenda(
     experience: ProductExperience;
     hasReproductiveTracking?: boolean;
     cycleData?: CycleData | null;
+    personalEvents?: PersonalCalendarEvent[];
   }
 ): CalendarEvent[] {
   const events: CalendarEvent[] = [];
   const targetDate = parseLocalDate(dateStr);
   const dayOfWeek = targetDate.getDay(); // 0 is Sun, 6 is Sat
   const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+  // Add holiday event if this date is a known holiday or health observance
+  const holiday = getHolidayForDate(dateStr);
+  if (holiday) {
+    events.push({
+      id: `holiday_${dateStr}`,
+      title: `${holiday.emoji} ${holiday.name}`,
+      date: dateStr,
+      kind: 'holiday',
+      status: 'recorded',
+      category: 'life',
+      privacy: 'public',
+      isAllDay: true,
+      description: holiday.description,
+    });
+  }
+
+  // Personal milestones (birthdays, wedding anniversaries, reminders)
+  if (options.personalEvents) {
+    const parts = dateStr.split('-').map(Number);
+    const targetMonth = parts[1];
+    const targetDay = parts[2];
+    for (const pe of options.personalEvents) {
+      const pParts = pe.date.split('-').map(Number);
+      const isMatch =
+        pe.date === dateStr ||
+        (pe.recurrence === 'yearly' && pParts[1] === targetMonth && pParts[2] === targetDay);
+      if (isMatch) {
+        events.push({
+          id: pe.id,
+          title: `${pe.emoji ? `${pe.emoji} ` : '⭐ '}${pe.title}`,
+          date: dateStr,
+          startTime: pe.time || '09:00',
+          kind: 'personal_event',
+          status: 'recorded',
+          category: 'life',
+          privacy: 'sensitive_encrypted',
+          isAllDay: !pe.time,
+          description: pe.notes || `${pe.category.toUpperCase()} milestone celebration.`,
+        });
+      }
+    }
+  }
+
+  // Recorded period for this date if present in periodHistory (Only for Women's health or explicit reproductive tracking)
+  const canTrackCycle = options.experience === 'women_health' || Boolean(options.hasReproductiveTracking);
+  if (canTrackCycle && options.cycleData?.periodHistory) {
+    for (const p of options.cycleData.periodHistory) {
+      if (p.startDate <= dateStr) {
+        const effectiveEnd = p.endDate || (p.isOngoing ? formatLocalDate(new Date()) : p.startDate);
+        if (dateStr <= effectiveEnd) {
+          events.push({
+            id: `rec_period_${p.id}_${dateStr}`,
+            title: `Recorded Menstrual Bleeding (${p.flowIntensity || 'medium'} flow)`,
+            date: dateStr,
+            kind: 'period',
+            status: 'recorded',
+            category: 'reproductive',
+            privacy: 'sensitive_encrypted',
+            isAllDay: true,
+            description: p.notes || `Self-recorded period. Pain level: ${p.painLevel ?? 'none'}/10.`,
+          });
+          break;
+        }
+      }
+    }
+  }
 
   // 1. Men's Health: Performance, Recovery, Strength, Mental Grounding
   if (options.experience === 'men_health') {
@@ -383,3 +456,534 @@ export function toggleEventStatus(event: CalendarEvent): CalendarEvent {
     completedAt: isNowCompleted ? new Date().toISOString() : undefined,
   };
 }
+
+/**
+ * Derives the biological or estimated cycle phase for a given date
+ */
+export function deriveCyclePhaseForDate(
+  dateStr: string,
+  cycleData?: CycleData | null
+): 'menstrual' | 'follicular' | 'ovulation' | 'luteal' {
+  if (!cycleData?.lastPeriodDate) {
+    return 'follicular';
+  }
+  const predictions = getCyclePredictions(
+    cycleData.lastPeriodDate,
+    cycleData.cycleLengthDays ?? 28,
+    cycleData.periodLengthDays ?? 5
+  );
+  if (!predictions) return 'follicular';
+  return predictions.cycleDayMap.get(dateStr) ?? 'follicular';
+}
+
+export type DateRangeType = 'none' | 'period' | 'fertile' | 'ovulation' | 'follicular' | 'luteal';
+export type DateRangePosition = 'none' | 'single' | 'start' | 'middle' | 'end';
+
+export interface CalendarHoliday {
+  name: string;
+  category: 'public' | 'health_observance' | 'cultural';
+  emoji: string;
+  description: string;
+}
+
+export interface DayRangeInfo {
+  rangeType: DateRangeType;
+  rangePosition: DateRangePosition;
+  cycleDay?: number;
+  isPeriod: boolean;
+  isRecordedPeriod: boolean;
+  isPredictedPeriod: boolean;
+  flowIntensity?: FlowIntensity;
+  isFertile: boolean;
+  isOvulationPeak: boolean;
+  isFollicular: boolean;
+  isLuteal: boolean;
+  isPmsWindow: boolean;
+  phaseLabel: string;
+  pregnancyWeek?: number;
+  holiday?: CalendarHoliday;
+  personalEvents: PersonalCalendarEvent[];
+  taskStats: {
+    total: number;
+    completed: number;
+    percent: number;
+  };
+}
+
+/**
+ * Deterministic holiday provider covering major federal, cultural holidays
+ * and international health observances.
+ */
+export function getHolidayForDate(dateStr: string): CalendarHoliday | null {
+  const parts = dateStr.split('-').map(Number);
+  if (parts.length < 3) return null;
+  const [year, month, day] = parts;
+  const date = new Date(year, month - 1, day);
+  const dayOfWeek = date.getDay(); // 0 is Sun, 1 is Mon, 4 is Thu, etc.
+
+  // Fixed Date Holidays & Observances
+  if (month === 1 && day === 1) {
+    return { name: "New Year's Day", category: 'public', emoji: '🎉', description: 'Fresh calendar year renewal & goal setting.' };
+  }
+  if (month === 2 && day === 14) {
+    return { name: "Valentine's Day", category: 'cultural', emoji: '💌', description: 'Celebration of love, empathy, and affectionate connections.' };
+  }
+  if (month === 3 && day === 8) {
+    return { name: "International Women's Day", category: 'health_observance', emoji: '🌸', description: 'Celebrating women’s achievements, wellness, and reproductive health equity.' };
+  }
+  if (month === 4 && day === 7) {
+    return { name: 'World Health Day', category: 'health_observance', emoji: '🌿', description: 'Global awareness of universal healthcare, longevity, and self-care.' };
+  }
+  if (month === 4 && day === 22) {
+    return { name: 'Earth Day', category: 'cultural', emoji: '🌍', description: 'Environmental stewardship, nature walks, and grounding mindfulness.' };
+  }
+  if (month === 5 && day === 1) {
+    return { name: 'May Day & Global Wellness', category: 'cultural', emoji: '🌱', description: 'Spring renewal, vitality, and outdoor activity.' };
+  }
+  if (month === 6 && day === 19) {
+    return { name: 'Juneteenth', category: 'public', emoji: '🕊️', description: 'National Independence Day commemorating freedom and community resilience.' };
+  }
+  if (month === 7 && day === 4) {
+    return { name: 'Independence Day', category: 'public', emoji: '🎆', description: 'Summer holiday, outdoor activity, and festive community gatherings.' };
+  }
+  if (month === 10 && day === 10) {
+    return { name: 'World Mental Health Day', category: 'health_observance', emoji: '🧠', description: 'Prioritizing emotional resilience, stress reduction, and mindful presence.' };
+  }
+  if (month === 10 && day === 31) {
+    return { name: 'Halloween', category: 'cultural', emoji: '🎃', description: 'Festive autumn celebration and playful social gathering.' };
+  }
+  if (month === 11 && day === 11) {
+    return { name: 'Veterans Day', category: 'public', emoji: '🎖️', description: 'Honoring service, dedication, and community care.' };
+  }
+  if (month === 12 && day === 24) {
+    return { name: 'Christmas Eve', category: 'cultural', emoji: '🕯️', description: 'Cozy winter evening, restorative rest, and peaceful reflection.' };
+  }
+  if (month === 12 && day === 25) {
+    return { name: 'Christmas Day', category: 'public', emoji: '🎄', description: 'Warmth, family connection, generosity, and seasonal celebration.' };
+  }
+  if (month === 12 && day === 31) {
+    return { name: "New Year's Eve", category: 'cultural', emoji: '✨', description: 'Reflecting on the past year’s journey and stepping into new beginnings.' };
+  }
+
+  // Floating Holidays
+  // Martin Luther King Jr. Day: 3rd Monday in January (between 15th and 21st)
+  if (month === 1 && dayOfWeek === 1 && day >= 15 && day <= 21) {
+    return { name: 'Martin Luther King Jr. Day', category: 'public', emoji: '⚖️', description: 'Honoring civil rights, community service, and compassionate action.' };
+  }
+  // Presidents' Day: 3rd Monday in February (between 15th and 21st)
+  if (month === 2 && dayOfWeek === 1 && day >= 15 && day <= 21) {
+    return { name: "Presidents' Day", category: 'public', emoji: '🏛️', description: 'Commemorating national leadership and civic responsibility.' };
+  }
+  // Mother's Day: 2nd Sunday in May (between 8th and 14th)
+  if (month === 5 && dayOfWeek === 0 && day >= 8 && day <= 14) {
+    return { name: "Mother's Day", category: 'cultural', emoji: '💐', description: 'Celebrating mothers, nurturing bonds, and maternal wellness.' };
+  }
+  // Memorial Day: Last Monday in May (between 25th and 31st)
+  if (month === 5 && dayOfWeek === 1 && day >= 25) {
+    return { name: 'Memorial Day', category: 'public', emoji: '🇺🇸', description: 'National remembrance, peaceful family gatherings, and active summer launch.' };
+  }
+  // Father's Day: 3rd Sunday in June (between 15th and 21st)
+  if (month === 6 && dayOfWeek === 0 && day >= 15 && day <= 21) {
+    return { name: "Father's Day", category: 'cultural', emoji: '👔', description: 'Honoring fatherhood, mentorship, and familial strength.' };
+  }
+  // Labor Day: 1st Monday in September (between 1st and 7th)
+  if (month === 9 && dayOfWeek === 1 && day <= 7) {
+    return { name: 'Labor Day', category: 'public', emoji: '🛠️', description: 'Celebration of hard work, healthy rest, and work-life balance.' };
+  }
+  // Thanksgiving: 4th Thursday in November (between 22nd and 28th)
+  if (month === 11 && dayOfWeek === 4 && day >= 22 && day <= 28) {
+    return { name: 'Thanksgiving Day', category: 'public', emoji: '🦃', description: 'Gratitude, mindful nourishment, and heartfelt family time.' };
+  }
+
+  return null;
+}
+
+/**
+ * Calculates continuous date range highlight geometry (caps and connectors)
+ * across the calendar grid rows, distinguishing confirmed recorded periods,
+ * predicted ranges, fertile windows, and personal milestones.
+ */
+export function getDayRangeInfo(
+  dateStr: string,
+  cellIndexInGrid: number,
+  cycleData?: CycleData | null,
+  dayEvents?: CalendarEvent[],
+  personalEvents?: PersonalCalendarEvent[]
+): DayRangeInfo {
+  const holiday = getHolidayForDate(dateStr) ?? undefined;
+
+  const total = dayEvents ? dayEvents.length : 0;
+  const completed = dayEvents ? dayEvents.filter((e) => e.status === 'completed').length : 0;
+  const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+  const taskStats = { total, completed, percent };
+
+  // Match personal events (including annual recurrence)
+  const matchingPersonalEvents: PersonalCalendarEvent[] = [];
+  if (personalEvents) {
+    const parts = dateStr.split('-').map(Number);
+    const targetMonth = parts[1];
+    const targetDay = parts[2];
+    for (const pe of personalEvents) {
+      const pParts = pe.date.split('-').map(Number);
+      const isMatch =
+        pe.date === dateStr ||
+        (pe.recurrence === 'yearly' && pParts[1] === targetMonth && pParts[2] === targetDay);
+      if (isMatch) {
+        matchingPersonalEvents.push(pe);
+      }
+    }
+  }
+
+  const columnIndex = cellIndexInGrid % 7; // 0 = Mon, 6 = Sun
+
+  // 1. Check for CONFIRMED RECORDED period in periodHistory
+  let recordedPeriod: PeriodLogRecord | undefined;
+  if (cycleData?.periodHistory && cycleData.periodHistory.length > 0) {
+    for (const p of cycleData.periodHistory) {
+      if (p.startDate <= dateStr) {
+        const effectiveEnd = p.endDate || (p.isOngoing ? formatLocalDate(new Date()) : p.startDate);
+        if (dateStr <= effectiveEnd) {
+          recordedPeriod = p;
+          break;
+        }
+      }
+    }
+  }
+
+  if (recordedPeriod) {
+    const effectiveEnd =
+      recordedPeriod.endDate || (recordedPeriod.isOngoing ? formatLocalDate(new Date()) : recordedPeriod.startDate);
+    const connectsLeft = dateStr > recordedPeriod.startDate && columnIndex > 0;
+    const connectsRight = dateStr < effectiveEnd && columnIndex < 6;
+
+    let rangePosition: DateRangePosition = 'single';
+    if (connectsLeft && connectsRight) {
+      rangePosition = 'middle';
+    } else if (!connectsLeft && connectsRight) {
+      rangePosition = 'start';
+    } else if (connectsLeft && !connectsRight) {
+      rangePosition = 'end';
+    }
+
+    let cycleDay: number | undefined;
+    if (cycleData?.lastPeriodDate) {
+      const lpd = parseLocalDate(cycleData.lastPeriodDate);
+      const targetDate = parseLocalDate(dateStr);
+      const diff = Math.floor((targetDate.getTime() - lpd.getTime()) / 86400000);
+      cycleDay = diff >= 0 ? diff + 1 : undefined;
+    }
+
+    return {
+      rangeType: 'period',
+      rangePosition,
+      cycleDay,
+      isPeriod: true,
+      isRecordedPeriod: true,
+      isPredictedPeriod: false,
+      flowIntensity: recordedPeriod.flowIntensity,
+      isFertile: false,
+      isOvulationPeak: false,
+      isFollicular: true,
+      isLuteal: false,
+      isPmsWindow: false,
+      phaseLabel: `Follicular Phase (Recorded Bleed: ${recordedPeriod.flowIntensity.toUpperCase()})`,
+      holiday,
+      personalEvents: matchingPersonalEvents,
+      taskStats,
+    };
+  }
+
+  // 2. Pregnancy Context: Suppress standard period/ovulation forecasts
+  if (cycleData?.reproductiveContext === 'pregnant') {
+    let pregnancyWeek: number | undefined;
+    if (cycleData.lastPeriodDate) {
+      const lpd = parseLocalDate(cycleData.lastPeriodDate);
+      const targetDate = parseLocalDate(dateStr);
+      const diff = Math.floor((targetDate.getTime() - lpd.getTime()) / 86400000);
+      if (diff >= 0 && diff <= 294) {
+        pregnancyWeek = Math.floor(diff / 7);
+      }
+    }
+    return {
+      rangeType: 'none',
+      rangePosition: 'none',
+      isPeriod: false,
+      isRecordedPeriod: false,
+      isPredictedPeriod: false,
+      isFertile: false,
+      isOvulationPeak: false,
+      isFollicular: false,
+      isLuteal: false,
+      isPmsWindow: false,
+      phaseLabel: pregnancyWeek !== undefined ? `Gestational Week ${pregnancyWeek}` : 'Pregnancy Timeline',
+      pregnancyWeek,
+      holiday,
+      personalEvents: matchingPersonalEvents,
+      taskStats,
+    };
+  }
+
+  // 3. Fallback to PREDICTED Cycle Range
+  if (!cycleData?.lastPeriodDate) {
+    return {
+      rangeType: 'none',
+      rangePosition: 'none',
+      isPeriod: false,
+      isRecordedPeriod: false,
+      isPredictedPeriod: false,
+      isFertile: false,
+      isOvulationPeak: false,
+      isFollicular: false,
+      isLuteal: false,
+      isPmsWindow: false,
+      phaseLabel: 'No Cycle Baseline',
+      holiday,
+      personalEvents: matchingPersonalEvents,
+      taskStats,
+    };
+  }
+
+  const lpd = parseLocalDate(cycleData.lastPeriodDate);
+  const targetDate = parseLocalDate(dateStr);
+  const cycleLength = cycleData.cycleLengthDays ?? 28;
+  const periodLength = cycleData.periodLengthDays ?? 5;
+
+  const msDiff = targetDate.getTime() - lpd.getTime();
+  const daysDiff = Math.floor(msDiff / 86400000);
+  const rawCycleDay = daysDiff % cycleLength;
+  const cycleDay = (rawCycleDay < 0 ? rawCycleDay + cycleLength : rawCycleDay) + 1; // 1-based
+
+  const ovulationDay = cycleLength - 14;
+  const fertileStart = ovulationDay - 5;
+  const fertileEnd = ovulationDay;
+
+  const isPeriod = cycleDay >= 1 && cycleDay <= periodLength;
+  const isFertile = cycleDay >= fertileStart && cycleDay <= fertileEnd;
+  const isOvulationPeak = cycleDay === ovulationDay;
+  const isFollicular = isPeriod || (cycleDay >= 1 && cycleDay < ovulationDay - 1);
+  const isLuteal = cycleDay > ovulationDay + 1 && cycleDay <= cycleLength;
+  const isPmsWindow = cycleDay >= cycleLength - 4 && cycleDay <= cycleLength;
+
+  let rangeType: DateRangeType = 'none';
+  let rangePosition: DateRangePosition = 'none';
+
+  if (isPeriod) {
+    rangeType = 'period';
+    const connectsLeft = cycleDay > 1 && columnIndex > 0;
+    const connectsRight = cycleDay < periodLength && columnIndex < 6;
+
+    if (connectsLeft && connectsRight) {
+      rangePosition = 'middle';
+    } else if (!connectsLeft && connectsRight) {
+      rangePosition = 'start';
+    } else if (connectsLeft && !connectsRight) {
+      rangePosition = 'end';
+    } else {
+      rangePosition = 'single';
+    }
+  } else if (isFertile) {
+    rangeType = isOvulationPeak ? 'ovulation' : 'fertile';
+    const connectsLeft = cycleDay > fertileStart && columnIndex > 0;
+    const connectsRight = cycleDay < fertileEnd && columnIndex < 6;
+
+    if (connectsLeft && connectsRight) {
+      rangePosition = 'middle';
+    } else if (!connectsLeft && connectsRight) {
+      rangePosition = 'start';
+    } else if (connectsLeft && !connectsRight) {
+      rangePosition = 'end';
+    } else {
+      rangePosition = 'single';
+    }
+  } else if (isFollicular) {
+    rangeType = 'follicular';
+    const connectsLeft = cycleDay > (periodLength + 1) && columnIndex > 0;
+    const connectsRight = cycleDay < (fertileStart - 1) && columnIndex < 6;
+
+    if (connectsLeft && connectsRight) {
+      rangePosition = 'middle';
+    } else if (!connectsLeft && connectsRight) {
+      rangePosition = 'start';
+    } else if (connectsLeft && !connectsRight) {
+      rangePosition = 'end';
+    } else {
+      rangePosition = 'single';
+    }
+  } else if (isLuteal) {
+    rangeType = 'luteal';
+    const lutealStart = ovulationDay + 1;
+    const connectsLeft = cycleDay > lutealStart && columnIndex > 0;
+    const connectsRight = cycleDay < cycleLength && columnIndex < 6;
+
+    if (connectsLeft && connectsRight) {
+      rangePosition = 'middle';
+    } else if (!connectsLeft && connectsRight) {
+      rangePosition = 'start';
+    } else if (connectsLeft && !connectsRight) {
+      rangePosition = 'end';
+    } else {
+      rangePosition = 'single';
+    }
+  }
+
+  let phaseLabel = 'Follicular Phase';
+  if (isPeriod) {
+    phaseLabel = 'Follicular Phase (Menstrual Bleed)';
+  } else if (isOvulationPeak) {
+    phaseLabel = 'Ovulation Day (Estimated Peak)';
+  } else if (isFertile) {
+    phaseLabel = 'Fertile Window (Estimated)';
+  } else if (isPmsWindow) {
+    phaseLabel = 'Luteal Phase (Late / Premenstrual Window)';
+  } else if (isLuteal) {
+    phaseLabel = 'Luteal Phase (Mid-Luteal)';
+  } else if (cycleDay > cycleLength) {
+    phaseLabel = 'Cycle Overdue / Awaiting Period';
+  }
+
+  return {
+    rangeType,
+    rangePosition,
+    cycleDay,
+    isPeriod,
+    isRecordedPeriod: false,
+    isPredictedPeriod: isPeriod,
+    isFertile,
+    isOvulationPeak,
+    isFollicular,
+    isLuteal,
+    isPmsWindow,
+    phaseLabel,
+    holiday,
+    personalEvents: matchingPersonalEvents,
+    taskStats,
+  };
+}
+
+/**
+ * Generates an endless or week-bounded calendar grid (Monday to Sunday)
+ */
+export function generateWeekGrid(selectedDate: Date): DayCalendarCell[] {
+  const dayOfWeek = (selectedDate.getDay() + 6) % 7; // Monday = 0
+  const monday = new Date(selectedDate.getTime() - dayOfWeek * 86400000);
+  const todayStr = formatLocalDate(new Date());
+
+  const cells: DayCalendarCell[] = [];
+  for (let i = 0; i < 7; i++) {
+    const current = new Date(monday.getTime() + i * 86400000);
+    const dateStr = formatLocalDate(current);
+    cells.push({
+      date: dateStr,
+      dayOfMonth: current.getDate(),
+      month: current.getMonth(),
+      year: current.getFullYear(),
+      isCurrentMonth: current.getMonth() === selectedDate.getMonth(),
+      isToday: dateStr === todayStr,
+      events: [],
+    });
+  }
+  return cells;
+}
+
+/**
+ * Generates an annual 12-month rolling horizon summary with estimated periods and milestones
+ */
+export function generateYearForecast(
+  year: number,
+  cycleData?: CycleData | null,
+  personalEvents?: PersonalCalendarEvent[]
+): Array<{
+  monthIndex: number;
+  monthName: string;
+  year: number;
+  estimatedPeriodStart: string;
+  estimatedPeriodEnd: string;
+  milestones: PersonalCalendarEvent[];
+}> {
+  const forecast = [];
+  const cycleLength = cycleData?.cycleLengthDays ?? 28;
+  const periodDuration = cycleData?.periodLengthDays ?? 5;
+  const baseLPD = cycleData?.lastPeriodDate
+    ? parseLocalDate(cycleData.lastPeriodDate)
+    : new Date(year, 0, 1);
+
+  for (let m = 0; m < 12; m++) {
+    const monthDate = new Date(year, m, 1);
+    const monthName = monthDate.toLocaleDateString('en-US', { month: 'long' });
+
+    // Milestones in this month
+    const monthMilestones = (personalEvents || []).filter((pe) => {
+      const parts = pe.date.split('-').map(Number);
+      return parts[1] - 1 === m;
+    });
+
+    const targetMidMonth = new Date(year, m, 15);
+    const approxCycleCount = Math.max(
+      0,
+      Math.floor((targetMidMonth.getTime() - baseLPD.getTime()) / (cycleLength * 86400000))
+    );
+    const cycleStart = new Date(baseLPD.getTime() + approxCycleCount * cycleLength * 86400000);
+    const periodEnd = new Date(cycleStart.getTime() + (periodDuration - 1) * 86400000);
+
+    forecast.push({
+      monthIndex: m,
+      monthName,
+      year,
+      estimatedPeriodStart: formatLocalDate(cycleStart),
+      estimatedPeriodEnd: formatLocalDate(periodEnd),
+      milestones: monthMilestones,
+    });
+  }
+  return forecast;
+}
+
+export interface AgendaDayGroup {
+  date: string;
+  dayName: string;
+  dayOfMonth: number;
+  monthName: string;
+  isToday: boolean;
+  rangeInfo: DayRangeInfo;
+  events: CalendarEvent[];
+  personalEvents: PersonalCalendarEvent[];
+  holiday?: CalendarHoliday;
+}
+
+/**
+ * Generates continuous rolling agenda day groups for Day and Agenda views
+ */
+export function generateAgendaRange(
+  startDate: Date,
+  daysCount: number = 30,
+  options: {
+    experience: ProductExperience;
+    cycleData?: CycleData | null;
+    personalEvents?: PersonalCalendarEvent[];
+  }
+): AgendaDayGroup[] {
+  const groups: AgendaDayGroup[] = [];
+  const todayStr = formatLocalDate(new Date());
+
+  for (let i = 0; i < daysCount; i++) {
+    const d = new Date(startDate.getTime() + i * 86400000);
+    const dateStr = formatLocalDate(d);
+    const dayEvents = generateDayAgenda(dateStr, options);
+    const rangeInfo = getDayRangeInfo(dateStr, i, options.cycleData, dayEvents, options.personalEvents);
+
+    groups.push({
+      date: dateStr,
+      dayName: d.toLocaleDateString('en-US', { weekday: 'short' }),
+      dayOfMonth: d.getDate(),
+      monthName: d.toLocaleDateString('en-US', { month: 'short' }),
+      isToday: dateStr === todayStr,
+      rangeInfo,
+      events: dayEvents,
+      personalEvents: rangeInfo.personalEvents,
+      holiday: rangeInfo.holiday,
+    });
+  }
+
+  return groups;
+}
+
+

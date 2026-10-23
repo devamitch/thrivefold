@@ -10,6 +10,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Card } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
+import { AppHeader } from '../../../components/ui/AppHeader';
+import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { useTheme } from '../../../theme/useTheme';
 import { useRootStore, useShallow, xpForLevel } from '../../../stores/useRootStore';
 import {
@@ -74,37 +76,22 @@ export default function ProgressScreen() {
   ];
 
   return (
-    <View style={[styles.root, { backgroundColor: colors.background }]}>
-      <ScrollView
-        contentContainerStyle={[
-          styles.scroll,
-          {
-            paddingTop: insets.top + spacing.md,
-            paddingBottom: tabBarInset + spacing.xl,
-            paddingHorizontal: spacing.base,
-          },
-        ]}
-        showsVerticalScrollIndicator={false}
-        onScroll={onScroll}
-        scrollEventThrottle={scrollEventThrottle}
-      >
-        {/* Header - Flat, Sophisticated, Neev-Inspired */}
-        <View style={styles.header}>
-          <Text style={[typography.label, { color: colors.primary }]}>
-            {isMen ? 'MOMENTUM & VITALITY' : isPride ? 'WELLBEING & AFFIRMATION' : 'YOUR JOURNEY'}
-          </Text>
-          <Text style={[typography.display, { color: colors.text.primary, marginTop: 4 }]}>
-            Progress & Milestones
-          </Text>
-          <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 2 }]}>
-            {isMen
+    <ScreenContainer
+      header={
+        <AppHeader
+          eyebrow={isMen ? 'MOMENTUM & VITALITY' : isPride ? 'WELLBEING & AFFIRMATION' : 'YOUR JOURNEY'}
+          title="Progress & Milestones"
+          subtitle={
+            isMen
               ? 'Tracking discipline, physical endurance, and recovery data.'
               : isPride
               ? 'Tracking self-care, private reflections, and personal growth.'
-              : 'Holistic health progress, rhythm consistency, and milestones.'}
-          </Text>
-        </View>
-
+              : 'Holistic health progress, rhythm consistency, and milestones.'
+          }
+        />
+      }
+      scrollMode="shell-scroll-view"
+    >
         {/* Level & XP Overview Card (Zero borders, zero shadows) */}
         <Animated.View entering={FadeInDown.delay(40).duration(280)}>
           <Card style={[styles.levelCard, { backgroundColor: colors.surface, marginTop: spacing.md }]}>
@@ -244,8 +231,7 @@ export default function ProgressScreen() {
             </Card>
           </Animated.View>
         ))}
-      </ScrollView>
-    </View>
+    </ScreenContainer>
   );
 }
 
