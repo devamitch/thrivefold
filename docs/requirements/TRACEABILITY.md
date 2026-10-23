@@ -16,7 +16,7 @@ No Android/iOS native build or device run was done in this pass.
 | REQ-004 Questionnaires | NOT TESTED | Onboarding routes exist | Skip/edit/resume persistence not verified on device |
 | REQ-005 ADHD space | FAIL | — | Not implemented |
 | REQ-006 Health safety | NOT TESTED | Cycle estimates labelled; fake health data removed | No safety-scenario test suite |
-| REQ-007 AI & gamification | PASS (partial) | Deterministic rules tested (`local-ai.test.ts`); progress from real activity | Cloud gateway untested; no local LLM |
+| REQ-007 AI & gamification | PASS (partial) | Deterministic rules + recovery rule, insight engine, BM25 note search, negation-aware classifier, persisted memory vault (`local-ai.test.ts`, `local-intelligence.test.ts`, 75c628b); progress from real activity | No local LLM or cloud gateway (simulated code removed); Home does not yet pass `recentLoad`; AI screens not seen on device |
 | REQ-008 Identity & privacy | PASS (local) / BLOCKED (server) | Local export/erase implemented; `tf_export_my_data`, consent revocation in `test:db` | Server account deletion needs an edge function; backend not deployed |
 | REQ-009 Infrastructure | BLOCKED | Migrations 1–4 verified on Postgres | Needs its own Supabase project + env vars; no fallback to another app's project |
 | REQ-010 Special users | PASS (DB) | `tf_admin_grant_special` / revoke, no self-grant, audited (`test:db`) | No admin UI; backend not deployed |
