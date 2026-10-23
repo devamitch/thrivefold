@@ -24,6 +24,7 @@ import { useRootStore, PersonalCalendarEvent } from '../../stores/useRootStore';
 import { Button } from './Button';
 import { TextField } from './TextField';
 import { PressableScale } from './PressableScale';
+import { DatePickerModal } from './DatePickerModal';
 import { formatLocalDate } from '../../domain/calendar/universalCalendarEngine';
 
 interface PersonalEventModalProps {
@@ -88,6 +89,7 @@ export function PersonalEventModal({
   const [recurrence, setRecurrence] = useState<'yearly' | 'monthly' | 'weekly' | 'none'>('yearly');
   const [time, setTime] = useState('');
   const [notes, setNotes] = useState('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   useEffect(() => {
     if (existingEvent) {
@@ -249,14 +251,36 @@ export function PersonalEventModal({
               {/* Event Date */}
               <View style={{ marginTop: spacing.md }}>
                 <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 6 }]}>
-                  DATE (YYYY-MM-DD) *
+                  DATE *
                 </Text>
-                <TextField
-                  placeholder="2026-10-23"
-                  value={dateStr}
-                  onChangeText={setDateStr}
-                  keyboardType="numbers-and-punctuation"
-                />
+                <PressableScale
+                  onPress={() => {
+                    try {
+                      Haptics.selectionAsync();
+                    } catch {}
+                    setShowDatePicker(true);
+                  }}
+                  scaleTo={0.98}
+                  style={[
+                    styles.datePickerTrigger,
+                    {
+                      backgroundColor: colors.surface1,
+                      borderColor: colors.primary + '33',
+                    },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Event date: ${dateStr}. Tap to select from calendar.`}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Ionicons name="calendar" size={18} color={colors.primary} style={{ marginRight: 10 }} />
+                    <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                      {dateStr || 'Select event date'}
+                    </Text>
+                  </View>
+                  <View style={[styles.datePickerPill, { backgroundColor: colors.primary + '18' }]}>
+                    <Text style={[typography.captionBold, { color: colors.primary }]}>Select Date</Text>
+                  </View>
+                </PressableScale>
               </View>
 
               {/* Category Selection */}
@@ -435,6 +459,18 @@ export function PersonalEventModal({
           </View>
         </View>
       </KeyboardAvoidingView>
+
+      {/* DatePicker Modal */}
+      <DatePickerModal
+        visible={showDatePicker}
+        value={dateStr}
+        title="Select Event Date"
+        onChange={(val) => {
+          setDateStr(val);
+          setShowDatePicker(false);
+        }}
+        onClose={() => setShowDatePicker(false)}
+      />
     </Modal>
   );
 }
@@ -506,6 +542,20 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  datePickerTrigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  datePickerPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
   },
 });
 

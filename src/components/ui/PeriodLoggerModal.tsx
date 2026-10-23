@@ -24,6 +24,7 @@ import { useRootStore, PeriodLogRecord, FlowIntensity } from '../../stores/useRo
 import { Button } from './Button';
 import { TextField } from './TextField';
 import { PressableScale } from './PressableScale';
+import { DatePickerModal } from './DatePickerModal';
 import { formatLocalDate } from '../../domain/calendar/universalCalendarEngine';
 
 interface PeriodLoggerModalProps {
@@ -109,6 +110,8 @@ export function PeriodLoggerModal({
   const [painLevel, setPainLevel] = useState(3);
   const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>(['Cramps']);
   const [notes, setNotes] = useState('');
+  const [showStartDatePicker, setShowStartDatePicker] = useState(false);
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
 
   useEffect(() => {
     if (existingRecord) {
@@ -285,14 +288,36 @@ export function PeriodLoggerModal({
               {/* Start Date Field */}
               <View style={{ marginTop: spacing.md }}>
                 <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 6 }]}>
-                  PERIOD START DATE (YYYY-MM-DD) *
+                  PERIOD START DATE *
                 </Text>
-                <TextField
-                  value={startDate}
-                  onChangeText={setStartDate}
-                  placeholder="2026-10-23"
-                  keyboardType="numbers-and-punctuation"
-                />
+                <PressableScale
+                  onPress={() => {
+                    try {
+                      Haptics.selectionAsync();
+                    } catch {}
+                    setShowStartDatePicker(true);
+                  }}
+                  scaleTo={0.98}
+                  style={[
+                    styles.datePickerTrigger,
+                    {
+                      backgroundColor: colors.surface1,
+                      borderColor: colors.primary + '33',
+                    },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Start date: ${startDate}. Tap to select from calendar.`}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Ionicons name="calendar" size={18} color={colors.primary} style={{ marginRight: 10 }} />
+                    <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                      {startDate || 'Select start date'}
+                    </Text>
+                  </View>
+                  <View style={[styles.datePickerPill, { backgroundColor: colors.primary + '18' }]}>
+                    <Text style={[typography.captionBold, { color: colors.primary }]}>Select Date</Text>
+                  </View>
+                </PressableScale>
               </View>
 
               {/* Ongoing Bleeding Switch */}
@@ -336,14 +361,36 @@ export function PeriodLoggerModal({
               {!isOngoing && (
                 <View style={{ marginTop: spacing.md }}>
                   <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 6 }]}>
-                    PERIOD END DATE (YYYY-MM-DD)
+                    PERIOD END DATE *
                   </Text>
-                  <TextField
-                    value={endDate}
-                    onChangeText={setEndDate}
-                    placeholder="2026-10-27"
-                    keyboardType="numbers-and-punctuation"
-                  />
+                  <PressableScale
+                    onPress={() => {
+                      try {
+                        Haptics.selectionAsync();
+                      } catch {}
+                      setShowEndDatePicker(true);
+                    }}
+                    scaleTo={0.98}
+                    style={[
+                      styles.datePickerTrigger,
+                      {
+                        backgroundColor: colors.surface1,
+                        borderColor: colors.primary + '33',
+                      },
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`End date: ${endDate || startDate}. Tap to select from calendar.`}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Ionicons name="calendar-outline" size={18} color={colors.primary} style={{ marginRight: 10 }} />
+                      <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                        {endDate || startDate || 'Select end date'}
+                      </Text>
+                    </View>
+                    <View style={[styles.datePickerPill, { backgroundColor: colors.primary + '18' }]}>
+                      <Text style={[typography.captionBold, { color: colors.primary }]}>Select Date</Text>
+                    </View>
+                  </PressableScale>
                 </View>
               )}
 
@@ -518,6 +565,30 @@ export function PeriodLoggerModal({
           </View>
         </View>
       </KeyboardAvoidingView>
+
+      {/* DatePicker Modals */}
+      <DatePickerModal
+        visible={showStartDatePicker}
+        value={startDate}
+        title="Select Period Start Date"
+        onChange={(val) => {
+          setStartDate(val);
+          setShowStartDatePicker(false);
+        }}
+        onClose={() => setShowStartDatePicker(false)}
+      />
+
+      <DatePickerModal
+        visible={showEndDatePicker}
+        value={endDate || startDate}
+        title="Select Period End Date"
+        minDate={startDate}
+        onChange={(val) => {
+          setEndDate(val);
+          setShowEndDatePicker(false);
+        }}
+        onClose={() => setShowEndDatePicker(false)}
+      />
     </Modal>
   );
 }
@@ -618,6 +689,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 12,
+  },
+  datePickerTrigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  datePickerPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
   },
 });
 
