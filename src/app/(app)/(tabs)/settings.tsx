@@ -18,8 +18,7 @@ import { Card } from '../../../components/ui/Card';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { buildLocalExport, eraseLocalData } from '../../../services/privacy/localData';
 import { useRootStore } from '../../../stores/useRootStore';
-import { signOutAccount } from '../../../services/account/accountService';
-import { signOutGoogle } from '../../../services/account/googleAccount';
+import { signOutEverywhere } from '../../../services/account/accountService';
 import { enableQuestReminders } from '../../../services/notifications/questReminders';
 import {
   clearSummaryOutbox,
@@ -130,14 +129,8 @@ export default function SettingsScreen() {
       confirmText: 'Erase everything',
       destructive: true,
       onConfirm: async () => {
-        try {
-          await signOutGoogle();
-        } catch {}
-        try {
-          await signOutAccount();
-        } catch {}
+        await signOutEverywhere();
         eraseLocalData();
-        signOut();
         router.replace('/(auth)/sign-in');
       },
     });
@@ -526,13 +519,7 @@ export default function SettingsScreen() {
 
         <Card
           onPress={async () => {
-            try {
-              await signOutGoogle();
-            } catch {}
-            try {
-              await signOutAccount();
-            } catch {}
-            signOut();
+            await signOutEverywhere();
             router.replace('/(auth)/sign-in');
           }}
           style={{ marginBottom: 8 }}

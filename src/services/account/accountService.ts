@@ -58,3 +58,18 @@ export async function currentAccount(): Promise<{ userId: string; email: string 
 export async function signOutAccount(): Promise<void> {
   if (supabase) await supabase.auth.signOut();
 }
+
+/**
+ * One sign-out path for every button: ends the Google and Supabase sessions (best effort,
+ * offline-safe), drops cached server answers so the next person never sees them, and
+ * clears the signed-in user. Local health records stay unless the person erases them.
+ */
+export async function signOutEverywhere(): Promise<void> {
+  const { signOutGoogle } = await import('./googleAccount');
+  const { queryClient } = await import('../supabase/queryClient');
+  const { useRootStore } = await import('../../stores/useRootStore');
+  await signOutGoogle().catch(() => undefined);
+  await signOutAccount().catch(() => undefined);
+  queryClient.clear();
+  useRootStore.getState().signOut();
+}
