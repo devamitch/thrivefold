@@ -70,7 +70,11 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
           <Text style={[typography.subheading, { color: colors.text.primary }]}>{monthName}</Text>
           <Text style={[typography.caption, { color: colors.text.muted, marginTop: 1 }]}>
             {isWomen
-              ? `${cycleData?.cycleLengthDays ?? 28}-day natural rhythm estimate`
+              ? !cycleData?.lastPeriodDate
+                ? 'Log a period to see estimates'
+                : (cycleData.periodHistory?.length ?? 0) < 2
+                  ? 'Rough estimate: log more periods for accuracy'
+                  : `Estimate from your ${cycleData.periodHistory.length} logged periods`
               : 'Monthly milestones & habit calendar'}
           </Text>
         </View>
