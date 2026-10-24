@@ -93,7 +93,7 @@ export default function CommunitiesScreen() {
       {
         id: 'women_pcos',
         title: 'PCOS & Endometriosis Resilience',
-        description: 'Holistic approaches, dietary support, and shared compassionate experiences.',
+        description: 'Food, symptoms and day-to-day tips from people with the same condition.',
         category: 'Hormonal Wellness',
       },
       {

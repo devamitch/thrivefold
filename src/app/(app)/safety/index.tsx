@@ -112,7 +112,7 @@ export default function SafetyScreen() {
             Your safety
           </Text>
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4, lineHeight: 18 }]}>
-            You have full sovereignty over your privacy, contacts, and personal boundaries. 24/7 hotlines and moderation appeals are always available.
+            You decide who can reach you and what is shared. Crisis lines and appeals are listed below.
           </Text>
         </Card>
 

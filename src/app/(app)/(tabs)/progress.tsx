@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import React, { useState } from 'react';
 import {
   Pressable,
@@ -15,155 +15,147 @@ import { Card } from '../../../components/ui/Card';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { ProgressionPanel } from '../../../components/game/ProgressionPanel';
+import { SETUP_REWARDS } from '../../../domain/game/setupProfile';
 import { useTheme } from '../../../theme/useTheme';
+
+interface Stats {
+  questsCompleted: number;
+  streak: number;
+  daysActive: number;
+  journalCount: number;
+  level: number;
+  setupDone: number;
+  movementCount: number;
+  connected: boolean;
+}
 
 interface RoadmapStep {
   id: string;
   stepNumber: number;
   phase: string;
   title: string;
-  description: string;
-  xpReward: number;
+  description: (s: Stats) => string;
   icon: keyof typeof Ionicons.glyphMap;
-  targetRoute?: string;
-  isUnlocked: (stats: {
-    questsCompleted: number;
-    streak: number;
-    daysActive: number;
-    journalCount: number;
-    level: number;
-  }) => boolean;
-  isCompleted: (stats: {
-    questsCompleted: number;
-    streak: number;
-    daysActive: number;
-    journalCount: number;
-    level: number;
-  }) => boolean;
+  targetRoute: string;
+  isUnlocked: (s: Stats) => boolean;
+  isCompleted: (s: Stats) => boolean;
 }
 
+/**
+ * Milestones measured from real records only. They mark progress; XP comes from quests and
+ * setup steps in the ledger, so no milestone shows or pays a reward of its own.
+ */
 const ROADMAP_STEPS: RoadmapStep[] = [
-  // Phase 1: Foundation
   {
-    id: 'step_1',
+    id: 'setup',
     stepNumber: 1,
-    phase: 'Phase 1: Foundation',
-    title: 'Identity & Setup',
-    description: 'Set your routine, preferences, and private on-device vault.',
-    xpReward: 50,
-    icon: 'sparkles-outline',
-    targetRoute: '/(app)/(tabs)/settings',
+    phase: 'Foundation',
+    title: 'Finish setting up',
+    description: (s) => `${s.setupDone} of ${SETUP_REWARDS.length} setup steps answered. Each one fits your quests better.`,
+    icon: 'options-outline',
+    targetRoute: '/(app)/personalize',
     isUnlocked: () => true,
-    isCompleted: () => true,
+    isCompleted: (s) => s.setupDone >= SETUP_REWARDS.length,
   },
   {
-    id: 'step_2',
+    id: 'first_checkin',
     stepNumber: 2,
-    phase: 'Phase 1: Foundation',
-    title: 'First Health Quest',
-    description: 'Complete your first verified daily quest and claim your XP.',
-    xpReward: 50,
+    phase: 'Foundation',
+    title: 'First daily check-in',
+    description: () => 'Energy, mood, stress and sleep in under a minute.',
+    icon: 'sunny-outline',
+    targetRoute: '/(app)/check-in',
+    isUnlocked: () => true,
+    isCompleted: (s) => s.daysActive >= 1,
+  },
+  {
+    id: 'first_quest',
+    stepNumber: 3,
+    phase: 'Foundation',
+    title: 'First quest done',
+    description: () => 'Finish one of today’s quests.',
     icon: 'checkmark-circle-outline',
-    targetRoute: '/(app)/(tabs)',
+    targetRoute: '/(app)/(tabs)/today',
     isUnlocked: () => true,
     isCompleted: (s) => s.questsCompleted >= 1,
   },
   {
-    id: 'step_3',
-    stepNumber: 3,
-    phase: 'Phase 1: Foundation',
-    title: 'Natural Cycle & Rhythm',
-    description: 'Log your first cycle or daily wellness check-in.',
-    xpReward: 50,
-    icon: 'calendar-outline',
-    targetRoute: '/(app)/health/cycle',
-    isUnlocked: (s) => s.questsCompleted >= 1,
-    isCompleted: (s) => s.daysActive >= 1,
-  },
-  // Phase 2: Momentum
-  {
-    id: 'step_4',
+    id: 'first_movement',
     stepNumber: 4,
-    phase: 'Phase 2: Momentum',
-    title: '3-Day Consistency Streak',
-    description: 'Maintain habit momentum for three consecutive active days.',
-    xpReward: 100,
+    phase: 'Momentum',
+    title: 'Move with a plan',
+    description: (s) => (s.movementCount ? `${s.movementCount} workouts or activities logged.` : 'Log a workout, walk, ride or class.'),
+    icon: 'barbell-outline',
+    targetRoute: '/(app)/health/exercise',
+    isUnlocked: () => true,
+    isCompleted: (s) => s.movementCount >= 1,
+  },
+  {
+    id: 'three_day',
+    stepNumber: 5,
+    phase: 'Momentum',
+    title: 'Three check-ins in a row',
+    description: (s) => `Current run: ${s.streak} day${s.streak === 1 ? '' : 's'}. Rest days never take away earned progress.`,
     icon: 'flame-outline',
-    targetRoute: '/(app)/(tabs)',
+    targetRoute: '/(app)/check-in',
     isUnlocked: (s) => s.daysActive >= 1,
     isCompleted: (s) => s.streak >= 3,
   },
   {
-    id: 'step_5',
-    stepNumber: 5,
-    phase: 'Phase 2: Momentum',
-    title: 'Private Wax Letter',
-    description: 'Seal a private reflection letter with a collectible wax stamp.',
-    xpReward: 75,
-    icon: 'mail-outline',
-    targetRoute: '/(app)/letters',
-    isUnlocked: (s) => s.questsCompleted >= 2,
+    id: 'journal',
+    stepNumber: 6,
+    phase: 'Momentum',
+    title: 'First journal entry',
+    description: () => 'A few private lines, kept on this phone.',
+    icon: 'book-outline',
+    targetRoute: '/(app)/journal',
+    isUnlocked: () => true,
     isCompleted: (s) => s.journalCount >= 1,
   },
   {
-    id: 'step_6',
-    stepNumber: 6,
-    phase: 'Phase 2: Momentum',
-    title: 'Mind Calibration Session',
-    description: 'Engage with a focus game or mindful breathing puzzle.',
-    xpReward: 75,
-    icon: 'game-controller-outline',
-    targetRoute: '/(app)/games',
-    isUnlocked: (s) => s.streak >= 2,
-    isCompleted: (s) => s.questsCompleted >= 3,
-  },
-  // Phase 3: Synchronization
-  {
-    id: 'step_7',
+    id: 'connected',
     stepNumber: 7,
-    phase: 'Phase 3: Synchronization',
-    title: '7-Day Steadiness',
-    description: 'Sustain uninterrupted daily rhythm for a full calendar week.',
-    xpReward: 200,
-    icon: 'diamond-outline',
-    targetRoute: '/(app)/(tabs)',
-    isUnlocked: (s) => s.streak >= 3,
+    phase: 'Momentum',
+    title: 'Bring in your other data',
+    description: () => 'Optional: connect Health Connect or a heart-rate strap so steps and sleep fill in themselves.',
+    icon: 'link-outline',
+    targetRoute: '/(app)/health/integrations',
+    isUnlocked: () => true,
+    isCompleted: (s) => s.connected,
+  },
+  {
+    id: 'seven_day',
+    stepNumber: 8,
+    phase: 'Steadiness',
+    title: 'A full week of check-ins',
+    description: (s) => `Current run: ${s.streak} of 7 days.`,
+    icon: 'calendar-outline',
+    targetRoute: '/(app)/check-in',
+    isUnlocked: (s) => s.streak >= 1,
     isCompleted: (s) => s.streak >= 7,
   },
   {
-    id: 'step_8',
-    stepNumber: 8,
-    phase: 'Phase 3: Synchronization',
-    title: 'Audit AI Memory Vault',
-    description: 'Review on-device private memory tokens and verify your safety vault.',
-    xpReward: 100,
-    icon: 'shield-checkmark-outline',
-    targetRoute: '/(app)/ai',
-    isUnlocked: (s) => s.streak >= 3,
-    isCompleted: (s) => s.level >= 2,
-  },
-  // Phase 4: Mastery
-  {
-    id: 'step_9',
+    id: 'level_ten',
     stepNumber: 9,
-    phase: 'Phase 4: Mastery',
-    title: '21-Day Habit Metamorphosis',
-    description: 'Transform daily routines into effortless automatic mastery.',
-    xpReward: 500,
+    phase: 'Steadiness',
+    title: 'Reach level 10',
+    description: (s) => `You are level ${s.level}.`,
+    icon: 'trending-up-outline',
+    targetRoute: '/(app)/(tabs)/today',
+    isUnlocked: () => true,
+    isCompleted: (s) => s.level >= 10,
+  },
+  {
+    id: 'twenty_one',
+    stepNumber: 10,
+    phase: 'Habit',
+    title: '21 days in a row',
+    description: (s) => `Current run: ${s.streak} of 21 days.`,
     icon: 'ribbon-outline',
-    targetRoute: '/(app)/(tabs)',
+    targetRoute: '/(app)/check-in',
     isUnlocked: (s) => s.streak >= 7,
     isCompleted: (s) => s.streak >= 21,
   },
-];
-
-const ACHIEVEMENTS = [
-  { id: 'first_quest', icon: 'flash-outline' as const, title: 'First Quest', desc: 'Completed your very first daily quest' },
-  { id: 'three_day_streak', icon: 'flame-outline' as const, title: '3-Day Consistency', desc: 'Logged and completed three consecutive days' },
-  { id: 'ai_vault', icon: 'shield-checkmark-outline' as const, title: 'Private Vault', desc: 'Audited and verified your on-device records' },
-  { id: 'letters', icon: 'mail-outline' as const, title: 'Reflective Notes', desc: 'Saved your first private health reflection' },
-  { id: 'seven_day_streak', icon: 'diamond-outline' as const, title: '7-Day Steadiness', desc: 'Seven days of sustained healthy momentum' },
-  { id: 'circles', icon: 'people-outline' as const, title: 'Inner Circle', desc: 'Joined a private circle' },
 ];
 
 export default function ProgressScreen() {
@@ -175,19 +167,27 @@ export default function ProgressScreen() {
   const currentStreak = useRootStore((s) => s.currentStreak);
   const daysActive = useRootStore((s) => s.completedCheckInDaysCount);
   const journalCount = useRootStore((s) => s.journalEntries.length);
-  const { level: LEVEL, questsCompleted, achievements } = useRootStore(
-    useShallow((s) => ({ level: s.level, questsCompleted: s.questsCompleted, achievements: s.achievements })),
+  const { level: LEVEL, questsCompleted, setupDone, movementCount, connected } = useRootStore(
+    useShallow((s) => ({
+      level: s.level,
+      questsCompleted: s.questsCompleted,
+      setupDone: s.rewardLedger.filter((e) => e.kind === 'setup_reward').length,
+      movementCount: s.workoutSessions.length + s.activityLogs.length + s.poseSessions.length,
+      connected: Boolean(s.healthConnect) || s.deviceReadings.length > 0,
+    })),
   );
 
-  const unlocked = new Set(achievements);
-
-  const stats = {
+  const stats: Stats = {
     questsCompleted,
     streak: currentStreak,
     daysActive,
     journalCount,
     level: LEVEL,
+    setupDone,
+    movementCount,
+    connected,
   };
+  const earned = ROADMAP_STEPS.filter((st) => st.isCompleted(stats));
 
   const isMen = experience === 'men_health';
   const isPride = experience === 'pride_wellbeing';
@@ -200,8 +200,8 @@ export default function ProgressScreen() {
       header={
         <AppHeader
           eyebrow={isMen ? 'MOMENTUM & VITALITY' : isPride ? 'WELLBEING & AFFIRMATION' : 'YOUR JOURNEY'}
-          title="Progress & Roadmap"
-          subtitle="Explore your personalized growth roadmap, rhythm milestones, and earned badges."
+          title="Progress"
+          subtitle="Your level, milestones and what you have logged"
         />
       }
       scrollMode="shell-scroll-view"
@@ -232,7 +232,7 @@ export default function ProgressScreen() {
                 },
               ]}
             >
-              Personal Roadmap ({roadmapPct}%)
+              Milestones ({roadmapPct}%)
             </Text>
           </Pressable>
 
@@ -257,7 +257,7 @@ export default function ProgressScreen() {
                 },
               ]}
             >
-              Badges & Stats
+              Stats
             </Text>
           </Pressable>
         </View>
@@ -270,10 +270,10 @@ export default function ProgressScreen() {
               <View style={styles.rowBetween}>
                 <View>
                   <Text style={[typography.subheading, { color: colors.text.primary }]}>
-                    Roadmap Milestone Progress
+                    Milestones
                   </Text>
                   <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                    {completedStepsCount} of {ROADMAP_STEPS.length} Milestones Cleared
+                    {completedStepsCount} of {ROADMAP_STEPS.length} reached
                   </Text>
                 </View>
                 <Badge label={`${roadmapPct}% Complete`} variant="primary" />
@@ -311,9 +311,9 @@ export default function ProgressScreen() {
                         ]}
                       >
                         {isComp ? (
-                          <Ionicons name="checkmark" size={14} color="#FFF" />
+                          <Ionicons name="checkmark" size={14} color={colors.onPrimary} />
                         ) : isUnl ? (
-                          <Ionicons name={step.icon} size={14} color="#FFF" />
+                          <Ionicons name={step.icon} size={14} color={colors.onPrimary} />
                         ) : (
                           <Ionicons name="lock-closed" size={12} color={colors.text.muted} />
                         )}
@@ -335,7 +335,7 @@ export default function ProgressScreen() {
                       <Card
                         onPress={() => {
                           if (step.targetRoute) {
-                            router.push(step.targetRoute as any);
+                            router.push(step.targetRoute as Href);
                           }
                         }}
                         style={[
@@ -351,9 +351,9 @@ export default function ProgressScreen() {
                             {step.phase.toUpperCase()}
                           </Text>
                           {isComp ? (
-                            <Badge label="Cleared" variant="success" />
+                            <Badge label="Done" variant="success" />
                           ) : isUnl ? (
-                            <Badge label={`+${step.xpReward} XP`} variant="primary" />
+                            <Badge label="Next" variant="primary" />
                           ) : (
                             <Badge label="Locked" variant="neutral" />
                           )}
@@ -373,14 +373,14 @@ export default function ProgressScreen() {
                             { color: colors.text.secondary, marginTop: 2 },
                           ]}
                         >
-                          {step.description}
+                          {step.description(stats)}
                         </Text>
 
                         {/* Interactive Action CTA */}
                         {isUnl && !isComp && (
                           <View style={styles.stepCtaRow}>
                             <Text style={[typography.captionBold, { color: colors.primary }]}>
-                              Complete this milestone
+                              Go
                             </Text>
                             <Ionicons name="arrow-forward" size={14} color={colors.primary} />
                           </View>
@@ -394,7 +394,7 @@ export default function ProgressScreen() {
           </Animated.View>
         )}
 
-        {/* Badges & Stats View */}
+        {/* Stats View */}
         {activeTab === 'badges' && (
           <Animated.View entering={FadeInDown.duration(280)}>
             {/* Stats Grid */}
@@ -443,7 +443,7 @@ export default function ProgressScreen() {
                   {journalCount}
                 </Text>
                 <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                  Saved Letters
+                  Journal entries
                 </Text>
               </View>
             </View>
@@ -455,53 +455,30 @@ export default function ProgressScreen() {
                 { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm },
               ]}
             >
-              Earned Badges & Feats
+              Milestones reached
             </Text>
-            {ACHIEVEMENTS.map((ach) => (
-              <Card
-                key={ach.id}
-                style={[
-                  styles.achCard,
-                  {
-                    opacity: unlocked.has(ach.id) ? 1 : 0.65,
-                    marginBottom: 8,
-                    backgroundColor: colors.surface,
-                  },
-                ]}
-              >
-                <View style={styles.achRow}>
-                  <View
-                    style={[
-                      styles.achIcon,
-                      {
-                        backgroundColor: unlocked.has(ach.id)
-                          ? colors.primaryAlpha
-                          : colors.surface1,
-                      },
-                    ]}
-                  >
-                    <Ionicons
-                      name={ach.icon}
-                      size={20}
-                      color={unlocked.has(ach.id) ? colors.primary : colors.text.muted}
-                    />
+            {earned.length === 0 ? (
+              <Text style={[typography.subbody, { color: colors.text.secondary }]}>
+                Milestones you reach show up here. Start with a check-in.
+              </Text>
+            ) : (
+              earned.map((ach) => (
+                <Card key={ach.id} style={[styles.achCard, { marginBottom: 8, backgroundColor: colors.surface }]}>
+                  <View style={styles.achRow}>
+                    <View style={[styles.achIcon, { backgroundColor: colors.primaryAlpha }]}>
+                      <Ionicons name={ach.icon} size={20} color={colors.primary} />
+                    </View>
+                    <View style={{ flex: 1, marginLeft: 12 }}>
+                      <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{ach.title}</Text>
+                      <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                        {ach.phase}
+                      </Text>
+                    </View>
+                    <Badge label="Reached" variant="success" />
                   </View>
-                  <View style={{ flex: 1, marginLeft: 12 }}>
-                    <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                      {ach.title}
-                    </Text>
-                    <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                      {ach.desc}
-                    </Text>
-                  </View>
-                  {unlocked.has(ach.id) ? (
-                    <Badge label="Unlocked" variant="success" />
-                  ) : (
-                    <Badge label="In Progress" variant="neutral" />
-                  )}
-                </View>
-              </Card>
-            ))}
+                </Card>
+              ))
+            )}
           </Animated.View>
         )}
       </View>

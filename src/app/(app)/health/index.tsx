@@ -22,7 +22,7 @@ export default function HealthIndexScreen() {
     return <PrideHealthScreen />;
   }
 
-  // Default: Women's Health Hub (Harmony Bloom inspired)
+  // Default: women's health hub
   return (
     <ScreenWrapper scrollable>
       <Header title="Health" subtitle="Everything you track, in one place" showBack />
@@ -42,10 +42,10 @@ export default function HealthIndexScreen() {
             />
           </View>
           <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 12 }]}>
-            Holistic Daily Harmony
+            Your body, your records
           </Text>
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4, lineHeight: 18 }]}>
-            Biological rhythm synchronization, hormonal cycle phases, and gentle natural wellness tracking.
+            Cycle, symptoms, sleep and movement in one place. Everything stays on this phone.
           </Text>
         </Card>
 
@@ -59,9 +59,9 @@ export default function HealthIndexScreen() {
                 <Ionicons name="water-outline" size={20} color={colors.primary} />
               </View>
               <View style={{ marginLeft: 14, flex: 1 }}>
-                <Text style={[typography.subheading, { color: colors.text.primary }]}>Cycle & Follicular Calendar</Text>
+                <Text style={[typography.subheading, { color: colors.text.primary }]}>Cycle calendar</Text>
                 <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                  Track phases, predicted windows, and hormonal rhythm
+                  Log periods and see estimated phases and next dates
                 </Text>
               </View>
             </View>
@@ -79,9 +79,9 @@ export default function HealthIndexScreen() {
                 <Ionicons name="pulse-outline" size={20} color={colors.accent} />
               </View>
               <View style={{ marginLeft: 14, flex: 1 }}>
-                <Text style={[typography.subheading, { color: colors.text.primary }]}>Symptom Logging</Text>
+                <Text style={[typography.subheading, { color: colors.text.primary }]}>Symptoms</Text>
                 <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                  Energy, cramps, mood shifts, and physical cues
+                  Cramps, headaches, mood and anything else you notice
                 </Text>
               </View>
             </View>
@@ -99,9 +99,9 @@ export default function HealthIndexScreen() {
                 <Ionicons name="moon-outline" size={20} color={colors.text.primary} />
               </View>
               <View style={{ marginLeft: 14, flex: 1 }}>
-                <Text style={[typography.subheading, { color: colors.text.primary }]}>Sleep & Rest</Text>
+                <Text style={[typography.subheading, { color: colors.text.primary }]}>Sleep</Text>
                 <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                  Sleep consistency, resting readiness, bedtime routines
+                  Hours, regularity and a wind-down routine
                 </Text>
               </View>
             </View>
@@ -119,9 +119,9 @@ export default function HealthIndexScreen() {
                 <Ionicons name="fitness-outline" size={20} color={colors.primary} />
               </View>
               <View style={{ marginLeft: 14, flex: 1 }}>
-                <Text style={[typography.subheading, { color: colors.text.primary }]}>Pelvic Floor & Core</Text>
+                <Text style={[typography.subheading, { color: colors.text.primary }]}>Pelvic floor and core</Text>
                 <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                  Gentle strengthening, relaxation, and guidance
+                  Guided squeeze-and-relax sets with a timer
                 </Text>
               </View>
             </View>

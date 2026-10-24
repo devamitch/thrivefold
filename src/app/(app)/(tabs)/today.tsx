@@ -1,12 +1,6 @@
 /**
- * Thrivefold Universal Today Tab
- * Sacred Harmony Bloom & Discipline Recovery Center.
- * Modular, performant, and clean orchestration of:
- * - Dynamic Level 1-1,000 Personalized Game Journey & Daily 40-Point Target
- * - Single-tier animated tab navigation with Reanimated spring interpolation
- * - Clean, non-overflowing cycle & life calendar
- * - Isolated, zero-lag somatic restorative arcade
- * - Privacy-respecting Men's / Women's health paradigms
+ * Today: the day's quests and points toward the daily goal, the calendar, and quick
+ * routines for the selected experience.
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
