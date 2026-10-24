@@ -32,6 +32,7 @@ import Animated, {
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
+  withRepeat,
   withTiming,
   type SharedValue,
 } from 'react-native-reanimated';
@@ -51,30 +52,30 @@ interface IntroSlide {
 const SLIDES: readonly IntroSlide[] = [
   {
     id: 'health',
-    eyebrow: 'Private health',
-    title: 'Your cycle and health, kept on your phone',
-    description: 'Check-ins, sleep, symptoms and cycle tracking that stay on this device unless you choose otherwise.',
+    eyebrow: 'Yours, on your phone',
+    title: 'Your health, kept close',
+    description: 'Check-ins, sleep, cycle and symptoms are encrypted on this device. Nothing leaves it unless you choose.',
     image: require('../../../assets/illustrations/intro-cycle.jpg'),
   },
   {
     id: 'quests',
-    eyebrow: 'Daily quests',
-    title: 'Small daily quests, real progress',
-    description: 'Three short tasks a day. Each one asks for what it needs, and points only count when it is done.',
+    eyebrow: 'Gentle daily quests',
+    title: 'Small steps that fit your day',
+    description: 'Quests follow your pace, your limits and the time of day. A hard day makes them lighter, never heavier.',
     image: require('../../../assets/illustrations/intro-quests.jpg'),
   },
   {
-    id: 'letters',
-    eyebrow: 'Letters and circles',
-    title: 'Slow letters and private circles',
-    description: 'Card-based letters and private support circles for verified adults, when they open. Always optional.',
-    image: require('../../../assets/illustrations/intro-letters.jpg'),
+    id: 'coach',
+    eyebrow: 'Camera coach',
+    title: 'Move with a coach beside you',
+    description: 'Follow a tutorial while your camera checks your form on the phone, and earn ten times the points for good form.',
+    image: require('../../../assets/illustrations/workout-strength.jpg'),
   },
   {
     id: 'memory',
-    eyebrow: 'On your device',
-    title: 'Patterns and memory that stay with you',
-    description: 'See how sleep, stress and energy connect for you, worked out on your phone. Nothing is sent anywhere.',
+    eyebrow: 'Patterns, privately',
+    title: 'See what helps you',
+    description: 'How sleep, stress and energy connect for you, worked out on this phone. No ads, no selling, no guessing about you.',
     image: require('../../../assets/illustrations/intro-vault.jpg'),
   },
 ];
@@ -317,6 +318,7 @@ const SlidePage = memo(function SlidePage({ slide, index, width, height, side, s
       accessibilityLabel={`${slide.title}. ${slide.description}`}
     >
       <Animated.View style={[styles.art, artStyle]}>
+        <BreathingAura index={index} motion={motion} />
         <View style={[styles.artCard, { backgroundColor: colors.surface1 }]}>
           <Image source={slide.image} style={styles.artImage} contentFit="cover" priority="high" transition={0} accessible={false} />
         </View>
@@ -339,6 +341,30 @@ const SlidePage = memo(function SlidePage({ slide, index, width, height, side, s
     </View>
   );
 });
+
+const BREATH_MS = 4800;
+
+/** A soft, slowly breathing halo behind each slide's artwork; tint differs per slide. */
+function BreathingAura({ index, motion }: { index: number; motion: number }) {
+  const { colors } = useTheme();
+  const tints = [colors.primaryAlpha, colors.successSurface, colors.infoSurface, colors.warningSurface];
+  const breath = useSharedValue(0);
+  useEffect(() => {
+    if (!motion) return;
+    breath.value = withRepeat(withTiming(1, { duration: BREATH_MS, easing: Easing.inOut(Easing.sin) }), -1, true);
+    return () => cancelAnimation(breath);
+  }, [breath, motion]);
+  const style = useAnimatedStyle(() => ({
+    opacity: 0.75 + 0.25 * breath.value,
+    transform: [{ scale: 0.94 + 0.1 * breath.value }],
+  }));
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[styles.aura, { backgroundColor: tints[index % tints.length] }, style]}
+    />
+  );
+}
 
 function Dot({
   index,
@@ -384,7 +410,8 @@ const styles = StyleSheet.create({
   pager: { flex: 1 },
   page: { paddingTop: 8 },
   art: { flex: 1, minHeight: 120, alignItems: 'center', justifyContent: 'center', paddingVertical: 8 },
-  artCard: { aspectRatio: 1, height: '100%', maxWidth: '100%', borderRadius: 36, borderCurve: 'continuous', overflow: 'hidden' },
+  aura: { position: 'absolute', width: '92%', aspectRatio: 1, maxHeight: '100%', borderRadius: 999 },
+  artCard: { aspectRatio: 1, height: '86%', maxWidth: '86%', borderRadius: 40, borderCurve: 'continuous', overflow: 'hidden' },
   artImage: { width: '100%', height: '100%' },
   copy: { paddingTop: 16, paddingBottom: 12 },
   eyebrow: { letterSpacing: 1, marginBottom: 8, textTransform: 'uppercase' },
