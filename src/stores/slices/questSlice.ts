@@ -26,6 +26,10 @@ import {
   type LedgerEntry,
   type ReplacementOption,
   type UnlockBlock,
+  type WorkoutFormEvidence,
+  WORKOUT_REWARDS_PER_DAY,
+  workoutRewardsOn,
+  workoutRewardXp,
 } from '../../domain/game/progression';
 import {
   EMPTY_BASELINE,
@@ -41,7 +45,8 @@ import type { TaskAssignment, TaskDefinition, VerificationResult } from '../../d
 export type SyncItem =
   | { kind: 'claim'; key: string; assignmentId: string; taskId: string; gameDate: string }
   | { kind: 'unlock'; key: string; featureId: string }
-  | { kind: 'setup'; key: string; section: SetupSection };
+  | { kind: 'setup'; key: string; section: SetupSection }
+  | { kind: 'workout'; key: string; sessionId: string; gameDate: string; validFrames: number; formScore: number };
 
 /** Screen-facing view of an assignment. */
 export interface Quest {
@@ -91,6 +96,8 @@ export interface QuestSlice {
   refitDailyQuests: () => void;
   /** Awards a setup step's fixed XP once, if the step has really been answered. */
   claimSetupReward: (section: SetupSection) => { awarded: boolean; xp: number };
+  /** Pays a finished workout once: base XP, or ten times that with good camera-checked form. */
+  claimWorkoutReward: (sessionId: string, form: WorkoutFormEvidence | null) => { awarded: boolean; xp: number; reason?: 'daily_limit' | 'duplicate' };
   skipDailyTask: (assignmentId: string, reason?: string) => boolean;
   getReplacementOptions: (assignmentId: string) => ReplacementOption[];
   acceptReplacement: (skippedAssignmentId: string, taskId: string) => boolean;
@@ -344,6 +351,36 @@ export const createQuestSlice: StateCreator<RootState, [['zustand/persist', unkn
       if (ledger === state.rewardLedger) return { awarded: false, xp: 0 };
       commit({ rewardLedger: ledger, pendingSync: [...state.pendingSync, { kind: 'setup', key, section }] });
       return { awarded: true, xp: reward.xp };
+    },
+
+    claimWorkoutReward: (sessionId, form) => {
+      const state = get();
+      const date = today();
+      const key = `workout:${sessionId}`;
+      if (state.rewardLedger.some((e) => e.key === key)) return { awarded: false, xp: 0, reason: 'duplicate' };
+      if (workoutRewardsOn(state.rewardLedger, date) >= WORKOUT_REWARDS_PER_DAY) {
+        return { awarded: false, xp: 0, reason: 'daily_limit' };
+      }
+      const xp = workoutRewardXp(form);
+      const ledger = appendLedger(state.rewardLedger, {
+        key,
+        kind: 'workout_reward',
+        xp,
+        diamonds: 0,
+        taskPoints: 0,
+        gameDate: date,
+        sourceId: sessionId,
+        policyVersion: ECONOMY_VERSION,
+        createdAt: new Date().toISOString(),
+      });
+      commit({
+        rewardLedger: ledger,
+        pendingSync: [
+          ...state.pendingSync,
+          { kind: 'workout', key, sessionId, gameDate: date, validFrames: form?.validFrames ?? 0, formScore: form?.formScore ?? 0 },
+        ],
+      });
+      return { awarded: true, xp };
     },
 
     skipDailyTask: (assignmentId, reason) => {

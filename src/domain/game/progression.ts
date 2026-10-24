@@ -20,7 +20,7 @@ export const ECONOMY_VERSION = economy.version;
 
 // ---------------------------------------------------------------- ledger
 
-export type LedgerKind = 'task_reward' | 'setup_reward' | 'daily_goal' | 'level_clear' | 'unlock_spend' | 'legacy_import';
+export type LedgerKind = 'task_reward' | 'setup_reward' | 'workout_reward' | 'daily_goal' | 'level_clear' | 'unlock_spend' | 'legacy_import';
 
 export interface LedgerEntry {
   /** Idempotency key: the same key is never applied twice. */
@@ -70,6 +70,35 @@ export function dailyPointsFor(ledger: LedgerEntry[], gameDate: string): number 
     .filter((e) => e.kind === 'task_reward' && e.gameDate === gameDate)
     .reduce((sum, e) => sum + e.taskPoints, 0);
 }
+
+// ---------------------------------------------------------------- workouts
+
+/** XP for a finished plan workout; the server applies the same numbers (tf_claim_workout_reward). */
+export const WORKOUT_XP_BASE = 5;
+/** Camera-checked workouts with good form earn ten times the base. */
+export const WORKOUT_FORM_MULTIPLIER = 10;
+export const WORKOUT_FORM_MIN_SCORE = 0.8;
+export const WORKOUT_FORM_MIN_FRAMES = 12;
+/** Only the first two workouts of a day pay XP, so the reward follows effort, not repetition. */
+export const WORKOUT_REWARDS_PER_DAY = 2;
+
+export interface WorkoutFormEvidence {
+  /** Frames the camera tracked clearly across the checked exercises. */
+  validFrames: number;
+  /** Share of those frames with no form fault (0-1). */
+  formScore: number;
+}
+
+/** True when a workout's camera evidence qualifies for the form multiplier. */
+export const formQualifies = (form: WorkoutFormEvidence | null | undefined): boolean =>
+  Boolean(form && form.validFrames >= WORKOUT_FORM_MIN_FRAMES && form.formScore >= WORKOUT_FORM_MIN_SCORE);
+
+export const workoutRewardXp = (form: WorkoutFormEvidence | null | undefined): number =>
+  formQualifies(form) ? WORKOUT_XP_BASE * WORKOUT_FORM_MULTIPLIER : WORKOUT_XP_BASE;
+
+/** Workout rewards already paid on a game date. */
+export const workoutRewardsOn = (ledger: LedgerEntry[], gameDate: string): number =>
+  ledger.filter((e) => e.kind === 'workout_reward' && e.gameDate === gameDate).length;
 
 // ---------------------------------------------------------------- levels
 

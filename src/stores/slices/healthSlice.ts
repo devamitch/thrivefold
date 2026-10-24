@@ -131,7 +131,8 @@ export interface HealthSlice {
   addMedication: (entry: Omit<MedicationEntry, 'id'>) => void;
   deleteMedication: (id: string) => void;
   toggleMedicationTaken: (id: string, date: string) => void;
-  saveWorkoutSession: (session: Omit<WorkoutSession, 'id'>) => void;
+  /** Saves a finished workout and returns its id. */
+  saveWorkoutSession: (session: Omit<WorkoutSession, 'id'>) => string;
   deleteWorkoutSession: (id: string) => void;
   // Mood and check-in tracking fields
   todayEnergy: number | null; // 1-10
@@ -328,13 +329,11 @@ export const createHealthSlice: StateCreator<
       };
     }),
 
-  saveWorkoutSession: (session) =>
-    set((state) => ({
-      workoutSessions: [
-        { ...session, id: `wk_${Date.now()}_${Math.random().toString(36).slice(2, 6)}` },
-        ...state.workoutSessions,
-      ].slice(0, 500),
-    })),
+  saveWorkoutSession: (session) => {
+    const id = `wk_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    set((state) => ({ workoutSessions: [{ ...session, id }, ...state.workoutSessions].slice(0, 500) }));
+    return id;
+  },
 
   deleteWorkoutSession: (id) =>
     set((state) => ({ workoutSessions: state.workoutSessions.filter((w) => w.id !== id) })),

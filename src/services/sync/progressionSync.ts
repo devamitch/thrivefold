@@ -7,7 +7,7 @@
 import { supabase } from '../supabase/supabaseClient';
 import { useRootStore } from '../../stores/useRootStore';
 
-const PERMANENT = /unknown task|unknown setup step|stale game date|limit reached|account restricted|UNKNOWN_FEATURE|OWNED/i;
+const PERMANENT = /unknown task|unknown setup step|workout limit reached|stale game date|limit reached|account restricted|UNKNOWN_FEATURE|OWNED/i;
 
 let flushing = false;
 
@@ -30,7 +30,14 @@ export async function flushProgressionSync(): Promise<{ sent: number; pending: n
             })
           : item.kind === 'setup'
             ? await supabase.rpc('tf_claim_setup_reward', { p_section: item.section })
-            : await supabase.rpc('tf_unlock_feature', { p_feature_id: item.featureId });
+            : item.kind === 'workout'
+              ? await supabase.rpc('tf_claim_workout_reward', {
+                  p_session_key: item.sessionId,
+                  p_game_date: item.gameDate,
+                  p_valid_frames: item.validFrames,
+                  p_form_score: item.formScore,
+                })
+              : await supabase.rpc('tf_unlock_feature', { p_feature_id: item.featureId });
       const message = error?.message ?? (result && result.ok === false ? String(result.block) : '');
       if (!error && !(result && result.ok === false)) {
         resolveSync(item.key);

@@ -50,6 +50,8 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
   private var active = false
   private var frontFacing = true
   private var lastEmit = 0L
+  @Volatile private var frameW = 0
+  @Volatile private var frameH = 0
 
   fun setActive(value: Boolean) {
     if (value == active) return
@@ -128,6 +130,8 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
         if (frontFacing) postScale(-1f, 1f, bitmap.width / 2f, bitmap.height / 2f)
       }
       val upright = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+      frameW = upright.width
+      frameH = upright.height
       model.detectAsync(BitmapImageBuilder(upright).build(), SystemClock.uptimeMillis())
     } catch (_: Exception) {
       // A dropped frame is fine; the next one is analysed.
@@ -149,7 +153,7 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
         "visibility" to lm.visibility().orElse(0f).toDouble(),
       )
     } ?: emptyList()
-    post { onPose(mapOf("timestamp" to result.timestampMs(), "landmarks" to landmarks)) }
+    post { onPose(mapOf("timestamp" to result.timestampMs(), "landmarks" to landmarks, "frameWidth" to frameW, "frameHeight" to frameH)) }
   }
 
   private fun stop() {

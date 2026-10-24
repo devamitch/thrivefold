@@ -3,6 +3,7 @@ import {
   jointAngle,
   LM,
   movementById,
+  movementForExercise,
   stepReps,
   summarize,
   type Landmark,
@@ -57,4 +58,65 @@ test('low-confidence frames are ignored and the checkpoint needs enough valid fr
   expect(summary.reps).toBe(10);
   expect(summary.meetsCheckpoint).toBe(true);
   expect(summary.angleRange![0]).toBeLessThan(100);
+});
+
+/** Side-on body lying horizontally; `hipDrop` moves the hip below (+) or above (-) the line. */
+function plankBody(hipDrop: number, elbowDeg = 170): Landmark[] {
+  const lms = Array.from({ length: 33 }, () => point(0.5, 0.5, 0.1));
+  lms[LM.leftShoulder] = point(0.3, 0.5);
+  lms[LM.leftAnkle] = point(0.9, 0.5);
+  lms[LM.leftHip] = point(0.6, 0.5 + hipDrop);
+  lms[LM.leftKnee] = point(0.75, 0.5 + hipDrop / 2);
+  const rad = ((180 - elbowDeg) * Math.PI) / 180;
+  lms[LM.leftElbow] = point(0.3, 0.65);
+  lms[LM.leftWrist] = point(0.3 + 0.15 * Math.sin(rad), 0.65 + 0.15 * Math.cos(rad));
+  return lms;
+}
+
+describe('form faults', () => {
+  const plank = movementById('plank')!;
+  const pushup = movementById('pushup')!;
+
+  test('sagging hips are flagged only after they persist, then clear', () => {
+    let s = initialRepState();
+    s = stepReps(plank, s, plankBody(0.12), 0);
+    expect(s.fault).toBeNull();
+    for (let i = 1; i <= 8; i++) s = stepReps(plank, s, plankBody(0.12), i * 66);
+    expect(s.fault?.id).toBe('hips_sag');
+    for (let i = 9; i <= 20; i++) s = stepReps(plank, s, plankBody(0), i * 66);
+    expect(s.fault).toBeNull();
+  });
+
+  test('hips too high is told apart from sagging', () => {
+    let s = initialRepState();
+    for (let i = 0; i < 10; i++) s = stepReps(pushup, s, plankBody(-0.12), i * 66);
+    expect(s.fault?.id).toBe('hips_high');
+  });
+
+  test('plank hold counts only time in good form', () => {
+    let s = initialRepState();
+    for (let i = 0; i <= 150; i++) s = stepReps(plank, s, plankBody(0), i * 66);
+    const good = summarize(plank, s);
+    expect(good.holdSeconds).toBeGreaterThanOrEqual(9);
+    expect(good.formScore).toBe(1);
+    let bad = initialRepState();
+    for (let i = 0; i <= 150; i++) bad = stepReps(plank, bad, plankBody(0.12), i * 66);
+    expect(summarize(plank, bad).holdSeconds).toBeLessThan(1);
+  });
+
+  test('a squat that turns back early is flagged as shallow and not counted', () => {
+    const squat = movementById('squat')!;
+    let s = initialRepState();
+    for (const deg of [170, 150, 130, 125, 140, 165, 170]) s = stepReps(squat, s, body(deg));
+    expect(s.reps).toBe(0);
+    expect(s.fault?.id).toBe('shallow');
+    for (const deg of [140, 100, 165]) s = stepReps(squat, s, body(deg));
+    expect(s.reps).toBe(1);
+    expect(s.fault).toBeNull();
+  });
+
+  test('exercises map to camera-checked movements', () => {
+    expect(movementForExercise('pushup')?.id).toBe('pushup');
+    expect(movementForExercise('burpee')).toBeUndefined();
+  });
 });

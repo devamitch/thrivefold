@@ -289,5 +289,18 @@ await as('anon');
 r = await q(`select public.tf_claim_setup_reward('privacy')`);
 check('anon cannot claim setup rewards', !!r.error, r.error);
 
+// Workout rewards (migration 7): fixed amounts, 10x for good checked form, two per day
+await as('B');
+r = await q(`select public.tf_claim_workout_reward('wk_1', current_date, 40, 0.9) as r`);
+check('form-checked workout earns ten times the base', r.rows?.[0]?.r?.xp === 50, r.error ?? JSON.stringify(r.rows));
+r = await q(`select public.tf_claim_workout_reward('wk_1', current_date, 40, 0.9) as r`);
+check('same workout cannot pay twice', r.rows?.[0]?.r?.status === 'duplicate', r.error);
+r = await q(`select public.tf_claim_workout_reward('wk_2', current_date, 5, 0.95) as r`);
+check('too few tracked frames earns only the base', r.rows?.[0]?.r?.xp === 5, r.error ?? JSON.stringify(r.rows));
+r = await q(`select public.tf_claim_workout_reward('wk_3', current_date, 40, 0.9) as r`);
+check('third workout of the day is refused', /workout limit/.test(r.error ?? ''), r.error);
+r = await q(`select public.tf_claim_workout_reward('wk_4', current_date - 3, 40, 0.9) as r`);
+check('stale workout date is refused', /stale game date/.test(r.error ?? ''), r.error);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

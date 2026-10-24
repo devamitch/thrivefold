@@ -13,6 +13,9 @@ export interface PoseFrame {
   timestamp: number;
   /** 33 MediaPipe pose landmarks, normalized to the frame; empty when nobody is in view. */
   landmarks: PoseLandmark[];
+  /** Size of the analysed (upright, mirrored for the front camera) frame, for overlay mapping. */
+  frameWidth: number;
+  frameHeight: number;
 }
 
 export interface PoseCameraViewProps extends ViewProps {

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet, TextInput, Pressable, Linking } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
@@ -99,7 +99,7 @@ export default function WorkoutSessionScreen() {
       return;
     }
     const finishedAt = new Date().toISOString();
-    saveWorkoutSession({
+    const sessionId = saveWorkoutSession({
       planId: plan.id,
       date: formatLocalDate(new Date()),
       startedAt: startedAt.current,
@@ -108,7 +108,12 @@ export default function WorkoutSessionScreen() {
       effort: effort ?? undefined,
       painReported: pain,
     });
-    showToast({ type: 'success', title: 'Workout saved', message: `${loggedSets} sets logged on this device.` });
+    const reward = useRootStore.getState().claimWorkoutReward(sessionId, null);
+    showToast({
+      type: 'success',
+      title: 'Workout saved',
+      message: `${loggedSets} sets logged.${reward.awarded ? ` +${reward.xp} XP.` : ''} Use the camera coach next time for 10x XP.`,
+    });
     // Shared with Health Connect only when the person allowed workout writing there.
     const { healthConnect, audit } = useRootStore.getState();
     if (healthConnect?.scopes.includes('write:ExerciseSession')) {
@@ -131,6 +136,23 @@ export default function WorkoutSessionScreen() {
             </View>
           </Card>
         ) : null}
+
+        <Card
+          variant="tinted"
+          onPress={() => router.push(`/(app)/health/coach/${plan.id}` as Href)}
+          style={{ padding: spacing.base, marginBottom: spacing.sm }}
+        >
+          <View style={styles.row}>
+            <Ionicons name="videocam-outline" size={22} color={colors.primary} />
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Train with the camera coach</Text>
+              <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                Tutorial video and live form check side by side. Good form earns 10x XP.
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
+          </View>
+        </Card>
 
         {plan.items.map((item) => {
           const ex = exerciseById(item.exerciseId);
