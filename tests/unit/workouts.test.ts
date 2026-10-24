@@ -40,3 +40,23 @@ describe('workouts', () => {
     expect(weightHistory('goblet_squat', [a, b])).toEqual([{ date: '2026-10-10', kg: 10 }, { date: '2026-10-22', kg: 12 }]);
   });
 });
+
+describe('exercise library breadth and activity minutes', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const w = require('../../src/domain/fitness/workouts');
+  test('covers strength, cardio, HIIT, yoga, Pilates, balance, seated and stretch plans', () => {
+    const settings = new Set(w.PLANS.map((p: { setting: string }) => p.setting));
+    for (const s of ['home', 'gym', 'cardio', 'hiit', 'yoga', 'pilates', 'balance', 'seated', 'recovery', 'desk']) {
+      expect(settings.has(s)).toBe(true);
+    }
+  });
+  test('weekly active minutes add plan sessions and logged activities', () => {
+    const sessions = [{ date: '2026-10-22', startedAt: '2026-10-22T10:00:00Z', finishedAt: '2026-10-22T10:30:00Z' }];
+    const activities = [
+      { id: 'a', type: 'Running', date: '2026-10-23', minutes: 25 },
+      { id: 'b', type: 'Cycling', date: '2026-10-01', minutes: 60 },
+    ];
+    expect(w.activeMinutesThisWeek(sessions, activities, '2026-10-23')).toBe(55);
+    expect(w.activitiesThisWeek(activities, '2026-10-23')).toBe(1);
+  });
+});

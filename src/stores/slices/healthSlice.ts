@@ -3,7 +3,7 @@ import type { StateCreator } from 'zustand';
 import type { RootState } from '../rootTypes';
 import { CyclePhase } from '../../domain/health/cycleCalculations';
 import { formatLocalDate } from '../../domain/calendar/universalCalendarEngine';
-import type { WorkoutSession } from '../../domain/fitness/workouts';
+import type { ActivityLog, WorkoutSession } from '../../domain/fitness/workouts';
 
 
 export type FlowIntensity = 'none' | 'spotting' | 'light' | 'medium' | 'heavy';
@@ -103,6 +103,9 @@ export interface HealthSlice {
   journalEntries: JournalEntry[];
   personalEvents: PersonalCalendarEvent[];
   workoutSessions: WorkoutSession[];
+  activityLogs: ActivityLog[];
+  addActivityLog: (log: Omit<ActivityLog, 'id'>) => void;
+  deleteActivityLog: (id: string) => void;
   /** Glasses of water per date (YYYY-MM-DD). */
   hydration: Record<string, number>;
   setHydration: (date: string, glasses: number) => void;
@@ -263,6 +266,14 @@ export const createHealthSlice: StateCreator<
   // Only events the person adds; nothing is pre-filled.
   personalEvents: [],
   workoutSessions: [],
+  activityLogs: [],
+
+  addActivityLog: (log) =>
+    set((state) => ({
+      activityLogs: [{ ...log, id: `act_${Date.now()}_${Math.random().toString(36).slice(2, 6)}` }, ...state.activityLogs].slice(0, 1000),
+    })),
+
+  deleteActivityLog: (id) => set((state) => ({ activityLogs: state.activityLogs.filter((a) => a.id !== id) })),
   hydration: {},
 
   setHydration: (date, glasses) =>

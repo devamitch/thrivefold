@@ -4,7 +4,19 @@
  */
 
 export type Equipment = 'none' | 'chair' | 'dumbbells' | 'barbell' | 'machine' | 'band';
-export type Pattern = 'squat' | 'hinge' | 'push' | 'pull' | 'core' | 'mobility' | 'cardio' | 'carry';
+export type Pattern =
+  | 'squat'
+  | 'hinge'
+  | 'push'
+  | 'pull'
+  | 'core'
+  | 'mobility'
+  | 'cardio'
+  | 'carry'
+  | 'balance'
+  | 'yoga'
+  | 'pilates'
+  | 'plyometric';
 
 export interface Exercise {
   id: string;
@@ -33,7 +45,7 @@ export interface WorkoutPlan {
   id: string;
   title: string;
   summary: string;
-  setting: 'home' | 'desk' | 'gym' | 'recovery';
+  setting: 'home' | 'desk' | 'gym' | 'recovery' | 'cardio' | 'hiit' | 'yoga' | 'pilates' | 'balance' | 'seated';
   level: 'beginner' | 'intermediate';
   minutes: number;
   items: PlanItem[];
@@ -94,6 +106,126 @@ export const EXERCISES: Exercise[] = [
   { id: 'farmer_carry', name: 'Farmer carry', pattern: 'carry', equipment: 'dumbbells', weighted: true, timed: true,
     steps: ['Hold a weight in each hand.', 'Stand tall and walk steadily.'],
     easier: 'Lighter weights, shorter time.', harder: 'Heavier weights.', safety: 'Set weights down with a straight back.' },
+  // ── Strength (more) ──
+  { id: 'step_up', name: 'Step-up', pattern: 'squat', equipment: 'none', weighted: false,
+    steps: ['Stand facing a sturdy step or low bench.', 'Step up with one foot and press through the heel.', 'Stand tall at the top, then step down with control.', 'Switch the leading leg each set.'],
+    easier: 'Use a lower step and hold a rail.', harder: 'Hold dumbbells.', safety: 'Use a step that will not slide.' },
+  { id: 'calf_raise', name: 'Calf raise', pattern: 'squat', equipment: 'none', weighted: false,
+    steps: ['Stand tall, hands on a wall for balance.', 'Rise onto the balls of your feet.', 'Pause, then lower slowly.'],
+    easier: 'Both feet, small range.', harder: 'One foot at a time.', safety: 'Lower slowly to protect the Achilles tendon.' },
+  { id: 'superman', name: 'Superman hold', pattern: 'core', equipment: 'none', weighted: false, timed: true,
+    steps: ['Lie face down, arms forward.', 'Lift arms, chest and legs slightly.', 'Hold, breathing steadily.'],
+    easier: 'Lift arms only, or legs only.', harder: 'Longer holds.', safety: 'Keep the lift small; stop with any back pain.' },
+  { id: 'db_overhead_press', name: 'Dumbbell overhead press', pattern: 'push', equipment: 'dumbbells', weighted: true,
+    steps: ['Stand with dumbbells at shoulder height.', 'Brace your stomach.', 'Press the weights overhead.', 'Lower with control.'],
+    easier: 'Seated, lighter weights.', harder: 'One arm at a time.', safety: 'Skip it if overhead movement hurts your shoulders.' },
+  // ── Cardio ──
+  { id: 'march_in_place', name: 'March in place', pattern: 'cardio', equipment: 'none', weighted: false, timed: true,
+    steps: ['Stand tall.', 'Lift knees alternately at a steady pace.', 'Swing your arms naturally.'],
+    easier: 'Smaller steps, hold a chair.', harder: 'Lift knees higher and faster.', safety: 'Low impact; stop if dizzy.' },
+  { id: 'jumping_jacks', name: 'Jumping jacks', pattern: 'cardio', equipment: 'none', weighted: false, timed: true,
+    steps: ['Start standing, feet together.', 'Jump feet out while raising arms.', 'Jump back to the start.'],
+    easier: 'Step one foot out at a time.', harder: 'Faster pace.', safety: 'Land softly; use the step version for sore joints.' },
+  { id: 'jog', name: 'Easy jog', pattern: 'cardio', equipment: 'none', weighted: false, timed: true,
+    steps: ['Run at a pace where you can still speak in short sentences.', 'Keep steps short and light.'],
+    easier: 'Alternate one minute jog, one minute walk.', harder: 'Longer or hillier route.', safety: 'Stop with chest pain, dizziness or unusual breathlessness.' },
+  { id: 'cycling', name: 'Cycling (bike or stationary)', pattern: 'cardio', equipment: 'machine', weighted: false, timed: true,
+    steps: ['Set the seat so your knee is slightly bent at the bottom.', 'Pedal at a steady, comfortable effort.'],
+    easier: 'Lower resistance.', harder: 'Short faster intervals.', safety: 'Wear a helmet outdoors.' },
+  { id: 'rowing', name: 'Rowing machine', pattern: 'cardio', equipment: 'machine', weighted: false, timed: true,
+    steps: ['Push with legs first, then lean back slightly, then pull the handle to your ribs.', 'Return in reverse order.'],
+    easier: 'Lower damper, slower strokes.', harder: 'Higher stroke rate.', safety: 'Keep your back long; the legs do most of the work.' },
+  { id: 'jump_rope', name: 'Jump rope', pattern: 'cardio', equipment: 'none', weighted: false, timed: true,
+    steps: ['Turn the rope with your wrists.', 'Small, light hops on the balls of your feet.'],
+    easier: 'Rope-free: mimic the motion.', harder: 'Alternate feet.', safety: 'Land softly on a forgiving surface.' },
+  // ── HIIT ──
+  { id: 'squat_jump', name: 'Squat jump', pattern: 'plyometric', equipment: 'none', weighted: false,
+    steps: ['Squat down.', 'Jump up explosively.', 'Land softly back into a squat.'],
+    easier: 'Squat with a rise onto the toes.', harder: 'Higher jumps.', safety: 'Skip jumping with knee or pelvic-floor problems.' },
+  { id: 'mountain_climber', name: 'Mountain climber', pattern: 'plyometric', equipment: 'none', weighted: false, timed: true,
+    steps: ['Start in a high plank.', 'Drive knees toward your chest alternately.'],
+    easier: 'Hands on a bench, slower steps.', harder: 'Faster pace.', safety: 'Keep wrists under shoulders.' },
+  { id: 'burpee', name: 'Burpee', pattern: 'plyometric', equipment: 'none', weighted: false,
+    steps: ['Squat and place hands on the floor.', 'Step or jump feet back to a plank.', 'Return feet forward and stand or jump.'],
+    easier: 'Step back and forward, no jump.', harder: 'Add a push-up.', safety: 'Stop if you feel dizzy.' },
+  { id: 'high_knees', name: 'High knees', pattern: 'plyometric', equipment: 'none', weighted: false, timed: true,
+    steps: ['Run in place, bringing knees toward hip height.', 'Pump your arms.'],
+    easier: 'March instead of run.', harder: 'Faster pace.', safety: 'Land softly.' },
+  { id: 'skater', name: 'Skater hop', pattern: 'plyometric', equipment: 'none', weighted: false,
+    steps: ['Hop sideways onto one foot.', 'Swing the other leg behind.', 'Hop back to the other side.'],
+    easier: 'Step side to side.', harder: 'Wider, faster hops.', safety: 'Clear space around you.' },
+  // ── Yoga ──
+  { id: 'downward_dog', name: 'Downward dog', pattern: 'yoga', equipment: 'none', weighted: false, timed: true,
+    steps: ['From hands and knees, lift hips up and back.', 'Press the floor away; bend knees if needed.', 'Breathe slowly.'],
+    easier: 'Hands on a chair.', harder: 'Straighten legs gently.', safety: 'Skip with uncontrolled high blood pressure or late pregnancy.' },
+  { id: 'child_pose', name: "Child's pose", pattern: 'yoga', equipment: 'none', weighted: false, timed: true,
+    steps: ['Kneel and sit back toward your heels.', 'Fold forward, arms long or by your sides.', 'Breathe into your back.'],
+    easier: 'Cushion under hips or knees.', harder: 'Walk hands to each side.', safety: 'Keep knees wide if your stomach feels compressed.' },
+  { id: 'warrior_two', name: 'Warrior II', pattern: 'yoga', equipment: 'none', weighted: false, timed: true,
+    steps: ['Step feet wide; turn the front foot out.', 'Bend the front knee over the ankle.', 'Reach arms out, gaze over the front hand.'],
+    easier: 'Shorter stance.', harder: 'Deeper bend, longer hold.', safety: 'Keep the knee in line with the toes.' },
+  { id: 'cobra', name: 'Cobra', pattern: 'yoga', equipment: 'none', weighted: false, timed: true,
+    steps: ['Lie face down, hands under shoulders.', 'Lift the chest gently, elbows bent.', 'Shoulders away from ears.'],
+    easier: 'Forearms down (sphinx).', harder: 'Straighter arms if comfortable.', safety: 'Stop with any low-back pinching.' },
+  { id: 'tree_pose', name: 'Tree pose', pattern: 'balance', equipment: 'none', weighted: false, timed: true,
+    steps: ['Stand on one leg.', 'Place the other foot on the ankle, calf or thigh (not the knee).', 'Hands at chest; fix your gaze.'],
+    easier: 'Toes on the floor, hand on a wall.', harder: 'Arms overhead.', safety: 'Stand near a wall.' },
+  { id: 'sun_salutation', name: 'Sun salutation (gentle)', pattern: 'yoga', equipment: 'none', weighted: false,
+    steps: ['Reach up, fold forward.', 'Half lift, step back to plank or knees.', 'Lower, cobra, downward dog.', 'Step forward, rise up.'],
+    easier: 'Knees down throughout.', harder: 'Flow with the breath, more rounds.', safety: 'Move slowly; skip with dizziness.' },
+  // ── Pilates ──
+  { id: 'pilates_hundred', name: 'The hundred', pattern: 'pilates', equipment: 'none', weighted: false, timed: true,
+    steps: ['Lie on your back, knees bent and lifted.', 'Lift head and shoulders, arms long.', 'Pump arms, breathe in for 5, out for 5.'],
+    easier: 'Head down, feet on the floor.', harder: 'Legs extended higher.', safety: 'Keep your neck relaxed.' },
+  { id: 'single_leg_stretch', name: 'Single-leg stretch', pattern: 'pilates', equipment: 'none', weighted: false,
+    steps: ['Lie on your back, head lifted.', 'Draw one knee in, extend the other leg.', 'Switch smoothly.'],
+    easier: 'Head down, legs higher.', harder: 'Legs lower.', safety: 'Keep your lower back steady.' },
+  { id: 'roll_up', name: 'Roll-up', pattern: 'pilates', equipment: 'none', weighted: false,
+    steps: ['Lie with arms overhead.', 'Peel up one vertebra at a time to sitting.', 'Roll back down slowly.'],
+    easier: 'Start from sitting and roll halfway back.', harder: 'Slower tempo.', safety: 'Skip with acute back pain.' },
+  { id: 'side_leg_lift', name: 'Side-lying leg lift', pattern: 'pilates', equipment: 'none', weighted: false,
+    steps: ['Lie on your side, legs long.', 'Lift the top leg slowly.', 'Lower with control.'],
+    easier: 'Bend the bottom knee.', harder: 'Add a small circle at the top.', safety: 'Keep hips stacked.' },
+  { id: 'pilates_swim', name: 'Pilates swimming', pattern: 'pilates', equipment: 'none', weighted: false, timed: true,
+    steps: ['Lie face down, arms forward.', 'Lift arms and legs slightly.', 'Flutter opposite arm and leg.'],
+    easier: 'Arms only.', harder: 'Faster flutter.', safety: 'Keep the lift small.' },
+  // ── Balance ──
+  { id: 'single_leg_stand', name: 'Single-leg stand', pattern: 'balance', equipment: 'none', weighted: false, timed: true,
+    steps: ['Stand near a wall.', 'Lift one foot slightly.', 'Hold, then switch.'],
+    easier: 'Fingertips on the wall.', harder: 'Eyes closed (near support).', safety: 'Always keep support within reach.' },
+  { id: 'heel_toe_walk', name: 'Heel-to-toe walk', pattern: 'balance', equipment: 'none', weighted: false,
+    steps: ['Walk in a straight line placing heel to toe.', 'Look ahead, arms out if needed.'],
+    easier: 'Walk beside a wall.', harder: 'Walk backwards.', safety: 'Clear the floor first.' },
+  { id: 'clock_reach', name: 'Clock reach', pattern: 'balance', equipment: 'none', weighted: false,
+    steps: ['Stand on one leg holding a chair.', 'Reach the other foot to 12, 3 and 6 o\'clock points.', 'Return to centre each time.'],
+    easier: 'Small reaches.', harder: 'Bigger reaches, lighter grip.', safety: 'Keep hold of the chair.' },
+  // ── Core ──
+  { id: 'side_plank', name: 'Side plank', pattern: 'core', equipment: 'none', weighted: false, timed: true,
+    steps: ['Lie on your side, elbow under shoulder.', 'Lift hips so your body forms a line.', 'Hold, then switch sides.'],
+    easier: 'Knees bent on the floor.', harder: 'Top leg lifted.', safety: 'Stop with shoulder pain.' },
+  { id: 'bird_dog', name: 'Bird dog', pattern: 'core', equipment: 'none', weighted: false,
+    steps: ['On hands and knees, back flat.', 'Reach one arm and the opposite leg out.', 'Pause, return and switch.'],
+    easier: 'Move only the leg.', harder: 'Slow three-second holds.', safety: 'Keep hips level.' },
+  // ── Seated / low impact ──
+  { id: 'seated_march', name: 'Seated march', pattern: 'cardio', equipment: 'chair', weighted: false, timed: true,
+    steps: ['Sit tall at the front of a chair.', 'Lift knees alternately.', 'Swing arms if comfortable.'],
+    easier: 'Smaller lifts.', harder: 'Faster pace, add arm punches.', safety: 'Use a chair without wheels.' },
+  { id: 'seated_leg_extension', name: 'Seated leg extension', pattern: 'squat', equipment: 'chair', weighted: false,
+    steps: ['Sit tall.', 'Straighten one knee, hold for a second.', 'Lower slowly and switch.'],
+    easier: 'Smaller range.', harder: 'Ankle weight.', safety: 'Move slowly.' },
+  { id: 'seated_arm_circles', name: 'Seated arm circles', pattern: 'mobility', equipment: 'chair', weighted: false, timed: true,
+    steps: ['Sit tall, arms out to the sides.', 'Make small circles forward, then backward.'],
+    easier: 'One arm at a time.', harder: 'Bigger circles.', safety: 'Lower arms if shoulders ache.' },
+  // ── Stretching ──
+  { id: 'hamstring_stretch', name: 'Hamstring stretch', pattern: 'mobility', equipment: 'none', weighted: false, timed: true,
+    steps: ['Sit or stand with one leg straight.', 'Hinge forward from the hips until you feel a stretch.', 'Breathe and hold.'],
+    easier: 'Bend the knee slightly.', harder: 'Longer hold.', safety: 'No bouncing.' },
+  { id: 'chest_stretch', name: 'Doorway chest stretch', pattern: 'mobility', equipment: 'none', weighted: false, timed: true,
+    steps: ['Forearm on a door frame at shoulder height.', 'Step through gently until the chest stretches.'],
+    easier: 'Lower arm position.', harder: 'Slightly higher arm.', safety: 'Stop with any tingling in the arm.' },
+  { id: 'calf_stretch', name: 'Wall calf stretch', pattern: 'mobility', equipment: 'none', weighted: false, timed: true,
+    steps: ['Hands on a wall, one leg back, heel down.', 'Lean in until the calf stretches.'],
+    easier: 'Shorter stance.', harder: 'Bend the back knee for a deeper calf stretch.', safety: 'Keep the heel down.' },
   { id: 'band_pull_apart', name: 'Band pull-apart', pattern: 'pull', equipment: 'band', weighted: false,
     steps: ['Hold a band at shoulder height, arms straight.', 'Pull the band apart to your chest.', 'Return slowly.'],
     easier: 'Lighter band.', harder: 'Pause at the chest.', safety: 'Keep shoulders down, away from ears.' },
@@ -136,6 +268,68 @@ export const PLANS: WorkoutPlan[] = [
       { exerciseId: 'brisk_walk', sets: 1, target: 900, restSeconds: 0 },
       { exerciseId: 'cat_cow', sets: 1, target: 8, restSeconds: 30 },
       { exerciseId: 'hip_flexor_stretch', sets: 2, target: 30, restSeconds: 15 },
+    ] },
+  { id: 'cardio_starter', title: 'Cardio starter', summary: 'Low-impact intervals to raise your heart rate gently.', setting: 'cardio', level: 'beginner', minutes: 20,
+    items: [
+      { exerciseId: 'march_in_place', sets: 1, target: 180, restSeconds: 30 },
+      { exerciseId: 'jumping_jacks', sets: 3, target: 30, restSeconds: 45 },
+      { exerciseId: 'step_up', sets: 3, target: 10, restSeconds: 45 },
+      { exerciseId: 'march_in_place', sets: 2, target: 120, restSeconds: 30 },
+    ] },
+  { id: 'hiit_short', title: 'Short HIIT', summary: 'Hard work with full rests. Only on a high-energy day.', setting: 'hiit', level: 'intermediate', minutes: 15,
+    items: [
+      { exerciseId: 'squat_jump', sets: 3, target: 10, restSeconds: 45 },
+      { exerciseId: 'mountain_climber', sets: 3, target: 30, restSeconds: 45 },
+      { exerciseId: 'burpee', sets: 3, target: 6, restSeconds: 60 },
+      { exerciseId: 'high_knees', sets: 3, target: 30, restSeconds: 45 },
+    ] },
+  { id: 'yoga_flow', title: 'Gentle yoga flow', summary: 'Breath-led poses for mobility and calm.', setting: 'yoga', level: 'beginner', minutes: 20,
+    items: [
+      { exerciseId: 'cat_cow', sets: 1, target: 8, restSeconds: 0 },
+      { exerciseId: 'sun_salutation', sets: 3, target: 1, restSeconds: 20 },
+      { exerciseId: 'warrior_two', sets: 2, target: 30, restSeconds: 15 },
+      { exerciseId: 'tree_pose', sets: 2, target: 30, restSeconds: 15 },
+      { exerciseId: 'cobra', sets: 2, target: 20, restSeconds: 15 },
+      { exerciseId: 'child_pose', sets: 1, target: 60, restSeconds: 0 },
+    ] },
+  { id: 'pilates_core', title: 'Pilates core', summary: 'Controlled mat work for deep core and posture.', setting: 'pilates', level: 'beginner', minutes: 20,
+    items: [
+      { exerciseId: 'pilates_hundred', sets: 1, target: 60, restSeconds: 30 },
+      { exerciseId: 'single_leg_stretch', sets: 2, target: 10, restSeconds: 30 },
+      { exerciseId: 'roll_up', sets: 2, target: 6, restSeconds: 30 },
+      { exerciseId: 'side_leg_lift', sets: 2, target: 12, restSeconds: 20 },
+      { exerciseId: 'pilates_swim', sets: 2, target: 30, restSeconds: 30 },
+    ] },
+  { id: 'balance_basics', title: 'Balance basics', summary: 'Steadier on your feet, with support nearby.', setting: 'balance', level: 'beginner', minutes: 12,
+    items: [
+      { exerciseId: 'single_leg_stand', sets: 3, target: 30, restSeconds: 20 },
+      { exerciseId: 'heel_toe_walk', sets: 3, target: 10, restSeconds: 20 },
+      { exerciseId: 'clock_reach', sets: 2, target: 6, restSeconds: 20 },
+      { exerciseId: 'calf_raise', sets: 2, target: 12, restSeconds: 30 },
+    ] },
+  { id: 'seated_strength', title: 'Seated workout', summary: 'Everything from a chair, for limited mobility or busy days.', setting: 'seated', level: 'beginner', minutes: 15,
+    items: [
+      { exerciseId: 'seated_march', sets: 2, target: 60, restSeconds: 20 },
+      { exerciseId: 'seated_leg_extension', sets: 2, target: 10, restSeconds: 20 },
+      { exerciseId: 'chair_squat', sets: 2, target: 8, restSeconds: 30 },
+      { exerciseId: 'seated_arm_circles', sets: 2, target: 30, restSeconds: 15 },
+      { exerciseId: 'thoracic_rotation', sets: 2, target: 6, restSeconds: 15 },
+    ] },
+  { id: 'evening_stretch', title: 'Evening stretch', summary: 'Ten quiet minutes before bed.', setting: 'recovery', level: 'beginner', minutes: 12,
+    items: [
+      { exerciseId: 'hamstring_stretch', sets: 2, target: 30, restSeconds: 10 },
+      { exerciseId: 'chest_stretch', sets: 2, target: 30, restSeconds: 10 },
+      { exerciseId: 'calf_stretch', sets: 2, target: 30, restSeconds: 10 },
+      { exerciseId: 'hip_flexor_stretch', sets: 2, target: 30, restSeconds: 10 },
+      { exerciseId: 'child_pose', sets: 1, target: 60, restSeconds: 0 },
+    ] },
+  { id: 'gym_upper_lower', title: 'Gym strength C', summary: 'Press, step-ups and core with dumbbells.', setting: 'gym', level: 'intermediate', minutes: 40,
+    items: [
+      { exerciseId: 'db_overhead_press', sets: 3, target: 10, restSeconds: 90 },
+      { exerciseId: 'step_up', sets: 3, target: 10, restSeconds: 60 },
+      { exerciseId: 'db_row', sets: 3, target: 10, restSeconds: 75 },
+      { exerciseId: 'side_plank', sets: 2, target: 30, restSeconds: 30 },
+      { exerciseId: 'bird_dog', sets: 2, target: 10, restSeconds: 30 },
     ] },
 ];
 
@@ -209,4 +403,57 @@ export function weightHistory(exerciseId: string, sessions: WorkoutSession[]): {
     .map((s) => ({ date: s.date, kg: Math.max(0, ...(s.entries.find((e) => e.exerciseId === exerciseId)?.sets ?? []).map((x) => x.weightKg ?? 0)) }))
     .filter((p) => p.kg > 0)
     .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/** Activities logged outside a plan (sport, runs, classes). */
+export const ACTIVITY_TYPES = [
+  'Walking',
+  'Running',
+  'Cycling',
+  'Swimming',
+  'Rowing',
+  'Hiking',
+  'Yoga class',
+  'Pilates class',
+  'Dance',
+  'Gym session',
+  'Football',
+  'Cricket',
+  'Badminton',
+  'Tennis',
+  'Basketball',
+  'Martial arts',
+  'Climbing',
+  'Other',
+] as const;
+
+export interface ActivityLog {
+  id: string;
+  type: string;
+  date: string; // YYYY-MM-DD
+  minutes: number;
+  distanceKm?: number;
+  /** 1-10 how hard it felt. */
+  effort?: number;
+  note?: string;
+}
+
+const inLastWeek = (date: string, today: string) => {
+  const end = Date.parse(`${today}T00:00:00Z`);
+  const d = Date.parse(`${date}T00:00:00Z`);
+  return d <= end && end - d < 7 * 86400000;
+};
+
+/** Logged activities in the 7 days ending `today`. */
+export const activitiesThisWeek = (activities: ActivityLog[], today: string) =>
+  activities.filter((a) => inLastWeek(a.date, today)).length;
+
+/** Active minutes in the 7 days ending `today`, from plan sessions and logged activities. */
+export function activeMinutesThisWeek(sessions: WorkoutSession[], activities: ActivityLog[], today: string): number {
+  const inWeek = (date: string) => inLastWeek(date, today);
+  const planMinutes = sessions
+    .filter((s) => inWeek(s.date))
+    .reduce((sum, s) => sum + Math.max(1, Math.round((Date.parse(s.finishedAt) - Date.parse(s.startedAt)) / 60000)), 0);
+  const activityMinutes = activities.filter((a) => inWeek(a.date)).reduce((sum, a) => sum + a.minutes, 0);
+  return planMinutes + activityMinutes;
 }

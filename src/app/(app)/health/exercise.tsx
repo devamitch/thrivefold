@@ -6,31 +6,40 @@ import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Header } from '../../../components/ui/Header';
 import { Card } from '../../../components/ui/Card';
+import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { Chip } from '../../../components/ui/Chip';
 import { useTheme } from '../../../theme/useTheme';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngine';
-import { PLANS, exerciseById, planById, sessionsThisWeek, type WorkoutPlan } from '../../../domain/fitness/workouts';
+import { PLANS, activeMinutesThisWeek, activitiesThisWeek, exerciseById, planById, sessionsThisWeek, type WorkoutPlan } from '../../../domain/fitness/workouts';
 
 const SETTINGS: { id: 'all' | WorkoutPlan['setting']; label: string }[] = [
   { id: 'all', label: 'All' },
   { id: 'home', label: 'Home' },
   { id: 'gym', label: 'Gym' },
+  { id: 'cardio', label: 'Cardio' },
+  { id: 'hiit', label: 'HIIT' },
+  { id: 'yoga', label: 'Yoga' },
+  { id: 'pilates', label: 'Pilates' },
+  { id: 'balance', label: 'Balance' },
+  { id: 'seated', label: 'Seated' },
   { id: 'desk', label: 'Desk' },
-  { id: 'recovery', label: 'Recovery' },
+  { id: 'recovery', label: 'Stretch and recovery' },
 ];
 
 /** Workouts hub: plans to start, this week's count and logged history. */
 export default function WorkoutsScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
-  const { sessions, deleteWorkoutSession, showAlert } = useRootStore(
-    useShallow((s) => ({ sessions: s.workoutSessions, deleteWorkoutSession: s.deleteWorkoutSession, showAlert: s.showAlert })),
+  const { sessions, activities, deleteWorkoutSession, showAlert } = useRootStore(
+    useShallow((s) => ({ sessions: s.workoutSessions, activities: s.activityLogs, deleteWorkoutSession: s.deleteWorkoutSession, showAlert: s.showAlert })),
   );
   const [filter, setFilter] = useState<(typeof SETTINGS)[number]['id']>('all');
   const plans = useMemo(() => PLANS.filter((p) => filter === 'all' || p.setting === filter), [filter]);
-  const week = sessionsThisWeek(sessions, formatLocalDate(new Date()));
+  const today = formatLocalDate(new Date());
+  const week = sessionsThisWeek(sessions, today);
+  const minutes = activeMinutesThisWeek(sessions, activities, today);
 
   return (
     <ScreenWrapper scrollable>
@@ -38,8 +47,19 @@ export default function WorkoutsScreen() {
       <View style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
         <Card variant="surface1" style={{ padding: spacing.base }}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>
-            {week} workout{week === 1 ? '' : 's'} in the last 7 days
+            {minutes} active minutes in the last 7 days
           </Text>
+          <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 2 }]}>
+            {week} plan workout{week === 1 ? '' : 's'} · {activitiesThisWeek(activities, today)} other activities.
+            Many adults aim for about 150 minutes of moderate activity a week.
+          </Text>
+          <Button
+            label="Log a run, ride, class or sport"
+            size="sm"
+            variant="outline"
+            onPress={() => router.push('/(app)/health/activity' as Href)}
+            style={{ marginTop: spacing.sm, alignSelf: 'flex-start' }}
+          />
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>
             Never train through sharp pain, chest pain or dizziness. General fitness guidance, not medical advice.
           </Text>
