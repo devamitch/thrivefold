@@ -59,6 +59,11 @@ export async function signInWithGoogle(): Promise<GoogleResult> {
     const { user, idToken } = response.data;
     const { accessToken } = await GoogleSignin.getTokens();
     const facts = await readFacts(accessToken);
+    let resolvedGender = facts.gender;
+    if (!resolvedGender) {
+      const { inferGender } = await import('../../domain/account/genderInference');
+      resolvedGender = (await inferGender(user.name ?? user.givenName ?? user.email)) ?? null;
+    }
 
     let serverSession = false;
     if (supabase && idToken) {
@@ -74,6 +79,7 @@ export async function signInWithGoogle(): Promise<GoogleResult> {
       photo: user.photo,
       serverSession,
       ...facts,
+      gender: resolvedGender ?? facts.gender,
     };
     return { ok: true, profile: pending };
   } catch (e) {

@@ -19,6 +19,7 @@ import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { buildLocalExport, eraseLocalData } from '../../../services/privacy/localData';
 import { useRootStore } from '../../../stores/useRootStore';
 import { signOutAccount } from '../../../services/account/accountService';
+import { signOutGoogle } from '../../../services/account/googleAccount';
 import { enableQuestReminders } from '../../../services/notifications/questReminders';
 import {
   clearSummaryOutbox,
@@ -128,8 +129,15 @@ export default function SettingsScreen() {
         'Check-ins, cycle records, journal, workouts, quests and settings are permanently deleted from this phone. Export first if you want a copy.',
       confirmText: 'Erase everything',
       destructive: true,
-      onConfirm: () => {
+      onConfirm: async () => {
+        try {
+          await signOutGoogle();
+        } catch {}
+        try {
+          await signOutAccount();
+        } catch {}
         eraseLocalData();
+        signOut();
         router.replace('/(auth)/sign-in');
       },
     });
@@ -517,10 +525,15 @@ export default function SettingsScreen() {
         </Card>
 
         <Card
-          onPress={() => {
-            signOutAccount().catch(() => undefined);
+          onPress={async () => {
+            try {
+              await signOutGoogle();
+            } catch {}
+            try {
+              await signOutAccount();
+            } catch {}
             signOut();
-            router.replace('/');
+            router.replace('/(auth)/sign-in');
           }}
           style={{ marginBottom: 8 }}
         >

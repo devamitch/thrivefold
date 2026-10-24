@@ -56,7 +56,17 @@ export const createAuthSlice: StateCreator<
       introsSentToday: 0,
       lastIntroDate: null,
 
-      setUser: (user) => set({ user, isAuthenticated: Boolean(user) }),
+      setUser: (user) => {
+        const updates: Record<string, unknown> = { user, isAuthenticated: Boolean(user) };
+        if (user?.gender?.toLowerCase() === 'male' && get().experience === 'women_health') {
+          updates.experience = 'men_health';
+          updates.experienceConfirmed = true;
+        } else if (user?.gender?.toLowerCase() === 'female' && get().experience === 'men_health') {
+          updates.experience = 'women_health';
+          updates.experienceConfirmed = true;
+        }
+        set(updates as any);
+      },
       continueAsGuest: () => {
         const guestUser: UserProfile = {
           id: newLocalId('guest'),

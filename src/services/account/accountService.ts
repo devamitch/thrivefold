@@ -13,6 +13,10 @@ const friendly = (message: string) =>
       ? 'That code is not valid or has expired. Request a new one.'
       : 'Could not reach the server. Check your connection and try again.';
 
+export const SUPABASE_CALLBACK_URL =
+  process.env.EXPO_PUBLIC_SUPABASE_CALLBACK_URL ||
+  'https://lymbgfzngpkvcadrkvui.supabase.co/auth/v1/callback';
+
 export const accountsAvailable = () => isBackendConfigured && supabase !== null;
 
 export const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
@@ -21,7 +25,13 @@ export const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.t
 export async function requestEmailCode(email: string): Promise<AccountResult> {
   if (!supabase) return { ok: false, message: 'Accounts are not available in this build.' };
   if (!isValidEmail(email)) return { ok: false, message: 'Enter a valid email address.' };
-  const { error } = await supabase.auth.signInWithOtp({ email: email.trim(), options: { shouldCreateUser: true } });
+  const { error } = await supabase.auth.signInWithOtp({
+    email: email.trim(),
+    options: {
+      shouldCreateUser: true,
+      emailRedirectTo: SUPABASE_CALLBACK_URL,
+    },
+  });
   return error ? { ok: false, message: friendly(error.message) } : { ok: true };
 }
 
