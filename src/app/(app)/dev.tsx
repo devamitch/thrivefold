@@ -604,7 +604,7 @@ export default function DevToolsScreen() {
                 store.showToast({
                   type: 'error',
                   title: 'Storage Full Warning',
-                  message: 'Local encrypted vault approaching limit.',
+                  message: 'Device storage is almost full.',
                 })
               }
             />

@@ -128,6 +128,26 @@ export default function HealthIndexScreen() {
             <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
           </View>
         </Card>
+
+        <Card
+          onPress={() => router.push('/(app)/health/integrations')}
+          style={{ marginTop: spacing.sm, padding: spacing.base }}
+        >
+          <View style={styles.rowBetween}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+              <View style={[styles.iconWrap, { backgroundColor: colors.surface1 }]}>
+                <Ionicons name="link-outline" size={20} color={colors.text.primary} />
+              </View>
+              <View style={{ marginLeft: 14, flex: 1 }}>
+                <Text style={[typography.subheading, { color: colors.text.primary }]}>Connected apps</Text>
+                <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                  Health Connect, heart-rate straps, FHIR export
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
+          </View>
+        </Card>
       </ScrollView>
     </ScreenWrapper>
   );

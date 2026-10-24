@@ -12,6 +12,7 @@ import { Chip } from '../../../../components/ui/Chip';
 import { useTheme } from '../../../../theme/useTheme';
 import { useRootStore, useShallow } from '../../../../stores/useRootStore';
 import { formatLocalDate } from '../../../../domain/calendar/universalCalendarEngine';
+import { writeWorkoutToHealthConnect } from '../../../../services/integrations/healthConnect';
 import {
   exerciseById,
   planById,
@@ -97,16 +98,24 @@ export default function WorkoutSessionScreen() {
       showToast({ type: 'info', message: 'Tick at least one set as done before saving.' });
       return;
     }
+    const finishedAt = new Date().toISOString();
     saveWorkoutSession({
       planId: plan.id,
       date: formatLocalDate(new Date()),
       startedAt: startedAt.current,
-      finishedAt: new Date().toISOString(),
+      finishedAt,
       entries,
       effort: effort ?? undefined,
       painReported: pain,
     });
     showToast({ type: 'success', title: 'Workout saved', message: `${loggedSets} sets logged on this device.` });
+    // Shared with Health Connect only when the person allowed workout writing there.
+    const { healthConnect, audit } = useRootStore.getState();
+    if (healthConnect?.scopes.includes('write:ExerciseSession')) {
+      writeWorkoutToHealthConnect({ title: plan.title, setting: plan.setting, startedAt: startedAt.current, finishedAt })
+        .then(() => audit('sync_write', 'health_connect', `Workout "${plan.title}" written`))
+        .catch(() => audit('sync_write', 'health_connect', `Workout "${plan.title}" could not be written`));
+    }
     router.back();
   };
 
