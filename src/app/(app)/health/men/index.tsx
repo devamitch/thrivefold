@@ -89,11 +89,15 @@ export default function MenHealthScreen() {
         </Card>
 
         <Card style={{ marginBottom: spacing.md, padding: spacing.lg }}>
-          <Text style={[typography.subheading, { color: colors.text.primary }]}>Stress and frustration</Text>
+          <Text style={[typography.subheading, { color: colors.text.primary }]}>Stress, confidence and communication</Text>
           <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>
-            Write down what happened and what you need, privately on this device.
+            Short reads on handling work frustration, listening well and saying what you need. Write things down
+            privately on this device.
           </Text>
-          <Button label="Write a private note" size="sm" variant="outline" onPress={() => router.push('/(app)/journal/new')} style={{ marginTop: spacing.md, alignSelf: 'flex-start' }} />
+          <View style={[styles.actions, { marginTop: spacing.md }]}>
+            <Button label="Read" size="sm" variant="outline" onPress={() => router.push('/(app)/learn')} />
+            <Button label="Write a private note" size="sm" variant="ghost" onPress={() => router.push('/(app)/journal/new')} />
+          </View>
         </Card>
 
         <Card style={{ marginBottom: spacing.md, padding: spacing.lg }}>

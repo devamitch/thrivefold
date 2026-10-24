@@ -1,84 +1,70 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { ScreenWrapper } from '../../components/ui/ScreenWrapper';
-import { Card } from '../../components/ui/Card';
+import { Ionicons } from '@expo/vector-icons';
+import React, { useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
+
+import { AppHeader } from '../../components/ui/AppHeader';
 import { Badge } from '../../components/ui/Badge';
-import { Header } from '../../components/ui/Header';
+import { Card } from '../../components/ui/Card';
+import { ScreenContainer } from '../../components/ui/ScreenContainer';
+import { articlesFor } from '../../content/learn';
 import { useTheme } from '../../theme/useTheme';
 
+/** Plain-language health basics for the selected experience; tap an article to read it. */
 export default function LearnScreen() {
-  const { colors, typography, spacing } = useTheme();
-
-  const articles = [
-    {
-      id: 'art_01',
-      category: 'Reproductive Wellbeing',
-      title: 'Understanding Hormonal Fluctuations & Daily Energy',
-      summary: 'How estrogen and progesterone shift throughout the cycle, affecting metabolic rate and natural rest needs.',
-      readTime: '4 min read',
-    },
-    {
-      id: 'art_02',
-      category: 'Physical Resilience',
-      title: 'Pelvic-Floor Awareness & Spine Stabilization',
-      summary: 'Dispelling myths around universal exercises: why relaxing hypertonic pelvic muscles is just as critical as strengthening.',
-      readTime: '5 min read',
-    },
-    {
-      id: 'art_03',
-      category: 'Stress Regulation',
-      title: 'Vagal Nerve Activation: The Science of Parasympathetic Breathing',
-      summary: 'How 4-second inhales and 8-second slow exhales physically trigger heart rate variability recovery.',
-      readTime: '3 min read',
-    },
-    {
-      id: 'art_04',
-      category: 'Men’s Health & Confidence',
-      title: 'Workplace Decompression & Mindful Boundaries',
-      summary: 'Practical cognitive habits to disengage from job stress without emotional reactivity or chronic fatigue.',
-      readTime: '4 min read',
-    },
-  ];
+  const { colors, typography, spacing, experience } = useTheme();
+  const reduceMotion = useReducedMotion();
+  const [open, setOpen] = useState<string | null>(null);
+  const articles = articlesFor(experience);
 
   return (
-    <ScreenWrapper scrollable>
-      <Header title="Learn" subtitle="Plain-language health basics" showBack />
-      <View style={[styles.content, { paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }]}>
-        <Card variant="surface1" style={{ marginBottom: spacing.md, padding: spacing.base }}>
-          <Text style={[typography.captionBold, { color: colors.primary }]}>
-            Non-Diagnostic Educational Portal
-          </Text>
-          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>
-            All guidance is reviewed for clinical safety. Thrivefold does not prescribe treatments or replace professional medical consultations.
-          </Text>
-        </Card>
+    <ScreenContainer header={<AppHeader title="Learn" subtitle="Plain-language health basics" showBack />} scrollMode="shell-scroll-view">
+      <Card variant="surface1" style={{ marginBottom: spacing.md, padding: spacing.base }}>
+        <Text style={[typography.caption, { color: colors.text.secondary }]}>
+          General information based on public health guidance (NHS, WHO, CDC). Not medical advice and not a diagnosis.
+        </Text>
+      </Card>
 
-        {articles.map((art) => (
-          <Card key={art.id} style={{ marginBottom: spacing.md }}>
+      {articles.map((art) => {
+        const expanded = open === art.id;
+        return (
+          <Card
+            key={art.id}
+            onPress={() => setOpen(expanded ? null : art.id)}
+            style={{ marginBottom: spacing.md }}
+          >
             <View style={styles.cardHeader}>
               <Badge label={art.category} variant="primary" />
-              <Text style={[typography.caption, { color: colors.text.muted }]}>{art.readTime}</Text>
+              <Text style={[typography.caption, { color: colors.text.muted }]}>{art.minutes} min read</Text>
             </View>
-            <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.xs }]}>
-              {art.title}
-            </Text>
-            <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: spacing.xs }]}>
-              {art.summary}
-            </Text>
+            <View style={[styles.cardHeader, { marginTop: spacing.xs }]}>
+              <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>{art.title}</Text>
+              <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.text.muted} />
+            </View>
+            {expanded ? (
+              <Animated.View entering={reduceMotion ? undefined : FadeIn.duration(200)}>
+                {art.body.map((p) => (
+                  <Text key={p.slice(0, 24)} style={[typography.body, { color: colors.text.secondary, marginTop: spacing.sm }]}>
+                    {p}
+                  </Text>
+                ))}
+                {art.seekHelp ? (
+                  <View style={[styles.help, { backgroundColor: colors.warningSurface, marginTop: spacing.md }]}>
+                    <Ionicons name="medkit-outline" size={18} color={colors.warning} />
+                    <Text style={[typography.subbody, styles.flex, { color: colors.text.primary, marginLeft: 8 }]}>{art.seekHelp}</Text>
+                  </View>
+                ) : null}
+              </Animated.View>
+            ) : null}
           </Card>
-        ))}
-      </View>
-    </ScreenWrapper>
+        );
+      })}
+    </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
-    flex: 1,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
+  cardHeader: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
+  flex: { flex: 1 },
+  help: { alignItems: 'flex-start', borderRadius: 12, flexDirection: 'row', padding: 12 },
 });
