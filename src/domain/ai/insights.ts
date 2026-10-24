@@ -19,7 +19,7 @@ export interface InsightPeriod {
   startDate: string; // YYYY-MM-DD
 }
 
-export type InsightKind = 'trend' | 'link' | 'pattern' | 'symptom' | 'cycle' | 'consistency';
+export type InsightKind = 'trend' | 'link' | 'pattern' | 'symptom' | 'cycle' | 'consistency' | 'activity';
 
 export interface Insight {
   id: string;
@@ -41,6 +41,10 @@ export interface InsightInput {
   periods?: InsightPeriod[];
   /** YYYY-MM-DD for "today"; injectable so results are reproducible in tests. */
   today: string;
+  /** Dates with a workout or logged activity. */
+  activeDates?: string[];
+  /** Protein (g) per logged meal day. */
+  proteinByDate?: Record<string, number>;
 }
 
 /** Thresholds are deliberately conservative: a quiet screen beats a false pattern. */
@@ -409,6 +413,67 @@ function consistencyInsight(days: DayRecord[], today: string): Insight[] {
   ];
 }
 
+// ---------------------------------------------------------------- activity and food
+
+/** Training this week vs last, mood on active vs rest days, and protein from logged meals. */
+function activityInsights(days: { date: string; mood: number; energy: number }[], input: InsightInput): Insight[] {
+  const out: Insight[] = [];
+  const active = new Set(input.activeDates ?? []);
+  const thisWeek = [...active].filter((d) => daysAgo(d, input.today) >= 0 && daysAgo(d, input.today) < 7).length;
+  const lastWeek = [...active].filter((d) => daysAgo(d, input.today) >= 7 && daysAgo(d, input.today) < 14).length;
+  if (thisWeek + lastWeek >= 2) {
+    out.push({
+      id: 'activity_weeks',
+      kind: 'activity',
+      title: `${thisWeek} active day${thisWeek === 1 ? '' : 's'} this week${lastWeek ? `, ${lastWeek} last week` : ''}`,
+      detail:
+        thisWeek > lastWeek
+          ? 'More than last week. Steady beats heroic: keep the easy days easy.'
+          : thisWeek === lastWeek
+            ? 'Same as last week: a steady rhythm.'
+            : 'Fewer than last week. A short session still counts; rest is not failure.',
+      evidence: 'From your workouts and logged activities',
+      sampleSize: thisWeek + lastWeek,
+      strength: 'clear',
+    });
+  }
+  const onActive = days.filter((d) => active.has(d.date));
+  const onRest = days.filter((d) => !active.has(d.date));
+  if (onActive.length >= INSIGHT_THRESHOLDS.groupMinDays && onRest.length >= INSIGHT_THRESHOLDS.groupMinDays) {
+    const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+    const diff = mean(onActive.map((d) => d.mood)) - mean(onRest.map((d) => d.mood));
+    if (Math.abs(diff) >= INSIGHT_THRESHOLDS.trendMinDelta) {
+      out.push({
+        id: 'activity_mood',
+        kind: 'activity',
+        title: diff > 0 ? 'Your mood is higher on days you move' : 'Your mood is lower on days you train',
+        detail:
+          diff > 0
+            ? `Mood averages ${diff.toFixed(1)} points higher on active days in your check-ins.`
+            : `Mood averages ${Math.abs(diff).toFixed(1)} points lower on training days. Lighter sessions may suit you better.`,
+        evidence: `${onActive.length} active and ${onRest.length} rest check-in days`,
+        sampleSize: onActive.length + onRest.length,
+        strength: onActive.length + onRest.length >= INSIGHT_THRESHOLDS.linkClearDays ? 'clear' : 'emerging',
+        suggestion: diff > 0 ? 'On a low day, a ten-minute walk may help.' : undefined,
+      });
+    }
+  }
+  const proteinDays = Object.entries(input.proteinByDate ?? {}).filter(([d]) => daysAgo(d, input.today) >= 0 && daysAgo(d, input.today) < 7);
+  if (proteinDays.length >= 3) {
+    const avg = Math.round(proteinDays.reduce((n, [, g]) => n + g, 0) / proteinDays.length);
+    out.push({
+      id: 'protein_week',
+      kind: 'activity',
+      title: `About ${avg} g of protein a day this week`,
+      detail: 'From the meals you logged. Many adults need roughly 0.8 g per kg of body weight; more if training hard.',
+      evidence: `${proteinDays.length} days of logged meals`,
+      sampleSize: proteinDays.length,
+      strength: proteinDays.length >= 5 ? 'clear' : 'emerging',
+    });
+  }
+  return out;
+}
+
 // ---------------------------------------------------------------- entry point
 
 const KIND_ORDER: Record<InsightKind, number> = {
@@ -418,6 +483,7 @@ const KIND_ORDER: Record<InsightKind, number> = {
   cycle: 3,
   pattern: 4,
   consistency: 5,
+  activity: 2,
 };
 
 /** All insights the records support, most actionable first. Empty when data is thin. */
@@ -430,6 +496,7 @@ export function computeInsights(input: InsightInput): Insight[] {
     ...cycleInsights(days, input.periods ?? [], input.today),
     ...weekdayInsights(days),
     ...consistencyInsight(days, input.today),
+    ...activityInsights(days, input),
   ];
   return all.sort(
     (a, b) =>

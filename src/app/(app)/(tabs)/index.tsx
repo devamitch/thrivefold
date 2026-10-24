@@ -32,14 +32,17 @@ const TOOLS: Record<ProductExperience, Tool[]> = {
   women_health: [
     { icon: 'water-outline', label: 'Cycle', route: '/(app)/health/cycle' },
     { icon: 'pulse-outline', label: 'Symptoms', route: '/(app)/health/symptoms' },
+    { icon: 'barbell-outline', label: 'Workouts', route: '/(app)/health/exercise' },
   ],
   men_health: [
     { icon: 'barbell-outline', label: 'Workouts', route: '/(app)/health/exercise' },
     { icon: 'body-outline', label: "Men's health", route: '/(app)/health/men' },
+    { icon: 'calendar-outline', label: 'Calendar', route: '/(app)/calendar' },
   ],
   pride_wellbeing: [
     { icon: 'heart-outline', label: 'Self-care', route: '/(app)/health/pride' },
     { icon: 'barbell-outline', label: 'Workouts', route: '/(app)/health/exercise' },
+    { icon: 'calendar-outline', label: 'Calendar', route: '/(app)/calendar' },
   ],
 };
 const SHARED_TOOLS: Tool[] = [

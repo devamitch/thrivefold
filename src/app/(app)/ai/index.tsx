@@ -15,6 +15,7 @@ import { checkInsUntilInsights, computeInsights, type Insight } from '../../../d
 import { searchDocuments, type RetrievalDocument } from '../../../domain/ai/localRetrieval';
 import { activeMemories } from '../../../domain/ai/types';
 import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngine';
+import { totals } from '../../../domain/nutrition/foods';
 
 const KIND_LABEL: Record<Insight['kind'], string> = {
   trend: 'This week',
@@ -23,6 +24,7 @@ const KIND_LABEL: Record<Insight['kind'], string> = {
   symptom: 'Recurring',
   cycle: 'Cycle',
   consistency: 'Habit',
+  activity: 'Activity',
 };
 
 /** Same date convention the check-in screen uses when it saves records. */
@@ -31,13 +33,16 @@ const todayKey = () => formatLocalDate(new Date());
 export default function InsightsScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
-  const { checkInHistory, periodHistory, journalEntries, aiMemories, aiMemoryEnabled, addAiMemory, showToast } =
+  const { checkInHistory, periodHistory, journalEntries, aiMemories, aiMemoryEnabled, addAiMemory, showToast, workoutSessions, activityLogs, mealLogs } =
     useRootStore(
       useShallow((s) => ({
         checkInHistory: s.checkInHistory,
         periodHistory: s.cycleData?.periodHistory,
         journalEntries: s.journalEntries,
         aiMemories: s.aiMemories,
+        workoutSessions: s.workoutSessions,
+        activityLogs: s.activityLogs,
+        mealLogs: s.mealLogs,
         aiMemoryEnabled: s.aiMemoryEnabled,
         addAiMemory: s.addAiMemory,
         showToast: s.showToast,
@@ -48,8 +53,18 @@ export default function InsightsScreen() {
   const today = todayKey();
 
   const insights = useMemo(
-    () => computeInsights({ checkIns: checkInHistory, periods: periodHistory ?? [], today }),
-    [checkInHistory, periodHistory, today],
+    () =>
+      computeInsights({
+        checkIns: checkInHistory,
+        periods: periodHistory ?? [],
+        today,
+        activeDates: [...workoutSessions.map((w) => w.date), ...activityLogs.map((a) => a.date)],
+        proteinByDate: mealLogs.reduce<Record<string, number>>((acc, m) => {
+          acc[m.date] = (acc[m.date] ?? 0) + totals(m.items).protein;
+          return acc;
+        }, {}),
+      }),
+    [checkInHistory, periodHistory, today, workoutSessions, activityLogs, mealLogs],
   );
   const daysToGo = useMemo(() => checkInsUntilInsights(checkInHistory, today), [checkInHistory, today]);
 

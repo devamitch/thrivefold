@@ -38,13 +38,13 @@ export const EXPERIENCE_ICONS: Record<ProductExperience, ExperienceIcons> = {
     experience: 'women_health',
     tabs: {
       index: { active: 'home', inactive: 'home-outline', label: 'Home' },
-      today: { active: 'barbell', inactive: 'barbell-outline', label: 'Train' },
+      today: { active: 'calendar', inactive: 'calendar-outline', label: 'Cycle' },
       progress: { active: 'trending-up', inactive: 'trending-up-outline', label: 'Progress' },
       settings: { active: 'person-circle', inactive: 'person-circle-outline', label: 'You' },
     },
     orb: {
       icon: 'leaf',
-      label: 'Check in',
+      label: 'Thrive',
     },
     actions: {
       checkIn: 'heart-outline',
@@ -60,14 +60,14 @@ export const EXPERIENCE_ICONS: Record<ProductExperience, ExperienceIcons> = {
   men_health: {
     experience: 'men_health',
     tabs: {
-      index: { active: 'grid', inactive: 'grid-outline', label: 'Home' },
-      today: { active: 'barbell', inactive: 'barbell-outline', label: 'Train' },
-      progress: { active: 'stats-chart', inactive: 'stats-chart-outline', label: 'Progress' },
-      settings: { active: 'shield', inactive: 'shield-outline', label: 'You' },
+      index: { active: 'grid', inactive: 'grid-outline', label: 'Base' },
+      today: { active: 'flash', inactive: 'flash-outline', label: 'Plan' },
+      progress: { active: 'stats-chart', inactive: 'stats-chart-outline', label: 'Metrics' },
+      settings: { active: 'shield', inactive: 'shield-outline', label: 'Profile' },
     },
     orb: {
       icon: 'flash',
-      label: 'Check in',
+      label: 'Action',
     },
     actions: {
       checkIn: 'pulse-outline',
@@ -83,14 +83,14 @@ export const EXPERIENCE_ICONS: Record<ProductExperience, ExperienceIcons> = {
   pride_wellbeing: {
     experience: 'pride_wellbeing',
     tabs: {
-      index: { active: 'infinite', inactive: 'infinite-outline', label: 'Home' },
-      today: { active: 'barbell', inactive: 'barbell-outline', label: 'Train' },
-      progress: { active: 'pulse', inactive: 'pulse-outline', label: 'Progress' },
-      settings: { active: 'heart-circle', inactive: 'heart-circle-outline', label: 'You' },
+      index: { active: 'infinite', inactive: 'infinite-outline', label: 'Sanctuary' },
+      today: { active: 'sunny', inactive: 'sunny-outline', label: 'Journey' },
+      progress: { active: 'pulse', inactive: 'pulse-outline', label: 'Growth' },
+      settings: { active: 'heart-circle', inactive: 'heart-circle-outline', label: 'Self' },
     },
     orb: {
       icon: 'prism',
-      label: 'Check in',
+      label: 'Thrive',
     },
     actions: {
       checkIn: 'sunny-outline',

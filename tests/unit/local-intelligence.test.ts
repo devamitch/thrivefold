@@ -213,3 +213,26 @@ describe('Memory vault', () => {
     expect(activeMemories(items, now).map((m) => m.id)).toEqual(['b', 'a']);
   });
 });
+
+describe('activity and food insights', () => {
+  const ci = (date: string, mood: number) => ({ date, energy: 5, mood, stress: 5, sleepHours: 7, symptoms: [] });
+  test('mood on active vs rest days, weekly activity and protein', () => {
+    const checkIns = [
+      ci('2026-10-20', 8), ci('2026-10-21', 8), ci('2026-10-22', 8),
+      ci('2026-10-17', 5), ci('2026-10-18', 5), ci('2026-10-19', 5),
+    ];
+    const out = computeInsights({
+      checkIns,
+      today: '2026-10-25',
+      activeDates: ['2026-10-20', '2026-10-21', '2026-10-22'],
+      proteinByDate: { '2026-10-22': 60, '2026-10-23': 70, '2026-10-24': 80 },
+    });
+    const ids = out.map((i) => i.id);
+    expect(ids).toEqual(expect.arrayContaining(['activity_weeks', 'activity_mood', 'protein_week']));
+    expect(out.find((i) => i.id === 'protein_week')!.title).toMatch(/70 g/);
+    expect(out.find((i) => i.id === 'activity_mood')!.title).toMatch(/higher/);
+  });
+  test('nothing without enough data', () => {
+    expect(computeInsights({ checkIns: [], today: '2026-10-25', activeDates: ['2026-10-24'] }).filter((i) => i.kind === 'activity')).toEqual([]);
+  });
+});
