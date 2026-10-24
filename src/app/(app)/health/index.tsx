@@ -26,7 +26,7 @@ export default function HealthIndexScreen() {
   // Default: Women's Health Hub (Harmony Bloom inspired)
   return (
     <ScreenWrapper scrollable>
-      <Header title="Health Sanctuary" subtitle="Rhythm, Symptoms & Vitality" showBack />
+      <Header title="Health" subtitle="Everything you track, in one place" showBack />
       <ScrollView
         contentContainerStyle={{
           paddingHorizontal: spacing.base,

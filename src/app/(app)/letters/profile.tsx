@@ -19,7 +19,7 @@ export default function LetterProfileScreen() {
   const [selectedInterests, setSelectedInterests] = useState<string[]>(['Mindful Habits', 'Literature & Poetry']);
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>(['English']);
 
-  const allInterests = ['Mindful Habits', 'Literature & Poetry', 'Nature & Hiking', 'Language Exchange', 'Tea & Quiet Living', 'Somatic Health', 'Philosophy', 'Art & Photography'];
+  const allInterests = ['Mindful Habits', 'Literature & Poetry', 'Nature & Hiking', 'Language Exchange', 'Tea & Quiet Living', 'Body and movement', 'Philosophy', 'Art & Photography'];
   const allLanguages = ['English', 'Spanish', 'French', 'German', 'Japanese', 'Swedish', 'Hindi'];
 
   const toggleInterest = (item: string) => {

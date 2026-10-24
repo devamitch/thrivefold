@@ -394,7 +394,7 @@ export default function TodayScreen() {
       header={
         <AppHeader
           eyebrow={isWomen ? 'SACRED HARMONY BLOOM' : isMen ? 'DISCIPLINE & RECOVERY' : 'SANCTUARY AGENDA'}
-          title={isWomen ? 'Cycle Sanctuary' : "Today's Focus"}
+          title={isWomen ? 'Cycle and calendar' : 'Today'}
           subtitle={
             isWomen
               ? 'Personalized Level 1-1,000 Journey & Restorative Cycle Rhythm.'

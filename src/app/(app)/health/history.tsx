@@ -23,13 +23,13 @@ export default function HealthHistoryScreen() {
     showToast({
       type: 'success',
       title: 'Export Ready',
-      message: 'Your encrypted health logs have been prepared as a private, redacted file.',
+      message: 'Your health records are ready to share as a file.',
     });
   };
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Health History & Vault" subtitle="Chronological Records & Encrypted Export" showBack />
+      <Header title="Health History & Vault" subtitle="Your records, newest first" showBack />
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
         {/* Summary Stats */}
         <Card style={{ marginBottom: spacing.md, padding: spacing.lg }}>

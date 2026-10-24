@@ -45,7 +45,7 @@ export default function SymptomsScreen() {
             Today's Logged Symptoms ({todaySymptoms.length})
           </Text>
           <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: 12 }]}>
-            Tap any symptom tag to add or remove it from today's on-device encrypted record.
+            Tap any symptom tag to add or remove it from today's record on this phone.
           </Text>
           <View style={styles.chipRow}>
             {commonSymptoms.map((s) => {

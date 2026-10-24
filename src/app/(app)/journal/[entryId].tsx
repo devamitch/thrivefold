@@ -33,7 +33,7 @@ export default function JournalEntryDetailScreen() {
       destructive: true,
       onConfirm: () => {
         if (entry) deleteJournalEntry(entry.id);
-        showToast({ type: 'info', title: 'Deleted', message: 'Reflection removed from encrypted vault.' });
+        showToast({ type: 'info', title: 'Deleted', message: 'Entry deleted from this phone.' });
         router.back();
       },
     });

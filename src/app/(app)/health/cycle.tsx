@@ -173,7 +173,7 @@ export default function CycleScreen() {
   return (
     <ScreenWrapper scrollable>
       <Header
-        title="Cycle Sanctuary"
+        title="Cycle"
         subtitle="Clinical & Hormonal Intelligence"
         showBack
       />
@@ -189,7 +189,7 @@ export default function CycleScreen() {
             />
           </View>
           <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 12 }]}>
-            Biological Rhythm Sanctuary
+            Your cycle
           </Text>
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4, lineHeight: 18 }]}>
             Observe natural fluctuations, follicular energy peaks, and fertile phases with clinical uncertainty bounds.

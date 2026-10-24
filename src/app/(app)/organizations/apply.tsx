@@ -20,7 +20,7 @@ export default function OrganizationApplyScreen() {
   const [orgType, setOrgType] = useState('Non-Profit / NGO');
   const [purpose, setPurpose] = useState('');
 
-  const types = ['Non-Profit / NGO', 'Licensed Mental Health Clinic', 'Corporate Wellness Cohort', 'Community Peer Sanctuary'];
+  const types = ['Non-Profit / NGO', 'Licensed Mental Health Clinic', 'Corporate Wellness Cohort', 'Peer support community'];
 
   const handleSubmit = () => {
     if (!orgName.trim() || !repName.trim()) {
@@ -50,7 +50,7 @@ export default function OrganizationApplyScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
             <Ionicons name="business-outline" size={20} color={colors.primary} />
             <Text style={[typography.subbodyBold, { color: colors.text.primary, marginLeft: 6 }]}>
-              Verification Standards (Section 9.3)
+              Verification standards
             </Text>
           </View>
           <Text style={[typography.caption, { color: colors.text.secondary, lineHeight: 18 }]}>
@@ -63,7 +63,7 @@ export default function OrganizationApplyScreen() {
             ORGANIZATION / CLINIC NAME
           </Text>
           <TextInput
-            placeholder="e.g. Nordic Somatic Health Foundation"
+            placeholder="Registered name of the organisation"
             placeholderTextColor={colors.text.muted}
             value={orgName}
             onChangeText={setOrgName}

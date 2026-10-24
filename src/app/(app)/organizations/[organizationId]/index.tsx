@@ -72,7 +72,7 @@ export default function OrganizationDetailScreen() {
             <Card style={{ marginBottom: spacing.sm }}>
               <Badge label="Active Cohort" variant="primary" />
               <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 6 }]}>
-                Workplace Somatic Reset: 4-Week Journey
+                Workplace movement reset: 4 weeks
               </Text>
               <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
                 18 active participants · Next live guided session Thursday 7pm
@@ -80,7 +80,7 @@ export default function OrganizationDetailScreen() {
             </Card>
 
             <Card style={{ marginBottom: spacing.sm }}>
-              <Badge label="Peer Sanctuary" variant="neutral" />
+              <Badge label="Peer support" variant="neutral" />
               <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 6 }]}>
                 Grief & Life Transitions Support
               </Text>

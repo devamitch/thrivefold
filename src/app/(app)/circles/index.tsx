@@ -149,7 +149,7 @@ export default function CommunitiesScreen() {
             />
           </View>
           <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 12 }]}>
-            Affinity Circles Sanctuary
+            Private circles
           </Text>
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4, lineHeight: 18 }]}>
             All circles are private and segmented by health journey. Conversations are conducted exclusively through curated topic prompts to ensure a zero-harassment sanctuary.

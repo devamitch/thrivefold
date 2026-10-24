@@ -308,7 +308,7 @@ export default function SettingsScreen() {
                   Export Health Records
                 </Text>
                 <Text style={[typography.caption, { color: colors.text.secondary }]}>
-                  Save encrypted JSON package to device Files
+                  Share a JSON copy of everything on this phone
                 </Text>
               </View>
             </View>
@@ -430,7 +430,7 @@ export default function SettingsScreen() {
                   {user?.isGuest ? 'Exit Guest Session' : 'Sign Out'}
                 </Text>
                 <Text style={[typography.caption, { color: colors.text.secondary }]}>
-                  Your encrypted local vault remains on this device
+                  Your records stay on this phone
                 </Text>
               </View>
             </View>

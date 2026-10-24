@@ -110,7 +110,7 @@ export default function SafetyScreen() {
             />
           </View>
           <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 12 }]}>
-            Protected Health Sanctuary
+            Your safety
           </Text>
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4, lineHeight: 18 }]}>
             You have full sovereignty over your privacy, contacts, and personal boundaries. 24/7 hotlines and moderation appeals are always available.

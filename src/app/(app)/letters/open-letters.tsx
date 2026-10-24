@@ -28,7 +28,7 @@ export default function OpenLettersScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
             <Ionicons name="mail-open-outline" size={18} color={colors.primary} />
             <Text style={[typography.subbodyBold, { color: colors.text.primary, marginLeft: 6 }]}>
-              Approved Prompt Cards (Section 8.3 & 14)
+              Approved prompt cards
             </Text>
           </View>
           <Text style={[typography.caption, { color: colors.text.secondary, lineHeight: 18 }]}>

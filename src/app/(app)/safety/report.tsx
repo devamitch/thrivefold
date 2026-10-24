@@ -68,7 +68,7 @@ export default function SafetyReportScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
             <Ionicons name="shield-half-outline" size={20} color={colors.primary} />
             <Text style={[typography.subbodyBold, { color: colors.text.primary, marginLeft: 6 }]}>
-              Behavior-Based Moderation (Section 7.4)
+              We act on behaviour, not identity
             </Text>
           </View>
           <Text style={[typography.caption, { color: colors.text.secondary, lineHeight: 18 }]}>

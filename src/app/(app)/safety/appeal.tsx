@@ -41,7 +41,7 @@ export default function SafetyAppealScreen() {
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
         <Card style={{ marginBottom: spacing.md, backgroundColor: colors.surface1, borderColor: colors.border }}>
           <Text style={[typography.subbodyBold, { color: colors.text.primary, marginBottom: 4 }]}>
-            Due Process & Fair Treatment (Section 7.4)
+            Fair review
           </Text>
           <Text style={[typography.caption, { color: colors.text.secondary, lineHeight: 18 }]}>
             Thrivefold provides a human review pathway for high-impact restrictions. If you believe your card composition or account action was flagged incorrectly, describe the context below.

@@ -17,7 +17,7 @@ export default function PrivacyPolicyScreen() {
             Local-First Protection
           </Text>
           <Text style={[typography.body, { color: colors.text.secondary, lineHeight: 22 }]}>
-            All sensitive reproductive health metrics, period dates, symptom histories, private journals, and AI memory tokens default strictly to local encrypted storage on your device.
+            All sensitive reproductive health metrics, period dates, symptom histories, private journals, and AI memory tokens are stored only on your device by default. On-device storage is not encrypted by the app, so use your phone's screen lock.
           </Text>
         </Card>
 

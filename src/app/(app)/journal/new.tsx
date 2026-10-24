@@ -39,13 +39,13 @@ export default function NewJournalEntryScreen() {
     }
 
     addJournalEntry(title.trim(), content.trim(), moodTag);
-    showToast({ type: 'success', title: 'Saved to Encrypted Vault', message: 'Your private entry was saved locally.' });
+    showToast({ type: 'success', title: 'Saved', message: 'Your entry is kept on this phone.' });
     router.back();
   };
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="New Reflection" subtitle="Private, Local-Only Encrypted Journal" showBack />
+      <Header title="New Reflection" subtitle="Private, kept on this phone" showBack />
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
         <Card style={{ marginBottom: spacing.md }}>
           <Text style={[typography.captionBold, { color: colors.text.secondary, marginBottom: 6 }]}>
@@ -92,7 +92,7 @@ export default function NewJournalEntryScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Ionicons name="lock-closed" size={16} color={colors.primary} />
             <Text style={[typography.captionBold, { color: colors.primary, marginLeft: 6 }]}>
-              Encrypted Local Storage (Section 10.1)
+              Stored only on this phone
             </Text>
           </View>
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>

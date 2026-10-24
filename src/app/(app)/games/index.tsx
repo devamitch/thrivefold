@@ -160,7 +160,7 @@ export default function GamesScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Restorative Arcade" subtitle="Somatic & Rhythm Mini-Games" showBack />
+      <Header title="Games" subtitle="Short breathing, focus and memory practice" showBack />
       <View style={[styles.content, { paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }]}>
         <Card style={{ marginBottom: spacing.md, padding: 14, backgroundColor: colors.surface }}>
           <View style={styles.heroWrap}>

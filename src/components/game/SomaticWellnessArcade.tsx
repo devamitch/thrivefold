@@ -122,7 +122,7 @@ export const SomaticWellnessArcade: React.FC<SomaticWellnessArcadeProps> = React
         <View style={styles.rowBetween}>
           <View>
             <Text style={[typography.subheading, { color: colors.text.primary }]}>
-              Somatic Breath Blossom
+              Breathing pace
             </Text>
             <Text style={[typography.caption, { color: colors.text.muted }]}>
               4-7-8 parasympathetic tone release
@@ -225,7 +225,7 @@ export const SomaticWellnessArcade: React.FC<SomaticWellnessArcadeProps> = React
               Zen Harmonic Rhythm
             </Text>
             <Text style={[typography.caption, { color: colors.text.muted }]}>
-              Tap to ground somatic presence
+              Tap to start a short pause
             </Text>
           </View>
           <Badge label={`${zenTaps} Taps`} variant="neutral" />

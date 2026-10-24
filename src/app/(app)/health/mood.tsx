@@ -30,7 +30,7 @@ export default function MoodScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Mood & Energy Harmony" subtitle="Daily Somatic & Emotional Trends" showBack />
+      <Header title="Mood and energy" subtitle="Your daily trends" showBack />
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
         {/* Mood Slider/Pills */}
         <Card style={{ marginBottom: spacing.md }}>
@@ -103,7 +103,7 @@ export default function MoodScreen() {
             Local-Only Privacy Invariant
           </Text>
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-            Your daily mood, energy, and stress scores are stored only in your encrypted on-device SQLite database.
+            Your daily mood, energy, and stress scores are stored only on this phone.
           </Text>
         </Card>
       </ScrollView>

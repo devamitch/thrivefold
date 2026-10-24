@@ -43,7 +43,7 @@ export default function CircleInvitationsScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
             <Ionicons name="shield-outline" size={18} color={colors.primary} />
             <Text style={[typography.subbodyBold, { color: colors.text.primary, marginLeft: 6 }]}>
-              Anti-Coercion Safeguards (Section 9.3)
+              You always choose
             </Text>
           </View>
           <Text style={[typography.caption, { color: colors.text.secondary, lineHeight: 18 }]}>

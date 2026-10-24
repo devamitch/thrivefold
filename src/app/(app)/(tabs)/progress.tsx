@@ -163,7 +163,7 @@ const ACHIEVEMENTS = [
   { id: 'ai_vault', icon: 'shield-checkmark-outline' as const, title: 'Private Vault', desc: 'Audited and verified your on-device records' },
   { id: 'letters', icon: 'mail-outline' as const, title: 'Reflective Notes', desc: 'Saved your first private health reflection' },
   { id: 'seven_day_streak', icon: 'diamond-outline' as const, title: '7-Day Steadiness', desc: 'Seven days of sustained healthy momentum' },
-  { id: 'circles', icon: 'people-outline' as const, title: 'Inner Circle', desc: 'Connected in your private encrypted health circle' },
+  { id: 'circles', icon: 'people-outline' as const, title: 'Inner Circle', desc: 'Joined a private circle' },
 ];
 
 export default function ProgressScreen() {
