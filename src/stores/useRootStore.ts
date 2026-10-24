@@ -9,7 +9,7 @@ import { localJSONStorage } from './persistStorage';
 import type { RootState } from './rootTypes';
 import { createAiSlice } from './slices/aiSlice';
 import { createIntegrationSlice } from './slices/integrationSlice';
-import { createAppSlice } from './slices/appSlice';
+import { createAppSlice, EMPTY_ONBOARDING } from './slices/appSlice';
 import { createAuthSlice } from './slices/authSlice';
 import { createHealthSlice } from './slices/healthSlice';
 import { createLetterSlice } from './slices/letterSlice';
@@ -33,17 +33,23 @@ export const useRootStore = create<RootState>()(
     }),
     {
       name: 'thrivefold-root',
-      version: 2,
+      version: 3,
       storage: localJSONStorage,
       // v2: rewards moved onto an append-only ledger (see questSlice.migrateQuestState).
+      // v3: onboarding answers gained a baseline (body and mind check).
       migrate: (persisted, version) => {
-        if (version >= 2) return persisted as RootState;
-        const state = migrateQuestState((persisted ?? {}) as Record<string, unknown>);
-        // Earlier builds pre-filled a sample birthday and anniversary; drop those two only.
-        if (Array.isArray(state.personalEvents)) {
-          state.personalEvents = (state.personalEvents as { id: string }[]).filter(
-            (e) => e.id !== 'default_bday_user' && e.id !== 'default_anniversary',
-          );
+        let state = (persisted ?? {}) as Record<string, unknown>;
+        if (version < 2) {
+          state = migrateQuestState(state);
+          // Earlier builds pre-filled a sample birthday and anniversary; drop those two only.
+          if (Array.isArray(state.personalEvents)) {
+            state.personalEvents = (state.personalEvents as { id: string }[]).filter(
+              (e) => e.id !== 'default_bday_user' && e.id !== 'default_anniversary',
+            );
+          }
+        }
+        if (version < 3) {
+          state.onboarding = { ...EMPTY_ONBOARDING, ...((state.onboarding as object | undefined) ?? {}) };
         }
         return state as unknown as RootState;
       },

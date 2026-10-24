@@ -277,5 +277,17 @@ await as('anon');
 r = await q(`select public.tf_claim_task_reward('x', 'goal_define_one', current_date)`);
 check('anon cannot claim rewards', !!r.error, r.error);
 
+// Setup rewards (migration 6): fixed server-side amounts, once per step
+await as('B');
+r = await q(`select public.tf_claim_setup_reward('goals') as r`);
+check('setup step reward is recorded with the server amount', r.rows?.[0]?.r?.status === 'recorded' && r.rows[0].r.xp === 25, r.error ?? JSON.stringify(r.rows));
+r = await q(`select public.tf_claim_setup_reward('goals') as r`);
+check('setup step cannot pay twice', r.rows?.[0]?.r?.status === 'duplicate', r.error);
+r = await q(`select public.tf_claim_setup_reward('anything_else') as r`);
+check('unknown setup step is rejected', /unknown setup step/.test(r.error ?? ''), r.error);
+await as('anon');
+r = await q(`select public.tf_claim_setup_reward('privacy')`);
+check('anon cannot claim setup rewards', !!r.error, r.error);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

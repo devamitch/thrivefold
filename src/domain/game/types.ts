@@ -13,7 +13,7 @@ export type TaskCategory =
   | 'cycle_care'
   | 'affirming_care';
 
-export type DifficultyTier = 'starter' | 'gentle' | 'standard' | 'progressive' | 'advanced' | 'mastery';
+export type DifficultyTier = 'starter' | 'steady' | 'gentle' | 'standard' | 'progressive' | 'advanced' | 'mastery';
 
 export type VerificationClass = 'system_verified' | 'evidence_supported' | 'self_reported';
 

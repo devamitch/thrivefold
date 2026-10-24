@@ -2,6 +2,7 @@ import type { StateCreator } from 'zustand';
 
 import type { RootState } from '../rootTypes';
 
+import { EMPTY_BASELINE, type Baseline } from '../../domain/game/setupProfile';
 import { ProductExperience } from '../../theme/tokens';
 
 export type ThemeMode = 'system' | 'light' | 'dark';
@@ -22,6 +23,8 @@ export interface OnboardingAnswers {
   routineMinutes: 5 | 10 | 20 | null;
   diet: string | null;
   observances: string[];
+  /** How the person describes their body and mind today; shapes quest fit, never points. */
+  baseline: Baseline;
 }
 
 export const EMPTY_ONBOARDING: OnboardingAnswers = {
@@ -30,6 +33,7 @@ export const EMPTY_ONBOARDING: OnboardingAnswers = {
   routineMinutes: null,
   diet: null,
   observances: [],
+  baseline: EMPTY_BASELINE,
 };
 
 export interface AlertOptions {
@@ -84,7 +88,7 @@ export const createAppSlice: StateCreator<
   [['zustand/persist', unknown]],
   [],
   AppSlice
-> = (set) => ({
+> = (set, get) => ({
   experience: 'women_health',
   introSeen: false,
   setIntroSeen: (introSeen) => set({ introSeen }),
@@ -106,8 +110,11 @@ export const createAppSlice: StateCreator<
   setThemeMode: (themeMode) => set({ themeMode }),
   setIsOnboarded: (isOnboarded) =>
     set(isOnboarded ? { isOnboarded, onboardingStep: null } : { isOnboarded }),
-  setOnboardingAnswers: (answers) =>
-    set((state) => ({ onboarding: { ...state.onboarding, ...answers } })),
+  setOnboardingAnswers: (answers) => {
+    set((state) => ({ onboarding: { ...EMPTY_ONBOARDING, ...state.onboarding, ...answers } }));
+    // Changed goals, limits or baseline re-fit today's open quests straight away.
+    if (get().isOnboarded) get().refitDailyQuests();
+  },
   setOnboardingStep: (onboardingStep) => set({ onboardingStep }),
   confirmAdult: () => set({ adultConfirmedAt: new Date().toISOString() }),
   // Starts onboarding again with blank answers; health records are untouched.

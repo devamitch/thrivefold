@@ -16,6 +16,7 @@ const KIND_LABEL: Record<LedgerEntry['kind'], string> = {
   level_clear: 'Level cleared',
   unlock_spend: 'Unlocked',
   legacy_import: 'Earlier progress',
+  setup_reward: 'Setting up',
 };
 
 /** Level, diamonds, unlocks, emblem and reward history, all derived from the reward ledger. */

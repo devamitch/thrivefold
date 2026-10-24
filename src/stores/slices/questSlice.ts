@@ -27,12 +27,21 @@ import {
   type ReplacementOption,
   type UnlockBlock,
 } from '../../domain/game/progression';
+import {
+  EMPTY_BASELINE,
+  fitFor,
+  isSetupSectionAnswered,
+  setupLedgerKey,
+  setupReward,
+  type SetupSection,
+} from '../../domain/game/setupProfile';
 import type { TaskAssignment, TaskDefinition, VerificationResult } from '../../domain/game/types';
 
 /** Reward events waiting to be confirmed by the server (only used with an account). */
 export type SyncItem =
   | { kind: 'claim'; key: string; assignmentId: string; taskId: string; gameDate: string }
-  | { kind: 'unlock'; key: string; featureId: string };
+  | { kind: 'unlock'; key: string; featureId: string }
+  | { kind: 'setup'; key: string; section: SetupSection };
 
 /** Screen-facing view of an assignment. */
 export interface Quest {
@@ -78,6 +87,10 @@ export interface QuestSlice {
   dailyGoalReached: boolean;
 
   ensureDailyQuests: () => void;
+  /** Re-picks today's open quests after goals, limits or baseline change; done ones stay. */
+  refitDailyQuests: () => void;
+  /** Awards a setup step's fixed XP once, if the step has really been answered. */
+  claimSetupReward: (section: SetupSection) => { awarded: boolean; xp: number };
   skipDailyTask: (assignmentId: string, reason?: string) => boolean;
   getReplacementOptions: (assignmentId: string) => ReplacementOption[];
   acceptReplacement: (skippedAssignmentId: string, taskId: string) => boolean;
@@ -149,6 +162,7 @@ function derive(
 }
 
 function assignmentContext(state: RootState, date: string): AssignmentContext {
+  const fit = fitFor(setupAnswersOf(state));
   const recentDates = new Set<string>();
   for (let i = 1; i <= 3; i++) {
     const d = new Date(`${date}T12:00:00`);
@@ -164,7 +178,21 @@ function assignmentContext(state: RootState, date: string): AssignmentContext {
     recentTaskIds: new Set(
       state.assignmentHistory.filter((h) => recentDates.has(h.date)).flatMap((h) => h.taskIds),
     ),
-    preferredFamilies: familiesForGoals(state.onboarding?.goals ?? []),
+    preferredFamilies: [...new Set([...familiesForGoals(state.onboarding?.goals ?? []), ...fit.families])],
+    capacity: fit.capacity,
+    maxMinutes: fit.maxMinutes,
+  };
+}
+
+function setupAnswersOf(state: RootState) {
+  const o = state.onboarding;
+  return {
+    goals: o?.goals ?? [],
+    constraints: o?.constraints ?? [],
+    routineMinutes: o?.routineMinutes ?? null,
+    diet: o?.diet ?? null,
+    observances: o?.observances ?? [],
+    baseline: { ...EMPTY_BASELINE, ...o?.baseline },
   };
 }
 
@@ -253,6 +281,68 @@ export const createQuestSlice: StateCreator<RootState, [['zustand/persist', unkn
         dailyTargetDate: date,
         assignmentHistory: [{ date, taskIds: tasks.map((t) => t.id) }, ...state.assignmentHistory].slice(0, 14),
       });
+    },
+
+    refitDailyQuests: () => {
+      const state = get();
+      const date = today();
+      const todays = state.dailyAssignments.filter((a) => a.assignedDate === date);
+      if (!state.isOnboarded || todays.length === 0) return;
+      // Only untouched quests move; anything started, done, skipped or replaced stays as it is.
+      const open = todays.filter((a) => a.status === 'assigned' && !a.replacedAssignmentId);
+      if (open.length === 0) return;
+      const kept = todays.filter((a) => !open.includes(a));
+      const ctx = assignmentContext(state, date);
+      const keptIds = new Set(kept.map((a) => a.taskId));
+      const picks = selectDailyTasks(
+        getGameCatalog().tasks.filter((t) => !keptIds.has(t.id)),
+        ctx,
+        open.length,
+      );
+      const fresh: TaskAssignment[] = picks.map((task, idx) => ({
+        assignmentId: `asg_${date}_${task.id}_f${state.dailyAssignments.length + idx}`,
+        taskId: task.id,
+        assignedDate: date,
+        status: 'assigned',
+        isSpecialQuestReplacement: false,
+        earnedTaskPoints: 0,
+        earnedXp: 0,
+        earnedCoins: 0,
+      }));
+      const allToday = [...kept, ...fresh];
+      const assignedPoints = allToday
+        .filter((a) => !['skipped', 'replaced'].includes(a.status))
+        .reduce((sum, a) => sum + (getTaskById(a.taskId)?.points.taskPoints ?? 0), 0);
+      commit({
+        dailyAssignments: [...state.dailyAssignments.filter((a) => !open.includes(a)), ...fresh],
+        // The day's goal never gets harder because of a change; it may get reachable.
+        dailyPointsTarget: Math.min(state.dailyPointsTarget || Infinity, dailyTargetFor(assignedPoints)),
+        assignmentHistory: [
+          { date, taskIds: allToday.map((a) => a.taskId) },
+          ...state.assignmentHistory.filter((h) => h.date !== date),
+        ].slice(0, 14),
+      });
+    },
+
+    claimSetupReward: (section) => {
+      const state = get();
+      const reward = setupReward(section);
+      const key = setupLedgerKey(section);
+      if (!isSetupSectionAnswered(section, setupAnswersOf(state))) return { awarded: false, xp: 0 };
+      const ledger = appendLedger(state.rewardLedger, {
+        key,
+        kind: 'setup_reward',
+        xp: reward.xp,
+        diamonds: 0,
+        taskPoints: 0,
+        gameDate: today(),
+        sourceId: section,
+        policyVersion: ECONOMY_VERSION,
+        createdAt: new Date().toISOString(),
+      });
+      if (ledger === state.rewardLedger) return { awarded: false, xp: 0 };
+      commit({ rewardLedger: ledger, pendingSync: [...state.pendingSync, { kind: 'setup', key, section }] });
+      return { awarded: true, xp: reward.xp };
     },
 
     skipDailyTask: (assignmentId, reason) => {

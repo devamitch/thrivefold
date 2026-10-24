@@ -13,13 +13,14 @@
 import economy from '../../content/game/progression_economy.v1.json';
 import { ProductExperience } from '../../theme/tokens';
 import { isObjectiveSupported } from './objectives';
+import type { Capacity } from './setupProfile';
 import type { LevelDefinition, SpecialQuestParent, TaskDefinition } from './types';
 
 export const ECONOMY_VERSION = economy.version;
 
 // ---------------------------------------------------------------- ledger
 
-export type LedgerKind = 'task_reward' | 'daily_goal' | 'level_clear' | 'unlock_spend' | 'legacy_import';
+export type LedgerKind = 'task_reward' | 'setup_reward' | 'daily_goal' | 'level_clear' | 'unlock_spend' | 'legacy_import';
 
 export interface LedgerEntry {
   /** Idempotency key: the same key is never applied twice. */
@@ -235,6 +236,10 @@ export interface AssignmentContext {
   recentTaskIds: ReadonlySet<string>;
   /** Families the person asked for help with in onboarding, most wanted first. */
   preferredFamilies?: QuestFamily[];
+  /** From the person's own baseline answers (setupProfile.fitFor); orders difficulty. */
+  capacity?: Capacity;
+  /** Longest quest to offer when enough shorter ones exist. */
+  maxMinutes?: number | null;
 }
 
 /** Onboarding goals and the quest family each one asks for. */
@@ -305,8 +310,9 @@ export function selectDailyTasks(tasks: TaskDefinition[], ctx: AssignmentContext
     .map((t) => ({ t, h: stableHash(`${ctx.seed}:${ctx.gameDate}:${t.id}`) }))
     .sort((a, b) => a.h - b.h)
     .map((x) => x.t);
-  const fresh = eligible.filter((t) => !ctx.recentTaskIds.has(t.id));
-  const pool = fresh.length >= slots ? fresh : [...fresh, ...eligible.filter((t) => ctx.recentTaskIds.has(t.id))];
+  const fitted = fitToCapability(eligible, ctx, slots);
+  const fresh = fitted.filter((t) => !ctx.recentTaskIds.has(t.id));
+  const pool = fresh.length >= slots ? fresh : [...fresh, ...fitted.filter((t) => ctx.recentTaskIds.has(t.id))];
 
   const picked: TaskDefinition[] = [];
   // One quest from the person's current chapter, the rest spread across families.
@@ -330,6 +336,22 @@ export function selectDailyTasks(tasks: TaskDefinition[], ctx: AssignmentContext
     if (!picked.includes(t)) picked.push(t);
   }
   return picked.slice(0, slots);
+}
+
+/**
+ * Applies the person's capability: drops quests longer than their routine allows (only while
+ * enough shorter ones remain) and puts the difficulty that suits them first, keeping the
+ * per-day hash order within each tier. Gentle starts with starter quests, strong with steady.
+ */
+export function fitToCapability(tasks: TaskDefinition[], ctx: AssignmentContext, slots: number): TaskDefinition[] {
+  let fitted = tasks;
+  if (ctx.maxMinutes) {
+    const short = tasks.filter((t) => t.estimatedDurationMinutes <= ctx.maxMinutes!);
+    if (short.length >= slots) fitted = short;
+  }
+  if (!ctx.capacity || ctx.capacity === 'steady') return fitted;
+  const first = ctx.capacity === 'gentle' ? 'starter' : 'steady';
+  return [...fitted.filter((t) => t.difficulty === first), ...fitted.filter((t) => t.difficulty !== first)];
 }
 
 // ---------------------------------------------------------------- replacement
