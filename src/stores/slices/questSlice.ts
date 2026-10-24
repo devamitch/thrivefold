@@ -14,6 +14,7 @@ import {
   dailySlotsFor,
   dailyTargetFor,
   familiesForGoals,
+  questFamily,
   ECONOMY_VERSION,
   ledgerTotals,
   levelProgress,
@@ -40,6 +41,7 @@ import {
   type SetupSection,
 } from '../../domain/game/setupProfile';
 import type { TaskAssignment, TaskDefinition, VerificationResult } from '../../domain/game/types';
+import { evidenceFromWorkout, type WorkoutFacts } from '../../domain/game/workoutEvidence';
 
 /** Reward events waiting to be confirmed by the server (only used with an account). */
 export type SyncItem =
@@ -96,6 +98,8 @@ export interface QuestSlice {
   refitDailyQuests: () => void;
   /** Awards a setup step's fixed XP once, if the step has really been answered. */
   claimSetupReward: (section: SetupSection) => { awarded: boolean; xp: number };
+  /** Completes today's first open movement quest that a finished workout satisfies. */
+  completeMovementQuestWithWorkout: (facts: WorkoutFacts) => { title: string; xp: number } | null;
   /** Pays a finished workout once: base XP, or ten times that with good camera-checked form. */
   claimWorkoutReward: (sessionId: string, form: WorkoutFormEvidence | null) => { awarded: boolean; xp: number; reason?: 'daily_limit' | 'duplicate' };
   skipDailyTask: (assignmentId: string, reason?: string) => boolean;
@@ -351,6 +355,24 @@ export const createQuestSlice: StateCreator<RootState, [['zustand/persist', unkn
       if (ledger === state.rewardLedger) return { awarded: false, xp: 0 };
       commit({ rewardLedger: ledger, pendingSync: [...state.pendingSync, { kind: 'setup', key, section }] });
       return { awarded: true, xp: reward.xp };
+    },
+
+    completeMovementQuestWithWorkout: (facts) => {
+      const date = today();
+      const open = get().dailyAssignments.filter(
+        (a) => a.assignedDate === date && ACTIVE_STATUSES.includes(a.status),
+      );
+      for (const asg of open) {
+        const task = getTaskById(asg.taskId);
+        if (!task || questFamily(task.category) !== 'movement') continue;
+        const form = objectiveFormFor(task);
+        if (!form) continue;
+        const evidence = evidenceFromWorkout(form, task.instructions, facts);
+        if (!evidence) continue;
+        const result = get().submitQuestEvidence(asg.assignmentId, evidence);
+        if (result.success) return { title: task.title, xp: result.earnedXp };
+      }
+      return null;
     },
 
     claimWorkoutReward: (sessionId, form) => {

@@ -109,10 +109,16 @@ export default function WorkoutSessionScreen() {
       painReported: pain,
     });
     const reward = useRootStore.getState().claimWorkoutReward(sessionId, null);
+    const quest = useRootStore.getState().completeMovementQuestWithWorkout({
+      title: plan.title,
+      minutes: Math.max(1, Math.round((Date.parse(finishedAt) - Date.parse(startedAt.current)) / 60000)),
+      date: formatLocalDate(new Date()),
+      cameraChecked: false,
+    });
     showToast({
       type: 'success',
       title: 'Workout saved',
-      message: `${loggedSets} sets logged.${reward.awarded ? ` +${reward.xp} XP.` : ''} Use the camera coach next time for 10x XP.`,
+      message: `${loggedSets} sets logged.${reward.awarded ? ` +${reward.xp} XP.` : ''}${quest ? ` Quest done: ${quest.title}.` : ''} Use the camera coach next time for 10x XP.`,
     });
     // Shared with Health Connect only when the person allowed workout writing there.
     const { healthConnect, audit } = useRootStore.getState();

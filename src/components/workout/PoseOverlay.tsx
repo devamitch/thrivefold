@@ -1,9 +1,8 @@
-import { BlurMask, Canvas, Circle, Group, Line, vec } from '@shopify/react-native-skia';
 import React, { useEffect } from 'react';
-import { StyleSheet } from 'react-native';
-import {
+import { StyleSheet, View } from 'react-native';
+import Animated, {
   Easing,
-  useDerivedValue,
+  useAnimatedStyle,
   useFrameCallback,
   useReducedMotion,
   useSharedValue,
@@ -29,31 +28,26 @@ interface Props {
 const JOINTS = [...new Set(SKELETON.flat())];
 const N = 33;
 /** Share of the remaining distance covered each display frame (~60 fps easing). */
-const FOLLOW = 0.32;
+const FOLLOW = 0.3;
 const BREATH_MS = 2400;
+const DOT = 10;
 
 /**
- * Skia skeleton over a centre-cropped camera preview. Detections arrive ~15 times a second;
- * the drawn points ease towards each new detection every display frame, so the skeleton
- * moves fluidly instead of jumping. Joints breathe with a slow pulse and soft glow; joints
- * that need fixing pulse in the warning colour.
+ * Skeleton over a centre-cropped camera preview, drawn with plain native views moved on
+ * the UI thread (no extra GPU surface next to the camera and the video). Detections arrive
+ * ~15 times a second; drawn points ease towards each one every display frame, so the
+ * skeleton glides. Joints breathe with a slow pulse; joints that need fixing turn red.
  */
 export function PoseOverlay({ landmarks, frameWidth, frameHeight, width, height, highlight }: Props) {
   const { colors } = useTheme();
   const reduceMotion = useReducedMotion();
-  // Projected targets and smoothed display positions, as flat [x0, y0, v0, x1, ...] arrays.
   const target = useSharedValue<number[]>(new Array(N * 3).fill(0));
   const shown = useSharedValue<number[]>(new Array(N * 3).fill(0));
   const breath = useSharedValue(0);
-  const hot = useSharedValue<number[]>([]);
 
   useEffect(() => {
     breath.value = reduceMotion ? 0.5 : withRepeat(withTiming(1, { duration: BREATH_MS, easing: Easing.inOut(Easing.sin) }), -1, true);
   }, [breath, reduceMotion]);
-
-  useEffect(() => {
-    hot.value = highlight;
-  }, [highlight, hot]);
 
   useEffect(() => {
     if (landmarks.length < N || !frameWidth || !frameHeight || !width || !height) return;
@@ -75,11 +69,11 @@ export function PoseOverlay({ landmarks, frameWidth, frameHeight, width, height,
   useFrameCallback(() => {
     const t = target.value;
     const s = shown.value;
-    const out = s.slice();
     let moved = false;
+    const out = s.slice();
     for (let i = 0; i < N * 3; i++) {
       const d = t[i] - s[i];
-      if (Math.abs(d) > 0.05) {
+      if (Math.abs(d) > 0.5) {
         out[i] = s[i] + d * (reduceMotion ? 1 : FOLLOW);
         moved = true;
       } else out[i] = t[i];
@@ -88,68 +82,80 @@ export function PoseOverlay({ landmarks, frameWidth, frameHeight, width, height,
   });
 
   if (landmarks.length < N || !width || !height) return null;
+  const hot = new Set(highlight);
 
   return (
-    <Canvas style={[StyleSheet.absoluteFill, { width, height }]} pointerEvents="none">
-      <Group>
-        {SKELETON.map(([a, b]) => (
-          <Bone key={`${a}-${b}`} a={a} b={b} shown={shown} hot={hot} color={colors.onPrimary} hotColor={colors.error} />
-        ))}
-        {JOINTS.map((i) => (
-          <Joint key={i} i={i} shown={shown} hot={hot} breath={breath} color={colors.primary} ring={colors.onPrimary} hotColor={colors.error} />
-        ))}
-      </Group>
-    </Canvas>
+    <View style={[StyleSheet.absoluteFill, { width, height }]} pointerEvents="none">
+      {SKELETON.map(([a, b]) => (
+        <Bone key={`${a}-${b}`} a={a} b={b} shown={shown} color={hot.has(a) || hot.has(b) ? colors.error : colors.onPrimary} thick={hot.has(a) || hot.has(b)} />
+      ))}
+      {JOINTS.map((i) => (
+        <Joint key={i} i={i} shown={shown} breath={breath} color={hot.has(i) ? colors.error : colors.primary} ring={colors.onPrimary} big={hot.has(i)} />
+      ))}
+    </View>
   );
 }
 
-const visible = (s: number[], i: number) => {
-  'worklet';
-  return s[i * 3 + 2] >= 0.5;
-};
-
-function Bone({ a, b, shown, hot, color, hotColor }: { a: number; b: number; shown: SharedValue<number[]>; hot: SharedValue<number[]>; color: string; hotColor: string }) {
-  const p1 = useDerivedValue(() => vec(shown.value[a * 3], shown.value[a * 3 + 1]));
-  const p2 = useDerivedValue(() => vec(shown.value[b * 3], shown.value[b * 3 + 1]));
-  const opacity = useDerivedValue(() => (visible(shown.value, a) && visible(shown.value, b) ? 0.85 : 0));
-  const isHot = useDerivedValue(() => hot.value.includes(a) || hot.value.includes(b));
-  const stroke = useDerivedValue(() => (isHot.value ? hotColor : color));
-  const width = useDerivedValue(() => (isHot.value ? 5 : 3));
-  return <Line p1={p1} p2={p2} color={stroke} strokeWidth={width} opacity={opacity} strokeCap="round" />;
+function Bone({ a, b, shown, color, thick }: { a: number; b: number; shown: SharedValue<number[]>; color: string; thick: boolean }) {
+  const h = thick ? 5 : 3;
+  const style = useAnimatedStyle(() => {
+    const s = shown.value;
+    const x1 = s[a * 3];
+    const y1 = s[a * 3 + 1];
+    const x2 = s[b * 3];
+    const y2 = s[b * 3 + 1];
+    const len = Math.hypot(x2 - x1, y2 - y1);
+    const visible = s[a * 3 + 2] >= 0.5 && s[b * 3 + 2] >= 0.5;
+    return {
+      opacity: visible ? 0.85 : 0,
+      width: len,
+      transform: [{ translateX: x1 }, { translateY: y1 - h / 2 }, { rotate: `${Math.atan2(y2 - y1, x2 - x1)}rad` }],
+    };
+  });
+  return <Animated.View style={[styles.bone, { height: h, borderRadius: h / 2, backgroundColor: color }, style]} />;
 }
 
 function Joint({
   i,
   shown,
-  hot,
   breath,
   color,
   ring,
-  hotColor,
+  big,
 }: {
   i: number;
   shown: SharedValue<number[]>;
-  hot: SharedValue<number[]>;
   breath: SharedValue<number>;
   color: string;
   ring: string;
-  hotColor: string;
+  big: boolean;
 }) {
-  const cx = useDerivedValue(() => shown.value[i * 3]);
-  const cy = useDerivedValue(() => shown.value[i * 3 + 1]);
-  const on = useDerivedValue(() => (visible(shown.value, i) ? 1 : 0));
-  const isHot = useDerivedValue(() => hot.value.includes(i));
-  const r = useDerivedValue(() => (isHot.value ? 8 : 4.5) * (1 + 0.22 * breath.value));
-  const glowR = useDerivedValue(() => r.value * (2.2 + 0.6 * breath.value));
-  const glowOpacity = useDerivedValue(() => on.value * (0.18 + 0.22 * breath.value));
-  const fill = useDerivedValue(() => (isHot.value ? hotColor : color));
+  const size = big ? DOT * 1.6 : DOT;
+  const dot = useAnimatedStyle(() => {
+    const s = shown.value;
+    return {
+      opacity: s[i * 3 + 2] >= 0.5 ? 1 : 0,
+      transform: [{ translateX: s[i * 3] - size / 2 }, { translateY: s[i * 3 + 1] - size / 2 }, { scale: 1 + 0.22 * breath.value }],
+    };
+  });
+  const glow = useAnimatedStyle(() => {
+    const s = shown.value;
+    const g = size * 2.4;
+    return {
+      opacity: s[i * 3 + 2] >= 0.5 ? 0.16 + 0.22 * breath.value : 0,
+      transform: [{ translateX: s[i * 3] - g / 2 }, { translateY: s[i * 3 + 1] - g / 2 }, { scale: 0.85 + 0.35 * breath.value }],
+    };
+  });
+  const g = size * 2.4;
   return (
-    <Group opacity={on}>
-      <Circle cx={cx} cy={cy} r={glowR} color={fill} opacity={glowOpacity}>
-        <BlurMask blur={6} style="normal" />
-      </Circle>
-      <Circle cx={cx} cy={cy} r={r} color={fill} />
-      <Circle cx={cx} cy={cy} r={r} color={ring} style="stroke" strokeWidth={1.5} />
-    </Group>
+    <>
+      <Animated.View style={[styles.abs, { width: g, height: g, borderRadius: g / 2, backgroundColor: color }, glow]} />
+      <Animated.View style={[styles.abs, { width: size, height: size, borderRadius: size / 2, backgroundColor: color, borderColor: ring, borderWidth: 1.5 }, dot]} />
+    </>
   );
 }
+
+const styles = StyleSheet.create({
+  abs: { left: 0, position: 'absolute', top: 0 },
+  bone: { left: 0, position: 'absolute', top: 0, transformOrigin: '0% 50%' },
+});

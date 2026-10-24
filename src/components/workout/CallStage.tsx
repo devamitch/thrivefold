@@ -11,7 +11,10 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-const PIP_WIDTH_RATIO = 0.32;
+const PIP_WIDTH_RATIO = 0.3;
+/** Gap around the main tile, so the stage reads as a framed call, not a wall of video. */
+const GUTTER = 8;
+const MAIN_RADIUS = 22;
 const PIP_ASPECT = 4 / 3;
 const MARGIN = 12;
 const SPRING = { damping: 20, stiffness: 220 };
@@ -56,7 +59,7 @@ export function CallStage({ primary, secondary, insetTop, insetBottom, onStageTa
     W.value = width;
     H.value = height;
     const pw = width * PIP_WIDTH_RATIO;
-    px.value = width - pw - MARGIN;
+    px.value = width - pw - GUTTER - MARGIN;
     py.value = height - pw * PIP_ASPECT - insetBottom - MARGIN;
     setSize({ width, height });
   };
@@ -79,7 +82,7 @@ export function CallStage({ primary, secondary, insetTop, insetBottom, onStageTa
     const ph = pw * PIP_ASPECT;
     const x = px.value + dragX.value;
     const y = py.value + dragY.value;
-    const cornerX = x + pw / 2 < W.value / 2 ? MARGIN : W.value - pw - MARGIN;
+    const cornerX = x + pw / 2 < W.value / 2 ? GUTTER + MARGIN : W.value - pw - GUTTER - MARGIN;
     const cornerY = y + ph / 2 < H.value / 2 ? insetTop + MARGIN : H.value - ph - insetBottom - MARGIN;
     // Move the anchor to the corner and spring the remaining offset away.
     px.value = cornerX;
@@ -95,12 +98,13 @@ export function CallStage({ primary, secondary, insetTop, insetBottom, onStageTa
     'worklet';
     const pw = W.value * PIP_WIDTH_RATIO;
     const ph = pw * PIP_ASPECT;
+    const mainH = H.value - insetTop - insetBottom + MARGIN;
     return {
-      left: interpolate(t, [0, 1], [0, px.value + dragX.value]),
-      top: interpolate(t, [0, 1], [0, py.value + dragY.value]),
-      width: interpolate(t, [0, 1], [W.value, pw]),
-      height: interpolate(t, [0, 1], [H.value, ph]),
-      borderRadius: interpolate(t, [0, 1], [0, 16]),
+      left: interpolate(t, [0, 1], [GUTTER, px.value + dragX.value]),
+      top: interpolate(t, [0, 1], [insetTop - MARGIN / 2, py.value + dragY.value]),
+      width: interpolate(t, [0, 1], [W.value - GUTTER * 2, pw]),
+      height: interpolate(t, [0, 1], [mainH, ph]),
+      borderRadius: interpolate(t, [0, 1], [MAIN_RADIUS, 16]),
       zIndex: t > 0.5 ? 2 : 1,
       elevation: t > 0.5 ? 8 : 0,
     };
@@ -130,9 +134,10 @@ export function CallStage({ primary, secondary, insetTop, insetBottom, onStageTa
   };
 
   const floatingSize = { width: size.width * PIP_WIDTH_RATIO, height: size.width * PIP_WIDTH_RATIO * PIP_ASPECT };
+  const mainSize = { width: size.width - GUTTER * 2, height: size.height - insetTop - insetBottom + MARGIN };
 
   return (
-    <View style={StyleSheet.absoluteFill} onLayout={onLayout}>
+    <View style={StyleSheet.absoluteFill} onLayout={onLayout} collapsable={false}>
       {size.width > 0 ? (
         <>
           <GestureDetector gesture={gestureFor(false)}>
@@ -143,7 +148,7 @@ export function CallStage({ primary, secondary, insetTop, insetBottom, onStageTa
           <GestureDetector gesture={gestureFor(true)}>
             <Animated.View style={[styles.tile, secondaryStyle]} accessibilityLabel={secondaryIsMain ? 'Camera' : 'Camera, small. Tap to enlarge'}>
               {secondary}
-              {renderSecondaryOverlay?.(secondaryIsMain ? size : floatingSize)}
+              {renderSecondaryOverlay?.(secondaryIsMain ? mainSize : floatingSize)}
             </Animated.View>
           </GestureDetector>
         </>

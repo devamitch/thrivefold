@@ -3,9 +3,10 @@ import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { BackHandler, Linking, PermissionsAndroid, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { BackHandler, Linking, PermissionsAndroid, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown, FadeOut, FadeOutUp, useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Speech from 'expo-speech';
 import { PoseCameraView, poseLandmarkerAvailable, poseModelVersion, type PoseFrame } from 'pose-landmarker';
 
 import { Button } from '../../../../components/ui/Button';
@@ -45,8 +46,6 @@ interface DoneSummary {
   lines: { name: string; detail: string }[];
 }
 
-const CONTROLS_HIDE_MS = 4000;
-
 const clock = (s: number) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 
 /**
@@ -78,6 +77,11 @@ export default function CoachScreen() {
   const [frame, setFrame] = useState<{ landmarks: Landmark[]; w: number; h: number } | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [done, setDone] = useState<DoneSummary | null>(null);
+  /** 3-2-1 before each set; reps are not counted until it reaches 0. */
+  const [countdown, setCountdown] = useState(0);
+  const [voiceOn, setVoiceOn] = useState(true);
+  const voiceRef = useRef(true);
+  voiceRef.current = voiceOn;
 
   const repRef = useRef<RepState>(initialRepState());
   const results = useRef<Record<string, ExerciseResult>>({});
@@ -85,13 +89,12 @@ export default function CoachScreen() {
   const autoPaused = useRef(false);
   const startedAt = useRef('');
   const lastUi = useRef(0);
-  const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const item = plan?.items[itemIdx];
   const exercise = item ? exerciseById(item.exerciseId) : undefined;
   const movement = item ? movementForExercise(item.exerciseId) : undefined;
   const video = item ? videoFor(item.exerciseId) : undefined;
-  const checking = phase === 'live' && cameraOn && Boolean(movement) && rest === 0;
+  const checking = phase === 'live' && cameraOn && Boolean(movement) && rest === 0 && countdown === 0;
   const unit = exercise?.timed || movement?.kind === 'hold' ? 's' : 'reps';
 
   // Call timer.
@@ -101,21 +104,48 @@ export default function CoachScreen() {
     return () => clearInterval(t);
   }, [phase]);
 
-  // Rest countdown.
+  // Rest countdown; when it ends, a 3-2-1 leads into the next set.
+  const resting = useRef(false);
   useEffect(() => {
-    if (rest <= 0) return;
-    const t = setTimeout(() => setRest((r) => r - 1), 1000);
-    return () => clearTimeout(t);
+    if (rest > 0) {
+      resting.current = true;
+      const t = setTimeout(() => setRest((r) => r - 1), 1000);
+      return () => clearTimeout(t);
+    }
+    if (resting.current) {
+      resting.current = false;
+      setCountdown(3);
+    }
   }, [rest]);
 
-  const showControls = useCallback(() => {
-    setControls(true);
-    if (hideTimer.current) clearTimeout(hideTimer.current);
-    hideTimer.current = setTimeout(() => setControls(false), CONTROLS_HIDE_MS);
-  }, []);
+  // 3-2-1 before a set, spoken and shown.
+  useEffect(() => {
+    if (countdown <= 0) return;
+    say(String(countdown));
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
+    const t = setTimeout(() => {
+      setCountdown((c) => {
+        if (c === 1) say('Go');
+        return c - 1;
+      });
+    }, 900);
+    return () => clearTimeout(t);
+  }, [countdown]);
+
   useEffect(() => () => {
-    if (hideTimer.current) clearTimeout(hideTimer.current);
+    Speech.stop();
   }, []);
+
+  // Controls stay on screen: taps on the video go to YouTube, so hidden controls could not
+  // be brought back reliably.
+  const showControls = useCallback(() => setControls(true), []);
+
+  /** Short spoken cues; never queued behind each other, so the voice stays in time. */
+  function say(text: string) {
+    if (!voiceRef.current) return;
+    Speech.stop();
+    Speech.speak(text, { rate: 1.05, pitch: 1.0 });
+  }
 
   const resetReps = () => {
     repRef.current = initialRepState();
@@ -152,6 +182,7 @@ export default function CoachScreen() {
     const finishedAt = new Date().toISOString();
     let xp = 0;
     let rewardNote = 'Nothing was logged, so nothing was saved.';
+    let questNote: string | null = null;
     if (entries.length > 0) {
       const sessionId = store.saveWorkoutSession({
         planId: plan.id,
@@ -166,6 +197,17 @@ export default function CoachScreen() {
       }
       const reward = store.claimWorkoutReward(sessionId, form);
       xp = reward.xp;
+      const minutes = Math.max(1, Math.round((Date.parse(finishedAt) - Date.parse(startedAt.current)) / 60000));
+      const quest = store.completeMovementQuestWithWorkout({
+        title: plan.title,
+        minutes,
+        date: formatLocalDate(new Date()),
+        cameraChecked: Boolean(form),
+      });
+      if (quest) {
+        xp += quest.xp;
+        questNote = `Also completed today's quest: ${quest.title}.`;
+      }
       rewardNote = reward.awarded
         ? formQualifies(form)
           ? `Form-checked: ${WORKOUT_FORM_MULTIPLIER}x XP.`
@@ -183,7 +225,7 @@ export default function CoachScreen() {
     }
     if (cameraOn) store.audit('device_disconnected', 'pose_camera', `${plan.title}: camera off`);
     setCameraOn(false);
-    setDone({ xp, rewardNote, form, lines });
+    setDone({ xp, rewardNote: questNote ? `${rewardNote} ${questNote}` : rewardNote, form, lines });
     setPhase('done');
   }, [plan, cameraOn]);
 
@@ -199,13 +241,16 @@ export default function CoachScreen() {
         autoPaused.current = false;
       }
       if (setIdx + 1 < item.sets) {
+        say(`Set done. Rest ${item.restSeconds} seconds.`);
         setSetIdx(setIdx + 1);
         setRest(item.restSeconds);
       } else if (itemIdx + 1 < plan.items.length) {
+        say(`Nice. Next, ${exerciseById(plan.items[itemIdx + 1].exerciseId)?.name ?? 'the next exercise'}.`);
         setItemIdx(itemIdx + 1);
         setSetIdx(0);
         setRest(item.restSeconds || 20);
       } else {
+        say('Workout done. Well done.');
         finish();
       }
       showControls();
@@ -231,6 +276,7 @@ export default function CoachScreen() {
       // Form slipped: pause the tutorial and say what to fix. Fixed: carry on.
       if (!before.fault && next.fault) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => undefined);
+        say(next.fault.fix);
         if (videoPlaying) {
           player.current?.pause();
           autoPaused.current = true;
@@ -242,7 +288,14 @@ export default function CoachScreen() {
           autoPaused.current = false;
         }
       }
-      if (next.reps > before.reps) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
+      if (next.reps > before.reps) {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
+        if (!next.fault) say(String(next.reps));
+      }
+      if (movement.kind === 'hold') {
+        const sec = Math.floor(next.holdMs / 1000);
+        if (sec > 0 && sec !== Math.floor(before.holdMs / 1000) && sec % 10 === 0) say(`${sec} seconds`);
+      }
 
       const doneNow = movement.kind === 'hold' ? next.holdMs / 1000 >= item.target : next.reps >= item.target;
       if (now - lastUi.current > 100 || doneNow || next.fault !== before.fault) {
@@ -277,6 +330,8 @@ export default function CoachScreen() {
     startedAt.current = new Date().toISOString();
     setPhase('live');
     showControls();
+    say(`${exercise?.name ?? 'Get ready'}. ${item?.target ?? ''} ${movementForExercise(item?.exerciseId ?? '')?.kind === 'hold' ? 'seconds' : 'reps'}.`);
+    setTimeout(() => setCountdown(3), 1600);
   };
 
   const confirmEnd = useCallback(() => {
@@ -428,50 +483,52 @@ export default function CoachScreen() {
 
   return (
     <View style={[styles.flex, { backgroundColor: colors.text.primary }]}>
+      <StatusBar barStyle="light-content" />
       <CallStage
         primary={videoTile}
         secondary={cameraTile}
-        insetTop={insets.top + 64}
-        insetBottom={insets.bottom + 110}
-        onStageTap={() => (controls ? setControls(false) : showControls())}
+        insetTop={insets.top + 76}
+        insetBottom={insets.bottom + 108}
+        onStageTap={showControls}
         renderSecondaryOverlay={(size) => (
           <>
             {frame && cameraOn ? (
               <PoseOverlay landmarks={frame.landmarks} frameWidth={frame.w} frameHeight={frame.h} width={size.width} height={size.height} highlight={fault?.joints ?? []} />
             ) : null}
             {fault ? <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.faultBorder, { borderColor: colors.error }]} /> : null}
-            {checking ? (
-              <View pointerEvents="none" style={[styles.repBadge, { backgroundColor: fault ? colors.error : colors.primary }]}>
-                <Text style={[typography.bodyBold, { color: colors.onPrimary }]}>
-                  {counted}/{item.target}
-                </Text>
-              </View>
-            ) : null}
           </>
         )}
       />
 
       {/* Top bar: like a call header */}
-      {controls || rest > 0 || fault ? (
+      <View style={[styles.topBar, { paddingTop: insets.top + 6 }]}>
+        <View style={styles.flex}>
+          <Text style={[typography.bodyBold, { color: colors.onPrimary }]} numberOfLines={1}>
+            {exercise.name}
+          </Text>
+          <Text style={[typography.caption, { color: colors.onPrimary, opacity: 0.8 }]}>
+            Set {setIdx + 1} of {item.sets} · {clock(elapsed)}
+            {movement && cameraOn ? ' · form check on' : ''}
+          </Text>
+        </View>
+        <View style={styles.counter} accessibilityLabel={`${counted} of ${item.target} ${unit}`}>
+          <Text style={[styles.counterBig, typography.display, { color: fault ? colors.error : colors.onPrimary }]}>{counted}</Text>
+          <Text style={[typography.captionBold, { color: colors.onPrimary, opacity: 0.8 }]}>
+            / {item.target} {unit}
+          </Text>
+        </View>
+      </View>
+
+      {/* 3-2-1 before each set */}
+      {countdown > 0 ? (
         <Animated.View
-          entering={reduceMotion ? undefined : FadeInDown.duration(200)}
-          exiting={reduceMotion ? undefined : FadeOutUp.duration(200)}
-          style={[styles.topBar, { paddingTop: insets.top + 8, backgroundColor: colors.scrim }]}
+          key={countdown}
+          entering={reduceMotion ? undefined : FadeIn.duration(150)}
+          pointerEvents="none"
+          style={[styles.restWrap, { backgroundColor: colors.scrim }]}
         >
-          <View style={styles.flex}>
-            <Text style={[typography.bodyBold, { color: colors.onPrimary }]} numberOfLines={1}>
-              {exercise.name}
-            </Text>
-            <Text style={[typography.caption, { color: colors.onPrimary }]}>
-              Set {setIdx + 1} of {item.sets} · {item.target} {unit} · {clock(elapsed)}
-            </Text>
-          </View>
-          {checking ? (
-            <View style={[styles.pill, { backgroundColor: colors.primary }]}>
-              <Ionicons name="scan-outline" size={12} color={colors.onPrimary} />
-              <Text style={[typography.captionBold, { color: colors.onPrimary, marginLeft: 4 }]}>Form check · 10x XP</Text>
-            </View>
-          ) : null}
+          <Text style={[styles.restNumber, typography.display, { color: colors.onPrimary }]}>{countdown}</Text>
+          <Text style={[typography.body, { color: colors.onPrimary }]}>Get into position</Text>
         </Animated.View>
       ) : null}
 
@@ -480,7 +537,7 @@ export default function CoachScreen() {
         <Animated.View
           entering={reduceMotion ? undefined : FadeInDown.springify().damping(16)}
           exiting={reduceMotion ? undefined : FadeOut.duration(200)}
-          style={[styles.faultCard, { top: insets.top + 72, backgroundColor: colors.errorSurface, borderColor: colors.error }]}
+          style={[styles.faultCard, { top: insets.top + 84, backgroundColor: colors.errorSurface, borderColor: colors.error }]}
           accessibilityLiveRegion="assertive"
         >
           <Ionicons name="alert-circle" size={22} color={colors.error} />
@@ -493,7 +550,7 @@ export default function CoachScreen() {
           </View>
         </Animated.View>
       ) : checking && controls ? (
-        <View pointerEvents="none" style={[styles.cue, { top: insets.top + 72, backgroundColor: colors.scrim }]}>
+        <View pointerEvents="none" style={[styles.cue, { top: insets.top + 88, backgroundColor: colors.scrim }]}>
           <Text style={[typography.subbody, { color: colors.onPrimary }]}>{liveCue(movement!, rep, (frame?.landmarks.length ?? 0) > 0)}</Text>
         </View>
       ) : null}
@@ -521,7 +578,7 @@ export default function CoachScreen() {
         <Animated.View
           entering={reduceMotion ? undefined : FadeInDown.duration(200)}
           exiting={reduceMotion ? undefined : FadeOut.duration(200)}
-          style={[styles.controls, { paddingBottom: insets.bottom + 16, backgroundColor: colors.scrim }]}
+          style={[styles.controls, { paddingBottom: insets.bottom + 14 }]}
         >
           <CallButton icon="camera-reverse-outline" label="Flip camera" disabled={!cameraOn} onPress={() => setFacing((f) => (f === 'front' ? 'back' : 'front'))} />
           <CallButton
@@ -536,9 +593,12 @@ export default function CoachScreen() {
           />
           <CallButton icon="checkmark" label="Set done" tone="success" size={64} onPress={manualSetDone} />
           <CallButton
-            icon="logo-youtube"
-            label="Open in YouTube"
-            onPress={() => Linking.openURL(video ? youtubeWatchUrl(video.videoId) : youtubeSearchUrl(exercise.name)).catch(() => undefined)}
+            icon={voiceOn ? 'volume-high-outline' : 'volume-mute-outline'}
+            label={voiceOn ? 'Mute voice coach' : 'Turn on voice coach'}
+            onPress={() => {
+              if (voiceOn) Speech.stop();
+              setVoiceOn((v) => !v);
+            }}
           />
           <CallButton icon="call" label="End workout" tone="danger" onPress={confirmEnd} rotate />
         </Animated.View>
@@ -586,22 +646,23 @@ function CallButton({
 
 const styles = StyleSheet.create({
   callButton: { alignItems: 'center', justifyContent: 'center' },
-  cameraError: { alignSelf: 'center', borderRadius: 12, overflow: 'hidden', paddingHorizontal: 12, paddingVertical: 6, position: 'absolute' },
+  cameraError: { alignSelf: 'center', borderRadius: 12, elevation: 20, overflow: 'hidden', paddingHorizontal: 12, paddingVertical: 6, position: 'absolute', zIndex: 20 },
   center: { alignItems: 'center', flex: 1, justifyContent: 'center', padding: 8 },
-  controls: { alignItems: 'center', bottom: 0, flexDirection: 'row', justifyContent: 'space-evenly', left: 0, paddingTop: 16, position: 'absolute', right: 0 },
-  cue: { alignSelf: 'center', borderRadius: 14, left: 16, paddingHorizontal: 14, paddingVertical: 8, position: 'absolute', right: 16 },
+  controls: { alignItems: 'center', bottom: 0, elevation: 20, flexDirection: 'row', justifyContent: 'space-evenly', left: 0, paddingTop: 16, position: 'absolute', right: 0, zIndex: 20 },
+  cue: { alignSelf: 'center', borderRadius: 14, elevation: 20, left: 16, paddingHorizontal: 14, paddingVertical: 8, position: 'absolute', right: 16, zIndex: 20 },
   faultBorder: { borderRadius: 16, borderWidth: 4 },
-  faultCard: { alignItems: 'flex-start', borderRadius: 16, borderWidth: 1, flexDirection: 'row', left: 12, padding: 14, position: 'absolute', right: 12 },
+  faultCard: { alignItems: 'flex-start', borderRadius: 16, borderWidth: 1, elevation: 21, flexDirection: 'row', left: 12, padding: 14, position: 'absolute', right: 12, zIndex: 21 },
   flex: { flex: 1 },
   hangUp: { transform: [{ rotate: '135deg' }] },
   howTo: { justifyContent: 'flex-start' },
   pill: { alignItems: 'center', borderRadius: 999, flexDirection: 'row', paddingHorizontal: 8, paddingVertical: 4 },
-  repBadge: { alignSelf: 'center', borderRadius: 999, bottom: 8, paddingHorizontal: 10, paddingVertical: 2, position: 'absolute' },
+  counter: { alignItems: 'flex-end', marginLeft: 12 },
+  counterBig: { fontSize: 40, lineHeight: 44 },
   restNumber: { fontSize: 72, lineHeight: 80 },
-  restWrap: { alignItems: 'center', bottom: 0, justifyContent: 'center', left: 0, position: 'absolute', right: 0, top: 0 },
+  restWrap: { alignItems: 'center', bottom: 0, elevation: 19, justifyContent: 'center', left: 0, position: 'absolute', right: 0, top: 0, zIndex: 19 },
   round: { alignItems: 'center', borderRadius: 22, height: 44, justifyContent: 'center', width: 44 },
   row: { alignItems: 'center', flexDirection: 'row' },
   summaryRow: { alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth, flexDirection: 'row', paddingVertical: 12 },
-  topBar: { alignItems: 'center', flexDirection: 'row', left: 0, paddingBottom: 10, paddingHorizontal: 16, position: 'absolute', right: 0, top: 0 },
+  topBar: { alignItems: 'center', elevation: 20, flexDirection: 'row', left: 0, paddingBottom: 10, paddingHorizontal: 16, position: 'absolute', right: 0, top: 0, zIndex: 20 },
   xpBox: { alignItems: 'center', borderRadius: 20, marginBottom: 16, padding: 20 },
 });

@@ -37,11 +37,17 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
     private const val MIN_EMIT_INTERVAL_MS = 66L
   }
 
+  // React Native does not lay out native children on its own; without this the camera
+  // preview never gets a size, its surface is never created and CameraX times out.
+  override val shouldUseAndroidLayout = true
+
   private val onPose by EventDispatcher()
   private val onPoseError by EventDispatcher()
 
   private val previewView = PreviewView(context).also {
     it.scaleType = PreviewView.ScaleType.FILL_CENTER
+    // TextureView-backed preview: clips to rounded corners and animates with the call layout.
+    it.implementationMode = PreviewView.ImplementationMode.COMPATIBLE
     addView(it, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
   }
   private var executor: ExecutorService? = null
@@ -67,6 +73,18 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
       stop()
       start()
     }
+  }
+
+  override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
+    previewView.layout(0, 0, r - l, b - t)
+  }
+
+  override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+    super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+    previewView.measure(
+      MeasureSpec.makeMeasureSpec(measuredWidth, MeasureSpec.EXACTLY),
+      MeasureSpec.makeMeasureSpec(measuredHeight, MeasureSpec.EXACTLY),
+    )
   }
 
   private fun start() {
