@@ -141,7 +141,7 @@ export default function SafetyScreen() {
                 size="sm"
                 variant="danger"
                 onPress={() => handleResourceAction(res)}
-                icon={<Ionicons name={res.isSms ? 'chatbubble-ellipses' : 'call'} size={14} color="#FFFFFF" />}
+                icon={<Ionicons name={res.isSms ? 'chatbubble-ellipses' : 'call'} size={14} color={colors.onPrimary} />}
               />
             </View>
           ))}

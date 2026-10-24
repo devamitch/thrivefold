@@ -469,7 +469,7 @@ export default function CycleScreen() {
                     <Text
                       style={[
                         typography.caption,
-                        { color: isSelected ? '#FFFFFF' : colors.text.muted, fontSize: 11 },
+                        { color: isSelected ? colors.onPrimary : colors.text.muted, fontSize: 11 },
                       ]}
                     >
                       {d.weekday}
@@ -477,7 +477,7 @@ export default function CycleScreen() {
                     <Text
                       style={[
                         typography.bodyBold,
-                        { color: isSelected ? '#FFFFFF' : colors.text.primary, marginVertical: 2 },
+                        { color: isSelected ? colors.onPrimary : colors.text.primary, marginVertical: 2 },
                       ]}
                     >
                       {d.dayNumber}
@@ -485,7 +485,7 @@ export default function CycleScreen() {
                     <View
                       style={[
                         styles.phaseDot,
-                        { backgroundColor: isSelected ? '#FFFFFF' : d.cfg.color },
+                        { backgroundColor: isSelected ? colors.onPrimary : d.cfg.color },
                       ]}
                     />
                   </Pressable>

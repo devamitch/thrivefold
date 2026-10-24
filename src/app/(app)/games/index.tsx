@@ -205,7 +205,7 @@ export default function GamesScreen() {
 
         {/* Breathing Exercise Modal */}
         <Modal visible={activeSession === 'game_breathe'} transparent animationType="fade">
-          <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.65)' }]}>
+          <View style={[styles.modalOverlay, { backgroundColor: colors.scrim }]}>
             <View style={[styles.modalCard, { backgroundColor: colors.surface }]}>
               <View style={styles.modalHeader}>
                 <Text style={[typography.subheading, { color: colors.text.primary }]}>
@@ -259,7 +259,7 @@ export default function GamesScreen() {
 
         {/* Memory Game Modal */}
         <Modal visible={activeSession === 'game_memory'} transparent animationType="fade">
-          <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.65)' }]}>
+          <View style={[styles.modalOverlay, { backgroundColor: colors.scrim }]}>
             <View style={[styles.modalCard, { backgroundColor: colors.surface }]}>
               <View style={styles.modalHeader}>
                 <Text style={[typography.subheading, { color: colors.text.primary }]}>
@@ -335,7 +335,7 @@ export default function GamesScreen() {
 
         {/* Sensory Grounding Modal */}
         <Modal visible={activeSession === 'game_focus'} transparent animationType="fade">
-          <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.65)' }]}>
+          <View style={[styles.modalOverlay, { backgroundColor: colors.scrim }]}>
             <View style={[styles.modalCard, { backgroundColor: colors.surface }]}>
               <View style={styles.modalHeader}>
                 <Text style={[typography.subheading, { color: colors.text.primary }]}>

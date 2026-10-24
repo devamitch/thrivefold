@@ -119,44 +119,17 @@ export function MindfulNotificationBanner() {
     }
   };
 
+  // Tone colours come from the theme, so the banner matches every experience.
   const getTone = (type: string) => {
     switch (type) {
       case 'success':
-        return {
-          category: 'THRIVEFOLD UPDATE',
-          pillColor: '#2E7D32',
-          iconName: 'checkmark-circle-outline' as any,
-          iconColor: '#2E7D32',
-          iconBg: 'rgba(46, 125, 50, 0.12)',
-          defaultTitle: 'Habit & Health Harmony',
-        };
+        return { category: 'DONE', iconName: 'checkmark-circle-outline' as const, color: colors.success, bg: colors.successSurface, defaultTitle: 'Saved' };
       case 'error':
-        return {
-          category: 'SECURITY NOTICE',
-          pillColor: '#C62828',
-          iconName: 'shield' as any,
-          iconColor: '#C62828',
-          iconBg: 'rgba(198, 40, 40, 0.12)',
-          defaultTitle: 'Attention Required',
-        };
+        return { category: 'PROBLEM', iconName: 'alert-circle-outline' as const, color: colors.error, bg: colors.errorSurface, defaultTitle: 'Something went wrong' };
       case 'warning':
-        return {
-          category: 'COMMUNITY NOTICE',
-          pillColor: '#D97706',
-          iconName: 'alert-circle' as const,
-          iconColor: '#D97706',
-          iconBg: 'rgba(217, 119, 6, 0.12)',
-          defaultTitle: 'Gentle Notice',
-        };
+        return { category: 'HEADS UP', iconName: 'information-circle-outline' as const, color: colors.warning, bg: colors.warningSurface, defaultTitle: 'Heads up' };
       default:
-        return {
-          category: 'MINDFUL NUDGE',
-          pillColor: colors.primary,
-          iconName: 'heart-outline' as const,
-          iconColor: colors.primary,
-          iconBg: colors.primaryAlpha,
-          defaultTitle: 'Daily Check-In',
-        };
+        return { category: 'NOTE', iconName: 'leaf-outline' as const, color: colors.primary, bg: colors.primaryAlpha, defaultTitle: '' };
     }
   };
 
@@ -169,34 +142,32 @@ export function MindfulNotificationBanner() {
           <SquircleSurface
             radius={20}
             smoothing={0.7}
-            fill="#FFFDF9"
-            stroke="rgba(218, 119, 86, 0.22)"
+            fill={colors.surface}
+            stroke={colors.border}
             strokeWidth={1}
             style={styles.surface}
           >
             <View style={styles.contentRow}>
               {/* Tone Icon Tile */}
-              <View style={[styles.iconTile, { backgroundColor: tone.iconBg }]}>
-                <Ionicons name={tone.iconName} size={18} color={tone.iconColor} />
+              <View style={[styles.iconTile, { backgroundColor: tone.bg }]}>
+                <Ionicons name={tone.iconName} size={18} color={tone.color} />
               </View>
 
               {/* Notification Body */}
               <View style={styles.textColumn}>
                 <View style={styles.headerRow}>
-                  <Text style={[typography.captionBold, styles.categoryPill, { color: tone.pillColor }]}>
+                  <Text style={[typography.captionBold, styles.categoryPill, { color: tone.color }]}>
                     {tone.category}
-                  </Text>
-                  <Text style={styles.dotSeparator}>•</Text>
-                  <Text style={[typography.caption, styles.timeText]}>
-                    Mindful Nudge
                   </Text>
                 </View>
 
-                <Text style={[typography.bodyBold, styles.titleText, { color: '#1C1917' }]} numberOfLines={1}>
-                  {activeToast.title || tone.defaultTitle}
-                </Text>
+                {activeToast.title || tone.defaultTitle ? (
+                  <Text style={[typography.bodyBold, styles.titleText, { color: colors.text.primary }]} numberOfLines={1}>
+                    {activeToast.title || tone.defaultTitle}
+                  </Text>
+                ) : null}
 
-                <Text style={[typography.body, styles.bodyText, { color: '#57534E' }]} numberOfLines={2}>
+                <Text style={[typography.body, styles.bodyText, { color: colors.text.secondary }]} numberOfLines={2}>
                   {activeToast.message}
                 </Text>
 
@@ -205,12 +176,12 @@ export function MindfulNotificationBanner() {
                     onPress={handleAction}
                     style={({ pressed }) => [
                       styles.actionButton,
-                      { backgroundColor: tone.iconBg },
+                      { backgroundColor: tone.bg },
                       pressed && { opacity: 0.8 },
                     ]}
                   >
-                    <Text style={[typography.captionBold, styles.actionText, { color: tone.pillColor }]}>
-                      {activeToast.actionLabel} →
+                    <Text style={[typography.captionBold, styles.actionText, { color: tone.color }]}>
+                      {activeToast.actionLabel}
                     </Text>
                   </Pressable>
                 )}
@@ -227,7 +198,7 @@ export function MindfulNotificationBanner() {
                 accessibilityRole="button"
                 accessibilityLabel="Dismiss notification"
               >
-                <Ionicons name="close" size={15} color="#78716C" />
+                <Ionicons name="close" size={15} color={colors.text.muted} />
               </Pressable>
             </View>
           </SquircleSurface>
