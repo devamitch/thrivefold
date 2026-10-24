@@ -23,6 +23,7 @@ import { useRootStore } from '../../stores/useRootStore';
 import { accountsAvailable, requestEmailCode, verifyEmailCode } from '../../services/account/accountService';
 import { googleAvailable, signInWithGoogle } from '../../services/account/googleAccount';
 import { IntroSlider } from '../../components/onboarding/IntroSlider';
+import { AnimatedThrivefoldMark } from '../../components/brand/AnimatedThrivefoldMark';
 import { useTheme } from '../../theme/useTheme';
 
 
@@ -151,14 +152,16 @@ export default function SignInScreen() {
         >
           <Ionicons name="chevron-back" size={20} color={colors.text.primary} />
         </Pressable>
-        <Text style={[typography.display, { color: colors.text.primary, marginTop: spacing.xl }]} accessibilityRole="header">
-          Sign in
-        </Text>
-        <Text style={[typography.body, { color: colors.text.secondary, marginTop: spacing.xs }]}>
-          Sign in with Google and we will show you what your account shares so you can confirm it. Health records stay
-          on this phone either way.
-        </Text>
-        <View style={styles.flex} />
+        <View style={styles.hero}>
+          <AnimatedThrivefoldMark size={132} />
+          <Text style={[typography.display, styles.center, { color: colors.text.primary, marginTop: spacing.lg }]} accessibilityRole="header">
+            Welcome to Thrivefold
+          </Text>
+          <Text style={[typography.body, styles.center, { color: colors.text.secondary, marginTop: spacing.xs }]}>
+            Sign in with Google and we will show you what your account shares so you can confirm it. Your health records
+            stay on this phone either way.
+          </Text>
+        </View>
         {googleAvailable() ? (
           <Pressable
             onPress={google}
@@ -290,6 +293,8 @@ export default function SignInScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   flex: { flex: 1 },
+  hero: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 },
+  center: { textAlign: 'center' },
   brandRow: { flexDirection: 'row', alignItems: 'center', height: 56 },
   brandMark: { width: 32, height: 32 },
   slides: { flexGrow: 0 },

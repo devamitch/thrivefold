@@ -33,3 +33,6 @@ export const baseTokens = {
     display: 34,
   },
 } as const;
+
+/** Native splash background (app.json expo-splash-screen); the animated splash must match it. */
+export const SPLASH_BACKGROUND = '#FAF7F2';

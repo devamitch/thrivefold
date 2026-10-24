@@ -38,6 +38,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { AnimatedThrivefoldMark } from '../brand/AnimatedThrivefoldMark';
 import { PressableScale } from '../ui/PressableScale';
 import { useTheme } from '../../theme/useTheme';
 
@@ -192,12 +193,7 @@ export function IntroSlider({ onFinish }: { onFinish: () => void }) {
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent />
       <Animated.View style={[styles.root, rootStyle]}>
         <View style={[styles.header, { paddingTop: insets.top + 12, paddingHorizontal: side }]}>
-          <Image
-            source={require('../../../assets/brand/Minimalist-Terracotta-T-and-Leaf-Emblem.png')}
-            style={styles.logo}
-            contentFit="contain"
-            accessibilityLabel="Thrivefold"
-          />
+          <AnimatedThrivefoldMark size={30} entrance={false} />
           <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Thrivefold</Text>
         </View>
 
@@ -406,7 +402,6 @@ function Dot({
 const styles = StyleSheet.create({
   root: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingBottom: 4 },
-  logo: { width: 28, height: 28, borderRadius: 6 },
   pager: { flex: 1 },
   page: { paddingTop: 8 },
   art: { flex: 1, minHeight: 120, alignItems: 'center', justifyContent: 'center', paddingVertical: 8 },

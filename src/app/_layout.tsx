@@ -1,25 +1,25 @@
-import React, { useEffect } from "react";
-import { Stack } from "expo-router";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { StatusBar, StyleSheet } from "react-native";
-import { useTheme } from "../theme/useTheme";
-import { useRootStore } from "../stores/useRootStore";
+import * as SplashScreen from 'expo-splash-screen';
+import React, { useEffect, useState } from 'react';
+import { Stack } from 'expo-router';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { StatusBar, StyleSheet } from 'react-native';
+import { useTheme } from '../theme/useTheme';
+import { useRootStore } from '../stores/useRootStore';
 
-import { ErrorBoundary } from "../components/ErrorBoundary";
-import { MindfulNotificationBanner } from "../components/ui/MindfulNotificationBanner";
-import { CustomAlert } from "../components/ui/CustomAlert";
-import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import {
-  PERSIST_MAX_AGE,
-  queryClient,
-  queryPersister,
-} from "../services/supabase/queryClient";
+import { ErrorBoundary } from '../components/ErrorBoundary';
+import { MindfulNotificationBanner } from '../components/ui/MindfulNotificationBanner';
+import { CustomAlert } from '../components/ui/CustomAlert';
+import { AnimatedSplash } from '../components/brand/AnimatedSplash';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { PERSIST_MAX_AGE, queryClient, queryPersister } from '../services/supabase/queryClient';
+
+// The animated splash hides the native one once it is drawn on top of it.
+SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 export default function RootLayout() {
-  const resetDailyQuotaIfNewDay = useRootStore(
-    (s) => s.resetDailyQuotaIfNewDay,
-  );
+  const [splash, setSplash] = useState(true);
+  const resetDailyQuotaIfNewDay = useRootStore((s) => s.resetDailyQuotaIfNewDay);
 
   useEffect(() => {
     resetDailyQuotaIfNewDay();
@@ -40,7 +40,7 @@ export default function RootLayout() {
             <Stack
               screenOptions={{
                 headerShown: false,
-                animation: "slide_from_right",
+                animation: 'slide_from_right',
               }}
             >
               <Stack.Screen name="index" />
@@ -51,6 +51,7 @@ export default function RootLayout() {
             </Stack>
             <MindfulNotificationBanner />
             <CustomAlert />
+            {splash ? <AnimatedSplash onDone={() => setSplash(false)} /> : null}
           </ErrorBoundary>
         </PersistQueryClientProvider>
       </SafeAreaProvider>
@@ -67,11 +68,5 @@ const styles = StyleSheet.create({
 /** One status bar for the whole app: dark icons on light canvases, light on dark. */
 function ThemedStatusBar() {
   const { isDark } = useTheme();
-  return (
-    <StatusBar
-      barStyle={isDark ? "light-content" : "dark-content"}
-      translucent
-      backgroundColor="transparent"
-    />
-  );
+  return <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} translucent backgroundColor="transparent" />;
 }
