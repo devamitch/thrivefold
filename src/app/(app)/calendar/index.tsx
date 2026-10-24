@@ -17,7 +17,8 @@ import {
   generateMonthGrid,
   generateDayAgenda,
   formatLocalDate,
-  } from '../../../domain/calendar/universalCalendarEngine';
+  parseLocalDate,
+} from '../../../domain/calendar/universalCalendarEngine';
 import { useAgendaSources } from '../../../hooks/useAgendaSources';
 import { routeForEvent } from '../../../navigation/eventRoutes';
 import * as Haptics from 'expo-haptics';
@@ -83,14 +84,14 @@ export default function CalendarScreen() {
     <ScreenWrapper scrollable>
       <Header
         title="Calendar"
-        subtitle={isMen ? "Performance, Recovery & Routines" : isPride ? "Affirming Schedule & Care" : "Rhythm, Follicular & Life Planner"}
+        subtitle={isMen ? 'Training, recovery and routine' : isPride ? 'Care and schedule' : 'Cycle, health and plans'}
         showBack
       />
 
       <View style={[styles.content, { paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }]}>
         {/* Cyclical Rhythm & Life Flow Hero */}
         <Card style={{ marginBottom: spacing.md, padding: 14, backgroundColor: colors.surface }}>
-          <View style={styles.heroWrap}>
+          <View style={[styles.heroWrap, { backgroundColor: colors.surface1 }]}>
             <Image
               source={require('../../../../assets/illustrations/calendar-rhythm.jpg')}
               style={styles.heroImage}
@@ -98,10 +99,14 @@ export default function CalendarScreen() {
             />
           </View>
           <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 12 }]}>
-            Cyclical Rhythm & Life Flow
+            {isMen ? 'Training and routine' : isPride ? 'Your private schedule' : 'Cycle and life'}
           </Text>
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4, lineHeight: 18 }]}>
-            Universal alignment across lunar rhythms, cycle phases, and personal health milestones.
+            {isMen
+              ? 'Workouts, meals, check-ins, quests and your own events, by date.'
+              : isPride
+                ? 'Care plans, check-ins, quests and your own events, kept on this phone.'
+                : 'Periods you logged, estimated phases, check-ins, quests and your own events, by date.'}
           </Text>
         </Card>
 
@@ -121,7 +126,7 @@ export default function CalendarScreen() {
                 {MONTH_NAMES[currentMonth]} {currentYear}
               </Text>
               <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                {isMen ? 'Training & Habits' : isPride ? 'Private Schedule' : 'Cycle & Wellbeing'}
+                {selectedDayAgenda.length ? `${selectedDayAgenda.length} on the selected day` : 'Nothing on the selected day'}
               </Text>
             </View>
 
@@ -198,7 +203,7 @@ export default function CalendarScreen() {
         <View style={{ marginTop: spacing.lg }}>
           <View style={styles.rowBetween}>
             <Text style={[typography.subheading, { color: colors.text.primary }]}>
-              Schedule for {selectedDateStr}
+              {parseLocalDate(selectedDateStr).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}
             </Text>
             <Badge label={`${selectedDayAgenda.length} items`} variant="neutral" />
           </View>
@@ -228,7 +233,7 @@ export default function CalendarScreen() {
                         </Text>
                       ) : null}
                       <Badge
-                        label={event.category.toUpperCase()}
+                        label={event.category}
                         variant={event.category === 'fitness' ? 'primary' : 'neutral'}
                       />
                     </View>
@@ -311,7 +316,6 @@ const styles = StyleSheet.create({
     height: 140,
     borderRadius: 14,
     overflow: 'hidden',
-    backgroundColor: '#F3EFEA',
   },
   heroImage: {
     width: '100%',
