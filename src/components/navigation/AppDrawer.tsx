@@ -10,12 +10,13 @@ import {
   View,
 } from 'react-native';
 import Animated, {
+  Easing,
   Extrapolation,
   interpolate,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
-  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -50,11 +51,7 @@ export function AppDrawer() {
     if (reduceMotion) {
       progress.value = open ? 1 : 0;
     } else {
-      progress.value = withSpring(open ? 1 : 0, {
-        damping: 18,
-        stiffness: 130,
-        mass: 0.75,
-      });
+      progress.value = withTiming(open ? 1 : 0, { duration: 280, easing: Easing.out(Easing.cubic) });
     }
   }, [open, reduceMotion, progress]);
 

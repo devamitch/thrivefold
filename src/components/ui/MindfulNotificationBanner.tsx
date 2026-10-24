@@ -65,7 +65,7 @@ export function MindfulNotificationBanner() {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       } catch {}
-      translateY.value = withSpring(0, { damping: 20, stiffness: 300 });
+      translateY.value = withSpring(0, { damping: 24, stiffness: 300, overshootClamping: true });
       opacity.value = withTiming(1, { duration: 180 });
 
       // Auto dismiss after 4.5s
@@ -98,7 +98,7 @@ export function MindfulNotificationBanner() {
           runOnJS(handleDismiss)();
         });
       } else {
-        translateY.value = withSpring(0, { damping: 20, stiffness: 350 });
+        translateY.value = withSpring(0, { damping: 24, stiffness: 350, overshootClamping: true });
       }
     });
 

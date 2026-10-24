@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
-  FadeInDown,
+  FadeIn,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
@@ -54,7 +54,7 @@ export default function RoadmapScreen() {
 
   const stageState = (r: [number, number]): NodeState => (inChapter > r[1] ? 'done' : inChapter >= r[0] ? 'current' : 'locked');
   const chapterState = (n: number): NodeState => (n < chapter.number ? 'done' : n === chapter.number ? 'current' : 'locked');
-  const enter = (i: number) => (reduceMotion ? undefined : FadeInDown.delay(30 * i).duration(260));
+  const enter = (i: number) => (reduceMotion ? undefined : FadeIn.duration(180));
 
   return (
     <ScreenContainer header={<AppHeader title="Roadmap" subtitle="Where you are on the journey" showBack />} scrollMode="shell-scroll-view">

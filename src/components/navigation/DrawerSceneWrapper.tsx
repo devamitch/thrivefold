@@ -7,13 +7,13 @@ import {
   View,
 } from 'react-native';
 import Animated, {
+  Easing,
   Extrapolation,
   interpolate,
   runOnJS,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -35,11 +35,7 @@ export function DrawerSceneWrapper({ children }: { children: ReactNode }) {
     if (reduceMotion) {
       progress.value = drawerOpen ? 1 : 0;
     } else {
-      progress.value = withSpring(drawerOpen ? 1 : 0, {
-        damping: 18,
-        stiffness: 130,
-        mass: 0.75,
-      });
+      progress.value = withTiming(drawerOpen ? 1 : 0, { duration: 280, easing: Easing.out(Easing.cubic) });
     }
   }, [drawerOpen, reduceMotion, progress]);
 

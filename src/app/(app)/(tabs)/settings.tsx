@@ -9,7 +9,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { Badge } from '../../../components/ui/Badge';
 import { Card } from '../../../components/ui/Card';
@@ -74,7 +74,7 @@ export default function SettingsScreen() {
     <ScreenContainer header={<AppHeader title="You" subtitle="Profile, spaces and settings" />} scrollMode="shell-scroll-view">
       <View style={[styles.content, { paddingBottom: spacing.xxl }]}>
         {/* Profile Card Header */}
-        <Animated.View entering={FadeInDown.duration(280)}>
+        <Animated.View entering={FadeIn.duration(180)}>
           <Card style={[styles.profileCard, { backgroundColor: colors.surface }]}>
             <View style={styles.profileHeader}>
               <Pressable

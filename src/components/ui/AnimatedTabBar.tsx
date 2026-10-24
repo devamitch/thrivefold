@@ -46,6 +46,7 @@ export const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
     if (tabWidth.value > 0) {
       indicatorTranslateX.value = withSpring(safeIndex * tabWidth.value, {
         damping: 22,
+        overshootClamping: true,
         stiffness: 240,
         mass: 0.8,
       });

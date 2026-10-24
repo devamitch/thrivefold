@@ -16,7 +16,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, type Href } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { useShallow } from 'zustand/react/shallow';
 
 import { useTheme } from '../../../theme/useTheme';
@@ -406,7 +406,7 @@ export default function TodayScreen() {
 
       {/* SECTION 1: QUESTS & GAME ENGINE (PRIMARY TAB) */}
       {activeTab === 'quests' && (
-        <Animated.View entering={FadeInDown.duration(220)}>
+        <Animated.View entering={FadeIn.duration(180)}>
           <QuestsSection
             progress={progress}
             xp={xp}
@@ -423,7 +423,7 @@ export default function TodayScreen() {
 
       {/* SECTION 2: CLEAN MONTH CALENDAR & SELECTED DAY AGENDA (NO SUB-SWITCHERS!) */}
       {activeTab === 'calendar' && (
-        <Animated.View entering={FadeInDown.duration(220)}>
+        <Animated.View entering={FadeIn.duration(180)}>
           {/* Quick Header Row with History Modal Button */}
           <View style={styles.calendarHeaderRow}>
             <Text style={[typography.captionBold, { color: colors.text.muted }]}>
@@ -483,14 +483,14 @@ export default function TodayScreen() {
 
       {/* Short calming exercises with their own timer state */}
       {activeTab === 'arcade' && (
-        <Animated.View entering={FadeInDown.duration(220)}>
+        <Animated.View entering={FadeIn.duration(180)}>
           <SomaticWellnessArcade onCompleteExercise={handleExerciseComplete} />
         </Animated.View>
       )}
 
       {/* SECTION 4: FORECAST (WOMEN) OR RECOVERY & NOURISHMENT (MEN) */}
       {isWomen && activeTab === 'forecast' && (
-        <Animated.View entering={FadeInDown.duration(220)}>
+        <Animated.View entering={FadeIn.duration(180)}>
           <MultiMonthCycleForecast
             cycleData={cycleData}
             twelveMonthForecast={twelveMonthForecast}
@@ -509,7 +509,7 @@ export default function TodayScreen() {
       )}
 
       {isMen && activeTab === 'recovery' && (
-        <Animated.View entering={FadeInDown.duration(220)}>
+        <Animated.View entering={FadeIn.duration(180)}>
           <AthleticCheckInCard
             energy={energy}
             mood={mood}

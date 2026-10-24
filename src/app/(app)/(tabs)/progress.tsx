@@ -7,7 +7,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { AppHeader } from '../../../components/ui/AppHeader';
 import { Badge } from '../../../components/ui/Badge';
@@ -276,7 +276,7 @@ export default function ProgressScreen() {
 
         {/* Roadmap View */}
         {activeTab === 'roadmap' && (
-          <Animated.View entering={FadeInDown.duration(280)}>
+          <Animated.View entering={FadeIn.duration(180)}>
             {/* Roadmap Progress Summary */}
             <Card style={[styles.roadmapBanner, { backgroundColor: colors.surface, marginTop: spacing.md }]}>
               <View style={styles.rowBetween}>
@@ -408,7 +408,7 @@ export default function ProgressScreen() {
 
         {/* Stats View */}
         {activeTab === 'badges' && (
-          <Animated.View entering={FadeInDown.duration(280)}>
+          <Animated.View entering={FadeIn.duration(180)}>
             {/* Stats Grid */}
             <View style={[styles.statsGrid, { marginTop: spacing.md }]}>
               <View style={[styles.statCard, { backgroundColor: colors.surface }]}>

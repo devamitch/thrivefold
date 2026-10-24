@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import React, { useEffect } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, { ZoomIn, useReducedMotion } from 'react-native-reanimated';
+import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { setupLedgerKey, setupReward, SETUP_XP_TOTAL, type SetupSection } from '../../domain/game/setupProfile';
@@ -129,7 +129,7 @@ export function OnboardingScaffold({
         <View style={[styles.xpRow, { paddingHorizontal: spacing.base }]}>
           <Animated.View
             key={setupXp}
-            entering={reduceMotion ? undefined : ZoomIn.springify().damping(14)}
+            entering={reduceMotion ? undefined : FadeIn.duration(200)}
             style={[styles.xpPill, { backgroundColor: colors.primaryAlpha }]}
             accessibilityLabel={`Level ${level}, ${setupXp} of ${SETUP_XP_TOTAL} setup XP earned`}
           >

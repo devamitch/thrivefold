@@ -350,7 +350,7 @@ export default function CoachScreen() {
       }
       if (next.reps > before.reps) {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
-        counterPulse.value = withSequence(withTiming(1.25, { duration: 120 }), withSpring(1, { damping: 8 }));
+        counterPulse.value = withSequence(withTiming(1.25, { duration: 120 }), withTiming(1, { duration: 180 }));
         const left = item.target - next.reps;
         if (!next.fault && left > 0) say(left === 1 ? 'Last one' : left <= 3 ? `${left} to go` : String(next.reps));
       }
@@ -619,7 +619,7 @@ export default function CoachScreen() {
       {/* Form fault: what is wrong and how to fix it */}
       {fault ? (
         <Animated.View
-          entering={reduceMotion ? undefined : FadeInDown.springify().damping(16)}
+          entering={reduceMotion ? undefined : FadeIn.duration(200)}
           exiting={reduceMotion ? undefined : FadeOut.duration(200)}
           style={[styles.faultCard, { top: insets.top + 84, backgroundColor: colors.errorSurface, borderColor: colors.error }]}
           accessibilityLiveRegion="assertive"

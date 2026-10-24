@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, type Href } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
+import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
@@ -164,7 +164,7 @@ export default function HomeScreen() {
   ].filter((t): t is { label: string; value: string } => t !== null);
   const setupOpen = SETUP_REWARDS.length - s.setupClaimed;
 
-  const enter = (i: number) => (reduceMotion ? undefined : FadeInDown.delay(40 * i).duration(260));
+  const enter = (i: number) => (reduceMotion ? undefined : FadeIn.duration(180));
 
   return (
     <ScreenContainer
