@@ -1,5 +1,18 @@
 # Requirements Traceability Matrix
 
+## Update — 2026-10-25 (2)
+
+Checks: compile 0, lint 0, `pnpm test` 155/155, `pnpm test:db` 77/77, Android release build PASS.
+Supabase: migration 8 (weekly summaries) pushed. No device run.
+
+| Area | Status | Evidence | Remaining |
+| --- | --- | --- | --- |
+| Pose overlay | PASS (build) | Skia skeleton eases between detections every frame; joints breathe; faulty joints pulse red | Device run |
+| Exercise coverage | PASS (logic) | 21 plan exercises camera-checked; holds count only in the recognised posture (`pose-movement.test.ts`) | Machine and stretch moves stay manual |
+| Time-based quests | PASS (logic) | Now / Later / Done by part of day (`time-of-day.test.ts`); opt-in discreet reminders respecting quiet hours (`reminders.test.ts`) | Device run |
+| Weekly summaries | PASS (logic, DB) | SQLite outbox with backoff; opt-in, signed-in only; guests never send; RPC validates ranges, own-rows RLS (`weekly-summary.test.ts`, `test:db`) | Device run |
+| Intro | NOT TESTED | Rewritten slides, breathing aura | Device QA |
+
 ## Update — 2026-10-25
 
 Checks: compile 0, lint 0, `pnpm test` 142/142, `pnpm test:db` 71/71, Android release build PASS
