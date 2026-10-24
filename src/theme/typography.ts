@@ -9,8 +9,8 @@ import type { ProductExperience } from './tokens';
  *
  * - Women's health & LGBTQ+: Fraunces (static SemiBold/Medium serif) for display/headings — warm,
  *   editorial — with Geist (shared with BlinkQuest/Neev) for everything you read.
- * - Men's health: Space Mono for headings and labels (calm, technical character) with
- *   Space Grotesk for body text, because long monospaced paragraphs tire the eye.
+ * - Men's health: Space Grotesk for headings (geometric, confident, not code-like) and
+ *   Geist for body and labels, matching the other experiences' reading face.
  */
 interface Faces {
   display: string;
@@ -44,19 +44,19 @@ const SERIF_FACES: Faces = {
 };
 
 const MONO_FACES: Faces = {
-  display: 'SpaceMono-Bold',
-  heading: 'SpaceMono-Bold',
-  subheading: 'SpaceMono-Bold',
-  regular: 'SpaceGrotesk-Regular',
-  medium: 'SpaceGrotesk-Medium',
-  semibold: 'SpaceGrotesk-SemiBold',
-  bold: 'SpaceGrotesk-Bold',
+  display: 'SpaceGrotesk-Bold',
+  heading: 'SpaceGrotesk-SemiBold',
+  subheading: 'SpaceGrotesk-SemiBold',
+  regular: 'Geist-Regular',
+  medium: 'Geist-Medium',
+  semibold: 'Geist-SemiBold',
+  bold: 'Geist-Bold',
   mono: 'SpaceMono-Regular',
   monoBold: 'SpaceMono-Bold',
-  label: 'SpaceMono-Regular',
-  stat: 'SpaceMono-Bold',
-  displayTracking: -1.2,
-};
+  label: 'Geist-SemiBold',
+  stat: 'SpaceGrotesk-Bold',
+  displayTracking: -0.8,
+}
 
 function build(f: Faces) {
   return {

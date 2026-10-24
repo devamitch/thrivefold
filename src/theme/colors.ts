@@ -142,20 +142,20 @@ export const womenDarkColors = palette({
   dockActive: '#E28A6D',
 });
 
-/** Men's health — frosted titanium slate, architectural deep spruce teal and forged amber bronze. */
+/** Men's health — midnight navy on cool slate, sea-glass teal and a restrained amber accent. */
 export const menLightColors = palette({
   experience: 'men_health',
   scheme: 'light',
-  canvas: ['#F3F6F8', '#FFFFFF', '#E7EDF0', '#D9E2E6', '#C9D5DB'],
-  ink: ['#0F181A', '#3C4D51', '#6B7C80'],
-  primary: '#1B5760',
+  canvas: ['#F2F4F6', '#FFFFFF', '#E8ECF0', '#DAE0E6', '#C9D1D9'],
+  ink: ['#0E1726', '#3D4A5C', '#5C6776'],
+  primary: '#1F3A5F',
   onPrimary: '#FFFFFF',
-  accent: '#C47D33',
-  accentText: '#15454D',
-  gradient: ['#246B75', '#1B5760'],
+  accent: '#2E7F7A',
+  accentText: '#8A5414',
+  gradient: ['#284A75', '#1F3A5F'],
   status: LIGHT_STATUS,
-  dock: '#0D1618',
-  dockActive: '#42B0A9',
+  dock: '#0E1726',
+  dockActive: '#5FBDB6',
 });
 
 export const menDarkColors = palette({

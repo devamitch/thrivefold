@@ -180,7 +180,7 @@ export default function DevToolsScreen() {
 
   const experiences: { id: ProductExperience; label: string; sub: string }[] = [
     { id: 'women_health', label: "Women's Health", sub: 'Terracotta & Sage · Fraunces' },
-    { id: 'men_health', label: "Men's Health", sub: 'Slate Teal & Amber · SpaceMono' },
+    { id: 'men_health', label: "Men's Health", sub: 'Midnight navy, sea-glass and amber · Space Grotesk' },
     { id: 'pride_wellbeing', label: 'Pride & LGBTQ+', sub: 'Amethyst & Rose · Serene' },
   ];
 
