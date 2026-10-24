@@ -89,7 +89,7 @@ export default function TodayScreen() {
   const isMen = experience === 'men_health';
 
   // Primary active tab (Quests is default to put the game engine front and center)
-  const [activeTab, setActiveTab] = useState<ActiveTab>('quests');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('calendar');
 
   // Universal Store Hooks
   const {
@@ -374,17 +374,17 @@ export default function TodayScreen() {
   const tabItems: TabItem[] = useMemo(() => {
     if (isWomen) {
       return [
-        { id: 'quests', label: 'Quests', icon: 'trophy-outline' },
         { id: 'calendar', label: 'Calendar', icon: 'calendar-outline' },
-        { id: 'arcade', label: 'Arcade', icon: 'game-controller-outline' },
         { id: 'forecast', label: 'Forecast', icon: 'analytics-outline' },
+        { id: 'quests', label: 'Quests', icon: 'trophy-outline' },
+        { id: 'arcade', label: 'Games', icon: 'game-controller-outline' },
       ];
     } else {
       return [
-        { id: 'quests', label: 'Quests', icon: 'trophy-outline' },
         { id: 'calendar', label: 'Calendar', icon: 'calendar-outline' },
-        { id: 'arcade', label: 'Arcade', icon: 'game-controller-outline' },
+        { id: 'quests', label: 'Quests', icon: 'trophy-outline' },
         { id: 'recovery', label: 'Recovery', icon: 'pulse-outline' },
+        { id: 'arcade', label: 'Games', icon: 'game-controller-outline' },
       ];
     }
   }, [isWomen]);
@@ -393,13 +393,8 @@ export default function TodayScreen() {
     <ScreenContainer
       header={
         <AppHeader
-          eyebrow={isWomen ? 'SACRED HARMONY BLOOM' : isMen ? 'DISCIPLINE & RECOVERY' : 'SANCTUARY AGENDA'}
-          title={isWomen ? 'Cycle and calendar' : 'Today'}
-          subtitle={
-            isWomen
-              ? 'Personalized Level 1-1,000 Journey & Restorative Cycle Rhythm.'
-              : 'Physical conditioning, recovery, and daily goal progress.'
-          }
+          title={isWomen ? 'Cycle and calendar' : 'Plan'}
+          subtitle={isWomen ? 'Periods, estimates, events and quests by date' : 'Your calendar, quests and recovery'}
         />
       }
       scrollMode="shell-scroll-view"

@@ -17,6 +17,11 @@ export interface UserProfile {
   isAgeVerified: boolean;
   ageBand: string | null;
   email?: string;
+  /** As saved in the person's Google account and confirmed by them; never inferred. */
+  gender?: string | null;
+  photoUrl?: string | null;
+  /** Where name/age/gender came from. Google-provided age is self-reported, not verified. */
+  profileSource?: 'google' | 'manual' | 'email';
   isGuest?: boolean;
   createdAt: string;
 }

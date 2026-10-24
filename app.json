@@ -30,7 +30,8 @@
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.SYSTEM_ALERT_WINDOW"
-      ]
+      ],
+      "googleServicesFile": "./google-services.json"
     },
     "ios": {
       "bundleIdentifier": "com.amit.thrivefold",
@@ -88,11 +89,15 @@
           "resizeMode": "contain",
           "backgroundColor": "#FAF7F2"
         }
-      ]
+      ],
+      "@react-native-google-signin/google-signin"
     ],
     "experiments": {
       "tsconfigPaths": true,
       "typedRoutes": true
+    },
+    "extra": {
+      "googleWebClientId": "976390431722-9msfcuu1q0p2co1p40c3i4dnd6tuk8di.apps.googleusercontent.com"
     }
   }
 }

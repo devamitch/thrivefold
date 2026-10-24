@@ -29,6 +29,7 @@ import { TextField } from '../../components/ui/TextField';
 import { newLocalId } from '../../stores/slices/authSlice';
 import { useRootStore } from '../../stores/useRootStore';
 import { accountsAvailable, requestEmailCode, verifyEmailCode } from '../../services/account/accountService';
+import { googleAvailable, signInWithGoogle } from '../../services/account/googleAccount';
 import { useTheme } from '../../theme/useTheme';
 
 const SLIDES = [
@@ -64,7 +65,7 @@ const SLIDES = [
 
 const AUTO_ADVANCE_MS = 4500;
 
-type Step = 'intro' | 'name' | 'email' | 'code';
+type Step = 'intro' | 'account' | 'name' | 'email' | 'code';
 
 export default function SignInScreen() {
   const router = useRouter();
@@ -125,6 +126,16 @@ export default function SignInScreen() {
       createdAt: new Date().toISOString(),
     });
     router.replace('/');
+  };
+
+  const google = async () => {
+    if (busy) return;
+    setBusy(true);
+    setAuthError(null);
+    const res = await signInWithGoogle();
+    setBusy(false);
+    if (res.ok) router.push('/(auth)/confirm-profile');
+    else if (!res.cancelled) setAuthError(res.message);
   };
 
   const guest = () => {
@@ -243,15 +254,58 @@ export default function SignInScreen() {
         <View style={styles.flex} />
 
         <View style={{ paddingHorizontal: spacing.lg, paddingBottom: insets.bottom + spacing.md }}>
-          <Button label="Get started" size="lg" onPress={() => setStep('name')} />
-          <View style={[styles.secondaryRow, { marginTop: spacing.xs }]}>
-            <Button label="Explore as guest" variant="ghost" onPress={guest} style={styles.flex} />
-            {accountsAvailable() ? (
-              <Button label="Sign in" variant="ghost" onPress={() => setStep('email')} style={styles.flex} />
-            ) : null}
-          </View>
+          <Button label="Get started" size="lg" onPress={() => setStep('account')} />
+          <Button label="Explore as guest" variant="ghost" onPress={guest} style={{ marginTop: spacing.xs }} />
           {legal}
         </View>
+      </View>
+    );
+  }
+
+  if (step === 'account') {
+    return (
+      <View style={[styles.root, { backgroundColor: colors.background, paddingTop: insets.top + spacing.md, paddingHorizontal: spacing.lg }]}>
+        <Pressable
+          onPress={() => {
+            setAuthError(null);
+            setStep('intro');
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+          style={[styles.back, { backgroundColor: colors.surface1 }]}
+        >
+          <Ionicons name="chevron-back" size={20} color={colors.text.primary} />
+        </Pressable>
+        <Text style={[typography.display, { color: colors.text.primary, marginTop: spacing.xl }]} accessibilityRole="header">
+          Sign in
+        </Text>
+        <Text style={[typography.body, { color: colors.text.secondary, marginTop: spacing.xs }]}>
+          Sign in with Google and we will show you what your account shares so you can confirm it. Health records stay
+          on this phone either way.
+        </Text>
+        <View style={styles.flex} />
+        {googleAvailable() ? (
+          <Pressable
+            onPress={google}
+            disabled={busy}
+            accessibilityRole="button"
+            accessibilityLabel="Continue with Google"
+            style={[styles.google, { backgroundColor: colors.surface, borderColor: colors.borderStrong, opacity: busy ? 0.6 : 1 }]}
+          >
+            <Ionicons name="logo-google" size={20} color={colors.text.primary} />
+            <Text style={[typography.bodyBold, { color: colors.text.primary, marginLeft: 12 }]}>
+              {busy ? 'Opening Google…' : 'Continue with Google'}
+            </Text>
+          </Pressable>
+        ) : null}
+        {authError ? (
+          <Text style={[typography.caption, { color: colors.error, marginTop: spacing.sm, textAlign: 'center' }]}>{authError}</Text>
+        ) : null}
+        {accountsAvailable() ? (
+          <Button label="Sign in with email" variant="outline" onPress={() => setStep('email')} style={{ marginTop: spacing.sm }} />
+        ) : null}
+        <Button label="Continue without an account" variant="ghost" onPress={() => setStep('name')} style={{ marginTop: spacing.xs }} />
+        <View style={{ paddingBottom: insets.bottom + spacing.md }}>{legal}</View>
       </View>
     );
   }
@@ -270,7 +324,7 @@ export default function SignInScreen() {
         <Pressable
           onPress={() => {
             setAuthError(null);
-            setStep(step === 'code' ? 'email' : 'intro');
+            setStep(step === 'code' ? 'email' : 'account');
           }}
           accessibilityRole="button"
           accessibilityLabel="Back"
@@ -381,4 +435,13 @@ const styles = StyleSheet.create({
   secondaryRow: { flexDirection: 'row', gap: 8 },
   links: { alignItems: 'center', flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap' },
   back: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  google: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 56,
+    borderRadius: 18,
+    borderCurve: 'continuous',
+    borderWidth: 1,
+  },
 });

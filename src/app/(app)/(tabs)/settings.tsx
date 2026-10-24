@@ -128,6 +128,13 @@ export default function SettingsScreen() {
                   </Pressable>
                 </View>
 
+                {user?.profileSource === 'google' ? (
+                  <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                    {[user.age !== null && user.age !== undefined ? `${user.age}` : null, user.gender ?? null, 'from Google']
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </Text>
+                ) : null}
                 <View style={styles.badgeRow}>
                   <Badge
                     label={user?.isGuest ? 'Guest' : user?.email ? 'Signed in' : 'On this device'}
