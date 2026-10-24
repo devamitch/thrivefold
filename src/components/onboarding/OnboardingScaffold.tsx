@@ -133,7 +133,7 @@ export function OnboardingScaffold({
             style={[styles.xpPill, { backgroundColor: colors.primaryAlpha }]}
             accessibilityLabel={`Level ${level}, ${setupXp} of ${SETUP_XP_TOTAL} setup XP earned`}
           >
-            <Ionicons name="sparkles" size={14} color={colors.primary} />
+            <Ionicons name="trophy-outline" size={14} color={colors.primary} />
             <Text style={[typography.captionBold, { color: colors.primary, marginLeft: 6 }]}>
               Level {level} · {setupXp} XP
             </Text>

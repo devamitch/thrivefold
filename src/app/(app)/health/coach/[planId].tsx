@@ -456,7 +456,7 @@ export default function CoachScreen() {
           {[
             ['videocam-outline', cameraBuilt ? 'The camera counts reps and checks your form for the exercises it knows.' : 'Form checking is not available in this build; the coach still runs videos, sets and rest.'],
             ['pause-circle-outline', 'If your form slips, the video pauses and shows exactly what to fix. It carries on when you have fixed it.'],
-            ['sparkles-outline', `Good camera-checked form (80% or more) earns ${WORKOUT_XP_BASE * WORKOUT_FORM_MULTIPLIER} XP instead of ${WORKOUT_XP_BASE}.`],
+            ['ribbon-outline', `Good camera-checked form (80% or more) earns ${WORKOUT_XP_BASE * WORKOUT_FORM_MULTIPLIER} XP instead of ${WORKOUT_XP_BASE}.`],
             ['hand-left-outline', 'Hands-free: hold one hand above your head to play or pause the video, both hands to finish a set or skip a rest.'],
             ['volume-high-outline', 'A voice counts you in, counts your reps and tells you what to fix. You can mute it.'],
             ['eye-off-outline', 'Everything runs on this phone. No photos or video are saved or sent.'],

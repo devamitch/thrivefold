@@ -87,7 +87,7 @@ export default function PersonalizeScreen() {
           accessibilityRole="button"
           style={[styles.claim, { backgroundColor: colors.primaryAlpha, marginTop: spacing.md }]}
         >
-          <Ionicons name="sparkles" size={16} color={colors.primary} />
+          <Ionicons name="trophy-outline" size={16} color={colors.primary} />
           <Text style={[typography.subbodyBold, styles.flex, { color: colors.primary, marginLeft: 8 }]}>
             {unclaimed.reduce((sum, r) => sum + r.xp, 0)} setup XP still open. Answer below, then tap to collect.
           </Text>

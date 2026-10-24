@@ -34,7 +34,7 @@ const AVATAR_OPTIONS = [
   { id: 'lotus', icon: 'flower-outline' as const, label: 'Lotus' },
   { id: 'flame', icon: 'flame-outline' as const, label: 'Flame' },
   { id: 'compass', icon: 'compass-outline' as const, label: 'Compass' },
-  { id: 'sparkles', icon: 'sparkles-outline' as const, label: 'Spark' },
+  { id: 'sun', icon: 'sunny-outline' as const, label: 'Dawn' },
   { id: 'leaf', icon: 'leaf-outline' as const, label: 'Nature' },
   { id: 'shield', icon: 'shield-outline' as const, label: 'Guardian' },
 ];

@@ -262,7 +262,7 @@ export default function HomeScreen() {
         <Animated.View entering={enter(1)}>
           <Card onPress={() => router.push('/(app)/personalize')} variant="tinted" style={{ padding: spacing.base, marginTop: spacing.md }}>
             <View style={styles.rowBetween}>
-              <Ionicons name="sparkles-outline" size={20} color={colors.primary} />
+              <Ionicons name="trophy-outline" size={20} color={colors.primary} />
               <View style={[styles.flex, { marginLeft: 12 }]}>
                 <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
                   {setupOpen} setup step{setupOpen === 1 ? '' : 's'} left
