@@ -142,35 +142,38 @@ export const womenDarkColors = palette({
   dockActive: '#E28A6D',
 });
 
-/** Men's health — midnight navy on cool slate, sea-glass teal and a restrained amber accent. */
+/**
+ * Men's health — deep slate navy on warm stone, with a muted brass accent. Low-glare:
+ * no pure white in light mode, and a soft steel blue (not neon) as the dark primary.
+ */
 export const menLightColors = palette({
   experience: 'men_health',
   scheme: 'light',
-  canvas: ['#F2F4F6', '#FFFFFF', '#E8ECF0', '#DAE0E6', '#C9D1D9'],
-  ink: ['#0E1726', '#3D4A5C', '#5C6776'],
-  primary: '#1F3A5F',
-  onPrimary: '#FFFFFF',
-  accent: '#2E7F7A',
-  accentText: '#8A5414',
-  gradient: ['#284A75', '#1F3A5F'],
+  canvas: ['#F3F2EF', '#FAF9F7', '#EBE9E4', '#DFDCD5', '#D0CCC3'],
+  ink: ['#141A22', '#46505C', '#626A75'],
+  primary: '#22364F',
+  onPrimary: '#F6F4F0',
+  accent: '#9A7440',
+  accentText: '#7A5A2E',
+  gradient: ['#2C4562', '#22364F'],
   status: LIGHT_STATUS,
-  dock: '#0E1726',
-  dockActive: '#5FBDB6',
+  dock: '#121820',
+  dockActive: '#C9A46A',
 });
 
 export const menDarkColors = palette({
   experience: 'men_health',
   scheme: 'dark',
-  canvas: ['#0B1113', '#121C1F', '#1A2529', '#233237', '#2E3F45'],
-  ink: ['#EEF4F5', '#A2B5B8', '#66787B'],
-  primary: '#4CBAB3',
-  onPrimary: '#071517',
-  accent: '#E8A24B',
-  accentText: '#4CBAB3',
-  gradient: ['#5FC4BD', '#4CBAB3'],
+  canvas: ['#0F1216', '#161B21', '#1E242B', '#272E36', '#323A43'],
+  ink: ['#ECEEF0', '#A9B1BA', '#7D8690'],
+  primary: '#9DB7D5',
+  onPrimary: '#0D1622',
+  accent: '#C9A46A',
+  accentText: '#D4B27C',
+  gradient: ['#AFC5DF', '#9DB7D5'],
   status: DARK_STATUS,
-  dock: '#080E10',
-  dockActive: '#4CBAB3',
+  dock: '#0B0E12',
+  dockActive: '#C9A46A',
 });
 
 /** LGBTQ+ wellbeing — lavender porcelain, royal amethyst, and glowing rose quartz. */

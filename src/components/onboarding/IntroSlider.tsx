@@ -55,8 +55,8 @@ const SLIDES: readonly IntroSlide[] = [
     id: 'health',
     eyebrow: 'Yours, on your phone',
     title: 'Your health, kept close',
-    description: 'Check-ins, sleep, cycle and symptoms are encrypted on this device. Nothing leaves it unless you choose.',
-    image: require('../../../assets/illustrations/intro-cycle.jpg'),
+    description: 'Check-ins, sleep, workouts and health notes are encrypted on this device. Nothing leaves it unless you choose.',
+    image: require('../../../assets/illustrations/health-holistic.jpg'),
   },
   {
     id: 'quests',
@@ -69,7 +69,7 @@ const SLIDES: readonly IntroSlide[] = [
     id: 'coach',
     eyebrow: 'Camera coach',
     title: 'Move with a coach beside you',
-    description: 'Follow a tutorial while your camera checks your form on the phone, and earn ten times the points for good form.',
+    description: 'For supported exercises, the camera counts reps and checks form on the phone. Video is never saved or sent. Good form earns ten times the XP.',
     image: require('../../../assets/illustrations/workout-strength.jpg'),
   },
   {
