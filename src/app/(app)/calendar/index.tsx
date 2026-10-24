@@ -19,7 +19,9 @@ import {
   formatLocalDate,
   } from '../../../domain/calendar/universalCalendarEngine';
 import { useAgendaSources } from '../../../hooks/useAgendaSources';
+import { routeForEvent } from '../../../navigation/eventRoutes';
 import * as Haptics from 'expo-haptics';
+import { useRouter, type Href } from 'expo-router';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -29,6 +31,7 @@ const MONTH_NAMES = [
 const WEEKDAY_HEADERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
 export default function CalendarScreen() {
+  const router = useRouter();
   const { colors, typography, spacing, experience } = useTheme();
   const cycleData = useRootStore((s) => s.cycleData);
 
@@ -204,6 +207,13 @@ export default function CalendarScreen() {
             {selectedDayAgenda.map((event) => (
               <Card
                 key={event.id}
+                onPress={
+                  routeForEvent(event)
+                    ? () => router.push(routeForEvent(event) as Href)
+                    : event.kind === 'task'
+                      ? () => router.push(`/(app)/quests/${event.id}` as Href)
+                      : undefined
+                }
                 style={[
                   styles.agendaCard,
                   { backgroundColor: colors.surface, marginBottom: 8 },

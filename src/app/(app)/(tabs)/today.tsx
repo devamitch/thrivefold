@@ -14,7 +14,7 @@ import {
   Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useShallow } from 'zustand/react/shallow';
@@ -61,6 +61,7 @@ import {
 } from '../../../domain/calendar/universalCalendarEngine';
 import { currentLevelProgress } from '../../../domain/game/gameCatalogService';
 import { useAgendaSources } from '../../../hooks/useAgendaSources';
+import { routeForEvent } from '../../../navigation/eventRoutes';
 import {
   PHASE_CONFIG,
   computeAdvancedCycleMetrics,
@@ -279,12 +280,18 @@ export default function TodayScreen() {
     setCurrentMonthDate(now);
   }, []);
 
-  // Agenda items that are today's quests open the quest sheet; nothing is completed by a tap.
+  // Agenda items open their real record: today's quests in the quest sheet, workouts, meals
+  // and health logs on their own screens. A tap never completes anything.
   const handleToggleEvent = useCallback(
     (event: CalendarEvent) => {
-      if (todayQuests.some((q) => q.id === event.id)) setSelectedAssignmentId(event.id);
+      if (todayQuests.some((q) => q.id === event.id)) {
+        setSelectedAssignmentId(event.id);
+        return;
+      }
+      const route = routeForEvent(event);
+      if (route) router.push(route as Href);
     },
-    [todayQuests],
+    [todayQuests, router],
   );
 
   const handleLogPeriodBleeding = useCallback(() => {
