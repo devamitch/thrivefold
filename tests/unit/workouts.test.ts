@@ -1,4 +1,4 @@
-import { EXERCISES, PLANS, exerciseById, sessionsThisWeek, suggestNext, weightHistory, type WorkoutSession } from '../../src/domain/fitness/workouts';
+import { EXERCISES, PLANS, exerciseById, sessionsThisWeek, suggestNext, suggestPlans, weightHistory, type WorkoutSession } from '../../src/domain/fitness/workouts';
 
 const session = (over: Partial<WorkoutSession>): WorkoutSession => ({
   id: 'w1',
@@ -58,5 +58,22 @@ describe('exercise library breadth and activity minutes', () => {
     ];
     expect(w.activeMinutesThisWeek(sessions, activities, '2026-10-23')).toBe(55);
     expect(w.activitiesThisWeek(activities, '2026-10-23')).toBe(1);
+  });
+});
+
+describe('plan suggestions', () => {
+  const base = { constraints: [] as string[], sessions: [], today: '2026-10-24' };
+  test('rest day suggests recovery only', () => {
+    const s = suggestPlans({ ...base, capacity: 'strong', restDay: true });
+    expect(s.length).toBeGreaterThan(0);
+    s.forEach((x) => expect(x.plan.setting).toBe('recovery'));
+  });
+  test('gentle never suggests intermediate plans; joint limits drop HIIT', () => {
+    suggestPlans({ ...base, capacity: 'gentle', restDay: false }).forEach((x) => expect(x.plan.level).toBe('beginner'));
+    const strongKnees = suggestPlans({ ...base, capacity: 'strong', restDay: false, constraints: ['Knees or joints'] });
+    strongKnees.forEach((x) => expect(x.plan.setting).not.toBe('hiit'));
+  });
+  test('desk sitters get the desk reset first', () => {
+    expect(suggestPlans({ ...base, capacity: 'steady', restDay: false, constraints: ['Mostly sitting all day'] })[0].plan.id).toBe('desk_reset');
   });
 });

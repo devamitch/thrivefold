@@ -12,7 +12,8 @@ import { Chip } from '../../../components/ui/Chip';
 import { useTheme } from '../../../theme/useTheme';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngine';
-import { PLANS, activeMinutesThisWeek, activitiesThisWeek, exerciseById, planById, sessionsThisWeek, type WorkoutPlan } from '../../../domain/fitness/workouts';
+import { fitFor } from '../../../domain/game/setupProfile';
+import { PLANS, suggestPlans, activeMinutesThisWeek, activitiesThisWeek, exerciseById, planById, sessionsThisWeek, type WorkoutPlan } from '../../../domain/fitness/workouts';
 
 const SETTINGS: { id: 'all' | WorkoutPlan['setting']; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -32,14 +33,32 @@ const SETTINGS: { id: 'all' | WorkoutPlan['setting']; label: string }[] = [
 export default function WorkoutsScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
-  const { sessions, activities, deleteWorkoutSession, showAlert } = useRootStore(
-    useShallow((s) => ({ sessions: s.workoutSessions, activities: s.activityLogs, deleteWorkoutSession: s.deleteWorkoutSession, showAlert: s.showAlert })),
+  const { sessions, activities, deleteWorkoutSession, showAlert, onboarding, checkIns } = useRootStore(
+    useShallow((s) => ({
+      sessions: s.workoutSessions,
+      activities: s.activityLogs,
+      deleteWorkoutSession: s.deleteWorkoutSession,
+      showAlert: s.showAlert,
+      onboarding: s.onboarding,
+      checkIns: s.checkInHistory,
+    })),
   );
   const [filter, setFilter] = useState<(typeof SETTINGS)[number]['id']>('all');
   const plans = useMemo(() => PLANS.filter((p) => filter === 'all' || p.setting === filter), [filter]);
   const today = formatLocalDate(new Date());
   const week = sessionsThisWeek(sessions, today);
   const minutes = activeMinutesThisWeek(sessions, activities, today);
+  const suggestions = useMemo(() => {
+    const todayCheckIn = checkIns.find((c) => c.date === today);
+    const fit = fitFor(onboarding, todayCheckIn ?? null);
+    return suggestPlans({
+      capacity: fit.capacity,
+      restDay: todayCheckIn?.intensity === 'rest',
+      constraints: onboarding.constraints,
+      sessions,
+      today,
+    });
+  }, [checkIns, onboarding, sessions, today]);
 
   return (
     <ScreenWrapper scrollable>
@@ -71,6 +90,27 @@ export default function WorkoutsScreen() {
             Never train through sharp pain, chest pain or dizziness. General fitness guidance, not medical advice.
           </Text>
         </Card>
+
+        {suggestions.length > 0 ? (
+          <>
+            <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg }]}>Suggested for you</Text>
+            {suggestions.map(({ plan, reason }) => (
+              <Card
+                key={plan.id}
+                variant="tinted"
+                onPress={() => router.push(`/(app)/health/workout/${plan.id}` as Href)}
+                style={{ marginTop: spacing.sm }}
+              >
+                <View style={styles.row}>
+                  <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{plan.title}</Text>
+                  <Text style={[typography.captionBold, { color: colors.primary }]}>{plan.minutes} min</Text>
+                </View>
+                <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>{reason}</Text>
+              </Card>
+            ))}
+            <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg }]}>All plans</Text>
+          </>
+        ) : null}
 
         <View style={[styles.chips, { marginTop: spacing.md }]}>
           {SETTINGS.map((s) => (

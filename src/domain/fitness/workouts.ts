@@ -457,3 +457,71 @@ export function activeMinutesThisWeek(sessions: WorkoutSession[], activities: Ac
   const activityMinutes = activities.filter((a) => inWeek(a.date)).reduce((sum, a) => sum + a.minutes, 0);
   return planMinutes + activityMinutes;
 }
+
+// ---------------------------------------------------------------- suggestions
+
+export interface PlanSuggestion {
+  plan: WorkoutPlan;
+  reason: string;
+}
+
+const JOINT_LIMITS = ['Knees or joints', 'Low impact only', 'Lower back', 'Recovering / low energy'];
+
+/**
+ * Up to three plans that suit the person today: rest days get recovery, a gentle pace gets
+ * seated, mobility and balance work, a strong pace gets gym and intervals. Plans done in the
+ * last two days, or that brought pain last time, drop down the list. Deterministic.
+ */
+export function suggestPlans(input: {
+  capacity: 'gentle' | 'steady' | 'strong';
+  restDay: boolean;
+  constraints: string[];
+  sessions: WorkoutSession[];
+  today: string;
+}): PlanSuggestion[] {
+  const { capacity, restDay, constraints, sessions, today } = input;
+  const recent = new Set(
+    sessions.filter((s) => Date.parse(`${today}T00:00:00Z`) - Date.parse(`${s.date}T00:00:00Z`) < 2 * 86400000).map((s) => s.planId),
+  );
+  const hurt = new Set(sessions.filter((s) => s.painReported).slice(0, 5).map((s) => s.planId));
+  const jointLimit = constraints.some((c) => JOINT_LIMITS.includes(c));
+  const sitting = constraints.includes('Mostly sitting all day');
+
+  const order: { setting: WorkoutPlan['setting']; reason: string }[] = restDay
+    ? [{ setting: 'recovery', reason: 'You chose a rest day: easy movement only.' }]
+    : capacity === 'gentle'
+      ? [
+          { setting: 'seated', reason: 'Gentle pace: everything from a chair.' },
+          { setting: 'recovery', reason: 'Gentle pace: easy walking and mobility.' },
+          { setting: 'yoga', reason: 'Gentle pace: breath-led mobility.' },
+          { setting: 'balance', reason: 'Gentle pace: steadier on your feet.' },
+        ]
+      : capacity === 'strong'
+        ? [
+            { setting: 'gym', reason: 'You are active most days: progressive strength.' },
+            { setting: 'hiit', reason: 'For a high-energy day.' },
+            { setting: 'home', reason: 'No equipment needed.' },
+            { setting: 'cardio', reason: 'Heart and lungs.' },
+          ]
+        : [
+            { setting: 'home', reason: 'Steady pace: strength at home, no equipment.' },
+            { setting: 'cardio', reason: 'Steady pace: low-impact cardio.' },
+            { setting: 'pilates', reason: 'Steady pace: core and posture.' },
+            { setting: 'yoga', reason: 'Steady pace: mobility and calm.' },
+          ];
+  if (sitting && !restDay) order.unshift({ setting: 'desk', reason: 'You sit most of the day: hips, back and shoulders.' });
+
+  const picked: PlanSuggestion[] = [];
+  for (const { setting, reason } of order) {
+    const plans = PLANS.filter(
+      (p) =>
+        p.setting === setting &&
+        !(jointLimit && (p.setting === 'hiit' || p.level === 'intermediate')) &&
+        !(capacity === 'gentle' && p.level !== 'beginner'),
+    ).sort((a, b) => Number(recent.has(a.id) || hurt.has(a.id)) - Number(recent.has(b.id) || hurt.has(b.id)));
+    const plan = plans.find((p) => !picked.some((x) => x.plan.id === p.id));
+    if (plan) picked.push({ plan, reason: hurt.has(plan.id) ? `${reason} Last time it hurt: go easier.` : reason });
+    if (picked.length === 3) break;
+  }
+  return picked;
+}
