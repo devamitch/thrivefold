@@ -1,5 +1,20 @@
 # Requirements Traceability Matrix
 
+## Update — 2026-10-24
+
+Checks: `pnpm compile` 0 errors, `pnpm lint` 0, `pnpm test` 130/130, `pnpm test:db` 66/66.
+Native release build: see the latest commit message. No device run in this pass (no device attached).
+
+| Area | Status | Evidence | Remaining |
+| --- | --- | --- | --- |
+| Setup rewards (REQ-004/007) | PASS (logic) | Fixed XP per onboarding step, 165 XP total reaches level 5 (orientation stage); same XP for any answer incl. "prefer not to say"; server `tf_claim_setup_reward` (`setup-profile.test.ts`, `test:db`) | Not seen on device |
+| Capability fit (REQ-007) | PASS (logic) | Baseline step (activity, energy, sleep, stress) + limits + routine length set pace, max quest length and families; edits re-fit today's unstarted quests (`refitDailyQuests`) | Not seen on device |
+| Personalize screen (REQ-004) | NOT TESTED | `(app)/personalize.tsx`, linked from You | Device QA |
+| Interop | PASS (logic) / NOT TESTED (device) | Health Connect read + workout write, BLE heart rate, FHIR R4 export, consent and audit log (`interop.test.ts`) | Needs a device with Health Connect and a strap |
+| Encryption at rest (REQ-008) | NOT TESTED | MMKV encrypted with Keystore-held key, re-encrypt on upgrade | Verify on device upgrade path |
+| MediaPipe pose | PASS (logic) | `modules/pose-landmarker` (MediaPipe Tasks + CameraX, frames never stored), rep counting (`pose-movement.test.ts`) | Device run; catalog pose objectives not wired into the verifier |
+| Compliance | Documented | `docs/compliance/HIPAA_FHIR.md` | BAA, risk analysis, policies (owner) |
+
 ## Verified status — 2026-10-23 (authoritative)
 
 Status values: PASS (verified with the listed evidence), FAIL, BLOCKED (needs an external

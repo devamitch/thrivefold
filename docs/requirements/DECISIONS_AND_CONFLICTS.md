@@ -40,3 +40,20 @@
 - **Context**: v3 defines task points, XP and levels but no diamond amounts.
 - **Decision**: `src/content/game/progression_economy.v1.json`: 5 diamonds per level cleared, 15 every tenth level, 50 at a chapter checkpoint level, 2 per daily goal. Unlocks: fourth daily quest (30, level 3), nature emblems (15, level 2), milestone emblems (40, level 6). Earned only; no purchase path (REQ-014). Health, safety and privacy features are never locked.
 - **Server**: migration 5 is generated from the catalog and this file (`scripts/build-progression-migration.mjs`); the server reads rewards from its own tables, never from the client.
+
+## SETUP-REWARD: onboarding XP is fixed per step (2026-10-24)
+
+The owner asked for large rewards per onboarding answer, scaled to the person's physical,
+mental and sexual condition. The v3 catalog forbids rewarding health or sensitive disclosure
+("Do not award points for disclosing pain or health information"; gender identity is barred
+from level scoring). Decision: each setup step pays a fixed amount whatever is answered,
+"prefer not to say" included, and the answers change task fit (pace, length, families)
+instead of points. Sexual wellbeing is not asked in onboarding; the catalog keeps intimacy
+content adult-only behind the backend age gate.
+
+## POSE-ADAPTER: own Expo module instead of vision-camera (2026-10-24)
+
+Thrivefold has no vision-camera, and react-native-mediapipe needs worklets-core, which
+conflicts with Reanimated 4's react-native-worklets. `modules/pose-landmarker` uses CameraX
+and MediaPipe tasks-vision 0.10.35 (the version BlinkQuest builds with) and bundles the
+pose_landmarker_lite model copied from aura-arena (sha256 in the module's build.gradle).
