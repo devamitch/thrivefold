@@ -3,6 +3,7 @@ import type { StateCreator } from 'zustand';
 import type { RootState } from '../rootTypes';
 import { CyclePhase } from '../../domain/health/cycleCalculations';
 import { formatLocalDate } from '../../domain/calendar/universalCalendarEngine';
+import type { PoseSessionSummary } from '../../domain/pose/movement';
 import type { ActivityLog, WorkoutSession } from '../../domain/fitness/workouts';
 
 
@@ -94,6 +95,15 @@ export interface JournalEntry {
   isPrivateLocalOnly: boolean;
 }
 
+/** A pose-checked movement session: derived numbers only, never images or landmarks. */
+export interface PoseSessionRecord extends PoseSessionSummary {
+  id: string;
+  date: string;
+  startedAt: string;
+  finishedAt: string;
+  modelVersion: string;
+}
+
 export interface HealthSlice {
   currentStreak: number;
   completedCheckInDaysCount: number;
@@ -103,6 +113,8 @@ export interface HealthSlice {
   journalEntries: JournalEntry[];
   personalEvents: PersonalCalendarEvent[];
   workoutSessions: WorkoutSession[];
+  poseSessions: PoseSessionRecord[];
+  savePoseSession: (session: Omit<PoseSessionRecord, 'id'>) => void;
   activityLogs: ActivityLog[];
   addActivityLog: (log: Omit<ActivityLog, 'id'>) => void;
   deleteActivityLog: (id: string) => void;
@@ -266,6 +278,11 @@ export const createHealthSlice: StateCreator<
   // Only events the person adds; nothing is pre-filled.
   personalEvents: [],
   workoutSessions: [],
+  poseSessions: [],
+  savePoseSession: (session) =>
+    set((state) => ({
+      poseSessions: [{ ...session, id: `pose_${Date.now()}` }, ...state.poseSessions].slice(0, 300),
+    })),
   activityLogs: [],
 
   addActivityLog: (log) =>

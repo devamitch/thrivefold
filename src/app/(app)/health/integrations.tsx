@@ -44,6 +44,7 @@ const ACTION_LABEL: Record<string, string> = {
 const SOURCE_LABEL: Record<string, string> = {
   health_connect: 'Health Connect',
   ble_heart_rate: 'Heart-rate monitor',
+  pose_camera: 'Movement check camera',
   fhir_export: 'FHIR',
   json_export: 'Export',
   local_data: 'This phone',

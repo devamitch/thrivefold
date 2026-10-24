@@ -60,6 +60,13 @@ export default function WorkoutsScreen() {
             onPress={() => router.push('/(app)/health/activity' as Href)}
             style={{ marginTop: spacing.sm, alignSelf: 'flex-start' }}
           />
+          <Button
+            label="Movement check with camera"
+            size="sm"
+            variant="ghost"
+            onPress={() => router.push('/(app)/health/pose-check' as Href)}
+            style={{ marginTop: spacing.xs, alignSelf: 'flex-start' }}
+          />
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>
             Never train through sharp pain, chest pain or dizziness. General fitness guidance, not medical advice.
           </Text>

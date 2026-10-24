@@ -3,7 +3,7 @@ import type { StateCreator } from 'zustand';
 import type { RootState } from '../rootTypes';
 import { mergeReadings, type DeviceReading } from '../../domain/interop/readings';
 
-export type IntegrationSource = 'health_connect' | 'ble_heart_rate' | 'fhir_export' | 'json_export' | 'local_data';
+export type IntegrationSource = 'health_connect' | 'ble_heart_rate' | 'pose_camera' | 'fhir_export' | 'json_export' | 'local_data';
 
 /** A consent decision for one source and the data types it covers. Kept even after revoke. */
 export interface ConsentRecord {

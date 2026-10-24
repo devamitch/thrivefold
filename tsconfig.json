@@ -7,7 +7,8 @@
       "@/*": ["src/*", "./src/*"],
       "@assets/*": ["assets/*", "./assets/*"],
       "setu-squircle": ["modules/setu-squircle"],
-      "setu-squircle/*": ["modules/setu-squircle/*"]
+      "setu-squircle/*": ["modules/setu-squircle/*"],
+      "pose-landmarker": ["modules/pose-landmarker"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"]

@@ -1,0 +1,31 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'expo.modules.poselandmarker'
+version = '0.1.0'
+
+// MediaPipe Pose Landmarker (lite, float16, Apache-2.0) is bundled in src/main/assets,
+// sha256 59929e1d1ee95287735ddd833b19cf4ac46d29bc7afddbbf6753c459690d574a.
+// tasks-vision and CameraX match the versions BlinkQuest's vision module already builds with.
+
+android {
+  namespace "expo.modules.poselandmarker"
+  defaultConfig {
+    versionCode 1
+    versionName "0.1.0"
+  }
+  androidResources {
+    noCompress += ['task']
+  }
+}
+
+dependencies {
+  implementation 'com.google.mediapipe:tasks-vision:0.10.35'
+  def camerax = '1.5.0-alpha03'
+  implementation "androidx.camera:camera-core:$camerax"
+  implementation "androidx.camera:camera-camera2:$camerax"
+  implementation "androidx.camera:camera-lifecycle:$camerax"
+  implementation "androidx.camera:camera-view:$camerax"
+}
