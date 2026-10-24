@@ -1,0 +1,3346 @@
+{
+  "_meta": {
+    "version": "1.0.0",
+    "generatedAt": "2026-10-24T21:10:48Z",
+    "totalExercises": 56,
+    "totalTasks": 151,
+    "totalSpecialQuests": 49,
+    "totalVideos": 256
+  },
+  "exercises": {
+    "dead_bug": {
+      "videoId": "o4GKiEoYClI",
+      "title": "Dead Bug Exercise For Core Stability  | Pursuit Physical Therapy",
+      "channel": "Pursuit Physical Therapy"
+    },
+    "reverse_lunge": {
+      "videoId": "Ry-wqegeKlE",
+      "title": "How To Perform The Reverse Lunge",
+      "channel": "Dr. Carl Baird"
+    },
+    "chair_squat": {
+      "videoId": "ITv-_BkcrD0",
+      "title": "Sit to Stand",
+      "channel": "Baptist Health"
+    },
+    "thoracic_rotation": {
+      "videoId": "QwsdhRTdqqs",
+      "title": "How to Do Seated Thoracic Rotation with Breathing",
+      "channel": "Jon Hodgkinson Golf Fitness"
+    },
+    "hip_flexor_stretch": {
+      "videoId": "gqoPYLUgP48",
+      "title": "Bulletproof Step-by-step Guide to the Half Kneeling Hip Flexor Stretch\" [stretching advice]",
+      "channel": "[P]rehab"
+    },
+    "cat_cow": {
+      "videoId": "LIVJZZyZ2qM",
+      "title": "Cat - Cow Stretch",
+      "channel": "Dr. Dawn"
+    },
+    "brisk_walk": {
+      "videoId": "nmvVfgrExAg",
+      "title": "How to do Brisk Walk - Warm Up Exercise",
+      "channel": "GetFitso"
+    },
+    "goblet_squat": {
+      "videoId": "Mu7aVOjEBdA",
+      "title": "How To: Goblet Squats",
+      "channel": "Mobility Doc"
+    },
+    "db_row": {
+      "videoId": "dFzUjzfih7k",
+      "title": "How to do the SINGLE ARM DUMBBELL ROW! | 2 Minute Tutorial",
+      "channel": "Max Euceda"
+    },
+    "db_press": {
+      "videoId": "QsYre__-aro",
+      "title": "STOP Doing Dumbbell Press Like This (5 Mistakes Slowing Your Chest Gains)",
+      "channel": "Jeremy Ethier"
+    },
+    "rdl": {
+      "videoId": "3VXmecChYYM",
+      "title": "How to do the ROMANIAN DEADLIFT! | 2 Minute Tutorial",
+      "channel": "Max Euceda"
+    },
+    "lat_pulldown": {
+      "videoId": "SALxEARiMkw",
+      "title": "How to do Lat Pulldowns (AVOID MISTAKES!)",
+      "channel": "ATHLEAN-X™"
+    },
+    "leg_press": {
+      "videoId": "K5n2vg3oZa4",
+      "title": "How to PROPERLY Leg Press (FIX YOUR FORM NOW)",
+      "channel": "Colossus Fitness"
+    },
+    "farmer_carry": {
+      "videoId": "z7E_YU9P1jU",
+      "title": "How to Perform the Farmer’s Carry",
+      "channel": "Dr. Carl Baird"
+    },
+    "step_up": {
+      "videoId": "wfhXnLILqdk",
+      "title": "Step Up Exercise | Osteoarthritis Physiotherapy",
+      "channel": "Cornerstone Physiotherapy"
+    },
+    "calf_raise": {
+      "videoId": "CtyIVeJH6lI",
+      "title": "You're Doing Calf Raises WRONG | The Correct Way Taught By Physical Therapist",
+      "channel": "Rehab and Revive"
+    },
+    "superman": {
+      "videoId": "J9zXkxUAfUA",
+      "title": "Core Exercise: Superman",
+      "channel": "Children's Hospital Colorado"
+    },
+    "db_overhead_press": {
+      "videoId": "Did01dFR3Lk",
+      "title": "Dumbbell Overhead Press - How To",
+      "channel": "Bobby Maximus"
+    },
+    "march_in_place": {
+      "videoId": "u1gmWFvEluM",
+      "title": "Marching in Place Demonstrated by a Physical Therapist",
+      "channel": "Margaret Martin, Physical Therapist"
+    },
+    "jumping_jacks": {
+      "videoId": "XR0xeuK5zBU",
+      "title": "How to do Jumping Jacks exercise - Best Cardio Exercises video tutorial",
+      "channel": "P4P WORKOUTS "
+    },
+    "jog": {
+      "videoId": "ZTBRQ5MEJsE",
+      "title": "Your Jogging Technique Matters! Slow Jogging Dos & Don'ts: Part 3",
+      "channel": "Slow Jogging"
+    },
+    "rowing": {
+      "videoId": "ZN0J6qKCIrI",
+      "title": "The Official 2026 Rowing Form Checklist (PERFECT STROKE!)",
+      "channel": "Training Tall"
+    },
+    "jump_rope": {
+      "videoId": "u3zgHI8QnqE",
+      "title": "How To Jump Rope | The Right Way | Well+Good",
+      "channel": "Well+Good"
+    },
+    "squat_jump": {
+      "videoId": "A-cFYWvaHr0",
+      "title": "How To Do A Squat Jump | The Right Way | Well+Good",
+      "channel": "Well+Good"
+    },
+    "mountain_climber": {
+      "videoId": "cnyTQDSE884",
+      "title": "How to Do Mountain Climbers | The Right Way | Well+Good",
+      "channel": "Well+Good"
+    },
+    "burpee": {
+      "videoId": "NCqbpkoiyXE",
+      "title": "How To Burpee | Nuffield Health",
+      "channel": "Nuffield Health"
+    },
+    "high_knees": {
+      "videoId": "FvjmPRU3zn4",
+      "title": "How to do High Knees | Forever Living UK & Ireland",
+      "channel": "Forever Living Products UK "
+    },
+    "skater": {
+      "videoId": "9_jLW6VkU8A",
+      "title": "Speed Skaters Exercise (Skater Hops): Proper Form",
+      "channel": "BuiltLean®"
+    },
+    "downward_dog": {
+      "videoId": "Y0GDgQqt-bA",
+      "title": "How to do Downward Facing Dog | Yoga for Beginners Pose Tutorial",
+      "channel": "SarahBethYoga"
+    },
+    "warrior_two": {
+      "videoId": "V_VsRe015pU",
+      "title": "Warrior 2 Tutorial - Proper Alignment in Warrior 2",
+      "channel": "Yoga with Kassandra"
+    },
+    "cobra": {
+      "videoId": "k48O2CxvZ3o",
+      "title": "Cobra Workout Tutorial | Cobra Pose How-To For Beginners| Workout At Home With Body By Yoga",
+      "channel": "Body By Yoga"
+    },
+    "tree_pose": {
+      "videoId": "_u3NOB8pZf8",
+      "title": "How to Do the Tree Pose Properly | Balance Exercise",
+      "channel": "Your Health Videos"
+    },
+    "sun_salutation": {
+      "videoId": "1xRX1MuoImw",
+      "title": "STEP BY STEP SURYA NAMASKAR FOR BEGINNERS | Learn Sun Salutation In 3 Minutes| Simple Yoga Lessons",
+      "channel": "Mind Body Soul"
+    },
+    "pilates_hundred": {
+      "videoId": "UaqpuUzs1i8",
+      "title": "How to Do The Hundred | Pilates Workout",
+      "channel": "Howcast"
+    },
+    "single_leg_stretch": {
+      "videoId": "woYtwok_YUQ",
+      "title": "Single Leg Stretch - Pilates",
+      "channel": "intosport"
+    },
+    "roll_up": {
+      "videoId": "PGnibcCcAUE",
+      "title": "How to do a Pilates Roll Up | The Right Way | Well+Good",
+      "channel": "Well+Good"
+    },
+    "side_leg_lift": {
+      "videoId": "pNismoYr1Fg",
+      "title": "Pelvic health education Side lying leg lift",
+      "channel": "Sheffield Teaching Hospitals NHS Foundation Trust"
+    },
+    "pilates_swim": {
+      "videoId": "cao5EZuaOzg",
+      "title": "Pilates Mat Swimming Exercise",
+      "channel": "Aligned Pilates"
+    },
+    "single_leg_stand": {
+      "videoId": "7SF7AYh2_Yw",
+      "title": "Single Leg Balance Exercise",
+      "channel": "Coury & Buehler Physical Therapy"
+    },
+    "heel_toe_walk": {
+      "videoId": "z_GKdFf3qv4",
+      "title": "Heel-to-Toe Walk Balance Exercise for Older Adults",
+      "channel": "National Institute on Aging"
+    },
+    "clock_reach": {
+      "videoId": "-l8SJZf2I5M",
+      "title": "CLOCK REACH",
+      "channel": "Jake Blackmer"
+    },
+    "side_plank": {
+      "videoId": "NXr4Fw8q60o",
+      "title": "How to Do a Side Plank | Ab Workout",
+      "channel": "Howcast"
+    },
+    "bird_dog": {
+      "videoId": "QABW99qPiNM",
+      "title": "Bird Dog Exercise | Improve Your Core and Balance",
+      "channel": "Muscle & Motion"
+    },
+    "seated_march": {
+      "videoId": "xxf93bq9-vA",
+      "title": "Seated March",
+      "channel": "Institute of Sports and Spines"
+    },
+    "seated_leg_extension": {
+      "videoId": "OFgG6OjiT4Q",
+      "title": "Seated Leg Extension",
+      "channel": "UCF Recreation and Wellness Center"
+    },
+    "seated_arm_circles": {
+      "videoId": "UVMEnIaY8aU",
+      "title": "Arm Circles Exercise",
+      "channel": "Sworkit"
+    },
+    "hamstring_stretch": {
+      "videoId": "T_l0AyZywjU",
+      "title": "How to do a hamstring stretch | Bupa Health",
+      "channel": "Bupa Health"
+    },
+    "chest_stretch": {
+      "videoId": "B9uY01NoqBg",
+      "title": "Doorway Stretch",
+      "channel": "Baptist Health"
+    },
+    "band_pull_apart": {
+      "videoId": "stwYTTPXubo",
+      "title": "How To Do Banded Pull-Aparts",
+      "channel": "Tangelo - Seattle Chiropractor + Rehab"
+    },
+    "calf_stretch": {
+      "videoId": "trC42QD0wQI",
+      "title": "Calf Stretch",
+      "channel": "Sheffield Teaching Hospitals NHS Foundation Trust"
+    },
+    "squat_bw": {
+      "videoId": "eWatHIujxPM",
+      "title": "How to Do a Bodyweight Squat (Perfect Form + Common Mistakes)",
+      "channel": "Over The Hill Athlete"
+    },
+    "pushup": {
+      "videoId": "zF0jbubK_jU",
+      "title": "How To Do A Push-Up: Proper Form & Technique",
+      "channel": "BuiltLean"
+    },
+    "glute_bridge": {
+      "videoId": "OUgsJ8-Vi0E",
+      "title": "How to Perform the Perfect Glute Bridge",
+      "channel": "Airrosti Rehab Centers"
+    },
+    "plank": {
+      "videoId": "mwlp75MS6Rg",
+      "title": "How to do a Plank | Proper Form & Technique",
+      "channel": "NASM"
+    },
+    "cycling": {
+      "videoId": "gWosN1CY4bg",
+      "title": "Zero Healthcare™ Fitness Tips At Home | How To Use A Spin Bike Correctly",
+      "channel": "Zero Healthcare_Official"
+    },
+    "child_pose": {
+      "videoId": "YAmAET3Uomk",
+      "title": "How to do: CHILD'S POSE (BALASANA) #yoga #yogapose #yogatutorials #yogatutorial #yogaforbeginners",
+      "channel": "Karina Fit"
+    }
+  },
+  "tasks": {
+    "goal_define_one": {
+      "videoId": "lHZ54TBXbiI",
+      "title": "Achieve Any Goal With These 7 Simple Steps • Brian Tracy",
+      "channel": "GrindBuddy"
+    },
+    "plan_tomorrow_three": {
+      "videoId": "aD7Upt5dVQo",
+      "title": "Priority Echo Method: A 3-Pass Daily Planner for Focused Momentum",
+      "channel": "Task Mastery Channel"
+    },
+    "weekly_review": {
+      "videoId": "GCK17S4XpEU",
+      "title": "Wispr Flow Review & Tutorial: Beginner's Guide, Live Demo, and Pro Tips! | Top AI Dictation Tools",
+      "channel": "Samantha Kasbrick | Systems & Operations"
+    },
+    "habit_design": {
+      "videoId": "9E2SdLD3Kpc",
+      "title": "30 Habits That (Quietly) Changed My Life Forever",
+      "channel": "RelentX"
+    },
+    "habit_barrier_plan": {
+      "videoId": "LLZ2F-XIEsg",
+      "title": "Ashampoo Backup Pro 28 Tutorial – Create a Backup Plan & Set Up Real-Time Backup",
+      "channel": "Ashampoo"
+    },
+    "daily_energy_checkin": {
+      "videoId": "FmGdFnZnal0",
+      "title": "Energy Efficiency Video Application",
+      "channel": "Portal ST"
+    },
+    "values_reflection": {
+      "videoId": "oZQO0kMdzPU",
+      "title": "How To Identify Your Core Values: Acceptance and Commitment Therapy (ACT)",
+      "channel": "The ACT Therapist"
+    },
+    "personality_workstyle_reflection": {
+      "videoId": "fLhyr5MGi2g",
+      "title": "Google My Maps Tutorial",
+      "channel": "Technology for Teachers and Students"
+    },
+    "focus_session": {
+      "videoId": "oQZm8daaN3s",
+      "title": "The Flowtime Technique",
+      "channel": "Gohar Khan"
+    },
+    "learning_micro_lesson": {
+      "videoId": "FJc3O6oEqWI",
+      "title": "How to Create Lesson Plans with AI tool Edcafe AI",
+      "channel": "ClassPoint"
+    },
+    "learning_knowledge_check": {
+      "videoId": "YZKQDyRW5Kc",
+      "title": "Cyber Awareness Challenge 2026 | Latest Knowledge Check Practice Questions & Answers",
+      "channel": "onlineexamprep"
+    },
+    "sleep_wind_down_plan": {
+      "videoId": "p3EJuBxEjt0",
+      "title": "8 Minute Evening Yoga - Wind Down & Chill Out Yoga",
+      "channel": "Yoga with Kassandra"
+    },
+    "sleep_log": {
+      "videoId": "i5NTULguqs8",
+      "title": "Apple Watch Sleep Tracking Setup Guide & Tutorial",
+      "channel": "CPAP Reviews"
+    },
+    "sleep_environment_check": {
+      "videoId": "vVn2UP0_vcc",
+      "title": "Stop using humidifiers! #shorts #doctor #humidifier",
+      "channel": "drtaniaelliott"
+    },
+    "recovery_checkin": {
+      "videoId": "FHBsNevP_ws",
+      "title": "What is Disaster Recovery? | Simple Explanation & Importance for your business",
+      "channel": "DevOps Mind"
+    },
+    "movement_break": {
+      "videoId": "2Q68rduETt0",
+      "title": "How to breakdance | The basic 6-Step move #breakdance #dancetutorial",
+      "channel": "DJ Raphi"
+    },
+    "walk_or_wheel_log": {
+      "videoId": "Nj6f0BzbB0Q",
+      "title": "Why Walking Is So Powerful for Mental Health#mentalhealth #walking #wellbeing #wellness",
+      "channel": "Rebuilt Wellbeing"
+    },
+    "strength_session_record": {
+      "videoId": "e570BTaXdlA",
+      "title": "HOW TO RECORD A STRENGTH SESSION | GARMIN",
+      "channel": "TRIAX Performance"
+    },
+    "mobility_routine": {
+      "videoId": "lTe6GFTieP8",
+      "title": "Full Mobility Routine - 5 Mobility Exercises must do everyday #calisthenics #mobility #shorts #yoga",
+      "channel": "Mohit Sharma"
+    },
+    "activity_week_plan": {
+      "videoId": "ESZ7PZU9yZI",
+      "title": "How to Plan Your Week in 30 Minutes",
+      "channel": "WiseBits"
+    },
+    "balance_safety_plan": {
+      "videoId": "5xs4qosqcQ4",
+      "title": "How To Turn On Enhanced Protection in Chrome 💯 || Google Safe Browsing ||#shorts#viral",
+      "channel": " TECH ARNIT "
+    },
+    "food_preferences_setup": {
+      "videoId": "R04sq4U9o0g",
+      "title": "Want better food videos? Try these shots 😎🥰 #cookingvideo #tutorial #videotips #contentideas #yt",
+      "channel": "Swati Dwivedi"
+    },
+    "food_restrictions_review": {
+      "videoId": "Eq8v4OxVYWc",
+      "title": "ServSafe 2026 Food Safety Manager Certification Practice Test and Full Exam Study Guide",
+      "channel": "exam practice and quizzes"
+    },
+    "cultural_faith_meal_preferences": {
+      "videoId": "GgowiHahpSY",
+      "title": "Nutrition 11: How Culture and Religion Shape Our Food Choices",
+      "channel": "RN Toolkit"
+    },
+    "balanced_meal_plan": {
+      "videoId": "iTsDycQN-zQ",
+      "title": "Step-By-Step INDIAN Diet Guide | Doctor Explains 💯",
+      "channel": "Dr Umesh Wadhavani"
+    },
+    "plant_protein_plan": {
+      "videoId": "ogzn4NZcgAc",
+      "title": "Protein Guide ft. Sonia Narang",
+      "channel": "Sonia Narang"
+    },
+    "grocery_list_plan": {
+      "videoId": "3cz9LitAj9c",
+      "title": "How to make Grocery list | Grocery List I grocery listing for beginners",
+      "channel": "Easy Hub"
+    },
+    "nutrition_label_lesson": {
+      "videoId": "R-o-83k8dP0",
+      "title": "10 Rules For Reading a Food Label",
+      "channel": "Doctablet"
+    },
+    "meal_reflection": {
+      "videoId": "UQf9zqyf3Uo",
+      "title": "4 Essential things for Shooting Cooking videos with your phone l Create High Quality Content",
+      "channel": "India eating Habits"
+    },
+    "hydration_habit_reflection": {
+      "videoId": "hlE2uL3m6W0",
+      "title": "6 Easy Habits to Elevate Your Mental Wellness",
+      "channel": "RESPIRE"
+    },
+    "height_record": {
+      "videoId": "NMALMm6CJeY",
+      "title": "PC Quick tips - Take Screenshot- 🔴 Record Screen  #windows",
+      "channel": "Smart Graphics"
+    },
+    "weight_record": {
+      "videoId": "l3MZyLA2rDg",
+      "title": "How to Calculate Your Goal Body Weight (Response to Jordan Syatt's Calorie Calculator)",
+      "channel": "Hunter Grindle Fitness"
+    },
+    "waist_measurement_record": {
+      "videoId": "dwk8sVCKuio",
+      "title": "How to measure your waist | NHS",
+      "channel": "NHS"
+    },
+    "body_composition_record": {
+      "videoId": "g5bgGzWMKh8",
+      "title": "Body Composition Analysis: Sirf Weight Nahi, Body Ko Samajhna Bhi Zaroori Hai!",
+      "channel": "Dr Gaurav Chawla"
+    },
+    "blood_pressure_record": {
+      "videoId": "g7kjjhK5jcU",
+      "title": "The Right Way to Check Your Blood Pressure at Home | A Doctor Explains",
+      "channel": "The Cooking Doc"
+    },
+    "resting_pulse_record": {
+      "videoId": "XpFVuPwbMso",
+      "title": "06 Counts Radial Pulse",
+      "channel": "sbcccna"
+    },
+    "bmi_screening_explainer": {
+      "videoId": "t9e46CV_pyM",
+      "title": "BMI Calculation Formula: How to Calculate Body Mass Index | Nursing Calculations Math NCLEX",
+      "channel": "RegisteredNurseRN"
+    },
+    "bone_health_lesson": {
+      "videoId": "a73fCJCN0Nk",
+      "title": "Bone Health: the geriatrician's approach - Bite sized learning from the MDTea Help! Series",
+      "channel": "Hearing Aid Podcasts"
+    },
+    "bone_density_record": {
+      "videoId": "_BkH-fPwTyc",
+      "title": "Bone Density (DEXA) Scan: What to Expect Step by Step",
+      "channel": "Center for Diagnostic Imaging"
+    },
+    "oral_care_routine_log": {
+      "videoId": "UiOQnoOTZRQ",
+      "title": "What Order Should I Brush, Floss and Mouthwash?",
+      "channel": "Advanced Dental Artistry"
+    },
+    "oral_health_knowledge": {
+      "videoId": "5J89gCDt_rk",
+      "title": "The Perfect Oral Health Care Routine (3 easy steps in order)",
+      "channel": "Teeth Talk Girl"
+    },
+    "dental_visit_prepare": {
+      "videoId": "gGSLwp6UVbo",
+      "title": "Mock Exam Questions for the Dental Hygiene/Assisting Board Exams - How to Prepare!",
+      "channel": "Dentalelle with Andrea"
+    },
+    "skin_routine_plan": {
+      "videoId": "gzdCax46puk",
+      "title": "Simple Skincare Routine For Beginners |  Product recommendations | Tvacha ke doctor ka sujhav",
+      "channel": "Dr. Aanchal MD"
+    },
+    "sun_protection_plan": {
+      "videoId": "h9GauZwy_PM",
+      "title": "Applying SPF under LED-UV Light | Dr. Medispa",
+      "channel": "Dr. Somji Skin"
+    },
+    "grooming_routine_choice": {
+      "videoId": "U-kKKZATK70",
+      "title": "The Ultimate Grooming Routine For Every Man",
+      "channel": "Brandon Balfour"
+    },
+    "body_neutrality_reflection": {
+      "videoId": "dO2hX1dVYNo",
+      "title": "Body Positivity and Body Neutrality: Tips for a Healthy Mindset",
+      "channel": "Tahoe Forest Health System"
+    },
+    "appearance_confidence_goal": {
+      "videoId": "GBv9UbZbsWs",
+      "title": "This Claude Prompt Creates PERFECT PPTs in 3 Minutes",
+      "channel": "WallStreetMojo"
+    },
+    "ergonomic_setup": {
+      "videoId": "F8_ME4VwTiw",
+      "title": "Ergonomics Expert Explains How to Set Up Your Desk | WSJ Pro Tip",
+      "channel": "The Wall Street Journal"
+    },
+    "emotion_label_checkin": {
+      "videoId": "zoCiHlFjo04",
+      "title": "Name It to Tame It: How to Process Emotions 1/30",
+      "channel": "Therapy in a Nutshell"
+    },
+    "grounding_exercise": {
+      "videoId": "30VMIEmA114",
+      "title": "The 5-4-3-2-1 Method: A Grounding Exercise to Manage Anxiety",
+      "channel": "The Partnership In Education"
+    },
+    "stress_trigger_reflection": {
+      "videoId": "5gnvGMp_QFg",
+      "title": "Stress, Social Support, & The Faith Factor (Intro Psych Tutorial #219)",
+      "channel": "PsychExamReview"
+    },
+    "support_contact_plan": {
+      "videoId": "2m5GNu04JII",
+      "title": "Master The Support and Resistance Trading Strategy: ALL YOU NEED TO KNOW!",
+      "channel": "Hash Forex "
+    },
+    "communication_boundary_plan": {
+      "videoId": "dXvlwXMNbXI",
+      "title": "Boundaries: Why You Need Them & How to Set Them",
+      "channel": "The Holistic Psychologist"
+    },
+    "social_connection_reflection": {
+      "videoId": "D_hcYp7Wn1Y",
+      "title": "Action Guide Webinar",
+      "channel": "Foundation for Social Connection"
+    },
+    "personality_preference_review": {
+      "videoId": "TGOQShqfaOA",
+      "title": "How To Coach (by asking questions) | Coaching Leaders | Winning By Design",
+      "channel": "Winning by Design"
+    },
+    "faith_observance_planner": {
+      "videoId": "YAfvvxwfVZE",
+      "title": "How to fill in the \"Reflections\" Section - Using Templates for ESL Lesson Planning (Part 12)",
+      "channel": "Citizens of Hope"
+    },
+    "personal_decision_matrix": {
+      "videoId": "s3ZAPZXOU1A",
+      "title": "The 6 Steps To Making Confident Decisions",
+      "channel": "Tony Robbins"
+    },
+    "creative_practice": {
+      "videoId": "GBSB4pZHEeI",
+      "title": "Artists: Top Tips To Developing Your Creative Practice",
+      "channel": "Sophie Mahir"
+    },
+    "appointment_question_prep": {
+      "videoId": "pGfH0OauAvQ",
+      "title": "Healthcare Interview Questions and Answers",
+      "channel": "Knowledge Topper"
+    },
+    "medication_list_review": {
+      "videoId": "n1ZS8b5upRQ",
+      "title": "If You're Over 60, A Medical Educator Explains Your Medicine List",
+      "channel": "Lab Salud"
+    },
+    "preventive_care_plan": {
+      "videoId": "ESwdQfBlujE",
+      "title": "Guidelines for Medicare Annual Wellness Preventive Services Explained with practice Questions #cpc",
+      "channel": "Medical Coding Club"
+    },
+    "health_record_literacy": {
+      "videoId": "HoWvf76JdX8",
+      "title": "EHR Systems 101: Simple Guide to Electronic Health Records for Beginners #ElectronicHealthRecords",
+      "channel": "Healthcare Information Technology"
+    },
+    "sexual_health_knowledge": {
+      "videoId": "iVyRKkYGCgk",
+      "title": "Journey to Conception: Functions of the Female Reproductive System Explained",
+      "channel": "Medical Animation Media"
+    },
+    "consent_boundaries_lesson": {
+      "videoId": "eljGlVYwpqI",
+      "title": "Teach Us: What 'no' looks like and how to practice consent",
+      "channel": "Teach Us Consent"
+    },
+    "reproductive_tracking_optin_review": {
+      "videoId": "BwyBWXjrU88",
+      "title": "Bloom period tracker #PeriodTracking #BloomAI",
+      "channel": "Mokora"
+    },
+    "symptom_log": {
+      "videoId": "F6NeSeGYOJQ",
+      "title": "Whatsapp Primary Controls For Parents || Whatsapp parental control | Whatsapp New Update #shorts",
+      "channel": "Tech Babo Vai"
+    },
+    "clinical_followup_question": {
+      "videoId": "TL2CHIrPblA",
+      "title": "How to write a health research questionnaire",
+      "channel": "Amer Al-Jawabreh"
+    },
+    "environment_reset": {
+      "videoId": "3TwbE7gv6qo",
+      "title": "Learn 99% Of Claude Code in One Video",
+      "channel": "Tech With Tim"
+    },
+    "calendar_review": {
+      "videoId": "kqTL7Gr5oFg",
+      "title": "How to Use Google Calendar Effectively | Full Tutorial",
+      "channel": "Anson Alexander"
+    },
+    "money_routine_review": {
+      "videoId": "yNaN5kYTNLY",
+      "title": "AAPKE 20s ke liye COMPLETE FINANCIAL PLANNING! | Investing for Beginners 2021 | Ankur Warikoo Hindi",
+      "channel": "warikoo"
+    },
+    "weekly_food_budget": {
+      "videoId": "5kvbMWVz1cY",
+      "title": "How I Plan a Month of Dinners in Just 1 Hour!",
+      "channel": "Food Prep Guide"
+    },
+    "rest_and_boundaries_plan": {
+      "videoId": "yhcD6U5UAQM",
+      "title": "How to Make Wooden Windows Look Realistic in Minecraft",
+      "channel": "Nightfxll"
+    },
+    "weekly_goal_adjustment": {
+      "videoId": "dMh_THfSkxM",
+      "title": "How To Set & Achieve Your Goals",
+      "channel": "Saurabh Gandhi"
+    },
+    "body_measurement_context": {
+      "videoId": "9M_LYmjdhKU",
+      "title": "How to Take Your Own Body Measurements | Self-Measurement Guide",
+      "channel": "LisbethPosh"
+    },
+    "body_comfort_checkin": {
+      "videoId": "xTaUvknBjZU",
+      "title": "Excel for HR Full Course Tutorial",
+      "channel": "Learn Skills Daily"
+    },
+    "health_source_check": {
+      "videoId": "bM9e2EPUg0g",
+      "title": "Health Insurance Claims Adjudication",
+      "channel": "AHealthcareZ - Healthcare Finance Explained"
+    },
+    "sleep_support_question": {
+      "videoId": "pyLULgL6YFI",
+      "title": "Neuroscientist: How To Reset Your Sleeping Schedule | Andrew Huberman #neuroscience #shorts #sleep",
+      "channel": "Pure Plate"
+    },
+    "personal_care_inventory": {
+      "videoId": "KtCEhmJ9wiQ",
+      "title": "The Only Skincare Products You Actually Need",
+      "channel": "Brandon Balfour"
+    },
+    "personal_learning_path": {
+      "videoId": "NTxBP4bFrBA",
+      "title": "Find Your skill in 7minute in 2025",
+      "channel": "Vishal Sharma"
+    },
+    "social_media_boundary": {
+      "videoId": "3yZd6cXWcxU",
+      "title": "Set Digital Boundaries",
+      "channel": "The Source File"
+    },
+    "values_and_food_review": {
+      "videoId": "Lwaubw-c6XQ",
+      "title": "How to Use My Perfect Menu | My Perfect Meals Step-by-Step Tutorial",
+      "channel": "My Perfect Meals"
+    },
+    "screen_break_plan": {
+      "videoId": "x0-Urx3OCJU",
+      "title": "How to Reduce Your Screen Time",
+      "channel": "Gohar Khan"
+    },
+    "hearing_protection_plan": {
+      "videoId": "IUAssEF1Lhc",
+      "title": "10 Hearing Hacks That Work in Noisy Situations",
+      "channel": "Pro Fit Hearing"
+    },
+    "pain_function_note": {
+      "videoId": "3-JgLyhZVhg",
+      "title": "How to TAKE NOTES during a LECTURE 📝⚡️ #studytips #collegelife #studysmart",
+      "channel": "studiedwithme"
+    },
+    "ai_provider_privacy_setup": {
+      "videoId": "dEwd8SaJVSs",
+      "title": "AI Privacy Explained: Where Your Prompts Go",
+      "channel": "ECONFLUENCY"
+    },
+    "ai_byok_connect_and_test": {
+      "videoId": "jZS62g8ik2c",
+      "title": "The Local-First AI Workspace Setup: Bring Your Own Keys (BYOK) Guide",
+      "channel": "Tensor Pilot"
+    },
+    "ai_review_personal_goal_with_rubric": {
+      "videoId": "m7GqrPRLwlI",
+      "title": "Set Goals in Muse AI: Turn Plans Into Progress (Tutorial)",
+      "channel": "Rank with Haris"
+    },
+    "ai_fact_check_response_sources": {
+      "videoId": "9Vsf5dZiNNA",
+      "title": "AI Research With Sources: Current Answers You Can Actually Check",
+      "channel": "vDesktop"
+    },
+    "ai_prompt_privacy_check": {
+      "videoId": "KxQ7jIEMylE",
+      "title": "5 Small Habits for Better Mental Wellness 💜 #shorts",
+      "channel": "The Horizon Behavioral Health"
+    },
+    "ai_key_rotation_or_removal": {
+      "videoId": "ZkTvw3usMw4",
+      "title": "Artificial Intelligence Meets Mental Health Therapy | Andy Blackwell | TEDxNatick",
+      "channel": "TEDx Talks"
+    },
+    "ai_response_privacy_audit": {
+      "videoId": "9rPxE5_rlRI",
+      "title": "AI Evaluation Explained: How to Compare Two AI Answers",
+      "channel": "Earn With Loki"
+    },
+    "open_letter_create_private_draft": {
+      "videoId": "QTB8H6Gg2bc",
+      "title": "Formal letter writing | Write letter to the editor about social issues |formal letter writing format",
+      "channel": "Learn Easily by Sandhya Wagh"
+    },
+    "open_letter_share_or_keep_private": {
+      "videoId": "v0KB130rVko",
+      "title": "Before you write an open letter, make sure it meets this criteria | Debra Mashek |  Big Think",
+      "channel": "Big Think"
+    },
+    "media_permission_minimum_access": {
+      "videoId": "meXQl0bnL9M",
+      "title": "Vivo Me Screen Capture Protection Kaise Enable Kare | How To On Screen Capture Protection In Vivo |",
+      "channel": "Ram Ki Tech"
+    },
+    "attach_one_selected_private_photo": {
+      "videoId": "q41P4Yv2AyQ",
+      "title": "my junk journal intro page 💌🫶🏻✂️✨#junkjournal #journaling #hobby #scrapbooking",
+      "channel": "Carter Sullivan"
+    },
+    "address_and_home_privacy_review": {
+      "videoId": "nAY8qOFEv0E",
+      "title": "How to Hide Your Home Address (build privacy with these 3 steps)",
+      "channel": "All Things Secured"
+    },
+    "family_media_consent_review": {
+      "videoId": "VhCBekU-7K0",
+      "title": "Permission manager allow and deny app permission#shorts",
+      "channel": "Setting technology 1.3M"
+    },
+    "screenshot_redaction_practice": {
+      "videoId": "UimPV7g42MM",
+      "title": "#windowscreenshot How to take a screenshot on Windows using Snagit App",
+      "channel": "How-To Authority"
+    },
+    "trusted_contact_privacy_review": {
+      "videoId": "cjHGlHx58vk",
+      "title": "🔐 WhatsApp Privacy Check | How to Review & Manage Privacy Settings in WhatsApp | Tech Zone #shorts",
+      "channel": "Tech Zone"
+    },
+    "try_one_new_recipe": {
+      "videoId": "yzDAApWOgYg",
+      "title": "Cooking basics for Newbies Part 10",
+      "channel": "ChefRonCooks"
+    },
+    "care_for_a_plant_or_garden": {
+      "videoId": "L6SGoqoEt8A",
+      "title": "This Tiny Pot Is Growing SO MUCH GARLIC?! 😱🧄🌱 #shorts #viral #trending",
+      "channel": "Mr Yousaf"
+    },
+    "choose_a_personal_values_practice": {
+      "videoId": "vBOty22hHzE",
+      "title": "What is a Spiritual Practice? (5 Examples of Spiritual Practice)",
+      "channel": "Intuitive Karen Bell"
+    },
+    "take_a_self_chosen_solo_outing": {
+      "videoId": "khDheA0UIU4",
+      "title": "\"Today's Activity-A solo trip\"✨ #day15 #shorts #adayinmylife #viral #shortsvideo #vlogchallenge",
+      "channel": "POV Homemaking with Marju"
+    },
+    "relationship_communication_reflection": {
+      "videoId": "VPDCo4s_EjM",
+      "title": "Relationship Tips: relationship reflection activities and more!",
+      "channel": "Relationship Educator"
+    },
+    "plan_a_low_pressure_date_or_meetup": {
+      "videoId": "EVJMe3KoznA",
+      "title": "How to Host a Meetup: Step-by-Step Guide and Networking Events for First-Time Hosts",
+      "channel": "Nick Gray"
+    },
+    "practice_respectful_flirting_and_consent": {
+      "videoId": "MEEMEUgvJzo",
+      "title": "How to Flirt Without Feeling Awkward",
+      "channel": "School of Sensuality"
+    },
+    "attend_a_user_chosen_social_event": {
+      "videoId": "TiD8SyGo79w",
+      "title": "If you’re planning to join a modelling agency, these are the steps you need to follow.✨ #model",
+      "channel": "Shaswati Bala"
+    },
+    "adult_private_intimacy_journal_setup": {
+      "videoId": "xnaHjx5Tpag",
+      "title": "10 Ways to Keep Your Journal Private (Even in Your Own Home)",
+      "channel": "Chic Sparrow"
+    },
+    "adult_sexual_health_knowledge_review": {
+      "videoId": "0N2v2B189hc",
+      "title": "What Happens At A Sexual Health Clinic? | NEED to Watch Before Visiting Allo Sexual Health Clinic",
+      "channel": "Allo Health"
+    },
+    "private_intimacy_history_controls_check": {
+      "videoId": "fqTlPB3QIZ0",
+      "title": "How to See Your Google Activity 🔍📊 | Track Your Search & App History #Shorts #privacyfirst  #tech",
+      "channel": "ProwiseTech"
+    },
+    "adapt_a_goal_to_a_health_constraint": {
+      "videoId": "dYuBwYuVVyw",
+      "title": "Adapt to Change: Connect with Colleagues",
+      "channel": "The Business Butterfly Effect"
+    },
+    "build_a_personal_coaching_tone": {
+      "videoId": "LF2bkho1gg0",
+      "title": "Quick Mental Health Fit Check ✅🧠 #mentalhealthcheck #quiz #mentalhealth",
+      "channel": "Abhasa - Mental Health"
+    },
+    "pose_landmarker_camera_setup": {
+      "videoId": "71cjM_u_QyM",
+      "title": "Checks and Logs | Practice Hub walkthrough #Shorts",
+      "channel": "Dentistry Dashboard"
+    },
+    "pose_landmark_movement_checkpoint": {
+      "videoId": "WPn8n65N36A",
+      "title": "My Youngest Brother Do This Always - Flipbook #Creativity #Flipbook #littos #nabishevahmad",
+      "channel": "MR Comfort"
+    },
+    "pose_feedback_understand_limits": {
+      "videoId": "eL_XaKA5qWM",
+      "title": "Why Great Directors Lock the Camera",
+      "channel": "StudioBinder"
+    },
+    "body_measurement_source_review": {
+      "videoId": "QemL8ObSFzk",
+      "title": "खुद का बॉडी मेजरमेंट लेना सीखे | Self Body Measurement Guide | Raja-Rani Coaching",
+      "channel": "Rajarani Coaching (Academy)"
+    },
+    "personalization_data_review": {
+      "videoId": "pQH2PhYhXlA",
+      "title": "Staff Details in a Google Review? Myth vs Fact #shorts",
+      "channel": "MAYZIUM"
+    },
+    "personal_scorecard_customize": {
+      "videoId": "4sPJNZMPxec",
+      "title": "Make a Productivity Tracker in Excel + FREE File",
+      "channel": "Kenji Explains"
+    },
+    "daily_workload_and_caregiving_log": {
+      "videoId": "dz_aADsp8tU",
+      "title": "초보자를 위한 튼튼한 목재 구조물 설치 방법 #worker #process #construction #guide #tutorial",
+      "channel": "Quazivo"
+    },
+    "heavy_workday_recovery_plan": {
+      "videoId": "VLw_V69s-Lg",
+      "title": "How to Successfully Support Mental Wellness at Work | Matthew Ratz | TEDxGaithersburg",
+      "channel": "TEDx Talks"
+    },
+    "personal_effort_and_baseline_setup": {
+      "videoId": "fmPNn9ry9Y0",
+      "title": "How to get awakening variant for Ryu/Jane Juliet in JJS! #jjs #roblox #jjk #guide #tutorial",
+      "channel": "Julix"
+    },
+    "relative_functional_movement_baseline": {
+      "videoId": "TS-iWrIEjFg",
+      "title": "How to Screen Record on Laptop - Free & No Install",
+      "channel": "Kevin Stratvert"
+    },
+    "user_chosen_values_or_faith_practice": {
+      "videoId": "S2EbOmUwyhg",
+      "title": "“How to Align Your Heart, Mind, and Actions for True Success - Shi Heng Yi” #motivation",
+      "channel": "Satori"
+    },
+    "chosen_dietary_values_goal": {
+      "videoId": "iTsDycQN-zQ",
+      "title": "Step-By-Step INDIAN Diet Guide | Doctor Explains 💯",
+      "channel": "Dr Umesh Wadhavani"
+    },
+    "language_confidence_baseline_and_practice": {
+      "videoId": "U40qvUiefQo",
+      "title": "30 Day Plan to Master Your Communication [Complete Beginner’s Guide] + FREE Workbook PDF",
+      "channel": "Vinh Giang"
+    },
+    "private_good_bad_and_repair_reflection": {
+      "videoId": "7YmnmvSc_VA",
+      "title": "Your past mistakes are meant to guide you, not to define you #missmaturedquotes #past #lesson #learn",
+      "channel": "Miss Matured"
+    },
+    "personal_style_and_appearance_scorecard": {
+      "videoId": "4k1GjpWacLQ",
+      "title": "Module 4.4 | Designing Assessment Rubrics with AI",
+      "channel": "Academic Vinragi"
+    },
+    "face_shape_and_style_preference_review": {
+      "videoId": "XbfIT-cXsnM",
+      "title": "The Oval face guide ( glow up tips for oval face ) ",
+      "channel": "BeautywithK"
+    },
+    "body_measurement_source_and_trend_review": {
+      "videoId": "D5OrAkOhKQc",
+      "title": "Full Body Measurement Lena Sheekhe Sirf 2 Minutes Me ✨ #measurement",
+      "channel": "Nisha Rajput | निशा राजपूत |"
+    },
+    "bone_health_and_body_composition_evidence_review": {
+      "videoId": "_jpUcPlDUJY",
+      "title": "How to Interpret a Body Composition Analysis Report (Using Bio-electrical Impedance Analysis)",
+      "channel": "Endocrinology India"
+    },
+    "oral_care_and_dental_goal_review": {
+      "videoId": "qgYF_V56SvU",
+      "title": "Perfact Oral Health Care Routine #shivangidesai #oralhealth #dentalcare",
+      "channel": "Fit Bharat"
+    },
+    "mental_wellbeing_private_domain_review": {
+      "videoId": "D5jcofTU8BE",
+      "title": "How to Disable Parental Controls on Android (100% Working 2026)",
+      "channel": "TechEase Mobile"
+    },
+    "relationship_support_and_satisfaction_review": {
+      "videoId": "bfP87UlOvBQ",
+      "title": "How to Check Apps and Services Permissions on TikTok | TikTok Security Settings 2026",
+      "channel": "YK Production"
+    },
+    "adult_intimacy_wellbeing_review": {
+      "videoId": "WPMaKnv17LM",
+      "title": "Essential intimate kit items you never knew you needed. #health #wellness #couplegoals #education",
+      "channel": "Sex Ed with Khushboo"
+    },
+    "adult_private_sexual_activity_record": {
+      "videoId": "XviwoKXL4s0",
+      "title": "How to Enhance Intimacy 👀",
+      "channel": "Camming Life"
+    },
+    "safe_social_discovery_plan": {
+      "videoId": "4Nubuzmzn_A",
+      "title": "Follow My Secret Study Trick: A Clever Way to Study for Exams 🔥😎 #study #exam #motivation #studytips",
+      "channel": "FundaTube"
+    },
+    "open_letter_with_audience_choice": {
+      "videoId": "HNC7uXl1Uzc",
+      "title": "How to Write an Open Letter",
+      "channel": "Ms. Ryan"
+    },
+    "address_and_family_media_sharing_safety": {
+      "videoId": "_OPgfRS_Lg8",
+      "title": "How to share your family photos | Sharing your digital photos",
+      "channel": "Amanda Littlecott: The Photo Organiser"
+    },
+    "personal_financial_goal_and_wealth_context": {
+      "videoId": "bnGIjE73wWw",
+      "title": "SETTING 5 Financial Goals #organizedlife #budgeting",
+      "channel": "The Organized Money"
+    },
+    "ai_scorecard_explanation_and_rubric_review": {
+      "videoId": "_UY49Q_qFhs",
+      "title": "Inspect - A LLM Eval Framework Used by Anthropic, DeepMind, Grok and More.",
+      "channel": "Hamel Husain"
+    },
+    "byok_key_storage_and_rotation_check": {
+      "videoId": "UinWPAj9ZCw",
+      "title": "OpenAI API Key Setup & .ENV File | Agentic AI for Testing #8",
+      "channel": "Software Testing Mentor"
+    },
+    "health_constraint_and_task_adaptation_review": {
+      "videoId": "MlbFeZXVgy0",
+      "title": "@movementrecoverylife #🩺 Task Constraints in Motor Control # Essential Guide for PTs",
+      "channel": "movementrecoverylife"
+    },
+    "character_in_action_commitment_review": {
+      "videoId": "6VHLa8OL4uc",
+      "title": "Values Versus Goals In Acceptance And Commitment Therapy",
+      "channel": "Teresa Lewis | Lewis Psychology"
+    },
+    "personal_relationship_and_flirting_skills_practice": {
+      "videoId": "wWHJhwVyt1w",
+      "title": "How To Become A Flirt and Banter Master (Actual Exercises Included)",
+      "channel": "Marni Your Personal Wing Girl"
+    },
+    "personal_domain_score_review": {
+      "videoId": "vCCCiIYAV7k",
+      "title": "Code Review Lab - Domain Lookup",
+      "channel": "OwlHackU"
+    },
+    "identity_self_discovery_and_expression_goal": {
+      "videoId": "hbqPMvIdt2g",
+      "title": "What do you really want? A Step-by-Step Guide to Self-discovery",
+      "channel": "Talk it with Diana"
+    },
+    "local_personal_progress_photo_comparison": {
+      "videoId": "RHgL-vtg5L4",
+      "title": "How to Compare Photos & Survey | Lightroom Classic Tutorial 10",
+      "channel": "Aperlust"
+    },
+    "relative_movement_achievement_checkpoint": {
+      "videoId": "n_aTjyU_Ryw",
+      "title": "How to defend Powerful SMASHES!",
+      "channel": "Badminton Soul"
+    },
+    "adult_intimacy_communication_skill_practice": {
+      "videoId": "WrbdbchN_iw",
+      "title": "7 Communication Skills That Make You Sound More Mature 🧠",
+      "channel": "intrepidreads "
+    },
+    "public_presence_and_confidence_practice": {
+      "videoId": "d812a7qG9Kw",
+      "title": "How to Practice a Speech or Presentation",
+      "channel": "Alexander Lyon Communication Coach"
+    },
+    "oral_appearance_goal_and_safe_care_review": {
+      "videoId": "GBYktykWWXE",
+      "title": "🦷 How To Set Up Your Oral Hygiene Routine.",
+      "channel": "Health With Cory"
+    }
+  },
+  "specialQuests": {
+    "special_daily_reset_v1": {
+      "videoId": "KljKZhUf6Jo",
+      "title": "Ultimate Sunday Reset Routine that will actually motivate you for next week! 💗",
+      "channel": "GlowzzTips"
+    },
+    "special_learning_sprint_v1": {
+      "videoId": "IJzi1mfgh70",
+      "title": "Sprinting for Beginners",
+      "channel": "Swain_Performance"
+    },
+    "special_routine_tuneup_v1": {
+      "videoId": "Opdv8_RsJyQ",
+      "title": "PAANO MAG TUNE UP NG 6 CYLINDER ENGINE? || BEGINNERS GUIDE TUTORIAL",
+      "channel": "Ka Yabe vlog"
+    },
+    "special_food_fit_v1": {
+      "videoId": "R04sq4U9o0g",
+      "title": "Want better food videos? Try these shots 😎🥰 #cookingvideo #tutorial #videotips #contentideas #yt",
+      "channel": "Swati Dwivedi"
+    },
+    "special_recovery_reset_v1": {
+      "videoId": "wYjbnB1YNeg",
+      "title": "How to use Recovery Mode on Android",
+      "channel": "Android Authority"
+    },
+    "special_health_literacy_v1": {
+      "videoId": "Zv8dn1ievpI",
+      "title": "CareSync (PUPTOCMS): HOW TO REVIEW HEALTH RECORDS AND STUDENT REQUIREMENTS",
+      "channel": "Team Innovision"
+    },
+    "special_selfcare_reset_v1": {
+      "videoId": "kdq6TOSa6a4",
+      "title": "I tried 2 trending selfcare for a month #shorts",
+      "channel": "leeskin"
+    },
+    "special_connection_or_solitude_v1": {
+      "videoId": "p-pNqMTXhPY",
+      "title": "A Quiet Guide to Relationship Psychology Shorts",
+      "channel": "Simply Shifted"
+    },
+    "special_goal_review_v1": {
+      "videoId": "AxrJ5TPMSYI",
+      "title": "How to have the PERFECT START ON GOALS!",
+      "channel": "AidenVTW"
+    },
+    "special_private_health_prep_v1": {
+      "videoId": "yX-wBzDdqvQ",
+      "title": "Youth Mental Health: How to Prepare for a Healthcare Appointment",
+      "channel": "Bridges To Work"
+    },
+    "capstone_01": {
+      "videoId": "gX6B9PeSRfY",
+      "title": "blowout brush tutorial!",
+      "channel": "em"
+    },
+    "capstone_02": {
+      "videoId": "hlE2uL3m6W0",
+      "title": "6 Easy Habits to Elevate Your Mental Wellness",
+      "channel": "RESPIRE"
+    },
+    "capstone_03": {
+      "videoId": "eT48bNJaSeA",
+      "title": "Introduction Lesson 01",
+      "channel": "Ali Katary"
+    },
+    "capstone_04": {
+      "videoId": "eL_XaKA5qWM",
+      "title": "Why Great Directors Lock the Camera",
+      "channel": "StudioBinder"
+    },
+    "capstone_05": {
+      "videoId": "_n9a9IcZQTU",
+      "title": "Last Minute Functional Medicine Certification Exam Strategy (Don't Make This Mistake)",
+      "channel": "Jinhee Park"
+    },
+    "capstone_06": {
+      "videoId": "46nW8kKxa34",
+      "title": "Evidence Based Nutrition",
+      "channel": "Dr. Radha's NutriCare"
+    },
+    "capstone_07": {
+      "videoId": "R04sq4U9o0g",
+      "title": "Want better food videos? Try these shots 😎🥰 #cookingvideo #tutorial #videotips #contentideas #yt",
+      "channel": "Swati Dwivedi"
+    },
+    "capstone_08": {
+      "videoId": "rTsUqR4NV7A",
+      "title": "Grade 12 Mathematical Literacy: Conversions",
+      "channel": "Maths Monkey"
+    },
+    "capstone_09": {
+      "videoId": "Pz9XuvtSZTI",
+      "title": "The Easiest Skincare Routine for College & Office Days – Dr. Aanchal Panth Shares #shorts",
+      "channel": "Ranveer Allahbadia"
+    },
+    "capstone_10": {
+      "videoId": "XS7cC4rj1VU",
+      "title": "Trying 10 emotions in 1 minute ✨ IB @Hereimyadhu #acting #actingemotions",
+      "channel": "Eliana Ghen"
+    },
+    "capstone_11": {
+      "videoId": "LKhNlJ9IjDE",
+      "title": "Mastery Learning (Explained for Beginners in 3 Minutes)",
+      "channel": "Helpful Professor Explains!"
+    },
+    "capstone_12": {
+      "videoId": "cOyPAKYuZJY",
+      "title": "AutoPath (Boundaries) Tutorial on John Deere G5 Display | How-to Video",
+      "channel": "John Deere UK IE"
+    },
+    "capstone_13": {
+      "videoId": "_9Gr4cE4S0I",
+      "title": "Communication Tips for Performance Reviews: What to Say in Your Performance Review",
+      "channel": "Kara Ronin"
+    },
+    "capstone_14": {
+      "videoId": "wZMQKUb2ws8",
+      "title": "Upmetrics Tutorial, Review & Demo | Business Planning Software (2026)",
+      "channel": "James And Jenna's Tutorials"
+    },
+    "capstone_15": {
+      "videoId": "lsdkNPoDjyI",
+      "title": "Learn the power of body language (Look confident & dominating)",
+      "channel": "SantwinderSinghWaraich"
+    },
+    "capstone_16": {
+      "videoId": "nrzH3vEYzus",
+      "title": "Before Renewal Run a Readiness Review",
+      "channel": "Training IQ"
+    },
+    "capstone_17": {
+      "videoId": "UBxRB5PygoA",
+      "title": "Adaptation Workbook Progress Summary final",
+      "channel": "Northern Institute of Applied Climate Science"
+    },
+    "capstone_18": {
+      "videoId": "Eo9DlDuEVEk",
+      "title": "How to Use ChatGPT in Excel (FREE) | AI Formula Assistant Inside Excel 💡",
+      "channel": "Office Master by be10X"
+    },
+    "capstone_19": {
+      "videoId": "2Vtz43pRPas",
+      "title": "Mental Health and Well-Being",
+      "channel": "Osmosis from Elsevier"
+    },
+    "capstone_20": {
+      "videoId": "1U0mDEGX9v0",
+      "title": "How to complete a TSP Sustainability assessment (2025)",
+      "channel": "djaodjin"
+    },
+    "final_sustainable_mastery": {
+      "videoId": "1-u0NU_N3ns",
+      "title": "Can 100 Readers Make You $1,000/Month? | Beehiiv Full Review",
+      "channel": "MSB Digital"
+    },
+    "special_ai_setup_and_review_v1": {
+      "videoId": "j8BiIZIZBsU",
+      "title": "AI-powered mental health chatbots developed as a therapy support tool | 60 Minutes",
+      "channel": "60 Minutes"
+    },
+    "special_open_letter_v1": {
+      "videoId": "JTCMzMvblfc",
+      "title": "How to do Calligraphy with Brush Pens for Total Beginners #shorts",
+      "channel": "Lettering With Liv"
+    },
+    "special_privacy_guard_v1": {
+      "videoId": "HIdgGRbtmKs",
+      "title": "Protect Your Online Privacy with Privacy Guardian",
+      "channel": "iolo"
+    },
+    "special_self_discovery_v1": {
+      "videoId": "1XSlPMcj2iI",
+      "title": "Instagram Password Change Tutorial - Step by Step Guide for 2024 || #shorts",
+      "channel": "Tech Mahendra "
+    },
+    "special_connection_with_consent_v1": {
+      "videoId": "vtryZ5J6rls",
+      "title": "How to Use Claude Code for FREE in 2026 (Step-by-Step Guide)",
+      "channel": "Mayank Aggarwal"
+    },
+    "special_move_with_landmarks_v1": {
+      "videoId": "ZwxyB7AgMQ0",
+      "title": "Checkpoint firewall configuration step by step| Checkpoint firewall full tutorial | Day 1",
+      "channel": "Fresh Developer (Sapium Security)"
+    },
+    "special_intimacy_privacy_v1": {
+      "videoId": "-P6Q74N3ILA",
+      "title": "Best way to remove pubic hair | How to remove hair from private part | Intimate area hair removal",
+      "channel": "ZolieSkinClinic"
+    },
+    "special_personalization_review_v1": {
+      "videoId": "ukZqb8GrN_8",
+      "title": "Everfit App Review: Easy-To-Use Software for Personal Trainers and Online Coaches!",
+      "channel": "Alex Povey"
+    },
+    "special_personal_scorecard_context_v2": {
+      "videoId": "CrToe5pW_RE",
+      "title": "QuickScore: Creating your Balanced Scorecard",
+      "channel": "Spider Strategies"
+    },
+    "special_life_load_and_recovery_v2": {
+      "videoId": "cnpHK79NgxU",
+      "title": "CORTIS ‘REDRED’ Dance Tutorial (Slow+Counts) #CORTIS #REDRED #KpopTutorial",
+      "channel": "SHERO"
+    },
+    "special_personal_progress_and_style_v2": {
+      "videoId": "bxkgomPlxQQ",
+      "title": "How to Make Basslines EASY step-by-step guide",
+      "channel": "Busy Works Beats"
+    },
+    "special_values_food_and_character_v2": {
+      "videoId": "2BnFk4-LWiE",
+      "title": "How to Turn Company Values Into Action",
+      "channel": "MindEdge Learning"
+    },
+    "special_relationship_and_adult_wellbeing_v2": {
+      "videoId": "XlmKqkZkfqI",
+      "title": "The Best Professional Connectors to Explain Your Opinions in English",
+      "channel": "Speak Confident English"
+    },
+    "special_ai_byok_and_verifiable_scoring_v2": {
+      "videoId": "OIbI8s3yz30",
+      "title": "Government of India Free AI Certification Courses! Intel & MeitY Initiative 2026",
+      "channel": "Data Logic With Shivam"
+    },
+    "special_privacy_letters_and_media_v2": {
+      "videoId": "mRjSXZPYiVY",
+      "title": "Share Intent is Awesome - Developing Android Apps",
+      "channel": "Udacity"
+    },
+    "special_work_finances_and_independence_v2": {
+      "videoId": "8iagehxjZE8",
+      "title": "Why we use the Key Worker Model",
+      "channel": "Everyday Independence"
+    },
+    "special_social_confidence_and_self_discovery_v2": {
+      "videoId": "EptPeU9mqAA",
+      "title": "HOW TO MASTER SOCIAL CONFIDENCE | talk to anyone, develop extroverted traits and become magnetic!",
+      "channel": "Tam Kaur"
+    },
+    "special_adult_intimacy_learning_v1": {
+      "videoId": "OfAtWW1ZzX0",
+      "title": "Woman's intimate health program Training",
+      "channel": "Davis-Diley"
+    }
+  },
+  "all": {
+    "exercise:dead_bug": {
+      "videoId": "o4GKiEoYClI",
+      "title": "Dead Bug Exercise For Core Stability  | Pursuit Physical Therapy",
+      "channel": "Pursuit Physical Therapy",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=o4GKiEoYClI",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/o4GKiEoYClI"
+    },
+    "exercise:reverse_lunge": {
+      "videoId": "Ry-wqegeKlE",
+      "title": "How To Perform The Reverse Lunge",
+      "channel": "Dr. Carl Baird",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=Ry-wqegeKlE",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/Ry-wqegeKlE"
+    },
+    "exercise:chair_squat": {
+      "videoId": "ITv-_BkcrD0",
+      "title": "Sit to Stand",
+      "channel": "Baptist Health",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=ITv-_BkcrD0",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/ITv-_BkcrD0"
+    },
+    "exercise:thoracic_rotation": {
+      "videoId": "QwsdhRTdqqs",
+      "title": "How to Do Seated Thoracic Rotation with Breathing",
+      "channel": "Jon Hodgkinson Golf Fitness",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=QwsdhRTdqqs",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/QwsdhRTdqqs"
+    },
+    "exercise:hip_flexor_stretch": {
+      "videoId": "gqoPYLUgP48",
+      "title": "Bulletproof Step-by-step Guide to the Half Kneeling Hip Flexor Stretch\" [stretching advice]",
+      "channel": "[P]rehab",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=gqoPYLUgP48",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/gqoPYLUgP48"
+    },
+    "exercise:cat_cow": {
+      "videoId": "LIVJZZyZ2qM",
+      "title": "Cat - Cow Stretch",
+      "channel": "Dr. Dawn",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=LIVJZZyZ2qM",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/LIVJZZyZ2qM"
+    },
+    "exercise:brisk_walk": {
+      "videoId": "nmvVfgrExAg",
+      "title": "How to do Brisk Walk - Warm Up Exercise",
+      "channel": "GetFitso",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=nmvVfgrExAg",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/nmvVfgrExAg"
+    },
+    "exercise:goblet_squat": {
+      "videoId": "Mu7aVOjEBdA",
+      "title": "How To: Goblet Squats",
+      "channel": "Mobility Doc",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=Mu7aVOjEBdA",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/Mu7aVOjEBdA"
+    },
+    "exercise:db_row": {
+      "videoId": "dFzUjzfih7k",
+      "title": "How to do the SINGLE ARM DUMBBELL ROW! | 2 Minute Tutorial",
+      "channel": "Max Euceda",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=dFzUjzfih7k",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/dFzUjzfih7k"
+    },
+    "exercise:db_press": {
+      "videoId": "QsYre__-aro",
+      "title": "STOP Doing Dumbbell Press Like This (5 Mistakes Slowing Your Chest Gains)",
+      "channel": "Jeremy Ethier",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=QsYre__-aro",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/QsYre__-aro"
+    },
+    "exercise:rdl": {
+      "videoId": "3VXmecChYYM",
+      "title": "How to do the ROMANIAN DEADLIFT! | 2 Minute Tutorial",
+      "channel": "Max Euceda",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=3VXmecChYYM",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/3VXmecChYYM"
+    },
+    "exercise:lat_pulldown": {
+      "videoId": "SALxEARiMkw",
+      "title": "How to do Lat Pulldowns (AVOID MISTAKES!)",
+      "channel": "ATHLEAN-X™",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=SALxEARiMkw",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/SALxEARiMkw"
+    },
+    "exercise:leg_press": {
+      "videoId": "K5n2vg3oZa4",
+      "title": "How to PROPERLY Leg Press (FIX YOUR FORM NOW)",
+      "channel": "Colossus Fitness",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=K5n2vg3oZa4",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/K5n2vg3oZa4"
+    },
+    "exercise:farmer_carry": {
+      "videoId": "z7E_YU9P1jU",
+      "title": "How to Perform the Farmer’s Carry",
+      "channel": "Dr. Carl Baird",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=z7E_YU9P1jU",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/z7E_YU9P1jU"
+    },
+    "exercise:step_up": {
+      "videoId": "wfhXnLILqdk",
+      "title": "Step Up Exercise | Osteoarthritis Physiotherapy",
+      "channel": "Cornerstone Physiotherapy",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=wfhXnLILqdk",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/wfhXnLILqdk"
+    },
+    "exercise:calf_raise": {
+      "videoId": "CtyIVeJH6lI",
+      "title": "You're Doing Calf Raises WRONG | The Correct Way Taught By Physical Therapist",
+      "channel": "Rehab and Revive",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=CtyIVeJH6lI",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/CtyIVeJH6lI"
+    },
+    "exercise:superman": {
+      "videoId": "J9zXkxUAfUA",
+      "title": "Core Exercise: Superman",
+      "channel": "Children's Hospital Colorado",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=J9zXkxUAfUA",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/J9zXkxUAfUA"
+    },
+    "exercise:db_overhead_press": {
+      "videoId": "Did01dFR3Lk",
+      "title": "Dumbbell Overhead Press - How To",
+      "channel": "Bobby Maximus",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=Did01dFR3Lk",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/Did01dFR3Lk"
+    },
+    "exercise:march_in_place": {
+      "videoId": "u1gmWFvEluM",
+      "title": "Marching in Place Demonstrated by a Physical Therapist",
+      "channel": "Margaret Martin, Physical Therapist",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=u1gmWFvEluM",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/u1gmWFvEluM"
+    },
+    "exercise:jumping_jacks": {
+      "videoId": "XR0xeuK5zBU",
+      "title": "How to do Jumping Jacks exercise - Best Cardio Exercises video tutorial",
+      "channel": "P4P WORKOUTS ",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=XR0xeuK5zBU",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/XR0xeuK5zBU"
+    },
+    "exercise:jog": {
+      "videoId": "ZTBRQ5MEJsE",
+      "title": "Your Jogging Technique Matters! Slow Jogging Dos & Don'ts: Part 3",
+      "channel": "Slow Jogging",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=ZTBRQ5MEJsE",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/ZTBRQ5MEJsE"
+    },
+    "exercise:rowing": {
+      "videoId": "ZN0J6qKCIrI",
+      "title": "The Official 2026 Rowing Form Checklist (PERFECT STROKE!)",
+      "channel": "Training Tall",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=ZN0J6qKCIrI",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/ZN0J6qKCIrI"
+    },
+    "exercise:jump_rope": {
+      "videoId": "u3zgHI8QnqE",
+      "title": "How To Jump Rope | The Right Way | Well+Good",
+      "channel": "Well+Good",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=u3zgHI8QnqE",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/u3zgHI8QnqE"
+    },
+    "exercise:squat_jump": {
+      "videoId": "A-cFYWvaHr0",
+      "title": "How To Do A Squat Jump | The Right Way | Well+Good",
+      "channel": "Well+Good",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=A-cFYWvaHr0",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/A-cFYWvaHr0"
+    },
+    "exercise:mountain_climber": {
+      "videoId": "cnyTQDSE884",
+      "title": "How to Do Mountain Climbers | The Right Way | Well+Good",
+      "channel": "Well+Good",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=cnyTQDSE884",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/cnyTQDSE884"
+    },
+    "exercise:burpee": {
+      "videoId": "NCqbpkoiyXE",
+      "title": "How To Burpee | Nuffield Health",
+      "channel": "Nuffield Health",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=NCqbpkoiyXE",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/NCqbpkoiyXE"
+    },
+    "exercise:high_knees": {
+      "videoId": "FvjmPRU3zn4",
+      "title": "How to do High Knees | Forever Living UK & Ireland",
+      "channel": "Forever Living Products UK ",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=FvjmPRU3zn4",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/FvjmPRU3zn4"
+    },
+    "exercise:skater": {
+      "videoId": "9_jLW6VkU8A",
+      "title": "Speed Skaters Exercise (Skater Hops): Proper Form",
+      "channel": "BuiltLean®",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=9_jLW6VkU8A",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/9_jLW6VkU8A"
+    },
+    "exercise:downward_dog": {
+      "videoId": "Y0GDgQqt-bA",
+      "title": "How to do Downward Facing Dog | Yoga for Beginners Pose Tutorial",
+      "channel": "SarahBethYoga",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=Y0GDgQqt-bA",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/Y0GDgQqt-bA"
+    },
+    "exercise:warrior_two": {
+      "videoId": "V_VsRe015pU",
+      "title": "Warrior 2 Tutorial - Proper Alignment in Warrior 2",
+      "channel": "Yoga with Kassandra",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=V_VsRe015pU",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/V_VsRe015pU"
+    },
+    "exercise:cobra": {
+      "videoId": "k48O2CxvZ3o",
+      "title": "Cobra Workout Tutorial | Cobra Pose How-To For Beginners| Workout At Home With Body By Yoga",
+      "channel": "Body By Yoga",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=k48O2CxvZ3o",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/k48O2CxvZ3o"
+    },
+    "exercise:tree_pose": {
+      "videoId": "_u3NOB8pZf8",
+      "title": "How to Do the Tree Pose Properly | Balance Exercise",
+      "channel": "Your Health Videos",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=_u3NOB8pZf8",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/_u3NOB8pZf8"
+    },
+    "exercise:sun_salutation": {
+      "videoId": "1xRX1MuoImw",
+      "title": "STEP BY STEP SURYA NAMASKAR FOR BEGINNERS | Learn Sun Salutation In 3 Minutes| Simple Yoga Lessons",
+      "channel": "Mind Body Soul",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=1xRX1MuoImw",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/1xRX1MuoImw"
+    },
+    "exercise:pilates_hundred": {
+      "videoId": "UaqpuUzs1i8",
+      "title": "How to Do The Hundred | Pilates Workout",
+      "channel": "Howcast",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=UaqpuUzs1i8",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/UaqpuUzs1i8"
+    },
+    "exercise:single_leg_stretch": {
+      "videoId": "woYtwok_YUQ",
+      "title": "Single Leg Stretch - Pilates",
+      "channel": "intosport",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=woYtwok_YUQ",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/woYtwok_YUQ"
+    },
+    "exercise:roll_up": {
+      "videoId": "PGnibcCcAUE",
+      "title": "How to do a Pilates Roll Up | The Right Way | Well+Good",
+      "channel": "Well+Good",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=PGnibcCcAUE",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/PGnibcCcAUE"
+    },
+    "exercise:side_leg_lift": {
+      "videoId": "pNismoYr1Fg",
+      "title": "Pelvic health education Side lying leg lift",
+      "channel": "Sheffield Teaching Hospitals NHS Foundation Trust",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=pNismoYr1Fg",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/pNismoYr1Fg"
+    },
+    "exercise:pilates_swim": {
+      "videoId": "cao5EZuaOzg",
+      "title": "Pilates Mat Swimming Exercise",
+      "channel": "Aligned Pilates",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=cao5EZuaOzg",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/cao5EZuaOzg"
+    },
+    "exercise:single_leg_stand": {
+      "videoId": "7SF7AYh2_Yw",
+      "title": "Single Leg Balance Exercise",
+      "channel": "Coury & Buehler Physical Therapy",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=7SF7AYh2_Yw",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/7SF7AYh2_Yw"
+    },
+    "exercise:heel_toe_walk": {
+      "videoId": "z_GKdFf3qv4",
+      "title": "Heel-to-Toe Walk Balance Exercise for Older Adults",
+      "channel": "National Institute on Aging",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=z_GKdFf3qv4",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/z_GKdFf3qv4"
+    },
+    "exercise:clock_reach": {
+      "videoId": "-l8SJZf2I5M",
+      "title": "CLOCK REACH",
+      "channel": "Jake Blackmer",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=-l8SJZf2I5M",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/-l8SJZf2I5M"
+    },
+    "exercise:side_plank": {
+      "videoId": "NXr4Fw8q60o",
+      "title": "How to Do a Side Plank | Ab Workout",
+      "channel": "Howcast",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=NXr4Fw8q60o",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/NXr4Fw8q60o"
+    },
+    "exercise:bird_dog": {
+      "videoId": "QABW99qPiNM",
+      "title": "Bird Dog Exercise | Improve Your Core and Balance",
+      "channel": "Muscle & Motion",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=QABW99qPiNM",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/QABW99qPiNM"
+    },
+    "exercise:seated_march": {
+      "videoId": "xxf93bq9-vA",
+      "title": "Seated March",
+      "channel": "Institute of Sports and Spines",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=xxf93bq9-vA",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/xxf93bq9-vA"
+    },
+    "exercise:seated_leg_extension": {
+      "videoId": "OFgG6OjiT4Q",
+      "title": "Seated Leg Extension",
+      "channel": "UCF Recreation and Wellness Center",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=OFgG6OjiT4Q",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/OFgG6OjiT4Q"
+    },
+    "exercise:seated_arm_circles": {
+      "videoId": "UVMEnIaY8aU",
+      "title": "Arm Circles Exercise",
+      "channel": "Sworkit",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=UVMEnIaY8aU",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/UVMEnIaY8aU"
+    },
+    "exercise:hamstring_stretch": {
+      "videoId": "T_l0AyZywjU",
+      "title": "How to do a hamstring stretch | Bupa Health",
+      "channel": "Bupa Health",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=T_l0AyZywjU",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/T_l0AyZywjU"
+    },
+    "exercise:chest_stretch": {
+      "videoId": "B9uY01NoqBg",
+      "title": "Doorway Stretch",
+      "channel": "Baptist Health",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=B9uY01NoqBg",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/B9uY01NoqBg"
+    },
+    "exercise:band_pull_apart": {
+      "videoId": "stwYTTPXubo",
+      "title": "How To Do Banded Pull-Aparts",
+      "channel": "Tangelo - Seattle Chiropractor + Rehab",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=stwYTTPXubo",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/stwYTTPXubo"
+    },
+    "exercise:calf_stretch": {
+      "videoId": "trC42QD0wQI",
+      "title": "Calf Stretch",
+      "channel": "Sheffield Teaching Hospitals NHS Foundation Trust",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=trC42QD0wQI",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/trC42QD0wQI"
+    },
+    "exercise:squat_bw": {
+      "videoId": "eWatHIujxPM",
+      "title": "How to Do a Bodyweight Squat (Perfect Form + Common Mistakes)",
+      "channel": "Over The Hill Athlete",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=eWatHIujxPM",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/eWatHIujxPM"
+    },
+    "exercise:pushup": {
+      "videoId": "zF0jbubK_jU",
+      "title": "How To Do A Push-Up: Proper Form & Technique",
+      "channel": "BuiltLean",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=zF0jbubK_jU",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/zF0jbubK_jU"
+    },
+    "exercise:glute_bridge": {
+      "videoId": "OUgsJ8-Vi0E",
+      "title": "How to Perform the Perfect Glute Bridge",
+      "channel": "Airrosti Rehab Centers",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=OUgsJ8-Vi0E",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/OUgsJ8-Vi0E"
+    },
+    "exercise:plank": {
+      "videoId": "mwlp75MS6Rg",
+      "title": "How to do a Plank | Proper Form & Technique",
+      "channel": "NASM",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=mwlp75MS6Rg",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/mwlp75MS6Rg"
+    },
+    "exercise:cycling": {
+      "videoId": "gWosN1CY4bg",
+      "title": "Zero Healthcare™ Fitness Tips At Home | How To Use A Spin Bike Correctly",
+      "channel": "Zero Healthcare_Official",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=gWosN1CY4bg",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/gWosN1CY4bg"
+    },
+    "exercise:child_pose": {
+      "videoId": "YAmAET3Uomk",
+      "title": "How to do: CHILD'S POSE (BALASANA) #yoga #yogapose #yogatutorials #yogatutorial #yogaforbeginners",
+      "channel": "Karina Fit",
+      "category": "exercise",
+      "url": "https://www.youtube.com/watch?v=YAmAET3Uomk",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/YAmAET3Uomk"
+    },
+    "task:values_reflection": {
+      "videoId": "oZQO0kMdzPU",
+      "title": "How To Identify Your Core Values: Acceptance and Commitment Therapy (ACT)",
+      "channel": "The ACT Therapist",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=oZQO0kMdzPU",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/oZQO0kMdzPU"
+    },
+    "task:sleep_wind_down_plan": {
+      "videoId": "p3EJuBxEjt0",
+      "title": "8 Minute Evening Yoga - Wind Down & Chill Out Yoga",
+      "channel": "Yoga with Kassandra",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=p3EJuBxEjt0",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/p3EJuBxEjt0"
+    },
+    "task:nutrition_label_lesson": {
+      "videoId": "R-o-83k8dP0",
+      "title": "10 Rules For Reading a Food Label",
+      "channel": "Doctablet",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=R-o-83k8dP0",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/R-o-83k8dP0"
+    },
+    "task:waist_measurement_record": {
+      "videoId": "dwk8sVCKuio",
+      "title": "How to measure your waist | NHS",
+      "channel": "NHS",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=dwk8sVCKuio",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/dwk8sVCKuio"
+    },
+    "task:blood_pressure_record": {
+      "videoId": "g7kjjhK5jcU",
+      "title": "The Right Way to Check Your Blood Pressure at Home | A Doctor Explains",
+      "channel": "The Cooking Doc",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=g7kjjhK5jcU",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/g7kjjhK5jcU"
+    },
+    "task:oral_health_knowledge": {
+      "videoId": "5J89gCDt_rk",
+      "title": "The Perfect Oral Health Care Routine (3 easy steps in order)",
+      "channel": "Teeth Talk Girl",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=5J89gCDt_rk",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/5J89gCDt_rk"
+    },
+    "task:skin_routine_plan": {
+      "videoId": "gzdCax46puk",
+      "title": "Simple Skincare Routine For Beginners |  Product recommendations | Tvacha ke doctor ka sujhav",
+      "channel": "Dr. Aanchal MD",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=gzdCax46puk",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/gzdCax46puk"
+    },
+    "task:grooming_routine_choice": {
+      "videoId": "U-kKKZATK70",
+      "title": "The Ultimate Grooming Routine For Every Man",
+      "channel": "Brandon Balfour",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=U-kKKZATK70",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/U-kKKZATK70"
+    },
+    "task:body_neutrality_reflection": {
+      "videoId": "dO2hX1dVYNo",
+      "title": "Body Positivity and Body Neutrality: Tips for a Healthy Mindset",
+      "channel": "Tahoe Forest Health System",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=dO2hX1dVYNo",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/dO2hX1dVYNo"
+    },
+    "task:grounding_exercise": {
+      "videoId": "30VMIEmA114",
+      "title": "The 5-4-3-2-1 Method: A Grounding Exercise to Manage Anxiety",
+      "channel": "The Partnership In Education",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=30VMIEmA114",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/30VMIEmA114"
+    },
+    "task:creative_practice": {
+      "videoId": "GBSB4pZHEeI",
+      "title": "Artists: Top Tips To Developing Your Creative Practice",
+      "channel": "Sophie Mahir",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=GBSB4pZHEeI",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/GBSB4pZHEeI"
+    },
+    "task:medication_list_review": {
+      "videoId": "n1ZS8b5upRQ",
+      "title": "If You're Over 60, A Medical Educator Explains Your Medicine List",
+      "channel": "Lab Salud",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=n1ZS8b5upRQ",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/n1ZS8b5upRQ"
+    },
+    "task:consent_boundaries_lesson": {
+      "videoId": "eljGlVYwpqI",
+      "title": "Teach Us: What 'no' looks like and how to practice consent",
+      "channel": "Teach Us Consent",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=eljGlVYwpqI",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/eljGlVYwpqI"
+    },
+    "task:relationship_communication_reflection": {
+      "videoId": "VPDCo4s_EjM",
+      "title": "Relationship Tips: relationship reflection activities and more!",
+      "channel": "Relationship Educator",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=VPDCo4s_EjM",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/VPDCo4s_EjM"
+    },
+    "task:adult_sexual_health_knowledge_review": {
+      "videoId": "0N2v2B189hc",
+      "title": "What Happens At A Sexual Health Clinic? | NEED to Watch Before Visiting Allo Sexual Health Clinic",
+      "channel": "Allo Health",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=0N2v2B189hc",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/0N2v2B189hc"
+    },
+    "task:personal_care_inventory": {
+      "videoId": "KtCEhmJ9wiQ",
+      "title": "The Only Skincare Products You Actually Need",
+      "channel": "Brandon Balfour",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=KtCEhmJ9wiQ",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/KtCEhmJ9wiQ"
+    },
+    "task:bone_health_lesson": {
+      "videoId": "a73fCJCN0Nk",
+      "title": "Bone Health: the geriatrician's approach - Bite sized learning from the MDTea Help! Series",
+      "channel": "Hearing Aid Podcasts",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=a73fCJCN0Nk",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/a73fCJCN0Nk"
+    },
+    "task:daily_energy_checkin": {
+      "videoId": "FmGdFnZnal0",
+      "title": "Energy Efficiency Video Application",
+      "channel": "Portal ST",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=FmGdFnZnal0",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/FmGdFnZnal0"
+    },
+    "task:goal_define_one": {
+      "videoId": "lHZ54TBXbiI",
+      "title": "Achieve Any Goal With These 7 Simple Steps • Brian Tracy",
+      "channel": "GrindBuddy",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=lHZ54TBXbiI",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/lHZ54TBXbiI"
+    },
+    "task:plan_tomorrow_three": {
+      "videoId": "aD7Upt5dVQo",
+      "title": "Priority Echo Method: A 3-Pass Daily Planner for Focused Momentum",
+      "channel": "Task Mastery Channel",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=aD7Upt5dVQo",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/aD7Upt5dVQo"
+    },
+    "task:habit_design": {
+      "videoId": "9E2SdLD3Kpc",
+      "title": "30 Habits That (Quietly) Changed My Life Forever",
+      "channel": "RelentX",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=9E2SdLD3Kpc",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/9E2SdLD3Kpc"
+    },
+    "task:weekly_review": {
+      "videoId": "GCK17S4XpEU",
+      "title": "Wispr Flow Review & Tutorial: Beginner's Guide, Live Demo, and Pro Tips! | Top AI Dictation Tools",
+      "channel": "Samantha Kasbrick | Systems & Operations",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=GCK17S4XpEU",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/GCK17S4XpEU"
+    },
+    "task:habit_barrier_plan": {
+      "videoId": "LLZ2F-XIEsg",
+      "title": "Ashampoo Backup Pro 28 Tutorial – Create a Backup Plan & Set Up Real-Time Backup",
+      "channel": "Ashampoo",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=LLZ2F-XIEsg",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/LLZ2F-XIEsg"
+    },
+    "task:focus_session": {
+      "videoId": "oQZm8daaN3s",
+      "title": "The Flowtime Technique",
+      "channel": "Gohar Khan",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=oQZm8daaN3s",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/oQZm8daaN3s"
+    },
+    "task:learning_micro_lesson": {
+      "videoId": "FJc3O6oEqWI",
+      "title": "How to Create Lesson Plans with AI tool Edcafe AI",
+      "channel": "ClassPoint",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=FJc3O6oEqWI",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/FJc3O6oEqWI"
+    },
+    "task:sleep_log": {
+      "videoId": "i5NTULguqs8",
+      "title": "Apple Watch Sleep Tracking Setup Guide & Tutorial",
+      "channel": "CPAP Reviews",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=i5NTULguqs8",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/i5NTULguqs8"
+    },
+    "task:learning_knowledge_check": {
+      "videoId": "YZKQDyRW5Kc",
+      "title": "Cyber Awareness Challenge 2026 | Latest Knowledge Check Practice Questions & Answers",
+      "channel": "onlineexamprep",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=YZKQDyRW5Kc",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/YZKQDyRW5Kc"
+    },
+    "task:sleep_environment_check": {
+      "videoId": "vVn2UP0_vcc",
+      "title": "Stop using humidifiers! #shorts #doctor #humidifier",
+      "channel": "drtaniaelliott",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=vVn2UP0_vcc",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/vVn2UP0_vcc"
+    },
+    "task:recovery_checkin": {
+      "videoId": "FHBsNevP_ws",
+      "title": "What is Disaster Recovery? | Simple Explanation & Importance for your business",
+      "channel": "DevOps Mind",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=FHBsNevP_ws",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/FHBsNevP_ws"
+    },
+    "task:movement_break": {
+      "videoId": "2Q68rduETt0",
+      "title": "How to breakdance | The basic 6-Step move #breakdance #dancetutorial",
+      "channel": "DJ Raphi",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=2Q68rduETt0",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/2Q68rduETt0"
+    },
+    "task:mobility_routine": {
+      "videoId": "lTe6GFTieP8",
+      "title": "Full Mobility Routine - 5 Mobility Exercises must do everyday #calisthenics #mobility #shorts #yoga",
+      "channel": "Mohit Sharma",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=lTe6GFTieP8",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/lTe6GFTieP8"
+    },
+    "task:strength_session_record": {
+      "videoId": "e570BTaXdlA",
+      "title": "HOW TO RECORD A STRENGTH SESSION | GARMIN",
+      "channel": "TRIAX Performance",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=e570BTaXdlA",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/e570BTaXdlA"
+    },
+    "task:personality_workstyle_reflection": {
+      "videoId": "fLhyr5MGi2g",
+      "title": "Google My Maps Tutorial",
+      "channel": "Technology for Teachers and Students",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=fLhyr5MGi2g",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/fLhyr5MGi2g"
+    },
+    "task:activity_week_plan": {
+      "videoId": "ESZ7PZU9yZI",
+      "title": "How to Plan Your Week in 30 Minutes",
+      "channel": "WiseBits",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=ESZ7PZU9yZI",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/ESZ7PZU9yZI"
+    },
+    "task:walk_or_wheel_log": {
+      "videoId": "Nj6f0BzbB0Q",
+      "title": "Why Walking Is So Powerful for Mental Health#mentalhealth #walking #wellbeing #wellness",
+      "channel": "Rebuilt Wellbeing",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=Nj6f0BzbB0Q",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/Nj6f0BzbB0Q"
+    },
+    "task:balance_safety_plan": {
+      "videoId": "5xs4qosqcQ4",
+      "title": "How To Turn On Enhanced Protection in Chrome 💯 || Google Safe Browsing ||#shorts#viral",
+      "channel": " TECH ARNIT ",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=5xs4qosqcQ4",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/5xs4qosqcQ4"
+    },
+    "task:food_preferences_setup": {
+      "videoId": "R04sq4U9o0g",
+      "title": "Want better food videos? Try these shots 😎🥰 #cookingvideo #tutorial #videotips #contentideas #yt",
+      "channel": "Swati Dwivedi",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=R04sq4U9o0g",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/R04sq4U9o0g"
+    },
+    "task:cultural_faith_meal_preferences": {
+      "videoId": "GgowiHahpSY",
+      "title": "Nutrition 11: How Culture and Religion Shape Our Food Choices",
+      "channel": "RN Toolkit",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=GgowiHahpSY",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/GgowiHahpSY"
+    },
+    "task:food_restrictions_review": {
+      "videoId": "Eq8v4OxVYWc",
+      "title": "ServSafe 2026 Food Safety Manager Certification Practice Test and Full Exam Study Guide",
+      "channel": "exam practice and quizzes",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=Eq8v4OxVYWc",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/Eq8v4OxVYWc"
+    },
+    "task:balanced_meal_plan": {
+      "videoId": "iTsDycQN-zQ",
+      "title": "Step-By-Step INDIAN Diet Guide | Doctor Explains 💯",
+      "channel": "Dr Umesh Wadhavani",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=iTsDycQN-zQ",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/iTsDycQN-zQ"
+    },
+    "task:plant_protein_plan": {
+      "videoId": "ogzn4NZcgAc",
+      "title": "Protein Guide ft. Sonia Narang",
+      "channel": "Sonia Narang",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=ogzn4NZcgAc",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/ogzn4NZcgAc"
+    },
+    "task:meal_reflection": {
+      "videoId": "UQf9zqyf3Uo",
+      "title": "4 Essential things for Shooting Cooking videos with your phone l Create High Quality Content",
+      "channel": "India eating Habits",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=UQf9zqyf3Uo",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/UQf9zqyf3Uo"
+    },
+    "task:grocery_list_plan": {
+      "videoId": "3cz9LitAj9c",
+      "title": "How to make Grocery list | Grocery List I grocery listing for beginners",
+      "channel": "Easy Hub",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=3cz9LitAj9c",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/3cz9LitAj9c"
+    },
+    "task:weight_record": {
+      "videoId": "l3MZyLA2rDg",
+      "title": "How to Calculate Your Goal Body Weight (Response to Jordan Syatt's Calorie Calculator)",
+      "channel": "Hunter Grindle Fitness",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=l3MZyLA2rDg",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/l3MZyLA2rDg"
+    },
+    "task:bmi_screening_explainer": {
+      "videoId": "t9e46CV_pyM",
+      "title": "BMI Calculation Formula: How to Calculate Body Mass Index | Nursing Calculations Math NCLEX",
+      "channel": "RegisteredNurseRN",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=t9e46CV_pyM",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/t9e46CV_pyM"
+    },
+    "task:height_record": {
+      "videoId": "NMALMm6CJeY",
+      "title": "PC Quick tips - Take Screenshot- 🔴 Record Screen  #windows",
+      "channel": "Smart Graphics",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=NMALMm6CJeY",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/NMALMm6CJeY"
+    },
+    "task:resting_pulse_record": {
+      "videoId": "XpFVuPwbMso",
+      "title": "06 Counts Radial Pulse",
+      "channel": "sbcccna",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=XpFVuPwbMso",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/XpFVuPwbMso"
+    },
+    "task:hydration_habit_reflection": {
+      "videoId": "hlE2uL3m6W0",
+      "title": "6 Easy Habits to Elevate Your Mental Wellness",
+      "channel": "RESPIRE",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=hlE2uL3m6W0",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/hlE2uL3m6W0"
+    },
+    "task:dental_visit_prepare": {
+      "videoId": "gGSLwp6UVbo",
+      "title": "Mock Exam Questions for the Dental Hygiene/Assisting Board Exams - How to Prepare!",
+      "channel": "Dentalelle with Andrea",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=gGSLwp6UVbo",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/gGSLwp6UVbo"
+    },
+    "task:body_composition_record": {
+      "videoId": "g5bgGzWMKh8",
+      "title": "Body Composition Analysis: Sirf Weight Nahi, Body Ko Samajhna Bhi Zaroori Hai!",
+      "channel": "Dr Gaurav Chawla",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=g5bgGzWMKh8",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/g5bgGzWMKh8"
+    },
+    "task:oral_care_routine_log": {
+      "videoId": "UiOQnoOTZRQ",
+      "title": "What Order Should I Brush, Floss and Mouthwash?",
+      "channel": "Advanced Dental Artistry",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=UiOQnoOTZRQ",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/UiOQnoOTZRQ"
+    },
+    "task:bone_density_record": {
+      "videoId": "_BkH-fPwTyc",
+      "title": "Bone Density (DEXA) Scan: What to Expect Step by Step",
+      "channel": "Center for Diagnostic Imaging",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=_BkH-fPwTyc",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/_BkH-fPwTyc"
+    },
+    "task:sun_protection_plan": {
+      "videoId": "h9GauZwy_PM",
+      "title": "Applying SPF under LED-UV Light | Dr. Medispa",
+      "channel": "Dr. Somji Skin",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=h9GauZwy_PM",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/h9GauZwy_PM"
+    },
+    "task:ergonomic_setup": {
+      "videoId": "F8_ME4VwTiw",
+      "title": "Ergonomics Expert Explains How to Set Up Your Desk | WSJ Pro Tip",
+      "channel": "The Wall Street Journal",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=F8_ME4VwTiw",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/F8_ME4VwTiw"
+    },
+    "task:appearance_confidence_goal": {
+      "videoId": "GBv9UbZbsWs",
+      "title": "This Claude Prompt Creates PERFECT PPTs in 3 Minutes",
+      "channel": "WallStreetMojo",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=GBv9UbZbsWs",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/GBv9UbZbsWs"
+    },
+    "task:stress_trigger_reflection": {
+      "videoId": "5gnvGMp_QFg",
+      "title": "Stress, Social Support, & The Faith Factor (Intro Psych Tutorial #219)",
+      "channel": "PsychExamReview",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=5gnvGMp_QFg",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/5gnvGMp_QFg"
+    },
+    "task:support_contact_plan": {
+      "videoId": "2m5GNu04JII",
+      "title": "Master The Support and Resistance Trading Strategy: ALL YOU NEED TO KNOW!",
+      "channel": "Hash Forex ",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=2m5GNu04JII",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/2m5GNu04JII"
+    },
+    "task:communication_boundary_plan": {
+      "videoId": "dXvlwXMNbXI",
+      "title": "Boundaries: Why You Need Them & How to Set Them",
+      "channel": "The Holistic Psychologist",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=dXvlwXMNbXI",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/dXvlwXMNbXI"
+    },
+    "task:social_connection_reflection": {
+      "videoId": "D_hcYp7Wn1Y",
+      "title": "Action Guide Webinar",
+      "channel": "Foundation for Social Connection",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=D_hcYp7Wn1Y",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/D_hcYp7Wn1Y"
+    },
+    "task:emotion_label_checkin": {
+      "videoId": "zoCiHlFjo04",
+      "title": "Name It to Tame It: How to Process Emotions 1/30",
+      "channel": "Therapy in a Nutshell",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=zoCiHlFjo04",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/zoCiHlFjo04"
+    },
+    "task:personality_preference_review": {
+      "videoId": "TGOQShqfaOA",
+      "title": "How To Coach (by asking questions) | Coaching Leaders | Winning By Design",
+      "channel": "Winning by Design",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=TGOQShqfaOA",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/TGOQShqfaOA"
+    },
+    "task:faith_observance_planner": {
+      "videoId": "YAfvvxwfVZE",
+      "title": "How to fill in the \"Reflections\" Section - Using Templates for ESL Lesson Planning (Part 12)",
+      "channel": "Citizens of Hope",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=YAfvvxwfVZE",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/YAfvvxwfVZE"
+    },
+    "task:personal_decision_matrix": {
+      "videoId": "s3ZAPZXOU1A",
+      "title": "The 6 Steps To Making Confident Decisions",
+      "channel": "Tony Robbins",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=s3ZAPZXOU1A",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/s3ZAPZXOU1A"
+    },
+    "task:appointment_question_prep": {
+      "videoId": "pGfH0OauAvQ",
+      "title": "Healthcare Interview Questions and Answers",
+      "channel": "Knowledge Topper",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=pGfH0OauAvQ",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/pGfH0OauAvQ"
+    },
+    "task:preventive_care_plan": {
+      "videoId": "ESwdQfBlujE",
+      "title": "Guidelines for Medicare Annual Wellness Preventive Services Explained with practice Questions #cpc",
+      "channel": "Medical Coding Club",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=ESwdQfBlujE",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/ESwdQfBlujE"
+    },
+    "task:health_record_literacy": {
+      "videoId": "HoWvf76JdX8",
+      "title": "EHR Systems 101: Simple Guide to Electronic Health Records for Beginners #ElectronicHealthRecords",
+      "channel": "Healthcare Information Technology",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=HoWvf76JdX8",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/HoWvf76JdX8"
+    },
+    "task:sexual_health_knowledge": {
+      "videoId": "iVyRKkYGCgk",
+      "title": "Journey to Conception: Functions of the Female Reproductive System Explained",
+      "channel": "Medical Animation Media",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=iVyRKkYGCgk",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/iVyRKkYGCgk"
+    },
+    "task:reproductive_tracking_optin_review": {
+      "videoId": "BwyBWXjrU88",
+      "title": "Bloom period tracker #PeriodTracking #BloomAI",
+      "channel": "Mokora",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=BwyBWXjrU88",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/BwyBWXjrU88"
+    },
+    "task:symptom_log": {
+      "videoId": "F6NeSeGYOJQ",
+      "title": "Whatsapp Primary Controls For Parents || Whatsapp parental control | Whatsapp New Update #shorts",
+      "channel": "Tech Babo Vai",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=F6NeSeGYOJQ",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/F6NeSeGYOJQ"
+    },
+    "task:environment_reset": {
+      "videoId": "3TwbE7gv6qo",
+      "title": "Learn 99% Of Claude Code in One Video",
+      "channel": "Tech With Tim",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=3TwbE7gv6qo",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/3TwbE7gv6qo"
+    },
+    "task:clinical_followup_question": {
+      "videoId": "TL2CHIrPblA",
+      "title": "How to write a health research questionnaire",
+      "channel": "Amer Al-Jawabreh",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=TL2CHIrPblA",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/TL2CHIrPblA"
+    },
+    "task:calendar_review": {
+      "videoId": "kqTL7Gr5oFg",
+      "title": "How to Use Google Calendar Effectively | Full Tutorial",
+      "channel": "Anson Alexander",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=kqTL7Gr5oFg",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/kqTL7Gr5oFg"
+    },
+    "task:weekly_food_budget": {
+      "videoId": "5kvbMWVz1cY",
+      "title": "How I Plan a Month of Dinners in Just 1 Hour!",
+      "channel": "Food Prep Guide",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=5kvbMWVz1cY",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/5kvbMWVz1cY"
+    },
+    "task:money_routine_review": {
+      "videoId": "yNaN5kYTNLY",
+      "title": "AAPKE 20s ke liye COMPLETE FINANCIAL PLANNING! | Investing for Beginners 2021 | Ankur Warikoo Hindi",
+      "channel": "warikoo",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=yNaN5kYTNLY",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/yNaN5kYTNLY"
+    },
+    "task:rest_and_boundaries_plan": {
+      "videoId": "yhcD6U5UAQM",
+      "title": "How to Make Wooden Windows Look Realistic in Minecraft",
+      "channel": "Nightfxll",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=yhcD6U5UAQM",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/yhcD6U5UAQM"
+    },
+    "task:body_measurement_context": {
+      "videoId": "9M_LYmjdhKU",
+      "title": "How to Take Your Own Body Measurements | Self-Measurement Guide",
+      "channel": "LisbethPosh",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=9M_LYmjdhKU",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/9M_LYmjdhKU"
+    },
+    "task:weekly_goal_adjustment": {
+      "videoId": "dMh_THfSkxM",
+      "title": "How To Set & Achieve Your Goals",
+      "channel": "Saurabh Gandhi",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=dMh_THfSkxM",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/dMh_THfSkxM"
+    },
+    "task:sleep_support_question": {
+      "videoId": "pyLULgL6YFI",
+      "title": "Neuroscientist: How To Reset Your Sleeping Schedule | Andrew Huberman #neuroscience #shorts #sleep",
+      "channel": "Pure Plate",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=pyLULgL6YFI",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/pyLULgL6YFI"
+    },
+    "task:body_comfort_checkin": {
+      "videoId": "xTaUvknBjZU",
+      "title": "Excel for HR Full Course Tutorial",
+      "channel": "Learn Skills Daily",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=xTaUvknBjZU",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/xTaUvknBjZU"
+    },
+    "task:personal_learning_path": {
+      "videoId": "NTxBP4bFrBA",
+      "title": "Find Your skill in 7minute in 2025",
+      "channel": "Vishal Sharma",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=NTxBP4bFrBA",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/NTxBP4bFrBA"
+    },
+    "task:health_source_check": {
+      "videoId": "bM9e2EPUg0g",
+      "title": "Health Insurance Claims Adjudication",
+      "channel": "AHealthcareZ - Healthcare Finance Explained",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=bM9e2EPUg0g",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/bM9e2EPUg0g"
+    },
+    "task:social_media_boundary": {
+      "videoId": "3yZd6cXWcxU",
+      "title": "Set Digital Boundaries",
+      "channel": "The Source File",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=3yZd6cXWcxU",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/3yZd6cXWcxU"
+    },
+    "task:values_and_food_review": {
+      "videoId": "Lwaubw-c6XQ",
+      "title": "How to Use My Perfect Menu | My Perfect Meals Step-by-Step Tutorial",
+      "channel": "My Perfect Meals",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=Lwaubw-c6XQ",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/Lwaubw-c6XQ"
+    },
+    "task:pain_function_note": {
+      "videoId": "3-JgLyhZVhg",
+      "title": "How to TAKE NOTES during a LECTURE 📝⚡️ #studytips #collegelife #studysmart",
+      "channel": "studiedwithme",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=3-JgLyhZVhg",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/3-JgLyhZVhg"
+    },
+    "task:screen_break_plan": {
+      "videoId": "x0-Urx3OCJU",
+      "title": "How to Reduce Your Screen Time",
+      "channel": "Gohar Khan",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=x0-Urx3OCJU",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/x0-Urx3OCJU"
+    },
+    "task:hearing_protection_plan": {
+      "videoId": "IUAssEF1Lhc",
+      "title": "10 Hearing Hacks That Work in Noisy Situations",
+      "channel": "Pro Fit Hearing",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=IUAssEF1Lhc",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/IUAssEF1Lhc"
+    },
+    "task:ai_provider_privacy_setup": {
+      "videoId": "dEwd8SaJVSs",
+      "title": "AI Privacy Explained: Where Your Prompts Go",
+      "channel": "ECONFLUENCY",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=dEwd8SaJVSs",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/dEwd8SaJVSs"
+    },
+    "task:ai_byok_connect_and_test": {
+      "videoId": "jZS62g8ik2c",
+      "title": "The Local-First AI Workspace Setup: Bring Your Own Keys (BYOK) Guide",
+      "channel": "Tensor Pilot",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=jZS62g8ik2c",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/jZS62g8ik2c"
+    },
+    "task:ai_review_personal_goal_with_rubric": {
+      "videoId": "m7GqrPRLwlI",
+      "title": "Set Goals in Muse AI: Turn Plans Into Progress (Tutorial)",
+      "channel": "Rank with Haris",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=m7GqrPRLwlI",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/m7GqrPRLwlI"
+    },
+    "task:ai_fact_check_response_sources": {
+      "videoId": "9Vsf5dZiNNA",
+      "title": "AI Research With Sources: Current Answers You Can Actually Check",
+      "channel": "vDesktop",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=9Vsf5dZiNNA",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/9Vsf5dZiNNA"
+    },
+    "task:open_letter_create_private_draft": {
+      "videoId": "QTB8H6Gg2bc",
+      "title": "Formal letter writing | Write letter to the editor about social issues |formal letter writing format",
+      "channel": "Learn Easily by Sandhya Wagh",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=QTB8H6Gg2bc",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/QTB8H6Gg2bc"
+    },
+    "task:ai_response_privacy_audit": {
+      "videoId": "9rPxE5_rlRI",
+      "title": "AI Evaluation Explained: How to Compare Two AI Answers",
+      "channel": "Earn With Loki",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=9rPxE5_rlRI",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/9rPxE5_rlRI"
+    },
+    "task:open_letter_share_or_keep_private": {
+      "videoId": "v0KB130rVko",
+      "title": "Before you write an open letter, make sure it meets this criteria | Debra Mashek |  Big Think",
+      "channel": "Big Think",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=v0KB130rVko",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/v0KB130rVko"
+    },
+    "task:media_permission_minimum_access": {
+      "videoId": "meXQl0bnL9M",
+      "title": "Vivo Me Screen Capture Protection Kaise Enable Kare | How To On Screen Capture Protection In Vivo |",
+      "channel": "Ram Ki Tech",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=meXQl0bnL9M",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/meXQl0bnL9M"
+    },
+    "task:ai_prompt_privacy_check": {
+      "videoId": "KxQ7jIEMylE",
+      "title": "5 Small Habits for Better Mental Wellness 💜 #shorts",
+      "channel": "The Horizon Behavioral Health",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=KxQ7jIEMylE",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/KxQ7jIEMylE"
+    },
+    "task:address_and_home_privacy_review": {
+      "videoId": "nAY8qOFEv0E",
+      "title": "How to Hide Your Home Address (build privacy with these 3 steps)",
+      "channel": "All Things Secured",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=nAY8qOFEv0E",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/nAY8qOFEv0E"
+    },
+    "task:attach_one_selected_private_photo": {
+      "videoId": "q41P4Yv2AyQ",
+      "title": "my junk journal intro page 💌🫶🏻✂️✨#junkjournal #journaling #hobby #scrapbooking",
+      "channel": "Carter Sullivan",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=q41P4Yv2AyQ",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/q41P4Yv2AyQ"
+    },
+    "task:family_media_consent_review": {
+      "videoId": "VhCBekU-7K0",
+      "title": "Permission manager allow and deny app permission#shorts",
+      "channel": "Setting technology 1.3M",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=VhCBekU-7K0",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/VhCBekU-7K0"
+    },
+    "task:ai_key_rotation_or_removal": {
+      "videoId": "ZkTvw3usMw4",
+      "title": "Artificial Intelligence Meets Mental Health Therapy | Andy Blackwell | TEDxNatick",
+      "channel": "TEDx Talks",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=ZkTvw3usMw4",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/ZkTvw3usMw4"
+    },
+    "task:screenshot_redaction_practice": {
+      "videoId": "UimPV7g42MM",
+      "title": "#windowscreenshot How to take a screenshot on Windows using Snagit App",
+      "channel": "How-To Authority",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=UimPV7g42MM",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/UimPV7g42MM"
+    },
+    "task:trusted_contact_privacy_review": {
+      "videoId": "cjHGlHx58vk",
+      "title": "🔐 WhatsApp Privacy Check | How to Review & Manage Privacy Settings in WhatsApp | Tech Zone #shorts",
+      "channel": "Tech Zone",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=cjHGlHx58vk",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/cjHGlHx58vk"
+    },
+    "task:care_for_a_plant_or_garden": {
+      "videoId": "L6SGoqoEt8A",
+      "title": "This Tiny Pot Is Growing SO MUCH GARLIC?! 😱🧄🌱 #shorts #viral #trending",
+      "channel": "Mr Yousaf",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=L6SGoqoEt8A",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/L6SGoqoEt8A"
+    },
+    "task:try_one_new_recipe": {
+      "videoId": "yzDAApWOgYg",
+      "title": "Cooking basics for Newbies Part 10",
+      "channel": "ChefRonCooks",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=yzDAApWOgYg",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/yzDAApWOgYg"
+    },
+    "task:choose_a_personal_values_practice": {
+      "videoId": "vBOty22hHzE",
+      "title": "What is a Spiritual Practice? (5 Examples of Spiritual Practice)",
+      "channel": "Intuitive Karen Bell",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=vBOty22hHzE",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/vBOty22hHzE"
+    },
+    "task:take_a_self_chosen_solo_outing": {
+      "videoId": "khDheA0UIU4",
+      "title": "\"Today's Activity-A solo trip\"✨ #day15 #shorts #adayinmylife #viral #shortsvideo #vlogchallenge",
+      "channel": "POV Homemaking with Marju",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=khDheA0UIU4",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/khDheA0UIU4"
+    },
+    "task:plan_a_low_pressure_date_or_meetup": {
+      "videoId": "EVJMe3KoznA",
+      "title": "How to Host a Meetup: Step-by-Step Guide and Networking Events for First-Time Hosts",
+      "channel": "Nick Gray",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=EVJMe3KoznA",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/EVJMe3KoznA"
+    },
+    "task:practice_respectful_flirting_and_consent": {
+      "videoId": "MEEMEUgvJzo",
+      "title": "How to Flirt Without Feeling Awkward",
+      "channel": "School of Sensuality",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=MEEMEUgvJzo",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/MEEMEUgvJzo"
+    },
+    "task:adult_private_intimacy_journal_setup": {
+      "videoId": "xnaHjx5Tpag",
+      "title": "10 Ways to Keep Your Journal Private (Even in Your Own Home)",
+      "channel": "Chic Sparrow",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=xnaHjx5Tpag",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/xnaHjx5Tpag"
+    },
+    "task:pose_landmarker_camera_setup": {
+      "videoId": "71cjM_u_QyM",
+      "title": "Checks and Logs | Practice Hub walkthrough #Shorts",
+      "channel": "Dentistry Dashboard",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=71cjM_u_QyM",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/71cjM_u_QyM"
+    },
+    "task:attend_a_user_chosen_social_event": {
+      "videoId": "TiD8SyGo79w",
+      "title": "If you’re planning to join a modelling agency, these are the steps you need to follow.✨ #model",
+      "channel": "Shaswati Bala",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=TiD8SyGo79w",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/TiD8SyGo79w"
+    },
+    "task:pose_landmark_movement_checkpoint": {
+      "videoId": "WPn8n65N36A",
+      "title": "My Youngest Brother Do This Always - Flipbook #Creativity #Flipbook #littos #nabishevahmad",
+      "channel": "MR Comfort",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=WPn8n65N36A",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/WPn8n65N36A"
+    },
+    "task:private_intimacy_history_controls_check": {
+      "videoId": "fqTlPB3QIZ0",
+      "title": "How to See Your Google Activity 🔍📊 | Track Your Search & App History #Shorts #privacyfirst  #tech",
+      "channel": "ProwiseTech",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=fqTlPB3QIZ0",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/fqTlPB3QIZ0"
+    },
+    "task:adapt_a_goal_to_a_health_constraint": {
+      "videoId": "dYuBwYuVVyw",
+      "title": "Adapt to Change: Connect with Colleagues",
+      "channel": "The Business Butterfly Effect",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=dYuBwYuVVyw",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/dYuBwYuVVyw"
+    },
+    "task:body_measurement_source_review": {
+      "videoId": "QemL8ObSFzk",
+      "title": "खुद का बॉडी मेजरमेंट लेना सीखे | Self Body Measurement Guide | Raja-Rani Coaching",
+      "channel": "Rajarani Coaching (Academy)",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=QemL8ObSFzk",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/QemL8ObSFzk"
+    },
+    "task:build_a_personal_coaching_tone": {
+      "videoId": "LF2bkho1gg0",
+      "title": "Quick Mental Health Fit Check ✅🧠 #mentalhealthcheck #quiz #mentalhealth",
+      "channel": "Abhasa - Mental Health",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=LF2bkho1gg0",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/LF2bkho1gg0"
+    },
+    "task:pose_feedback_understand_limits": {
+      "videoId": "eL_XaKA5qWM",
+      "title": "Why Great Directors Lock the Camera",
+      "channel": "StudioBinder",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=eL_XaKA5qWM",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/eL_XaKA5qWM"
+    },
+    "task:personalization_data_review": {
+      "videoId": "pQH2PhYhXlA",
+      "title": "Staff Details in a Google Review? Myth vs Fact #shorts",
+      "channel": "MAYZIUM",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=pQH2PhYhXlA",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/pQH2PhYhXlA"
+    },
+    "task:personal_scorecard_customize": {
+      "videoId": "4sPJNZMPxec",
+      "title": "Make a Productivity Tracker in Excel + FREE File",
+      "channel": "Kenji Explains",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=4sPJNZMPxec",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/4sPJNZMPxec"
+    },
+    "task:personal_effort_and_baseline_setup": {
+      "videoId": "fmPNn9ry9Y0",
+      "title": "How to get awakening variant for Ryu/Jane Juliet in JJS! #jjs #roblox #jjk #guide #tutorial",
+      "channel": "Julix",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=fmPNn9ry9Y0",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/fmPNn9ry9Y0"
+    },
+    "task:daily_workload_and_caregiving_log": {
+      "videoId": "dz_aADsp8tU",
+      "title": "초보자를 위한 튼튼한 목재 구조물 설치 방법 #worker #process #construction #guide #tutorial",
+      "channel": "Quazivo",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=dz_aADsp8tU",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/dz_aADsp8tU"
+    },
+    "task:chosen_dietary_values_goal": {
+      "videoId": "iTsDycQN-zQ",
+      "title": "Step-By-Step INDIAN Diet Guide | Doctor Explains 💯",
+      "channel": "Dr Umesh Wadhavani",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=iTsDycQN-zQ",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/iTsDycQN-zQ"
+    },
+    "task:language_confidence_baseline_and_practice": {
+      "videoId": "U40qvUiefQo",
+      "title": "30 Day Plan to Master Your Communication [Complete Beginner’s Guide] + FREE Workbook PDF",
+      "channel": "Vinh Giang",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=U40qvUiefQo",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/U40qvUiefQo"
+    },
+    "task:user_chosen_values_or_faith_practice": {
+      "videoId": "S2EbOmUwyhg",
+      "title": "“How to Align Your Heart, Mind, and Actions for True Success - Shi Heng Yi” #motivation",
+      "channel": "Satori",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=S2EbOmUwyhg",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/S2EbOmUwyhg"
+    },
+    "task:relative_functional_movement_baseline": {
+      "videoId": "TS-iWrIEjFg",
+      "title": "How to Screen Record on Laptop - Free & No Install",
+      "channel": "Kevin Stratvert",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=TS-iWrIEjFg",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/TS-iWrIEjFg"
+    },
+    "task:heavy_workday_recovery_plan": {
+      "videoId": "VLw_V69s-Lg",
+      "title": "How to Successfully Support Mental Wellness at Work | Matthew Ratz | TEDxGaithersburg",
+      "channel": "TEDx Talks",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=VLw_V69s-Lg",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/VLw_V69s-Lg"
+    },
+    "task:private_good_bad_and_repair_reflection": {
+      "videoId": "7YmnmvSc_VA",
+      "title": "Your past mistakes are meant to guide you, not to define you #missmaturedquotes #past #lesson #learn",
+      "channel": "Miss Matured",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=7YmnmvSc_VA",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/7YmnmvSc_VA"
+    },
+    "task:personal_style_and_appearance_scorecard": {
+      "videoId": "4k1GjpWacLQ",
+      "title": "Module 4.4 | Designing Assessment Rubrics with AI",
+      "channel": "Academic Vinragi",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=4k1GjpWacLQ",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/4k1GjpWacLQ"
+    },
+    "task:face_shape_and_style_preference_review": {
+      "videoId": "XbfIT-cXsnM",
+      "title": "The Oval face guide ( glow up tips for oval face ) ",
+      "channel": "BeautywithK",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=XbfIT-cXsnM",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/XbfIT-cXsnM"
+    },
+    "task:body_measurement_source_and_trend_review": {
+      "videoId": "D5OrAkOhKQc",
+      "title": "Full Body Measurement Lena Sheekhe Sirf 2 Minutes Me ✨ #measurement",
+      "channel": "Nisha Rajput | निशा राजपूत |",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=D5OrAkOhKQc",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/D5OrAkOhKQc"
+    },
+    "task:oral_care_and_dental_goal_review": {
+      "videoId": "qgYF_V56SvU",
+      "title": "Perfact Oral Health Care Routine #shivangidesai #oralhealth #dentalcare",
+      "channel": "Fit Bharat",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=qgYF_V56SvU",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/qgYF_V56SvU"
+    },
+    "task:bone_health_and_body_composition_evidence_review": {
+      "videoId": "_jpUcPlDUJY",
+      "title": "How to Interpret a Body Composition Analysis Report (Using Bio-electrical Impedance Analysis)",
+      "channel": "Endocrinology India",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=_jpUcPlDUJY",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/_jpUcPlDUJY"
+    },
+    "task:mental_wellbeing_private_domain_review": {
+      "videoId": "D5jcofTU8BE",
+      "title": "How to Disable Parental Controls on Android (100% Working 2026)",
+      "channel": "TechEase Mobile",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=D5jcofTU8BE",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/D5jcofTU8BE"
+    },
+    "task:adult_intimacy_wellbeing_review": {
+      "videoId": "WPMaKnv17LM",
+      "title": "Essential intimate kit items you never knew you needed. #health #wellness #couplegoals #education",
+      "channel": "Sex Ed with Khushboo",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=WPMaKnv17LM",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/WPMaKnv17LM"
+    },
+    "task:adult_private_sexual_activity_record": {
+      "videoId": "XviwoKXL4s0",
+      "title": "How to Enhance Intimacy 👀",
+      "channel": "Camming Life",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=XviwoKXL4s0",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/XviwoKXL4s0"
+    },
+    "task:relationship_support_and_satisfaction_review": {
+      "videoId": "bfP87UlOvBQ",
+      "title": "How to Check Apps and Services Permissions on TikTok | TikTok Security Settings 2026",
+      "channel": "YK Production",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=bfP87UlOvBQ",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/bfP87UlOvBQ"
+    },
+    "task:safe_social_discovery_plan": {
+      "videoId": "4Nubuzmzn_A",
+      "title": "Follow My Secret Study Trick: A Clever Way to Study for Exams 🔥😎 #study #exam #motivation #studytips",
+      "channel": "FundaTube",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=4Nubuzmzn_A",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/4Nubuzmzn_A"
+    },
+    "task:address_and_family_media_sharing_safety": {
+      "videoId": "_OPgfRS_Lg8",
+      "title": "How to share your family photos | Sharing your digital photos",
+      "channel": "Amanda Littlecott: The Photo Organiser",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=_OPgfRS_Lg8",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/_OPgfRS_Lg8"
+    },
+    "task:open_letter_with_audience_choice": {
+      "videoId": "HNC7uXl1Uzc",
+      "title": "How to Write an Open Letter",
+      "channel": "Ms. Ryan",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=HNC7uXl1Uzc",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/HNC7uXl1Uzc"
+    },
+    "task:byok_key_storage_and_rotation_check": {
+      "videoId": "UinWPAj9ZCw",
+      "title": "OpenAI API Key Setup & .ENV File | Agentic AI for Testing #8",
+      "channel": "Software Testing Mentor",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=UinWPAj9ZCw",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/UinWPAj9ZCw"
+    },
+    "task:personal_financial_goal_and_wealth_context": {
+      "videoId": "bnGIjE73wWw",
+      "title": "SETTING 5 Financial Goals #organizedlife #budgeting",
+      "channel": "The Organized Money",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=bnGIjE73wWw",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/bnGIjE73wWw"
+    },
+    "task:ai_scorecard_explanation_and_rubric_review": {
+      "videoId": "_UY49Q_qFhs",
+      "title": "Inspect - A LLM Eval Framework Used by Anthropic, DeepMind, Grok and More.",
+      "channel": "Hamel Husain",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=_UY49Q_qFhs",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/_UY49Q_qFhs"
+    },
+    "task:health_constraint_and_task_adaptation_review": {
+      "videoId": "MlbFeZXVgy0",
+      "title": "@movementrecoverylife #🩺 Task Constraints in Motor Control # Essential Guide for PTs",
+      "channel": "movementrecoverylife",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=MlbFeZXVgy0",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/MlbFeZXVgy0"
+    },
+    "task:character_in_action_commitment_review": {
+      "videoId": "6VHLa8OL4uc",
+      "title": "Values Versus Goals In Acceptance And Commitment Therapy",
+      "channel": "Teresa Lewis | Lewis Psychology",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=6VHLa8OL4uc",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/6VHLa8OL4uc"
+    },
+    "task:personal_relationship_and_flirting_skills_practice": {
+      "videoId": "wWHJhwVyt1w",
+      "title": "How To Become A Flirt and Banter Master (Actual Exercises Included)",
+      "channel": "Marni Your Personal Wing Girl",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=wWHJhwVyt1w",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/wWHJhwVyt1w"
+    },
+    "task:personal_domain_score_review": {
+      "videoId": "vCCCiIYAV7k",
+      "title": "Code Review Lab - Domain Lookup",
+      "channel": "OwlHackU",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=vCCCiIYAV7k",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/vCCCiIYAV7k"
+    },
+    "task:local_personal_progress_photo_comparison": {
+      "videoId": "RHgL-vtg5L4",
+      "title": "How to Compare Photos & Survey | Lightroom Classic Tutorial 10",
+      "channel": "Aperlust",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=RHgL-vtg5L4",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/RHgL-vtg5L4"
+    },
+    "task:identity_self_discovery_and_expression_goal": {
+      "videoId": "hbqPMvIdt2g",
+      "title": "What do you really want? A Step-by-Step Guide to Self-discovery",
+      "channel": "Talk it with Diana",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=hbqPMvIdt2g",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/hbqPMvIdt2g"
+    },
+    "task:adult_intimacy_communication_skill_practice": {
+      "videoId": "WrbdbchN_iw",
+      "title": "7 Communication Skills That Make You Sound More Mature 🧠",
+      "channel": "intrepidreads ",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=WrbdbchN_iw",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/WrbdbchN_iw"
+    },
+    "task:public_presence_and_confidence_practice": {
+      "videoId": "d812a7qG9Kw",
+      "title": "How to Practice a Speech or Presentation",
+      "channel": "Alexander Lyon Communication Coach",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=d812a7qG9Kw",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/d812a7qG9Kw"
+    },
+    "task:relative_movement_achievement_checkpoint": {
+      "videoId": "n_aTjyU_Ryw",
+      "title": "How to defend Powerful SMASHES!",
+      "channel": "Badminton Soul",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=n_aTjyU_Ryw",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/n_aTjyU_Ryw"
+    },
+    "task:special_routine_tuneup_v1": {
+      "videoId": "Opdv8_RsJyQ",
+      "title": "PAANO MAG TUNE UP NG 6 CYLINDER ENGINE? || BEGINNERS GUIDE TUTORIAL",
+      "channel": "Ka Yabe vlog",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=Opdv8_RsJyQ",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/Opdv8_RsJyQ"
+    },
+    "task:special_food_fit_v1": {
+      "videoId": "R04sq4U9o0g",
+      "title": "Want better food videos? Try these shots 😎🥰 #cookingvideo #tutorial #videotips #contentideas #yt",
+      "channel": "Swati Dwivedi",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=R04sq4U9o0g",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/R04sq4U9o0g"
+    },
+    "task:special_learning_sprint_v1": {
+      "videoId": "IJzi1mfgh70",
+      "title": "Sprinting for Beginners",
+      "channel": "Swain_Performance",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=IJzi1mfgh70",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/IJzi1mfgh70"
+    },
+    "task:special_recovery_reset_v1": {
+      "videoId": "wYjbnB1YNeg",
+      "title": "How to use Recovery Mode on Android",
+      "channel": "Android Authority",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=wYjbnB1YNeg",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/wYjbnB1YNeg"
+    },
+    "task:oral_appearance_goal_and_safe_care_review": {
+      "videoId": "GBYktykWWXE",
+      "title": "🦷 How To Set Up Your Oral Hygiene Routine.",
+      "channel": "Health With Cory",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=GBYktykWWXE",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/GBYktykWWXE"
+    },
+    "task:special_health_literacy_v1": {
+      "videoId": "Zv8dn1ievpI",
+      "title": "CareSync (PUPTOCMS): HOW TO REVIEW HEALTH RECORDS AND STUDENT REQUIREMENTS",
+      "channel": "Team Innovision",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=Zv8dn1ievpI",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/Zv8dn1ievpI"
+    },
+    "task:special_daily_reset_v1": {
+      "videoId": "KljKZhUf6Jo",
+      "title": "Ultimate Sunday Reset Routine that will actually motivate you for next week! 💗",
+      "channel": "GlowzzTips",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=KljKZhUf6Jo",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/KljKZhUf6Jo"
+    },
+    "task:special_goal_review_v1": {
+      "videoId": "AxrJ5TPMSYI",
+      "title": "How to have the PERFECT START ON GOALS!",
+      "channel": "AidenVTW",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=AxrJ5TPMSYI",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/AxrJ5TPMSYI"
+    },
+    "task:special_connection_or_solitude_v1": {
+      "videoId": "p-pNqMTXhPY",
+      "title": "A Quiet Guide to Relationship Psychology Shorts",
+      "channel": "Simply Shifted",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=p-pNqMTXhPY",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/p-pNqMTXhPY"
+    },
+    "task:special_selfcare_reset_v1": {
+      "videoId": "kdq6TOSa6a4",
+      "title": "I tried 2 trending selfcare for a month #shorts",
+      "channel": "leeskin",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=kdq6TOSa6a4",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/kdq6TOSa6a4"
+    },
+    "task:capstone_03": {
+      "videoId": "eT48bNJaSeA",
+      "title": "Introduction Lesson 01",
+      "channel": "Ali Katary",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=eT48bNJaSeA",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/eT48bNJaSeA"
+    },
+    "task:capstone_01": {
+      "videoId": "gX6B9PeSRfY",
+      "title": "blowout brush tutorial!",
+      "channel": "em",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=gX6B9PeSRfY",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/gX6B9PeSRfY"
+    },
+    "task:capstone_05": {
+      "videoId": "_n9a9IcZQTU",
+      "title": "Last Minute Functional Medicine Certification Exam Strategy (Don't Make This Mistake)",
+      "channel": "Jinhee Park",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=_n9a9IcZQTU",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/_n9a9IcZQTU"
+    },
+    "task:special_private_health_prep_v1": {
+      "videoId": "yX-wBzDdqvQ",
+      "title": "Youth Mental Health: How to Prepare for a Healthcare Appointment",
+      "channel": "Bridges To Work",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=yX-wBzDdqvQ",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/yX-wBzDdqvQ"
+    },
+    "task:capstone_04": {
+      "videoId": "eL_XaKA5qWM",
+      "title": "Why Great Directors Lock the Camera",
+      "channel": "StudioBinder",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=eL_XaKA5qWM",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/eL_XaKA5qWM"
+    },
+    "task:capstone_06": {
+      "videoId": "46nW8kKxa34",
+      "title": "Evidence Based Nutrition",
+      "channel": "Dr. Radha's NutriCare",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=46nW8kKxa34",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/46nW8kKxa34"
+    },
+    "task:capstone_07": {
+      "videoId": "R04sq4U9o0g",
+      "title": "Want better food videos? Try these shots 😎🥰 #cookingvideo #tutorial #videotips #contentideas #yt",
+      "channel": "Swati Dwivedi",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=R04sq4U9o0g",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/R04sq4U9o0g"
+    },
+    "task:capstone_09": {
+      "videoId": "Pz9XuvtSZTI",
+      "title": "The Easiest Skincare Routine for College & Office Days – Dr. Aanchal Panth Shares #shorts",
+      "channel": "Ranveer Allahbadia",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=Pz9XuvtSZTI",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/Pz9XuvtSZTI"
+    },
+    "task:capstone_02": {
+      "videoId": "hlE2uL3m6W0",
+      "title": "6 Easy Habits to Elevate Your Mental Wellness",
+      "channel": "RESPIRE",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=hlE2uL3m6W0",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/hlE2uL3m6W0"
+    },
+    "task:capstone_10": {
+      "videoId": "XS7cC4rj1VU",
+      "title": "Trying 10 emotions in 1 minute ✨ IB @Hereimyadhu #acting #actingemotions",
+      "channel": "Eliana Ghen",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=XS7cC4rj1VU",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/XS7cC4rj1VU"
+    },
+    "task:capstone_08": {
+      "videoId": "rTsUqR4NV7A",
+      "title": "Grade 12 Mathematical Literacy: Conversions",
+      "channel": "Maths Monkey",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=rTsUqR4NV7A",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/rTsUqR4NV7A"
+    },
+    "task:capstone_11": {
+      "videoId": "LKhNlJ9IjDE",
+      "title": "Mastery Learning (Explained for Beginners in 3 Minutes)",
+      "channel": "Helpful Professor Explains!",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=LKhNlJ9IjDE",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/LKhNlJ9IjDE"
+    },
+    "task:capstone_12": {
+      "videoId": "cOyPAKYuZJY",
+      "title": "AutoPath (Boundaries) Tutorial on John Deere G5 Display | How-to Video",
+      "channel": "John Deere UK IE",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=cOyPAKYuZJY",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/cOyPAKYuZJY"
+    },
+    "task:capstone_13": {
+      "videoId": "_9Gr4cE4S0I",
+      "title": "Communication Tips for Performance Reviews: What to Say in Your Performance Review",
+      "channel": "Kara Ronin",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=_9Gr4cE4S0I",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/_9Gr4cE4S0I"
+    },
+    "task:capstone_14": {
+      "videoId": "wZMQKUb2ws8",
+      "title": "Upmetrics Tutorial, Review & Demo | Business Planning Software (2026)",
+      "channel": "James And Jenna's Tutorials",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=wZMQKUb2ws8",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/wZMQKUb2ws8"
+    },
+    "task:capstone_15": {
+      "videoId": "lsdkNPoDjyI",
+      "title": "Learn the power of body language (Look confident & dominating)",
+      "channel": "SantwinderSinghWaraich",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=lsdkNPoDjyI",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/lsdkNPoDjyI"
+    },
+    "task:capstone_16": {
+      "videoId": "nrzH3vEYzus",
+      "title": "Before Renewal Run a Readiness Review",
+      "channel": "Training IQ",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=nrzH3vEYzus",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/nrzH3vEYzus"
+    },
+    "task:final_sustainable_mastery": {
+      "videoId": "1-u0NU_N3ns",
+      "title": "Can 100 Readers Make You $1,000/Month? | Beehiiv Full Review",
+      "channel": "MSB Digital",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=1-u0NU_N3ns",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/1-u0NU_N3ns"
+    },
+    "task:capstone_17": {
+      "videoId": "UBxRB5PygoA",
+      "title": "Adaptation Workbook Progress Summary final",
+      "channel": "Northern Institute of Applied Climate Science",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=UBxRB5PygoA",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/UBxRB5PygoA"
+    },
+    "task:capstone_18": {
+      "videoId": "Eo9DlDuEVEk",
+      "title": "How to Use ChatGPT in Excel (FREE) | AI Formula Assistant Inside Excel 💡",
+      "channel": "Office Master by be10X",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=Eo9DlDuEVEk",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/Eo9DlDuEVEk"
+    },
+    "task:capstone_20": {
+      "videoId": "1U0mDEGX9v0",
+      "title": "How to complete a TSP Sustainability assessment (2025)",
+      "channel": "djaodjin",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=1U0mDEGX9v0",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/1U0mDEGX9v0"
+    },
+    "task:capstone_19": {
+      "videoId": "2Vtz43pRPas",
+      "title": "Mental Health and Well-Being",
+      "channel": "Osmosis from Elsevier",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=2Vtz43pRPas",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/2Vtz43pRPas"
+    },
+    "task:special_open_letter_v1": {
+      "videoId": "JTCMzMvblfc",
+      "title": "How to do Calligraphy with Brush Pens for Total Beginners #shorts",
+      "channel": "Lettering With Liv",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=JTCMzMvblfc",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/JTCMzMvblfc"
+    },
+    "task:special_privacy_guard_v1": {
+      "videoId": "HIdgGRbtmKs",
+      "title": "Protect Your Online Privacy with Privacy Guardian",
+      "channel": "iolo",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=HIdgGRbtmKs",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/HIdgGRbtmKs"
+    },
+    "task:special_self_discovery_v1": {
+      "videoId": "1XSlPMcj2iI",
+      "title": "Instagram Password Change Tutorial - Step by Step Guide for 2024 || #shorts",
+      "channel": "Tech Mahendra ",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=1XSlPMcj2iI",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/1XSlPMcj2iI"
+    },
+    "task:special_connection_with_consent_v1": {
+      "videoId": "vtryZ5J6rls",
+      "title": "How to Use Claude Code for FREE in 2026 (Step-by-Step Guide)",
+      "channel": "Mayank Aggarwal",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=vtryZ5J6rls",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/vtryZ5J6rls"
+    },
+    "task:special_ai_setup_and_review_v1": {
+      "videoId": "j8BiIZIZBsU",
+      "title": "AI-powered mental health chatbots developed as a therapy support tool | 60 Minutes",
+      "channel": "60 Minutes",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=j8BiIZIZBsU",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/j8BiIZIZBsU"
+    },
+    "task:special_move_with_landmarks_v1": {
+      "videoId": "ZwxyB7AgMQ0",
+      "title": "Checkpoint firewall configuration step by step| Checkpoint firewall full tutorial | Day 1",
+      "channel": "Fresh Developer (Sapium Security)",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=ZwxyB7AgMQ0",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/ZwxyB7AgMQ0"
+    },
+    "task:special_intimacy_privacy_v1": {
+      "videoId": "-P6Q74N3ILA",
+      "title": "Best way to remove pubic hair | How to remove hair from private part | Intimate area hair removal",
+      "channel": "ZolieSkinClinic",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=-P6Q74N3ILA",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/-P6Q74N3ILA"
+    },
+    "task:special_personalization_review_v1": {
+      "videoId": "ukZqb8GrN_8",
+      "title": "Everfit App Review: Easy-To-Use Software for Personal Trainers and Online Coaches!",
+      "channel": "Alex Povey",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=ukZqb8GrN_8",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/ukZqb8GrN_8"
+    },
+    "task:special_personal_scorecard_context_v2": {
+      "videoId": "CrToe5pW_RE",
+      "title": "QuickScore: Creating your Balanced Scorecard",
+      "channel": "Spider Strategies",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=CrToe5pW_RE",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/CrToe5pW_RE"
+    },
+    "task:special_life_load_and_recovery_v2": {
+      "videoId": "cnpHK79NgxU",
+      "title": "CORTIS ‘REDRED’ Dance Tutorial (Slow+Counts) #CORTIS #REDRED #KpopTutorial",
+      "channel": "SHERO",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=cnpHK79NgxU",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/cnpHK79NgxU"
+    },
+    "task:special_personal_progress_and_style_v2": {
+      "videoId": "bxkgomPlxQQ",
+      "title": "How to Make Basslines EASY step-by-step guide",
+      "channel": "Busy Works Beats",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=bxkgomPlxQQ",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/bxkgomPlxQQ"
+    },
+    "task:special_values_food_and_character_v2": {
+      "videoId": "2BnFk4-LWiE",
+      "title": "How to Turn Company Values Into Action",
+      "channel": "MindEdge Learning",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=2BnFk4-LWiE",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/2BnFk4-LWiE"
+    },
+    "task:special_relationship_and_adult_wellbeing_v2": {
+      "videoId": "XlmKqkZkfqI",
+      "title": "The Best Professional Connectors to Explain Your Opinions in English",
+      "channel": "Speak Confident English",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=XlmKqkZkfqI",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/XlmKqkZkfqI"
+    },
+    "task:special_ai_byok_and_verifiable_scoring_v2": {
+      "videoId": "OIbI8s3yz30",
+      "title": "Government of India Free AI Certification Courses! Intel & MeitY Initiative 2026",
+      "channel": "Data Logic With Shivam",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=OIbI8s3yz30",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/OIbI8s3yz30"
+    },
+    "task:special_privacy_letters_and_media_v2": {
+      "videoId": "mRjSXZPYiVY",
+      "title": "Share Intent is Awesome - Developing Android Apps",
+      "channel": "Udacity",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=mRjSXZPYiVY",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/mRjSXZPYiVY"
+    },
+    "task:special_work_finances_and_independence_v2": {
+      "videoId": "8iagehxjZE8",
+      "title": "Why we use the Key Worker Model",
+      "channel": "Everyday Independence",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=8iagehxjZE8",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/8iagehxjZE8"
+    },
+    "task:special_social_confidence_and_self_discovery_v2": {
+      "videoId": "EptPeU9mqAA",
+      "title": "HOW TO MASTER SOCIAL CONFIDENCE | talk to anyone, develop extroverted traits and become magnetic!",
+      "channel": "Tam Kaur",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=EptPeU9mqAA",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/EptPeU9mqAA"
+    },
+    "task:special_adult_intimacy_learning_v1": {
+      "videoId": "OfAtWW1ZzX0",
+      "title": "Woman's intimate health program Training",
+      "channel": "Davis-Diley",
+      "category": "task",
+      "url": "https://www.youtube.com/watch?v=OfAtWW1ZzX0",
+      "embedUrl": "https://www.youtube-nocookie.com/embed/OfAtWW1ZzX0"
+    }
+  }
+}
