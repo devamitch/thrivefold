@@ -65,6 +65,13 @@ export default function MenHealthScreen() {
             <Button label="Gym A" size="sm" variant="outline" onPress={() => openPlan('gym_full_a')} />
             <Button label="All plans" size="sm" variant="ghost" onPress={() => router.push('/(app)/health/exercise')} />
           </View>
+          <Button
+            label="Count squats with the camera"
+            size="sm"
+            variant="ghost"
+            onPress={() => router.push('/(app)/health/pose-check' as Href)}
+            style={{ marginTop: spacing.xs, alignSelf: 'flex-start' }}
+          />
         </Card>
 
         <Card style={{ marginBottom: spacing.md, padding: spacing.base }}>
