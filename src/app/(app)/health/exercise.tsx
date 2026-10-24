@@ -66,7 +66,7 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title={asTab ? 'Train' : 'Workouts'} subtitle="Camera coach, plans and your progress" showBack={!asTab} />
+      <Header title="Train" subtitle="Camera coach, plans and your progress" showBack={!asTab} />
       <View style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
         <Card variant="surface1" style={{ padding: spacing.base }}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>
@@ -77,6 +77,10 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
             Many adults aim for about 150 minutes of moderate activity a week.
           </Text>
           <WeekStrip />
+          <View style={[styles.row, { marginTop: spacing.sm, justifyContent: 'flex-start', gap: 8 }]}>
+            <Button label="Exercise library" size="sm" variant="outline" onPress={() => router.push('/(app)/train/library' as Href)} />
+            <Button label="Log what I did" size="sm" variant="ghost" onPress={() => router.push('/(app)/train/log' as Href)} />
+          </View>
           <Button
             label="Log a run, ride, class or sport"
             size="sm"
@@ -177,10 +181,13 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
               <View key={s.id} style={[styles.row, styles.historyRow, { borderBottomColor: colors.border }]}>
                 <View style={{ flex: 1 }}>
                   <Text style={[typography.subbodyBold, { color: colors.text.primary }]}>
-                    {planById(s.planId)?.title ?? 'Workout'}
+                    {planById(s.planId)?.title ??
+                      (s.entries.length === 1 ? exerciseById(s.entries[0].exerciseId)?.name ?? 'Workout' : 'Workout')}
                   </Text>
                   <Text style={[typography.caption, { color: colors.text.secondary }]}>
                     {new Date(`${s.date}T12:00:00`).toLocaleDateString()} · {sets} sets
+                    {s.entries.length === 1 ? ` · ${s.entries[0].sets.map((x) => x.value).join('+')}` : ''}
+                    {s.verification === 'camera' ? ' · camera-checked' : s.verification === 'manual' ? ' · self-reported' : ''}
                     {s.effort ? ` · effort ${s.effort}/10` : ''}
                     {s.painReported ? ' · discomfort noted' : ''}
                   </Text>

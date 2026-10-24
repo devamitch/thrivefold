@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useRef, useState } from 'react';
 import { PermissionsAndroid, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { PoseCameraView, poseLandmarkerAvailable, poseModelVersion, type PoseFrame } from 'pose-landmarker';
@@ -44,7 +44,8 @@ export default function PoseCheckScreen() {
     })),
   );
   const available = Boolean(PoseCameraView) && poseLandmarkerAvailable();
-  const [movement, setMovement] = useState<MovementDefinition>(MOVEMENTS[0]);
+  const { movement: movementParam } = useLocalSearchParams<{ movement?: string }>();
+  const [movement, setMovement] = useState<MovementDefinition>(() => MOVEMENTS.find((m) => m.id === movementParam) ?? MOVEMENTS[0]);
   const [phase, setPhase] = useState<Phase>('setup');
   const [facing, setFacing] = useState<'front' | 'back'>('front');
   const [error, setError] = useState<string | null>(null);
