@@ -63,6 +63,9 @@ export interface AppSlice {
   /** When the person stated they are 18+ (a self-declaration, not verification). */
   adultConfirmedAt: string | null;
   quietHoursEnabled: boolean;
+  /** Opt-in, generic reminders for open quests (off by default). */
+  questRemindersEnabled: boolean;
+  setQuestRemindersEnabled: (enabled: boolean) => void;
   quietHoursStart: string; // e.g. "22:00"
   quietHoursEnd: string; // e.g. "07:00"
   offlineModeForced: boolean;
@@ -99,6 +102,8 @@ export const createAppSlice: StateCreator<
   onboardingStep: null,
   adultConfirmedAt: null,
   quietHoursEnabled: true,
+  questRemindersEnabled: false,
+  setQuestRemindersEnabled: (questRemindersEnabled) => set({ questRemindersEnabled }),
   quietHoursStart: '22:00',
   quietHoursEnd: '07:00',
   offlineModeForced: false,

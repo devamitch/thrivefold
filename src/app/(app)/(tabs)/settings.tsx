@@ -6,6 +6,7 @@ import {
   Pressable,
   Share,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View,
@@ -18,6 +19,7 @@ import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { buildLocalExport, eraseLocalData } from '../../../services/privacy/localData';
 import { useRootStore } from '../../../stores/useRootStore';
 import { signOutAccount } from '../../../services/account/accountService';
+import { enableQuestReminders } from '../../../services/notifications/questReminders';
 import { AppHeader } from '../../../components/ui/AppHeader';
 import { useTheme } from '../../../theme/useTheme';
 
@@ -39,6 +41,19 @@ export default function SettingsScreen() {
   const setUser = useRootStore((s) => s.setUser);
   const signOut = useRootStore((s) => s.signOut);
   const resetOnboarding = useRootStore((s) => s.resetOnboarding);
+  const remindersOn = useRootStore((s) => s.questRemindersEnabled);
+  const setRemindersOn = useRootStore((s) => s.setQuestRemindersEnabled);
+  const quietOn = useRootStore((s) => s.quietHoursEnabled);
+  const quietStart = useRootStore((s) => s.quietHoursStart);
+  const quietEnd = useRootStore((s) => s.quietHoursEnd);
+  const setQuietHours = useRootStore((s) => s.setQuietHours);
+  const toggleReminders = async (next: boolean) => {
+    if (next && !(await enableQuestReminders())) {
+      useRootStore.getState().showToast({ type: 'info', message: 'Notifications are off for Thrivefold in system settings.' });
+      return;
+    }
+    setRemindersOn(next);
+  };
   const showAlert = useRootStore((s) => s.showAlert);
 
   // App metrics for profile overview
@@ -350,6 +365,31 @@ export default function SettingsScreen() {
                 </Text>
               </Pressable>
             ))}
+          </View>
+        </Card>
+
+        {/* Reminders */}
+        <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.sm, marginBottom: spacing.sm }]}>
+          Reminders
+        </Text>
+        <Card style={{ marginBottom: spacing.md }}>
+          <View style={styles.rowBetween}>
+            <View style={{ flex: 1, paddingRight: 12 }}>
+              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Quest reminders</Text>
+              <Text style={[typography.caption, { color: colors.text.secondary }]}>
+                Morning, afternoon or evening, only when a quest fits that time. The text never mentions health topics.
+              </Text>
+            </View>
+            <Switch value={remindersOn} onValueChange={toggleReminders} accessibilityLabel="Quest reminders" />
+          </View>
+          <View style={[styles.rowBetween, { marginTop: spacing.md }]}>
+            <View style={{ flex: 1, paddingRight: 12 }}>
+              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Quiet hours</Text>
+              <Text style={[typography.caption, { color: colors.text.secondary }]}>
+                No reminders from {quietStart} to {quietEnd}.
+              </Text>
+            </View>
+            <Switch value={quietOn} onValueChange={(v) => setQuietHours(v)} accessibilityLabel="Quiet hours" />
           </View>
         </Card>
 

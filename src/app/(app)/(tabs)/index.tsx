@@ -17,6 +17,7 @@ import { getCyclePredictions } from '../../../domain/health/cycleCalculations';
 import { currentLevelProgress } from '../../../domain/game/gameCatalogService';
 import { questFamily, type QuestFamily } from '../../../domain/game/progression';
 import { SETUP_REWARDS } from '../../../domain/game/setupProfile';
+import { DAY_PART_LABEL, dayPartAt, splitByTime } from '../../../domain/game/timeOfDay';
 import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngine';
 import type { Quest } from '../../../stores/slices/questSlice';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
@@ -114,6 +115,11 @@ export default function HomeScreen() {
   const families = [...new Set(visible.map((q) => questFamily(q.category)))];
   const shown = visible.filter((q) => filter === 'all' || questFamily(q.category) === filter);
   const done = visible.filter((q) => q.isCompleted).length;
+  const finished = shown.filter((q) => q.isCompleted || q.status === 'skipped');
+  const timed = splitByTime(
+    shown.filter((q) => !q.isCompleted && q.status !== 'skipped'),
+    new Date(),
+  );
   const active = visible.filter((q) => q.status !== 'skipped').length;
 
   const name = s.user?.pseudonym && !['Friend', 'Guest'].includes(s.user.pseudonym) ? s.user.pseudonym : null;
@@ -306,7 +312,32 @@ export default function HomeScreen() {
               </Text>
             </Card>
           ) : (
-            shown.map((q) => <QuestRow key={q.id} quest={q} onPress={() => setOpenQuest(q.id)} />)
+            <>
+              {timed.now.length > 0 ? (
+                <Text style={[typography.captionBold, styles.groupLabel, { color: colors.text.muted }]}>
+                  NOW · {DAY_PART_LABEL[dayPartAt(new Date())].toUpperCase()}
+                </Text>
+              ) : null}
+              {timed.now.map((q) => (
+                <QuestRow key={q.id} quest={q} onPress={() => setOpenQuest(q.id)} />
+              ))}
+              {timed.later.map((g) => (
+                <View key={g.part}>
+                  <Text style={[typography.captionBold, styles.groupLabel, { color: colors.text.muted }]}>
+                    LATER · {DAY_PART_LABEL[g.part].toUpperCase()}
+                  </Text>
+                  {g.quests.map((q) => (
+                    <QuestRow key={q.id} quest={q} onPress={() => setOpenQuest(q.id)} />
+                  ))}
+                </View>
+              ))}
+              {finished.length > 0 ? (
+                <Text style={[typography.captionBold, styles.groupLabel, { color: colors.text.muted }]}>DONE</Text>
+              ) : null}
+              {finished.map((q) => (
+                <QuestRow key={q.id} quest={q} onPress={() => setOpenQuest(q.id)} />
+              ))}
+            </>
           )}
         </View>
       </Animated.View>
@@ -453,6 +484,7 @@ const styles = StyleSheet.create({
   rowBetween: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   metrics: { flexDirection: 'row', gap: 8 },
+  groupLabel: { marginBottom: 6, marginTop: 10 },
   metric: { alignItems: 'center', borderRadius: 14, flex: 1, paddingVertical: 10 },
   insight: { alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', marginTop: 12, minHeight: 48, paddingTop: 8 },
   track: { height: 6, borderRadius: 3, overflow: 'hidden' },

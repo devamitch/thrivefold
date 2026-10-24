@@ -4,11 +4,19 @@ import { Stack } from 'expo-router';
 
 import { useRootStore } from '../../stores/useRootStore';
 import { flushProgressionSync } from '../../services/sync/progressionSync';
+import { syncQuestReminders } from '../../services/notifications/questReminders';
 
 export default function AppLayout() {
   const ensureDailyQuests = useRootStore((s) => s.ensureDailyQuests);
   const isOnboarded = useRootStore((s) => s.isOnboarded);
   const pendingCount = useRootStore((s) => s.pendingSync.length);
+  const openCount = useRootStore((s) => s.todayQuests.filter((q) => !q.isCompleted && q.status !== 'skipped').length);
+  const remindersOn = useRootStore((s) => s.questRemindersEnabled);
+
+  // Reminders follow what is still open today.
+  useEffect(() => {
+    syncQuestReminders();
+  }, [openCount, remindersOn]);
 
   // A new day's quests are created on first open and whenever the app returns to the
   // foreground on a new date; the same day's set is kept as-is.
