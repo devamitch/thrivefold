@@ -63,7 +63,7 @@ export const useRootStore = create<RootState>()(
           Object.entries(state).filter(
             // todayQuests is a projection of dailyAssignments and is rebuilt on load.
             ([key, value]) =>
-              typeof value !== 'function' && key !== 'toasts' && key !== 'alert' && key !== 'todayQuests',
+              typeof value !== 'function' && key !== 'toasts' && key !== 'alert' && key !== 'todayQuests' && key !== 'drawerOpen',
           ),
         ) as Partial<RootState>,
     },

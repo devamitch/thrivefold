@@ -5,6 +5,7 @@ import { Stack } from 'expo-router';
 import { useRootStore } from '../../stores/useRootStore';
 import { flushProgressionSync } from '../../services/sync/progressionSync';
 import { syncQuestReminders } from '../../services/notifications/questReminders';
+import { AppDrawer } from '../../components/navigation/AppDrawer';
 import { enqueueFinishedWeeks, flushSummaryOutbox } from '../../services/sync/summaryOutbox';
 
 /** Queues finished weeks and sends them if this person opted in; never throws. */
@@ -51,32 +52,35 @@ export default function AppLayout() {
   }, [pendingCount]);
 
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        animation: 'slide_from_right',
-      }}
-    >
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="health" />
-      <Stack.Screen name="quests" />
-      <Stack.Screen name="games" />
-      <Stack.Screen name="journal" />
-      <Stack.Screen name="learn" />
-      <Stack.Screen name="dev" />
-      <Stack.Screen name="ai" />
-      <Stack.Screen name="circles" />
-      <Stack.Screen name="letters" />
-      <Stack.Screen name="social" />
-      <Stack.Screen name="organizations" />
-      <Stack.Screen name="safety" />
-      <Stack.Screen name="check-in" />
-      <Stack.Screen name="calendar" />
-      <Stack.Screen name="settings" />
-      <Stack.Screen name="personalize" />
-      <Stack.Screen name="roadmap" />
-      <Stack.Screen name="train" />
-      <Stack.Screen name="watch" options={{ animation: 'slide_from_bottom' }} />
-    </Stack>
+    <>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          animation: 'slide_from_right',
+        }}
+      >
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="health" />
+        <Stack.Screen name="quests" />
+        <Stack.Screen name="games" />
+        <Stack.Screen name="journal" />
+        <Stack.Screen name="learn" />
+        <Stack.Screen name="dev" />
+        <Stack.Screen name="ai" />
+        <Stack.Screen name="circles" />
+        <Stack.Screen name="letters" />
+        <Stack.Screen name="social" />
+        <Stack.Screen name="organizations" />
+        <Stack.Screen name="safety" />
+        <Stack.Screen name="check-in" />
+        <Stack.Screen name="calendar" />
+        <Stack.Screen name="settings" />
+        <Stack.Screen name="personalize" />
+        <Stack.Screen name="roadmap" />
+        <Stack.Screen name="train" />
+        <Stack.Screen name="watch" options={{ animation: 'slide_from_bottom' }} />
+      </Stack>
+      <AppDrawer />
+    </>
   );
 }

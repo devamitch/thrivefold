@@ -175,6 +175,7 @@ export default function HomeScreen() {
           subtitle={subtitle}
           rightAction={
             <View style={styles.headerActions}>
+              <HeaderIconButton icon="menu-outline" label="Open menu" onPress={() => useRootStore.getState().setDrawerOpen(true)} />
               <HeaderIconButton icon="calendar-outline" label="Calendar" onPress={() => router.push('/(app)/calendar')} />
               <HeaderIconButton icon="person-outline" label="You" onPress={() => router.push('/(app)/(tabs)/settings')} />
             </View>

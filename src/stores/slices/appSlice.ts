@@ -69,6 +69,9 @@ export interface AppSlice {
   questRemindersEnabled: boolean;
   /** The first-run "how it works" guide on Home was dismissed. */
   homeGuideDone: boolean;
+  /** App drawer visibility (not persisted). */
+  drawerOpen: boolean;
+  setDrawerOpen: (open: boolean) => void;
   setHomeGuideDone: () => void;
   /** Signed-in only, opt-in: weekly averages and counts backed up to the account. */
   shareWeeklySummaries: boolean;
@@ -113,6 +116,8 @@ export const createAppSlice: StateCreator<
   quietHoursEnabled: true,
   questRemindersEnabled: false,
   homeGuideDone: false,
+  drawerOpen: false,
+  setDrawerOpen: (drawerOpen) => set({ drawerOpen }),
   setHomeGuideDone: () => set({ homeGuideDone: true }),
   shareWeeklySummaries: false,
   setShareWeeklySummaries: (shareWeeklySummaries) => set({ shareWeeklySummaries }),
