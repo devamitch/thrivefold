@@ -302,5 +302,22 @@ check('third workout of the day is refused', /workout limit/.test(r.error ?? '')
 r = await q(`select public.tf_claim_workout_reward('wk_4', current_date - 3, 40, 0.9) as r`);
 check('stale workout date is refused', /stale game date/.test(r.error ?? ''), r.error);
 
+// Weekly summaries (migration 8): opt-in, own rows only, validated
+await as('B');
+r = await q(`select public.tf_upsert_weekly_summary(date_trunc('week', current_date - 7)::date, 3, 6.5, 7, 4, 7.2, 5, 2, 90, 1, 120) as r`);
+check('signed-in person can back up a weekly summary', r.rows?.[0]?.r?.status === 'saved', r.error ?? JSON.stringify(r.rows));
+r = await q(`select public.tf_upsert_weekly_summary(date_trunc('week', current_date - 7)::date, 9, 6.5, 7, 4, 7.2, 5, 2, 90, 1, 120) as r`);
+check('impossible values are refused', !!r.error, r.error);
+r = await q(`select count(*)::int as n from public.thrivefold_weekly_summaries`);
+check('owner sees their weekly summary', r.rows?.[0]?.n === 1, JSON.stringify(r.rows));
+await as('A');
+r = await q(`select count(*)::int as n from public.thrivefold_weekly_summaries`);
+check('other users cannot see weekly summaries', r.rows?.[0]?.n === 0, JSON.stringify(r.rows));
+r = await q(`insert into public.thrivefold_weekly_summaries (user_id, week_start, check_ins, quests_done, workouts, active_minutes, form_checked_sessions, xp_earned) values ('${ids.A}', date_trunc('week', current_date)::date, 1, 0, 0, 0, 0, 0)`);
+check('summaries cannot be written directly', !!r.error, r.error);
+await as('anon');
+r = await q(`select public.tf_upsert_weekly_summary(date_trunc('week', current_date - 7)::date, 1, 5, 5, 5, 7, 0, 0, 0, 0, 0)`);
+check('anon cannot back up summaries', !!r.error, r.error);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

@@ -3,6 +3,7 @@
  * everything. Health records are local-first, so these are the authoritative copies.
  */
 import { wipeLocalData } from '../../stores/persistStorage';
+import { wipeSummaryOutbox } from '../sync/summaryOutbox';
 import { useRootStore } from '../../stores/useRootStore';
 
 export function buildLocalExport(): string {
@@ -22,4 +23,9 @@ export function eraseLocalData(): void {
   useRootStore.setState(useRootStore.getInitialState(), true);
   useRootStore.persist.clearStorage();
   wipeLocalData();
+  try {
+    wipeSummaryOutbox();
+  } catch {
+    // No outbox on this platform.
+  }
 }

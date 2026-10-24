@@ -65,6 +65,9 @@ export interface AppSlice {
   quietHoursEnabled: boolean;
   /** Opt-in, generic reminders for open quests (off by default). */
   questRemindersEnabled: boolean;
+  /** Signed-in only, opt-in: weekly averages and counts backed up to the account. */
+  shareWeeklySummaries: boolean;
+  setShareWeeklySummaries: (enabled: boolean) => void;
   setQuestRemindersEnabled: (enabled: boolean) => void;
   quietHoursStart: string; // e.g. "22:00"
   quietHoursEnd: string; // e.g. "07:00"
@@ -103,6 +106,8 @@ export const createAppSlice: StateCreator<
   adultConfirmedAt: null,
   quietHoursEnabled: true,
   questRemindersEnabled: false,
+  shareWeeklySummaries: false,
+  setShareWeeklySummaries: (shareWeeklySummaries) => set({ shareWeeklySummaries }),
   setQuestRemindersEnabled: (questRemindersEnabled) => set({ questRemindersEnabled }),
   quietHoursStart: '22:00',
   quietHoursEnd: '07:00',

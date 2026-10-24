@@ -5,6 +5,17 @@ import { Stack } from 'expo-router';
 import { useRootStore } from '../../stores/useRootStore';
 import { flushProgressionSync } from '../../services/sync/progressionSync';
 import { syncQuestReminders } from '../../services/notifications/questReminders';
+import { enqueueFinishedWeeks, flushSummaryOutbox } from '../../services/sync/summaryOutbox';
+
+/** Queues finished weeks and sends them if this person opted in; never throws. */
+function runSummaryQueue() {
+  try {
+    enqueueFinishedWeeks();
+    flushSummaryOutbox().catch(() => undefined);
+  } catch {
+    // The outbox is best-effort; the app works without it.
+  }
+}
 
 export default function AppLayout() {
   const ensureDailyQuests = useRootStore((s) => s.ensureDailyQuests);
@@ -22,10 +33,12 @@ export default function AppLayout() {
   // foreground on a new date; the same day's set is kept as-is.
   useEffect(() => {
     ensureDailyQuests();
+    runSummaryQueue();
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'active') {
         ensureDailyQuests();
         flushProgressionSync().catch(() => undefined);
+        runSummaryQueue();
       }
     });
     return () => sub.remove();

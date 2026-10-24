@@ -20,6 +20,12 @@ import { buildLocalExport, eraseLocalData } from '../../../services/privacy/loca
 import { useRootStore } from '../../../stores/useRootStore';
 import { signOutAccount } from '../../../services/account/accountService';
 import { enableQuestReminders } from '../../../services/notifications/questReminders';
+import {
+  clearSummaryOutbox,
+  enqueueFinishedWeeks,
+  flushSummaryOutbox,
+  outboxStatus,
+} from '../../../services/sync/summaryOutbox';
 import { AppHeader } from '../../../components/ui/AppHeader';
 import { useTheme } from '../../../theme/useTheme';
 
@@ -47,6 +53,22 @@ export default function SettingsScreen() {
   const quietStart = useRootStore((s) => s.quietHoursStart);
   const quietEnd = useRootStore((s) => s.quietHoursEnd);
   const setQuietHours = useRootStore((s) => s.setQuietHours);
+  const shareSummaries = useRootStore((s) => s.shareWeeklySummaries);
+  const setShareSummaries = useRootStore((s) => s.setShareWeeklySummaries);
+  const accountSignedIn = Boolean(user && !user.isGuest && user.email);
+  const [outbox, setOutbox] = useState(() => outboxStatus());
+  const toggleSummaries = (next: boolean) => {
+    setShareSummaries(next);
+    if (next) {
+      enqueueFinishedWeeks();
+      flushSummaryOutbox()
+        .then(() => setOutbox(outboxStatus()))
+        .catch(() => undefined);
+    } else {
+      clearSummaryOutbox();
+    }
+    setOutbox(outboxStatus());
+  };
   const toggleReminders = async (next: boolean) => {
     if (next && !(await enableQuestReminders())) {
       useRootStore.getState().showToast({ type: 'info', message: 'Notifications are off for Thrivefold in system settings.' });
@@ -392,6 +414,29 @@ export default function SettingsScreen() {
             <Switch value={quietOn} onValueChange={(v) => setQuietHours(v)} accessibilityLabel="Quiet hours" />
           </View>
         </Card>
+
+        {/* Backup of weekly summaries (signed-in only) */}
+        {accountSignedIn ? (
+          <Card style={{ marginBottom: spacing.md }}>
+            <View style={styles.rowBetween}>
+              <View style={{ flex: 1, paddingRight: 12 }}>
+                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Back up weekly summaries</Text>
+                <Text style={[typography.caption, { color: colors.text.secondary }]}>
+                  Once a week, your averages (energy, mood, stress, sleep) and counts (check-ins, quests, workouts,
+                  minutes) are saved to your account. Notes, symptoms, cycle dates and journal entries never leave the
+                  phone.
+                </Text>
+                {shareSummaries ? (
+                  <Text style={[typography.caption, { color: colors.text.muted, marginTop: 4 }]}>
+                    {outbox.queued > 0 ? `${outbox.queued} week${outbox.queued === 1 ? '' : 's'} waiting to send. ` : ''}
+                    {outbox.lastSentWeek ? `Last backed up: week of ${outbox.lastSentWeek}.` : 'Nothing sent yet.'}
+                  </Text>
+                ) : null}
+              </View>
+              <Switch value={shareSummaries} onValueChange={toggleSummaries} accessibilityLabel="Back up weekly summaries" />
+            </View>
+          </Card>
+        ) : null}
 
         {/* Preferences & Developer Options */}
         <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.sm, marginBottom: spacing.sm }]}>
