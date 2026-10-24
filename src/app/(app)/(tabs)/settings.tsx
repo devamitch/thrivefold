@@ -19,6 +19,7 @@ import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { buildLocalExport, eraseLocalData } from '../../../services/privacy/localData';
 import { useRootStore } from '../../../stores/useRootStore';
 import { signOutEverywhere } from '../../../services/account/accountService';
+import { canUseCorrespondence } from '../../../navigation/eligibility';
 import { enableQuestReminders } from '../../../services/notifications/questReminders';
 import {
   clearSummaryOutbox,
@@ -51,7 +52,7 @@ export default function SettingsScreen() {
   const setExperience = useRootStore((s) => s.setExperience);
   const user = useRootStore((s) => s.user);
   const setUser = useRootStore((s) => s.setUser);
-  const signOut = useRootStore((s) => s.signOut);
+  const correspondenceOpen = useRootStore(canUseCorrespondence);
   const resetOnboarding = useRootStore((s) => s.resetOnboarding);
   const remindersOn = useRootStore((s) => s.questRemindersEnabled);
   const setRemindersOn = useRootStore((s) => s.setQuestRemindersEnabled);
@@ -258,6 +259,7 @@ export default function SettingsScreen() {
           </View>
         </Card>
 
+        {correspondenceOpen ? (
         <Card onPress={() => router.push('/(app)/letters')} style={{ marginBottom: 8 }}>
           <View style={styles.rowBetween}>
             <View style={styles.hubIconRow}>
@@ -276,6 +278,7 @@ export default function SettingsScreen() {
             <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
           </View>
         </Card>
+        ) : null}
 
         <Card onPress={() => router.push('/(app)/games')} style={{ marginBottom: 8 }}>
           <View style={styles.rowBetween}>

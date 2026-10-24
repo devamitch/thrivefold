@@ -23,3 +23,13 @@ test('cycle is only offered to the women\'s health experience; community is gate
   items.filter((i) => ['Circles', 'Letters', 'Organizations'].includes(i.label)).forEach((i) => expect(i.social).toBe(true));
   expect(items.some((i) => i.label === 'Train')).toBe(true);
 });
+
+test('correspondence needs an open social path and a real age check', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { canUseCorrespondence } = require('../../src/navigation/eligibility');
+  const user = (isAgeVerified: boolean) => ({ isAgeVerified }) as never;
+  expect(canUseCorrespondence({ isSocialPathRevealed: true, user: user(false) })).toBe(false);
+  expect(canUseCorrespondence({ isSocialPathRevealed: false, user: user(true) })).toBe(false);
+  expect(canUseCorrespondence({ isSocialPathRevealed: true, user: null })).toBe(false);
+  expect(canUseCorrespondence({ isSocialPathRevealed: true, user: user(true) })).toBe(true);
+});
