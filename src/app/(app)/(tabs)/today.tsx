@@ -9,7 +9,7 @@
  * - Privacy-respecting Men's / Women's health paradigms
  */
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -19,7 +19,6 @@ import {
   Platform,
   Pressable,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -27,10 +26,6 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useShallow } from 'zustand/react/shallow';
 
 import { useTheme } from '../../../theme/useTheme';
-import {
-  useTabBarInset,
-  useScrollAwareTabBar,
-} from '../../../components/navigation/CustomTabBar';
 import {
   ScreenContainer,
   AppHeader,
@@ -57,7 +52,9 @@ import {
   AthleticCheckInCard,
 } from '../../../components/wellness';
 
-import { useRootStore } from '../../../stores/useRootStore';
+import { useRootStore ,
+  PersonalCalendarEvent,
+} from '../../../stores/useRootStore';
 import {
   generateMonthGrid,
   generateDayAgenda,
@@ -73,9 +70,6 @@ import {
   PHASE_CONFIG,
   computeAdvancedCycleMetrics,
 } from '../../../domain/health/cycleCalculations';
-import {
-  PersonalCalendarEvent,
-} from '../../../stores/useRootStore';
 
 type ActiveTab = 'quests' | 'calendar' | 'arcade' | 'forecast' | 'recovery';
 
@@ -83,7 +77,6 @@ export default function TodayScreen() {
   const router = useRouter();
   const { colors, typography, spacing, experience } = useTheme();
   const insets = useSafeAreaInsets();
-  const tabBarInset = useTabBarInset();
 
   const isWomen = experience === 'women_health';
   const isMen = experience === 'men_health';

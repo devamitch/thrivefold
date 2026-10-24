@@ -177,8 +177,6 @@ export function generateDayAgenda(
 ): CalendarEvent[] {
   const events: CalendarEvent[] = [];
   const targetDate = parseLocalDate(dateStr);
-  const dayOfWeek = targetDate.getDay(); // 0 is Sun, 6 is Sat
-  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
 
   // Add holiday event if this date is a known holiday or health observance
   const holiday = getHolidayForDate(dateStr);
@@ -779,14 +777,14 @@ export function generateYearForecast(
   year: number,
   cycleData?: CycleData | null,
   personalEvents?: PersonalCalendarEvent[]
-): Array<{
+): {
   monthIndex: number;
   monthName: string;
   year: number;
   estimatedPeriodStart: string;
   estimatedPeriodEnd: string;
   milestones: PersonalCalendarEvent[];
-}> {
+}[] {
   const forecast = [];
   const cycleLength = cycleData?.cycleLengthDays ?? 28;
   const periodDuration = cycleData?.periodLengthDays ?? 5;

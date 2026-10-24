@@ -9,8 +9,7 @@ import { PressableScale } from '../ui/PressableScale';
 import {
   DayCalendarCell,
   getDayRangeInfo,
-  CalendarEvent,
-} from '../../domain/calendar/universalCalendarEngine';
+  } from '../../domain/calendar/universalCalendarEngine';
 import { CycleData, PersonalCalendarEvent } from '../../stores/useRootStore';
 
 export interface WeekTimelineViewProps {

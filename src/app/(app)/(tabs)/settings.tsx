@@ -34,8 +34,7 @@ export default function SettingsScreen() {
   const router = useRouter();
   const { colors, typography, spacing, experience } = useTheme();
 
-  const themeMode = useRootStore((s) => s.themeMode);
-  const setThemeMode = useRootStore((s) => s.setThemeMode);
+  const setExperience = useRootStore((s) => s.setExperience);
   const user = useRootStore((s) => s.user);
   const setUser = useRootStore((s) => s.setUser);
   const signOut = useRootStore((s) => s.signOut);
@@ -323,33 +322,31 @@ export default function SettingsScreen() {
           </View>
         </Card>
 
-        {/* Appearance Settings */}
+        {/* Experience (onboarding promises it can be switched here) */}
         <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.md, marginBottom: spacing.sm }]}>
-          Theme & Appearance
+          Experience
         </Text>
         <Card style={{ marginBottom: spacing.md }}>
+          <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: spacing.sm }]}>
+            Changes your home screen, tools and look. Your records are kept.
+          </Text>
           <View style={styles.themeRow}>
-            {(['system', 'light', 'dark'] as const).map((mode) => (
+            {(
+              [
+                ['women_health', "Women's"],
+                ['men_health', "Men's"],
+                ['pride_wellbeing', 'LGBTQ+'],
+              ] as const
+            ).map(([id, label]) => (
               <Pressable
-                key={mode}
-                onPress={() => setThemeMode(mode)}
-                style={[
-                  styles.themeBtn,
-                  {
-                    backgroundColor: themeMode === mode ? colors.primary : colors.surface1,
-                  },
-                ]}
+                key={id}
+                onPress={() => setExperience(id)}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: experience === id }}
+                style={[styles.themeBtn, { backgroundColor: experience === id ? colors.primary : colors.surface1 }]}
               >
-                <Text
-                  style={[
-                    typography.captionBold,
-                    {
-                      color: themeMode === mode ? colors.onPrimary : colors.text.primary,
-                      textTransform: 'capitalize',
-                    },
-                  ]}
-                >
-                  {mode}
+                <Text style={[typography.captionBold, { color: experience === id ? colors.onPrimary : colors.text.primary }]}>
+                  {label}
                 </Text>
               </Pressable>
             ))}

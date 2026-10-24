@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Share,
   StyleSheet,
@@ -22,12 +22,11 @@ import { useRootStore, useShallow } from '../../stores/useRootStore';
 import { ProductExperience } from '../../theme/tokens';
 import { ThemeMode } from '../../stores/slices/appSlice';
 import { useTheme } from '../../theme/useTheme';
-import { CyclePhase } from '../../domain/health/cycleCalculations';
 import { formatLocalDate } from '../../domain/calendar/universalCalendarEngine';
 
 export default function DevToolsScreen() {
   const router = useRouter();
-  const { colors, typography, spacing, experience, isDark } = useTheme();
+  const { colors, typography, spacing, isDark } = useTheme();
 
   const store = useRootStore(
     useShallow((st) => ({

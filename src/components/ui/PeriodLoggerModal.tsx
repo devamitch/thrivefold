@@ -35,13 +35,13 @@ interface PeriodLoggerModalProps {
   onSaved?: () => void;
 }
 
-const FLOW_OPTIONS: Array<{
+const FLOW_OPTIONS: {
   intensity: FlowIntensity;
   label: string;
   desc: string;
   color: string;
   bg: string;
-}> = [
+}[] = [
   {
     intensity: 'spotting',
     label: 'Spotting',

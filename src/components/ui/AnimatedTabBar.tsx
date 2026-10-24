@@ -50,7 +50,7 @@ export const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
         mass: 0.8,
       });
     }
-  }, [safeIndex, tabWidth.value]);
+  }, [safeIndex, tabWidth, indicatorTranslateX]);
 
   const animatedIndicatorStyle = useAnimatedStyle(() => {
     return {

@@ -22,7 +22,7 @@ export const SomaticWellnessArcade: React.FC<SomaticWellnessArcadeProps> = React
   const [breathActive, setBreathActive] = useState(false);
   const [breathPhase, setBreathPhase] = useState<'inhale' | 'hold' | 'exhale'>('inhale');
   const [breathSeconds, setBreathSeconds] = useState(4);
-  const [breathCycles, setBreathCycles] = useState(0);
+  const [, setBreathCycles] = useState(0);
 
   // Internal Pelvic Sync Game state
   const [pelvicActive, setPelvicActive] = useState(false);

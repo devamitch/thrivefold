@@ -15,7 +15,7 @@ export default function JournalScreen() {
 
   const [newTitle, setNewTitle] = useState('');
   const [newContent, setNewContent] = useState('');
-  const [isComposing, setIsComposing] = useState(false);
+  const [, setIsComposing] = useState(false);
 
   const handleSave = () => {
     if (newTitle.trim() && newContent.trim()) {

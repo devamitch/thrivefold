@@ -2,14 +2,12 @@ import {
   formatLocalDate,
   parseLocalDate,
   generateDayAgenda,
-  generateMonthGrid,
   generateWeekGrid,
   generateYearForecast,
   generateAgendaRange,
   deriveCyclePhaseForDate,
   getDayRangeInfo,
-  getHolidayForDate,
-} from '../../src/domain/calendar/universalCalendarEngine';
+  } from '../../src/domain/calendar/universalCalendarEngine';
 import {
   getCyclePredictions,
   calculatePregnancyProgress,

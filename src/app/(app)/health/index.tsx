@@ -7,7 +7,6 @@ import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
 import { Header } from '../../../components/ui/Header';
 import { useTheme } from '../../../theme/useTheme';
-import { useRootStore } from '../../../stores/useRootStore';
 import MenHealthScreen from './men/index';
 import PrideHealthScreen from './pride/index';
 

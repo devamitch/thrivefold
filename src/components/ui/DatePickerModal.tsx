@@ -6,8 +6,7 @@ import {
   StyleSheet,
   Pressable,
   ScrollView,
-  Platform,
-} from 'react-native';
+  } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -57,7 +56,7 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
   maxDate,
 }) => {
   const insets = useSafeAreaInsets();
-  const { colors, typography, spacing } = useTheme();
+  const { colors, typography } = useTheme();
 
   const initialDate = useMemo(() => {
     return value ? parseLocalDate(value) : new Date();
@@ -144,12 +143,12 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
     ).getDate();
     const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
 
-    const days: Array<{
+    const days: {
       day: number;
       isCurrentMonth: boolean;
       dateStr: string;
       disabled: boolean;
-    }> = [];
+    }[] = [];
 
     // Prev month padding
     for (let i = startDayOfWeek - 1; i >= 0; i--) {

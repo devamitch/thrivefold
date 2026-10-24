@@ -21,7 +21,7 @@ export const CalendarViewModeSwitcher: React.FC<CalendarViewModeSwitcherProps> =
 }) => {
   const { colors, typography, spacing } = useTheme();
 
-  const modes: Array<{ id: CalendarViewMode; label: string; icon: string }> = [
+  const modes: { id: CalendarViewMode; label: string; icon: string }[] = [
     { id: 'month', label: 'Month', icon: 'grid-outline' },
     { id: 'week', label: 'Week', icon: 'reorder-two-outline' },
     { id: 'agenda', label: 'Agenda', icon: 'list-outline' },

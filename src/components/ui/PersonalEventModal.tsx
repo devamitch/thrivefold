@@ -35,11 +35,11 @@ interface PersonalEventModalProps {
   onSaved?: () => void;
 }
 
-const CATEGORIES: Array<{
+const CATEGORIES: {
   id: PersonalCalendarEvent['category'];
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
-}> = [
+}[] = [
   { id: 'birthday', label: 'Birthday', icon: 'gift-outline' },
   { id: 'anniversary', label: 'Anniversary', icon: 'ribbon-outline' },
   { id: 'appointment', label: 'Appointment', icon: 'calendar-outline' },
@@ -49,10 +49,10 @@ const CATEGORIES: Array<{
   { id: 'custom', label: 'Milestone', icon: 'star-outline' },
 ];
 
-const RELATIONSHIPS: Array<{
+const RELATIONSHIPS: {
   id: NonNullable<PersonalCalendarEvent['relationship']>;
   label: string;
-}> = [
+}[] = [
   { id: 'partner', label: 'Partner / Fiancé' },
   { id: 'self', label: 'Myself' },
   { id: 'family', label: 'Family' },
@@ -61,10 +61,10 @@ const RELATIONSHIPS: Array<{
   { id: 'other', label: 'Other' },
 ];
 
-const RECURRENCE_OPTIONS: Array<{
+const RECURRENCE_OPTIONS: {
   id: 'yearly' | 'monthly' | 'weekly' | 'none';
   label: string;
-}> = [
+}[] = [
   { id: 'yearly', label: 'Yearly (Annual)' },
   { id: 'monthly', label: 'Monthly' },
   { id: 'none', label: 'One-Time' },

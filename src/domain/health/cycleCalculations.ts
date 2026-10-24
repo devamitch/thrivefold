@@ -355,7 +355,7 @@ export function calculatePregnancyProgress(
  */
 export function computeAdvancedCycleMetrics(
   lastPeriodDate: string | null | undefined,
-  periodHistory: Array<{ startDate: string; endDate?: string }> = [],
+  periodHistory: { startDate: string; endDate?: string }[] = [],
   cycleLength: number = 28,
   periodLength: number = 5,
   context: string = 'regular'

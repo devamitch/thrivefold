@@ -26,9 +26,10 @@ export default function QuestsScreen() {
   const [open, setOpen] = useState<string | null>(null);
   const progress = useMemo(() => currentLevelProgress(s.xp, s.completedCheckpoints), [s.xp, s.completedCheckpoints]);
 
+  const { ensureDailyQuests } = s;
   useEffect(() => {
-    s.ensureDailyQuests();
-  }, [s.ensureDailyQuests]);
+    ensureDailyQuests();
+  }, [ensureDailyQuests]);
 
   return (
     <ScreenContainer header={<AppHeader title="Quests" subtitle="Today's quests and your level" showBack />} scrollMode="shell-scroll-view">

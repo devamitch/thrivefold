@@ -16,7 +16,6 @@ export default function SafetyScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
   const blockedUserIds = useRootStore((s) => s.blockedUserIds);
-  const blockUser = useRootStore((s) => s.blockUser);
   const unblockUser = useRootStore((s) => s.unblockUser);
   const showAlert = useRootStore((s) => s.showAlert);
   const showToast = useRootStore((s) => s.showToast);

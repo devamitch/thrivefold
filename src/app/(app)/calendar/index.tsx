@@ -3,10 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
-  Pressable,
-} from 'react-native';
-import { useRouter } from 'expo-router';
+  } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
@@ -20,10 +17,7 @@ import {
   generateMonthGrid,
   generateDayAgenda,
   formatLocalDate,
-  parseLocalDate,
-  DayCalendarCell,
-  CalendarEvent,
-} from '../../../domain/calendar/universalCalendarEngine';
+  } from '../../../domain/calendar/universalCalendarEngine';
 import * as Haptics from 'expo-haptics';
 
 const MONTH_NAMES = [
@@ -34,7 +28,6 @@ const MONTH_NAMES = [
 const WEEKDAY_HEADERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
 export default function CalendarScreen() {
-  const router = useRouter();
   const { colors, typography, spacing, experience } = useTheme();
   const cycleData = useRootStore((s) => s.cycleData);
 

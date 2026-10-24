@@ -1,4 +1,3 @@
-import { useColorScheme } from 'react-native';
 import { getThemeColors, ThemeColors } from './colors';
 import { ProductExperience } from './tokens';
 import { typographyFor, type Typography } from './typography';
@@ -14,7 +13,6 @@ export interface ThemeContextValue {
 }
 
 export function useTheme(): ThemeContextValue {
-  const themeMode = useRootStore((s) => s.themeMode);
   const experience = useRootStore((s) => s.experience);
 
   // Dark theme explicitly disabled for homely, calm, eye-friendly aesthetics

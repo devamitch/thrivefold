@@ -45,6 +45,9 @@ export interface AlertOptions {
 
 export interface AppSlice {
   experience: ProductExperience;
+  /** First-run intro slides were finished or skipped; they are not shown again. */
+  introSeen: boolean;
+  setIntroSeen: (seen: boolean) => void;
   /** Optional, private, never shared or used for eligibility. */
   privateIdentity: { pronouns: string; genderDescription: string };
   setPrivateIdentity: (identity: { pronouns: string; genderDescription: string }) => void;
@@ -83,6 +86,8 @@ export const createAppSlice: StateCreator<
   AppSlice
 > = (set) => ({
   experience: 'women_health',
+  introSeen: false,
+  setIntroSeen: (introSeen) => set({ introSeen }),
   privateIdentity: { pronouns: '', genderDescription: '' },
   themeMode: 'system',
   isOnboarded: false,

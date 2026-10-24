@@ -1,26 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
-  FlatList,
   KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  useWindowDimensions,
   View,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
 } from 'react-native';
 import Animated, {
   FadeIn,
-  useAnimatedStyle,
   useReducedMotion,
-  useSharedValue,
-  withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -30,56 +22,23 @@ import { newLocalId } from '../../stores/slices/authSlice';
 import { useRootStore } from '../../stores/useRootStore';
 import { accountsAvailable, requestEmailCode, verifyEmailCode } from '../../services/account/accountService';
 import { googleAvailable, signInWithGoogle } from '../../services/account/googleAccount';
+import { IntroSlider } from '../../components/onboarding/IntroSlider';
 import { useTheme } from '../../theme/useTheme';
 
-const SLIDES = [
-  {
-    id: 'health',
-    icon: 'water-outline' as const,
-    title: 'Your health, kept on your phone',
-    body: 'Track check-ins, sleep, symptoms and your cycle. Records stay on this device unless you choose otherwise.',
-    image: require('../../../assets/illustrations/intro-cycle.jpg'),
-  },
-  {
-    id: 'quests',
-    icon: 'trophy-outline' as const,
-    title: 'Three small quests a day',
-    body: 'Short, practical tasks. Each asks for what it actually needs, and points count only when it is done.',
-    image: require('../../../assets/illustrations/intro-quests.jpg'),
-  },
-  {
-    id: 'patterns',
-    icon: 'analytics-outline' as const,
-    title: 'Patterns from your own data',
-    body: 'See how sleep, stress and energy connect for you. Worked out on your phone; nothing is sent anywhere.',
-    image: require('../../../assets/illustrations/intro-vault.jpg'),
-  },
-  {
-    id: 'letters',
-    icon: 'mail-outline' as const,
-    title: 'Letters and circles, later',
-    body: 'Slow letters and private support circles open for verified adults when they are ready. Always optional.',
-    image: require('../../../assets/illustrations/intro-letters.jpg'),
-  },
-];
 
-const AUTO_ADVANCE_MS = 4500;
-
-type Step = 'intro' | 'account' | 'name' | 'email' | 'code';
+type Step = 'account' | 'name' | 'email' | 'code';
 
 export default function SignInScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
   const { colors, typography, spacing } = useTheme();
   const reduceMotion = useReducedMotion();
   const setUser = useRootStore((s) => s.setUser);
   const continueAsGuest = useRootStore((s) => s.continueAsGuest);
 
-  const [step, setStep] = useState<Step>('intro');
-  const [slide, setSlide] = useState(0);
-  const [paused, setPaused] = useState(false);
-  const listRef = useRef<FlatList<(typeof SLIDES)[number]>>(null);
+  const introSeen = useRootStore((s) => s.introSeen);
+  const setIntroSeen = useRootStore((s) => s.setIntroSeen);
+  const [step, setStep] = useState<Step>('account');
 
   const [pseudonym, setPseudonym] = useState('');
   const [email, setEmail] = useState('');
@@ -89,30 +48,6 @@ export default function SignInScreen() {
 
   const name = pseudonym.trim();
   const tooLong = name.length > 24;
-
-  // Auto-advance, paused while the person is swiping and off with reduced motion.
-  useEffect(() => {
-    if (step !== 'intro' || paused || reduceMotion) return;
-    const id = setTimeout(() => {
-      const next = (slide + 1) % SLIDES.length;
-      listRef.current?.scrollToIndex({ index: next, animated: true });
-      setSlide(next);
-    }, AUTO_ADVANCE_MS);
-    return () => clearTimeout(id);
-  }, [slide, paused, step, reduceMotion]);
-
-  const onMomentumEnd = useCallback(
-    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-      setSlide(Math.round(e.nativeEvent.contentOffset.x / width));
-      setPaused(false);
-    },
-    [width],
-  );
-
-  const goTo = (index: number) => {
-    listRef.current?.scrollToIndex({ index, animated: !reduceMotion });
-    setSlide(index);
-  };
 
   const createProfile = () => {
     if (tooLong) return;
@@ -198,68 +133,8 @@ export default function SignInScreen() {
     </View>
   );
 
-  if (step === 'intro') {
-    return (
-      <View style={[styles.root, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-        <View style={[styles.brandRow, { paddingHorizontal: spacing.lg }]}>
-          <Image
-            source={require('../../../assets/brand/Minimalist-Terracotta-T-and-Leaf-Emblem.png')}
-            style={styles.brandMark}
-            contentFit="contain"
-            accessibilityLabel="Thrivefold"
-          />
-          <Text style={[typography.subheading, { color: colors.text.primary, marginLeft: 10 }]}>Thrivefold</Text>
-        </View>
-
-        <FlatList
-          ref={listRef}
-          data={SLIDES}
-          keyExtractor={(s) => s.id}
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          onScrollBeginDrag={() => setPaused(true)}
-          onMomentumScrollEnd={onMomentumEnd}
-          getItemLayout={(_, index) => ({ length: width, offset: width * index, index })}
-          style={styles.slides}
-          renderItem={({ item }) => (
-            <View style={{ width, paddingHorizontal: spacing.lg }} accessible accessibilityLabel={`${item.title}. ${item.body}`}>
-              <View style={[styles.imageWrap, { backgroundColor: colors.surface1 }]}>
-                <Image source={item.image} style={styles.image} contentFit="cover" />
-              </View>
-              <View style={[styles.slideIcon, { backgroundColor: colors.primaryAlpha, marginTop: spacing.lg }]}>
-                <Ionicons name={item.icon} size={20} color={colors.primary} />
-              </View>
-              <Text style={[typography.heading, { color: colors.text.primary, marginTop: spacing.sm }]}>{item.title}</Text>
-              <Text style={[typography.body, { color: colors.text.secondary, marginTop: spacing.xs }]}>{item.body}</Text>
-            </View>
-          )}
-        />
-
-        <View style={[styles.dotsRow, { marginTop: spacing.sm }]}>
-          {SLIDES.map((s, i) => (
-            <Pressable
-              key={s.id}
-              onPress={() => goTo(i)}
-              hitSlop={10}
-              accessibilityRole="button"
-              accessibilityLabel={`Slide ${i + 1} of ${SLIDES.length}`}
-              accessibilityState={{ selected: i === slide }}
-            >
-              <Dot active={i === slide} activeColor={colors.primary} idleColor={colors.surface2} />
-            </Pressable>
-          ))}
-        </View>
-
-        <View style={styles.flex} />
-
-        <View style={{ paddingHorizontal: spacing.lg, paddingBottom: insets.bottom + spacing.md }}>
-          <Button label="Get started" size="lg" onPress={() => setStep('account')} />
-          <Button label="Explore as guest" variant="ghost" onPress={guest} style={{ marginTop: spacing.xs }} />
-          {legal}
-        </View>
-      </View>
-    );
+  if (!introSeen) {
+    return <IntroSlider onFinish={() => setIntroSeen(true)} />;
   }
 
   if (step === 'account') {
@@ -268,10 +143,10 @@ export default function SignInScreen() {
         <Pressable
           onPress={() => {
             setAuthError(null);
-            setStep('intro');
+            setIntroSeen(false);
           }}
           accessibilityRole="button"
-          accessibilityLabel="Back"
+          accessibilityLabel="See the introduction again"
           style={[styles.back, { backgroundColor: colors.surface1 }]}
         >
           <Ionicons name="chevron-back" size={20} color={colors.text.primary} />
@@ -305,6 +180,7 @@ export default function SignInScreen() {
           <Button label="Sign in with email" variant="outline" onPress={() => setStep('email')} style={{ marginTop: spacing.sm }} />
         ) : null}
         <Button label="Continue without an account" variant="ghost" onPress={() => setStep('name')} style={{ marginTop: spacing.xs }} />
+        <Button label="Explore as guest" variant="ghost" onPress={guest} />
         <View style={{ paddingBottom: insets.bottom + spacing.md }}>{legal}</View>
       </View>
     );
@@ -409,16 +285,6 @@ export default function SignInScreen() {
       </ScrollView>
     </KeyboardAvoidingView>
   );
-}
-
-/** Pagination dot that widens when its slide is showing. */
-function Dot({ active, activeColor, idleColor }: { active: boolean; activeColor: string; idleColor: string }) {
-  const width = useSharedValue(active ? 22 : 8);
-  useEffect(() => {
-    width.value = withTiming(active ? 22 : 8, { duration: 200 });
-  }, [active, width]);
-  const style = useAnimatedStyle(() => ({ width: width.value }));
-  return <Animated.View style={[styles.dot, { backgroundColor: active ? activeColor : idleColor }, style]} />;
 }
 
 const styles = StyleSheet.create({

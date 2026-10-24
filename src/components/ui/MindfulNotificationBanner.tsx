@@ -10,7 +10,7 @@
   * - Haptic feedback for tactile mindfulness
   */
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { StyleSheet, View, Text, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -55,6 +55,10 @@ export function MindfulNotificationBanner() {
       hideToast(activeToast.id);
     }
   };
+  // The auto-dismiss timer calls the current handler without restarting on every render.
+  const dismissRef = useRef(handleDismiss);
+  dismissRef.current = handleDismiss;
+  const callDismiss = () => dismissRef.current();
 
   useEffect(() => {
     if (activeToast) {
@@ -68,7 +72,7 @@ export function MindfulNotificationBanner() {
       const timer = setTimeout(() => {
         translateY.value = withTiming(-140, { duration: 200 });
         opacity.value = withTiming(0, { duration: 200 }, () => {
-          runOnJS(handleDismiss)();
+          runOnJS(callDismiss)();
         });
       }, 4500);
 
@@ -78,7 +82,7 @@ export function MindfulNotificationBanner() {
       opacity.value = 0;
       return undefined;
     }
-  }, [activeToast]);
+  }, [activeToast, opacity, translateY]);
 
   const pan = Gesture.Pan()
     .activeOffsetY([-10, 10])

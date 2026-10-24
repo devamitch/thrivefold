@@ -1,5 +1,5 @@
 import { ProductExperience } from '../../theme/tokens';
-import { getSpecialQuestsForExperience, getTasksForExperience } from './gameCatalogService';
+import { getTasksForExperience } from './gameCatalogService';
 import {
   EvidenceSubmission,
   SpecialQuestDefinition,

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../../components/ui/ScreenWrapper';
 import { Card } from '../../../../components/ui/Card';
@@ -10,7 +10,6 @@ import { Badge } from '../../../../components/ui/Badge';
 import { useTheme } from '../../../../theme/useTheme';
 
 export default function OrganizationDetailScreen() {
-  const router = useRouter();
   const { organizationId } = useLocalSearchParams<{ organizationId: string }>();
   const { colors, typography, spacing } = useTheme();
 

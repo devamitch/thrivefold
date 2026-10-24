@@ -18,12 +18,11 @@ import { useTheme } from '../../../theme/useTheme';
 export default function LetterComposeScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
-  const { createDraft, sendLetter, showAlert, showToast } = useRootStore(
+  const { createDraft, sendLetter, showAlert } = useRootStore(
     useShallow((s) => ({
       createDraft: s.createDraft,
       sendLetter: s.sendLetter,
       showAlert: s.showAlert,
-      showToast: s.showToast,
     })),
   );
 

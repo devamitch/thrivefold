@@ -1,7 +1,5 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle, StyleProp } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   SharedValue,
   useAnimatedStyle,
@@ -10,9 +8,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../theme/useTheme';
-import { PressableScale } from './PressableScale';
-import * as Haptics from 'expo-haptics';
-import { HeaderBackButton, HeaderIconButton, HeaderLargeTitle, AppHeader, type AppHeaderProps } from './AppHeader';
+import { HeaderBackButton } from './AppHeader';
 
 export interface HeaderProps {
   title: string;
@@ -40,17 +36,10 @@ export const SanctuaryHeader: React.FC<HeaderProps> = ({
   style,
   scrollY,
 }) => {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, typography, spacing } = useTheme();
 
-  const handleBack = () => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    } catch {}
-    if (router.canGoBack()) router.back();
-    else router.replace('/(app)/(tabs)');
-  };
+
 
   const animatedEyebrowStyle = useAnimatedStyle(() => {
     if (!scrollY) return {};

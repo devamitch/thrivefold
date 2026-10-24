@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
@@ -38,7 +37,6 @@ const CONTEXT_OPTIONS: { id: ReproductiveContext; label: string; icon: string; d
 ];
 
 export default function CycleScreen() {
-  const router = useRouter();
   const { colors, typography, spacing } = useTheme();
   const cycleData = useRootStore((s) => s.cycleData);
   const updateCycleData = useRootStore((s) => s.updateCycleData);
