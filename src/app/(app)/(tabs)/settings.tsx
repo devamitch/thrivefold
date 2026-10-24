@@ -18,6 +18,7 @@ import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { buildLocalExport, eraseLocalData } from '../../../services/privacy/localData';
 import { useRootStore } from '../../../stores/useRootStore';
 import { signOutAccount } from '../../../services/account/accountService';
+import { AppHeader } from '../../../components/ui/AppHeader';
 import { useTheme } from '../../../theme/useTheme';
 
 const AVATAR_OPTIONS = [
@@ -50,7 +51,7 @@ export default function SettingsScreen() {
 
   // Editing pseudonym state
   const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [editedName, setEditedName] = useState(user?.pseudonym ?? 'SolsticeSeeker');
+  const [editedName, setEditedName] = useState(user?.pseudonym ?? '');
   const [selectedAvatar, setSelectedAvatar] = useState(user?.avatarSeed ?? 'lotus');
 
   const handleSaveProfile = () => {
@@ -80,10 +81,10 @@ export default function SettingsScreen() {
 
   const handleDeleteAccount = () => {
     showAlert({
-      title: 'Erase Local Vault & Profile',
+      title: 'Erase everything on this device?',
       message:
-        'This will permanently delete all cycle entries, daily journals, private letters, and cryptographic keys from this device.',
-      confirmText: 'Erase Everything',
+        'Check-ins, cycle records, journal, workouts, quests and settings are permanently deleted from this phone. Export first if you want a copy.',
+      confirmText: 'Erase everything',
       destructive: true,
       onConfirm: () => {
         eraseLocalData();
@@ -97,7 +98,7 @@ export default function SettingsScreen() {
     AVATAR_OPTIONS.find((a) => a.id === (user?.avatarSeed ?? 'lotus')) ?? AVATAR_OPTIONS[0];
 
   return (
-    <ScreenContainer scrollMode="shell-scroll-view">
+    <ScreenContainer header={<AppHeader title="You" subtitle="Profile, privacy and settings" />} scrollMode="shell-scroll-view">
       <View style={[styles.content, { paddingBottom: spacing.xxl }]}>
         {/* Profile Card Header */}
         <Animated.View entering={FadeInDown.duration(280)}>
@@ -117,7 +118,7 @@ export default function SettingsScreen() {
               <View style={{ flex: 1, marginLeft: 16 }}>
                 <View style={styles.rowBetween}>
                   <Text style={[typography.heading, { color: colors.text.primary, fontSize: 20 }]}>
-                    {user?.pseudonym ?? 'SolsticeSeeker'}
+                    {user?.pseudonym ?? 'Friend'}
                   </Text>
                   <Pressable
                     onPress={() => setIsEditingProfile(true)}
@@ -129,8 +130,8 @@ export default function SettingsScreen() {
 
                 <View style={styles.badgeRow}>
                   <Badge
-                    label={user?.isGuest ? 'Guest Mode' : 'Verified Member'}
-                    variant={user?.isGuest ? 'neutral' : 'success'}
+                    label={user?.isGuest ? 'Guest' : user?.email ? 'Signed in' : 'On this device'}
+                    variant="neutral"
                   />
                   <Badge
                     label={`Lvl ${level}`}
