@@ -1,5 +1,30 @@
 # Requirements Traceability Matrix
 
+## Update — 2026-10-25 (3): repair prompt v3
+
+Checks: compile 0, lint 0, `pnpm test` 171/171, Android release build PASS. Device: Today tab and
+Roadmap seen on device earlier; this round's build not installed (phone has a differently
+signed build; replacing it would erase app data — needs the owner's OK).
+
+| Requirement (repair prompt) | Status | Where | Evidence |
+| --- | --- | --- | --- |
+| Today / Cycle and calendar tab preserved | verified | `(tabs)/today.tsx` restored from history | seen on device |
+| Train = route inside quest system, no tab | implemented | `(app)/train/*`, coach `assignmentId` | `workout-evidence.test.ts` |
+| Quest-launched workout completes only that assignment | implemented | `questSlice.completeAssignmentWithWorkout` | reuse of verifier + duplicate guard |
+| Manual / self-reported logging | implemented | `train/log.tsx`, `verification: 'manual'` | — |
+| App drawer, grouped, eligibility-aware | implemented | `navigation/drawerItems.ts`, `AppDrawer` | `drawer-routes.test.ts` |
+| Calendar shows saved workouts/meals/check-ins/quests | implemented | `useAgendaSources`, `generateDayAgenda` | `agenda-sources.test.ts` |
+| Local day keys (Asia/Kolkata before 05:30) | verified (unit) | `formatLocalDate` | `local-day.test.ts` |
+| Men never see cycle UI | implemented | drawer `only`, You card, calendar | `agenda-sources.test.ts`, drawer test |
+| No gender inference; honest birthday | implemented | `confirm-profile.tsx`, `googleProfile.ts` | `google-profile.test.ts` |
+| Sign-out / erase | implemented | `signOutEverywhere`, `eraseLocalData` | not device-tested |
+| Correspondence hidden + route-guarded | implemented | `navigation/eligibility.ts`, letters/social layouts | drawer test |
+| Videos: reviewed only | implemented | 50 exercise + 4 hand-picked, 17 quest; rest in-app search | raw manifest kept, not served |
+| Meal photos + macros | implemented | `meal-log.tsx`, `domain/nutrition/foods.ts` | `foods.test.ts` |
+| Image-based macro estimation | blocked | needs a consented vision provider | — |
+| Age verification provider | blocked | correspondence stays closed for everyone | — |
+| Voice commands (listening) | not started | speech output only | — |
+
 ## Update — 2026-10-25 (2)
 
 Checks: compile 0, lint 0, `pnpm test` 155/155, `pnpm test:db` 77/77, Android release build PASS.
