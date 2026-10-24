@@ -6,6 +6,7 @@ import { OnboardingScaffold } from '../../components/onboarding/OnboardingScaffo
 import { Card } from '../../components/ui/Card';
 import { Icon, IconName } from '../../components/ui/Icon';
 import { useRootStore } from '../../stores/useRootStore';
+import { suggestedExperience } from '../../domain/account/googleProfile';
 import { ProductExperience } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
 
@@ -34,19 +35,23 @@ export default function ChooseExperienceScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
   const experience = useRootStore((s) => s.experience);
+  const confirmed = useRootStore((s) => s.experienceConfirmed);
   const setExperience = useRootStore((s) => s.setExperience);
+  const googleGender = useRootStore((s) => (s.user?.profileSource === 'google' ? s.user.gender : null));
+  const suggested = suggestedExperience(googleGender ?? null);
 
   return (
     <OnboardingScaffold
       step="choose-experience"
       reward="experience"
       title="Where would you like to start?"
-      subtitle="This sets your home screen and look. You can switch any time in Settings."
-      primaryLabel="Continue"
+      subtitle="This sets your home screen, tools and look. You can change it later in Personalize."
+      primaryLabel={confirmed ? 'Continue' : 'Choose one to continue'}
+      primaryDisabled={!confirmed}
       onPrimary={() => router.push('/(onboarding)/privacy-choices')}
     >
       {EXPERIENCES.map((item) => {
-        const selected = experience === item.id;
+        const selected = confirmed && experience === item.id;
         return (
           <Card
             key={item.id}
@@ -77,6 +82,9 @@ export default function ChooseExperienceScreen() {
                 <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>
                   {item.desc}
                 </Text>
+                {suggested === item.id ? (
+                  <Text style={[typography.captionBold, { color: colors.primary, marginTop: 4 }]}>Suggested from your Google profile</Text>
+                ) : null}
               </View>
               <View
                 style={[

@@ -33,7 +33,7 @@ export const useRootStore = create<RootState>()(
     }),
     {
       name: 'thrivefold-root',
-      version: 3,
+      version: 4,
       storage: localJSONStorage,
       // v2: rewards moved onto an append-only ledger (see questSlice.migrateQuestState).
       // v3: onboarding answers gained a baseline (body and mind check).
@@ -47,6 +47,10 @@ export const useRootStore = create<RootState>()(
               (e) => e.id !== 'default_bday_user' && e.id !== 'default_anniversary',
             );
           }
+        }
+        if (version < 4) {
+          // Earlier builds preselected an experience; people who finished setup chose theirs.
+          state.experienceConfirmed = Boolean(state.isOnboarded);
         }
         if (version < 3) {
           state.onboarding = { ...EMPTY_ONBOARDING, ...((state.onboarding as object | undefined) ?? {}) };

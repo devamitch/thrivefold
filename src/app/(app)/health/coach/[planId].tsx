@@ -4,7 +4,17 @@ import { useKeepAwake } from 'expo-keep-awake';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { BackHandler, Linking, PermissionsAndroid, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeIn, FadeInDown, FadeOut, FadeOutUp, useReducedMotion } from 'react-native-reanimated';
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  FadeOut,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Speech from 'expo-speech';
 import { PoseCameraView, poseLandmarkerAvailable, poseModelVersion, type PoseFrame } from 'pose-landmarker';
@@ -28,6 +38,7 @@ import {
   type PoseSessionSummary,
   type RepState,
 } from '../../../../domain/pose/movement';
+import { initialGestureState, stepGesture, type Gesture } from '../../../../domain/pose/gestures';
 import { writeWorkoutToHealthConnect } from '../../../../services/integrations/healthConnect';
 import { useRootStore } from '../../../../stores/useRootStore';
 import { useTheme } from '../../../../theme/useTheme';
@@ -45,6 +56,9 @@ interface DoneSummary {
   form: WorkoutFormEvidence | null;
   lines: { name: string; detail: string }[];
 }
+
+/** Moves that raise the arms, during which hand gestures are ignored. */
+const ARM_MOVES = new Set(['arm_raise', 'jumping_jack', 'bird_dog', 'warrior']);
 
 const clock = (s: number) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 
@@ -80,6 +94,9 @@ export default function CoachScreen() {
   /** 3-2-1 before each set; reps are not counted until it reaches 0. */
   const [countdown, setCountdown] = useState(0);
   const [voiceOn, setVoiceOn] = useState(true);
+  const [gestureProgress, setGestureProgress] = useState<{ g: Gesture | null; p: number }>({ g: null, p: 0 });
+  const gestureRef = useRef(initialGestureState());
+  const counterPulse = useSharedValue(1);
   const voiceRef = useRef(true);
   voiceRef.current = voiceOn;
 
@@ -90,6 +107,7 @@ export default function CoachScreen() {
   const startedAt = useRef('');
   const lastUi = useRef(0);
 
+  const counterStyle = useAnimatedStyle(() => ({ transform: [{ scale: counterPulse.value }] }));
   const item = plan?.items[itemIdx];
   const exercise = item ? exerciseById(item.exerciseId) : undefined;
   const movement = item ? movementForExercise(item.exerciseId) : undefined;
@@ -258,10 +276,47 @@ export default function CoachScreen() {
     [plan, item, movement, setIdx, itemIdx, finish, showControls],
   );
 
+  const onGesture = useCallback(
+    (g: Gesture) => {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+      if (g === 'one_hand') {
+        if (!video) return;
+        autoPaused.current = false;
+        if (videoPlaying) {
+          player.current?.pause();
+          say('Video paused');
+        } else {
+          player.current?.play();
+          say('Playing');
+        }
+        return;
+      }
+      if (rest > 0) {
+        say('Skipping rest');
+        setRest(0);
+      } else if (countdown === 0 && item) {
+        const counted = movement?.kind === 'hold' ? Math.round(repRef.current.holdMs / 1000) : repRef.current.reps;
+        completeSet(cameraOn && movement && repRef.current.validFrames > 0 ? counted : item.target);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [video, videoPlaying, rest, countdown, item, movement, cameraOn, completeSet],
+  );
+
   const onPose = useCallback(
     (e: { nativeEvent: PoseFrame }) => {
       const { landmarks, frameWidth, frameHeight, timestamp } = e.nativeEvent;
       const now = Date.now();
+      // Hands-free control, except while doing a move that raises the arms.
+      const armsBusy = checking && movement && ARM_MOVES.has(movement.id);
+      if (!armsBusy) {
+        const g = stepGesture(gestureRef.current, landmarks, now);
+        gestureRef.current = g.state;
+        if (g.fired) onGesture(g.fired);
+        if (g.progress !== gestureProgress.p || g.state.current !== gestureProgress.g) {
+          setGestureProgress({ g: g.state.latched ? null : g.state.current, p: g.state.latched ? 0 : g.progress });
+        }
+      }
       if (!checking || !movement || !item) {
         if (now - lastUi.current > 100) {
           lastUi.current = now;
@@ -290,11 +345,17 @@ export default function CoachScreen() {
       }
       if (next.reps > before.reps) {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
-        if (!next.fault) say(String(next.reps));
+        counterPulse.value = withSequence(withTiming(1.25, { duration: 120 }), withSpring(1, { damping: 8 }));
+        const left = item.target - next.reps;
+        if (!next.fault && left > 0) say(left === 1 ? 'Last one' : left <= 3 ? `${left} to go` : String(next.reps));
       }
       if (movement.kind === 'hold') {
         const sec = Math.floor(next.holdMs / 1000);
-        if (sec > 0 && sec !== Math.floor(before.holdMs / 1000) && sec % 10 === 0) say(`${sec} seconds`);
+        if (sec > 0 && sec !== Math.floor(before.holdMs / 1000)) {
+          const left = item.target - sec;
+          if (left === 5) say('5 seconds left');
+          else if (left > 5 && sec % 10 === 0) say(`${sec} seconds`);
+        }
       }
 
       const doneNow = movement.kind === 'hold' ? next.holdMs / 1000 >= item.target : next.reps >= item.target;
@@ -305,7 +366,7 @@ export default function CoachScreen() {
       }
       if (doneNow) completeSet(movement.kind === 'hold' ? Math.round(next.holdMs / 1000) : next.reps);
     },
-    [checking, movement, item, videoPlaying, completeSet],
+    [checking, movement, item, videoPlaying, completeSet, gestureProgress, onGesture, counterPulse],
   );
 
   const manualSetDone = () => {
@@ -379,6 +440,8 @@ export default function CoachScreen() {
             ['videocam-outline', cameraBuilt ? 'The camera counts reps and checks your form for the exercises it knows.' : 'Form checking is not available in this build; the coach still runs videos, sets and rest.'],
             ['pause-circle-outline', 'If your form slips, the video pauses and shows exactly what to fix. It carries on when you have fixed it.'],
             ['sparkles-outline', `Good camera-checked form (80% or more) earns ${WORKOUT_XP_BASE * WORKOUT_FORM_MULTIPLIER} XP instead of ${WORKOUT_XP_BASE}.`],
+            ['hand-left-outline', 'Hands-free: hold one hand above your head to play or pause the video, both hands to finish a set or skip a rest.'],
+            ['volume-high-outline', 'A voice counts you in, counts your reps and tells you what to fix. You can mute it.'],
             ['eye-off-outline', 'Everything runs on this phone. No photos or video are saved or sent.'],
             ['phone-portrait-outline', 'Prop the phone up about two metres away, side-on, with your whole body in view.'],
           ].map(([icon, text]) => (
@@ -512,12 +575,27 @@ export default function CoachScreen() {
           </Text>
         </View>
         <View style={styles.counter} accessibilityLabel={`${counted} of ${item.target} ${unit}`}>
-          <Text style={[styles.counterBig, typography.display, { color: fault ? colors.error : colors.onPrimary }]}>{counted}</Text>
+          <Animated.Text style={[styles.counterBig, typography.display, { color: fault ? colors.error : colors.onPrimary }, counterStyle]}>
+            {counted}
+          </Animated.Text>
           <Text style={[typography.captionBold, { color: colors.onPrimary, opacity: 0.8 }]}>
-            / {item.target} {unit}
+            {item.target - counted > 0 ? `${item.target - counted} to go` : 'done'}
           </Text>
         </View>
       </View>
+
+      {/* Hands-free gesture in progress */}
+      {gestureProgress.g && gestureProgress.p > 0 ? (
+        <View pointerEvents="none" style={[styles.gesture, { top: insets.top + 84, backgroundColor: colors.primary }]}>
+          <Ionicons name="hand-left-outline" size={18} color={colors.onPrimary} />
+          <Text style={[typography.bodyBold, { color: colors.onPrimary, marginLeft: 8 }]}>
+            {gestureProgress.g === 'one_hand' ? (videoPlaying ? 'Pausing video' : 'Playing video') : rest > 0 ? 'Skipping rest' : 'Finishing set'}
+          </Text>
+          <View style={[styles.gestureTrack, { backgroundColor: colors.primaryAlpha }]}>
+            <View style={[styles.gestureFill, { width: `${Math.round(gestureProgress.p * 100)}%`, backgroundColor: colors.onPrimary }]} />
+          </View>
+        </View>
+      ) : null}
 
       {/* 3-2-1 before each set */}
       {countdown > 0 ? (
@@ -657,6 +735,9 @@ const styles = StyleSheet.create({
   howTo: { justifyContent: 'flex-start' },
   pill: { alignItems: 'center', borderRadius: 999, flexDirection: 'row', paddingHorizontal: 8, paddingVertical: 4 },
   counter: { alignItems: 'flex-end', marginLeft: 12 },
+  gesture: { alignItems: 'center', alignSelf: 'center', borderRadius: 999, elevation: 22, flexDirection: 'row', paddingHorizontal: 14, paddingVertical: 10, position: 'absolute', zIndex: 22 },
+  gestureTrack: { borderRadius: 3, height: 6, marginLeft: 10, overflow: 'hidden', width: 60 },
+  gestureFill: { height: 6 },
   counterBig: { fontSize: 40, lineHeight: 44 },
   restNumber: { fontSize: 72, lineHeight: 80 },
   restWrap: { alignItems: 'center', bottom: 0, elevation: 19, justifyContent: 'center', left: 0, position: 'absolute', right: 0, top: 0, zIndex: 19 },

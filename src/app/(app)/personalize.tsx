@@ -22,9 +22,10 @@ import { useTheme } from '../../theme/useTheme';
 export default function PersonalizeScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
-  const { experience, onboarding, setOnboardingAnswers, todayQuests, ledger, claimSetupReward, todayCheckIn } = useRootStore(
+  const { experience, setExperience, onboarding, setOnboardingAnswers, todayQuests, ledger, claimSetupReward, todayCheckIn } = useRootStore(
     useShallow((s) => ({
       experience: s.experience,
+      setExperience: s.setExperience,
       onboarding: s.onboarding,
       setOnboardingAnswers: s.setOnboardingAnswers,
       todayQuests: s.todayQuests,
@@ -92,6 +93,24 @@ export default function PersonalizeScreen() {
           </Text>
         </Pressable>
       ) : null}
+
+      <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.xl, marginBottom: spacing.xs }]}>
+        Your focus
+      </Text>
+      <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: spacing.sm }]}>
+        Sets your home screen, tools and look. Your records are kept.
+      </Text>
+      <View style={styles.chips}>
+        {(
+          [
+            ['women_health', "Women's health"],
+            ['men_health', "Men's health"],
+            ['pride_wellbeing', 'LGBTQ+ wellbeing'],
+          ] as const
+        ).map(([id, label]) => (
+          <Chip key={id} label={label} selected={experience === id} onPress={() => setExperience(id)} />
+        ))}
+      </View>
 
       <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.xl, marginBottom: spacing.sm }]}>
         What you want help with

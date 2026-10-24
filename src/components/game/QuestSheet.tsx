@@ -48,7 +48,7 @@ export function QuestSheet({ assignmentId, onClose }: QuestSheetProps) {
               keyboardShouldPersistTaps="handled"
               contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.md }}
             >
-              {assignmentId ? <QuestPanel assignmentId={assignmentId} onDone={onClose} /> : null}
+              {assignmentId ? <QuestPanel assignmentId={assignmentId} onDone={onClose} onLeave={onClose} /> : null}
             </ScrollView>
           </View>
         </View>

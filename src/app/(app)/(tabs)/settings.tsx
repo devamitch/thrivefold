@@ -359,36 +359,6 @@ export default function SettingsScreen() {
           </View>
         </Card>
 
-        {/* Experience (onboarding promises it can be switched here) */}
-        <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.md, marginBottom: spacing.sm }]}>
-          Experience
-        </Text>
-        <Card style={{ marginBottom: spacing.md }}>
-          <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: spacing.sm }]}>
-            Changes your home screen, tools and look. Your records are kept.
-          </Text>
-          <View style={styles.themeRow}>
-            {(
-              [
-                ['women_health', "Women's"],
-                ['men_health', "Men's"],
-                ['pride_wellbeing', 'LGBTQ+'],
-              ] as const
-            ).map(([id, label]) => (
-              <Pressable
-                key={id}
-                onPress={() => setExperience(id)}
-                accessibilityRole="radio"
-                accessibilityState={{ selected: experience === id }}
-                style={[styles.themeBtn, { backgroundColor: experience === id ? colors.primary : colors.surface1 }]}
-              >
-                <Text style={[typography.captionBold, { color: experience === id ? colors.onPrimary : colors.text.primary }]}>
-                  {label}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        </Card>
 
         {/* Reminders */}
         <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.sm, marginBottom: spacing.sm }]}>

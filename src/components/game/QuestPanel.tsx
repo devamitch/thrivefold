@@ -18,6 +18,9 @@ import {
 } from '../../domain/game/objectives';
 import { questFamily, type ReplacementOption } from '../../domain/game/progression';
 import { formatLocalDate } from '../../domain/calendar/universalCalendarEngine';
+import { suggestPlans } from '../../domain/fitness/workouts';
+import { fitFor } from '../../domain/game/setupProfile';
+import { useRouter, type Href } from 'expo-router';
 
 type Answers = ObjectiveEvidence['answers'];
 
@@ -27,6 +30,8 @@ export interface QuestPanelProps {
   assignmentId: string;
   /** Called after a successful submission, a skip, or a replacement. */
   onDone?: (outcome: 'completed' | 'skipped' | 'replaced') => void;
+  /** Called when the panel opens another screen (the sheet closes itself). */
+  onLeave?: () => void;
 }
 
 /**
@@ -34,8 +39,9 @@ export interface QuestPanelProps {
  * in-app timer when the objective is timed, and skip / same-family replacement. Rewards are
  * granted only by the store after the objective's evaluator accepts the evidence.
  */
-export function QuestPanel({ assignmentId, onDone }: QuestPanelProps) {
+export function QuestPanel({ assignmentId, onDone, onLeave }: QuestPanelProps) {
   const { colors, typography, spacing } = useTheme();
+  const router = useRouter();
   const { assignment, submitQuestEvidence, skipDailyTask, getReplacementOptions, acceptReplacement, showToast } =
     useRootStore(
       useShallow((s) => ({
@@ -119,6 +125,23 @@ export function QuestPanel({ assignmentId, onDone }: QuestPanelProps) {
 
   const done = assignment.status === 'verified' || assignment.status === 'self_reported';
   const closed = assignment.status === 'skipped' || assignment.status === 'replaced' || assignment.status === 'expired';
+
+  /** Opens the camera coach with the plan that suits the person today. */
+  const openCoach = () => {
+    const st = useRootStore.getState();
+    const day = formatLocalDate(new Date());
+    const checkIn = st.checkInHistory.find((c) => c.date === day);
+    const fit = fitFor(st.onboarding, checkIn ?? null);
+    const pick = suggestPlans({
+      capacity: fit.capacity,
+      restDay: checkIn?.intensity === 'rest',
+      constraints: st.onboarding.constraints,
+      sessions: st.workoutSessions,
+      today: day,
+    })[0];
+    onLeave?.();
+    router.push(`/(app)/health/coach/${pick?.plan.id ?? 'desk_reset'}` as Href);
+  };
   const minimum = form?.minimumElapsedSeconds ?? 0;
 
   const submit = () => {
@@ -194,6 +217,23 @@ export function QuestPanel({ assignmentId, onDone }: QuestPanelProps) {
 
       {task.purpose ? (
         <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: spacing.sm }]}>{task.purpose}</Text>
+      ) : null}
+
+      {questFamily(task.category) === 'movement' && !done && !closed ? (
+        <Pressable
+          onPress={openCoach}
+          accessibilityRole="button"
+          style={[styles.coach, { backgroundColor: colors.primary, marginTop: spacing.md }]}
+        >
+          <Ionicons name="videocam" size={20} color={colors.onPrimary} />
+          <View style={{ flex: 1, marginLeft: 10 }}>
+            <Text style={[typography.bodyBold, { color: colors.onPrimary }]}>Do it with the camera coach</Text>
+            <Text style={[typography.caption, { color: colors.onPrimary, opacity: 0.9 }]}>
+              A short guided workout. Finishing it completes this quest; good form earns 10x workout XP.
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.onPrimary} />
+        </Pressable>
       ) : null}
 
       <Pressable
@@ -465,6 +505,7 @@ function FieldInput({
 const styles = StyleSheet.create({
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
   row: { flexDirection: 'row', gap: 8 },
+  coach: { alignItems: 'center', borderRadius: 16, flexDirection: 'row', padding: 14 },
   box: { padding: 14, borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, borderColor: 'transparent' },
   stepRow: { flexDirection: 'row', alignItems: 'flex-start', minHeight: 24 },
   stepBadge: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },

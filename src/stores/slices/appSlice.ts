@@ -49,6 +49,8 @@ export interface AlertOptions {
 
 export interface AppSlice {
   experience: ProductExperience;
+  /** True once the person picked (or confirmed a suggested) experience; nothing is preselected. */
+  experienceConfirmed: boolean;
   /** First-run intro slides were finished or skipped; they are not shown again. */
   introSeen: boolean;
   setIntroSeen: (seen: boolean) => void;
@@ -96,6 +98,7 @@ export const createAppSlice: StateCreator<
   AppSlice
 > = (set, get) => ({
   experience: 'women_health',
+  experienceConfirmed: false,
   introSeen: false,
   setIntroSeen: (introSeen) => set({ introSeen }),
   privateIdentity: { pronouns: '', genderDescription: '' },
@@ -115,7 +118,7 @@ export const createAppSlice: StateCreator<
   toasts: [],
   alert: null,
   setExperience: (experience) => {
-    set({ experience });
+    set({ experience, experienceConfirmed: true });
     if (get().isOnboarded) get().refitDailyQuests();
   },
   setPrivateIdentity: (privateIdentity) =>
