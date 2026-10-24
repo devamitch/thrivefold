@@ -263,7 +263,7 @@ export function QuestPanel({ assignmentId, onDone, onLeave }: QuestPanelProps) {
       <Pressable
         onPress={() => {
           onLeave?.();
-          router.push(watchHref(task.title) as Href);
+          router.push(watchHref(task.title, undefined, task.id) as Href);
         }}
         accessibilityRole="link"
         style={[styles.metaRow, { marginTop: spacing.sm }]}
