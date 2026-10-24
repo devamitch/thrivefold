@@ -214,7 +214,6 @@ const styles = StyleSheet.create({
   agendaDayGroupCard: {
     padding: 12,
     borderRadius: 16,
-    borderWidth: 1,
     marginBottom: 10,
   },
   agendaDateBadge: {
@@ -240,7 +239,6 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     borderRadius: 6,
-    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
   },

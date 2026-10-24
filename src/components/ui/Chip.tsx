@@ -32,11 +32,7 @@ export const Chip: React.FC<ChipProps> = ({
 
   const chipStyle: ViewStyle = {
     backgroundColor: selected ? colors.primaryAlpha : colors.surface1,
-    borderWidth: 0,
     borderColor: 'transparent',
-    elevation: 0,
-    shadowColor: 'transparent',
-    shadowOpacity: 0,
     borderRadius: 14,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,

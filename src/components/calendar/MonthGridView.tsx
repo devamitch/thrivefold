@@ -180,7 +180,6 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
                   !isSelected &&
                     cell.isToday && {
                       backgroundColor: colors.surface1,
-                      borderWidth: 1.5,
                       borderColor: colors.primary,
                     },
                 ]}
@@ -367,7 +366,6 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 12,
     paddingTop: 12,
-    borderTopWidth: 1,
   },
   legendItem: {
     flexDirection: 'row',

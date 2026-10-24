@@ -223,5 +223,5 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   stepper: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   stepBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  note: { minHeight: 96, borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, padding: 12, textAlignVertical: 'top' },
+  note: { minHeight: 96, borderRadius: 16, padding: 12, textAlignVertical: 'top' },
 });

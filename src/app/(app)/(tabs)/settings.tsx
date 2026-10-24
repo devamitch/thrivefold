@@ -666,10 +666,6 @@ const styles = StyleSheet.create({
   profileCard: {
     borderRadius: 20,
     padding: 18,
-    borderWidth: 0,
-    elevation: 0,
-    shadowColor: 'transparent',
-    shadowOpacity: 0,
   },
   profileHeader: {
     flexDirection: 'row',
@@ -708,7 +704,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    borderTopWidth: 1,
     marginTop: 16,
     paddingTop: 12,
   },
@@ -771,7 +766,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
   },
   nameInput: {
     borderRadius: 12,

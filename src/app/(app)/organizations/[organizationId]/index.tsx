@@ -146,7 +146,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginTop: 16,
-    borderTopWidth: 1,
     borderTopColor: '#33333333',
     paddingTop: 14,
   },
@@ -157,7 +156,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: 4,
     borderRadius: 14,
-    borderWidth: 1,
     marginBottom: 16,
   },
 });

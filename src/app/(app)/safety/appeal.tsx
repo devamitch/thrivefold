@@ -79,7 +79,6 @@ const styles = StyleSheet.create({
   textArea: {
     minHeight: 140,
     borderRadius: 14,
-    borderWidth: 1,
     padding: 14,
     fontSize: 16,
     textAlignVertical: 'top',

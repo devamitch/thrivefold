@@ -138,7 +138,6 @@ export const SomaticWellnessArcade: React.FC<SomaticWellnessArcadeProps> = React
               {
                 backgroundColor: colors.surface1,
                 borderColor: colors.primary,
-                borderWidth: 2,
                 transform: [
                   {
                     scale:

@@ -70,10 +70,6 @@ export const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
           styles.indicator,
           {
             backgroundColor: colors.surface,
-            shadowColor: '#000',
-            shadowOpacity: 0.06,
-            shadowRadius: 4,
-            elevation: 2,
           },
           animatedIndicatorStyle,
         ]}

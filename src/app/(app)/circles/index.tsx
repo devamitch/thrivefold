@@ -178,7 +178,7 @@ export default function CommunitiesScreen() {
         {!eligibility.allowed && (
           <Card
             variant="surface1"
-            style={{ marginBottom: spacing.md, borderColor: colors.warning, borderWidth: 1 }}
+            style={{ marginBottom: spacing.md, borderColor: colors.warning, }}
           >
             <Badge label="Restricted During Trial" variant="warning" />
             <Text style={[typography.subbodyBold, { color: colors.text.primary, marginTop: 8 }]}>

@@ -219,11 +219,6 @@ const styles = StyleSheet.create({
   bannerWrapper: {
     width: '100%',
     maxWidth: 440,
-    shadowColor: '#1C1917',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.12,
-    shadowRadius: 14,
-    elevation: 8,
   },
   surface: {
     padding: 13,

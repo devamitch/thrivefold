@@ -199,9 +199,7 @@ export default function LetterComposeScreen() {
                 style={[
                   styles.stampItem,
                   {
-                    backgroundColor: colors.surface,
-                    borderColor: isSelected ? stamp.color : colors.border,
-                    borderWidth: isSelected ? 2 : 1,
+                    backgroundColor: isSelected ? colors.primaryAlpha : colors.surface,
                   },
                 ]}
               >
@@ -276,7 +274,6 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 14,
-    borderWidth: 2,
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
@@ -301,7 +298,6 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 12,

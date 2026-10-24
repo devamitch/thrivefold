@@ -222,9 +222,9 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   week: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
   weekDay: { alignItems: 'center', gap: 4 },
-  weekDot: { alignItems: 'center', borderRadius: 13, borderWidth: 2, height: 26, justifyContent: 'center', width: 26 },
+  weekDot: { alignItems: 'center', borderRadius: 13, height: 26, justifyContent: 'center', width: 26 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  historyRow: { paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth, minHeight: 52 },
+  historyRow: { paddingVertical: 10, minHeight: 52 },
   iconBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 });
 

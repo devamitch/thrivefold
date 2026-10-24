@@ -58,7 +58,6 @@ export function HeaderIconButton({
         styles.iconButton,
         {
           backgroundColor: colors.surface1,
-          borderWidth: 0,
         },
       ]}
       accessibilityRole="button"

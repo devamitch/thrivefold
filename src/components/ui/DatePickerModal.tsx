@@ -400,7 +400,6 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
                           },
                           !isSelected &&
                             isToday && {
-                              borderWidth: 1.5,
                               borderColor: colors.primary,
                             },
                         ]}
@@ -479,13 +478,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 380,
     borderRadius: 24,
-    borderWidth: 1,
     padding: 20,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 6 },
   },
   header: {
     flexDirection: 'row',
@@ -571,7 +564,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 12,
     paddingTop: 12,
-    borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: 'rgba(0,0,0,0.08)',
   },
 });

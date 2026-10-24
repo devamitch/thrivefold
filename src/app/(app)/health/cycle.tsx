@@ -687,7 +687,6 @@ const styles = StyleSheet.create({
   contextPill: {
     alignItems: 'center',
     borderRadius: 14,
-    borderWidth: 1,
     minWidth: 100,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -717,7 +716,6 @@ const styles = StyleSheet.create({
   historyRow: {
     alignItems: 'center',
     borderRadius: 12,
-    borderWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
     padding: 12,

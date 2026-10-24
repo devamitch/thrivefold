@@ -103,12 +103,11 @@ export default function ChooseExperienceScreen() {
 }
 
 const styles = StyleSheet.create({
-  card: { borderWidth: 1.5, padding: 16 },
+  card: { padding: 16 },
   icon: { alignItems: 'center', borderRadius: 14, height: 44, justifyContent: 'center', width: 44 },
   radio: {
     alignItems: 'center',
     borderRadius: 11,
-    borderWidth: 2,
     height: 22,
     justifyContent: 'center',
     marginLeft: 12,

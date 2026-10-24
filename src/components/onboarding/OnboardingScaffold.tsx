@@ -185,7 +185,7 @@ export function OnboardingScaffold({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  footer: { borderTopWidth: 0, paddingTop: 14 },
+  footer: { paddingTop: 14 },
   progress: { flex: 1, flexDirection: 'row', gap: 6, justifyContent: 'center' },
   progressDot: { borderRadius: 2, height: 4, maxWidth: 36, flex: 1 },
   root: { flex: 1 },

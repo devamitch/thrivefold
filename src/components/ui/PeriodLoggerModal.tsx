@@ -623,7 +623,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingBottom: 14,
-    borderBottomWidth: 1,
     borderBottomColor: 'rgba(0, 0, 0, 0.05)',
   },
   closeBtn: {
@@ -643,7 +642,6 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 7,
-    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -656,7 +654,6 @@ const styles = StyleSheet.create({
     width: '48%',
     padding: 12,
     borderRadius: 16,
-    borderWidth: 1.5,
   },
   flowIndicatorDot: {
     width: 10,
@@ -697,7 +694,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 13,
     borderRadius: 14,
-    borderWidth: 1,
   },
   datePickerPill: {
     paddingHorizontal: 10,

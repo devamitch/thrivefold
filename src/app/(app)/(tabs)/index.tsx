@@ -497,7 +497,7 @@ const styles = StyleSheet.create({
   metrics: { flexDirection: 'row', gap: 8 },
   groupLabel: { marginBottom: 6, marginTop: 10 },
   metric: { alignItems: 'center', borderRadius: 14, flex: 1, paddingVertical: 10 },
-  insight: { alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', marginTop: 12, minHeight: 48, paddingTop: 8 },
+  insight: { alignItems: 'center', flexDirection: 'row', marginTop: 12, minHeight: 48, paddingTop: 8 },
   track: { height: 6, borderRadius: 3, overflow: 'hidden' },
   fill: { height: '100%', borderRadius: 3 },
   chips: { gap: 8 },

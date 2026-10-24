@@ -55,10 +55,6 @@ export const CalendarViewModeSwitcher: React.FC<CalendarViewModeSwitcherProps> =
               styles.modeBtn,
               {
                 backgroundColor: isActive ? colors.surface : 'transparent',
-                shadowColor: isActive ? '#000' : 'transparent',
-                shadowOpacity: isActive ? 0.05 : 0,
-                shadowRadius: 4,
-                elevation: isActive ? 1 : 0,
               },
             ]}
             accessibilityRole="button"

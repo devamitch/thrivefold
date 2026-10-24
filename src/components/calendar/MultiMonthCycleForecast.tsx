@@ -257,13 +257,11 @@ const styles = StyleSheet.create({
   forecastItem: {
     padding: 14,
     borderRadius: 16,
-    borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.04)',
   },
   stageCard: {
     padding: 14,
     borderRadius: 14,
-    borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.04)',
   },
 });

@@ -313,6 +313,5 @@ const styles = StyleSheet.create({
     minHeight: 56,
     borderRadius: 18,
     borderCurve: 'continuous',
-    borderWidth: 1,
   },
 });

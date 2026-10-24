@@ -150,7 +150,7 @@ function Joint({
   return (
     <>
       <Animated.View style={[styles.abs, { width: g, height: g, borderRadius: g / 2, backgroundColor: color }, glow]} />
-      <Animated.View style={[styles.abs, { width: size, height: size, borderRadius: size / 2, backgroundColor: color, borderColor: ring, borderWidth: 1.5 }, dot]} />
+      <Animated.View style={[styles.abs, { width: size, height: size, borderRadius: size / 2, backgroundColor: color, borderColor: ring, }, dot]} />
     </>
   );
 }

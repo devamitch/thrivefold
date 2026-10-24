@@ -131,7 +131,6 @@ export const SquircleSurface = memo(function SquircleSurface({
         : {
             backgroundColor: paint,
             borderColor: stroke,
-            borderWidth: edge,
           },
       clip ? { borderRadius: effectiveRadius, overflow: 'hidden' as const } : null,
     ],
@@ -182,7 +181,6 @@ const styles = StyleSheet.create({
   clear: {
     backgroundColor: 'transparent',
     borderColor: 'transparent',
-    borderWidth: 0,
   },
 });
 

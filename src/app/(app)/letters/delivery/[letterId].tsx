@@ -120,7 +120,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     width: '100%',
     marginTop: 20,
-    borderTopWidth: 1,
     borderTopColor: '#33333333',
     paddingTop: 16,
   },

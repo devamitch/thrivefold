@@ -502,10 +502,6 @@ const styles = StyleSheet.create({
   levelCard: {
     borderRadius: 20,
     padding: 18,
-    borderWidth: 0,
-    elevation: 0,
-    shadowColor: 'transparent',
-    shadowOpacity: 0,
   },
   levelRow: {
     flexDirection: 'row',
@@ -543,7 +539,6 @@ const styles = StyleSheet.create({
   roadmapBanner: {
     borderRadius: 18,
     padding: 16,
-    borderWidth: 0,
   },
   timelineContainer: {
     marginTop: 16,
@@ -572,10 +567,6 @@ const styles = StyleSheet.create({
   stepCard: {
     borderRadius: 16,
     padding: 14,
-    borderWidth: 0,
-    elevation: 0,
-    shadowColor: 'transparent',
-    shadowOpacity: 0,
   },
   stepCtaRow: {
     flexDirection: 'row',
@@ -592,10 +583,6 @@ const styles = StyleSheet.create({
     width: '48.3%',
     borderRadius: 18,
     padding: 16,
-    borderWidth: 0,
-    elevation: 0,
-    shadowColor: 'transparent',
-    shadowOpacity: 0,
   },
   statIconWrap: {
     width: 36,
@@ -607,10 +594,6 @@ const styles = StyleSheet.create({
   achCard: {
     borderRadius: 16,
     padding: 14,
-    borderWidth: 0,
-    elevation: 0,
-    shadowColor: 'transparent',
-    shadowOpacity: 0,
   },
   achRow: {
     flexDirection: 'row',

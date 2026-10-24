@@ -129,7 +129,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: 4,
     borderRadius: 14,
-    borderWidth: 1,
     marginBottom: 16,
   },
   stepBox: {

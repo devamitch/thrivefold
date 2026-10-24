@@ -106,8 +106,8 @@ export default function ManualLogScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  input: { borderRadius: 12, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 8, width: 90 },
-  option: { alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth, flexDirection: 'row', paddingVertical: 12 },
+  input: { borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, width: 90 },
+  option: { alignItems: 'center', flexDirection: 'row', paddingVertical: 12 },
   row: { alignItems: 'center', flexDirection: 'row' },
-  search: { borderRadius: 14, borderWidth: 1, marginBottom: 8, paddingHorizontal: 14, paddingVertical: 10 },
+  search: { borderRadius: 14, marginBottom: 8, paddingHorizontal: 14, paddingVertical: 10 },
 });

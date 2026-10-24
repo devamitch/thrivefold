@@ -108,7 +108,6 @@ const styles = StyleSheet.create({
   box: {
     alignItems: 'center',
     borderRadius: 7,
-    borderWidth: 2,
     height: 24,
     justifyContent: 'center',
     marginRight: 12,
@@ -118,7 +117,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderCurve: 'continuous',
     borderRadius: 18,
-    borderWidth: 1.5,
     flexDirection: 'row',
     padding: 16,
   },

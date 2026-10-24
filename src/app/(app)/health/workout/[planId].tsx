@@ -276,7 +276,7 @@ export default function WorkoutSessionScreen() {
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   link: { flexDirection: 'row', alignItems: 'center', minHeight: 44, marginTop: 4 },
-  setRow: { flexDirection: 'row', alignItems: 'center', gap: 8, borderTopWidth: StyleSheet.hairlineWidth, paddingVertical: 6 },
+  setRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6 },
   input: { width: 64, minHeight: 40, borderRadius: 10, paddingHorizontal: 10, textAlign: 'center' },
   check: { marginLeft: 'auto', width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

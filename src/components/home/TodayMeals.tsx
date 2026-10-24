@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
   center: { alignItems: 'center', justifyContent: 'center' },
   flex: { flex: 1 },
   macro: { alignItems: 'center', flex: 1 },
-  meal: { alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', gap: 12, marginTop: 10, paddingTop: 10 },
+  meal: { alignItems: 'center', flexDirection: 'row', gap: 12, marginTop: 10, paddingTop: 10 },
   row: { flexDirection: 'row' },
   thumb: { borderRadius: 12, height: 48, width: 48 },
 });

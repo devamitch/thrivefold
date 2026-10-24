@@ -94,7 +94,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   banner: {
-    borderWidth: 1.5,
     marginBottom: 16,
   },
   rowBetween: {

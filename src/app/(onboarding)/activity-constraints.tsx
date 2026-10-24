@@ -87,7 +87,6 @@ const styles = StyleSheet.create({
   segmentItem: {
     alignItems: 'center',
     borderRadius: 10,
-    borderWidth: 1,
     borderColor: 'transparent',
     flex: 1,
     justifyContent: 'center',

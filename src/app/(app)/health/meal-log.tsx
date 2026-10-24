@@ -180,9 +180,9 @@ export default function MealLogScreen() {
 const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   flex: { flex: 1 },
-  food: { borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 10 },
-  input: { borderRadius: 14, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 10 },
-  itemRow: { borderTopWidth: StyleSheet.hairlineWidth, marginTop: 8, paddingTop: 8 },
+  food: { paddingVertical: 10 },
+  input: { borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10 },
+  itemRow: { marginTop: 8, paddingTop: 8 },
   macro: { alignItems: 'center', flex: 1 },
   macros: { flexDirection: 'row' },
   photo: { borderRadius: 18, height: 200, width: '100%' },

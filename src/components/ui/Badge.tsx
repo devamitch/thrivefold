@@ -53,9 +53,5 @@ export const Badge: React.FC<BadgeProps> = ({ label, variant = 'primary', style 
 const styles = StyleSheet.create({
   badge: {
     alignSelf: 'flex-start',
-    elevation: 0,
-    shadowColor: 'transparent',
-    shadowOpacity: 0,
-    borderWidth: 0,
   },
 });

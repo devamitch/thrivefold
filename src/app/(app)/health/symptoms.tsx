@@ -79,5 +79,5 @@ export default function SymptomsScreen() {
 
 const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, minHeight: 48, alignItems: 'center' },
+  row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, minHeight: 48, alignItems: 'center' },
 });

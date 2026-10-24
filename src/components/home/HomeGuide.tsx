@@ -62,7 +62,7 @@ export function HomeGuide() {
           key={s.title}
           onPress={() => router.push(s.route)}
           accessibilityRole="button"
-          style={[styles.step, { borderTopColor: colors.border, borderTopWidth: i === 0 ? 0 : StyleSheet.hairlineWidth }]}
+          style={styles.step}
         >
           <View style={[styles.badge, { backgroundColor: s.done ? colors.successSurface : colors.primaryAlpha }]}>
             <Ionicons name={s.done ? 'checkmark' : s.icon} size={18} color={s.done ? colors.success : colors.primary} />

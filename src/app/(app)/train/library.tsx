@@ -80,6 +80,6 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   flex: { flex: 1 },
   icon: { marginRight: 8 },
-  input: { borderRadius: 14, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 10 },
-  row: { alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth, flexDirection: 'row', paddingVertical: 12 },
+  input: { borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10 },
+  row: { alignItems: 'center', flexDirection: 'row', paddingVertical: 12 },
 });

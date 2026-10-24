@@ -299,7 +299,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderTopWidth: 0,
   },
   footerBtn: {
     flexDirection: 'row',

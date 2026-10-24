@@ -505,7 +505,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingBottom: 14,
-    borderBottomWidth: 1,
     borderBottomColor: 'rgba(0, 0, 0, 0.05)',
   },
   closeBtn: {
@@ -550,7 +549,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 13,
     borderRadius: 14,
-    borderWidth: 1,
   },
   datePickerPill: {
     paddingHorizontal: 10,

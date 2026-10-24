@@ -312,7 +312,6 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
   footerWrapper: {
-    borderTopWidth: 0,
     width: '100%',
   },
   noSide: { paddingHorizontal: 0 },

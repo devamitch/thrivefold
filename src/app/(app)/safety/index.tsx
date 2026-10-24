@@ -275,7 +275,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 10,
-    borderBottomWidth: 1,
   },
   rowBetween: {
     flexDirection: 'row',
@@ -290,7 +289,6 @@ const styles = StyleSheet.create({
   input: {
     minHeight: 80,
     borderRadius: 14,
-    borderWidth: 1,
     padding: 12,
     textAlignVertical: 'top',
   },
@@ -299,6 +297,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 6,
-    borderBottomWidth: 1,
   },
 });

@@ -106,7 +106,6 @@ export function CallStage({ primary, secondary, insetTop, insetBottom, onStageTa
       height: interpolate(t, [0, 1], [mainH, ph]),
       borderRadius: interpolate(t, [0, 1], [MAIN_RADIUS, 16]),
       zIndex: t > 0.5 ? 2 : 1,
-      elevation: t > 0.5 ? 8 : 0,
     };
   };
   const primaryStyle = useAnimatedStyle(() => frame(swap.value));

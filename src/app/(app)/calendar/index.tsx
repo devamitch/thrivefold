@@ -246,10 +246,6 @@ const styles = StyleSheet.create({
   navCard: {
     borderRadius: 18,
     padding: 14,
-    elevation: 0,
-    shadowColor: 'transparent',
-    shadowOpacity: 0,
-    borderWidth: 0,
   },
   navRow: {
     flexDirection: 'row',
@@ -265,10 +261,6 @@ const styles = StyleSheet.create({
   },
   gridCard: {
     borderRadius: 20,
-    elevation: 0,
-    shadowColor: 'transparent',
-    shadowOpacity: 0,
-    borderWidth: 0,
   },
   weekdayRow: {
     flexDirection: 'row',
@@ -294,10 +286,6 @@ const styles = StyleSheet.create({
   agendaCard: {
     borderRadius: 16,
     padding: 14,
-    elevation: 0,
-    shadowColor: 'transparent',
-    shadowOpacity: 0,
-    borderWidth: 0,
   },
   metaRow: {
     flexDirection: 'row',

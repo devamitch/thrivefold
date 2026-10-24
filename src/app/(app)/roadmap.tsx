@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
   halo: { borderRadius: 22, height: 44, left: -4, position: 'absolute', top: -4, width: 44 },
   levelDot: { alignItems: 'center', borderRadius: 18, height: 36, justifyContent: 'center', width: 36 },
   node: { alignItems: 'center', borderRadius: 14, height: 28, justifyContent: 'center', width: 28 },
-  questRow: { alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth, flexDirection: 'row', paddingVertical: 10 },
+  questRow: { alignItems: 'center', flexDirection: 'row', paddingVertical: 10 },
   rail: { alignItems: 'center', marginRight: 12, width: 28 },
   railLine: { flex: 1, marginVertical: 2, width: 2 },
   row: { alignItems: 'center', flexDirection: 'row' },
