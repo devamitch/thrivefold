@@ -162,7 +162,8 @@ function derive(
 }
 
 function assignmentContext(state: RootState, date: string): AssignmentContext {
-  const fit = fitFor(setupAnswersOf(state));
+  const checkIn = state.checkInHistory?.find((c) => c.date === date);
+  const fit = fitFor(setupAnswersOf(state), checkIn ?? null);
   const recentDates = new Set<string>();
   for (let i = 1; i <= 3; i++) {
     const d = new Date(`${date}T12:00:00`);

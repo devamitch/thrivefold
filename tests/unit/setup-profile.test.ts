@@ -77,3 +77,14 @@ describe('capability fit', () => {
     expect(gentle).not.toEqual(strong);
   });
 });
+
+describe('today signal', () => {
+  test('a hard check-in makes the day gentle and says why; a normal one changes nothing', () => {
+    const base = answers({ baseline: { ...EMPTY_BASELINE, activity: 'daily_training', energy: 'good' } });
+    expect(fitFor(base, { energy: 7, stress: 4, sleepHours: 7 }).capacity).toBe('strong');
+    const hard = fitFor(base, { energy: 2, stress: 9, sleepHours: 7 });
+    expect(hard.capacity).toBe('gentle');
+    expect(hard.families[0]).toBe('mind');
+    expect(hard.reasons[0]).toMatch(/hard day/);
+  });
+});

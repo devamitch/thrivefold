@@ -108,7 +108,17 @@ const EASY_CONSTRAINTS = new Set(['Recovering / low energy', 'Low impact only'])
 /** A routine length leaves room for quests a little longer than the routine itself. */
 const MINUTES_CAP: Record<number, number> = { 5: 8, 10: 12, 20: 20 };
 
-export function fitFor(a: Pick<SetupAnswers, 'constraints' | 'routineMinutes' | 'baseline'>): TaskFit {
+/** Today's check-in (1-10 scales), when there is one. A rough day softens only that day. */
+export interface TodaySignal {
+  energy: number;
+  stress: number;
+  sleepHours: number;
+}
+
+export function fitFor(
+  a: Pick<SetupAnswers, 'constraints' | 'routineMinutes' | 'baseline'>,
+  today?: TodaySignal | null,
+): TaskFit {
   const { activity, energy, sleep, stress } = a.baseline;
   const reasons: string[] = [];
   let capacity: Capacity = 'steady';
@@ -141,6 +151,12 @@ export function fitFor(a: Pick<SetupAnswers, 'constraints' | 'routineMinutes' | 
   }
   if (activity === 'rarely' || activity === 'some_days') families.push('movement');
   if (a.constraints.length > 0) reasons.push(`Going easy on: ${a.constraints.join(', ').toLowerCase()}.`);
+
+  if (today && (today.energy <= 3 || today.stress >= 8 || today.sleepHours < 5)) {
+    capacity = 'gentle';
+    families.unshift(today.stress >= 8 ? 'mind' : 'rhythm');
+    reasons.unshift('Today’s check-in shows a hard day, so today’s open quests are lighter.');
+  }
 
   return { capacity, maxMinutes, families: [...new Set(families)], reasons };
 }

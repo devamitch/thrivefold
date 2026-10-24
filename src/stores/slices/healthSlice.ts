@@ -264,7 +264,7 @@ export const createHealthSlice: StateCreator<
   [['zustand/persist', unknown]],
   [],
   HealthSlice
-> = (set) => ({
+> = (set, get) => ({
   currentStreak: 0,
   completedCheckInDaysCount: 0,
   cycleData: null,
@@ -337,7 +337,7 @@ export const createHealthSlice: StateCreator<
   deleteWorkoutSession: (id) =>
     set((state) => ({ workoutSessions: state.workoutSessions.filter((w) => w.id !== id) })),
 
-  addCheckIn: (record) =>
+  addCheckIn: (record) => {
     set((state) => {
       // One check-in per day: saving again updates that day's record.
       const checkInHistory = [
@@ -349,7 +349,10 @@ export const createHealthSlice: StateCreator<
         completedCheckInDaysCount: new Set(checkInHistory.map((r) => r.date)).size,
         currentStreak: streakFrom(checkInHistory),
       };
-    }),
+    });
+    // A hard day lightens today's unstarted quests (setupProfile.fitFor).
+    if (record.date === formatLocalDate(new Date())) get().refitDailyQuests();
+  },
 
   addJournalEntry: (title, content, moodTag = 7) =>
     set((state) => ({

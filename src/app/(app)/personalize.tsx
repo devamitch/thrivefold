@@ -8,6 +8,7 @@ import { AppHeader } from '../../components/ui/AppHeader';
 import { Card } from '../../components/ui/Card';
 import { Chip } from '../../components/ui/Chip';
 import { ScreenContainer } from '../../components/ui/ScreenContainer';
+import { formatLocalDate } from '../../domain/calendar/universalCalendarEngine';
 import { fitFor, SETUP_REWARDS, setupLedgerKey } from '../../domain/game/setupProfile';
 import { constraintsFor, goalsFor, ROUTINE_LENGTHS } from '../../domain/onboarding/options';
 import { useRootStore, useShallow } from '../../stores/useRootStore';
@@ -21,7 +22,7 @@ import { useTheme } from '../../theme/useTheme';
 export default function PersonalizeScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
-  const { experience, onboarding, setOnboardingAnswers, todayQuests, ledger, claimSetupReward } = useRootStore(
+  const { experience, onboarding, setOnboardingAnswers, todayQuests, ledger, claimSetupReward, todayCheckIn } = useRootStore(
     useShallow((s) => ({
       experience: s.experience,
       onboarding: s.onboarding,
@@ -29,9 +30,10 @@ export default function PersonalizeScreen() {
       todayQuests: s.todayQuests,
       ledger: s.rewardLedger,
       claimSetupReward: s.claimSetupReward,
+      todayCheckIn: s.checkInHistory.find((c) => c.date === formatLocalDate(new Date())),
     })),
   );
-  const fit = fitFor(onboarding);
+  const fit = fitFor(onboarding, todayCheckIn ?? null);
   const { goals, constraints, routineMinutes } = onboarding;
   const unclaimed = SETUP_REWARDS.filter((r) => !ledger.some((e) => e.key === setupLedgerKey(r.section)));
 
