@@ -1,4 +1,5 @@
 import type { AiSlice } from './slices/aiSlice';
+import type { IntegrationSlice } from './slices/integrationSlice';
 import type { AppSlice } from './slices/appSlice';
 import type { AuthSlice } from './slices/authSlice';
 import type { HealthSlice } from './slices/healthSlice';
@@ -12,4 +13,5 @@ export type RootState = AppSlice &
   QuestSlice &
   LetterSlice &
   PolicySlice &
-  AiSlice;
+  AiSlice &
+  IntegrationSlice;

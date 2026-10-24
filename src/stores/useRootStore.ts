@@ -8,6 +8,7 @@ import { persist } from 'zustand/middleware';
 import { localJSONStorage } from './persistStorage';
 import type { RootState } from './rootTypes';
 import { createAiSlice } from './slices/aiSlice';
+import { createIntegrationSlice } from './slices/integrationSlice';
 import { createAppSlice } from './slices/appSlice';
 import { createAuthSlice } from './slices/authSlice';
 import { createHealthSlice } from './slices/healthSlice';
@@ -28,6 +29,7 @@ export const useRootStore = create<RootState>()(
       ...createLetterSlice(...a),
       ...createPolicySlice(...a),
       ...createAiSlice(...a),
+      ...createIntegrationSlice(...a),
     }),
     {
       name: 'thrivefold-root',

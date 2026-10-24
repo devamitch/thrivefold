@@ -23,7 +23,13 @@
         "android.permission.CAMERA",
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.VIBRATE",
-        "android.permission.POST_NOTIFICATIONS"
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.health.READ_STEPS",
+        "android.permission.health.READ_HEART_RATE",
+        "android.permission.health.READ_SLEEP",
+        "android.permission.health.READ_EXERCISE",
+        "android.permission.health.READ_WEIGHT",
+        "android.permission.health.WRITE_EXERCISE"
       ],
       "blockedPermissions": [
         "com.google.android.gms.permission.AD_ID",
@@ -80,7 +86,14 @@
       "expo-localization",
       "expo-sqlite",
       "expo-image",
-      "expo-build-properties",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 26
+          }
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -90,7 +103,18 @@
           "backgroundColor": "#FAF7F2"
         }
       ],
-      "@react-native-google-signin/google-signin"
+      "@react-native-google-signin/google-signin",
+      "expo-secure-store",
+      "react-native-health-connect",
+      [
+        "react-native-ble-plx",
+        {
+          "isBackgroundEnabled": false,
+          "modes": [],
+          "bluetoothAlwaysPermission": "Thrivefold connects to a heart-rate monitor you choose, only while you are using it.",
+          "neverForLocation": true
+        }
+      ]
     ],
     "experiments": {
       "tsconfigPaths": true,
