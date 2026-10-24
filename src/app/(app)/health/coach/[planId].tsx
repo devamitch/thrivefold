@@ -3,7 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { BackHandler, Linking, PermissionsAndroid, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { BackHandler, PermissionsAndroid, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   FadeIn,
   FadeInDown,
@@ -24,7 +24,7 @@ import { Card } from '../../../../components/ui/Card';
 import { CallStage } from '../../../../components/workout/CallStage';
 import { PoseOverlay } from '../../../../components/workout/PoseOverlay';
 import { YouTubePlayer, type YouTubePlayerHandle } from '../../../../components/workout/YouTubePlayer';
-import { videoFor, youtubeSearchUrl, youtubeWatchUrl } from '../../../../content/exerciseVideos';
+import { videoFor } from '../../../../content/exerciseVideos';
 import { formatLocalDate } from '../../../../domain/calendar/universalCalendarEngine';
 import { exerciseById, planById, type LoggedSet } from '../../../../domain/fitness/workouts';
 import { formQualifies, WORKOUT_FORM_MULTIPLIER, WORKOUT_XP_BASE, type WorkoutFormEvidence } from '../../../../domain/game/progression';
@@ -280,7 +280,6 @@ export default function CoachScreen() {
     (g: Gesture) => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
       if (g === 'one_hand') {
-        if (!video) return;
         autoPaused.current = false;
         if (videoPlaying) {
           player.current?.pause();
@@ -505,27 +504,16 @@ export default function CoachScreen() {
   const counted = movement?.kind === 'hold' ? Math.floor(rep.holdMs / 1000) : rep.reps;
   const nextItem = rest > 0 ? (setIdx === 0 ? plan.items[itemIdx] : item) : null;
 
-  const videoTile = video ? (
-    <YouTubePlayer ref={player} videoId={video.videoId} style={StyleSheet.absoluteFill} onPlayingChange={setVideoPlaying} />
-  ) : (
-    <View style={[StyleSheet.absoluteFill, styles.howTo, { backgroundColor: colors.surface2 ?? colors.surface1 }]}>
-      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingTop: insets.top + 90 }}>
-        <Text style={[typography.heading, { color: colors.text.primary }]}>{exercise.name}</Text>
-        {exercise.steps.map((st, i) => (
-          <Text key={st} style={[typography.body, { color: colors.text.secondary, marginTop: spacing.sm }]}>
-            {i + 1}. {st}
-          </Text>
-        ))}
-        <Text style={[typography.subbody, { color: colors.text.muted, marginTop: spacing.md }]}>Easier: {exercise.easier}</Text>
-        <Button
-          label="Watch a tutorial on YouTube"
-          variant="outline"
-          size="sm"
-          onPress={() => Linking.openURL(youtubeSearchUrl(exercise.name)).catch(() => undefined)}
-          style={{ marginTop: spacing.lg, alignSelf: 'flex-start' }}
-        />
-      </ScrollView>
-    </View>
+  // Every exercise has a tutorial in the app: the verified video, or YouTube search for it.
+  const videoTile = (
+    <YouTubePlayer
+      key={item.exerciseId}
+      ref={player}
+      videoId={video?.videoId}
+      query={`${exercise.name} proper form tutorial`}
+      style={StyleSheet.absoluteFill}
+      onPlayingChange={setVideoPlaying}
+    />
   );
 
   const cameraTile =
@@ -662,7 +650,6 @@ export default function CoachScreen() {
           <CallButton
             icon={videoPlaying ? 'pause' : 'play'}
             label={videoPlaying ? 'Pause video' : 'Play video'}
-            disabled={!video}
             onPress={() => {
               autoPaused.current = false;
               if (videoPlaying) player.current?.pause();

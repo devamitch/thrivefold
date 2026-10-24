@@ -74,6 +74,8 @@ export default function AppLayout() {
       <Stack.Screen name="calendar" />
       <Stack.Screen name="settings" />
       <Stack.Screen name="personalize" />
+      <Stack.Screen name="roadmap" />
+      <Stack.Screen name="watch" options={{ animation: 'slide_from_bottom' }} />
     </Stack>
   );
 }

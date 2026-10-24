@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useRouter, type Href } from 'expo-router';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 
 import { AppHeader } from '../../components/ui/AppHeader';
@@ -12,6 +13,7 @@ import { useTheme } from '../../theme/useTheme';
 
 /** Plain-language health basics for the selected experience; tap an article to read it. */
 export default function LearnScreen() {
+  const router = useRouter();
   const { colors, typography, spacing, experience } = useTheme();
   const reduceMotion = useReducedMotion();
   const [open, setOpen] = useState<string | null>(null);
@@ -49,9 +51,7 @@ export default function LearnScreen() {
                   </Text>
                 ))}
                 <Pressable
-                  onPress={() =>
-                    Linking.openURL(`https://www.youtube.com/results?search_query=${encodeURIComponent(art.videoQuery)}`).catch(() => undefined)
-                  }
+                  onPress={() => router.push(`/(app)/watch?${new URLSearchParams({ title: art.title, q: art.videoQuery }).toString()}` as Href)}
                   accessibilityRole="link"
                   style={[styles.cardHeader, { justifyContent: 'flex-start', marginTop: spacing.md }]}
                 >

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Pressable, Linking } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Pressable } from 'react-native';
+import { watchHref } from '../../../../content/exerciseVideos';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -17,7 +18,6 @@ import {
   exerciseById,
   planById,
   suggestNext,
-  techniqueSearchUrl,
   type LoggedSet,
 } from '../../../../domain/fitness/workouts';
 
@@ -184,13 +184,13 @@ export default function WorkoutSessionScreen() {
               </Text>
               <Text style={[typography.caption, { color: colors.warning, marginTop: 4 }]}>{ex.safety}</Text>
               <Pressable
-                onPress={() => Linking.openURL(techniqueSearchUrl(ex)).catch(() => undefined)}
+                onPress={() => router.push(watchHref(ex.name, ex.id) as Href)}
                 accessibilityRole="link"
                 style={styles.link}
               >
                 <Ionicons name="logo-youtube" size={16} color={colors.text.secondary} />
                 <Text style={[typography.captionBold, { color: colors.text.secondary, marginLeft: 6 }]}>
-                  Find technique videos on YouTube
+                  Watch how (video)
                 </Text>
               </Pressable>
 

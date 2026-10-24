@@ -22,3 +22,10 @@ export const youtubeSearchUrl = (exerciseName: string) =>
   `https://www.youtube.com/results?search_query=${encodeURIComponent(`${exerciseName} proper form tutorial`)}`;
 
 export const youtubeWatchUrl = (videoId: string) => `https://www.youtube.com/watch?v=${videoId}`;
+
+/** Route to watch a tutorial inside the app: the verified video, or a search for the topic. */
+export function watchHref(topic: string, exerciseId?: string): string {
+  const v = exerciseId ? videoFor(exerciseId) : undefined;
+  const params = new URLSearchParams({ title: topic, ...(v ? { v: v.videoId } : { q: `${topic} how to` }) });
+  return `/(app)/watch?${params.toString()}`;
+}

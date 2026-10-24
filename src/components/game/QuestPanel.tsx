@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, TextInput, Linking } from 'react-native';
+import { View, Text, StyleSheet, Pressable, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
@@ -21,6 +21,7 @@ import { formatLocalDate } from '../../domain/calendar/universalCalendarEngine';
 import { suggestPlans } from '../../domain/fitness/workouts';
 import { fitFor } from '../../domain/game/setupProfile';
 import { useRouter, type Href } from 'expo-router';
+import { watchHref } from '../../content/exerciseVideos';
 
 type Answers = ObjectiveEvidence['answers'];
 
@@ -216,7 +217,10 @@ export function QuestPanel({ assignmentId, onDone, onLeave }: QuestPanelProps) {
       </View>
 
       {task.purpose ? (
-        <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: spacing.sm }]}>{task.purpose}</Text>
+        <>
+          <Text style={[typography.captionBold, { color: colors.text.muted, marginTop: spacing.md }]}>WHY IT HELPS</Text>
+          <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 2 }]}>{task.purpose}</Text>
+        </>
       ) : null}
 
       {questFamily(task.category) === 'movement' && !done && !closed ? (
@@ -237,17 +241,19 @@ export function QuestPanel({ assignmentId, onDone, onLeave }: QuestPanelProps) {
       ) : null}
 
       <Pressable
-        onPress={() =>
-          Linking.openURL(`https://www.youtube.com/results?search_query=${encodeURIComponent(`${task.title} how to`)}`).catch(() => undefined)
-        }
+        onPress={() => {
+          onLeave?.();
+          router.push(watchHref(task.title) as Href);
+        }}
         accessibilityRole="link"
         style={[styles.metaRow, { marginTop: spacing.sm }]}
       >
         <Ionicons name="logo-youtube" size={16} color={colors.text.secondary} />
-        <Text style={[typography.captionBold, { color: colors.text.secondary, marginLeft: 6 }]}>Watch how on YouTube</Text>
+        <Text style={[typography.captionBold, { color: colors.text.secondary, marginLeft: 6 }]}>Watch how (video)</Text>
       </Pressable>
 
-      <View style={[styles.box, { backgroundColor: colors.surface, borderColor: colors.border, marginTop: spacing.md }]}>
+      <Text style={[typography.captionBold, { color: colors.text.muted, marginTop: spacing.md }]}>WHAT TO DO</Text>
+      <View style={[styles.box, { backgroundColor: colors.surface, borderColor: colors.border, marginTop: spacing.xs }]}>
         {task.instructions.map((step, idx) => {
           const checked = steps.includes(step.id);
           const content = (

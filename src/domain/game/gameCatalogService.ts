@@ -307,3 +307,54 @@ export const validateCatalogIntegrity = (): CatalogValidationReport => {
 /** Level, next level and XP progress for a total, using the catalog's level records. */
 export const currentLevelProgress = (totalXp: number, completedCheckpoints: readonly string[] = []): LevelProgress =>
   levelProgress(totalXp, catalog.levels, new Set(completedCheckpoints));
+
+// ---------------------------------------------------------------- roadmap
+
+export interface RoadmapStage {
+  id: string;
+  /** Levels within a chapter, 1-based, e.g. [1, 5]. */
+  range: [number, number];
+  purpose: string;
+}
+
+export interface RoadmapChapter {
+  number: number;
+  id: string;
+  title: string;
+  description: string;
+  outcome: string;
+  levelRange: [number, number];
+  recommendedTaskIds: string[];
+  capstone: { title: string; purpose: string; requiredAtLevel: number } | null;
+}
+
+const capstones = new Map<string, { title: string; purpose: string; requiredAtLevel: number }>(
+  (((catalogV3Json as any).capstoneDefinitions ?? []) as any[]).map((c) => [
+    c.id,
+    { title: c.title, purpose: c.purpose, requiredAtLevel: c.requiredAtLevel },
+  ]),
+);
+
+const roadmapChapters: RoadmapChapter[] = v3Chapters
+  .map((ch) => ({
+    number: ch.order,
+    id: ch.id,
+    title: ch.title,
+    description: ch.description,
+    outcome: ch.primaryOutcome ?? '',
+    levelRange: [ch.levels.start, ch.levels.end] as [number, number],
+    recommendedTaskIds: ch.recommendedTaskIds ?? [],
+    capstone: capstones.get(ch.capstoneId) ?? null,
+  }))
+  .sort((a, b) => a.number - b.number);
+
+const roadmapStages: RoadmapStage[] = (((catalogV3Json as any).levelStageDefinitions ?? []) as any[]).map((s) => ({
+  id: s.id,
+  range: s.levelsWithinChapter as [number, number],
+  purpose: s.purpose,
+}));
+
+/** The 20 chapters of the journey with their outcomes, suggested quests and capstones. */
+export const getRoadmapChapters = (): RoadmapChapter[] => roadmapChapters;
+/** The stages every chapter moves through (orientation, practice, application ...). */
+export const getRoadmapStages = (): RoadmapStage[] => roadmapStages;

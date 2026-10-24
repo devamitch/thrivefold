@@ -9,7 +9,10 @@ export interface YouTubePlayerHandle {
 }
 
 interface Props {
-  videoId: string;
+  /** A verified video to embed. */
+  videoId?: string;
+  /** Without a verified video: YouTube search for this, shown inside the app. */
+  query?: string;
   style?: ViewStyle;
   onPlayingChange?: (playing: boolean) => void;
 }
@@ -42,16 +45,33 @@ window.__tf={play:function(){if(!player||!player.playVideo)return;player.unMute&
  * reliably (the coach pauses the video when form needs fixing). Shows the thumbnail and a
  * spinner until the player is ready, which matters on slow mobile networks.
  */
-export const YouTubePlayer = forwardRef<YouTubePlayerHandle, Props>(function YouTubePlayer({ videoId, style, onPlayingChange }, ref) {
+export const YouTubePlayer = forwardRef<YouTubePlayerHandle, Props>(function YouTubePlayer({ videoId, query, style, onPlayingChange }, ref) {
   const web = useRef<WebView>(null);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
-  const source = useMemo(() => ({ html: pageFor(videoId), baseUrl: ORIGIN }), [videoId]);
+  const embedded = Boolean(videoId);
+  const source = useMemo(
+    () =>
+      videoId
+        ? { html: pageFor(videoId), baseUrl: ORIGIN }
+        : { uri: `https://m.youtube.com/results?search_query=${encodeURIComponent(query ?? 'exercise tutorial')}` },
+    [videoId, query],
+  );
 
+  // The search page's own <video> element is driven directly once a video is open.
+  const searchJs = (cmd: 'play' | 'pause') => `(function(){var v=document.querySelector('video');if(v){v.${cmd}();}})();true;`;
   useImperativeHandle(ref, () => ({
-    play: () => web.current?.injectJavaScript('window.__tf&&window.__tf.play();true;'),
-    pause: () => web.current?.injectJavaScript('window.__tf&&window.__tf.pause();true;'),
+    play: () => web.current?.injectJavaScript(embedded ? 'window.__tf&&window.__tf.play();true;' : searchJs('play')),
+    pause: () => web.current?.injectJavaScript(embedded ? 'window.__tf&&window.__tf.pause();true;' : searchJs('pause')),
   }));
+
+  // On the search page, report play/pause of whichever video is open.
+  const watcher = `(function(){
+    function hook(v){if(v.__tf)return;v.__tf=1;
+      v.addEventListener('play',function(){window.ReactNativeWebView.postMessage(JSON.stringify({t:'state',s:1}));});
+      v.addEventListener('pause',function(){window.ReactNativeWebView.postMessage(JSON.stringify({t:'state',s:2}));});}
+    setInterval(function(){var v=document.querySelector('video');if(v)hook(v);},800);
+  })();true;`;
 
   const onMessage = (e: WebViewMessageEvent) => {
     try {
@@ -80,13 +100,18 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandle, Props>(function You
         setSupportMultipleWindows={false}
         allowsFullscreenVideo={false}
         onError={() => setFailed(true)}
+        injectedJavaScript={embedded ? undefined : watcher}
+        onLoadEnd={embedded ? undefined : () => setReady(true)}
+        allowsBackForwardNavigationGestures
       />
       {!ready || failed ? (
         <View style={StyleSheet.absoluteFill} pointerEvents="none">
-          <Image source={{ uri: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` }} style={StyleSheet.absoluteFill} contentFit="cover" />
+          {videoId ? (
+            <Image source={{ uri: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` }} style={StyleSheet.absoluteFill} contentFit="cover" />
+          ) : null}
           <View style={[StyleSheet.absoluteFill, styles.center]}>
             {failed ? (
-              <Text style={styles.note}>The video could not load. Use “Open in YouTube”.</Text>
+              <Text style={styles.note}>The video could not load on this connection. Try again in a moment.</Text>
             ) : (
               <ActivityIndicator size="large" color="#FFFFFF" />
             )}

@@ -207,6 +207,18 @@ export default function ProgressScreen() {
       scrollMode="shell-scroll-view"
     >
       <View style={{ paddingBottom: spacing.xxl }}>
+        <Card onPress={() => router.push('/(app)/roadmap' as Href)} variant="tinted" style={{ padding: spacing.base, marginTop: spacing.sm }}>
+          <View style={styles.rowBetween}>
+            <Ionicons name="map-outline" size={22} color={colors.primary} />
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Your roadmap</Text>
+              <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                20 chapters, their stages, and where you are now
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
+          </View>
+        </Card>
         <ProgressionPanel />
 
         {/* View Switcher Tabs (Roadmap vs Badges) */}

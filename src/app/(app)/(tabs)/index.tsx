@@ -11,6 +11,7 @@ import { PressableScale } from '../../../components/ui/PressableScale';
 import { AppHeader, HeaderIconButton } from '../../../components/ui/AppHeader';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { QuestSheet } from '../../../components/game/QuestSheet';
+import { HomeGuide } from '../../../components/home/HomeGuide';
 import { evaluateDeterministicRoutine } from '../../../domain/ai/deterministicRules';
 import { computeInsights, recentLoad } from '../../../domain/ai/insights';
 import { getCyclePredictions } from '../../../domain/health/cycleCalculations';
@@ -232,6 +233,8 @@ export default function HomeScreen() {
         </Card>
       </Animated.View>
 
+      <HomeGuide />
+
       {deviceTiles.length > 0 ? (
         <Animated.View entering={enter(1)}>
           <Card onPress={() => router.push('/(app)/health/integrations')} style={{ padding: spacing.base, marginTop: spacing.md }}>
@@ -374,7 +377,7 @@ export default function HomeScreen() {
           />
         )}
 
-        <Card onPress={() => router.push('/(app)/(tabs)/progress')} style={{ padding: spacing.base, marginTop: spacing.sm }}>
+        <Card onPress={() => router.push('/(app)/roadmap' as Href)} style={{ padding: spacing.base, marginTop: spacing.sm }}>
           <View style={styles.rowBetween}>
             <View style={[styles.iconTile, { backgroundColor: colors.primaryAlpha }]}>
               <Ionicons name="trending-up-outline" size={20} color={colors.primary} />
