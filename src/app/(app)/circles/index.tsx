@@ -1,15 +1,15 @@
+import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Image } from 'expo-image';
+import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
-import { Badge } from '../../../components/ui/Badge';
 import { Header } from '../../../components/ui/Header';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
-import { useTheme } from '../../../theme/useTheme';
-import { useRootStore } from '../../../stores/useRootStore';
 import { evaluateFeatureEligibility } from '../../../domain/policy/engine';
+import { useRootStore } from '../../../stores/useRootStore';
+import { useTheme } from '../../../theme/useTheme';
 
 interface CircleItem {
   id: string;
@@ -44,9 +44,43 @@ export default function CommunitiesScreen() {
     blockedUserIds,
   });
 
+  const level = useRootStore((s) => s.level);
+
   const getCohorts = (): CircleItem[] => {
+    const commonActivityCircles: CircleItem[] = [
+      {
+        id: 'circle_gym_pals',
+        title: 'Gym Pal & Strength Partner Finding',
+        description:
+          'Connect with local, verified training partners for spotters, form checks, and workout accountability.',
+        category: 'Fitness & Gym',
+      },
+      {
+        id: 'circle_therapy_healing',
+        title: 'Therapy & Emotional Healing Groups',
+        description:
+          'Moderated peer reflection circles focused on cognitive reframing, emotional decompression, and trauma-informed support.',
+        category: 'Mental Wellness',
+      },
+      {
+        id: 'circle_meditation_mindfulness',
+        title: 'Meditation & Mindfulness Practice',
+        description:
+          'Daily breathwork, silent sitting, and sound meditation circles with verified local practice hubs.',
+        category: 'Mindfulness',
+      },
+      {
+        id: 'circle_sports_aerobics',
+        title: 'Aerobics, Running & Sports Hubs',
+        description:
+          'Community aerobics, trail running clubs, badminton groups, and local sports court meetups.',
+        category: 'Sports & Movement',
+      },
+    ];
+
     if (experience === 'men_health') {
       return [
+        ...commonActivityCircles,
         {
           id: 'men_strength',
           title: 'Strength, Stamina & Recovery',
@@ -59,35 +93,34 @@ export default function CommunitiesScreen() {
           description: 'Stoic practices, decompressing after high-stress days, and presence.',
           category: 'Resilience',
         },
-        {
-          id: 'men_fatherhood',
-          title: 'Fatherhood & Life Balance',
-          description: 'Navigating family presence, work boundaries, and personal vitality.',
-          category: 'Fatherhood',
-        },
       ];
     }
     if (experience === 'pride_wellbeing') {
       return [
+        ...commonActivityCircles,
         {
           id: 'pride_affirming',
           title: 'Affirming Care Navigation',
-          description: 'Safe healthcare resources, provider recommendations, and hormone therapy care.',
+          description:
+            'Safe healthcare resources, provider recommendations, and hormone therapy care.',
           category: 'Affirming Care',
         },
         {
           id: 'pride_chosen_family',
           title: 'Chosen Family & Mental Haven',
-          description: 'Safe peer reflections, celebrating milestones, and unconditional community.',
+          description:
+            'Safe peer reflections, celebrating milestones, and unconditional community.',
           category: 'Haven',
         },
       ];
     }
     return [
+      ...commonActivityCircles,
       {
         id: 'women_cycle',
         title: 'Cycles and symptoms',
-        description: 'Sharing what helps with cramps, heavy days, energy and mood across the month.',
+        description:
+          'Sharing what helps with cramps, heavy days, energy and mood across the month.',
         category: "Women's Health",
       },
       {
@@ -99,7 +132,8 @@ export default function CommunitiesScreen() {
       {
         id: 'women_matrescence',
         title: 'Matrescence & Postpartum Care',
-        description: 'Gentle support for postpartum transitions, sleep shifts, and self-compassion.',
+        description:
+          'Gentle support for postpartum transitions, sleep shifts, and self-compassion.',
         category: 'Maternal Care',
       },
     ];
@@ -113,7 +147,11 @@ export default function CommunitiesScreen() {
       showToast({ type: 'info', title: 'Left Circle', message: `You have left ${title}.` });
     } else {
       setJoinedCircleIds((prev) => [...prev, circleId]);
-      showToast({ type: 'info', title: 'Saved for later', message: `${title} will open when community features launch.` });
+      showToast({
+        type: 'info',
+        title: 'Saved for later',
+        message: `${title} will open when community features launch.`,
+      });
     }
   };
 
@@ -123,12 +161,25 @@ export default function CommunitiesScreen() {
         title="Circles"
         subtitle="Private groups for people with shared experiences"
         showBack
-        rightAction={<Button label="Invites" variant="outline" size="sm" onPress={() => router.push('/(app)/circles/invitations')} />}
+        rightAction={
+          <Button
+            label="Invites"
+            variant="outline"
+            size="sm"
+            onPress={() => router.push('/(app)/circles/invitations')}
+          />
+        }
       />
-      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: spacing.xxl }]}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[styles.content, { paddingBottom: spacing.xxl }]}
+      >
         {/* Policy Notice if Barred */}
         {!eligibility.allowed && (
-          <Card variant="surface1" style={{ marginBottom: spacing.md, borderColor: colors.warning, borderWidth: 1 }}>
+          <Card
+            variant="surface1"
+            style={{ marginBottom: spacing.md, borderColor: colors.warning, borderWidth: 1 }}
+          >
             <Badge label="Restricted During Trial" variant="warning" />
             <Text style={[typography.subbodyBold, { color: colors.text.primary, marginTop: 8 }]}>
               Community Discovery Inactive
@@ -151,13 +202,40 @@ export default function CommunitiesScreen() {
           <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 12 }]}>
             Private circles
           </Text>
-          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4, lineHeight: 18 }]}>
-            All circles are private and segmented by health journey. Conversations are conducted exclusively through curated topic prompts to ensure a zero-harassment sanctuary.
+          <Text
+            style={[
+              typography.caption,
+              { color: colors.text.secondary, marginTop: 4, lineHeight: 18 },
+            ]}
+          >
+            All circles are private and segmented by health journey. Conversations are conducted
+            exclusively through curated topic prompts to ensure a zero-harassment sanctuary.
           </Text>
         </Card>
 
+        {/* Level Progression Lock Notice */}
+        {level < 6 && (
+          <Card variant="surface1" style={{ marginBottom: spacing.md, padding: 14 }}>
+            <Badge label="Unlocks at Level 3" variant="neutral" />
+            <Text style={[typography.subbodyBold, { color: colors.text.primary, marginTop: 8 }]}>
+              Activity &amp; Support Circles are Locked
+            </Text>
+            <Text
+              style={[
+                typography.caption,
+                { color: colors.text.secondary, marginTop: 4, lineHeight: 18 },
+              ]}
+            >
+              Reach Level 3 by completing your daily quests, check-ins, and training to unlock Gym
+              Pal finding, Therapy groups, and Sports hubs. Current progress: Level {level}.
+            </Text>
+          </Card>
+        )}
+
         {/* Circles List */}
-        <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: spacing.sm }]}>
+        <Text
+          style={[typography.subheading, { color: colors.text.primary, marginBottom: spacing.sm }]}
+        >
           Recommended for Your Journey
         </Text>
 
@@ -174,10 +252,18 @@ export default function CommunitiesScreen() {
                     {circle.category}
                   </Text>
                 </View>
-                <Badge label={isJoined ? 'Member' : 'Private'} variant={isJoined ? 'success' : 'neutral'} />
+                <Badge
+                  label={isJoined ? 'Member' : 'Private'}
+                  variant={isJoined ? 'success' : 'neutral'}
+                />
               </View>
 
-              <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 8, marginBottom: 12 }]}>
+              <Text
+                style={[
+                  typography.subbody,
+                  { color: colors.text.secondary, marginTop: 8, marginBottom: 12 },
+                ]}
+              >
                 {circle.description}
               </Text>
 

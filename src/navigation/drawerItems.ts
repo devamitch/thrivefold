@@ -10,6 +10,8 @@ export interface Item {
   only?: ProductExperience[];
   /** Shown only once the social path is open to this person. */
   social?: boolean;
+  /** Minimum progression level required to see this item. */
+  minLevel?: number;
 }
 
 /**
@@ -40,7 +42,11 @@ export const DRAWER_SECTIONS: { title: string; items: Item[] }[] = [
     title: 'Progress',
     items: [
       { label: 'Roadmap', icon: 'map-outline', route: '/(app)/roadmap' },
-      { label: 'Progress and rewards', icon: 'trending-up-outline', route: '/(app)/(tabs)/progress' },
+      {
+        label: 'Progress and rewards',
+        icon: 'trending-up-outline',
+        route: '/(app)/(tabs)/progress',
+      },
       { label: 'Patterns and insights', icon: 'analytics-outline', route: '/(app)/ai' },
     ],
   },
@@ -48,9 +54,24 @@ export const DRAWER_SECTIONS: { title: string; items: Item[] }[] = [
     title: 'Health',
     items: [
       { label: 'Health hub', icon: 'medkit-outline', route: '/(app)/health' },
-      { label: 'Cycle', icon: 'water-outline', route: '/(app)/health/cycle', only: ['women_health'] },
-      { label: "Men's health", icon: 'body-outline', route: '/(app)/health/men', only: ['men_health'] },
-      { label: 'Self-care', icon: 'heart-outline', route: '/(app)/health/pride', only: ['pride_wellbeing'] },
+      {
+        label: 'Cycle',
+        icon: 'water-outline',
+        route: '/(app)/health/cycle',
+        only: ['women_health'],
+      },
+      {
+        label: "Men's health",
+        icon: 'body-outline',
+        route: '/(app)/health/men',
+        only: ['men_health'],
+      },
+      {
+        label: 'Self-care',
+        icon: 'heart-outline',
+        route: '/(app)/health/pride',
+        only: ['pride_wellbeing'],
+      },
       { label: 'Food and macros', icon: 'restaurant-outline', route: '/(app)/health/nutrition' },
       { label: 'Sleep', icon: 'moon-outline', route: '/(app)/health/sleep' },
       { label: 'Medications', icon: 'medical-outline', route: '/(app)/health/medications' },
@@ -60,11 +81,22 @@ export const DRAWER_SECTIONS: { title: string; items: Item[] }[] = [
     ],
   },
   {
-    title: 'Community',
+    title: 'Activity & Wellness Circles',
     items: [
-      { label: 'Circles', icon: 'people-outline', route: '/(app)/circles', social: true },
-      { label: 'Letters', icon: 'mail-outline', route: '/(app)/letters', social: true },
-      { label: 'Organizations', icon: 'business-outline', route: '/(app)/organizations', social: true },
+      {
+        label: 'Circles (Gym, Therapy, Sports)',
+        icon: 'people-outline',
+        route: '/(app)/circles',
+        social: true,
+        minLevel: 6,
+      },
+      {
+        label: 'Verified Hubs & Places',
+        icon: 'business-outline',
+        route: '/(app)/organizations',
+        social: true,
+        minLevel: 6,
+      },
     ],
   },
   {
@@ -76,4 +108,3 @@ export const DRAWER_SECTIONS: { title: string; items: Item[] }[] = [
     ],
   },
 ];
-
