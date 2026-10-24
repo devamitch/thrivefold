@@ -1,131 +1,46 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
+import React, { useMemo } from 'react';
+import { Text } from 'react-native';
+import { useRouter } from 'expo-router';
+
+import { ScreenContainer } from '../../../components/ui/ScreenContainer';
+import { AppHeader } from '../../../components/ui/AppHeader';
 import { Card } from '../../../components/ui/Card';
-import { Header } from '../../../components/ui/Header';
 import { Button } from '../../../components/ui/Button';
-import { Chip } from '../../../components/ui/Chip';
-import { Badge } from '../../../components/ui/Badge';
+import { TrendBars, lastDays } from '../../../components/ui/TrendBars';
 import { useTheme } from '../../../theme/useTheme';
-import { useRootStore, useShallow } from '../../../stores/useRootStore';
+import { useRootStore } from '../../../stores/useRootStore';
+import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngine';
 
+/** Mood, energy and stress over the last two weeks, from the person's own check-ins. */
 export default function MoodScreen() {
+  const router = useRouter();
   const { colors, typography, spacing } = useTheme();
-  const { todayEnergy, todayMood, todayStress, todaySleepHours, updateTodayMetrics } = useRootStore(
-    useShallow((s) => ({ todayEnergy: s.todayEnergy, todayMood: s.todayMood, todayStress: s.todayStress, todaySleepHours: s.todaySleepHours, updateTodayMetrics: s.updateTodayMetrics })),
-  );
-
-  const [energy, setEnergy] = useState(todayEnergy ?? 5);
-  const [mood, setMood] = useState(todayMood ?? 5);
-  const [stress, setStress] = useState(todayStress ?? 5);
-
-  const saveMetrics = (e: number, m: number, s: number) => {
-    setEnergy(e);
-    setMood(m);
-    setStress(s);
-    updateTodayMetrics(e, m, s, todaySleepHours);
-  };
-
-  const scaleNumbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  const history = useRootStore((s) => s.checkInHistory);
+  const byDate = useMemo(() => new Map(history.map((c) => [c.date, c])), [history]);
+  const today = byDate.get(formatLocalDate(new Date()));
 
   return (
-    <ScreenWrapper scrollable>
-      <Header title="Mood and energy" subtitle="Your daily trends" showBack />
-      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
-        {/* Mood Slider/Pills */}
-        <Card style={{ marginBottom: spacing.md }}>
-          <View style={styles.metricHeader}>
-            <Text style={[typography.subheading, { color: colors.text.primary }]}>Emotional Valence (Mood)</Text>
-            <Badge label={`${mood}/10`} variant="primary" />
-          </View>
-          <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: 12 }]}>
-            1 = Very low / distressed · 10 = Joyful / deeply fulfilled
-          </Text>
-          <View style={styles.pillsRow}>
-            {scaleNumbers.map((num) => (
-              <Chip
-                key={num}
-                label={`${num}`}
-                selected={mood === num}
-                onPress={() => saveMetrics(energy, num, stress)}
-                style={{ width: 44, height: 38, marginRight: 6, marginBottom: 6, justifyContent: 'center', alignItems: 'center' }}
-              />
-            ))}
-          </View>
+    <ScreenContainer header={<AppHeader title="Mood and energy" subtitle="Your last 14 days" showBack />} scrollMode="shell-scroll-view">
+      <Card style={{ padding: spacing.base }}>
+        <Text style={[typography.subheading, { color: colors.text.primary }]}>
+          {today ? `Today: mood ${today.mood}, energy ${today.energy}, stress ${today.stress}` : 'No check-in today yet'}
+        </Text>
+        <Button
+          label={today ? 'Update today' : 'Check in'}
+          size="sm"
+          onPress={() => router.push('/(app)/check-in')}
+          style={{ marginTop: spacing.sm, alignSelf: 'flex-start' }}
+        />
+      </Card>
+      {(['mood', 'energy', 'stress'] as const).map((key) => (
+        <Card key={key} style={{ padding: spacing.base, marginTop: spacing.sm }}>
+          <TrendBars label={key[0].toUpperCase() + key.slice(1)} max={10} points={lastDays(14, (d) => byDate.get(d)?.[key] ?? null)} />
         </Card>
-
-        {/* Energy Slider/Pills */}
-        <Card style={{ marginBottom: spacing.md }}>
-          <View style={styles.metricHeader}>
-            <Text style={[typography.subheading, { color: colors.text.primary }]}>Physical Energy</Text>
-            <Badge label={`${energy}/10`} variant="success" />
-          </View>
-          <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: 12 }]}>
-            1 = Exhausted / depleted · 10 = Vibrant & alert
-          </Text>
-          <View style={styles.pillsRow}>
-            {scaleNumbers.map((num) => (
-              <Chip
-                key={num}
-                label={`${num}`}
-                selected={energy === num}
-                onPress={() => saveMetrics(num, mood, stress)}
-                style={{ width: 44, height: 38, marginRight: 6, marginBottom: 6, justifyContent: 'center', alignItems: 'center' }}
-              />
-            ))}
-          </View>
-        </Card>
-
-        {/* Stress Slider/Pills */}
-        <Card style={{ marginBottom: spacing.md }}>
-          <View style={styles.metricHeader}>
-            <Text style={[typography.subheading, { color: colors.text.primary }]}>Perceived Stress</Text>
-            <Badge label={`${stress}/10`} variant={stress <= 4 ? 'success' : stress <= 7 ? 'warning' : 'danger'} />
-          </View>
-          <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: 12 }]}>
-            1 = Completely serene · 10 = Overwhelmed / acute tension
-          </Text>
-          <View style={styles.pillsRow}>
-            {scaleNumbers.map((num) => (
-              <Chip
-                key={num}
-                label={`${num}`}
-                selected={stress === num}
-                onPress={() => saveMetrics(energy, mood, num)}
-                style={{ width: 44, height: 38, marginRight: 6, marginBottom: 6, justifyContent: 'center', alignItems: 'center' }}
-              />
-            ))}
-          </View>
-        </Card>
-
-        <Card variant="surface1" style={{ marginBottom: spacing.md }}>
-          <Text style={[typography.captionBold, { color: colors.text.primary }]}>
-            Local-Only Privacy Invariant
-          </Text>
-          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-            Your daily mood, energy, and stress scores are stored only on this phone.
-          </Text>
-        </Card>
-      </ScrollView>
-    </ScreenWrapper>
+      ))}
+      <Button label="See your patterns" variant="ghost" onPress={() => router.push('/(app)/ai')} style={{ marginTop: spacing.sm }} />
+      <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.sm }]}>
+        Scores are stored only on this phone. Not medical advice; if low mood persists, talk to someone you trust or a clinician.
+      </Text>
+    </ScreenContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-  },
-  metricHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  pillsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-});

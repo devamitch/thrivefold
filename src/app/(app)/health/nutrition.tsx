@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,7 @@ import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { useTheme } from '../../../theme/useTheme';
 import { useRootStore } from '../../../stores/useRootStore';
+import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngine';
 
 interface MealRecommendation {
   id: string;
@@ -68,14 +69,17 @@ export default function NutritionScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
   const onboarding = useRootStore((s) => s.onboarding);
-  const [waterGlasses, setWaterGlasses] = useState(5);
+  const date = formatLocalDate(new Date());
+  const waterGlasses = useRootStore((st) => st.hydration[date] ?? 0);
+  const setHydration = useRootStore((st) => st.setHydration);
+  const setWaterGlasses = (update: (v: number) => number) => setHydration(date, update(waterGlasses));
 
   const activeDiet = onboarding.diet && onboarding.diet !== 'No preference' ? onboarding.diet : null;
   const meals = activeDiet ? (MEALS_BY_DIET[activeDiet] ?? DEFAULT_MEALS) : DEFAULT_MEALS;
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Nutrition & Hydration" subtitle="Nourishment & Cellular Balance" showBack />
+      <Header title="Nutrition" subtitle="Water today and meal ideas for your preferences" showBack />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}
@@ -93,8 +97,8 @@ export default function NutritionScreen() {
           </View>
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 6 }]}>
             {activeDiet
-              ? `All daily meal ideas and recipes are tailored to your ${activeDiet} preference selected during onboarding.`
-              : 'Nutrient-dense, balanced macro recommendations to sustain cellular energy and mental clarity.'}
+              ? `Meal ideas below follow your ${activeDiet} preference.`
+              : 'Balanced meal ideas. Set a food preference to tailor them.'}
           </Text>
           <Button
             label="Edit Food Preferences"
@@ -149,7 +153,7 @@ export default function NutritionScreen() {
         {/* Meal Logs */}
         <View style={styles.headerRow}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>
-            Today's {activeDiet ? `${activeDiet} ` : ''}Nourishment Plan
+            {activeDiet ? `${activeDiet} meal ideas` : 'Meal ideas'}
           </Text>
         </View>
 
@@ -157,7 +161,7 @@ export default function NutritionScreen() {
           <Card key={meal.id} style={{ marginTop: spacing.sm, padding: spacing.md }}>
             <View style={styles.headerRow}>
               <Badge label={meal.type} variant="neutral" />
-              <Text style={[typography.caption, { color: colors.text.muted }]}>{meal.time}</Text>
+              <Text style={[typography.caption, { color: colors.text.muted }]}>Idea</Text>
             </View>
             <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 8 }]}>
               {meal.title}

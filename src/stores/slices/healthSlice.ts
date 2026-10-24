@@ -103,6 +103,11 @@ export interface HealthSlice {
   journalEntries: JournalEntry[];
   personalEvents: PersonalCalendarEvent[];
   workoutSessions: WorkoutSession[];
+  /** Glasses of water per date (YYYY-MM-DD). */
+  hydration: Record<string, number>;
+  setHydration: (date: string, glasses: number) => void;
+  /** Edits an existing check-in for a date; does nothing if there is none. */
+  patchCheckIn: (date: string, patch: Partial<Omit<DailyCheckInRecord, 'id' | 'date'>>) => void;
   medications: MedicationEntry[];
   /** "YYYY-MM-DD|medicationId" for each dose marked taken. */
   medicationTaken: string[];
@@ -258,6 +263,15 @@ export const createHealthSlice: StateCreator<
   // Only events the person adds; nothing is pre-filled.
   personalEvents: [],
   workoutSessions: [],
+  hydration: {},
+
+  setHydration: (date, glasses) =>
+    set((state) => ({ hydration: { ...state.hydration, [date]: Math.max(0, Math.min(20, glasses)) } })),
+
+  patchCheckIn: (date, patch) =>
+    set((state) => ({
+      checkInHistory: state.checkInHistory.map((r) => (r.date === date ? { ...r, ...patch } : r)),
+    })),
   medications: [],
   medicationTaken: [],
 

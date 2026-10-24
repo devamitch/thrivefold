@@ -1,105 +1,83 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
+import React, { useMemo } from 'react';
+import { Text, View, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
+
+import { ScreenContainer } from '../../../components/ui/ScreenContainer';
+import { AppHeader } from '../../../components/ui/AppHeader';
 import { Card } from '../../../components/ui/Card';
-import { Header } from '../../../components/ui/Header';
-import { Chip } from '../../../components/ui/Chip';
 import { Button } from '../../../components/ui/Button';
-import { Badge } from '../../../components/ui/Badge';
+import { Chip } from '../../../components/ui/Chip';
 import { useTheme } from '../../../theme/useTheme';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
+import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngine';
 
+const COMMON = ['Headache', 'Fatigue', 'Cramps', 'Bloating', 'Back pain', 'Nausea', 'Muscle soreness', 'Joint stiffness', 'Tension', 'Restless', 'Acne', 'Dizziness'];
+
+/** Today's symptoms (part of today's check-in) and how often each came up in 30 days. */
 export default function SymptomsScreen() {
+  const router = useRouter();
   const { colors, typography, spacing } = useTheme();
-  const { todaySymptoms, addTodaySymptom, removeTodaySymptom, checkInHistory } = useRootStore(
-    useShallow((s) => ({ todaySymptoms: s.todaySymptoms, addTodaySymptom: s.addTodaySymptom, removeTodaySymptom: s.removeTodaySymptom, checkInHistory: s.checkInHistory })),
-  );
+  const { history, patchCheckIn } = useRootStore(useShallow((s) => ({ history: s.checkInHistory, patchCheckIn: s.patchCheckIn })));
+  const date = formatLocalDate(new Date());
+  const today = history.find((c) => c.date === date);
 
-  const commonSymptoms = [
-    'Mild energy surge',
-    'Cramping / Discomfort',
-    'Lower Back Aches',
-    'Brain Fog',
-    'Bloating / Water Retention',
-    'Headache / Tension',
-    'Restlessness',
-    'Digestive Sensitivity',
-    'Joint Stiffness',
-    'Emotional Sensitivity',
-  ];
-
-  const toggleSymptom = (s: string) => {
-    if (todaySymptoms.includes(s)) {
-      removeTodaySymptom(s);
-    } else {
-      addTodaySymptom(s);
+  const counts = useMemo(() => {
+    const since = Date.now() - 30 * 86400000;
+    const m = new Map<string, number>();
+    for (const c of history) {
+      if (Date.parse(`${c.date}T12:00:00`) < since) continue;
+      for (const sym of c.symptoms) m.set(sym, (m.get(sym) ?? 0) + 1);
     }
+    return [...m.entries()].sort((a, b) => b[1] - a[1]);
+  }, [history]);
+
+  const options = [...new Set([...(today?.symptoms ?? []), ...COMMON])];
+  const toggle = (sym: string) => {
+    if (!today) return;
+    patchCheckIn(date, {
+      symptoms: today.symptoms.includes(sym) ? today.symptoms.filter((x) => x !== sym) : [...today.symptoms, sym],
+    });
   };
 
   return (
-    <ScreenWrapper scrollable>
-      <Header title="Symptom Tracker" subtitle="Log & Track Physical Sensations" showBack />
-      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
-        <Card style={{ marginBottom: spacing.md }}>
-          <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: 8 }]}>
-            Today's Logged Symptoms ({todaySymptoms.length})
-          </Text>
-          <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: 12 }]}>
-            Tap any symptom tag to add or remove it from today's record on this phone.
-          </Text>
-          <View style={styles.chipRow}>
-            {commonSymptoms.map((s) => {
-              const active = todaySymptoms.includes(s);
-              return (
-                <Chip
-                  key={s}
-                  label={s}
-                  selected={active}
-                  onPress={() => toggleSymptom(s)}
-                  style={{ marginRight: 6, marginBottom: 6 }}
-                />
-              );
-            })}
+    <ScreenContainer header={<AppHeader title="Symptoms" subtitle="What you noticed, and how often" showBack />} scrollMode="shell-scroll-view">
+      <Card style={{ padding: spacing.base }}>
+        <Text style={[typography.subheading, { color: colors.text.primary }]}>Today</Text>
+        {today ? (
+          <View style={[styles.chips, { marginTop: spacing.sm }]}>
+            {options.map((sym) => (
+              <Chip key={sym} label={sym} selected={today.symptoms.includes(sym)} onPress={() => toggle(sym)} />
+            ))}
           </View>
-        </Card>
-
-        {/* Historic Log Timeline */}
-        <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: spacing.sm }]}>
-          Recent History
-        </Text>
-
-        {checkInHistory.map((item) => (
-          <Card key={item.id} style={{ marginBottom: spacing.sm }}>
-            <View style={styles.historyRow}>
-              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                {new Date(item.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
-              </Text>
-              <Badge label={`Energy: ${item.energy}/10`} variant="neutral" />
-            </View>
-            <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>
-              Symptoms: {item.symptoms.length > 0 ? item.symptoms.join(', ') : 'None reported (Clear day)'}
+        ) : (
+          <>
+            <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>
+              Symptoms are saved with your daily check-in.
             </Text>
-          </Card>
-        ))}
-      </ScrollView>
-    </ScreenWrapper>
+            <Button label="Check in" size="sm" onPress={() => router.push('/(app)/check-in')} style={{ marginTop: spacing.sm, alignSelf: 'flex-start' }} />
+          </>
+        )}
+      </Card>
+
+      <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm }]}>Last 30 days</Text>
+      {counts.length === 0 ? (
+        <Text style={[typography.subbody, { color: colors.text.secondary }]}>Nothing logged yet.</Text>
+      ) : (
+        counts.map(([sym, n]) => (
+          <View key={sym} style={[styles.row, { borderBottomColor: colors.border }]}>
+            <Text style={[typography.body, { color: colors.text.primary }]}>{sym}</Text>
+            <Text style={[typography.subbodyBold, { color: colors.text.secondary }]}>{n} day{n === 1 ? '' : 's'}</Text>
+          </View>
+        ))
+      )}
+      <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.md }]}>
+        If a symptom is severe, new, or keeps coming back, please see a clinician. This is a record, not a diagnosis.
+      </Text>
+    </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-  },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  historyRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, minHeight: 48, alignItems: 'center' },
 });

@@ -1,53 +1,49 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { useMemo } from 'react';
+import { useRouter } from 'expo-router';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
 import { Header } from '../../../components/ui/Header';
 import { Button } from '../../../components/ui/Button';
-import { Badge } from '../../../components/ui/Badge';
 import { GuidedTimer } from '../../../components/ui/GuidedTimer';
 import { useTheme } from '../../../theme/useTheme';
-import { useRootStore, useShallow } from '../../../stores/useRootStore';
+import { useRootStore } from '../../../stores/useRootStore';
+import { TrendBars, lastDays } from '../../../components/ui/TrendBars';
+import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngine';
 
 export default function SleepScreen() {
   const { colors, typography, spacing } = useTheme();
-  const { todaySleepHours, updateTodayMetrics, todayEnergy, todayMood, todayStress } = useRootStore(
-    useShallow((s) => ({ todaySleepHours: s.todaySleepHours, updateTodayMetrics: s.updateTodayMetrics, todayEnergy: s.todayEnergy, todayMood: s.todayMood, todayStress: s.todayStress })),
-  );
-
-  const [hours, setHours] = useState(todaySleepHours ?? 7);
-
-  const adjustHours = (delta: number) => {
-    const next = Math.max(3, Math.min(12, Math.round((hours + delta) * 2) / 2));
-    setHours(next);
-    updateTodayMetrics(todayEnergy, todayMood, todayStress, next);
-  };
+  const router = useRouter();
+  const history = useRootStore((st) => st.checkInHistory);
+  const byDate = useMemo(() => new Map(history.map((c) => [c.date, c])), [history]);
+  const today = byDate.get(formatLocalDate(new Date()));
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Sleep & Circadian Rhythm" subtitle="Rest, Recovery & Parasympathetic Tone" showBack />
-      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
-        <Card style={{ marginBottom: spacing.md, alignItems: 'center', padding: spacing.lg }}>
-          <Text style={[typography.caption, { color: colors.text.muted }]}>LAST NIGHT'S DURATION</Text>
-          <Text style={[typography.hero, { color: colors.primary, marginVertical: 8 }]}>
-            {hours.toFixed(1)} <Text style={[typography.subheading, { color: colors.text.secondary }]}>hrs</Text>
+      <Header title="Sleep" subtitle="From your daily check-ins" showBack />
+      <View>
+        <Card style={{ marginBottom: spacing.md, padding: spacing.lg }}>
+          <Text style={[typography.caption, { color: colors.text.muted }]}>LAST NIGHT</Text>
+          <Text style={[typography.hero, { color: colors.primary, marginVertical: 4 }]}>
+            {today ? `${today.sleepHours}h` : 'Not logged'}
           </Text>
-          <Badge
-            label={hours >= 7.5 ? 'Restful & Optimal' : hours >= 6 ? 'Adequate Rest' : 'Sleep Debt Detected'}
-            variant={hours >= 7.5 ? 'success' : hours >= 6 ? 'warning' : 'danger'}
+          <Button
+            label={today ? 'Update in check-in' : 'Log in check-in'}
+            size="sm"
+            variant="outline"
+            onPress={() => router.push('/(app)/check-in')}
+            style={{ alignSelf: 'flex-start', marginTop: spacing.xs }}
           />
-
-          <View style={styles.stepperRow}>
-            <Button label="- 30 min" variant="outline" size="sm" onPress={() => adjustHours(-0.5)} />
-            <Button label="+ 30 min" variant="outline" size="sm" onPress={() => adjustHours(0.5)} style={{ marginLeft: 12 }} />
+          <View style={{ marginTop: spacing.md }}>
+            <TrendBars label="Last 14 nights" unit="h" max={10} points={lastDays(14, (d) => byDate.get(d)?.sleepHours ?? null)} />
           </View>
         </Card>
 
         {/* Circadian Wind-Down */}
         <Card style={{ marginBottom: spacing.md }}>
           <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: 8 }]}>
-            Circadian Alignment Tips
+            Habits that help sleep
           </Text>
           <View style={styles.tipRow}>
             <Ionicons name="sunny-outline" size={20} color={colors.primary} />
@@ -82,7 +78,7 @@ export default function SleepScreen() {
             ]}
           />
         </Card>
-      </ScrollView>
+      </View>
     </ScreenWrapper>
   );
 }
