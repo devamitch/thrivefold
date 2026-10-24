@@ -5,43 +5,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { OnboardingScaffold } from '../../components/onboarding/OnboardingScaffold';
 import { Chip } from '../../components/ui/Chip';
 import { useRootStore, useShallow } from '../../stores/useRootStore';
-import type { OnboardingAnswers } from '../../stores/slices/appSlice';
 import { useTheme } from '../../theme/useTheme';
-import { ProductExperience } from '../../theme/tokens';
-
-const SHARED_CONSTRAINTS = [
-  'Lower back',
-  'Knees or joints',
-  'Wrists or shoulders',
-  'Recovering / low energy',
-  'Mostly sitting all day',
-  'Low impact only',
-];
-
-const CONSTRAINTS_BY_EXPERIENCE: Record<ProductExperience, string[]> = {
-  women_health: [
-    ...SHARED_CONSTRAINTS,
-    'Pelvic floor & sacrum',
-    'Cramps / sensitive phase',
-  ],
-  men_health: [
-    ...SHARED_CONSTRAINTS,
-    'Tight hips / groin',
-    'Hamstrings & calves',
-    'Neck / upper spine',
-  ],
-  pride_wellbeing: [
-    ...SHARED_CONSTRAINTS,
-    'Chest / posture strain',
-    'Neck / upper back tension',
-  ],
-};
-
-const LENGTHS: { value: NonNullable<OnboardingAnswers['routineMinutes']>; label: string }[] = [
-  { value: 5, label: '5 min' },
-  { value: 10, label: '10 min' },
-  { value: 20, label: '20 min' },
-];
+import { constraintsFor, ROUTINE_LENGTHS } from '../../domain/onboarding/options';
 
 export default function ActivityConstraintsScreen() {
   const router = useRouter();
@@ -55,7 +20,7 @@ export default function ActivityConstraintsScreen() {
     })),
   );
 
-  const activeConstraints = CONSTRAINTS_BY_EXPERIENCE[experience] ?? SHARED_CONSTRAINTS;
+  const activeConstraints = constraintsFor(experience);
 
   const toggle = (c: string) =>
     setOnboardingAnswers({
@@ -66,6 +31,7 @@ export default function ActivityConstraintsScreen() {
   return (
     <OnboardingScaffold
       step="activity-constraints"
+      reward="constraints"
       title="Anything we should go easy on?"
       subtitle="We'll leave out movements that don't suit you. Skip if nothing applies."
       primaryLabel="Continue"
@@ -82,7 +48,7 @@ export default function ActivityConstraintsScreen() {
         How long can a daily routine be?
       </Text>
       <View style={[styles.segment, { backgroundColor: colors.surface1, marginTop: spacing.sm }]}>
-        {LENGTHS.map((l) => {
+        {ROUTINE_LENGTHS.map((l) => {
           const selected = routineMinutes === l.value;
           return (
             <Pressable

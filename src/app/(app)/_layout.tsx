@@ -52,6 +52,7 @@ export default function AppLayout() {
       <Stack.Screen name="check-in" />
       <Stack.Screen name="calendar" />
       <Stack.Screen name="settings" />
+      <Stack.Screen name="personalize" />
     </Stack>
   );
 }

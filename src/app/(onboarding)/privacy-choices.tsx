@@ -41,6 +41,7 @@ export default function PrivacyChoicesScreen() {
   return (
     <OnboardingScaffold
       step="privacy-choices"
+      reward="privacy"
       title="Your data, your rules"
       subtitle="A quick look at how Thrivefold treats what you share."
       primaryLabel="Continue"

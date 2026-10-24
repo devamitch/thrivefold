@@ -22,8 +22,9 @@ const REMINDERS = ['Fasting days', 'Weekly rest day', 'Meditation days', 'Festiv
 export default function LifestylePreferencesScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
-  const { diet, observances, isOnboarded, setOnboardingAnswers } = useRootStore(
+  const { diet, observances, isOnboarded, setOnboardingAnswers, claimSetupReward } = useRootStore(
     useShallow((s) => ({
+      claimSetupReward: s.claimSetupReward,
       diet: s.onboarding.diet,
       observances: s.onboarding.observances,
       isOnboarded: s.isOnboarded,
@@ -40,6 +41,7 @@ export default function LifestylePreferencesScreen() {
     if (!isOnboarded) {
       router.push('/(onboarding)/complete');
     } else {
+      claimSetupReward('lifestyle');
       router.back();
     }
   };
@@ -94,6 +96,7 @@ export default function LifestylePreferencesScreen() {
     return (
       <OnboardingScaffold
         step="lifestyle-preferences"
+      reward="lifestyle"
         title="Food & lifestyle choices"
         subtitle="Shapes nutrition and reminder suggestions. Skip if you prefer flexible options."
         primaryLabel={diet || observances.length ? 'Continue' : 'Continue without choices'}

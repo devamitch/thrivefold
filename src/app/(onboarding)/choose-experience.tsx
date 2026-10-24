@@ -39,6 +39,7 @@ export default function ChooseExperienceScreen() {
   return (
     <OnboardingScaffold
       step="choose-experience"
+      reward="experience"
       title="Where would you like to start?"
       subtitle="This sets your home screen and look. You can switch any time in Settings."
       primaryLabel="Continue"

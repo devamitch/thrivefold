@@ -104,7 +104,10 @@ export const createAppSlice: StateCreator<
   offlineModeForced: false,
   toasts: [],
   alert: null,
-  setExperience: (experience) => set({ experience }),
+  setExperience: (experience) => {
+    set({ experience });
+    if (get().isOnboarded) get().refitDailyQuests();
+  },
   setPrivateIdentity: (privateIdentity) =>
     set({ privateIdentity: { pronouns: privateIdentity.pronouns.trim().slice(0, 40), genderDescription: privateIdentity.genderDescription.trim().slice(0, 80) } }),
   setThemeMode: (themeMode) => set({ themeMode }),

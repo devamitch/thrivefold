@@ -358,6 +358,32 @@ export default function SettingsScreen() {
           Preferences & Actions
         </Text>
 
+        <Card onPress={() => router.push('/(app)/personalize')} style={{ marginBottom: 8 }}>
+          <View style={styles.rowBetween}>
+            <View style={styles.hubIconRow}>
+              <Ionicons name="options-outline" size={20} color={colors.primary} />
+              <View style={{ marginLeft: 12 }}>
+                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Personalize</Text>
+                <Text style={[typography.caption, { color: colors.text.secondary }]}>Goals, pace, limits and how you feel today</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
+          </View>
+        </Card>
+
+        <Card onPress={() => router.push('/(app)/health/integrations')} style={{ marginBottom: 8 }}>
+          <View style={styles.rowBetween}>
+            <View style={styles.hubIconRow}>
+              <Ionicons name="link-outline" size={20} color={colors.primary} />
+              <View style={{ marginLeft: 12 }}>
+                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Connected apps</Text>
+                <Text style={[typography.caption, { color: colors.text.secondary }]}>Health Connect, heart-rate straps, FHIR export</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
+          </View>
+        </Card>
+
         <Card
           onPress={() => router.push('/(onboarding)/lifestyle-preferences')}
           style={{ marginBottom: 8 }}

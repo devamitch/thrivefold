@@ -1,10 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import React, { useEffect } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { ZoomIn, useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useRootStore } from '../../stores/useRootStore';
+import { setupLedgerKey, setupReward, SETUP_XP_TOTAL, type SetupSection } from '../../domain/game/setupProfile';
+import { useRootStore, useShallow } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
 import { Button } from '../ui/Button';
 
@@ -13,6 +16,7 @@ export const ONBOARDING_STEPS = [
   'choose-experience',
   'privacy-choices',
   'goals',
+  'baseline',
   'activity-constraints',
   'lifestyle-preferences',
 ] as const;
@@ -28,6 +32,8 @@ interface OnboardingScaffoldProps {
   primaryDisabled?: boolean;
   /** Shown as a quiet "Skip" in the top bar when the step is optional. */
   onSkip?: () => void;
+  /** Setup step whose fixed XP is awarded when the person continues having answered it. */
+  reward?: SetupSection;
 }
 
 /**
@@ -44,12 +50,30 @@ export function OnboardingScaffold({
   onPrimary,
   primaryDisabled,
   onSkip,
+  reward,
 }: OnboardingScaffoldProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, typography, spacing } = useTheme();
   const setOnboardingStep = useRootStore((s) => s.setOnboardingStep);
   const index = ONBOARDING_STEPS.indexOf(step);
+  const reduceMotion = useReducedMotion();
+  const { setupXp, level, claimed, claimSetupReward } = useRootStore(
+    useShallow((s) => ({
+      setupXp: s.rewardLedger.filter((e) => e.kind === 'setup_reward').reduce((sum, e) => sum + e.xp, 0),
+      level: s.level,
+      claimed: reward ? s.rewardLedger.some((e) => e.key === setupLedgerKey(reward)) : false,
+      claimSetupReward: s.claimSetupReward,
+    })),
+  );
+  const stepReward = reward ? setupReward(reward) : null;
+
+  const continueStep = () => {
+    if (reward && claimSetupReward(reward).awarded) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+    }
+    onPrimary();
+  };
 
   useEffect(() => {
     setOnboardingStep(step);
@@ -101,6 +125,27 @@ export function OnboardingScaffold({
         )}
       </View>
 
+      {setupXp > 0 || stepReward ? (
+        <View style={[styles.xpRow, { paddingHorizontal: spacing.base }]}>
+          <Animated.View
+            key={setupXp}
+            entering={reduceMotion ? undefined : ZoomIn.springify().damping(14)}
+            style={[styles.xpPill, { backgroundColor: colors.primaryAlpha }]}
+            accessibilityLabel={`Level ${level}, ${setupXp} of ${SETUP_XP_TOTAL} setup XP earned`}
+          >
+            <Ionicons name="sparkles" size={14} color={colors.primary} />
+            <Text style={[typography.captionBold, { color: colors.primary, marginLeft: 6 }]}>
+              Level {level} · {setupXp} XP
+            </Text>
+          </Animated.View>
+          {stepReward ? (
+            <Text style={[typography.caption, { color: claimed ? colors.text.muted : colors.text.secondary, marginLeft: 10 }]}>
+              {claimed ? `Earned ${stepReward.xp} XP here` : `+${stepReward.xp} XP for answering`}
+            </Text>
+          ) : null}
+        </View>
+      ) : null}
+
       <ScrollView
         style={styles.flex}
         contentContainerStyle={{ paddingHorizontal: spacing.base, paddingBottom: spacing.lg }}
@@ -132,7 +177,7 @@ export function OnboardingScaffold({
           },
         ]}
       >
-        <Button label={primaryLabel} onPress={onPrimary} disabled={primaryDisabled} size="lg" />
+        <Button label={primaryLabel} onPress={continueStep} disabled={primaryDisabled} size="lg" />
       </View>
     </View>
   );
@@ -149,4 +194,6 @@ const styles = StyleSheet.create({
   title: { marginTop: 12 },
   topBar: { alignItems: 'center', flexDirection: 'row', height: 52 },
   topButton: { justifyContent: 'center', minHeight: 44, width: 56 },
+  xpPill: { alignItems: 'center', borderRadius: 999, flexDirection: 'row', paddingHorizontal: 10, paddingVertical: 5 },
+  xpRow: { alignItems: 'center', flexDirection: 'row', marginTop: 4 },
 });
