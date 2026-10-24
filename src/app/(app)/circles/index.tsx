@@ -86,8 +86,8 @@ export default function CommunitiesScreen() {
     return [
       {
         id: 'women_cycle',
-        title: 'Cycle Syncing & Hormonal Balance',
-        description: 'Nutrition, energy alignment, and symptom management across menstrual phases.',
+        title: 'Cycles and symptoms',
+        description: 'Sharing what helps with cramps, heavy days, energy and mood across the month.',
         category: "Women's Health",
       },
       {
