@@ -1,5 +1,18 @@
 # Requirements Traceability Matrix
 
+## Update — 2026-10-25
+
+Checks: compile 0, lint 0, `pnpm test` 142/142, `pnpm test:db` 71/71, Android release build PASS
+(arm64). Supabase: all 7 migrations pushed to project lymbgfzngpkvcadrkvui (ap-south-1);
+anonymous reward claims refused (verified over REST). No device run (no device attached).
+
+| Area | Status | Evidence | Remaining |
+| --- | --- | --- | --- |
+| Camera coach | PASS (logic, build) | `(app)/health/coach/[planId]`: video-call layout (`CallStage`), YouTube tutorial (4 oEmbed-verified IDs), live pose form faults that pause/resume the video, auto rep/hold counting (`pose-movement.test.ts`) | Device run; more verified videos |
+| Workout XP | PASS | 5 XP per workout, 50 XP (10x) with >=80% fault-free camera frames, 2 per day; client + `tf_claim_workout_reward` (`workout-reward.test.ts`, `test:db`) | Form numbers are device-reported |
+| Check-in intensity, plan suggestions | PASS (logic) | `setup-profile.test.ts`, `workouts.test.ts` | Device run |
+| Backend | PASS (deployed) | `supabase db push` 7/7; React Query with MMKV persister for server reads | Enable Google provider in Supabase Auth (dashboard) |
+
 ## Update — 2026-10-24
 
 Checks: `pnpm compile` 0 errors, `pnpm lint` 0, `pnpm test` 130/130, `pnpm test:db` 66/66.
