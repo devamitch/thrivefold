@@ -56,6 +56,9 @@ importers:
       expo-crypto:
         specifier: ~55.0.19
         version: 55.0.19(expo@55.0.31)
+      expo-file-system:
+        specifier: ~55.0.26
+        version: 55.0.26(expo@55.0.31)(react-native@0.83.10(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.87.1(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.0)(supports-color@8.1.1))
       expo-font:
         specifier: ~55.0.4
         version: 55.0.8(expo@55.0.31)(react-native@0.83.10(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.87.1(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.0)(supports-color@8.1.1))(react@19.2.0)
@@ -65,6 +68,9 @@ importers:
       expo-image:
         specifier: ~55.0.11
         version: 55.0.11(expo@55.0.31)(react-native-web@0.21.4(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-native@0.83.10(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.87.1(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.0)(supports-color@8.1.1))(react@19.2.0)
+      expo-image-picker:
+        specifier: ~55.0.24
+        version: 55.0.24(expo@55.0.31)
       expo-keep-awake:
         specifier: ~55.0.8
         version: 55.0.8(expo@55.0.31)(react@19.2.0)
@@ -2984,6 +2990,16 @@ packages:
 
   expo-haptics@55.0.18:
     resolution: {integrity: sha512-bEH0bf5bBGn7U2eTZVdiXBUk4vTfNGbfv9/9PCYLg3gL7L/WE2g8WKs2vYg1B4/BDSucyO8prZofH3IgvLJojQ==}
+    peerDependencies:
+      expo: '*'
+
+  expo-image-loader@55.0.1:
+    resolution: {integrity: sha512-o8gCo1j59XpXDh0/llgNYPcnfecYQhafQAO0yw5pb+kukPizvNoEqea8tFQIIQmNYqxd6Ljgs7lLXed0gXpOdQ==}
+    peerDependencies:
+      expo: '*'
+
+  expo-image-picker@55.0.24:
+    resolution: {integrity: sha512-scbtvQIgiqiOxQx/lFEocJkWPzYANHjwFLnzfKjdZNWh3RJjjMmtHaEoeu7lM9RzqE3EwF+JQecgy+FATXNfiQ==}
     peerDependencies:
       expo: '*'
 
@@ -9112,6 +9128,15 @@ snapshots:
   expo-haptics@55.0.18(expo@55.0.31):
     dependencies:
       expo: 55.0.31(8b6155f4e1a8580e4767c524e77c7a10)
+
+  expo-image-loader@55.0.1(expo@55.0.31):
+    dependencies:
+      expo: 55.0.31(8b6155f4e1a8580e4767c524e77c7a10)
+
+  expo-image-picker@55.0.24(expo@55.0.31):
+    dependencies:
+      expo: 55.0.31(8b6155f4e1a8580e4767c524e77c7a10)
+      expo-image-loader: 55.0.1(expo@55.0.31)
 
   expo-image@55.0.11(expo@55.0.31)(react-native-web@0.21.4(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-native@0.83.10(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.87.1(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.0)(supports-color@8.1.1))(react@19.2.0):
     dependencies:

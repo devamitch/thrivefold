@@ -98,6 +98,8 @@ export interface QuestSlice {
   refitDailyQuests: () => void;
   /** Awards a setup step's fixed XP once, if the step has really been answered. */
   claimSetupReward: (section: SetupSection) => { awarded: boolean; xp: number };
+  /** Completes today's open meal-log quest from a meal the person logged in the app. */
+  completeMealQuest: (description: string) => { title: string; xp: number } | null;
   /** Completes today's first open movement quest that a finished workout satisfies. */
   completeMovementQuestWithWorkout: (facts: WorkoutFacts) => { title: string; xp: number } | null;
   /** Pays a finished workout once: base XP, or ten times that with good camera-checked form. */
@@ -355,6 +357,22 @@ export const createQuestSlice: StateCreator<RootState, [['zustand/persist', unkn
       if (ledger === state.rewardLedger) return { awarded: false, xp: 0 };
       commit({ rewardLedger: ledger, pendingSync: [...state.pendingSync, { kind: 'setup', key, section }] });
       return { awarded: true, xp: reward.xp };
+    },
+
+    completeMealQuest: (description) => {
+      const date = today();
+      for (const asg of get().dailyAssignments.filter((a) => a.assignedDate === date && ACTIVE_STATUSES.includes(a.status))) {
+        const task = getTaskById(asg.taskId);
+        if (task?.objective?.type !== 'meal_log') continue;
+        const result = get().submitQuestEvidence(asg.assignmentId, {
+          answers: { mealDescription: description },
+          elapsedSeconds: 0,
+          completedStepIds: task.instructions.map((i) => i.id),
+          attested: true,
+        });
+        if (result.success) return { title: task.title, xp: result.earnedXp };
+      }
+      return null;
     },
 
     completeMovementQuestWithWorkout: (facts) => {

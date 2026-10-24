@@ -47,7 +47,7 @@ const SHARED_TOOLS: Tool[] = [
   { icon: 'book-outline', label: 'Journal', route: '/(app)/journal' },
   { icon: 'analytics-outline', label: 'Patterns', route: '/(app)/ai' },
   { icon: 'school-outline', label: 'Learn', route: '/(app)/learn' },
-  { icon: 'link-outline', label: 'Connected apps', route: '/(app)/health/integrations' },
+  { icon: 'restaurant-outline', label: 'Food', route: '/(app)/health/nutrition' },
   { icon: 'grid-outline', label: 'All health', route: '/(app)/health' },
 ];
 

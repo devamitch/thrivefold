@@ -10,6 +10,7 @@ import { Badge } from '../../../components/ui/Badge';
 import { useTheme } from '../../../theme/useTheme';
 import { useRootStore } from '../../../stores/useRootStore';
 import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngine';
+import { TodayMeals } from '../../../components/home/TodayMeals';
 
 interface MealRecommendation {
   id: string;
@@ -108,6 +109,8 @@ export default function NutritionScreen() {
             style={{ marginTop: 12, alignSelf: 'flex-start' }}
           />
         </Card>
+
+        <TodayMeals />
 
         {/* Hydration Tracker */}
         <Card style={{ marginBottom: spacing.md, padding: spacing.lg }}>

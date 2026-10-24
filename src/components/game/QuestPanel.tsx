@@ -240,6 +240,26 @@ export function QuestPanel({ assignmentId, onDone, onLeave }: QuestPanelProps) {
         </Pressable>
       ) : null}
 
+      {questFamily(task.category) === 'nutrition' && !done && !closed ? (
+        <Pressable
+          onPress={() => {
+            onLeave?.();
+            router.push('/(app)/health/meal-log' as Href);
+          }}
+          accessibilityRole="button"
+          style={[styles.coach, { backgroundColor: colors.primary, marginTop: spacing.md }]}
+        >
+          <Ionicons name="camera" size={20} color={colors.onPrimary} />
+          <View style={{ flex: 1, marginLeft: 10 }}>
+            <Text style={[typography.bodyBold, { color: colors.onPrimary }]}>Log a meal with a photo</Text>
+            <Text style={[typography.caption, { color: colors.onPrimary, opacity: 0.9 }]}>
+              Snap your plate, pick the foods and see calories and protein. Logging a meal completes meal quests.
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.onPrimary} />
+        </Pressable>
+      ) : null}
+
       <Pressable
         onPress={() => {
           onLeave?.();

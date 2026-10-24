@@ -4,6 +4,7 @@ import type { RootState } from '../rootTypes';
 import { CyclePhase } from '../../domain/health/cycleCalculations';
 import { formatLocalDate } from '../../domain/calendar/universalCalendarEngine';
 import type { PoseSessionSummary } from '../../domain/pose/movement';
+import type { MealItem } from '../../domain/nutrition/foods';
 import type { ActivityLog, WorkoutSession } from '../../domain/fitness/workouts';
 
 
@@ -106,6 +107,17 @@ export interface PoseSessionRecord extends PoseSessionSummary {
   modelVersion: string;
 }
 
+export interface MealLog {
+  id: string;
+  date: string;
+  at: string;
+  type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  /** Local file kept on this phone only. */
+  photoUri?: string;
+  items: MealItem[];
+  note?: string;
+}
+
 export interface HealthSlice {
   currentStreak: number;
   completedCheckInDaysCount: number;
@@ -116,6 +128,9 @@ export interface HealthSlice {
   personalEvents: PersonalCalendarEvent[];
   workoutSessions: WorkoutSession[];
   poseSessions: PoseSessionRecord[];
+  mealLogs: MealLog[];
+  saveMealLog: (meal: Omit<MealLog, 'id'>) => string;
+  deleteMealLog: (id: string) => void;
   savePoseSession: (session: Omit<PoseSessionRecord, 'id'>) => void;
   activityLogs: ActivityLog[];
   addActivityLog: (log: Omit<ActivityLog, 'id'>) => void;
@@ -282,6 +297,13 @@ export const createHealthSlice: StateCreator<
   personalEvents: [],
   workoutSessions: [],
   poseSessions: [],
+  mealLogs: [],
+  saveMealLog: (meal) => {
+    const id = `meal_${Date.now()}`;
+    set((state) => ({ mealLogs: [{ ...meal, id }, ...state.mealLogs].slice(0, 1000) }));
+    return id;
+  },
+  deleteMealLog: (id) => set((state) => ({ mealLogs: state.mealLogs.filter((m) => m.id !== id) })),
   savePoseSession: (session) =>
     set((state) => ({
       poseSessions: [{ ...session, id: `pose_${Date.now()}` }, ...state.poseSessions].slice(0, 300),
