@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, TextInput } from 'react-native';
+import { View, Text, StyleSheet, Pressable, TextInput, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
@@ -195,6 +195,17 @@ export function QuestPanel({ assignmentId, onDone }: QuestPanelProps) {
       {task.purpose ? (
         <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: spacing.sm }]}>{task.purpose}</Text>
       ) : null}
+
+      <Pressable
+        onPress={() =>
+          Linking.openURL(`https://www.youtube.com/results?search_query=${encodeURIComponent(`${task.title} how to`)}`).catch(() => undefined)
+        }
+        accessibilityRole="link"
+        style={[styles.metaRow, { marginTop: spacing.sm }]}
+      >
+        <Ionicons name="logo-youtube" size={16} color={colors.text.secondary} />
+        <Text style={[typography.captionBold, { color: colors.text.secondary, marginLeft: 6 }]}>Watch how on YouTube</Text>
+      </Pressable>
 
       <View style={[styles.box, { backgroundColor: colors.surface, borderColor: colors.border, marginTop: spacing.md }]}>
         {task.instructions.map((step, idx) => {

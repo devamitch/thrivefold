@@ -13,11 +13,14 @@ export interface Article {
   body: string[];
   /** When to get professional help; shown highlighted. */
   seekHelp?: string;
+  /** YouTube search for follow-up videos on the topic. */
+  videoQuery: string;
 }
 
 export const ARTICLES: Article[] = [
   {
     id: 'sleep_basics',
+    videoQuery: 'sleep hygiene tips NHS',
     category: 'Sleep',
     title: 'Sleep basics that actually help',
     minutes: 3,
@@ -31,6 +34,7 @@ export const ARTICLES: Article[] = [
   },
   {
     id: 'slow_breathing',
+    videoQuery: 'slow breathing exercise for stress',
     category: 'Stress',
     title: 'Slow breathing for a stressful moment',
     minutes: 2,
@@ -43,6 +47,7 @@ export const ARTICLES: Article[] = [
   },
   {
     id: 'activity_guidelines',
+    videoQuery: '150 minutes exercise a week guidelines explained',
     category: 'Movement',
     title: 'How much movement is enough?',
     minutes: 3,
@@ -56,6 +61,7 @@ export const ARTICLES: Article[] = [
   },
   {
     id: 'cycle_basics',
+    videoQuery: 'menstrual cycle explained',
     category: 'Cycle',
     title: 'What counts as a normal cycle',
     minutes: 3,
@@ -69,6 +75,7 @@ export const ARTICLES: Article[] = [
   },
   {
     id: 'pelvic_floor',
+    videoQuery: 'pelvic floor exercises physiotherapist',
     category: 'Pelvic floor',
     title: 'Pelvic floor: strengthen or relax?',
     minutes: 3,
@@ -82,6 +89,7 @@ export const ARTICLES: Article[] = [
   },
   {
     id: 'mens_urinary_sexual',
+    videoQuery: 'men urinary health when to see a doctor',
     category: 'Men’s health',
     title: 'Urinary and sexual health: when to get checked',
     minutes: 3,
@@ -95,6 +103,7 @@ export const ARTICLES: Article[] = [
   },
   {
     id: 'posture_desk',
+    videoQuery: 'desk stretches for back and neck',
     category: 'Men’s health',
     title: 'Desk days, posture and stiff backs',
     minutes: 2,
@@ -107,6 +116,7 @@ export const ARTICLES: Article[] = [
   },
   {
     id: 'listening',
+    videoQuery: 'active listening skills',
     category: 'Confidence',
     title: 'Listening well and saying what you need',
     minutes: 3,
@@ -119,6 +129,7 @@ export const ARTICLES: Article[] = [
   },
   {
     id: 'work_frustration',
+    videoQuery: 'managing anger at work',
     category: 'Stress',
     title: 'When work makes you angry',
     minutes: 3,
@@ -132,6 +143,7 @@ export const ARTICLES: Article[] = [
   },
   {
     id: 'affirming_care',
+    videoQuery: 'LGBTQ affirming healthcare tips',
     category: 'Self-care',
     title: 'Finding affirming healthcare',
     minutes: 2,

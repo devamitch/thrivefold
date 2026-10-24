@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 
 import { AppHeader } from '../../components/ui/AppHeader';
@@ -48,6 +48,16 @@ export default function LearnScreen() {
                     {p}
                   </Text>
                 ))}
+                <Pressable
+                  onPress={() =>
+                    Linking.openURL(`https://www.youtube.com/results?search_query=${encodeURIComponent(art.videoQuery)}`).catch(() => undefined)
+                  }
+                  accessibilityRole="link"
+                  style={[styles.cardHeader, { justifyContent: 'flex-start', marginTop: spacing.md }]}
+                >
+                  <Ionicons name="logo-youtube" size={16} color={colors.text.secondary} />
+                  <Text style={[typography.captionBold, { color: colors.text.secondary, marginLeft: 6 }]}>Watch videos on this topic</Text>
+                </Pressable>
                 {art.seekHelp ? (
                   <View style={[styles.help, { backgroundColor: colors.warningSurface, marginTop: spacing.md }]}>
                     <Ionicons name="medkit-outline" size={18} color={colors.warning} />
