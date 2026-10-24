@@ -1,5 +1,6 @@
 import {
   initialRepState,
+  liveCue,
   jointAngle,
   LM,
   movementById,
@@ -118,5 +119,53 @@ describe('form faults', () => {
   test('exercises map to camera-checked movements', () => {
     expect(movementForExercise('pushup')?.id).toBe('pushup');
     expect(movementForExercise('burpee')).toBeUndefined();
+  });
+});
+
+describe('more exercises', () => {
+  /** Front-facing standing body; `liftLeft`/`liftRight` raise that knee to roughly the given hip angle. */
+  function standing(leftHipDeg = 175, rightHipDeg = 175, footUp = false): Landmark[] {
+    const lms = Array.from({ length: 33 }, () => point(0.5, 0.5, 0.95));
+    const leg = (hipX: number, deg: number, i: { sh: number; hip: number; knee: number; ankle: number }) => {
+      lms[i.sh] = point(hipX, 0.3);
+      lms[i.hip] = point(hipX, 0.55);
+      const rad = ((180 - deg) * Math.PI) / 180;
+      lms[i.knee] = point(hipX + 0.2 * Math.sin(rad), 0.55 + 0.2 * Math.cos(rad));
+      lms[i.ankle] = point(hipX, footUp && i.hip === LM.leftHip ? 0.75 : 0.9);
+    };
+    leg(0.45, leftHipDeg, { sh: LM.leftShoulder, hip: LM.leftHip, knee: LM.leftKnee, ankle: LM.leftAnkle });
+    leg(0.55, rightHipDeg, { sh: LM.rightShoulder, hip: LM.rightHip, knee: LM.rightKnee, ankle: LM.rightAnkle });
+    return lms;
+  }
+
+  test('alternating knee lifts each count', () => {
+    const def = movementById('knee_drive')!;
+    let s = initialRepState();
+    for (const [l, r] of [[175, 175], [100, 175], [175, 175], [175, 100], [175, 175]] as const) s = stepReps(def, s, standing(l, r));
+    expect(s.reps).toBe(2);
+  });
+
+  test('a plank hold does not count while standing upright', () => {
+    const def = movementById('plank')!;
+    let s = initialRepState();
+    for (let i = 0; i <= 60; i++) s = stepReps(def, s, standing(), i * 66);
+    expect(s.holdMs).toBe(0);
+    expect(liveCue(def, s, true)).toMatch(/plank/i);
+  });
+
+  test('single-leg balance counts only with a foot off the floor', () => {
+    const def = movementById('balance')!;
+    let down = initialRepState();
+    for (let i = 0; i <= 40; i++) down = stepReps(def, down, standing(), i * 66);
+    expect(down.holdMs).toBe(0);
+    let up = initialRepState();
+    for (let i = 0; i <= 40; i++) up = stepReps(def, up, standing(175, 175, true), i * 66);
+    expect(up.holdMs).toBeGreaterThan(2000);
+  });
+
+  test('many plan exercises are camera-checked', () => {
+    for (const id of ['jumping_jacks', 'high_knees', 'calf_raise', 'tree_pose', 'downward_dog', 'mountain_climber']) {
+      expect(movementForExercise(id)).toBeDefined();
+    }
   });
 });

@@ -29,6 +29,10 @@ export const LM = {
   rightKnee: 26,
   leftAnkle: 27,
   rightAnkle: 28,
+  leftHeel: 29,
+  rightHeel: 30,
+  leftFoot: 31,
+  rightFoot: 32,
 } as const;
 
 /** Bones drawn on the camera overlay. */
@@ -54,7 +58,24 @@ const FAULT_ON_FRAMES = 6;
 /** ...and be absent this many before it clears. */
 const FAULT_OFF_FRAMES = 8;
 
-export type MovementId = 'squat' | 'sit_to_stand' | 'arm_raise' | 'pushup' | 'glute_bridge' | 'lunge' | 'plank';
+export type MovementId =
+  | 'squat'
+  | 'sit_to_stand'
+  | 'arm_raise'
+  | 'pushup'
+  | 'glute_bridge'
+  | 'lunge'
+  | 'plank'
+  | 'side_plank'
+  | 'calf_raise'
+  | 'jumping_jack'
+  | 'knee_drive'
+  | 'mountain_climber'
+  | 'leg_extension'
+  | 'bird_dog'
+  | 'balance'
+  | 'down_dog'
+  | 'warrior';
 
 type Triplet = [number, number, number];
 
@@ -74,6 +95,12 @@ export interface MovementDefinition {
   targetReps: number;
   /** Form checks run on every valid frame. */
   checks: FormCheckId[];
+  /** Which side's angle counts: the clearer side (default), or the smaller / larger of both. */
+  sideRule?: 'best' | 'min' | 'max';
+  /** Holds: time counts only while this posture is recognised. */
+  holdWhen?: (landmarks: Landmark[]) => boolean;
+  /** What to say while the posture is not recognised yet. */
+  holdHint?: string;
 }
 
 export type FormCheckId = 'chest_up' | 'hip_line' | 'straight_arms' | 'depth';
@@ -94,6 +121,41 @@ const ELBOW = side([LM.leftShoulder, LM.leftElbow, LM.leftWrist], [LM.rightShoul
 const SHOULDER = side([LM.leftHip, LM.leftShoulder, LM.leftWrist], [LM.rightHip, LM.rightShoulder, LM.rightWrist]);
 const HIP = side([LM.leftShoulder, LM.leftHip, LM.leftKnee], [LM.rightShoulder, LM.rightHip, LM.rightKnee]);
 const BODY_LINE = side([LM.leftShoulder, LM.leftHip, LM.leftAnkle], [LM.rightShoulder, LM.rightHip, LM.rightAnkle]);
+
+const ANKLE = side([LM.leftKnee, LM.leftAnkle, LM.leftFoot], [LM.rightKnee, LM.rightAnkle, LM.rightFoot]);
+
+const seen = (l: Landmark | undefined) => Boolean(l && l.visibility >= MIN_LANDMARK_CONFIDENCE);
+
+/** Shoulders-to-ankles line within 35 degrees of horizontal: lying or in a plank. */
+function horizontal(l: Landmark[]): boolean {
+  const sh = seen(l[LM.leftShoulder]) ? l[LM.leftShoulder] : l[LM.rightShoulder];
+  const an = seen(l[LM.leftAnkle]) ? l[LM.leftAnkle] : l[LM.rightAnkle];
+  if (!seen(sh) || !seen(an)) return false;
+  const deg = (Math.atan2(Math.abs(an.y - sh.y), Math.abs(an.x - sh.x)) * 180) / Math.PI;
+  return deg < 35;
+}
+
+/** One foot clearly off the floor while standing. */
+function oneFootUp(l: Landmark[]): boolean {
+  if (!seen(l[LM.leftAnkle]) || !seen(l[LM.rightAnkle]) || !seen(l[LM.leftHip])) return false;
+  const leg = Math.abs(l[LM.leftAnkle].y - l[LM.leftHip].y) || 1;
+  return Math.abs(l[LM.leftAnkle].y - l[LM.rightAnkle].y) / leg > 0.12;
+}
+
+/** Hips are the highest point between hands and feet: an inverted V. */
+function invertedV(l: Landmark[]): boolean {
+  if (![LM.leftShoulder, LM.leftHip, LM.leftAnkle].every((i) => seen(l[i]))) return false;
+  return l[LM.leftHip].y < l[LM.leftShoulder].y - 0.05 && l[LM.leftHip].y < l[LM.leftAnkle].y - 0.05;
+}
+
+/** A bent front knee with both arms lifted out to the sides. */
+function warriorShape(l: Landmark[]): boolean {
+  const knees = [jointAngle(l[LM.leftHip], l[LM.leftKnee], l[LM.leftAnkle]), jointAngle(l[LM.rightHip], l[LM.rightKnee], l[LM.rightAnkle])];
+  const arms = [jointAngle(l[LM.leftHip], l[LM.leftShoulder], l[LM.leftWrist]), jointAngle(l[LM.rightHip], l[LM.rightShoulder], l[LM.rightWrist])];
+  if (![LM.leftKnee, LM.rightKnee, LM.leftWrist, LM.rightWrist].every((i) => seen(l[i]))) return false;
+  return Math.min(...knees) < 140 && arms.every((a) => a > 65);
+}
+
 
 export const MOVEMENTS: MovementDefinition[] = [
   {
@@ -179,6 +241,142 @@ export const MOVEMENTS: MovementDefinition[] = [
     pattern: 'extend',
     targetReps: 30,
     checks: ['hip_line'],
+    holdWhen: horizontal,
+    holdHint: 'Get into your plank, side-on to the phone.',
+  },
+  {
+    id: 'side_plank',
+    title: 'Side plank',
+    cue: 'Face the phone with your whole body in view.',
+    kind: 'hold',
+    joints: BODY_LINE,
+    low: 0,
+    high: 180,
+    pattern: 'extend',
+    targetReps: 20,
+    checks: ['hip_line'],
+    holdWhen: horizontal,
+    holdHint: 'Lift onto your forearm and the side of your foot.',
+  },
+  {
+    id: 'calf_raise',
+    title: 'Calf raise',
+    cue: 'Stand side-on with your feet in view. Hold a wall for balance.',
+    kind: 'reps',
+    joints: ANKLE,
+    low: 118,
+    high: 138,
+    pattern: 'extend',
+    targetReps: 12,
+    checks: [],
+  },
+  {
+    id: 'jumping_jack',
+    title: 'Jumping jacks',
+    cue: 'Face the phone, whole body in view.',
+    kind: 'reps',
+    joints: SHOULDER,
+    low: 45,
+    high: 140,
+    pattern: 'extend',
+    targetReps: 20,
+    checks: [],
+    sideRule: 'min',
+  },
+  {
+    id: 'knee_drive',
+    title: 'Knee lifts',
+    cue: 'Face the phone with hips and knees in view. Each knee lift counts.',
+    kind: 'reps',
+    joints: HIP,
+    low: 125,
+    high: 160,
+    pattern: 'flex',
+    targetReps: 20,
+    checks: [],
+    sideRule: 'min',
+  },
+  {
+    id: 'mountain_climber',
+    title: 'Mountain climbers',
+    cue: 'Plank side-on to the phone. Each knee drive counts.',
+    kind: 'reps',
+    joints: HIP,
+    low: 110,
+    high: 155,
+    pattern: 'flex',
+    targetReps: 20,
+    checks: ['hip_line'],
+    sideRule: 'min',
+  },
+  {
+    id: 'leg_extension',
+    title: 'Seated leg extension',
+    cue: 'Sit side-on to the phone with hips, knees and ankles in view.',
+    kind: 'reps',
+    joints: KNEE,
+    low: 110,
+    high: 150,
+    pattern: 'extend',
+    targetReps: 10,
+    checks: [],
+    sideRule: 'max',
+  },
+  {
+    id: 'bird_dog',
+    title: 'Bird dog',
+    cue: 'On hands and knees, side-on to the phone. Reach one arm forward.',
+    kind: 'reps',
+    joints: SHOULDER,
+    low: 70,
+    high: 150,
+    pattern: 'extend',
+    targetReps: 10,
+    checks: [],
+    sideRule: 'max',
+  },
+  {
+    id: 'balance',
+    title: 'Single-leg balance',
+    cue: 'Face the phone near a wall or chair, whole body in view.',
+    kind: 'hold',
+    joints: KNEE,
+    low: 0,
+    high: 180,
+    pattern: 'extend',
+    targetReps: 20,
+    checks: [],
+    holdWhen: oneFootUp,
+    holdHint: 'Lift one foot off the floor.',
+  },
+  {
+    id: 'down_dog',
+    title: 'Downward dog',
+    cue: 'Side-on to the phone, whole body in view.',
+    kind: 'hold',
+    joints: HIP,
+    low: 0,
+    high: 180,
+    pattern: 'extend',
+    targetReps: 20,
+    checks: [],
+    holdWhen: invertedV,
+    holdHint: 'Push your hips up and back into an upside-down V.',
+  },
+  {
+    id: 'warrior',
+    title: 'Warrior II',
+    cue: 'Face the phone, whole body in view.',
+    kind: 'hold',
+    joints: KNEE,
+    low: 0,
+    high: 180,
+    pattern: 'extend',
+    targetReps: 20,
+    checks: [],
+    sideRule: 'min',
+    holdWhen: warriorShape,
+    holdHint: 'Bend your front knee and reach both arms out wide.',
   },
 ];
 
@@ -193,7 +391,23 @@ export const EXERCISE_MOVEMENT: Record<string, MovementId> = {
   glute_bridge: 'glute_bridge',
   reverse_lunge: 'lunge',
   plank: 'plank',
+  side_plank: 'side_plank',
   db_overhead_press: 'arm_raise',
+  seated_arm_circles: 'arm_raise',
+  squat_jump: 'squat',
+  step_up: 'lunge',
+  calf_raise: 'calf_raise',
+  jumping_jacks: 'jumping_jack',
+  high_knees: 'knee_drive',
+  march_in_place: 'knee_drive',
+  seated_march: 'knee_drive',
+  mountain_climber: 'mountain_climber',
+  seated_leg_extension: 'leg_extension',
+  bird_dog: 'bird_dog',
+  single_leg_stand: 'balance',
+  tree_pose: 'balance',
+  downward_dog: 'down_dog',
+  warrior_two: 'warrior',
 };
 
 export const movementForExercise = (exerciseId: string) => {
@@ -227,6 +441,19 @@ function bestSide(pair: { left: Triplet; right: Triplet }, landmarks: Landmark[]
 
 /** The movement angle from the better-visible side, or null when neither side is confident. */
 export function readAngle(def: MovementDefinition, landmarks: Landmark[]): { angle: number; confidence: number } | null {
+  if (landmarks.length < 33) return null;
+  if (def.sideRule === 'min' || def.sideRule === 'max') {
+    const reads = [def.joints.left, def.joints.right]
+      .map((idx) => {
+        const pts = idx.map((i) => landmarks[i]);
+        const confidence = Math.min(...pts.map((p) => p.visibility));
+        return { angle: jointAngle(pts[0], pts[1], pts[2]), confidence };
+      })
+      .filter((r) => r.confidence >= MIN_LANDMARK_CONFIDENCE && Number.isFinite(r.angle));
+    if (reads.length === 0) return null;
+    const pick = reads.reduce((a, b) => ((def.sideRule === 'min' ? b.angle < a.angle : b.angle > a.angle) ? b : a));
+    return pick;
+  }
   const s = bestSide(def.joints, landmarks);
   if (!s) return null;
   const angle = jointAngle(s.pts[0], s.pts[1], s.pts[2]);
@@ -302,6 +529,8 @@ export interface RepState {
   /** Holds: milliseconds held in good form. */
   holdMs: number;
   lastTimestamp: number | null;
+  /** Holds: whether the posture is recognised in the latest frame. */
+  inPosture: boolean;
 }
 
 export const initialRepState = (): RepState => ({
@@ -324,6 +553,7 @@ export const initialRepState = (): RepState => ({
   faultCounts: {},
   holdMs: 0,
   lastTimestamp: null,
+  inPosture: false,
 });
 
 const SHALLOW: Record<string, FormFault> = {
@@ -371,7 +601,8 @@ export function stepReps(def: MovementDefinition, state: RepState, landmarks: La
 
   if (def.kind === 'hold') {
     const dt = timestamp !== undefined && state.lastTimestamp !== null ? Math.min(500, Math.max(0, timestamp - state.lastTimestamp)) : 0;
-    if (!next.fault) next.holdMs += dt;
+    next.inPosture = def.holdWhen ? def.holdWhen(landmarks) : true;
+    if (!next.fault && next.inPosture) next.holdMs += dt;
     return next;
   }
 
@@ -444,7 +675,7 @@ export function liveCue(def: MovementDefinition, s: RepState, personInView: bool
   if (!personInView) return 'Step back until your whole body is in view.';
   if (s.fault) return s.fault.fix;
   if (s.lastAngle === null) return def.cue;
-  if (def.kind === 'hold') return 'Good line. Keep breathing.';
+  if (def.kind === 'hold') return s.inPosture ? 'Good. Hold it and keep breathing.' : (def.holdHint ?? def.cue);
   if (def.pattern === 'flex') return s.phase === 'moving' ? 'Good depth. Now back up.' : 'Lower with control.';
   return s.phase === 'moving' ? 'Good. Now lower slowly.' : 'Lift with control.';
 }

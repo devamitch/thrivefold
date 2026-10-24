@@ -6,6 +6,7 @@ import { PermissionsAndroid, Platform, Pressable, StyleSheet, Text, View } from 
 import { PoseCameraView, poseLandmarkerAvailable, poseModelVersion, type PoseFrame } from 'pose-landmarker';
 
 import { AppHeader } from '../../../components/ui/AppHeader';
+import { PoseOverlay } from '../../../components/workout/PoseOverlay';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { Chip } from '../../../components/ui/Chip';
@@ -49,6 +50,8 @@ export default function PoseCheckScreen() {
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<{ reps: RepState; inView: boolean }>({ reps: initialRepState(), inView: false });
   const [result, setResult] = useState<PoseSessionSummary | null>(null);
+  const [frame, setFrame] = useState<{ landmarks: PoseFrame['landmarks']; w: number; h: number } | null>(null);
+  const [tile, setTile] = useState({ width: 0, height: 0 });
   const reps = useRef<RepState>(initialRepState());
   const startedAt = useRef('');
 
@@ -72,7 +75,8 @@ export default function PoseCheckScreen() {
   const onPose = useCallback(
     (e: { nativeEvent: PoseFrame }) => {
       const before = reps.current.reps;
-      reps.current = stepReps(movement, reps.current, e.nativeEvent.landmarks);
+      reps.current = stepReps(movement, reps.current, e.nativeEvent.landmarks, e.nativeEvent.timestamp);
+      setFrame({ landmarks: e.nativeEvent.landmarks, w: e.nativeEvent.frameWidth, h: e.nativeEvent.frameHeight });
       if (reps.current.reps > before) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
       setView({ reps: reps.current, inView: e.nativeEvent.landmarks.length > 0 });
     },
@@ -117,7 +121,7 @@ export default function PoseCheckScreen() {
     return (
       <View style={[styles.live, { backgroundColor: colors.background }]}>
         <AppHeader title={movement.title} subtitle="Processed on this phone" showBack />
-        <View style={styles.cameraWrap}>
+        <View style={styles.cameraWrap} onLayout={(ev) => setTile({ width: ev.nativeEvent.layout.width, height: ev.nativeEvent.layout.height })}>
           <PoseCameraView
             style={StyleSheet.absoluteFill}
             active
@@ -125,9 +129,19 @@ export default function PoseCheckScreen() {
             onPose={onPose}
             onPoseError={(e) => setError(e.nativeEvent.message || 'The camera stopped.')}
           />
+          {frame ? (
+            <PoseOverlay
+              landmarks={frame.landmarks}
+              frameWidth={frame.w}
+              frameHeight={frame.h}
+              width={tile.width}
+              height={tile.height}
+              highlight={view.reps.fault?.joints ?? []}
+            />
+          ) : null}
           <View style={[styles.overlay, { backgroundColor: colors.scrim }]}>
             <Text style={[typography.display, styles.repCount, { color: colors.onPrimary }]} accessibilityLiveRegion="polite">
-              {view.reps.reps}
+              {movement.kind === 'hold' ? Math.floor(view.reps.holdMs / 1000) : view.reps.reps}
               <Text style={typography.subheading}> / {movement.targetReps}</Text>
             </Text>
             <Text style={[typography.bodyBold, { color: colors.onPrimary }]}>
