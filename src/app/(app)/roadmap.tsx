@@ -38,13 +38,10 @@ type NodeState = 'done' | 'current' | 'locked';
 export default function RoadmapScreen() {
   const { colors, typography, spacing } = useTheme();
   const reduceMotion = useReducedMotion();
-  const { xp, checkpoints, todayTaskIds } = useRootStore(
-    useShallow((s) => ({
-      xp: s.xp,
-      checkpoints: s.completedCheckpoints,
-      todayTaskIds: s.todayQuests.map((q) => q.taskId),
-    })),
+  const { xp, checkpoints, todayQuests } = useRootStore(
+    useShallow((s) => ({ xp: s.xp, checkpoints: s.completedCheckpoints, todayQuests: s.todayQuests })),
   );
+  const todayTaskIds = todayQuests.map((q) => q.taskId);
   const progress = currentLevelProgress(xp, checkpoints);
   const level = progress.level;
   const chapters = getRoadmapChapters();
