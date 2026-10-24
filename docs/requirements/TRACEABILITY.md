@@ -1,5 +1,19 @@
 # Requirements Traceability Matrix
 
+## Update — 2026-10-25 (4): You split, motion, date picker, theme
+
+Checks: compile 0, lint 0, `pnpm test` 172/172. Not seen on device (installed build is signed
+with the upload key; replacing it needs an uninstall, which erases app data).
+
+| Requirement | Status | Where | Evidence |
+| --- | --- | --- | --- |
+| Profile/settings as focused sub-screens | implemented | `(tabs)/settings.tsx` hub, `(app)/you/{reminders,privacy,account}` | tsc, lint |
+| Calendar items open their record | implemented | `navigation/eventRoutes.ts`, `train/session/[id]`, `health/meal/[id]` | commit ecc9c37 |
+| No bouncy motion | implemented | drawer eased timing; section fades without slide/stagger; springs clamp | not device-tested |
+| Date picker usable for birthdays | implemented | `DatePickerModal` year → month → day sheet; birthday opens on years | not device-tested |
+| Men's theme calmer, low-glare | implemented | `theme/colors.ts` slate navy + brass, AA muted text; Geist headings | contrast computed (≥4.5 text) |
+| Intro copy honest for every space | implemented | `IntroSlider` no cycle on slide 1; camera "for supported exercises" | — |
+
 ## Update — 2026-10-25 (3): repair prompt v3
 
 Checks: compile 0, lint 0, `pnpm test` 171/171, Android release build PASS. Device: Today tab and
