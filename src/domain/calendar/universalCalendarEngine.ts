@@ -173,6 +173,12 @@ export function generateDayAgenda(
     personalEvents?: PersonalCalendarEvent[];
     /** Quest assignments to show on their dates. */
     quests?: { id: string; title: string; date: string; status: string }[];
+    /** Saved workouts (plan or self-reported). */
+    workouts?: { id: string; date: string; title: string; startedAt: string; minutes: number; verification?: 'camera' | 'manual' }[];
+    /** Saved meals with their totals. */
+    meals?: { id: string; date: string; type: string; at: string; kcal: number; protein: number }[];
+    /** Days with a saved check-in. */
+    checkIns?: { date: string; energy: number; mood: number; stress: number; sleepHours: number }[];
   }
 ): CalendarEvent[] {
   const events: CalendarEvent[] = [];
@@ -292,6 +298,55 @@ export function generateDayAgenda(
   }
 
   // The person's own quests for this date. Nothing else is scheduled on their behalf.
+  const hhmm = (iso: string) => {
+    const d = new Date(iso);
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  };
+  for (const c of options.checkIns ?? []) {
+    if (c.date !== dateStr) continue;
+    events.push({
+      id: `checkin_${dateStr}`,
+      title: 'Daily check-in',
+      date: dateStr,
+      kind: 'habit',
+      status: 'completed',
+      category: 'health',
+      privacy: 'private',
+      isAllDay: true,
+      description: `Energy ${c.energy}, mood ${c.mood}, stress ${c.stress}, sleep ${c.sleepHours} h.`,
+    });
+  }
+  for (const w of options.workouts ?? []) {
+    if (w.date !== dateStr) continue;
+    events.push({
+      id: w.id,
+      title: w.title,
+      date: dateStr,
+      startTime: hhmm(w.startedAt),
+      kind: 'exercise',
+      status: 'completed',
+      category: 'fitness',
+      privacy: 'private',
+      description: `${w.minutes} min${w.verification === 'camera' ? ', camera-checked' : w.verification === 'manual' ? ', self-reported' : ''}.`,
+      metadata: { workoutId: w.id },
+    });
+  }
+  for (const m of options.meals ?? []) {
+    if (m.date !== dateStr) continue;
+    events.push({
+      id: m.id,
+      title: m.type.charAt(0).toUpperCase() + m.type.slice(1),
+      date: dateStr,
+      startTime: hhmm(m.at),
+      kind: 'habit',
+      status: 'recorded',
+      category: 'health',
+      privacy: 'private',
+      description: `${m.kcal} kcal, ${m.protein} g protein (estimate).`,
+      metadata: { mealId: m.id },
+    });
+  }
+
   for (const q of options.quests ?? []) {
     if (q.date !== dateStr || q.status === 'replaced') continue;
     events.push({

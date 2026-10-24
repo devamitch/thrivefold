@@ -60,6 +60,7 @@ import {
   CalendarEvent,
 } from '../../../domain/calendar/universalCalendarEngine';
 import { currentLevelProgress } from '../../../domain/game/gameCatalogService';
+import { useAgendaSources } from '../../../hooks/useAgendaSources';
 import {
   PHASE_CONFIG,
   computeAdvancedCycleMetrics,
@@ -188,11 +189,12 @@ export default function TodayScreen() {
   }, [selectedDateStr, cycleData]);
 
   // Daily agenda calculation
+  const agendaSources = useAgendaSources();
   const agendaEvents = useMemo(() => {
     const todayKey = formatLocalDate(new Date());
     const quests = todayQuests.map((q) => ({ id: q.id, title: q.title, status: q.status, date: todayKey }));
-    return generateDayAgenda(selectedDateStr, { experience, cycleData, personalEvents, quests });
-  }, [selectedDateStr, experience, cycleData, personalEvents, todayQuests]);
+    return generateDayAgenda(selectedDateStr, { experience, cycleData, personalEvents, ...agendaSources, quests: [...agendaSources.quests.filter((q) => q.date !== todayKey), ...quests] });
+  }, [selectedDateStr, experience, cycleData, personalEvents, todayQuests, agendaSources]);
 
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null);
   const selectedDateHoliday = useMemo(() => getHolidayForDate(selectedDateStr), [selectedDateStr]);

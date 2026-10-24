@@ -18,6 +18,7 @@ import {
   generateDayAgenda,
   formatLocalDate,
   } from '../../../domain/calendar/universalCalendarEngine';
+import { useAgendaSources } from '../../../hooks/useAgendaSources';
 import * as Haptics from 'expo-haptics';
 
 const MONTH_NAMES = [
@@ -39,12 +40,14 @@ export default function CalendarScreen() {
     return generateMonthGrid(currentYear, currentMonth);
   }, [currentYear, currentMonth]);
 
+  const agendaSources = useAgendaSources();
   const selectedDayAgenda = useMemo(() => {
     return generateDayAgenda(selectedDateStr, {
       experience,
       cycleData,
+      ...agendaSources,
     });
-  }, [selectedDateStr, experience, cycleData]);
+  }, [selectedDateStr, experience, cycleData, agendaSources]);
 
   const handlePrevMonth = () => {
     try {
