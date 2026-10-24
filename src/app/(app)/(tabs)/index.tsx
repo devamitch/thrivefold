@@ -121,7 +121,13 @@ export default function HomeScreen() {
       : null;
   const daysToPeriod = cycle ? Math.max(0, Math.ceil((new Date(cycle.nextPeriodDate).getTime() - Date.now()) / 86_400_000)) : null;
 
-  const subtitle = !todaysCheckIn
+  // Gentle restart (spec §4.4): after a gap, no catch-up and no lost-streak message.
+  const lastCheckIn = s.checkInHistory.reduce<string | null>((d, c) => (!d || c.date > d ? c.date : d), null);
+  const daysAway = lastCheckIn ? Math.round((Date.parse(today()) - Date.parse(lastCheckIn)) / 86_400_000) : 0;
+
+  const subtitle = !todaysCheckIn && daysAway >= 2
+    ? 'Welcome back. Nothing to catch up on; start with today.'
+    : !todaysCheckIn
     ? 'Start with a one-minute check-in.'
     : active === 0
       ? 'No quests yet today.'
