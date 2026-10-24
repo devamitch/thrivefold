@@ -26,7 +26,7 @@ type Draft = Record<string, { value: string; weight: string; done: boolean }[]>;
 /** Runs a workout plan: log each set, rest timer between sets, save to history. */
 export default function WorkoutSessionScreen() {
   const router = useRouter();
-  const { planId } = useLocalSearchParams<{ planId: string }>();
+  const { planId, assignmentId } = useLocalSearchParams<{ planId: string; assignmentId?: string }>();
   const plan = planById(planId ?? '');
   const { colors, typography, spacing } = useTheme();
   const { sessions, saveWorkoutSession, showToast } = useRootStore(
@@ -107,14 +107,18 @@ export default function WorkoutSessionScreen() {
       entries,
       effort: effort ?? undefined,
       painReported: pain,
+      verification: 'manual',
+      assignmentId: assignmentId || undefined,
     });
     const reward = useRootStore.getState().claimWorkoutReward(sessionId, null);
-    const quest = useRootStore.getState().completeMovementQuestWithWorkout({
-      title: plan.title,
-      minutes: Math.max(1, Math.round((Date.parse(finishedAt) - Date.parse(startedAt.current)) / 60000)),
-      date: formatLocalDate(new Date()),
-      cameraChecked: false,
-    });
+    const quest = assignmentId
+      ? useRootStore.getState().completeAssignmentWithWorkout(assignmentId, {
+          title: plan.title,
+          minutes: Math.max(1, Math.round((Date.parse(finishedAt) - Date.parse(startedAt.current)) / 60000)),
+          date: formatLocalDate(new Date()),
+          cameraChecked: false,
+        })
+      : null;
     showToast({
       type: 'success',
       title: 'Workout saved',
@@ -145,7 +149,7 @@ export default function WorkoutSessionScreen() {
 
         <Card
           variant="tinted"
-          onPress={() => router.push(`/(app)/health/coach/${plan.id}` as Href)}
+          onPress={() => router.push(`/(app)/health/coach/${plan.id}${assignmentId ? `?assignmentId=${assignmentId}` : ''}` as Href)}
           style={{ padding: spacing.base, marginBottom: spacing.sm }}
         >
           <View style={styles.row}>

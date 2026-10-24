@@ -74,7 +74,8 @@ export default function CoachScreen() {
   const insets = useSafeAreaInsets();
   const reduceMotion = useReducedMotion();
   const { colors, typography, spacing } = useTheme();
-  const { planId } = useLocalSearchParams<{ planId: string }>();
+  const { planId, assignmentId } = useLocalSearchParams<{ planId: string; assignmentId?: string }>();
+  const linkedQuest = useRootStore((s) => (assignmentId ? s.todayQuests.find((q) => q.id === assignmentId) : undefined));
   const plan = planById(planId ?? '');
 
   const cameraBuilt = Boolean(PoseCameraView) && poseLandmarkerAvailable();
@@ -209,6 +210,8 @@ export default function CoachScreen() {
         finishedAt,
         entries,
         painReported: false,
+        verification: form ? 'camera' : 'manual',
+        assignmentId: assignmentId || undefined,
       });
       for (const s of summaries.filter((x) => x.reps > 0)) {
         store.savePoseSession({ ...s, date: formatLocalDate(new Date()), startedAt: startedAt.current, finishedAt, modelVersion: poseModelVersion() ?? 'unknown' });
@@ -216,12 +219,15 @@ export default function CoachScreen() {
       const reward = store.claimWorkoutReward(sessionId, form);
       xp = reward.xp;
       const minutes = Math.max(1, Math.round((Date.parse(finishedAt) - Date.parse(startedAt.current)) / 60000));
-      const quest = store.completeMovementQuestWithWorkout({
-        title: plan.title,
-        minutes,
-        date: formatLocalDate(new Date()),
-        cameraChecked: Boolean(form),
-      });
+      // Only the quest this workout was started from can be completed by it.
+      const quest = assignmentId
+        ? store.completeAssignmentWithWorkout(assignmentId, {
+            title: plan.title,
+            minutes,
+            date: formatLocalDate(new Date()),
+            cameraChecked: Boolean(form),
+          })
+        : null;
       if (quest) {
         xp += quest.xp;
         questNote = `Also completed today's quest: ${quest.title}.`;
@@ -245,7 +251,7 @@ export default function CoachScreen() {
     setCameraOn(false);
     setDone({ xp, rewardNote: questNote ? `${rewardNote} ${questNote}` : rewardNote, form, lines });
     setPhase('done');
-  }, [plan, cameraOn]);
+  }, [plan, cameraOn, assignmentId]);
 
   const completeSet = useCallback(
     (value: number) => {
@@ -430,6 +436,18 @@ export default function CoachScreen() {
           <Ionicons name="chevron-back" size={20} color={colors.text.primary} />
         </Pressable>
         <Text style={[typography.display, { color: colors.text.primary, marginTop: spacing.lg }]}>{plan.title}</Text>
+        {linkedQuest ? (
+          <View style={[styles.row, { marginTop: spacing.sm }]}>
+            <Ionicons name="flag-outline" size={16} color={colors.primary} />
+            <Text style={[typography.subbodyBold, styles.flex, { color: colors.primary, marginLeft: 6 }]}>
+              For today's quest: {linkedQuest.title}. Finishing completes it.
+            </Text>
+          </View>
+        ) : (
+          <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.sm }]}>
+            A standalone workout: saved to your history and calendar. Start from a quest to complete it too.
+          </Text>
+        )}
         <Text style={[typography.body, { color: colors.text.secondary, marginTop: spacing.xs }]}>
           The tutorial plays full screen with your camera in the corner, like a video call. Tap the small window to swap,
           drag it to move it.

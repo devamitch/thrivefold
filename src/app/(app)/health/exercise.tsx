@@ -13,6 +13,7 @@ import { useTheme } from '../../../theme/useTheme';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngine';
 import { fitFor } from '../../../domain/game/setupProfile';
+import { questFamily } from '../../../domain/game/progression';
 import { PLANS, suggestPlans, activeMinutesThisWeek, activitiesThisWeek, exerciseById, planById, sessionsThisWeek, type WorkoutPlan } from '../../../domain/fitness/workouts';
 
 const SETTINGS: { id: 'all' | WorkoutPlan['setting']; label: string }[] = [
@@ -34,7 +35,7 @@ const SETTINGS: { id: 'all' | WorkoutPlan['setting']; label: string }[] = [
 export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
-  const { sessions, activities, deleteWorkoutSession, showAlert, onboarding, checkIns } = useRootStore(
+  const { sessions, activities, deleteWorkoutSession, showAlert, onboarding, checkIns, todayQuests } = useRootStore(
     useShallow((s) => ({
       sessions: s.workoutSessions,
       activities: s.activityLogs,
@@ -42,6 +43,7 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
       showAlert: s.showAlert,
       onboarding: s.onboarding,
       checkIns: s.checkInHistory,
+      todayQuests: s.todayQuests,
     })),
   );
   const [filter, setFilter] = useState<(typeof SETTINGS)[number]['id']>('all');
@@ -49,6 +51,7 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
   const today = formatLocalDate(new Date());
   const week = sessionsThisWeek(sessions, today);
   const minutes = activeMinutesThisWeek(sessions, activities, today);
+  const movementQuest = todayQuests.find((q) => questFamily(q.category) === 'movement' && !q.isCompleted && q.status !== 'skipped' && q.status !== 'replaced');
   const suggestions = useMemo(() => {
     const todayCheckIn = checkIns.find((c) => c.date === today);
     const fit = fitFor(onboarding, todayCheckIn ?? null);
@@ -93,11 +96,25 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
           </Text>
         </Card>
 
+        {movementQuest ? (
+          <Card
+            variant="tinted"
+            onPress={() => router.push(`/(app)/health/coach/${suggestions[0]?.plan.id ?? 'desk_reset'}?assignmentId=${movementQuest.id}` as Href)}
+            style={{ marginTop: spacing.lg, padding: spacing.base }}
+          >
+            <Text style={[typography.captionBold, { color: colors.primary }]}>TODAY'S MOVEMENT QUEST</Text>
+            <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 2 }]}>{movementQuest.title}</Text>
+            <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+              Do it with the camera coach. Finishing the workout completes this quest (+{movementQuest.xpReward} XP).
+            </Text>
+          </Card>
+        ) : null}
+
         {suggestions.length > 0 ? (
           <>
             <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg }]}>Suggested for you today</Text>
             <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-              Tap to start with video, rep counting and form check. Finishing it also completes today's movement quest.
+              Tap to start with video, rep counting and form check. Saved to your history and calendar.
             </Text>
             {suggestions.map(({ plan, reason }, i) => (
               <Card

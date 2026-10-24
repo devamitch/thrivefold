@@ -141,7 +141,8 @@ export function QuestPanel({ assignmentId, onDone, onLeave }: QuestPanelProps) {
       today: day,
     })[0];
     onLeave?.();
-    router.push(`/(app)/health/coach/${pick?.plan.id ?? 'desk_reset'}` as Href);
+    // The workout carries this assignment, so finishing it can complete exactly this quest.
+    router.push(`/(app)/health/coach/${pick?.plan.id ?? 'desk_reset'}?assignmentId=${assignmentId}` as Href);
   };
   const minimum = form?.minimumElapsedSeconds ?? 0;
 

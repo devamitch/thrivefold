@@ -357,6 +357,10 @@ export interface WorkoutSession {
   effort?: number;
   /** Pain or discomfort reported during the session. */
   painReported: boolean;
+  /** How the reps were recorded: counted by the camera, or entered by the person. */
+  verification?: 'camera' | 'manual';
+  /** The quest assignment this session was started from, if any. */
+  assignmentId?: string;
 }
 
 export interface Suggestion {

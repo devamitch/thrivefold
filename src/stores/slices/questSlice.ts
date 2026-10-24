@@ -14,7 +14,6 @@ import {
   dailySlotsFor,
   dailyTargetFor,
   familiesForGoals,
-  questFamily,
   ECONOMY_VERSION,
   ledgerTotals,
   levelProgress,
@@ -100,8 +99,11 @@ export interface QuestSlice {
   claimSetupReward: (section: SetupSection) => { awarded: boolean; xp: number };
   /** Completes today's open meal-log quest from a meal the person logged in the app. */
   completeMealQuest: (description: string) => { title: string; xp: number } | null;
-  /** Completes today's first open movement quest that a finished workout satisfies. */
-  completeMovementQuestWithWorkout: (facts: WorkoutFacts) => { title: string; xp: number } | null;
+  /**
+   * Completes exactly the assignment a workout was started from, if that assignment's own
+   * objective accepts the workout as evidence. Standalone workouts never complete quests.
+   */
+  completeAssignmentWithWorkout: (assignmentId: string, facts: WorkoutFacts) => { title: string; xp: number } | null;
   /** Pays a finished workout once: base XP, or ten times that with good camera-checked form. */
   claimWorkoutReward: (sessionId: string, form: WorkoutFormEvidence | null) => { awarded: boolean; xp: number; reason?: 'daily_limit' | 'duplicate' };
   skipDailyTask: (assignmentId: string, reason?: string) => boolean;
@@ -375,22 +377,16 @@ export const createQuestSlice: StateCreator<RootState, [['zustand/persist', unkn
       return null;
     },
 
-    completeMovementQuestWithWorkout: (facts) => {
-      const date = today();
-      const open = get().dailyAssignments.filter(
-        (a) => a.assignedDate === date && ACTIVE_STATUSES.includes(a.status),
-      );
-      for (const asg of open) {
-        const task = getTaskById(asg.taskId);
-        if (!task || questFamily(task.category) !== 'movement') continue;
-        const form = objectiveFormFor(task);
-        if (!form) continue;
-        const evidence = evidenceFromWorkout(form, task.instructions, facts);
-        if (!evidence) continue;
-        const result = get().submitQuestEvidence(asg.assignmentId, evidence);
-        if (result.success) return { title: task.title, xp: result.earnedXp };
-      }
-      return null;
+    completeAssignmentWithWorkout: (assignmentId, facts) => {
+      const asg = get().dailyAssignments.find((a) => a.assignmentId === assignmentId);
+      if (!asg || asg.assignedDate !== today() || !ACTIVE_STATUSES.includes(asg.status)) return null;
+      const task = getTaskById(asg.taskId);
+      const form = task ? objectiveFormFor(task) : null;
+      if (!task || !form) return null;
+      const evidence = evidenceFromWorkout(form, task.instructions, facts);
+      if (!evidence) return null;
+      const result = get().submitQuestEvidence(assignmentId, evidence);
+      return result.success ? { title: task.title, xp: result.earnedXp } : null;
     },
 
     claimWorkoutReward: (sessionId, form) => {
