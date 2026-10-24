@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import React, { useState } from 'react';
 import {
   Modal,
@@ -41,6 +41,12 @@ const AVATAR_OPTIONS = [
 export default function SettingsScreen() {
   const router = useRouter();
   const { colors, typography, spacing, experience } = useTheme();
+  const HEALTH_SPACE =
+    experience === 'women_health'
+      ? { route: '/(app)/health/cycle', icon: 'water-outline' as const, title: 'Cycle', subtitle: 'Periods, symptoms and estimated phases' }
+      : experience === 'men_health'
+        ? { route: '/(app)/health/men', icon: 'barbell-outline' as const, title: "Men's health", subtitle: 'Training, recovery and health basics' }
+        : { route: '/(app)/health/pride', icon: 'heart-outline' as const, title: 'Self-care', subtitle: 'Affirming care, notes and support' };
 
   const setExperience = useRootStore((s) => s.setExperience);
   const user = useRootStore((s) => s.user);
@@ -218,22 +224,33 @@ export default function SettingsScreen() {
 
         {/* Interconnected Feature Hub */}
         <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm }]}>
-          Connected Spaces
+          Your spaces
         </Text>
 
-        <Card onPress={() => router.push('/(app)/health/cycle')} style={{ marginBottom: 8 }}>
+        <Card onPress={() => router.push(HEALTH_SPACE.route as Href)} style={{ marginBottom: 8 }}>
+          <View style={styles.rowBetween}>
+            <View style={styles.hubIconRow}>
+              <View style={[styles.iconWrap, { backgroundColor: colors.primaryAlpha }]}>
+                <Ionicons name={HEALTH_SPACE.icon} size={20} color={colors.primary} />
+              </View>
+              <View style={{ marginLeft: 12 }}>
+                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{HEALTH_SPACE.title}</Text>
+                <Text style={[typography.caption, { color: colors.text.secondary }]}>{HEALTH_SPACE.subtitle}</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
+          </View>
+        </Card>
+
+        <Card onPress={() => router.push('/(app)/calendar' as Href)} style={{ marginBottom: 8 }}>
           <View style={styles.rowBetween}>
             <View style={styles.hubIconRow}>
               <View style={[styles.iconWrap, { backgroundColor: colors.primaryAlpha }]}>
                 <Ionicons name="calendar-outline" size={20} color={colors.primary} />
               </View>
               <View style={{ marginLeft: 12 }}>
-                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                  Cycle & Health Engine
-                </Text>
-                <Text style={[typography.caption, { color: colors.text.secondary }]}>
-                  Natural rhythm predictions, logging, and phase insights
-                </Text>
+                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Calendar and routine</Text>
+                <Text style={[typography.caption, { color: colors.text.secondary }]}>Your days, workouts, check-ins and plans by date</Text>
               </View>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />

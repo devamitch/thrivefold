@@ -30,6 +30,9 @@ import {
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
 
+/** Stable empty list: a new [] in a store selector would re-render forever. */
+const NO_PERIODS: never[] = [];
+
 const ACTION_LABEL: Record<string, string> = {
   consent_granted: 'Access granted',
   consent_revoked: 'Access removed',
@@ -62,7 +65,7 @@ export default function IntegrationsScreen() {
       consentRecords: st.consentRecords,
       auditLog: st.auditLog,
       checkIns: st.checkInHistory,
-      periods: st.cycleData?.periodHistory ?? [],
+      periods: st.cycleData?.periodHistory ?? NO_PERIODS,
       medications: st.medications,
       workouts: st.workoutSessions,
       activities: st.activityLogs,

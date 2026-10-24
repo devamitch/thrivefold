@@ -30,7 +30,8 @@ const SETTINGS: { id: 'all' | WorkoutPlan['setting']; label: string }[] = [
 ];
 
 /** Workouts hub: plans to start, this week's count and logged history. */
-export default function WorkoutsScreen() {
+/** The Train tab and the Workouts screen share this hub. */
+export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
   const { sessions, activities, deleteWorkoutSession, showAlert, onboarding, checkIns } = useRootStore(
@@ -62,7 +63,7 @@ export default function WorkoutsScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Workouts" subtitle="Plans, logged sets and your progress" showBack />
+      <Header title={asTab ? 'Train' : 'Workouts'} subtitle="Camera coach, plans and your progress" showBack={!asTab} />
       <View style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
         <Card variant="surface1" style={{ padding: spacing.base }}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>
@@ -72,6 +73,7 @@ export default function WorkoutsScreen() {
             {week} plan workout{week === 1 ? '' : 's'} · {activitiesThisWeek(activities, today)} other activities.
             Many adults aim for about 150 minutes of moderate activity a week.
           </Text>
+          <WeekStrip />
           <Button
             label="Log a run, ride, class or sport"
             size="sm"
@@ -93,14 +95,23 @@ export default function WorkoutsScreen() {
 
         {suggestions.length > 0 ? (
           <>
-            <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg }]}>Suggested for you</Text>
-            {suggestions.map(({ plan, reason }) => (
+            <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg }]}>Suggested for you today</Text>
+            <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+              Tap to start with video, rep counting and form check. Finishing it also completes today's movement quest.
+            </Text>
+            {suggestions.map(({ plan, reason }, i) => (
               <Card
                 key={plan.id}
-                variant="tinted"
-                onPress={() => router.push(`/(app)/health/workout/${plan.id}` as Href)}
+                variant={i === 0 ? 'tinted' : 'surface'}
+                onPress={() => router.push(`/(app)/health/coach/${plan.id}` as Href)}
                 style={{ marginTop: spacing.sm }}
               >
+                {i === 0 ? (
+                  <View style={[styles.row, { marginBottom: 6 }]}>
+                    <Text style={[typography.captionBold, { color: colors.primary }]}>START WITH THE CAMERA COACH</Text>
+                    <Ionicons name="videocam" size={16} color={colors.primary} />
+                  </View>
+                ) : null}
                 <View style={styles.row}>
                   <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{plan.title}</Text>
                   <Text style={[typography.captionBold, { color: colors.primary }]}>{plan.minutes} min</Text>
@@ -185,7 +196,51 @@ export default function WorkoutsScreen() {
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  week: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
+  weekDay: { alignItems: 'center', gap: 4 },
+  weekDot: { alignItems: 'center', borderRadius: 13, borderWidth: 2, height: 26, justifyContent: 'center', width: 26 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   historyRow: { paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth, minHeight: 52 },
   iconBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 });
+
+export default function WorkoutsScreen() {
+  return <WorkoutsHub />;
+}
+
+/** This week, Monday to Sunday: a filled day had a workout or logged activity. Opens the calendar. */
+function WeekStrip() {
+  const router = useRouter();
+  const { colors, typography, spacing } = useTheme();
+  const { sessions, activities } = useRootStore(useShallow((s) => ({ sessions: s.workoutSessions, activities: s.activityLogs })));
+  const now = new Date();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+  const active = new Set([...sessions.map((w) => w.date), ...activities.map((a) => a.date)]);
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    return { key: formatLocalDate(d), label: 'MTWTFSS'[i], today: formatLocalDate(d) === formatLocalDate(now) };
+  });
+  return (
+    <Pressable onPress={() => router.push('/(app)/calendar' as Href)} accessibilityRole="button" accessibilityLabel="Open calendar" style={[styles.week, { marginTop: spacing.md }]}>
+      {days.map((d) => (
+        <View key={d.key} style={styles.weekDay}>
+          <Text style={[typography.caption, { color: d.today ? colors.primary : colors.text.muted }]}>{d.label}</Text>
+          <View
+            style={[
+              styles.weekDot,
+              {
+                backgroundColor: active.has(d.key) ? colors.primary : colors.surface2,
+                borderColor: d.today ? colors.primary : 'transparent',
+              },
+            ]}
+          >
+            {active.has(d.key) ? <Ionicons name="checkmark" size={12} color={colors.onPrimary} /> : null}
+          </View>
+        </View>
+      ))}
+      <Ionicons name="calendar-outline" size={18} color={colors.text.muted} style={{ marginLeft: 6 }} />
+    </Pressable>
+  );
+}

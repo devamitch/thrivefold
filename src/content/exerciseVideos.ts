@@ -1,8 +1,10 @@
 /**
- * Tutorial videos for exercises. Only IDs checked against YouTube's oEmbed endpoint
- * (embeddable, title and channel confirmed on 2026-10-25) are listed; every other exercise
- * links to a YouTube search instead of a guessed video.
+ * Tutorial videos for exercises. Every ID was taken from YouTube's own search results for
+ * that exercise and checked against YouTube's oEmbed endpoint (exists, embeddable, title and
+ * channel recorded) on 2026-10-25. The four hand-picked ones are below; the rest are in
+ * exercise-videos.json. Anything without a checked video opens an in-app YouTube search.
  */
+import gathered from './exercise-videos.json';
 export interface ExerciseVideo {
   videoId: string;
   title: string;
@@ -16,7 +18,9 @@ export const EXERCISE_VIDEOS: Record<string, ExerciseVideo> = {
   plank: { videoId: 'mwlp75MS6Rg', title: 'How to do a Plank | Proper Form & Technique', channel: 'NASM' },
 };
 
-export const videoFor = (exerciseId: string): ExerciseVideo | undefined => EXERCISE_VIDEOS[exerciseId];
+const ALL_VIDEOS: Record<string, ExerciseVideo> = { ...(gathered as Record<string, ExerciseVideo>), ...EXERCISE_VIDEOS };
+
+export const videoFor = (exerciseId: string): ExerciseVideo | undefined => ALL_VIDEOS[exerciseId];
 
 export const youtubeSearchUrl = (exerciseName: string) =>
   `https://www.youtube.com/results?search_query=${encodeURIComponent(`${exerciseName} proper form tutorial`)}`;
