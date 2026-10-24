@@ -60,7 +60,7 @@ export function evaluateFeatureEligibility(
       featureId,
       reasonCode: 'UNDERAGE_FORBIDDEN',
       policyVersion: POLICY_VERSION,
-      message: 'Adult eligibility (18+) is required for social and correspondence pathways.',
+      message: 'Community features open after a real age check.',
     };
   }
 

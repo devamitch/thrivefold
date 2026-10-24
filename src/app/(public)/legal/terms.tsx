@@ -14,10 +14,10 @@ export default function TermsScreen() {
       <View style={[styles.content, { padding: spacing.base }]}>
         <Card style={{ marginBottom: spacing.md }}>
           <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: spacing.xs }]}>
-            1. Adult Participation Policy
+            1. Who can use Thrivefold
           </Text>
           <Text style={[typography.body, { color: colors.text.secondary, lineHeight: 22 }]}>
-            Thrivefold is an adult wellbeing platform (18+). No minors are permitted in any social correspondence or intimate community spaces.
+            Thrivefold is made for adults. Community features open only after a real age check, and children cannot join them.
           </Text>
         </Card>
 

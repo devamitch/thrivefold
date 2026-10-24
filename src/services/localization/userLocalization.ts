@@ -1,5 +1,5 @@
 /**
- * Sovereign, on-device user localization service.
+ * On-device user localization: reads the device's own settings only.
  * Handles device locale, country, timezone, and calendar day alignment (e.g. Asia/Kolkata UTC+5:30)
  * without sending any tracking data or coordinates to third parties.
  */
