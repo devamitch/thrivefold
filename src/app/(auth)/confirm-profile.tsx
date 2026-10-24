@@ -175,7 +175,8 @@ export default function ConfirmProfileScreen() {
 
       <DatePickerModal
         visible={picker}
-        value={birthDate || '1995-01-01'}
+        value={birthDate || '1995-06-15'}
+        initialView={birthDate ? 'day' : 'year'}
         maxDate={formatLocalDate(new Date())}
         minDate="1910-01-01"
         title="Date of birth"

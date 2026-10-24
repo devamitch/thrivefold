@@ -1,23 +1,14 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import {
-  Modal,
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  ScrollView,
-  } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { formatLocalDate, parseLocalDate } from '../../domain/calendar/universalCalendarEngine';
 import { useTheme } from '../../theme/useTheme';
 import { Button } from './Button';
 import { PressableScale } from './PressableScale';
-import {
-  formatLocalDate,
-  parseLocalDate,
-} from '../../domain/calendar/universalCalendarEngine';
+import { SquircleSurface } from './SquircleSurface';
 
 export interface DatePickerModalProps {
   visible: boolean;
@@ -27,543 +18,269 @@ export interface DatePickerModalProps {
   title?: string;
   minDate?: string;
   maxDate?: string;
+  /** Start on the year grid (birthdays) instead of the month. */
+  initialView?: 'day' | 'year';
 }
 
-const MONTH_NAMES = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-];
+type View3 = 'day' | 'month' | 'year';
 
-const WEEKDAY_NAMES = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+const YEAR_ROW = 56;
+const pad = (n: number) => String(n).padStart(2, '0');
+const iso = (y: number, m: number, d: number) => `${y}-${pad(m + 1)}-${pad(d)}`;
+const tick = () => Haptics.selectionAsync().catch(() => undefined);
 
+/**
+ * Bottom-sheet date picker. Tap the month title to jump by year, then month, then day,
+ * so a birthday takes three taps. Dates outside min/max are shown but can't be chosen.
+ */
 export const DatePickerModal: React.FC<DatePickerModalProps> = ({
   visible,
   value,
   onChange,
   onClose,
-  title = 'Select Date',
+  title = 'Choose a date',
   minDate,
   maxDate,
+  initialView = 'day',
 }) => {
   const insets = useSafeAreaInsets();
-  const { colors, typography } = useTheme();
-
-  const initialDate = useMemo(() => {
-    return value ? parseLocalDate(value) : new Date();
-  }, [value]);
-
-  const [currentYear, setCurrentYear] = useState(initialDate.getFullYear());
-  const [currentMonth, setCurrentMonth] = useState(initialDate.getMonth()); // 0-indexed
-  const [selectedDateStr, setSelectedDateStr] = useState(
-    value || formatLocalDate(new Date()),
-  );
-  const [viewYearSelector, setViewYearSelector] = useState(false);
+  const { colors, typography, spacing } = useTheme();
+  const start = value ? parseLocalDate(value) : new Date();
+  const [year, setYear] = useState(start.getFullYear());
+  const [month, setMonth] = useState(start.getMonth());
+  const [selected, setSelected] = useState(value || formatLocalDate(new Date()));
+  const [mode, setMode] = useState<View3>(initialView);
+  const yearScroll = useRef<ScrollView>(null);
 
   useEffect(() => {
-    if (visible && value) {
-      const d = parseLocalDate(value);
-      setCurrentYear(d.getFullYear());
-      setCurrentMonth(d.getMonth());
-      setSelectedDateStr(value);
-      setViewYearSelector(false);
-    }
-  }, [visible, value]);
+    if (!visible) return;
+    const d = value ? parseLocalDate(value) : new Date();
+    setYear(d.getFullYear());
+    setMonth(d.getMonth());
+    setSelected(value || formatLocalDate(new Date()));
+    setMode(initialView);
+  }, [visible, value, initialView]);
 
-  const yearsList = useMemo(() => {
-    const startYear = 1940;
-    const endYear = new Date().getFullYear() + 25;
-    const years = [];
-    for (let y = endYear; y >= startYear; y--) {
-      years.push(y);
-    }
-    return years;
-  }, []);
+  const minY = minDate ? Number(minDate.slice(0, 4)) : 1910;
+  const maxY = maxDate ? Number(maxDate.slice(0, 4)) : new Date().getFullYear() + 25;
+  const years = useMemo(() => {
+    const out: number[] = [];
+    for (let y = maxY; y >= minY; y--) out.push(y);
+    return out;
+  }, [minY, maxY]);
 
-  const syncDate = (year: number, month: number) => {
-    try {
-      const currentD = parseLocalDate(selectedDateStr);
-      const d = currentD.getDate() || 1;
-      const daysInNewMonth = new Date(year, month + 1, 0).getDate();
-      const safeD = Math.min(d, daysInNewMonth);
-      const newDateObj = new Date(year, month, safeD, 12, 0, 0);
-      const formatted = formatLocalDate(newDateObj);
-      if (maxDate && formatted > maxDate) {
-        setSelectedDateStr(maxDate);
-      } else if (minDate && formatted < minDate) {
-        setSelectedDateStr(minDate);
-      } else {
-        setSelectedDateStr(formatted);
-      }
-    } catch {}
+  const allowed = (d: string) => (!minDate || d >= minDate) && (!maxDate || d <= maxDate);
+  // A month is selectable when any of its days is in range.
+  const monthAllowed = (y: number, m: number) =>
+    (!minDate || iso(y, m, new Date(y, m + 1, 0).getDate()) >= minDate) && (!maxDate || iso(y, m, 1) <= maxDate);
+
+  const cells = useMemo(() => {
+    const first = (new Date(year, month, 1).getDay() + 6) % 7;
+    const days = new Date(year, month + 1, 0).getDate();
+    const out: (number | null)[] = Array(first).fill(null);
+    for (let d = 1; d <= days; d++) out.push(d);
+    while (out.length % 7) out.push(null);
+    return out;
+  }, [year, month]);
+
+  const shift = (delta: number) => {
+    tick();
+    const d = new Date(year, month + delta, 1);
+    setYear(d.getFullYear());
+    setMonth(d.getMonth());
   };
+  const canPrev = !minDate || iso(year, month, 1) > minDate;
+  const canNext = !maxDate || iso(year, month, new Date(year, month + 1, 0).getDate()) < maxDate;
 
-  const handlePrevMonth = () => {
-    try {
-      Haptics.selectionAsync();
-    } catch {}
-    let newM = currentMonth - 1;
-    let newY = currentYear;
-    if (currentMonth === 0) {
-      newM = 11;
-      newY = currentYear - 1;
-    }
-    setCurrentMonth(newM);
-    setCurrentYear(newY);
-    syncDate(newY, newM);
-  };
-
-  const handleNextMonth = () => {
-    try {
-      Haptics.selectionAsync();
-    } catch {}
-    let newM = currentMonth + 1;
-    let newY = currentYear;
-    if (currentMonth === 11) {
-      newM = 0;
-      newY = currentYear + 1;
-    }
-    setCurrentMonth(newM);
-    setCurrentYear(newY);
-    syncDate(newY, newM);
-  };
-
-  const handleSelectDay = (dayNum: number) => {
-    try {
-      Haptics.selectionAsync();
-    } catch {}
-    const dateObj = new Date(currentYear, currentMonth, dayNum, 12, 0, 0);
-    const dateStr = formatLocalDate(dateObj);
-    setSelectedDateStr(dateStr);
-  };
-
-  const handleConfirm = () => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    } catch {}
-    onChange(selectedDateStr);
-    onClose();
-  };
-
-  // Generate calendar grid for current month
-  const calendarGrid = useMemo(() => {
-    const firstDay = new Date(currentYear, currentMonth, 1);
-    let startDayOfWeek = firstDay.getDay() - 1; // 0 for Mon, 6 for Sun
-    if (startDayOfWeek === -1) startDayOfWeek = 6;
-
-    const daysInCurrentMonth = new Date(
-      currentYear,
-      currentMonth + 1,
-      0,
-    ).getDate();
-    const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
-
-    const days: {
-      day: number;
-      isCurrentMonth: boolean;
-      dateStr: string;
-      disabled: boolean;
-    }[] = [];
-
-    // Prev month padding
-    for (let i = startDayOfWeek - 1; i >= 0; i--) {
-      const d = daysInPrevMonth - i;
-      const prevDate = new Date(currentYear, currentMonth - 1, d, 12, 0, 0);
-      const str = formatLocalDate(prevDate);
-      days.push({
-        day: d,
-        isCurrentMonth: false,
-        dateStr: str,
-        disabled: true,
-      });
-    }
-
-    // Current month days
-    for (let d = 1; d <= daysInCurrentMonth; d++) {
-      const dateObj = new Date(currentYear, currentMonth, d, 12, 0, 0);
-      const str = formatLocalDate(dateObj);
-      let disabled = false;
-      if (minDate && str < minDate) disabled = true;
-      if (maxDate && str > maxDate) disabled = true;
-
-      days.push({
-        day: d,
-        isCurrentMonth: true,
-        dateStr: str,
-        disabled,
-      });
-    }
-
-    // Next month padding to fill multiple of 7
-    const remaining = 7 - (days.length % 7);
-    if (remaining < 7) {
-      for (let d = 1; d <= remaining; d++) {
-        const nextDate = new Date(currentYear, currentMonth + 1, d, 12, 0, 0);
-        const str = formatLocalDate(nextDate);
-        days.push({
-          day: d,
-          isCurrentMonth: false,
-          dateStr: str,
-          disabled: true,
-        });
-      }
-    }
-
-    return days;
-  }, [currentYear, currentMonth, minDate, maxDate]);
-
-  if (!visible) return null;
+  const sel = parseLocalDate(selected);
+  const headline = `${sel.getDate()} ${MONTHS[sel.getMonth()]} ${sel.getFullYear()}`;
+  const today = formatLocalDate(new Date());
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
-      <View style={styles.overlay}>
-        <Pressable style={styles.backdrop} onPress={onClose} />
-        <View
-          style={[
-            styles.container,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.borderStrong,
-              paddingBottom: Math.max(insets.bottom, 16) + 8,
-            },
-          ]}
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
+      <View style={styles.root}>
+        <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: colors.scrim }]} onPress={onClose} accessibilityLabel="Close date picker" />
+        <SquircleSurface
+          radius={28}
+          fill={colors.surface}
+          style={[styles.sheet, { paddingBottom: insets.bottom + spacing.md, paddingHorizontal: spacing.lg }]}
         >
-          {/* Header */}
-          <View style={styles.header}>
-            <View>
-              <Text
-                style={[typography.captionBold, { color: colors.text.muted }]}
-              >
-                DATE SELECTOR
-              </Text>
-              <Text
-                style={[
-                  typography.subheading,
-                  { color: colors.text.primary, marginTop: 2 },
-                ]}
-              >
-                {title}
-              </Text>
-            </View>
-            <PressableScale
-              onPress={onClose}
-              style={[styles.closeBtn, { backgroundColor: colors.surface1 }]}
-            >
-              <Ionicons name="close" size={20} color={colors.text.secondary} />
-            </PressableScale>
-          </View>
+          <View style={[styles.grabber, { backgroundColor: colors.surface2 }]} />
+          <Text style={[typography.caption, { color: colors.text.secondary }]}>{title}</Text>
+          <Text style={[typography.heading, { color: colors.text.primary, marginTop: 2 }]} accessibilityLiveRegion="polite">
+            {headline}
+          </Text>
 
-          {/* Month / Year Navigator */}
-          <View style={styles.navRow}>
-            <PressableScale
-              onPress={handlePrevMonth}
-              style={[styles.navArrow, { backgroundColor: colors.surface1 }]}
-            >
-              <Ionicons
-                name="chevron-back"
-                size={20}
-                color={colors.text.primary}
-              />
-            </PressableScale>
-
+          <View style={[styles.nav, { marginTop: spacing.md }]}>
             <PressableScale
               onPress={() => {
-                try {
-                  Haptics.selectionAsync();
-                } catch {}
-                setViewYearSelector(!viewYearSelector);
+                tick();
+                setMode(mode === 'day' ? 'year' : 'day');
               }}
-              style={[styles.monthYearPill, { backgroundColor: colors.surface1 }]}
+              accessibilityRole="button"
+              accessibilityLabel={mode === 'day' ? `${MONTHS[month]} ${year}. Choose year and month` : 'Back to days'}
             >
-              <Text
-                style={[typography.bodyBold, { color: colors.text.primary }]}
-              >
-                {MONTH_NAMES[currentMonth]} {currentYear}
-              </Text>
-              <Ionicons
-                name={viewYearSelector ? 'chevron-up' : 'chevron-down'}
-                size={16}
-                color={colors.primary}
-                style={{ marginLeft: 6 }}
-              />
+              <SquircleSurface radius={14} fill={colors.surface1} style={styles.chip}>
+                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                  {mode === 'year' ? 'Choose a year' : mode === 'month' ? `${year}` : `${MONTHS[month]} ${year}`}
+                </Text>
+                <Ionicons name={mode === 'day' ? 'chevron-down' : 'chevron-up'} size={16} color={colors.text.secondary} />
+              </SquircleSurface>
             </PressableScale>
-
-            <PressableScale
-              onPress={handleNextMonth}
-              style={[styles.navArrow, { backgroundColor: colors.surface1 }]}
-            >
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color={colors.text.primary}
-              />
-            </PressableScale>
+            {mode === 'day' ? (
+              <View style={styles.arrows}>
+                <PressableScale onPress={() => shift(-1)} disabled={!canPrev} accessibilityRole="button" accessibilityLabel="Previous month">
+                  <SquircleSurface radius={12} fill={colors.surface1} style={[styles.arrow, { opacity: canPrev ? 1 : 0.35 }]}>
+                    <Ionicons name="chevron-back" size={18} color={colors.text.primary} />
+                  </SquircleSurface>
+                </PressableScale>
+                <PressableScale onPress={() => shift(1)} disabled={!canNext} accessibilityRole="button" accessibilityLabel="Next month">
+                  <SquircleSurface radius={12} fill={colors.surface1} style={[styles.arrow, { opacity: canNext ? 1 : 0.35 }]}>
+                    <Ionicons name="chevron-forward" size={18} color={colors.text.primary} />
+                  </SquircleSurface>
+                </PressableScale>
+              </View>
+            ) : null}
           </View>
 
-          {/* Year selector list or Calendar Grid */}
-          {viewYearSelector ? (
-            <View style={styles.yearScrollContainer}>
+          <View style={[styles.body, { marginTop: spacing.md }]}>
+            {mode === 'year' ? (
               <ScrollView
-                style={{ maxHeight: 240 }}
-                showsVerticalScrollIndicator
+                ref={yearScroll}
+                showsVerticalScrollIndicator={false}
+                onLayout={() => {
+                  const row = Math.floor(years.indexOf(year) / 4);
+                  yearScroll.current?.scrollTo({ y: Math.max(0, (row - 2) * YEAR_ROW), animated: false });
+                }}
               >
-                <View style={styles.yearGrid}>
-                  {yearsList.map((y) => {
-                    const isSelected = y === currentYear;
+                <View style={styles.grid}>
+                  {years.map((y) => {
+                    const on = y === year;
                     return (
-                      <PressableScale
+                      <Pressable
                         key={y}
                         onPress={() => {
-                          try {
-                            Haptics.selectionAsync();
-                          } catch {}
-                          setCurrentYear(y);
-                          syncDate(y, currentMonth);
-                          setViewYearSelector(false);
+                          tick();
+                          setYear(y);
+                          setMode('month');
                         }}
-                        style={[
-                          styles.yearItem,
-                          {
-                            backgroundColor: isSelected
-                              ? colors.primary
-                              : colors.surface1,
-                          },
-                        ]}
+                        style={styles.yearCell}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: on }}
                       >
-                        <Text
-                          style={[
-                            typography.captionBold,
-                            {
-                              color: isSelected
-                                ? colors.onPrimary
-                                : colors.text.primary,
-                            },
-                          ]}
-                        >
-                          {y}
-                        </Text>
-                      </PressableScale>
+                        <SquircleSurface radius={14} fill={on ? colors.primary : 'transparent'} style={styles.yearPill}>
+                          <Text style={[typography.bodyBold, { color: on ? colors.onPrimary : colors.text.primary }]}>{y}</Text>
+                        </SquircleSurface>
+                      </Pressable>
                     );
                   })}
                 </View>
               </ScrollView>
-            </View>
-          ) : (
-            <View style={styles.calendarContainer}>
-              {/* Weekday Row */}
-              <View style={styles.weekdayRow}>
-                {WEEKDAY_NAMES.map((d, idx) => (
-                  <Text
-                    key={idx}
-                    style={[
-                      styles.weekdayText,
-                      typography.captionBold,
-                      { color: colors.text.muted },
-                    ]}
-                  >
-                    {d}
-                  </Text>
-                ))}
-              </View>
-
-              {/* Day cells */}
-              <View style={styles.daysGrid}>
-                {calendarGrid.map((item, idx) => {
-                  const isSelected = item.dateStr === selectedDateStr;
-                  const isToday =
-                    item.dateStr === formatLocalDate(new Date());
-
+            ) : mode === 'month' ? (
+              <View style={styles.grid}>
+                {MONTHS.map((m, i) => {
+                  const on = i === month;
+                  const ok = monthAllowed(year, i);
                   return (
-                    <View key={idx} style={styles.dayCellContainer}>
-                      <PressableScale
-                        disabled={item.disabled || !item.isCurrentMonth}
-                        onPress={() => handleSelectDay(item.day)}
-                        scaleTo={0.9}
-                        style={[
-                          styles.dayCell,
-                          isSelected && {
-                            backgroundColor: colors.primary,
-                          },
-                          !isSelected &&
-                            isToday && {
-                              borderColor: colors.primary,
-                            },
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            typography.captionBold,
-                            {
-                              color: isSelected
-                                ? colors.onPrimary
-                                : !item.isCurrentMonth
-                                  ? colors.text.muted
-                                  : item.disabled
-                                    ? colors.text.muted
-                                    : colors.text.primary,
-                            },
-                          ]}
-                        >
-                          {item.day}
-                        </Text>
-                      </PressableScale>
-                    </View>
+                    <Pressable
+                      key={m}
+                      disabled={!ok}
+                      onPress={() => {
+                        tick();
+                        setMonth(i);
+                        setMode('day');
+                      }}
+                      style={styles.monthCell}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: on, disabled: !ok }}
+                    >
+                      <SquircleSurface radius={14} fill={on ? colors.primary : colors.surface1} style={[styles.monthPill, { opacity: ok ? 1 : 0.35 }]}>
+                        <Text style={[typography.subbodyBold, { color: on ? colors.onPrimary : colors.text.primary }]}>{m.slice(0, 3)}</Text>
+                      </SquircleSurface>
+                    </Pressable>
                   );
                 })}
               </View>
-            </View>
-          )}
-
-          {/* Selected Date Summary & Confirm Actions */}
-          <View style={styles.footerRow}>
-            <View style={{ flex: 1 }}>
-              <Text
-                style={[typography.caption, { color: colors.text.muted }]}
-              >
-                Selected:
-              </Text>
-              <Text
-                style={[typography.bodyBold, { color: colors.primary }]}
-              >
-                {selectedDateStr}
-              </Text>
-            </View>
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              <Button
-                label="Cancel"
-                variant="ghost"
-                size="sm"
-                onPress={onClose}
-              />
-              <Button
-                label="Select"
-                variant="primary"
-                size="sm"
-                onPress={handleConfirm}
-              />
-            </View>
+            ) : (
+              <>
+                <View style={styles.week}>
+                  {WEEKDAYS.map((d, i) => (
+                    <Text key={i} style={[typography.captionBold, styles.weekCell, { color: colors.text.muted }]}>
+                      {d}
+                    </Text>
+                  ))}
+                </View>
+                <View style={styles.grid}>
+                  {cells.map((d, i) => {
+                    if (d === null) return <View key={`e${i}`} style={styles.dayCell} />;
+                    const ds = iso(year, month, d);
+                    const on = ds === selected;
+                    const ok = allowed(ds);
+                    return (
+                      <Pressable
+                        key={ds}
+                        disabled={!ok}
+                        onPress={() => {
+                          tick();
+                          setSelected(ds);
+                        }}
+                        style={styles.dayCell}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${d} ${MONTHS[month]} ${year}`}
+                        accessibilityState={{ selected: on, disabled: !ok }}
+                      >
+                        <SquircleSurface
+                          radius={12}
+                          fill={on ? colors.primary : ds === today ? colors.primaryAlpha : 'transparent'}
+                          style={styles.dayPill}
+                        >
+                          <Text
+                            style={[
+                              typography.subbodyBold,
+                              { color: on ? colors.onPrimary : ok ? colors.text.primary : colors.text.muted, opacity: ok ? 1 : 0.45 },
+                            ]}
+                          >
+                            {d}
+                          </Text>
+                        </SquircleSurface>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </>
+            )}
           </View>
-        </View>
+
+          <View style={[styles.actions, { marginTop: spacing.md }]}>
+            <Button label="Cancel" variant="ghost" onPress={onClose} style={styles.flex} />
+            <Button label="Done" onPress={() => allowed(selected) && onChange(selected)} disabled={!allowed(selected)} style={styles.flex} />
+          </View>
+        </SquircleSurface>
       </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(28, 25, 23, 0.45)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  container: {
-    width: '100%',
-    maxWidth: 380,
-    borderRadius: 24,
-    padding: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  closeBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  navRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  navArrow: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  monthYearPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 14,
-  },
-  yearScrollContainer: {
-    paddingVertical: 8,
-  },
-  yearGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    justifyContent: 'center',
-  },
-  yearItem: {
-    width: '30%',
-    paddingVertical: 10,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  calendarContainer: {
-    marginBottom: 12,
-  },
-  weekdayRow: {
-    flexDirection: 'row',
-    marginBottom: 8,
-  },
-  weekdayText: {
-    width: '14.28%',
-    textAlign: 'center',
-    fontSize: 12,
-  },
-  daysGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  dayCellContainer: {
-    width: '14.28%',
-    aspectRatio: 1,
-    padding: 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  dayCell: {
-    width: '88%',
-    height: '88%',
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  footerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopColor: 'rgba(0,0,0,0.08)',
-  },
+  actions: { flexDirection: 'row', gap: 10 },
+  arrow: { alignItems: 'center', height: 40, justifyContent: 'center', width: 40 },
+  arrows: { flexDirection: 'row', gap: 8 },
+  body: { height: 300 },
+  chip: { alignItems: 'center', flexDirection: 'row', gap: 6, height: 40, paddingHorizontal: 14 },
+  dayCell: { alignItems: 'center', height: 44, justifyContent: 'center', width: `${100 / 7}%` },
+  dayPill: { alignItems: 'center', height: 40, justifyContent: 'center', width: 40 },
+  flex: { flex: 1 },
+  grabber: { alignSelf: 'center', borderRadius: 3, height: 5, marginBottom: 14, marginTop: 10, width: 40 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap' },
+  monthCell: { padding: 5, width: '33.333%' },
+  monthPill: { alignItems: 'center', height: 64, justifyContent: 'center' },
+  nav: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
+  root: { flex: 1, justifyContent: 'flex-end' },
+  sheet: { borderBottomLeftRadius: 0, borderBottomRightRadius: 0 },
+  week: { flexDirection: 'row' },
+  weekCell: { textAlign: 'center', width: `${100 / 7}%` },
+  yearCell: { height: YEAR_ROW, padding: 4, width: '25%' },
+  yearPill: { alignItems: 'center', flex: 1, justifyContent: 'center' },
 });
