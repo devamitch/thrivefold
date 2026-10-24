@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { AppState, StyleSheet, View } from 'react-native';
-import { Stack } from 'expo-router';
+import { Redirect, Stack } from 'expo-router';
 
 import { useRootStore } from '../../stores/useRootStore';
 import { flushProgressionSync } from '../../services/sync/progressionSync';
@@ -21,6 +21,7 @@ function runSummaryQueue() {
 }
 
 export default function AppLayout() {
+  const isAuthenticated = useRootStore((s) => s.isAuthenticated);
   const ensureDailyQuests = useRootStore((s) => s.ensureDailyQuests);
   const isOnboarded = useRootStore((s) => s.isOnboarded);
   const pendingCount = useRootStore((s) => s.pendingSync.length);
@@ -54,6 +55,10 @@ export default function AppLayout() {
   }, [pendingCount]);
 
   const { colors } = useTheme();
+
+  if (!isAuthenticated) {
+    return <Redirect href="/(auth)/sign-in" />;
+  }
 
   return (
     <View style={[styles.root, { backgroundColor: colors.surface1 }]}>

@@ -127,7 +127,6 @@ export function DrawerSceneWrapper({ children }: { children: ReactNode }) {
           styles.container,
           {
             backgroundColor: colors.background,
-            shadowColor: '#000000',
           },
           animatedSceneStyle,
         ]}
@@ -152,9 +151,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     overflow: 'hidden',
-    shadowOffset: { width: -4, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 16,
+    elevation: 0,
+    shadowColor: 'transparent',
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    borderWidth: 0,
   },
 });

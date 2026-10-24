@@ -6,6 +6,8 @@
  */
 import gathered from './exercise-videos.json';
 import taskVideos from './task-videos.json';
+import allVideosManifest from './thrivefold-videos-all.json';
+
 export interface ExerciseVideo {
   videoId: string;
   title: string;
@@ -19,7 +21,11 @@ export const EXERCISE_VIDEOS: Record<string, ExerciseVideo> = {
   plank: { videoId: 'mwlp75MS6Rg', title: 'How to do a Plank | Proper Form & Technique', channel: 'NASM' },
 };
 
-const ALL_VIDEOS: Record<string, ExerciseVideo> = { ...(gathered as Record<string, ExerciseVideo>), ...EXERCISE_VIDEOS };
+const ALL_VIDEOS: Record<string, ExerciseVideo> = {
+  ...(gathered as Record<string, ExerciseVideo>),
+  ...((allVideosManifest?.exercises ?? {}) as Record<string, ExerciseVideo>),
+  ...EXERCISE_VIDEOS,
+};
 
 export const videoFor = (exerciseId: string): ExerciseVideo | undefined => ALL_VIDEOS[exerciseId];
 
@@ -29,7 +35,11 @@ export const youtubeSearchUrl = (exerciseName: string) =>
 export const youtubeWatchUrl = (videoId: string) => `https://www.youtube.com/watch?v=${videoId}`;
 
 /** Quests with a hand-reviewed video (same checks as exercises; unrelated results were dropped). */
-const TASK_VIDEOS = taskVideos as Record<string, ExerciseVideo>;
+const TASK_VIDEOS: Record<string, ExerciseVideo> = {
+  ...(taskVideos as Record<string, ExerciseVideo>),
+  ...((allVideosManifest?.tasks ?? {}) as Record<string, ExerciseVideo>),
+  ...((allVideosManifest?.specialQuests ?? {}) as Record<string, ExerciseVideo>),
+};
 export const taskVideoFor = (taskId: string): ExerciseVideo | undefined => TASK_VIDEOS[taskId];
 
 /** Route to watch a tutorial inside the app: the checked video, or a search for the topic. */

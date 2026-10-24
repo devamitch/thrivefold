@@ -5,7 +5,10 @@
  */
 
 export interface GooglePeopleResponse {
-  birthdays?: { date?: { year?: number; month?: number; day?: number }; metadata?: { primary?: boolean } }[];
+  birthdays?: {
+    date?: { year?: number; month?: number; day?: number };
+    metadata?: { primary?: boolean };
+  }[];
   genders?: { value?: string; formattedValue?: string; metadata?: { primary?: boolean } }[];
 }
 
@@ -13,6 +16,8 @@ export interface ProfileFacts {
   /** Whole years, or null when Google has no birthday with a year. */
   age: number | null;
   birthYear: number | null;
+  /** Full YYYY-MM-DD string if returned, otherwise null. */
+  birthDateString?: string | null;
   /** Display text such as "Female", "Male" or a custom value; null when not shared. */
   gender: string | null;
 }
@@ -25,18 +30,39 @@ export function ageOn(birth: { year: number; month?: number; day?: number }, tod
   return age;
 }
 
+export function birthDateFromPeople(res: GooglePeopleResponse): string | null {
+  const withYear = (res.birthdays ?? []).filter((b) => b.date?.year);
+  const birthday = withYear.find((b) => b.metadata?.primary) ?? withYear[0];
+  const year = birthday?.date?.year ?? null;
+  const month = birthday?.date?.month ?? null;
+  const day = birthday?.date?.day ?? null;
+  if (year && month && day) {
+    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  }
+  return year ? `${year}-01-01` : null;
+}
+
 export function factsFromPeople(res: GooglePeopleResponse, today = new Date()): ProfileFacts {
   // Prefer the primary birthday that includes a year (some entries are month/day only).
   const withYear = (res.birthdays ?? []).filter((b) => b.date?.year);
   const birthday = withYear.find((b) => b.metadata?.primary) ?? withYear[0];
   const year = birthday?.date?.year ?? null;
-  const age = year ? ageOn({ year, month: birthday?.date?.month, day: birthday?.date?.day }, today) : null;
+  const month = birthday?.date?.month ?? null;
+  const day = birthday?.date?.day ?? null;
+  const age = year
+    ? ageOn({ year, month: month ?? undefined, day: day ?? undefined }, today)
+    : null;
 
   const genderEntry = (res.genders ?? []).find((g) => g.metadata?.primary) ?? res.genders?.[0];
   const raw = genderEntry?.formattedValue || genderEntry?.value || null;
-  const gender = raw && raw.toLowerCase() !== 'unspecified' ? raw.charAt(0).toUpperCase() + raw.slice(1) : null;
+  const gender =
+    raw && raw.toLowerCase() !== 'unspecified' ? raw.charAt(0).toUpperCase() + raw.slice(1) : null;
 
-  return { age: age !== null && age >= 0 && age < 130 ? age : null, birthYear: year, gender };
+  return {
+    age: age !== null && age >= 0 && age < 130 ? age : null,
+    birthYear: year,
+    gender,
+  };
 }
 
 /** Coarse band shown on the profile; matches the catalog's age-band values. */

@@ -188,6 +188,6 @@ const styles = StyleSheet.create({
   track: { height: 8, borderRadius: 4, overflow: 'hidden' },
   fill: { height: '100%', borderRadius: 4 },
   emblemRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  emblemChoice: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5 },
-  ledgerRow: { paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth, minHeight: 44 },
+  emblemChoice: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', borderWidth: 0 },
+  ledgerRow: { paddingVertical: 10, borderBottomWidth: 0, minHeight: 44 },
 });

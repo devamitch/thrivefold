@@ -1,22 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useEffect, useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Haptics from 'expo-haptics';
 
-import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
+import { Button } from '../../components/ui/Button';
+import { DatePickerModal } from '../../components/ui/DatePickerModal';
 import { PressableScale } from '../../components/ui/PressableScale';
 import { SquircleSurface } from '../../components/ui/SquircleSurface';
-import { DatePickerModal } from '../../components/ui/DatePickerModal';
-import { useRootStore, useShallow } from '../../stores/useRootStore';
-import { useTheme } from '../../theme/useTheme';
-import { pendingGoogleProfile, signOutGoogle } from '../../services/account/googleAccount';
-import { ageBandFor, ageOn } from '../../domain/account/googleProfile';
 import { inferGender, inferGenderFromLocalName } from '../../domain/account/genderInference';
+import { ageBandFor, ageOn } from '../../domain/account/googleProfile';
+import { pendingGoogleProfile, signOutGoogle } from '../../services/account/googleAccount';
+import { useRootStore, useShallow } from '../../stores/useRootStore';
 import type { ProductExperience } from '../../theme/tokens';
+import { useTheme } from '../../theme/useTheme';
 
 type GenderOption = 'Male' | 'Female' | 'Other';
 
@@ -57,8 +57,18 @@ function formatDisplayDate(dateStr: string): string {
   const day = parseInt(parts[2], 10);
   if (isNaN(year) || isNaN(month) || isNaN(day)) return dateStr;
   const monthNames = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
   const mName = monthNames[month - 1] || `${month}`;
   return `${day} ${mName} ${year}`;
@@ -83,7 +93,8 @@ export default function ConfirmProfileScreen() {
   const displayName = profile?.givenName || profile?.name?.split(' ')[0] || 'Friend';
 
   // Intelligent gender initialization
-  const initialGender = (profile?.gender as GenderOption | undefined) ??
+  const initialGender =
+    (profile?.gender as GenderOption | undefined) ??
     (inferGenderFromLocalName(profile?.givenName ?? profile?.name) as GenderOption | null) ??
     'Male';
   const [selectedGender, setSelectedGender] = useState<GenderOption>(initialGender);
@@ -108,7 +119,8 @@ export default function ConfirmProfileScreen() {
   }, [profile?.gender, profile?.givenName, profile?.name, setExperience]);
 
   // Birthday & Age state: never invent date if Google didn't provide one
-  const initialBirthDate = profile?.birthYear && profile?.age !== null ? `${profile.birthYear}-01-01` : '';
+  const initialBirthDate =
+    profile?.birthDateString ?? (profile?.birthYear ? `${profile.birthYear}-01-01` : '');
   const [birthDate, setBirthDate] = useState<string>(initialBirthDate);
   const [currentAge, setCurrentAge] = useState<number | null>(profile?.age ?? null);
   const [datePickerVisible, setDatePickerVisible] = useState<boolean>(false);
@@ -131,12 +143,25 @@ export default function ConfirmProfileScreen() {
 
   if (!profile) {
     return (
-      <View style={[styles.root, { backgroundColor: colors.background, paddingTop: insets.top + spacing.xl, paddingHorizontal: spacing.lg }]}>
+      <View
+        style={[
+          styles.root,
+          {
+            backgroundColor: colors.background,
+            paddingTop: insets.top + spacing.xl,
+            paddingHorizontal: spacing.lg,
+          },
+        ]}
+      >
         <Text style={[typography.heading, { color: colors.text.primary }]}>Session expired</Text>
         <Text style={[typography.body, { color: colors.text.secondary, marginTop: spacing.xs }]}>
           Please sign in again to continue.
         </Text>
-        <Button label="Back to sign in" onPress={() => router.replace('/(auth)/sign-in')} style={{ marginTop: spacing.lg }} />
+        <Button
+          label="Back to sign in"
+          onPress={() => router.replace('/(auth)/sign-in')}
+          style={{ marginTop: spacing.lg }}
+        />
       </View>
     );
   }
@@ -222,17 +247,16 @@ export default function ConfirmProfileScreen() {
     <View style={[styles.root, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <ScrollView
         style={styles.flex}
-        contentContainerStyle={[styles.scrollContent, { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg }]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg },
+        ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
         {/* Compact Header: Flat Squircle, Zero Borders, Zero Shadows */}
         <View style={styles.headerSection}>
-          <SquircleSurface
-            radius={20}
-            fill={colors.surface1}
-            style={styles.avatarSquircle}
-          >
+          <SquircleSurface radius={20} fill={colors.surface1} style={styles.avatarSquircle}>
             {profile.photo ? (
               <Image
                 source={{ uri: profile.photo }}
@@ -244,20 +268,40 @@ export default function ConfirmProfileScreen() {
             )}
           </SquircleSurface>
 
-          <Text style={[typography.heading, { color: colors.text.primary, marginTop: spacing.sm, textAlign: 'center' }]}>
+          <Text
+            style={[
+              typography.heading,
+              { color: colors.text.primary, marginTop: spacing.sm, textAlign: 'center' },
+            ]}
+          >
             Welcome, {displayName}
           </Text>
-          <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 2, textAlign: 'center' }]}>
+          <Text
+            style={[
+              typography.subbody,
+              { color: colors.text.secondary, marginTop: 2, textAlign: 'center' },
+            ]}
+          >
             {profile.email}
           </Text>
-          <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.xs, textAlign: 'center' }]}>
+          <Text
+            style={[
+              typography.caption,
+              { color: colors.text.muted, marginTop: spacing.xs, textAlign: 'center' },
+            ]}
+          >
             Select your health sanctuary to personalize your routines.
           </Text>
         </View>
 
         {/* Flat Squircle Sanctuary Choices: Zero Borders, Zero Shadows */}
         <View style={styles.sectionBlock}>
-          <Text style={[typography.captionBold, { color: colors.text.secondary, marginBottom: spacing.xs, letterSpacing: 0.5 }]}>
+          <Text
+            style={[
+              typography.captionBold,
+              { color: colors.text.secondary, marginBottom: spacing.xs, letterSpacing: 0.5 },
+            ]}
+          >
             SANCTUARY EXPERIENCE
           </Text>
 
@@ -295,7 +339,10 @@ export default function ConfirmProfileScreen() {
                         <Text
                           style={[
                             typography.bodyBold,
-                            { color: isSelected ? colors.primary : colors.text.primary, fontSize: 15 },
+                            {
+                              color: isSelected ? colors.primary : colors.text.primary,
+                              fontSize: 15,
+                            },
                           ]}
                         >
                           {opt.title}
@@ -323,7 +370,12 @@ export default function ConfirmProfileScreen() {
 
         {/* Date of Birth Selection: Flat Squircle, Zero Borders, Zero Shadows */}
         <View style={styles.sectionBlock}>
-          <Text style={[typography.captionBold, { color: colors.text.secondary, marginBottom: spacing.xs, letterSpacing: 0.5 }]}>
+          <Text
+            style={[
+              typography.captionBold,
+              { color: colors.text.secondary, marginBottom: spacing.xs, letterSpacing: 0.5 },
+            ]}
+          >
             DATE OF BIRTH
           </Text>
 
@@ -333,11 +385,7 @@ export default function ConfirmProfileScreen() {
             accessibilityRole="button"
             accessibilityLabel="Set Date of Birth"
           >
-            <SquircleSurface
-              radius={18}
-              fill={colors.surface1}
-              style={styles.dobCard}
-            >
+            <SquircleSurface radius={18} fill={colors.surface1} style={styles.dobCard}>
               <SquircleSurface
                 radius={12}
                 fill={isDobSelected ? colors.primaryAlpha : colors.surface2}
@@ -352,7 +400,9 @@ export default function ConfirmProfileScreen() {
 
               <View style={styles.dobInfo}>
                 <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                  {isDobSelected ? `${formatDisplayDate(birthDate)}  (${currentAge} years)` : 'Select your date of birth'}
+                  {isDobSelected
+                    ? `${formatDisplayDate(birthDate)}  (${currentAge} years)`
+                    : 'Select your date of birth'}
                 </Text>
                 <Text style={[typography.caption, { color: colors.text.muted, marginTop: 1 }]}>
                   Calibrates circadian rhythm & recovery timing.
@@ -370,7 +420,12 @@ export default function ConfirmProfileScreen() {
         {isMinor ? (
           <SquircleSurface radius={16} fill={colors.surface1} style={styles.minorNotice}>
             <Ionicons name="information-circle-outline" size={20} color={colors.text.secondary} />
-            <Text style={[typography.subbody, { color: colors.text.secondary, marginLeft: 10, flex: 1 }]}>
+            <Text
+              style={[
+                typography.subbody,
+                { color: colors.text.secondary, marginLeft: 10, flex: 1 },
+              ]}
+            >
               Thrivefold is designed for mature wellness journeys. Please return at a later time.
             </Text>
           </SquircleSurface>
@@ -414,12 +469,7 @@ export default function ConfirmProfileScreen() {
             />
           </>
         ) : isMinor ? (
-          <Button
-            label="Return to Sign In"
-            variant="outline"
-            size="lg"
-            onPress={cancel}
-          />
+          <Button label="Return to Sign In" variant="outline" size="lg" onPress={cancel} />
         ) : (
           <>
             <Button

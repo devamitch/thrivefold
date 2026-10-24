@@ -6,7 +6,7 @@
 import Constants from 'expo-constants';
 import { GoogleSignin, isErrorWithCode, isSuccessResponse, statusCodes } from '@react-native-google-signin/google-signin';
 
-import { factsFromPeople, type ProfileFacts } from '../../domain/account/googleProfile';
+import { birthDateFromPeople, factsFromPeople, type ProfileFacts } from '../../domain/account/googleProfile';
 import { supabase } from '../supabase/supabaseClient';
 
 const BIRTHDAY_SCOPE = 'https://www.googleapis.com/auth/user.birthday.read';
@@ -42,10 +42,14 @@ async function readFacts(accessToken: string): Promise<ProfileFacts> {
     const res = await fetch('https://people.googleapis.com/v1/people/me?personFields=birthdays,genders', {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
-    if (!res.ok) return { age: null, birthYear: null, gender: null };
-    return factsFromPeople(await res.json());
+    if (!res.ok) return { age: null, birthYear: null, gender: null, birthDateString: null };
+    const json = await res.json();
+    return {
+      ...factsFromPeople(json),
+      birthDateString: birthDateFromPeople(json),
+    };
   } catch {
-    return { age: null, birthYear: null, gender: null };
+    return { age: null, birthYear: null, gender: null, birthDateString: null };
   }
 }
 
@@ -101,6 +105,11 @@ export async function signOutGoogle(): Promise<void> {
   pending = null;
   try {
     configure();
+    try {
+      await GoogleSignin.revokeAccess();
+    } catch {
+      // revokeAccess is optional if not currently authorized
+    }
     await GoogleSignin.signOut();
   } catch {
     // Not signed in with Google; nothing to do.

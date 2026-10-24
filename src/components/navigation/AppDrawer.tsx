@@ -230,7 +230,6 @@ export function AppDrawer() {
           style={[
             styles.footerRow,
             {
-              borderTopColor: colors.border,
               paddingHorizontal: spacing.base,
               paddingTop: spacing.sm,
             },
@@ -300,7 +299,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderTopWidth: 1,
+    borderTopWidth: 0,
   },
   footerBtn: {
     flexDirection: 'row',
