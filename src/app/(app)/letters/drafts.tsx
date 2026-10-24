@@ -18,7 +18,7 @@ export default function LetterDraftsScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Letter Drafts" subtitle="Saved In-Progress Postal Cards" showBack />
+      <Header title="Drafts" subtitle="Letters you have not sent yet" showBack />
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
         {drafts.length > 0 ? (
           drafts.map((draft) => (

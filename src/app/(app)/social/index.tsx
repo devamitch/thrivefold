@@ -34,7 +34,7 @@ export default function SocialIntroScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Structured Introductions" subtitle="Controlled Pacing & Mutual Consent" showBack />
+      <Header title="Introductions" subtitle="Slow pace, and both sides agree" showBack />
       <View style={[styles.content, { paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }]}>
         {/* Policy Decision Banner */}
         <Card

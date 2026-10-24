@@ -10,7 +10,7 @@ export default function CommunityRulesScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Community Code of Conduct" subtitle="Safety, Respect, and Boundaries" showBack />
+      <Header title="Community rules" subtitle="Safety, respect and boundaries" showBack />
       <View style={[styles.content, { padding: spacing.base }]}>
         <Card style={{ marginBottom: spacing.md }}>
           <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: spacing.xs }]}>

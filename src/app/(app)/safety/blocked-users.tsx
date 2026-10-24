@@ -33,7 +33,7 @@ export default function BlockedUsersScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Blocked Users" subtitle="Manage Mutual Protection & Disconnects" showBack />
+      <Header title="Blocked people" subtitle="People you have blocked" showBack />
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
         <Card style={{ marginBottom: spacing.md, backgroundColor: colors.surface1, borderColor: colors.border }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>

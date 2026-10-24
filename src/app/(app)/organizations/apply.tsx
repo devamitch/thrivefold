@@ -44,7 +44,7 @@ export default function OrganizationApplyScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Register Organization" subtitle="Verification for NGOs, Clinics & Corporate Hubs" showBack />
+      <Header title="Register an organization" subtitle="For NGOs, clinics and employers" showBack />
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
         <Card style={{ marginBottom: spacing.md, backgroundColor: colors.surface1, borderColor: colors.border }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>

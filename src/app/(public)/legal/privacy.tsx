@@ -43,7 +43,7 @@ export default function PrivacyPolicyScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Privacy Policy" showBack />
+      <Header title="Privacy policy" showBack />
       <View style={[styles.content, { padding: spacing.base }]}>
         {SECTIONS.map((section) => (
           <Card key={section.title} style={{ marginBottom: spacing.md }}>

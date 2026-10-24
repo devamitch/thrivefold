@@ -28,7 +28,7 @@ export default function JournalScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Private Journal" subtitle="Private notes, kept on this phone" showBack />
+      <Header title="Journal" subtitle="Private notes, kept on this phone" showBack />
       <ScrollView style={[styles.content, { paddingHorizontal: 16, paddingBottom: 32 }]}>
         {/* Compose New Entry */}
         <Card style={{ marginBottom: 16, padding: 24 }}>

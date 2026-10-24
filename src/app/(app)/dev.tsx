@@ -215,7 +215,7 @@ export default function DevToolsScreen() {
 
   return (
     <ScreenWrapper scrollable disableScrollAwareDock>
-      <Header title="Developer Menu" subtitle="Full Device & App State Controls" showBack />
+      <Header title="Developer tools" subtitle="Developer tools" showBack />
 
       <View style={{ paddingHorizontal: spacing.base, paddingBottom: spacing['4xl'] }}>
         {/* ── 1. Live System Status ── */}

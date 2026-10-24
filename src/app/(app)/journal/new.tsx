@@ -45,7 +45,7 @@ export default function NewJournalEntryScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="New Reflection" subtitle="Private, kept on this phone" showBack />
+      <Header title="New entry" subtitle="Private, kept on this phone" showBack />
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
         <Card style={{ marginBottom: spacing.md }}>
           <Text style={[typography.captionBold, { color: colors.text.secondary, marginBottom: 6 }]}>
@@ -100,7 +100,7 @@ export default function NewJournalEntryScreen() {
           </Text>
         </Card>
 
-        <Button label="Save to Local Vault" onPress={handleSave} />
+        <Button label="Save entry" onPress={handleSave} />
       </ScrollView>
     </ScreenWrapper>
   );

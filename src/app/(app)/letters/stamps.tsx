@@ -13,7 +13,7 @@ export default function StampsAlbumScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Stamps Album" subtitle="Letter Collectibles & Milestones" showBack />
+      <Header title="Stamps" subtitle="Stamps you have collected" showBack />
       <View style={[styles.content, { paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }]}>
         <Card variant="tinted" style={{ marginBottom: spacing.md, padding: spacing.base }}>
           <Text style={[typography.captionBold, { color: colors.primary }]}>

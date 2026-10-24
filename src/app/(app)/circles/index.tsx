@@ -120,8 +120,8 @@ export default function CommunitiesScreen() {
   return (
     <ScreenWrapper scrollable>
       <Header
-        title="Private Circles"
-        subtitle="Segmented, identity-safe affinity spaces"
+        title="Circles"
+        subtitle="Private groups for people with shared experiences"
         showBack
         rightAction={<Button label="Invites" variant="outline" size="sm" onPress={() => router.push('/(app)/circles/invitations')} />}
       />

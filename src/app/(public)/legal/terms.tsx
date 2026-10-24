@@ -10,7 +10,7 @@ export default function TermsScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Terms of Service" showBack />
+      <Header title="Terms of service" showBack />
       <View style={[styles.content, { padding: spacing.base }]}>
         <Card style={{ marginBottom: spacing.md }}>
           <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: spacing.xs }]}>

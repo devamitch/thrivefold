@@ -15,7 +15,7 @@ export default function PelvicFloorScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Pelvic-Floor Health" subtitle="Awareness, Mobility & Safe Practice" showBack />
+      <Header title="Pelvic floor" subtitle="Strength and relaxation, safely" showBack />
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
         {/* Caution Banner (Section 4.1 & 4.2) */}
         <Card style={{ marginBottom: spacing.md, backgroundColor: colors.surface1, borderColor: colors.border }}>

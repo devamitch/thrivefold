@@ -18,7 +18,7 @@ export default function LetterOutboxScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Postal Outbox" subtitle="Letters Dispatched Across Global Channels" showBack />
+      <Header title="Sent" subtitle="Letters you have sent" showBack />
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
         {outbox.length > 0 ? (
           outbox.map((letter) => (

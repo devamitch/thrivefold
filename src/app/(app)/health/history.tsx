@@ -29,7 +29,7 @@ export default function HealthHistoryScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Health History & Vault" subtitle="Your records, newest first" showBack />
+      <Header title="Health history" subtitle="Your records, newest first" showBack />
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
         {/* Summary Stats */}
         <Card style={{ marginBottom: spacing.md, padding: spacing.lg }}>

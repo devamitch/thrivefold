@@ -22,7 +22,7 @@ export default function LettersInboxScreen() {
   return (
     <ScreenWrapper scrollable>
       <Header
-        title="Slow Mailbox"
+        title="Letters"
         subtitle="Asynchronous pen-pal letters"
         showBack
         rightAction={

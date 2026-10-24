@@ -270,7 +270,7 @@ export default function SettingsScreen() {
                   Mind Refreshers & Games
                 </Text>
                 <Text style={[typography.caption, { color: colors.text.secondary }]}>
-                  Breathing, focus calibration, and mindful puzzle sessions
+                  Breathing, memory and focus games
                 </Text>
               </View>
             </View>
@@ -299,7 +299,7 @@ export default function SettingsScreen() {
 
         {/* Privacy & Systems Section */}
         <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.md, marginBottom: spacing.sm }]}>
-          Vault & Privacy Controls
+          Privacy and your data
         </Text>
 
         <Card onPress={() => router.push('/(app)/ai')} style={{ marginBottom: 8 }}>
@@ -478,7 +478,7 @@ export default function SettingsScreen() {
               <Ionicons name="restaurant-outline" size={20} color={colors.primary} />
               <View style={{ marginLeft: 12 }}>
                 <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                  Habits & Dietary Preferences
+                  Food and reminders
                 </Text>
                 <Text style={[typography.caption, { color: colors.text.secondary }]}>
                   Nutritional focus and reminder timings
@@ -501,10 +501,10 @@ export default function SettingsScreen() {
               <Ionicons name="refresh-outline" size={20} color={colors.primary} />
               <View style={{ marginLeft: 12 }}>
                 <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                  Reset Routine & Goals
+                  Redo setup
                 </Text>
                 <Text style={[typography.caption, { color: colors.text.secondary }]}>
-                  Re-calibrate experience mode and routine length
+                  Start setup again; your records are kept
                 </Text>
               </View>
             </View>
@@ -556,7 +556,7 @@ export default function SettingsScreen() {
         <Card onPress={handleDeleteAccount} variant="surface1" style={{ marginTop: spacing.sm }}>
           <View style={styles.rowBetween}>
             <Text style={[typography.bodyBold, { color: colors.error }]}>
-              Erase Local Vault & Reset Account
+              Erase everything on this phone
             </Text>
             <Ionicons name="trash-outline" size={18} color={colors.error} />
           </View>

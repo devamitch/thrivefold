@@ -45,7 +45,7 @@ export default function LetterProfileScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Postal Profile" subtitle="Your Pseudonymous Pen-Pal Identity" showBack />
+      <Header title="Letter profile" subtitle="The name others see on your letters" showBack />
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
         <Card style={{ marginBottom: spacing.md }}>
           <Text style={[typography.captionBold, { color: colors.text.secondary, marginBottom: 4 }]}>

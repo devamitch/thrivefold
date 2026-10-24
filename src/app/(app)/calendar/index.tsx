@@ -76,7 +76,7 @@ export default function CalendarScreen() {
   return (
     <ScreenWrapper scrollable>
       <Header
-        title="Universal Calendar"
+        title="Calendar"
         subtitle={isMen ? "Performance, Recovery & Routines" : isPride ? "Affirming Schedule & Care" : "Rhythm, Follicular & Life Planner"}
         showBack
       />

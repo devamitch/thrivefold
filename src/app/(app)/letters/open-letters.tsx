@@ -21,7 +21,7 @@ export default function OpenLettersScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Open Letters" subtitle="Approved Reflection Prompts & Global Post" showBack />
+      <Header title="Open letters" subtitle="Prompts anyone can answer" showBack />
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
         <Card style={{ marginBottom: spacing.md, backgroundColor: colors.surface1, borderColor: colors.border }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>

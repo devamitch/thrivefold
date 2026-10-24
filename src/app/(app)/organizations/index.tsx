@@ -13,7 +13,7 @@ export default function OrganizationsScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Organizations" subtitle="Verified NGOs, Businesses, & Programs" showBack />
+      <Header title="Organizations" subtitle="Verified organizations and programs" showBack />
       <ScrollView style={[styles.content, { paddingHorizontal: 16, paddingBottom: 32 }]}>
         {/* Apply for Organization */}
         <Card style={{ marginBottom: 16, padding: 24 }}>

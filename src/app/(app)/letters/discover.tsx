@@ -61,7 +61,7 @@ export default function DiscoverPenPalsScreen() {
   return (
     <ScreenWrapper scrollable>
       <Header
-        title="Discover Pen-Pals"
+        title="Find pen pals"
         subtitle="Slow, Consented Global Correspondence"
         showBack
         rightAction={<Badge label={`${introsSentToday}/1 Intro Today`} variant={introsSentToday >= 1 ? 'warning' : 'primary'} />}

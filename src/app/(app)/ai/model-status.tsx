@@ -53,7 +53,7 @@ export default function ModelStatusScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="On This Device" subtitle="What powers suggestions and patterns" showBack />
+      <Header title="On this device" subtitle="What powers suggestions and patterns" showBack />
       <View style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
         {COMPONENTS.map((c) => (
           <Card key={c.title} style={{ marginBottom: spacing.sm }}>

@@ -37,7 +37,7 @@ export default function CircleInvitationsScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Circle Invitations" subtitle="Consented, Private Group Invitations" showBack />
+      <Header title="Circle invitations" subtitle="Invitations to private circles" showBack />
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
         <Card style={{ marginBottom: spacing.md, backgroundColor: colors.surface1, borderColor: colors.border }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>

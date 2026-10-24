@@ -23,7 +23,7 @@ export default function LetterPreferencesScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Delivery Preferences" subtitle="Pacing, Distance Bands & Boundaries" showBack />
+      <Header title="Delivery preferences" subtitle="Pace, distance and boundaries" showBack />
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
         <Card style={{ marginBottom: spacing.md }}>
           <View style={styles.switchRow}>

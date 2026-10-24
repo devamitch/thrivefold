@@ -472,7 +472,7 @@ export default function TodayScreen() {
         </Animated.View>
       )}
 
-      {/* SECTION 3: SOMATIC RESTORATIVE ARCADE (ISOLATED TIMER STATE - ZERO LAG!) */}
+      {/* Short calming exercises with their own timer state */}
       {activeTab === 'arcade' && (
         <Animated.View entering={FadeInDown.duration(220)}>
           <SomaticWellnessArcade onCompleteExercise={handleExerciseComplete} />

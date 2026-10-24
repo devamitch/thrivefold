@@ -53,7 +53,7 @@ export default function JournalEntryDetailScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Private Reflection" subtitle={new Date(entry.createdAt).toLocaleDateString()} showBack />
+      <Header title="Journal entry" subtitle={new Date(entry.createdAt).toLocaleDateString()} showBack />
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
         <Card style={{ marginBottom: spacing.md, padding: spacing.lg }}>
           <View style={styles.headerRow}>
@@ -63,7 +63,7 @@ export default function JournalEntryDetailScreen() {
             <Badge label={`Mood: ${entry.moodTag}/10`} variant="primary" />
           </View>
           <Text style={[typography.caption, { color: colors.text.muted, marginTop: 4, marginBottom: 16 }]}>
-            Logged at {new Date(entry.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · Stored in local vault
+            Logged at {new Date(entry.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · Kept on this phone
           </Text>
 
           <Text style={[typography.body, { color: colors.text.primary, lineHeight: 24 }]}>

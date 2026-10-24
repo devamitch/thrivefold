@@ -22,7 +22,7 @@ export default function LetterDeliveryDetailScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Postal Journey Tracker" subtitle="Simulated Regional Transit" showBack />
+      <Header title="Letter on its way" subtitle="Letters take time to arrive, like post" showBack />
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
         <Card style={{ marginBottom: spacing.md, alignItems: 'center', padding: spacing.xl }}>
           <View style={[styles.stampCircle, { backgroundColor: colors.primaryAlpha }]}>

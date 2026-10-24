@@ -38,7 +38,7 @@ export default function PrideWellbeingScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Pride Wellbeing" subtitle="Affirming care, on your terms" showBack />
+      <Header title="LGBTQ+ wellbeing" subtitle="Affirming care, on your terms" showBack />
       <View style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
         {section(
           'Your identity',

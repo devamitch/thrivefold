@@ -87,7 +87,7 @@ export default function LetterComposeScreen() {
   return (
     <ScreenWrapper scrollable>
       <Header
-        title="Compose Letter"
+        title="Write a letter"
         subtitle="Chip-only thoughtful correspondence"
         showBack
         rightAction={<Badge label={`${selectedChips.length}/5 Cards`} variant={selectedChips.length > 0 ? 'primary' : 'neutral'} />}

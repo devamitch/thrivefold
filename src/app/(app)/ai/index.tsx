@@ -91,9 +91,9 @@ export default function InsightsScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Your Patterns & Vault" subtitle="Private on-device intelligence from your own records" showBack />
+      <Header title="Your patterns" subtitle="Worked out on this phone from your own records" showBack />
       <View style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
-        {/* On-Device Vault Hero */}
+        {/* Hero */}
         <Card style={{ marginBottom: spacing.md, padding: 14, backgroundColor: colors.surface }}>
           <View style={styles.heroWrap}>
             <Image

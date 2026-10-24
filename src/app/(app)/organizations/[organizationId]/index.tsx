@@ -18,8 +18,8 @@ export default function OrganizationDetailScreen() {
   return (
     <ScreenWrapper scrollable>
       <Header
-        title="Organization Console"
-        subtitle="Accredited Wellbeing Hub Management"
+        title="Organization"
+        subtitle="Organization tools"
         showBack
       />
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>

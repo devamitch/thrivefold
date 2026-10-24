@@ -37,7 +37,7 @@ export default function SafetyAppealScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Moderation Appeal" subtitle="Transparent Review Pathway" showBack />
+      <Header title="Appeal a decision" subtitle="How a review works" showBack />
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
         <Card style={{ marginBottom: spacing.md, backgroundColor: colors.surface1, borderColor: colors.border }}>
           <Text style={[typography.subbodyBold, { color: colors.text.primary, marginBottom: 4 }]}>

@@ -66,7 +66,7 @@ export default function SafetyScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Safety, Crisis & Privacy" subtitle="Instant hotlines and protection controls" showBack />
+      <Header title="Safety" subtitle="Crisis lines, blocking and reports" showBack />
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: spacing.xxl }]}>
         {/* Quick Safety Hub Links */}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>

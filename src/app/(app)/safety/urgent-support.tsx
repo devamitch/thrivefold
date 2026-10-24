@@ -51,7 +51,7 @@ export default function UrgentSupportScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Immediate Support & Helplines" subtitle="Free, Confidential Crisis Resources" showBack />
+      <Header title="Get help now" subtitle="Free, confidential help" showBack />
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
         <Card style={{ marginBottom: spacing.md, backgroundColor: colors.surface1, borderColor: colors.border }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>

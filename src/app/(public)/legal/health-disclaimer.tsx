@@ -10,7 +10,7 @@ export default function HealthDisclaimerScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Health Disclaimer" showBack />
+      <Header title="Not medical advice" showBack />
       <View style={[styles.content, { padding: spacing.base }]}>
         <Card variant="tinted" style={{ marginBottom: spacing.md, padding: spacing.base }}>
           <Text style={[typography.subheading, { color: colors.primary, marginBottom: spacing.xs }]}>

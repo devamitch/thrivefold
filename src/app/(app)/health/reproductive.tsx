@@ -49,7 +49,7 @@ export default function ReproductiveHealthScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Reproductive Health" subtitle="Evidence-Based Clinical Education" showBack />
+      <Header title="Reproductive health" subtitle="Plain facts and when to see a clinician" showBack />
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
         {/* Clinician Advisory Banner */}
         <Card style={{ marginBottom: spacing.md, backgroundColor: colors.surface1, borderColor: colors.border }}>

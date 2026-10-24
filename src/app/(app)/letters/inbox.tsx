@@ -18,7 +18,7 @@ export default function LetterInboxDetailScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Postal Inbox" subtitle="Incoming Letters & In-Transit Mail" showBack />
+      <Header title="Inbox" subtitle="Letters to you and on their way" showBack />
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
         {inbox.map((letter) => {
           const isTransit = letter.status === 'in_transit';

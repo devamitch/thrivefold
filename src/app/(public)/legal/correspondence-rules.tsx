@@ -10,7 +10,7 @@ export default function CorrespondenceRulesScreen() {
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Correspondence Rules" subtitle="Slow, Thoughtful, Chip-Only Postal" showBack />
+      <Header title="Letter rules" subtitle="Slow letters, written with cards" showBack />
       <View style={[styles.content, { padding: spacing.base }]}>
         <Card style={{ marginBottom: spacing.md }}>
           <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: spacing.xs }]}>
