@@ -117,7 +117,6 @@ export function CollapsingHeaderBar({
   });
 
   const hasLeft = Boolean(props.showBack);
-  const sideWidth = Math.max(hasLeft ? HEADER_BUTTON_SIZE : 0, rightWidth);
 
   return (
     <View
@@ -154,14 +153,14 @@ export function CollapsingHeaderBar({
           pointerEvents="none"
           style={[
             styles.smallTitle,
-            { left: sideWidth + gutter, right: sideWidth + gutter },
+            { left: gutter + (hasLeft ? HEADER_BUTTON_SIZE + 12 : 0), right: rightWidth + gutter + 8 },
             smallTitleStyle,
           ]}
         >
           <Text
             style={[
               typography.subheading,
-              { color: colors.text.primary, textAlign: 'center' },
+              { color: colors.text.primary, textAlign: 'left' },
               props.titleStyle,
             ]}
             numberOfLines={1}
@@ -209,7 +208,7 @@ const styles = StyleSheet.create({
     minWidth: HEADER_BUTTON_SIZE,
   },
   smallTitle: {
-    alignItems: 'center',
+    alignItems: 'flex-start',
     bottom: 0,
     justifyContent: 'center',
     position: 'absolute',

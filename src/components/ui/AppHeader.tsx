@@ -124,7 +124,7 @@ export function HeaderLargeTitle({
 
 /**
  * Universal app header (Neev architecture).
- * - In compact mode: Back button, title, and right action share the single 52pt row with zero wasted gaps.
+ * - In compact mode: back button, left-aligned title and right action share one 52pt row.
  * - In large mode: Top action row with full-width large title below.
  */
 export function AppHeader({
@@ -154,7 +154,7 @@ export function AppHeader({
         <View
           style={[
             styles.compactCenter,
-            !hasLeft && { alignItems: 'flex-start', paddingHorizontal: 0 },
+            hasLeft ? { paddingLeft: 12, paddingRight: 8 } : { paddingHorizontal: 0 },
           ]}
         >
           {eyebrow ? (
@@ -171,7 +171,7 @@ export function AppHeader({
           <Text
             style={[
               typography.subheading,
-              { color: colors.text.primary, textAlign: hasLeft ? 'center' : 'left' },
+              { color: colors.text.primary, textAlign: 'left' },
               titleStyle,
             ]}
             numberOfLines={1}
@@ -183,7 +183,7 @@ export function AppHeader({
             <Text
               style={[
                 typography.caption,
-                { color: colors.text.secondary, textAlign: hasLeft ? 'center' : 'left' },
+                { color: colors.text.secondary, textAlign: 'left' },
               ]}
               numberOfLines={1}
             >
@@ -194,8 +194,6 @@ export function AppHeader({
 
         {rightAction ? (
           <View style={styles.right}>{rightAction}</View>
-        ) : hasLeft ? (
-          <View style={styles.emptyRight} />
         ) : null}
       </View>
     );
@@ -233,7 +231,7 @@ const styles = StyleSheet.create({
     minWidth: HEADER_BUTTON_SIZE,
   },
   compactCenter: {
-    alignItems: 'center',
+    alignItems: 'flex-start',
     flex: 1,
     justifyContent: 'center',
     paddingHorizontal: 8,
@@ -241,9 +239,6 @@ const styles = StyleSheet.create({
   right: {
     alignItems: 'flex-end',
     justifyContent: 'center',
-    minWidth: HEADER_BUTTON_SIZE,
-  },
-  emptyRight: {
     minWidth: HEADER_BUTTON_SIZE,
   },
   toolbar: {
