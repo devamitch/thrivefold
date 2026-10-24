@@ -16,6 +16,7 @@ import { computeInsights, recentLoad } from '../../../domain/ai/insights';
 import { getCyclePredictions } from '../../../domain/health/cycleCalculations';
 import { currentLevelProgress } from '../../../domain/game/gameCatalogService';
 import { questFamily, type QuestFamily } from '../../../domain/game/progression';
+import { SETUP_REWARDS } from '../../../domain/game/setupProfile';
 import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngine';
 import type { Quest } from '../../../stores/slices/questSlice';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
@@ -78,6 +79,8 @@ export default function HomeScreen() {
       dailyPoints: st.dailyPoints,
       dailyPointsTarget: st.dailyPointsTarget,
       dailyGoalReached: st.dailyGoalReached,
+      readings: st.deviceReadings,
+      setupClaimed: st.rewardLedger.filter((e) => e.kind === 'setup_reward').length,
     })),
   );
 
@@ -125,6 +128,19 @@ export default function HomeScreen() {
       : done >= active
         ? 'All of today’s quests are done.'
         : `${done} of ${active} quests done today.`;
+
+  // Latest value per kind from connected apps and devices; nothing shows without real readings.
+  const latest = (kind: string) =>
+    s.readings.filter((r) => r.kind === kind).reduce<(typeof s.readings)[number] | null>((a, r) => (!a || r.date > a.date ? r : a), null);
+  const steps = latest('steps');
+  const sleep = latest('sleep_minutes');
+  const heart = latest('heart_rate_avg');
+  const deviceTiles = [
+    steps ? { label: steps.date === today() ? 'Steps today' : `Steps ${steps.date.slice(5)}`, value: steps.value.toLocaleString() } : null,
+    sleep ? { label: 'Last sleep', value: `${Math.floor(sleep.value / 60)}h ${Math.round(sleep.value % 60)}m` } : null,
+    heart ? { label: 'Avg heart rate', value: `${Math.round(heart.value)} bpm` } : null,
+  ].filter((t): t is { label: string; value: string } => t !== null);
+  const setupOpen = SETUP_REWARDS.length - s.setupClaimed;
 
   const enter = (i: number) => (reduceMotion ? undefined : FadeInDown.delay(40 * i).duration(260));
 
@@ -197,6 +213,44 @@ export default function HomeScreen() {
           )}
         </Card>
       </Animated.View>
+
+      {deviceTiles.length > 0 ? (
+        <Animated.View entering={enter(1)}>
+          <Card onPress={() => router.push('/(app)/health/integrations')} style={{ padding: spacing.base, marginTop: spacing.md }}>
+            <View style={styles.rowBetween}>
+              <Text style={[typography.captionBold, { color: colors.text.muted }]}>FROM YOUR DEVICES</Text>
+              <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
+            </View>
+            <View style={[styles.metrics, { marginTop: spacing.sm }]}>
+              {deviceTiles.map((t) => (
+                <View key={t.label} style={[styles.metric, { backgroundColor: colors.surface1 }]}>
+                  <Text style={[typography.subheading, { color: colors.text.primary }]}>{t.value}</Text>
+                  <Text style={[typography.caption, { color: colors.text.muted }]}>{t.label}</Text>
+                </View>
+              ))}
+            </View>
+          </Card>
+        </Animated.View>
+      ) : null}
+
+      {setupOpen > 0 ? (
+        <Animated.View entering={enter(1)}>
+          <Card onPress={() => router.push('/(app)/personalize')} variant="tinted" style={{ padding: spacing.base, marginTop: spacing.md }}>
+            <View style={styles.rowBetween}>
+              <Ionicons name="sparkles-outline" size={20} color={colors.primary} />
+              <View style={[styles.flex, { marginLeft: 12 }]}>
+                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                  {setupOpen} setup step{setupOpen === 1 ? '' : 's'} left
+                </Text>
+                <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                  Answer them to fit your quests and earn the setup XP.
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
+            </View>
+          </Card>
+        </Animated.View>
+      ) : null}
 
       {recovery ? (
         <Animated.View entering={enter(1)}>
