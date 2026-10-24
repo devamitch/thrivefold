@@ -46,7 +46,7 @@ export default function SocialIntroScreen() {
               Eligibility Status
             </Text>
             <Badge
-              label={decision.allowed ? 'Eligible (18+)' : decision.reasonCode}
+              label={decision.allowed ? 'Eligible' : decision.reasonCode}
               variant={decision.allowed ? 'success' : 'warning'}
             />
           </View>

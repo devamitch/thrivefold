@@ -89,28 +89,52 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
     return years;
   }, []);
 
+  const syncDate = (year: number, month: number) => {
+    try {
+      const currentD = parseLocalDate(selectedDateStr);
+      const d = currentD.getDate() || 1;
+      const daysInNewMonth = new Date(year, month + 1, 0).getDate();
+      const safeD = Math.min(d, daysInNewMonth);
+      const newDateObj = new Date(year, month, safeD, 12, 0, 0);
+      const formatted = formatLocalDate(newDateObj);
+      if (maxDate && formatted > maxDate) {
+        setSelectedDateStr(maxDate);
+      } else if (minDate && formatted < minDate) {
+        setSelectedDateStr(minDate);
+      } else {
+        setSelectedDateStr(formatted);
+      }
+    } catch {}
+  };
+
   const handlePrevMonth = () => {
     try {
       Haptics.selectionAsync();
     } catch {}
+    let newM = currentMonth - 1;
+    let newY = currentYear;
     if (currentMonth === 0) {
-      setCurrentMonth(11);
-      setCurrentYear((y) => y - 1);
-    } else {
-      setCurrentMonth((m) => m - 1);
+      newM = 11;
+      newY = currentYear - 1;
     }
+    setCurrentMonth(newM);
+    setCurrentYear(newY);
+    syncDate(newY, newM);
   };
 
   const handleNextMonth = () => {
     try {
       Haptics.selectionAsync();
     } catch {}
+    let newM = currentMonth + 1;
+    let newY = currentYear;
     if (currentMonth === 11) {
-      setCurrentMonth(0);
-      setCurrentYear((y) => y + 1);
-    } else {
-      setCurrentMonth((m) => m + 1);
+      newM = 0;
+      newY = currentYear + 1;
     }
+    setCurrentMonth(newM);
+    setCurrentYear(newY);
+    syncDate(newY, newM);
   };
 
   const handleSelectDay = (dayNum: number) => {
@@ -308,6 +332,7 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
                             Haptics.selectionAsync();
                           } catch {}
                           setCurrentYear(y);
+                          syncDate(y, currentMonth);
                           setViewYearSelector(false);
                         }}
                         style={[

@@ -7,8 +7,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
 import { Button } from '../../components/ui/Button';
-import { Card } from '../../components/ui/Card';
-import { TextField } from '../../components/ui/TextField';
 import { Badge } from '../../components/ui/Badge';
 import { PressableScale } from '../../components/ui/PressableScale';
 import { SquircleSurface } from '../../components/ui/SquircleSurface';
@@ -25,36 +23,28 @@ type GenderOption = 'Male' | 'Female' | 'Other';
 interface SanctuaryOption {
   id: GenderOption;
   title: string;
-  badgeLabel: string;
   icon: keyof typeof Ionicons.glyphMap;
-  description: string;
-  benefits: string;
+  subtitle: string;
 }
 
 const SANCTUARY_OPTIONS: SanctuaryOption[] = [
   {
     id: 'Male',
-    title: "Men's Health Sanctuary",
-    badgeLabel: 'Stoic & Strength',
-    icon: 'barbell-outline',
-    description: 'Physical stamina, strength, cold recovery & mental resilience.',
-    benefits: 'Zero menstrual/cycle tracking • Men’s metabolic & testosterone health',
+    title: "Men's Health",
+    icon: 'fitness-outline',
+    subtitle: 'Strength, metabolic vitality & recovery. Zero cycle tracking.',
   },
   {
     id: 'Female',
-    title: "Women's Health Sanctuary",
-    badgeLabel: 'Hormonal Rhythms',
+    title: "Women's Health",
     icon: 'flower-outline',
-    description: 'Cycle phases, luteal & follicular nutrition, energy rhythms.',
-    benefits: 'Complete menstrual privacy • Hormone-aware workouts & nutrition',
+    subtitle: 'Cycle phases, luteal & follicular balance, and hormonal wellness.',
   },
   {
     id: 'Other',
-    title: 'Pride & Affirming Sanctuary',
-    badgeLabel: 'Inclusive Wellness',
+    title: 'Pride & Affirming',
     icon: 'heart-outline',
-    description: 'Affirming wellness milestones, holistic health & supportive habits.',
-    benefits: 'Safe haven tools • Affirming routines & non-gendered metrics',
+    subtitle: 'Inclusive milestones, holistic routines & affirming care.',
   },
 ];
 
@@ -89,16 +79,16 @@ export default function ConfirmProfileScreen() {
 
   const profile = pendingGoogleProfile();
 
-  // Preferred Display Name
-  const [name, setName] = useState(profile?.givenName ?? profile?.name ?? '');
+  // Name state
+  const displayName = profile?.givenName || profile?.name?.split(' ')[0] || 'Friend';
 
-  // Intelligent initial gender (Google claim -> Local Name Inference -> 'Male' safe default)
+  // Intelligent gender initialization
   const initialGender = (profile?.gender as GenderOption | undefined) ??
     (inferGenderFromLocalName(profile?.givenName ?? profile?.name) as GenderOption | null) ??
     'Male';
   const [selectedGender, setSelectedGender] = useState<GenderOption>(initialGender);
 
-  // Online gender fallback check (non-blocking)
+  // Online gender check fallback
   useEffect(() => {
     let isMounted = true;
     if (!profile?.gender) {
@@ -117,15 +107,13 @@ export default function ConfirmProfileScreen() {
     };
   }, [profile?.gender, profile?.givenName, profile?.name, setExperience]);
 
-  // Birthday & Age state: NEVER invent a birthday if Google didn't provide one
-  const hasGoogleProvidedAge = Boolean(profile?.birthYear && profile?.age !== null);
-  const [birthDate, setBirthDate] = useState<string>(
-    profile?.birthYear ? `${profile.birthYear}-01-01` : ''
-  );
+  // Birthday & Age state: never invent date if Google didn't provide one
+  const initialBirthDate = profile?.birthYear && profile?.age !== null ? `${profile.birthYear}-01-01` : '';
+  const [birthDate, setBirthDate] = useState<string>(initialBirthDate);
   const [currentAge, setCurrentAge] = useState<number | null>(profile?.age ?? null);
   const [datePickerVisible, setDatePickerVisible] = useState<boolean>(false);
 
-  // Recalculate age accurately if birthDate changes
+  // Recalculate age whenever birthDate changes
   useEffect(() => {
     if (birthDate) {
       const parts = birthDate.split('-');
@@ -144,9 +132,9 @@ export default function ConfirmProfileScreen() {
   if (!profile) {
     return (
       <View style={[styles.root, { backgroundColor: colors.background, paddingTop: insets.top + spacing.xl, paddingHorizontal: spacing.lg }]}>
-        <Text style={[typography.heading, { color: colors.text.primary }]}>Sign-in expired</Text>
+        <Text style={[typography.heading, { color: colors.text.primary }]}>Session expired</Text>
         <Text style={[typography.body, { color: colors.text.secondary, marginTop: spacing.xs }]}>
-          Your Google authentication session has timed out. Please sign in again.
+          Please sign in again to continue.
         </Text>
         <Button label="Back to sign in" onPress={() => router.replace('/(auth)/sign-in')} style={{ marginTop: spacing.lg }} />
       </View>
@@ -155,7 +143,6 @@ export default function ConfirmProfileScreen() {
 
   const isDobSelected = currentAge !== null && birthDate !== '';
   const isMinor = isDobSelected && currentAge < 18;
-  const isEligibleAdult = isDobSelected && currentAge >= 18;
 
   const cancel = async () => {
     await signOutGoogle();
@@ -207,7 +194,7 @@ export default function ConfirmProfileScreen() {
 
     setUser({
       id: `google_${profile.id}`,
-      pseudonym: name.trim().slice(0, 24) || (selectedGender === 'Male' ? 'Brother' : 'Friend'),
+      pseudonym: displayName.slice(0, 24),
       avatarSeed: `google_${profile.id}`,
       age: currentAge,
       ageBand: ageBandFor(currentAge),
@@ -232,289 +219,181 @@ export default function ConfirmProfileScreen() {
   };
 
   return (
-    <View style={[styles.root, { backgroundColor: colors.background }]}>
+    <View style={[styles.root, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <ScrollView
-        contentContainerStyle={{
-          paddingTop: insets.top + spacing.md,
-          paddingHorizontal: spacing.lg,
-          paddingBottom: insets.bottom + spacing.xxl + 40,
-        }}
+        style={styles.flex}
+        contentContainerStyle={[styles.scrollContent, { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg }]}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        {/* Header Profile Card with Squircle Frame */}
-        <Card variant="surface" radius={24} style={styles.profileHeaderCard}>
-          <View style={styles.profileHeaderRow}>
-            <SquircleSurface
-              radius={22}
-              fill={colors.surface2}
-              stroke={colors.border}
-              strokeWidth={1}
-              style={styles.avatarSquircle}
-            >
-              {profile.photo ? (
-                <Image
-                  source={{ uri: profile.photo }}
-                  style={styles.avatarImage}
-                  accessibilityLabel="Your Google profile photo"
-                />
-              ) : (
-                <Ionicons name="person-outline" size={32} color={colors.primary} />
-              )}
-            </SquircleSurface>
+        {/* Compact Header: Flat Squircle, Zero Borders, Zero Shadows */}
+        <View style={styles.headerSection}>
+          <SquircleSurface
+            radius={20}
+            fill={colors.surface1}
+            style={styles.avatarSquircle}
+          >
+            {profile.photo ? (
+              <Image
+                source={{ uri: profile.photo }}
+                style={styles.avatarImage}
+                accessibilityLabel="Profile photo"
+              />
+            ) : (
+              <Ionicons name="person-outline" size={26} color={colors.primary} />
+            )}
+          </SquircleSurface>
 
-            <View style={styles.profileHeaderTextGroup}>
-              <View style={styles.googleBadgeRow}>
-                <Badge label="Google Sovereign" variant="neutral" />
-                <Ionicons
-                  name="shield-checkmark"
-                  size={14}
-                  color={colors.success}
-                  style={{ marginLeft: 6 }}
-                />
-              </View>
-              <Text style={[typography.heading, { color: colors.text.primary, marginTop: 4 }]} numberOfLines={1}>
-                {profile.givenName || profile.name || 'Welcome'}
-              </Text>
-              <Text style={[typography.subbody, { color: colors.text.secondary }]} numberOfLines={1}>
-                {profile.email}
-              </Text>
-            </View>
+          <Text style={[typography.heading, { color: colors.text.primary, marginTop: spacing.sm, textAlign: 'center' }]}>
+            Welcome, {displayName}
+          </Text>
+          <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 2, textAlign: 'center' }]}>
+            {profile.email}
+          </Text>
+          <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.xs, textAlign: 'center' }]}>
+            Select your health sanctuary to personalize your routines.
+          </Text>
+        </View>
+
+        {/* Flat Squircle Sanctuary Choices: Zero Borders, Zero Shadows */}
+        <View style={styles.sectionBlock}>
+          <Text style={[typography.captionBold, { color: colors.text.secondary, marginBottom: spacing.xs, letterSpacing: 0.5 }]}>
+            SANCTUARY EXPERIENCE
+          </Text>
+
+          <View style={styles.optionsList}>
+            {SANCTUARY_OPTIONS.map((opt) => {
+              const isSelected = selectedGender === opt.id;
+              return (
+                <PressableScale
+                  key={opt.id}
+                  onPress={() => handleSelectSanctuary(opt.id)}
+                  scaleTo={0.985}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: isSelected }}
+                  accessibilityLabel={opt.title}
+                >
+                  <SquircleSurface
+                    radius={18}
+                    fill={isSelected ? colors.primaryAlpha : colors.surface1}
+                    style={styles.optionCard}
+                  >
+                    <View style={styles.optionRow}>
+                      <SquircleSurface
+                        radius={12}
+                        fill={isSelected ? colors.primary : colors.surface2}
+                        style={styles.optionIconBox}
+                      >
+                        <Ionicons
+                          name={opt.icon}
+                          size={18}
+                          color={isSelected ? colors.onPrimary : colors.primary}
+                        />
+                      </SquircleSurface>
+
+                      <View style={styles.optionInfo}>
+                        <Text
+                          style={[
+                            typography.bodyBold,
+                            { color: isSelected ? colors.primary : colors.text.primary, fontSize: 15 },
+                          ]}
+                        >
+                          {opt.title}
+                        </Text>
+                        <Text
+                          style={[
+                            typography.caption,
+                            { color: colors.text.secondary, marginTop: 2, lineHeight: 16 },
+                          ]}
+                        >
+                          {opt.subtitle}
+                        </Text>
+                      </View>
+
+                      {isSelected ? (
+                        <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
+                      ) : null}
+                    </View>
+                  </SquircleSurface>
+                </PressableScale>
+              );
+            })}
           </View>
+        </View>
 
-          <View style={[styles.headerDivider, { backgroundColor: colors.border }]} />
-
-          <Text style={[typography.subheading, { color: colors.text.primary, textAlign: 'left' }]} accessibilityRole="header">
-            {isMinor ? 'Thrivefold is for Adults (18+)' : 'Confirm Your Sanctuary Profile'}
-          </Text>
-          <Text style={[typography.body, { color: colors.text.secondary, marginTop: 4, lineHeight: 20 }]}>
-            {isMinor
-              ? 'Thrivefold is an adult-only sovereign health platform. Access is restricted to users 18 years and older.'
-              : 'Configure your health experience and sovereign identity. All biometric and cycle records remain 100% encrypted on your local device.'}
-          </Text>
-        </Card>
-
-        {/* Date of Birth & Age Selection Card */}
-        <View style={{ marginTop: spacing.lg }}>
-          <Text style={[typography.captionBold, { color: colors.text.secondary, marginBottom: spacing.xs, letterSpacing: 0.8 }]}>
-            AGE &amp; DATE OF BIRTH VERIFICATION
+        {/* Date of Birth Selection: Flat Squircle, Zero Borders, Zero Shadows */}
+        <View style={styles.sectionBlock}>
+          <Text style={[typography.captionBold, { color: colors.text.secondary, marginBottom: spacing.xs, letterSpacing: 0.5 }]}>
+            DATE OF BIRTH
           </Text>
 
           <PressableScale
             onPress={() => setDatePickerVisible(true)}
-            scaleTo={0.98}
+            scaleTo={0.985}
             accessibilityRole="button"
             accessibilityLabel="Set Date of Birth"
           >
             <SquircleSurface
-              radius={20}
-              fill={isMinor ? colors.errorSurface : isDobSelected ? colors.surface : colors.surface1}
-              stroke={isMinor ? colors.error : isDobSelected ? colors.border : colors.warning}
-              strokeWidth={isDobSelected ? 1 : 1.5}
+              radius={18}
+              fill={colors.surface1}
               style={styles.dobCard}
             >
               <SquircleSurface
-                radius={14}
-                fill={isMinor ? colors.errorSurface : isDobSelected ? colors.primaryAlpha : colors.warningSurface}
+                radius={12}
+                fill={isDobSelected ? colors.primaryAlpha : colors.surface2}
                 style={styles.dobIconBox}
               >
                 <Ionicons
                   name="calendar-outline"
-                  size={22}
-                  color={isMinor ? colors.error : isDobSelected ? colors.primary : colors.warning}
+                  size={18}
+                  color={isDobSelected ? colors.primary : colors.text.primary}
                 />
               </SquircleSurface>
 
-              <View style={styles.dobTextGroup}>
-                <View style={styles.dobLabelRow}>
-                  <Text style={[typography.captionBold, { color: colors.text.secondary }]}>
-                    DATE OF BIRTH
-                  </Text>
-                  {isDobSelected ? (
-                    isMinor ? (
-                      <Badge label="Under 18" variant="danger" />
-                    ) : (
-                      <Badge label="18+ Verified" variant="success" />
-                    )
-                  ) : (
-                    <Badge label="Required" variant="warning" />
-                  )}
-                </View>
-
-                {isDobSelected ? (
-                  <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 2 }]}>
-                    {formatDisplayDate(birthDate)} • {currentAge} years old
-                  </Text>
-                ) : (
-                  <Text style={[typography.bodyBold, { color: colors.warning, marginTop: 2 }]}>
-                    Tap to select your real Date of Birth
-                  </Text>
-                )}
-
-                <Text style={[typography.caption, { color: colors.text.muted, marginTop: 2 }]}>
-                  {isDobSelected
-                    ? hasGoogleProvidedAge
-                      ? 'Verified from your Google Profile.'
-                      : 'Self-declared and verified locally on this device.'
-                    : 'Required to verify adult status without tracking.'}
+              <View style={styles.dobInfo}>
+                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                  {isDobSelected ? `${formatDisplayDate(birthDate)}  (${currentAge} years)` : 'Select your date of birth'}
+                </Text>
+                <Text style={[typography.caption, { color: colors.text.muted, marginTop: 1 }]}>
+                  Calibrates circadian rhythm & recovery timing.
                 </Text>
               </View>
 
-              <Ionicons
-                name="chevron-forward"
-                size={18}
-                color={colors.text.muted}
-                style={{ marginLeft: spacing.xs }}
+              <Badge
+                label={isDobSelected ? 'Confirmed' : 'Set'}
+                variant={isDobSelected ? 'success' : 'neutral'}
               />
             </SquircleSurface>
           </PressableScale>
         </View>
 
-        {!isMinor ? (
-          <>
-            {/* Preferred Display Name Input */}
-            <View style={{ marginTop: spacing.lg }}>
-              <TextField
-                label="What should your sanctuary call you?"
-                value={name}
-                onChangeText={setName}
-                maxLength={24}
-                placeholder="Your preferred name or pseudonym"
-              />
-            </View>
-
-            {/* Health Sanctuary Selection Cards */}
-            <View style={{ marginTop: spacing.lg }}>
-              <View style={styles.sectionHeaderRow}>
-                <Text style={[typography.captionBold, { color: colors.text.secondary, letterSpacing: 0.8 }]}>
-                  SELECT YOUR HEALTH SANCTUARY
-                </Text>
-                <Text style={[typography.caption, { color: colors.text.muted }]}>
-                  Switch anytime in Settings
-                </Text>
-              </View>
-
-              <View style={styles.sanctuaryList}>
-                {SANCTUARY_OPTIONS.map((opt) => {
-                  const isSelected = selectedGender === opt.id;
-                  return (
-                    <PressableScale
-                      key={opt.id}
-                      onPress={() => handleSelectSanctuary(opt.id)}
-                      scaleTo={0.98}
-                      accessibilityRole="radio"
-                      accessibilityState={{ selected: isSelected }}
-                      accessibilityLabel={opt.title}
-                    >
-                      <SquircleSurface
-                        radius={20}
-                        fill={isSelected ? colors.surface : colors.surface1}
-                        stroke={isSelected ? colors.primary : colors.border}
-                        strokeWidth={isSelected ? 2 : 1}
-                        style={styles.sanctuaryCard}
-                      >
-                        <View style={styles.sanctuaryTopRow}>
-                          <SquircleSurface
-                            radius={14}
-                            fill={isSelected ? colors.primary : colors.surface2}
-                            style={styles.sanctuaryIconBox}
-                          >
-                            <Ionicons
-                              name={opt.icon}
-                              size={22}
-                              color={isSelected ? colors.onPrimary : colors.primary}
-                            />
-                          </SquircleSurface>
-
-                          <View style={styles.sanctuaryHeaderInfo}>
-                            <View style={styles.sanctuaryTitleRow}>
-                              <Text
-                                style={[
-                                  typography.bodyBold,
-                                  { color: isSelected ? colors.primary : colors.text.primary, fontSize: 16 },
-                                ]}
-                              >
-                                {opt.title}
-                              </Text>
-                              <Badge
-                                label={opt.badgeLabel}
-                                variant={isSelected ? 'primary' : 'neutral'}
-                              />
-                            </View>
-                            <Text
-                              style={[
-                                typography.caption,
-                                { color: colors.text.secondary, marginTop: 2, lineHeight: 17 },
-                              ]}
-                            >
-                              {opt.description}
-                            </Text>
-                          </View>
-
-                          <View style={styles.radioIndicator}>
-                            {isSelected ? (
-                              <Ionicons name="checkmark-circle" size={24} color={colors.primary} />
-                            ) : (
-                              <View
-                                style={[
-                                  styles.radioCircleUnchecked,
-                                  { borderColor: colors.border, backgroundColor: colors.surface },
-                                ]}
-                              />
-                            )}
-                          </View>
-                        </View>
-
-                        <View style={[styles.benefitDivider, { backgroundColor: isSelected ? colors.primaryAlpha : colors.border }]} />
-
-                        <View style={styles.benefitRow}>
-                          <Ionicons
-                            name="shield-outline"
-                            size={14}
-                            color={isSelected ? colors.primary : colors.text.muted}
-                          />
-                          <Text
-                            style={[
-                              typography.caption,
-                              {
-                                color: isSelected ? colors.text.primary : colors.text.muted,
-                                marginLeft: 6,
-                                flex: 1,
-                              },
-                            ]}
-                            numberOfLines={1}
-                          >
-                            {opt.benefits}
-                          </Text>
-                        </View>
-                      </SquircleSurface>
-                    </PressableScale>
-                  );
-                })}
-              </View>
-            </View>
-          </>
+        {isMinor ? (
+          <SquircleSurface radius={16} fill={colors.surface1} style={styles.minorNotice}>
+            <Ionicons name="information-circle-outline" size={20} color={colors.text.secondary} />
+            <Text style={[typography.subbody, { color: colors.text.secondary, marginLeft: 10, flex: 1 }]}>
+              Thrivefold is designed for mature wellness journeys. Please return at a later time.
+            </Text>
+          </SquircleSurface>
         ) : null}
       </ScrollView>
 
       {/* Date Picker Modal */}
       <DatePickerModal
         visible={datePickerVisible}
-        value={birthDate || '2000-01-01'}
+        value={birthDate || '1998-01-01'}
         onChange={handleDatePicked}
         onClose={() => setDatePickerVisible(false)}
-        title="Select Your Date of Birth"
+        title="Select Date of Birth"
         maxDate={new Date().toISOString().split('T')[0]}
       />
 
-      {/* Bottom Sticky Action Bar */}
+      {/* Clean Flat Footer: No Shadows, Pure Surface */}
       <View
         style={[
-          styles.bottomActionBar,
+          styles.footer,
           {
             backgroundColor: colors.background,
-            borderTopColor: colors.border,
-            paddingBottom: insets.bottom + spacing.sm,
-            paddingTop: spacing.sm,
+            paddingBottom: Math.max(insets.bottom, 16),
             paddingHorizontal: spacing.lg,
           },
         ]}
@@ -522,12 +401,12 @@ export default function ConfirmProfileScreen() {
         {!isDobSelected ? (
           <>
             <Button
-              label="Select Date of Birth to Continue"
+              label="Select Date of Birth"
               size="lg"
               onPress={() => setDatePickerVisible(true)}
             />
             <Button
-              label="Cancel and Sign Out"
+              label="Switch Account"
               variant="ghost"
               size="md"
               onPress={cancel}
@@ -535,14 +414,12 @@ export default function ConfirmProfileScreen() {
             />
           </>
         ) : isMinor ? (
-          <>
-            <Button
-              label="Thrivefold is 18+ Only — Return to Sign In"
-              variant="danger"
-              size="lg"
-              onPress={cancel}
-            />
-          </>
+          <Button
+            label="Return to Sign In"
+            variant="outline"
+            size="lg"
+            onPress={cancel}
+          />
         ) : (
           <>
             <Button
@@ -551,7 +428,7 @@ export default function ConfirmProfileScreen() {
               onPress={confirm}
             />
             <Button
-              label="Use a different Google account"
+              label="Sign out & switch account"
               variant="ghost"
               size="md"
               onPress={cancel}
@@ -566,36 +443,56 @@ export default function ConfirmProfileScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  profileHeaderCard: {
-    padding: 16,
+  flex: { flex: 1 },
+  scrollContent: {
+    flexGrow: 1,
+    paddingTop: 8,
   },
-  profileHeaderRow: {
-    flexDirection: 'row',
+  headerSection: {
     alignItems: 'center',
+    marginBottom: 20,
+    marginTop: 8,
   },
   avatarSquircle: {
-    width: 64,
-    height: 64,
+    width: 56,
+    height: 56,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
   avatarImage: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 18,
   },
-  profileHeaderTextGroup: {
-    flex: 1,
-    marginLeft: 14,
+  sectionBlock: {
+    marginBottom: 16,
   },
-  googleBadgeRow: {
+  optionsList: {
+    gap: 8,
+  },
+  optionCard: {
+    padding: 14,
+  },
+  optionRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  headerDivider: {
-    height: StyleSheet.hairlineWidth,
-    marginVertical: 14,
+  optionIconBox: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  optionContent: {
+    flex: 1,
+    marginLeft: 12,
+    marginRight: 8,
+  },
+  optionInfo: {
+    flex: 1,
+    marginLeft: 12,
+    marginRight: 8,
   },
   dobCard: {
     flexDirection: 'row',
@@ -603,78 +500,22 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   dobIconBox: {
-    width: 44,
-    height: 44,
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dobTextGroup: {
+  dobInfo: {
     flex: 1,
     marginLeft: 12,
   },
-  dobLabelRow: {
+  minorNotice: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  sanctuaryList: {
-    gap: 12,
-  },
-  sanctuaryCard: {
     padding: 14,
+    marginTop: 10,
   },
-  sanctuaryTopRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  sanctuaryIconBox: {
-    width: 42,
-    height: 42,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sanctuaryHeaderInfo: {
-    flex: 1,
-    marginLeft: 12,
-    marginRight: 8,
-  },
-  sanctuaryTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  radioIndicator: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 2,
-  },
-  radioCircleUnchecked: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 1.5,
-  },
-  benefitDivider: {
-    height: StyleSheet.hairlineWidth,
-    marginVertical: 10,
-  },
-  benefitRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  bottomActionBar: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+  footer: {
+    paddingTop: 12,
   },
 });
