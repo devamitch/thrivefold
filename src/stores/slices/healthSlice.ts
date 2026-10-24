@@ -73,6 +73,8 @@ export interface DailyCheckInRecord {
   sleepHours: number;
   symptoms: string[];
   notes?: string;
+  /** The day's chosen intensity (spec §3.4); shapes today's quests only. */
+  intensity?: 'rest' | 'light' | 'regular';
 }
 
 export interface CycleData {

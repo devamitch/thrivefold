@@ -113,6 +113,7 @@ export interface TodaySignal {
   energy: number;
   stress: number;
   sleepHours: number;
+  intensity?: 'rest' | 'light' | 'regular';
 }
 
 export function fitFor(
@@ -137,7 +138,7 @@ export function fitFor(
     reasons.push('You are active most days, so steadier quests come first.');
   }
 
-  const maxMinutes = a.routineMinutes ? (MINUTES_CAP[a.routineMinutes] ?? a.routineMinutes) : null;
+  let maxMinutes = a.routineMinutes ? (MINUTES_CAP[a.routineMinutes] ?? a.routineMinutes) : null;
   if (maxMinutes) reasons.push(`Quests stay within about ${maxMinutes} minutes.`);
 
   const families: QuestFamily[] = [];
@@ -152,7 +153,16 @@ export function fitFor(
   if (activity === 'rarely' || activity === 'some_days') families.push('movement');
   if (a.constraints.length > 0) reasons.push(`Going easy on: ${a.constraints.join(', ').toLowerCase()}.`);
 
-  if (today && (today.energy <= 3 || today.stress >= 8 || today.sleepHours < 5)) {
+  if (today?.intensity === 'rest' || today?.intensity === 'light') {
+    capacity = 'gentle';
+    families.unshift(today.intensity === 'rest' ? 'rhythm' : 'mind');
+    reasons.unshift(
+      today.intensity === 'rest'
+        ? 'You chose a rest day, so today leans on recovery and short, easy quests.'
+        : 'You asked for something light today, so today’s open quests are easier.',
+    );
+    if (today.intensity === 'rest') maxMinutes = Math.min(maxMinutes ?? 8, 8);
+  } else if (today && today.intensity !== 'regular' && (today.energy <= 3 || today.stress >= 8 || today.sleepHours < 5)) {
     capacity = 'gentle';
     families.unshift(today.stress >= 8 ? 'mind' : 'rhythm');
     reasons.unshift('Today’s check-in shows a hard day, so today’s open quests are lighter.');

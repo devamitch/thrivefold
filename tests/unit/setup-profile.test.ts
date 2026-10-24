@@ -88,3 +88,11 @@ describe('today signal', () => {
     expect(hard.reasons[0]).toMatch(/hard day/);
   });
 });
+
+test('a chosen rest day keeps quests short; choosing "my usual" overrides a rough score', () => {
+  const base = answers({ routineMinutes: 20, baseline: { ...EMPTY_BASELINE, activity: 'most_days', energy: 'good' } });
+  const rest = fitFor(base, { energy: 6, stress: 4, sleepHours: 7, intensity: 'rest' });
+  expect(rest.capacity).toBe('gentle');
+  expect(rest.maxMinutes).toBe(8);
+  expect(fitFor(base, { energy: 2, stress: 9, sleepHours: 4, intensity: 'regular' }).capacity).toBe('strong');
+});

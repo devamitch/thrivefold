@@ -10,6 +10,7 @@ import { Card } from '../../../components/ui/Card';
 import { Chip } from '../../../components/ui/Chip';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
+import type { DailyCheckInRecord } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
 import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngine';
 import { classifyLocalInput } from '../../../domain/ai/localClassifier';
@@ -28,6 +29,11 @@ const SCALES = {
 } as const;
 
 const SLEEP_PRESETS = [5, 6, 7, 8, 9];
+const INTENSITIES = [
+  { value: 'rest', label: 'Rest day' },
+  { value: 'light', label: 'Something light' },
+  { value: 'regular', label: 'My usual' },
+] as const;
 
 /** Daily check-in: four quick ratings, optional symptoms and a private note. One per day. */
 export default function CheckInScreen() {
@@ -52,6 +58,7 @@ export default function CheckInScreen() {
   const [sleep, setSleep] = useState(existing?.sleepHours ?? 7);
   const [symptoms, setSymptoms] = useState<string[]>(existing?.symptoms ?? []);
   const [note, setNote] = useState(existing?.notes ?? '');
+  const [intensity, setIntensity] = useState<DailyCheckInRecord['intensity']>(existing?.intensity);
 
   const signal = useMemo(() => (note.trim().length > 3 ? classifyLocalInput({ text: note }) : null), [note]);
 
@@ -60,7 +67,7 @@ export default function CheckInScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch {}
     updateTodayMetrics(energy, mood, stress, sleep);
-    addCheckIn({ date, energy, mood, stress, sleepHours: sleep, symptoms, notes: note.trim() || undefined });
+    addCheckIn({ date, energy, mood, stress, sleepHours: sleep, symptoms, notes: note.trim() || undefined, intensity });
     showToast({ type: 'success', title: existing ? 'Check-in updated' : 'Check-in saved', message: 'Saved on this device.' });
     router.back();
   };
@@ -98,7 +105,19 @@ export default function CheckInScreen() {
         </View>
       </Card>
 
-      <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.md, marginBottom: spacing.sm }]}>
+      <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.md, marginBottom: spacing.xs }]}>
+        How much do you want to do today?
+      </Text>
+      <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: spacing.sm }]}>
+        Optional. Today&apos;s quests follow your choice.
+      </Text>
+      <View style={styles.chips}>
+        {INTENSITIES.map((i) => (
+          <Chip key={i.value} label={i.label} selected={intensity === i.value} onPress={() => setIntensity(intensity === i.value ? undefined : i.value)} />
+        ))}
+      </View>
+
+      <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm }]}>
         Anything you noticed?
       </Text>
       <View style={styles.chips}>
