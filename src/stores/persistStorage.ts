@@ -115,3 +115,14 @@ export function wipeLocalData(): void {
     }
   }
 }
+
+/** Synchronous view of the same encrypted store, for the React Query cache persister. */
+export const syncKeyValueStorage = {
+  getItem: (key: string) => stateStorage.getItem(key) as string | null,
+  setItem: (key: string, value: string) => {
+    stateStorage.setItem(key, value);
+  },
+  removeItem: (key: string) => {
+    stateStorage.removeItem(key);
+  },
+};

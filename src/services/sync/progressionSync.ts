@@ -6,6 +6,7 @@
  */
 import { supabase } from '../supabase/supabaseClient';
 import { useRootStore } from '../../stores/useRootStore';
+import { invalidateServerProgress } from '../supabase/queries';
 
 const PERMANENT = /unknown task|unknown setup step|workout limit reached|stale game date|limit reached|account restricted|UNKNOWN_FEATURE|OWNED/i;
 
@@ -51,5 +52,6 @@ export async function flushProgressionSync(): Promise<{ sent: number; pending: n
   } finally {
     flushing = false;
   }
+  if (sent > 0) invalidateServerProgress().catch(() => undefined);
   return { sent, pending: useRootStore.getState().pendingSync.length };
 }

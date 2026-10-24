@@ -8,6 +8,7 @@ import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { useRootStore, useShallow } from '../../stores/useRootStore';
 import { currentLevelProgress } from '../../domain/game/gameCatalogService';
+import { useServerProgress } from '../../services/supabase/queries';
 import { FEATURE_UNLOCKS, ownedEmblems, unlockStatus, type LedgerEntry } from '../../domain/game/progression';
 
 const KIND_LABEL: Record<LedgerEntry['kind'], string> = {
@@ -35,8 +36,11 @@ export function ProgressionPanel() {
       setEmblem: st.setEmblem,
       showAlert: st.showAlert,
       showToast: st.showToast,
+      signedIn: Boolean(st.user && !st.user.isGuest && st.user.email),
+      pending: st.pendingSync.length,
     })),
   );
+  const server = useServerProgress(s.signedIn);
   const progress = useMemo(() => currentLevelProgress(s.xp, s.completedCheckpoints), [s.xp, s.completedCheckpoints]);
   const emblems = ownedEmblems(s.entitlements);
   const recent = useMemo(() => [...s.ledger].reverse().slice(0, 8), [s.ledger]);
@@ -83,6 +87,22 @@ export function ProgressionPanel() {
               ? `${progress.xpIntoLevel} / ${progress.xpForNext} XP to level ${progress.next.level} · ${s.xp} XP total`
               : `${s.xp} XP total`}
         </Text>
+        {s.signedIn ? (
+          <View style={[styles.row, { marginTop: spacing.sm }]}>
+            <Ionicons
+              name={s.pending > 0 ? 'cloud-upload-outline' : server.data ? 'cloud-done-outline' : 'cloud-offline-outline'}
+              size={14}
+              color={colors.text.muted}
+            />
+            <Text style={[typography.caption, { color: colors.text.muted, marginLeft: 6, flex: 1 }]}>
+              {s.pending > 0
+                ? `${s.pending} reward${s.pending === 1 ? '' : 's'} waiting to sync`
+                : server.data
+                  ? `Saved to your account: level ${server.data.level}, ${server.data.xp} XP`
+                  : 'Not synced yet'}
+            </Text>
+          </View>
+        ) : null}
       </Card>
 
       <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg }]}>Unlocks</Text>

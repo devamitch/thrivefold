@@ -1,17 +1,25 @@
-import React, { useEffect } from 'react';
-import { Stack } from 'expo-router';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { StatusBar, StyleSheet } from 'react-native';
-import { useTheme } from '../theme/useTheme';
-import { useRootStore } from '../stores/useRootStore';
+import React, { useEffect } from "react";
+import { Stack } from "expo-router";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { StatusBar, StyleSheet } from "react-native";
+import { useTheme } from "../theme/useTheme";
+import { useRootStore } from "../stores/useRootStore";
 
-import { ErrorBoundary } from '../components/ErrorBoundary';
-import { MindfulNotificationBanner } from '../components/ui/MindfulNotificationBanner';
-import { CustomAlert } from '../components/ui/CustomAlert';
+import { ErrorBoundary } from "../components/ErrorBoundary";
+import { MindfulNotificationBanner } from "../components/ui/MindfulNotificationBanner";
+import { CustomAlert } from "../components/ui/CustomAlert";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import {
+  PERSIST_MAX_AGE,
+  queryClient,
+  queryPersister,
+} from "../services/supabase/queryClient";
 
 export default function RootLayout() {
-  const resetDailyQuotaIfNewDay = useRootStore((s) => s.resetDailyQuotaIfNewDay);
+  const resetDailyQuotaIfNewDay = useRootStore(
+    (s) => s.resetDailyQuotaIfNewDay,
+  );
 
   useEffect(() => {
     resetDailyQuotaIfNewDay();
@@ -20,23 +28,31 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={styles.container}>
       <SafeAreaProvider>
-        <ErrorBoundary>
-          <ThemedStatusBar />
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              animation: 'slide_from_right',
-            }}
-          >
-            <Stack.Screen name="index" />
-            <Stack.Screen name="(public)" />
-            <Stack.Screen name="(auth)" />
-            <Stack.Screen name="(onboarding)" />
-            <Stack.Screen name="(app)" />
-          </Stack>
-          <MindfulNotificationBanner />
-          <CustomAlert />
-        </ErrorBoundary>
+        <PersistQueryClientProvider
+          client={queryClient}
+          persistOptions={{
+            persister: queryPersister,
+            maxAge: PERSIST_MAX_AGE,
+          }}
+        >
+          <ErrorBoundary>
+            <ThemedStatusBar />
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                animation: "slide_from_right",
+              }}
+            >
+              <Stack.Screen name="index" />
+              <Stack.Screen name="(public)" />
+              <Stack.Screen name="(auth)" />
+              <Stack.Screen name="(onboarding)" />
+              <Stack.Screen name="(app)" />
+            </Stack>
+            <MindfulNotificationBanner />
+            <CustomAlert />
+          </ErrorBoundary>
+        </PersistQueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
@@ -51,5 +67,11 @@ const styles = StyleSheet.create({
 /** One status bar for the whole app: dark icons on light canvases, light on dark. */
 function ThemedStatusBar() {
   const { isDark } = useTheme();
-  return <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} translucent backgroundColor="transparent" />;
+  return (
+    <StatusBar
+      barStyle={isDark ? "light-content" : "dark-content"}
+      translucent
+      backgroundColor="transparent"
+    />
+  );
 }
