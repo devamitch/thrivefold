@@ -1,4 +1,4 @@
-import { ageBandFor, ageOn, factsFromPeople, suggestedExperience } from '../../src/domain/account/googleProfile';
+import { ageBandFor, ageOn, birthDateFromPeople, factsFromPeople, suggestedExperience } from '../../src/domain/account/googleProfile';
 
 const TODAY = new Date(2026, 9, 24); // 24 Oct 2026, local time
 
@@ -36,5 +36,13 @@ describe('Google profile facts', () => {
     expect(suggestedExperience('Female')).toBe('women_health');
     expect(suggestedExperience('Male')).toBe('men_health');
     expect(suggestedExperience('Non-binary')).toBeNull();
+  });
+});
+
+describe('birth date from Google', () => {
+  test('a lone birth year is never padded into a date', () => {
+    expect(birthDateFromPeople({ birthdays: [{ date: { year: 1995 } }] })).toBeNull();
+    expect(birthDateFromPeople({ birthdays: [{ date: { year: 1995, month: 3, day: 7 } }] })).toBe('1995-03-07');
+    expect(birthDateFromPeople({})).toBeNull();
   });
 });

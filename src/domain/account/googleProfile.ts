@@ -36,10 +36,11 @@ export function birthDateFromPeople(res: GooglePeopleResponse): string | null {
   const year = birthday?.date?.year ?? null;
   const month = birthday?.date?.month ?? null;
   const day = birthday?.date?.day ?? null;
+  // Only a complete date is a birthday; a lone year is never padded into one.
   if (year && month && day) {
     return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
   }
-  return year ? `${year}-01-01` : null;
+  return null;
 }
 
 export function factsFromPeople(res: GooglePeopleResponse, today = new Date()): ProfileFacts {
