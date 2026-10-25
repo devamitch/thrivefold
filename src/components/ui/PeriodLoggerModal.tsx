@@ -207,7 +207,6 @@ export function PeriodLoggerModal({
               radius={14}
               smoothing={1}
               fill={colors.surface1}
-              stroke={colors.primary + '33'}
               strokeWidth={1}
               style={styles.datePickerTrigger}
             >
@@ -244,7 +243,6 @@ export function PeriodLoggerModal({
             radius={16}
             smoothing={1}
             fill={colors.surface1}
-            stroke={colors.border}
             strokeWidth={1}
             style={styles.ongoingCard}
           >
@@ -262,7 +260,6 @@ export function PeriodLoggerModal({
               radius={7}
               smoothing={1}
               fill={isOngoing ? colors.primary : 'transparent'}
-              stroke={isOngoing ? colors.primary : colors.text.muted}
               strokeWidth={1.5}
               style={styles.toggleBox}
             >
@@ -292,7 +289,6 @@ export function PeriodLoggerModal({
                 radius={14}
                 smoothing={1}
                 fill={colors.surface1}
-                stroke={colors.primary + '33'}
                 strokeWidth={1}
                 style={styles.datePickerTrigger}
               >
@@ -339,7 +335,6 @@ export function PeriodLoggerModal({
                     radius={16}
                     smoothing={1}
                     fill={isSelected ? opt.bg : colors.surface1}
-                    stroke={isSelected ? opt.color : colors.border}
                     strokeWidth={1}
                     style={styles.flowCard}
                   >
@@ -405,7 +400,6 @@ export function PeriodLoggerModal({
                     radius={10}
                     smoothing={1}
                     fill={isSelected ? colors.primary : colors.surface1}
-                    stroke={isSelected ? colors.primary : colors.border}
                     strokeWidth={1}
                     style={styles.painBtn}
                   >
@@ -445,7 +439,6 @@ export function PeriodLoggerModal({
                     radius={12}
                     smoothing={1}
                     fill={isSelected ? colors.primary : colors.surface1}
-                    stroke={isSelected ? colors.primary : colors.border}
                     strokeWidth={1}
                     style={styles.symptomChip}
                   >

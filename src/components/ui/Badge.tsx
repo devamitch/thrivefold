@@ -15,32 +15,25 @@ export const Badge: React.FC<BadgeProps> = ({ label, variant = 'primary', style,
 
   let bg = colors.badgeBg;
   let textCol = colors.badgeText;
-  let stroke: string | undefined = undefined;
 
   if (variant === 'success') {
     bg = colors.successSurface;
     textCol = colors.success;
-    stroke = colors.success;
   } else if (variant === 'warning') {
     bg = colors.warningSurface;
     textCol = colors.warning;
-    stroke = colors.warning;
   } else if (variant === 'info') {
     bg = colors.infoSurface;
     textCol = colors.info;
-    stroke = colors.info;
   } else if (variant === 'danger' || variant === 'error') {
     bg = colors.errorSurface ?? '#FEE2E2';
     textCol = colors.error;
-    stroke = colors.error;
   } else if (variant === 'neutral') {
     bg = colors.surface1;
     textCol = colors.text.secondary;
-    stroke = colors.border;
   } else {
     bg = colors.primaryAlpha;
     textCol = colors.primary;
-    stroke = colors.primary;
   }
 
   const textStyle: TextStyle = {
@@ -53,8 +46,6 @@ export const Badge: React.FC<BadgeProps> = ({ label, variant = 'primary', style,
       radius={8}
       smoothing={1}
       fill={bg}
-      stroke={stroke}
-      strokeWidth={0.5}
       style={[
         styles.badge,
         {

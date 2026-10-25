@@ -85,8 +85,6 @@ export const AnimatedBrandIcon = memo(function AnimatedBrandIcon({
             height: size,
             borderRadius: size / 2,
             backgroundColor: '#FDFBF7',
-            borderWidth: 1.5,
-            borderColor: 'rgba(200, 109, 81, 0.2)',
           },
         ]}
       >

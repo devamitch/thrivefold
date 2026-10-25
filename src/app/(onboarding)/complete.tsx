@@ -187,7 +187,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     borderRadius: 20,
     borderCurve: 'continuous',
-    borderWidth: 1,
     paddingVertical: 14,
     paddingHorizontal: 8,
   },

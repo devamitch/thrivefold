@@ -516,7 +516,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     borderRadius: 18,
     borderCurve: 'continuous',
-    borderWidth: 1,
   },
   toolIconTile: {
     width: 44,

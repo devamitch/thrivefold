@@ -33,9 +33,8 @@ export const Chip: React.FC<ChipProps> = ({
     }
   };
 
-  const bg = selected ? colors.primaryAlpha : colors.surface1;
-  const stroke = selected ? colors.primary : colors.border;
-  const labelColor = selected ? colors.primary : colors.text.primary;
+  const bg = selected ? colors.primary : colors.surface1;
+  const labelColor = selected ? colors.onPrimary : colors.text.primary;
 
   const labelStyle: TextStyle = {
     color: labelColor,
@@ -61,8 +60,6 @@ export const Chip: React.FC<ChipProps> = ({
         radius={14}
         smoothing={1}
         fill={bg}
-        stroke={stroke}
-        strokeWidth={1}
         style={[
           styles.surface,
           {

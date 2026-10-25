@@ -59,7 +59,6 @@ export const ContinuousAgendaView: React.FC<ContinuousAgendaViewProps> = ({
               radius={16}
               smoothing={2}
               fill={dayGroup.isToday ? colors.surface1 : colors.surface}
-              stroke={dayGroup.isToday ? colors.primary : colors.border}
               strokeWidth={1}
               style={[styles.agendaDayGroupCard, { marginBottom: 10 }]}
             >
@@ -127,7 +126,6 @@ export const ContinuousAgendaView: React.FC<ContinuousAgendaViewProps> = ({
                       radius={10}
                       smoothing={1}
                       fill="rgba(226, 178, 88, 0.15)"
-                      stroke="rgba(226, 178, 88, 0.25)"
                       strokeWidth={1}
                       style={styles.agendaMilestoneRow}
                     >
@@ -168,7 +166,6 @@ export const ContinuousAgendaView: React.FC<ContinuousAgendaViewProps> = ({
                           radius={10}
                           smoothing={1}
                           fill={isDone ? colors.surface1 : colors.surface}
-                          stroke={colors.border}
                           strokeWidth={1}
                           style={styles.agendaTaskSubRow}
                         >
@@ -183,7 +180,6 @@ export const ContinuousAgendaView: React.FC<ContinuousAgendaViewProps> = ({
                               radius={6}
                               smoothing={1}
                               fill={isDone ? colors.primary : 'transparent'}
-                              stroke={isDone ? colors.primary : colors.text.muted}
                               strokeWidth={1.5}
                               style={styles.checkboxSmall}
                             >

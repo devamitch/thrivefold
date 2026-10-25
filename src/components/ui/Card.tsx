@@ -29,7 +29,8 @@ export const Card: React.FC<CardProps> = ({
   const { colors, spacing } = useTheme();
 
   let bg = colors.surface;
-  let resolvedStroke = stroke ?? colors.border;
+  // Surfaces are separated by fill, never by a border line.
+  const resolvedStroke = stroke;
 
   if (variant === 'surface1') {
     bg = colors.surface1;
@@ -41,10 +42,8 @@ export const Card: React.FC<CardProps> = ({
     bg = colors.surfaceGlass;
   } else if (variant === 'tinted') {
     bg = colors.primaryAlpha;
-    resolvedStroke = stroke ?? colors.primary;
   } else if (variant === 'outline') {
-    bg = 'transparent';
-    resolvedStroke = stroke ?? (colors.borderStrong || colors.border);
+    bg = colors.surface1;
   }
 
   const defaultPadding = padding !== undefined ? padding : spacing.base;

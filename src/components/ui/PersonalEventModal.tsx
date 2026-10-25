@@ -234,7 +234,6 @@ export function PersonalEventModal({
                     radius={12}
                     smoothing={1}
                     fill={isSelected ? colors.primaryAlpha : colors.surface1}
-                    stroke={isSelected ? colors.primary : colors.border}
                     strokeWidth={1}
                     style={styles.categoryChip}
                   >
@@ -279,7 +278,6 @@ export function PersonalEventModal({
               radius={14}
               smoothing={1}
               fill={colors.surface1}
-              stroke={colors.primary + '33'}
               strokeWidth={1}
               style={styles.datePickerTrigger}
             >
@@ -325,7 +323,6 @@ export function PersonalEventModal({
                     radius={12}
                     smoothing={1}
                     fill={isSelected ? colors.primary : colors.surface1}
-                    stroke={isSelected ? colors.primary : colors.border}
                     strokeWidth={1}
                     style={styles.recurrencePill}
                   >
@@ -368,7 +365,6 @@ export function PersonalEventModal({
                       radius={12}
                       smoothing={1}
                       fill={isSelected ? colors.primaryAlpha : colors.surface1}
-                      stroke={isSelected ? colors.primary : colors.border}
                       strokeWidth={1}
                       style={styles.relationshipChip}
                     >

@@ -94,7 +94,6 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
                 radius={14}
                 smoothing={1}
                 fill={colors.surface1}
-                stroke={colors.border}
                 strokeWidth={1}
                 style={styles.dateNavBtn}
               >
@@ -118,7 +117,6 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
                   radius={10}
                   smoothing={1}
                   fill={colors.surface1}
-                  stroke={colors.border}
                   strokeWidth={1}
                   style={styles.todayJumpPill}
                 >
@@ -141,7 +139,6 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
                 radius={14}
                 smoothing={1}
                 fill={colors.surface1}
-                stroke={colors.border}
                 strokeWidth={1}
                 style={styles.dateNavBtn}
               >
@@ -157,7 +154,6 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
             radius={14}
             smoothing={1}
             fill={colors.surface1}
-            stroke={colors.border}
             strokeWidth={1}
             style={[styles.phaseDetailCard, { marginTop: spacing.md }]}
           >
@@ -202,7 +198,6 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
             radius={12}
             smoothing={1}
             fill="#FEF3C7"
-            stroke="#FDE68A"
             strokeWidth={1}
             style={[styles.milestoneNotice, { marginTop: spacing.sm }]}
           >
@@ -222,7 +217,6 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
                 radius={12}
                 smoothing={1}
                 fill="rgba(226, 178, 88, 0.16)"
-                stroke="rgba(226, 178, 88, 0.3)"
                 strokeWidth={1}
                 style={styles.milestoneNotice}
               >
@@ -248,7 +242,6 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
             radius={14}
             smoothing={1}
             fill="rgba(218, 119, 86, 0.12)"
-            stroke="rgba(218, 119, 86, 0.25)"
             strokeWidth={1}
             style={[styles.recordedBleedBanner, { marginTop: spacing.sm }]}
           >
@@ -272,7 +265,6 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
                   radius={8}
                   smoothing={1}
                   fill={colors.surface}
-                  stroke={colors.border}
                   strokeWidth={1}
                   style={styles.editBleedBtn}
                 >
@@ -364,7 +356,6 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
                   radius={14}
                   smoothing={1}
                   fill={isDone ? colors.surface1 : colors.surface}
-                  stroke={colors.border}
                   strokeWidth={1}
                   style={styles.agendaTaskCard}
                 >
@@ -380,7 +371,6 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
                         radius={7}
                         smoothing={1}
                         fill={isDone ? colors.primary : 'transparent'}
-                        stroke={isDone ? colors.primary : colors.text.muted}
                         strokeWidth={1.5}
                         style={styles.checkbox}
                       >

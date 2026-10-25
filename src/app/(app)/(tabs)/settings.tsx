@@ -115,7 +115,6 @@ export default function SettingsScreen() {
                       radius={10}
                       smoothing={1}
                       fill={colors.surface1}
-                      stroke={colors.border}
                       strokeWidth={1}
                       style={styles.editBtn}
                     >
@@ -228,7 +227,6 @@ export default function SettingsScreen() {
                   radius={14}
                   smoothing={1}
                   fill={isSelected ? colors.primaryAlpha : colors.surface1}
-                  stroke={isSelected ? colors.primary : colors.border}
                   strokeWidth={1}
                   style={styles.avatarOption}
                 >

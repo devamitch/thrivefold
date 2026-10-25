@@ -144,7 +144,6 @@ export function MindfulNotificationBanner() {
             radius={20}
             smoothing={0.7}
             fill={colors.surface}
-            stroke={colors.border}
             strokeWidth={1}
             style={styles.surface}
           >

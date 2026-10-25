@@ -44,8 +44,8 @@ export function TextField({
         radius={14}
         smoothing={1}
         fill={colors.surface1}
-        stroke={error ? colors.error : isFocused ? colors.primary : undefined}
-        strokeWidth={isFocused || error ? 1 : 0}
+        stroke={error ? colors.error : undefined}
+        strokeWidth={error ? 1 : 0}
         style={styles.surface}
       >
         <View style={styles.inputWrapper}>

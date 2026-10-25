@@ -64,14 +64,14 @@ function getPalette(variant: Variant, disabled: boolean, colors: Colors): Palett
     case 'danger':
       return { fill: colors.error, text: '#FFFFFF' };
     case 'outline':
-      return { fill: 'transparent', text: colors.text.primary, stroke: colors.borderStrong || colors.border };
+      return { fill: colors.surface1, text: colors.text.primary };
     case 'ghost':
       return { fill: 'transparent', text: colors.primary };
     case 'tinted':
       return { fill: colors.primaryAlpha, text: colors.primary };
     case 'secondary':
     default:
-      return { fill: colors.surface1, text: colors.text.primary, stroke: colors.border };
+      return { fill: colors.surface1, text: colors.text.primary };
   }
 }
 

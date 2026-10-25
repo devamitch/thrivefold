@@ -53,7 +53,6 @@ export function CustomAlert() {
           radius={24}
           smoothing={1}
           fill={colors.surface}
-          stroke="transparent"
           strokeWidth={0}
           style={styles.dialog}
         >

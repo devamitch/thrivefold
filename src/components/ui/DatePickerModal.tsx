@@ -114,7 +114,7 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
           accessibilityRole="button"
           accessibilityLabel={mode === 'day' ? `${MONTHS[month]} ${year}. Choose year and month` : 'Back to days'}
         >
-          <SquircleSurface radius={14} fill={colors.surface1} stroke={colors.border} strokeWidth={1} style={styles.chip}>
+          <SquircleSurface radius={14} fill={colors.surface1} style={styles.chip}>
             <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
               {mode === 'year' ? 'Choose a year' : mode === 'month' ? `${year}` : `${MONTHS[month]} ${year}`}
             </Text>
@@ -124,12 +124,12 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
         {mode === 'day' ? (
           <View style={styles.arrows}>
             <PressableScale onPress={() => shift(-1)} disabled={!canPrev} scaleTo={0.94} accessibilityRole="button" accessibilityLabel="Previous month">
-              <SquircleSurface radius={12} fill={colors.surface1} stroke={colors.border} strokeWidth={1} style={[styles.arrow, { opacity: canPrev ? 1 : 0.35 }]}>
+              <SquircleSurface radius={12} fill={colors.surface1} style={[styles.arrow, { opacity: canPrev ? 1 : 0.35 }]}>
                 <Ionicons name="chevron-back" size={18} color={colors.text.primary} />
               </SquircleSurface>
             </PressableScale>
             <PressableScale onPress={() => shift(1)} disabled={!canNext} scaleTo={0.94} accessibilityRole="button" accessibilityLabel="Next month">
-              <SquircleSurface radius={12} fill={colors.surface1} stroke={colors.border} strokeWidth={1} style={[styles.arrow, { opacity: canNext ? 1 : 0.35 }]}>
+              <SquircleSurface radius={12} fill={colors.surface1} style={[styles.arrow, { opacity: canNext ? 1 : 0.35 }]}>
                 <Ionicons name="chevron-forward" size={18} color={colors.text.primary} />
               </SquircleSurface>
             </PressableScale>
@@ -190,7 +190,7 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
                   accessibilityRole="button"
                   accessibilityState={{ selected: on, disabled: !ok }}
                 >
-                  <SquircleSurface radius={14} fill={on ? colors.primary : colors.surface1} stroke={colors.border} strokeWidth={1} style={[styles.monthPill, { opacity: ok ? 1 : 0.35 }]}>
+                  <SquircleSurface radius={14} fill={on ? colors.primary : colors.surface1} style={[styles.monthPill, { opacity: ok ? 1 : 0.35 }]}>
                     <Text style={[typography.subbodyBold, { color: on ? colors.onPrimary : colors.text.primary }]}>{m.slice(0, 3)}</Text>
                   </SquircleSurface>
                 </PressableScale>
