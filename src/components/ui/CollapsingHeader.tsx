@@ -10,6 +10,7 @@ import Animated, {
   type SharedValue,
 } from 'react-native-reanimated';
 import { useTheme } from '../../theme/useTheme';
+import { FrostedView } from './FrostedView';
 import {
   HEADER_BAR_HEIGHT,
   HEADER_BUTTON_SIZE,
@@ -125,14 +126,10 @@ export function CollapsingHeaderBar({
         },
       ]}
     >
-      <Animated.View
-        pointerEvents="none"
-        style={[
-          StyleSheet.absoluteFill,
-          { backgroundColor: colors.background },
-          barBg,
-        ]}
-      />
+      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, barBg]}>
+        <FrostedView tone="canvas" intensity={50} style={StyleSheet.absoluteFill} />
+        <SquircleSurface style={[styles.hairline, { backgroundColor: colors.borderStrong }]} />
+      </Animated.View>
 
       {/* Toolbar row with height locked to HEADER_BAR_HEIGHT */}
       <SquircleSurface style={[styles.toolbar, { paddingHorizontal: gutter }]} pointerEvents="box-none">
@@ -188,6 +185,13 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0,
     zIndex: 100,
+  },
+  hairline: {
+    bottom: 0,
+    height: StyleSheet.hairlineWidth,
+    left: 0,
+    position: 'absolute',
+    right: 0,
   },
   largeTitleWrapper: {
     marginBottom: 8,

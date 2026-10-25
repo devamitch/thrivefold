@@ -6,7 +6,7 @@ import { StyleSheet, Text } from 'react-native';
 import type { PeriodLogRecord, FlowIntensity } from '../../stores/slices/healthSlice';
 import { useRootStore } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
-import { AppBottomSheetModal } from './AppBottomSheetModal';
+import { AppBottomSheetModal, SheetFooterRow } from './AppBottomSheetModal';
 import { Button } from './Button';
 import { DatePickerModal } from './DatePickerModal';
 import { PressableScale } from './PressableScale';
@@ -181,7 +181,13 @@ export function PeriodLoggerModal({
         eyebrow="MENSTRUAL HEALTH LOG"
         title={existingRecord ? 'Edit Period Entry' : 'Log Period Bleeding'}
         maxHeight="92%"
-        contentContainerStyle={{ paddingHorizontal: spacing.base, paddingBottom: 20 }}
+        contentContainerStyle={{ paddingBottom: 12 }}
+        footer={
+          <SheetFooterRow>
+            {existingRecord ? <Button label="Delete" variant="secondary" onPress={handleDelete} /> : null}
+            <Button label={existingRecord ? 'Save changes' : 'Save period'} onPress={handleSave} />
+          </SheetFooterRow>
+        }
       >
         {/* Start Date Field */}
         <SquircleSurface style={{ marginTop: spacing.md }}>
@@ -470,22 +476,6 @@ export function PeriodLoggerModal({
           />
         </SquircleSurface>
 
-        {/* Action Buttons */}
-        <SquircleSurface style={{ marginTop: spacing.xl, gap: 10 }}>
-          <Button
-            label={existingRecord ? 'Save Changes' : 'Confirm & Save Period'}
-            onPress={handleSave}
-            size="lg"
-          />
-          {existingRecord && (
-            <Button
-              label="Delete Record"
-              variant="ghost"
-              onPress={handleDelete}
-              size="md"
-            />
-          )}
-        </SquircleSurface>
       </AppBottomSheetModal>
 
       {/* DatePicker Modals */}

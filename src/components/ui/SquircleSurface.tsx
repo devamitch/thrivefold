@@ -7,7 +7,14 @@
  * so layout behaves exactly like a normal `View`.
  */
 import { requireNativeView } from 'expo';
-import React, { memo, useCallback, useMemo, useState, type ComponentType, type ReactNode } from 'react';
+import React, {
+  memo,
+  useCallback,
+  useMemo,
+  useState,
+  type ComponentType,
+  type ReactNode,
+} from 'react';
 import {
   Platform,
   processColor,
@@ -40,6 +47,7 @@ type NativeSquircleProps = ViewProps & {
   preserveSmoothing?: boolean | null;
   shape?: SquircleShape | null;
   clipContent?: boolean | null;
+  ref?: any;
 };
 
 let NativeSquircleView: ComponentType<NativeSquircleProps> | null = null;
@@ -70,6 +78,7 @@ export interface SquircleSurfaceProps extends ViewProps {
   shape?: SquircleShape;
   /** Clips children to the corner radius. Ignored when `style.overflow` is 'visible'. */
   clipContent?: boolean;
+  ref?: React.Ref<View>;
 }
 
 export const SquircleSurface = memo(function SquircleSurface({
@@ -83,6 +92,7 @@ export const SquircleSurface = memo(function SquircleSurface({
   shape = 'squircle',
   clipContent = true,
   onLayout,
+  ref,
   ...rest
 }: SquircleSurfaceProps) {
   const { colors } = useTheme();
@@ -91,10 +101,12 @@ export const SquircleSurface = memo(function SquircleSurface({
   const handleLayout = useCallback(
     (e: LayoutChangeEvent) => {
       const { width, height } = e.nativeEvent.layout;
-      setSize((prev) => (prev.width === width && prev.height === height ? prev : { width, height }));
+      setSize((prev) =>
+        prev.width === width && prev.height === height ? prev : { width, height },
+      );
       onLayout?.(e);
     },
-    [onLayout]
+    [onLayout],
   );
 
   const flat = useMemo(() => (StyleSheet.flatten(style) ?? {}) as ViewStyle, [style]);
@@ -104,7 +116,10 @@ export const SquircleSurface = memo(function SquircleSurface({
     (typeof flat.backgroundColor === 'string' ? flat.backgroundColor : undefined) ??
     'transparent';
   const edge = stroke ? strokeWidth : 0;
-  const clip = clipContent && flat.overflow !== 'visible';
+  const painted = paint !== 'transparent' || edge > 0;
+  // Only clip when something is painted; a transparent rounded box (an unselected chip) must
+  // not start cutting off its children.
+  const clip = clipContent && painted && flat.overflow !== 'visible';
 
   // An explicit radius wins; otherwise the style's own borderRadius; otherwise square. A View
   // swapped for a SquircleSurface therefore keeps exactly the corners it had.
@@ -122,11 +137,14 @@ export const SquircleSurface = memo(function SquircleSurface({
             smoothing: shape === 'rounded' ? 0 : smoothing,
           })
         : '',
-    [edge, effectiveRadius, shape, size.height, size.width, smoothing]
+    [edge, effectiveRadius, shape, size.height, size.width, smoothing],
   );
 
   const drawn = Boolean(path);
-  const hasVisual = (paint !== 'transparent' || edge > 0) && (radius > 0 || shape !== 'squircle');
+  // Decided by shape alone, never by the fill: a chip whose fill toggles on selection must keep
+  // the same component tree, otherwise every toggle remounts its children (flicker, lost
+  // animations, re-measured text).
+  const hasVisual = radius > 0 || shape !== 'squircle';
   const viewStyle = useMemo(
     () => [
       flat,
@@ -134,18 +152,20 @@ export const SquircleSurface = memo(function SquircleSurface({
         ? drawn
           ? styles.clear
           : {
+              // Before the first layout: an ordinary rounded box, so nothing flashes square.
               backgroundColor: paint,
               borderColor: stroke,
+              borderWidth: edge,
+              borderRadius: shape === 'circle' || shape === 'pill' ? 9999 : radius,
             }
         : null,
       clip ? { borderRadius: effectiveRadius, overflow: 'hidden' as const } : null,
     ],
-    [clip, drawn, effectiveRadius, flat, hasVisual, paint, stroke]
+    [clip, drawn, edge, effectiveRadius, flat, hasVisual, paint, radius, shape, stroke],
   );
 
-  // Square corners or nothing to paint: behave exactly like a plain View (a fill still applies). No layout tracking, no extra render,
-  // and no rounded clip, so a SquircleSurface used for layout costs nothing and never cuts
-  // off its children.
+  // Square corners: behave exactly like a plain View (a fill still applies). No layout
+  // tracking, no extra render and no clip, so a SquircleSurface used for layout costs nothing.
   if (!hasVisual) {
     return (
       <View {...rest} onLayout={onLayout} style={fill ? [style, { backgroundColor: fill }] : style}>
@@ -159,8 +179,11 @@ export const SquircleSurface = memo(function SquircleSurface({
     return (
       <NativeSquircleView
         {...rest}
+        ref={ref as any}
         onLayout={handleLayout}
-        squircleBackgroundColor={paint !== 'transparent' ? (processColor(paint) as number | null) : null}
+        squircleBackgroundColor={
+          paint !== 'transparent' ? (processColor(paint) as number | null) : null
+        }
         squircleBorderColor={stroke ? (processColor(stroke) as number | null) : null}
         squircleBorderWidth={edge}
         squircleRadius={effectiveRadius}
@@ -175,8 +198,8 @@ export const SquircleSurface = memo(function SquircleSurface({
   }
 
   return (
-    <View {...rest} onLayout={handleLayout} style={viewStyle}>
-      {path && hasVisual ? (
+    <View {...rest} ref={ref} onLayout={handleLayout} style={viewStyle}>
+      {path && painted ? (
         <Svg
           pointerEvents="none"
           width={size.width}

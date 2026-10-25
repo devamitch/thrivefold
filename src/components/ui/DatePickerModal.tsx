@@ -5,7 +5,7 @@ import { ScrollView, StyleSheet, Text } from 'react-native';
 
 import { formatLocalDate, parseLocalDate } from '../../domain/calendar/universalCalendarEngine';
 import { useTheme } from '../../theme/useTheme';
-import { AppBottomSheetModal } from './AppBottomSheetModal';
+import { AppBottomSheetModal, SheetFooterRow } from './AppBottomSheetModal';
 import { Button } from './Button';
 import { PressableScale } from './PressableScale';
 import { SquircleSurface } from './SquircleSurface';
@@ -102,7 +102,34 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
       title={headline}
       subtitle={title}
       maxHeight="90%"
-      contentContainerStyle={{ paddingBottom: 16 }}
+      contentContainerStyle={{ paddingBottom: 8 }}
+      headerRight={
+        selected !== today && allowed(today) ? (
+          <PressableScale
+            onPress={() => {
+              tick();
+              const t = parseLocalDate(today);
+              setSelected(today);
+              setYear(t.getFullYear());
+              setMonth(t.getMonth());
+              setMode('day');
+            }}
+            scaleTo={0.94}
+            accessibilityRole="button"
+            accessibilityLabel="Jump to today"
+          >
+            <SquircleSurface shape="pill" fill={colors.primaryAlpha} style={styles.todayChip}>
+              <Text style={[typography.captionBold, { color: colors.primary }]}>Today</Text>
+            </SquircleSurface>
+          </PressableScale>
+        ) : null
+      }
+      footer={
+        <SheetFooterRow>
+          <Button label="Cancel" variant="secondary" onPress={onClose} />
+          <Button label="Done" onPress={() => allowed(selected) && onChange(selected)} disabled={!allowed(selected)} />
+        </SheetFooterRow>
+      }
     >
       <SquircleSurface style={[styles.nav, { marginTop: spacing.xs }]}>
         <PressableScale
@@ -227,8 +254,7 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
                     accessibilityState={{ selected: on, disabled: !ok }}
                   >
                     <SquircleSurface
-                      radius={12}
-                      smoothing={1}
+                      shape="circle"
                       fill={on ? colors.primary : ds === today ? colors.primaryAlpha : 'transparent'}
                       style={styles.dayPill}
                     >
@@ -249,23 +275,18 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
         )}
       </SquircleSurface>
 
-      <SquircleSurface style={[styles.actions, { marginTop: spacing.md }]}>
-        <Button label="Cancel" variant="ghost" onPress={onClose} style={styles.flex} />
-        <Button label="Done" onPress={() => allowed(selected) && onChange(selected)} disabled={!allowed(selected)} style={styles.flex} />
-      </SquircleSurface>
     </AppBottomSheetModal>
   );
 };
 
 const styles = StyleSheet.create({
-  actions: { flexDirection: 'row', gap: 10 },
+  todayChip: { alignItems: 'center', height: 32, justifyContent: 'center', paddingHorizontal: 14 },
   arrow: { alignItems: 'center', height: 40, justifyContent: 'center', width: 40 },
   arrows: { flexDirection: 'row', gap: 8 },
   body: { height: 300 },
   chip: { alignItems: 'center', flexDirection: 'row', gap: 6, height: 40, paddingHorizontal: 14 },
   dayCell: { alignItems: 'center', height: 44, justifyContent: 'center', width: `${100 / 7}%` },
   dayPill: { alignItems: 'center', height: 40, justifyContent: 'center', width: 40 },
-  flex: { flex: 1 },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
   monthCell: { padding: 5, width: '33.333%' },
   monthPill: { alignItems: 'center', height: 64, justifyContent: 'center' },

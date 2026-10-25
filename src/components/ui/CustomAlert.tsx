@@ -1,22 +1,46 @@
 /**
  * Thrivefold Custom Alert Dialog
- * Serene, modal confirmation dialog adapted from Neev / Setu.
+ * Serene, modal confirmation dialog adapted from Neev / Setu. The dialog scales in from 0.94 like
+ * an iOS alert; the backdrop is a scrim (a blur inside a Modal is pixelated on Android).
  */
 
-import React from 'react';
-import { Modal, Platform, StyleSheet, Text } from 'react-native';
 import { BlurView } from 'expo-blur';
+import React, { useEffect } from 'react';
+import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { useRootStore } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
 import { Button } from './Button';
-import { PressableScale } from './PressableScale';
 import { SquircleSurface } from './SquircleSurface';
+
+const IN = { duration: 260, easing: Easing.bezier(0.2, 0.9, 0.25, 1) };
 
 export function CustomAlert() {
   const { colors, typography } = useTheme();
   const alert = useRootStore((s) => s.alert);
   const hideAlert = useRootStore((s) => s.hideAlert);
+  const reduceMotion = useReducedMotion();
+  const shown = useSharedValue(0);
+
+  useEffect(() => {
+    if (alert) {
+      shown.value = 0;
+      shown.value = withTiming(1, reduceMotion ? { duration: 0 } : IN);
+    }
+  }, [alert, reduceMotion, shown]);
+
+  const backdropStyle = useAnimatedStyle(() => ({ opacity: shown.value }));
+  const dialogStyle = useAnimatedStyle(() => ({
+    opacity: shown.value,
+    transform: [{ scale: 0.94 + shown.value * 0.06 }],
+  }));
 
   if (!alert) return null;
 
@@ -31,53 +55,27 @@ export function CustomAlert() {
   };
 
   return (
-    <Modal
-      transparent
-      animationType="fade"
-      visible={Boolean(alert)}
-      onRequestClose={handleCancel}
-    >
-      <SquircleSurface style={styles.overlay}>
-        <BlurView
-          intensity={Platform.OS === 'ios' ? 25 : 10}
-          tint="light"
-          style={StyleSheet.absoluteFill}
-        />
-        <PressableScale
-          style={StyleSheet.absoluteFill}
-          scaleTo={1}
-          onPress={handleCancel}
-        />
+    <Modal transparent animationType="none" statusBarTranslucent visible onRequestClose={handleCancel}>
+      <View style={styles.overlay}>
+        <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: colors.scrim }, backdropStyle]}>
+          {Platform.OS === 'ios' ? (
+            <BlurView intensity={16} tint="systemUltraThinMaterialDark" style={StyleSheet.absoluteFill} />
+          ) : null}
+          <Pressable style={StyleSheet.absoluteFill} onPress={handleCancel} accessibilityLabel="Dismiss" />
+        </Animated.View>
 
-        <SquircleSurface
-          radius={24}
-          smoothing={1}
-          fill={colors.surface}
-          strokeWidth={0}
-          style={styles.dialog}
-        >
-          <SquircleSurface style={styles.content}>
-            <Text style={[typography.subheading, styles.title, { color: colors.text.primary }]}>
-              {alert.title}
-            </Text>
+        <Animated.View style={[styles.dialog, dialogStyle]} accessibilityViewIsModal accessibilityRole="alert">
+          <SquircleSurface radius={26} fill={colors.surface} style={styles.content}>
+            <Text style={[typography.subheading, styles.title, { color: colors.text.primary }]}>{alert.title}</Text>
             {alert.message ? (
-              <Text
-                style={[
-                  typography.body,
-                  styles.message,
-                  { color: colors.text.secondary },
-                ]}
-              >
-                {alert.message}
-              </Text>
+              <Text style={[typography.body, styles.message, { color: colors.text.secondary }]}>{alert.message}</Text>
             ) : null}
 
-            <SquircleSurface style={styles.actions}>
+            <View style={styles.actions}>
               {alert.cancelText !== null ? (
                 <Button
                   label={alert.cancelText || 'Cancel'}
-                  variant="outline"
-                  size="sm"
+                  variant="secondary"
                   style={styles.button}
                   onPress={handleCancel}
                 />
@@ -85,30 +83,27 @@ export function CustomAlert() {
               <Button
                 label={alert.confirmText || 'Confirm'}
                 variant={alert.destructive ? 'danger' : 'primary'}
-                size="sm"
                 style={styles.button}
                 onPress={handleConfirm}
               />
-            </SquircleSurface>
+            </View>
           </SquircleSurface>
-        </SquircleSurface>
-      </SquircleSurface>
+        </Animated.View>
+      </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
   overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(28, 25, 23, 0.45)',
     alignItems: 'center',
+    flex: 1,
     justifyContent: 'center',
     padding: 24,
   },
   dialog: {
+    maxWidth: 360,
     width: '100%',
-    maxWidth: 340,
-    zIndex: 10,
   },
   content: {
     padding: 22,
@@ -117,16 +112,15 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   message: {
-    marginBottom: 20,
     lineHeight: 21,
+    marginBottom: 22,
   },
   actions: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
     gap: 10,
   },
   button: {
-    minWidth: 92,
+    flex: 1,
   },
 });
 

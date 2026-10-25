@@ -13,7 +13,7 @@ import { StyleSheet, Text } from 'react-native';
 import { formatLocalDate } from '../../domain/calendar/universalCalendarEngine';
 import { useRootStore, useShallow, type PersonalCalendarEvent } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
-import { AppBottomSheetModal } from './AppBottomSheetModal';
+import { AppBottomSheetModal, SheetFooterRow } from './AppBottomSheetModal';
 import { Button } from './Button';
 import { DatePickerModal } from './DatePickerModal';
 import { PressableScale } from './PressableScale';
@@ -192,7 +192,13 @@ export function PersonalEventModal({
         eyebrow="LIFE PLANNER & REMINDERS"
         title={existingEvent ? 'Edit Milestone' : 'Add Milestone or Event'}
         maxHeight="92%"
-        contentContainerStyle={{ paddingHorizontal: spacing.base, paddingBottom: 24 }}
+        contentContainerStyle={{ paddingBottom: 12 }}
+        footer={
+          <SheetFooterRow>
+            {existingEvent ? <Button label="Delete" variant="secondary" onPress={handleDelete} /> : null}
+            <Button label={existingEvent ? 'Save changes' : 'Save'} onPress={handleSave} />
+          </SheetFooterRow>
+        }
       >
         {/* Event Title */}
         <SquircleSurface style={{ marginTop: spacing.md }}>
@@ -406,22 +412,6 @@ export function PersonalEventModal({
           />
         </SquircleSurface>
 
-        {/* Action Buttons */}
-        <SquircleSurface style={{ marginTop: spacing.xl, gap: 10 }}>
-          <Button
-            label={existingEvent ? 'Update Milestone' : 'Save Milestone'}
-            onPress={handleSave}
-            size="lg"
-          />
-          {existingEvent && (
-            <Button
-              label="Delete Event"
-              variant="ghost"
-              onPress={handleDelete}
-              size="md"
-            />
-          )}
-        </SquircleSurface>
       </AppBottomSheetModal>
 
       {/* DatePicker Modal */}

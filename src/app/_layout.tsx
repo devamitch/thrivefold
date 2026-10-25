@@ -10,6 +10,7 @@ import { useRootStore } from '../stores/useRootStore';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { MindfulNotificationBanner } from '../components/ui/MindfulNotificationBanner';
 import { CustomAlert } from '../components/ui/CustomAlert';
+import { BlurRoot } from '../components/ui/FrostedView';
 import { AnimatedSplash } from '../components/brand/AnimatedSplash';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { PERSIST_MAX_AGE, queryClient, queryPersister } from '../services/supabase/queryClient';
@@ -37,18 +38,20 @@ export default function RootLayout() {
         >
           <ErrorBoundary>
             <ThemedStatusBar />
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                animation: 'slide_from_right',
-              }}
-            >
-              <Stack.Screen name="index" />
-              <Stack.Screen name="(public)" />
-              <Stack.Screen name="(auth)" />
-              <Stack.Screen name="(onboarding)" />
-              <Stack.Screen name="(app)" />
-            </Stack>
+            <BlurRoot>
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  animation: 'slide_from_right',
+                }}
+              >
+                <Stack.Screen name="index" />
+                <Stack.Screen name="(public)" />
+                <Stack.Screen name="(auth)" />
+                <Stack.Screen name="(onboarding)" />
+                <Stack.Screen name="(app)" />
+              </Stack>
+            </BlurRoot>
             <MindfulNotificationBanner />
             <CustomAlert />
             {splash ? <AnimatedSplash onDone={() => setSplash(false)} /> : null}

@@ -12,7 +12,7 @@ import { useRootStore } from '../../../stores/useRootStore';
 import { canUseCorrespondence } from '../../../navigation/eligibility';
 import { SettingsRow } from '../../../components/ui/SettingsRow';
 import { AppHeader } from '../../../components/ui/AppHeader';
-import { AppBottomSheetModal } from '../../../components/ui/AppBottomSheetModal';
+import { AppBottomSheetModal, SheetFooterRow } from '../../../components/ui/AppBottomSheetModal';
 import { Button } from '../../../components/ui/Button';
 import { PressableScale } from '../../../components/ui/PressableScale';
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
@@ -213,6 +213,12 @@ export default function SettingsScreen() {
         title="Your name and emblem"
         subtitle="Choose your display identity and personal emblem."
         maxHeight="85%"
+        footer={
+          <SheetFooterRow>
+            <Button label="Cancel" variant="secondary" onPress={() => setIsEditingProfile(false)} />
+            <Button label="Save" onPress={handleSaveProfile} />
+          </SheetFooterRow>
+        }
         contentContainerStyle={{ paddingHorizontal: spacing.sm, paddingBottom: 24 }}
       >
         {/* Emblem Selector */}
@@ -270,20 +276,6 @@ export default function SettingsScreen() {
           />
         </SquircleSurface>
 
-        {/* Actions */}
-        <SquircleSurface style={styles.modalActionRow}>
-          <Button
-            label="Cancel"
-            variant="ghost"
-            onPress={() => setIsEditingProfile(false)}
-            style={{ flex: 1 }}
-          />
-          <Button
-            label="Save Changes"
-            onPress={handleSaveProfile}
-            style={{ flex: 1 }}
-          />
-        </SquircleSurface>
       </AppBottomSheetModal>
     </ScreenContainer>
   );

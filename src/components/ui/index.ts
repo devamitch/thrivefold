@@ -23,3 +23,4 @@ export * from './DatePickerModal';
 export * from './AnimatedTabBar';
 export * from './GuidedTimer';
 export * from './TrendBars';
+export * from './FrostedView';

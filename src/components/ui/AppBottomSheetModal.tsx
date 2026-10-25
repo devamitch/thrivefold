@@ -1,13 +1,27 @@
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import React, { useCallback, useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, ScrollView, StyleProp, StyleSheet, Text, useWindowDimensions, ViewStyle } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleProp,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+  ViewStyle,
+} from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
+  Easing,
+  interpolate,
   runOnJS,
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,8 +30,13 @@ import { useTheme } from '../../theme/useTheme';
 import { PressableScale } from './PressableScale';
 import { SquircleSurface } from './SquircleSurface';
 
-const SWIPE_CLOSE_THRESHOLD = 50;
-const SWIPE_VELOCITY_THRESHOLD = 250;
+const SWIPE_CLOSE_THRESHOLD = 64;
+const SWIPE_VELOCITY_THRESHOLD = 600;
+const SHEET_RADIUS = 30;
+// iOS sheet curves: a fast start that settles softly, no overshoot.
+const OPEN = { duration: 340, easing: Easing.bezier(0.2, 0.9, 0.25, 1) };
+const CLOSE = { duration: 220, easing: Easing.bezier(0.4, 0, 1, 1) };
+const SETTLE = { duration: 240, easing: Easing.out(Easing.cubic) };
 
 export interface AppBottomSheetModalProps {
   visible: boolean;
@@ -26,6 +45,11 @@ export interface AppBottomSheetModalProps {
   subtitle?: string;
   eyebrow?: string;
   children: React.ReactNode;
+  /**
+   * Pinned below the scrolling body, above the navigation bar: primary actions stay reachable
+   * however long the content is. Use `SheetFooterRow` for two buttons.
+   */
+  footer?: React.ReactNode;
   maxHeight?: number | `${number}%`;
   showHandle?: boolean;
   showCloseButton?: boolean;
@@ -35,15 +59,10 @@ export interface AppBottomSheetModalProps {
 }
 
 /**
- * Universal Gesture-Driven Bottom Sheet Modal for Thrivefold.
- * Traced from Neev & BlinkQuest canonical design system.
- *
- * Implements:
- * 1. UI-thread pan gesture to drag down and dismiss with spring physics.
- * 2. Animated frosted backdrop that dismisses on tap.
- * 3. Squircle top corners and centered pill handle.
- * 4. Safe-area bottom padding so buttons are never covered by navigation bars.
- * 5. Hardware back button handling on Android.
+ * The one bottom sheet (pattern from Neev). On Android the backdrop is a plain scrim: a Modal is
+ * its own window, so a blur there has nothing to blur and renders downsampled and pixelated.
+ * Drag the handle/header (or a body that does not scroll) down to dismiss; horizontal gestures
+ * inside the body are left alone.
  */
 export function AppBottomSheetModal({
   visible,
@@ -52,6 +71,7 @@ export function AppBottomSheetModal({
   subtitle,
   eyebrow,
   children,
+  footer,
   maxHeight = '90%',
   showHandle = true,
   showCloseButton = true,
@@ -62,104 +82,86 @@ export function AppBottomSheetModal({
   const { height: screenHeight } = useWindowDimensions();
   const { colors, typography } = useTheme();
   const insets = useSafeAreaInsets();
+  const reduceMotion = useReducedMotion();
 
-  // When body is taller than the sheet, it scrolls internally;
-  // dismissal moves to the handle & header zone.
+  // When the body is taller than the sheet it scrolls internally and dismissal moves to the
+  // handle and header.
   const [bodyViewportH, setBodyViewportH] = useState(0);
   const [bodyContentH, setBodyContentH] = useState(0);
   const bodyScrolls = bodyViewportH > 0 && bodyContentH > bodyViewportH + 1;
+  const [scrolled, setScrolled] = useState(false);
 
   const translateY = useSharedValue(screenHeight);
-  const backdropOpacity = useSharedValue(0);
-
-  const handleDismiss = useCallback(() => {
-    onClose();
-  }, [onClose]);
+  const sheetHeight = useSharedValue(screenHeight);
 
   const startCloseAnimation = useCallback(() => {
-    backdropOpacity.value = withTiming(0, { duration: 180 });
-    translateY.value = withTiming(screenHeight, { duration: 200 }, (finished) => {
-      if (finished) {
-        runOnJS(handleDismiss)();
-      }
-    });
-  }, [backdropOpacity, translateY, handleDismiss, screenHeight]);
+    translateY.value = withTiming(
+      sheetHeight.value + 40,
+      reduceMotion ? { duration: 0 } : CLOSE,
+      (finished) => {
+        if (finished) runOnJS(onClose)();
+      },
+    );
+  }, [onClose, reduceMotion, sheetHeight, translateY]);
 
   useEffect(() => {
     if (visible) {
+      setScrolled(false);
       translateY.value = screenHeight;
-      backdropOpacity.value = 0;
-      backdropOpacity.value = withTiming(1, { duration: 220 });
-      translateY.value = withSpring(0, { damping: 30, stiffness: 300, overshootClamping: true });
+      translateY.value = withTiming(0, reduceMotion ? { duration: 0 } : OPEN);
     }
-  }, [visible, backdropOpacity, translateY, screenHeight]);
+  }, [visible, reduceMotion, screenHeight, translateY]);
 
-  // Downward drag on body zone (when not scrolled)
-  const panGesture = Gesture.Pan()
-    .activeOffsetY(14)
-    .failOffsetX([-24, 24])
-    .enabled(!bodyScrolls)
-    .shouldCancelWhenOutside(false)
-    .onUpdate((e) => {
-      if (e.translationY > 0) {
-        translateY.value = e.translationY;
-      }
-    })
-    .onEnd((e) => {
-      if (e.translationY > SWIPE_CLOSE_THRESHOLD || e.velocityY > SWIPE_VELOCITY_THRESHOLD) {
-        runOnJS(startCloseAnimation)();
-      } else {
-        translateY.value = withSpring(0, { damping: 30, stiffness: 300, overshootClamping: true });
-      }
-    });
+  const makePan = (activeOffset: number, enabled: boolean) =>
+    Gesture.Pan()
+      .activeOffsetY(activeOffset)
+      .failOffsetX([-24, 24])
+      .enabled(enabled)
+      .shouldCancelWhenOutside(false)
+      .onUpdate((e) => {
+        // Rubber-band upward, free movement downward.
+        translateY.value = e.translationY > 0 ? e.translationY : e.translationY * 0.15;
+      })
+      .onEnd((e) => {
+        if (e.translationY > SWIPE_CLOSE_THRESHOLD || e.velocityY > SWIPE_VELOCITY_THRESHOLD) {
+          runOnJS(startCloseAnimation)();
+        } else {
+          translateY.value = withTiming(0, SETTLE);
+        }
+      });
 
-  // Handle + header always drag the sheet smoothly
-  const headerPanGesture = Gesture.Pan()
-    .activeOffsetY(6)
-    .failOffsetX([-24, 24])
-    .shouldCancelWhenOutside(false)
-    .onUpdate((e) => {
-      if (e.translationY > 0) {
-        translateY.value = e.translationY;
-      }
-    })
-    .onEnd((e) => {
-      if (e.translationY > SWIPE_CLOSE_THRESHOLD || e.velocityY > SWIPE_VELOCITY_THRESHOLD) {
-        runOnJS(startCloseAnimation)();
-      } else {
-        translateY.value = withSpring(0, { damping: 30, stiffness: 300, overshootClamping: true });
-      }
-    });
+  const bodyPan = makePan(14, !bodyScrolls);
+  const headerPan = makePan(6, true);
 
   const sheetAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],
   }));
 
   const backdropAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: backdropOpacity.value,
+    opacity: interpolate(translateY.value, [0, Math.max(1, sheetHeight.value)], [1, 0], 'clamp'),
   }));
 
   if (!visible) return null;
+
+  const bottomPad = Math.max(insets.bottom, 12) + 8;
 
   return (
     <Modal
       visible={visible}
       transparent
-      animationType="fade"
+      animationType="none"
       statusBarTranslucent
+      navigationBarTranslucent
       onRequestClose={startCloseAnimation}
-      accessibilityRole="alert"
     >
       <GestureHandlerRootView style={styles.modalRoot}>
-        {/* Animated backdrop with tap to close */}
-        <Animated.View style={[styles.backdrop, backdropAnimatedStyle]}>
-          <BlurView
-            intensity={Platform.OS === 'ios' ? 35 : 15}
-            tint="light"
-            style={StyleSheet.absoluteFill}
-          />
-          <PressableScale
-            scaleTo={1}
+        <Animated.View
+          style={[StyleSheet.absoluteFill, { backgroundColor: colors.scrim }, backdropAnimatedStyle]}
+        >
+          {Platform.OS === 'ios' ? (
+            <BlurView intensity={18} tint="systemUltraThinMaterialDark" style={StyleSheet.absoluteFill} />
+          ) : null}
+          <Pressable
             style={StyleSheet.absoluteFill}
             onPress={startCloseAnimation}
             accessibilityRole="button"
@@ -167,117 +169,124 @@ export function AppBottomSheetModal({
           />
         </Animated.View>
 
-        {/* Bottom sheet surface container with pan gesture */}
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           enabled={avoidKeyboard}
           style={styles.keyboardAvoid}
+          pointerEvents="box-none"
         >
-          <GestureDetector gesture={panGesture}>
+          <GestureDetector gesture={bodyPan}>
             <Animated.View
-              style={[
-                styles.sheetSurface,
-                {
-                  backgroundColor: colors.surface,
-                  borderTopColor: colors.border,
-                  borderLeftColor: colors.border,
-                  borderRightColor: colors.border,
-                  maxHeight,
-                  paddingBottom: Math.max(insets.bottom, 16) + 8,
-                },
-                sheetAnimatedStyle,
-              ]}
+              accessibilityViewIsModal
+              onLayout={(e) => {
+                sheetHeight.value = e.nativeEvent.layout.height;
+              }}
+              style={[styles.sheet, { maxHeight }, sheetAnimatedStyle]}
             >
-              {/* Draggable header zone with direct pan gesture */}
-              <GestureDetector gesture={headerPanGesture}>
-                <SquircleSurface style={styles.handleAndHeaderArea}>
-                  {/* Drag handle pill */}
-                  {showHandle && (
-                    <SquircleSurface style={styles.handleContainer}>
-                      <SquircleSurface style={[styles.handlePill, { backgroundColor: colors.borderStrong || colors.border }]} />
-                    </SquircleSurface>
+              <SquircleSurface
+                fill={colors.surface}
+                radius={SHEET_RADIUS}
+                style={styles.surfaceBleed}
+                pointerEvents="none"
+              />
+
+              <GestureDetector gesture={headerPan}>
+                <View style={styles.header}>
+                  {showHandle ? (
+                    <View style={styles.handleContainer}>
+                      <View style={[styles.handlePill, { backgroundColor: colors.text.muted }]} />
+                    </View>
+                  ) : (
+                    <View style={styles.handleSpacer} />
                   )}
 
-                  {/* Sheet header row */}
-                  {(Boolean(title) || Boolean(showCloseButton) || Boolean(headerRight)) && (
-                    <SquircleSurface style={styles.headerRow}>
-                      <SquircleSurface style={styles.titleColumn}>
+                  {(Boolean(title) || showCloseButton || Boolean(headerRight)) && (
+                    <View style={styles.headerRow}>
+                      <View style={styles.titleColumn}>
                         {eyebrow ? (
                           <Text
-                            style={[
-                              typography.captionBold,
-                              { color: colors.primary, marginBottom: 2, letterSpacing: 0.8 },
-                            ]}
+                            style={[typography.captionBold, { color: colors.accentText, marginBottom: 2 }]}
+                            numberOfLines={1}
                           >
                             {eyebrow}
                           </Text>
                         ) : null}
                         {title ? (
                           <Text
-                            style={[
-                              typography.heading,
-                              styles.titleText,
-                              { color: colors.text.primary },
-                            ]}
+                            style={[typography.heading, styles.titleText, { color: colors.text.primary }]}
                             numberOfLines={2}
+                            accessibilityRole="header"
                           >
                             {title}
                           </Text>
                         ) : null}
                         {subtitle ? (
-                          <Text
-                            style={[
-                              typography.caption,
-                              { color: colors.text.secondary, marginTop: 2 },
-                            ]}
-                          >
+                          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 3 }]}>
                             {subtitle}
                           </Text>
                         ) : null}
-                      </SquircleSurface>
+                      </View>
 
-                      <SquircleSurface style={styles.headerActions}>
+                      <View style={styles.headerActions}>
                         {headerRight}
                         {showCloseButton && (
                           <PressableScale
                             onPress={startCloseAnimation}
                             hitSlop={8}
                             scaleTo={0.92}
-                            style={styles.closeBtnScale}
                             accessibilityRole="button"
-                            accessibilityLabel="Close modal"
+                            accessibilityLabel="Close"
                           >
-                            <SquircleSurface
-                              radius={16}
-                              smoothing={1}
-                              fill={colors.surface2}
-                              style={styles.closeButton}
-                            >
-                              <Ionicons name="close" size={18} color={colors.text.primary} />
+                            <SquircleSurface shape="circle" fill={colors.surface2} style={styles.closeButton}>
+                              <Ionicons name="close" size={18} color={colors.text.secondary} />
                             </SquircleSurface>
                           </PressableScale>
                         )}
-                      </SquircleSurface>
-                    </SquircleSurface>
+                      </View>
+                    </View>
                   )}
-                </SquircleSurface>
+                  {scrolled ? (
+                    <View style={[styles.divider, { backgroundColor: colors.borderStrong }]} />
+                  ) : null}
+                </View>
               </GestureDetector>
 
-              {/* Sheet body */}
               <ScrollView
                 style={styles.body}
-                contentContainerStyle={contentContainerStyle}
+                contentContainerStyle={[
+                  footer ? null : { paddingBottom: bottomPad },
+                  contentContainerStyle,
+                ]}
                 scrollEnabled={bodyScrolls}
                 nestedScrollEnabled
                 keyboardShouldPersistTaps="handled"
-                showsVerticalScrollIndicator={bodyScrolls}
+                showsVerticalScrollIndicator={false}
                 overScrollMode="never"
                 bounces={false}
+                scrollEventThrottle={32}
+                onScroll={(e) => {
+                  const next = e.nativeEvent.contentOffset.y > 2;
+                  if (next !== scrolled) setScrolled(next);
+                }}
                 onLayout={(e) => setBodyViewportH(Math.round(e.nativeEvent.layout.height))}
                 onContentSizeChange={(_w, h) => setBodyContentH(Math.round(h))}
               >
                 {children}
               </ScrollView>
+
+              {footer ? (
+                <View
+                  style={[
+                    styles.footer,
+                    { paddingBottom: bottomPad },
+                    bodyScrolls
+                      ? { borderTopColor: colors.borderStrong, borderTopWidth: StyleSheet.hairlineWidth }
+                      : null,
+                  ]}
+                >
+                  {footer}
+                </View>
+              ) : null}
             </Animated.View>
           </GestureDetector>
         </KeyboardAvoidingView>
@@ -286,49 +295,61 @@ export function AppBottomSheetModal({
   );
 }
 
+/** One or two sheet actions side by side (secondary first, primary last), equal widths. */
+export function SheetFooterRow({ children }: { children: React.ReactNode }) {
+  return (
+    <View style={styles.footerRow}>
+      {React.Children.map(children, (child) => (child ? <View style={styles.footerCell}>{child}</View> : null))}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   modalRoot: {
     flex: 1,
     justifyContent: 'flex-end',
   },
-  handleAndHeaderArea: {
-    width: '100%',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(20, 18, 16, 0.45)',
-  },
   keyboardAvoid: {
+    flex: 1,
     justifyContent: 'flex-end',
     width: '100%',
   },
-  sheetSurface: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    borderTopWidth: 1,
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    overflow: 'hidden',
-    paddingHorizontal: 20,
+  sheet: {
     width: '100%',
+  },
+  // The squircle runs past the bottom edge so only the top corners round and an upward drag
+  // never shows a gap under the sheet.
+  surfaceBleed: {
+    bottom: -SHEET_RADIUS * 2,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+  },
+  header: {
+    paddingHorizontal: 20,
   },
   handleContainer: {
     alignItems: 'center',
-    height: 24,
+    height: 22,
     justifyContent: 'center',
     width: '100%',
   },
+  handleSpacer: {
+    height: 14,
+  },
   handlePill: {
-    borderRadius: 2.5,
+    borderRadius: 3,
     height: 5,
-    width: 38,
+    opacity: 0.35,
+    width: 40,
   },
   headerRow: {
-    alignItems: 'center',
+    alignItems: 'flex-start',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 12,
-    marginTop: 4,
+    paddingBottom: 12,
+    paddingTop: 6,
   },
   titleColumn: {
     flex: 1,
@@ -342,19 +363,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
   },
-  closeBtnScale: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   closeButton: {
     alignItems: 'center',
     height: 34,
     justifyContent: 'center',
     width: 34,
   },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    marginHorizontal: -20,
+  },
+  // Inset on the scroll view itself, so a caller's contentContainerStyle padding adds to it.
   body: {
     flexShrink: 1,
+    paddingHorizontal: 20,
     width: '100%',
+  },
+  footer: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+  },
+  footerRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  footerCell: {
+    flex: 1,
   },
 });
 
