@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { AppState, StyleSheet, View } from 'react-native';
-import { Redirect, Stack, usePathname } from 'expo-router';
+import { Redirect, Stack, usePathname, useRouter, type Href } from 'expo-router';
+import { restorableRoute } from '../../navigation/restore';
 
 import { useRootStore } from '../../stores/useRootStore';
 import { flushProgressionSync } from '../../services/sync/progressionSync';
@@ -25,6 +26,23 @@ function runSummaryQueue() {
 
 export default function AppLayout() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  // Reopen the screen the person left recently, once per launch, on top of Home (Back works).
+  // Read before this launch's navigation overwrites it; nothing on the screen is replayed.
+  const resumeRef = React.useRef<string | null | undefined>(undefined);
+  if (resumeRef.current === undefined) {
+    const s = useRootStore.getState();
+    const r = restorableRoute(s.lastActiveRoute, s.lastActiveAt);
+    resumeRef.current = r && !['/today', '/progress', '/settings'].includes(r) ? r : null;
+  }
+  useEffect(() => {
+    const r = resumeRef.current;
+    if (!r) return;
+    resumeRef.current = null;
+    const t = setTimeout(() => router.push(r as Href), 50);
+    return () => clearTimeout(t);
+  }, [router]);
   const isAuthenticated = useRootStore((s) => s.isAuthenticated);
   const ensureDailyQuests = useRootStore((s) => s.ensureDailyQuests);
   const isOnboarded = useRootStore((s) => s.isOnboarded);

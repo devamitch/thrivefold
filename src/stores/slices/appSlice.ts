@@ -93,6 +93,7 @@ export interface AppSlice {
   alert: AlertOptions | null;
   /** Restores previous active screen on forceful app restart */
   lastActiveRoute: string | null;
+  lastActiveAt: string | null;
   lastActiveParams?: Record<string, string>;
   navigationHistory: string[];
   lastScrollPositions: Record<string, number>;
@@ -155,6 +156,7 @@ export const createAppSlice: StateCreator<
   toasts: [],
   alert: null,
   lastActiveRoute: null,
+  lastActiveAt: null,
   lastActiveParams: {},
   navigationHistory: [],
   lastScrollPositions: {},
@@ -164,6 +166,7 @@ export const createAppSlice: StateCreator<
   recordNavigation: (route) =>
     set((state) => ({
       lastActiveRoute: route,
+      lastActiveAt: new Date().toISOString(),
       navigationHistory: [...state.navigationHistory.slice(-49), route],
     })),
   setLastScrollPosition: (screenKey, offsetY) =>

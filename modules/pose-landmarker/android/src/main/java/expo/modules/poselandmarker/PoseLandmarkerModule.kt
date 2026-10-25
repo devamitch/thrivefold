@@ -21,7 +21,7 @@ class PoseLandmarkerModule : Module() {
     Function("modelVersion") { PoseCameraView.MODEL_VERSION }
 
     View(PoseCameraView::class) {
-      Events("onPose", "onPoseError")
+      Events("onPose", "onPoseError", "onPoseReady")
       Prop("active") { view: PoseCameraView, active: Boolean -> view.setActive(active) }
       Prop("facing") { view: PoseCameraView, facing: String -> view.setFacing(facing) }
       Prop("face") { view: PoseCameraView, on: Boolean -> view.setFace(on) }

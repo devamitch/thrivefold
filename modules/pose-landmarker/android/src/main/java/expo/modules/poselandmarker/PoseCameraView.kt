@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.os.SystemClock
+import android.util.Log
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
@@ -44,7 +45,9 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
     const val MODEL_VERSION = "mediapipe-pose_landmarker_lite-float16-v1"
     const val FACE_ASSET = "face_landmarker.task"
     const val HAND_ASSET = "hand_landmarker.task"
-    private const val MIN_EMIT_INTERVAL_MS = 66L
+    /** ~30 results a second: every result the model produces on a mid-range phone. */
+    private const val MIN_EMIT_INTERVAL_MS = 30L
+    private const val TAG = "PoseCamera"
     /** Face and hand results older than this are dropped rather than drawn in the wrong place. */
     private const val STALE_MS = 500L
 
@@ -76,24 +79,30 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
 
   private val onPose by EventDispatcher()
   private val onPoseError by EventDispatcher()
+  private val onPoseReady by EventDispatcher()
 
   private val previewView = PreviewView(context).also {
     it.scaleType = PreviewView.ScaleType.FILL_CENTER
-    // TextureView-backed preview: clips to rounded corners and animates with the call layout.
-    it.implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+    // SurfaceView-backed preview: composited by the system, so camera frames never pass through
+    // the app's own rendering (the TextureView mode cost a lot of frame time and CPU that pose
+    // inference needs). It doesn't clip to rounded corners; the JS overlay draws a corner mask.
+    it.implementationMode = PreviewView.ImplementationMode.PERFORMANCE
     addView(it, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
   }
   private var executor: ExecutorService? = null
-  private var landmarker: PoseLandmarker? = null
+  @Volatile private var landmarker: PoseLandmarker? = null
   private var cameraProvider: ProcessCameraProvider? = null
   private var active = false
   private var frontFacing = true
   private var lastEmit = 0L
+  /** An inference is running; camera frames that arrive meanwhile are dropped before any work. */
+  @Volatile private var inFlight = false
+  @Volatile private var inFlightSince = 0L
   private var usingGpu = false
   private var faceOn = false
   private var handsOn = false
-  private var faceLandmarker: FaceLandmarker? = null
-  private var handLandmarker: HandLandmarker? = null
+  @Volatile private var faceLandmarker: FaceLandmarker? = null
+  @Volatile private var handLandmarker: HandLandmarker? = null
   private var frameCount = 0L
   @Volatile private var latestFace: List<Double> = emptyList()
   @Volatile private var latestFaceAt = 0L
@@ -117,7 +126,7 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
       faceLandmarker = null
       latestFace = emptyList()
     } else if (active) {
-      faceLandmarker = createFace()
+      executor?.execute { if (faceOn && faceLandmarker == null) faceLandmarker = createFace() }
     }
   }
 
@@ -130,7 +139,7 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
       handLandmarker = null
       latestHands = emptyList()
     } else if (active) {
-      handLandmarker = createHands()
+      executor?.execute { if (handsOn && handLandmarker == null) handLandmarker = createHands() }
     }
   }
 
@@ -220,20 +229,28 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
       onPoseError(mapOf("code" to "no_activity", "message" to "Camera needs a visible screen"))
       return
     }
-    // GPU inference is several times faster where supported; fall back to CPU otherwise.
-    landmarker = try {
-      createLandmarker(Delegate.GPU).also { usingGpu = true }
-    } catch (_: Exception) {
-      try {
+    val exec = Executors.newSingleThreadExecutor().also { executor = it }
+    // Models load on the analysis thread, never the main thread (loading three models with GPU
+    // set-up froze the app for seconds). The preview starts at once; frames that arrive before
+    // the models are ready are simply skipped.
+    exec.execute {
+      // CPU: on a Moto G71 the GPU delegate loaded but returned no body with a person clearly
+      // in frame. The lite model at 640x480 runs ~30-40 ms on CPU, fast enough for 25+ fps.
+      val pose = try {
         createLandmarker(Delegate.CPU).also { usingGpu = false }
       } catch (e: Exception) {
-        onPoseError(mapOf("code" to "model_unavailable", "message" to (e.message ?: "Pose model could not load")))
-        return
+        post { onPoseError(mapOf("code" to "model_unavailable", "message" to (e.message ?: "Pose model could not load"))) }
+        null
       }
+      if (!active) {
+        pose?.close()
+        return@execute
+      }
+      landmarker = pose
+      if (faceOn) faceLandmarker = createFace()
+      if (handsOn) handLandmarker = createHands()
+      if (pose != null) post { onPoseReady(mapOf("delegate" to if (usingGpu) "gpu" else "cpu")) }
     }
-    if (faceOn) faceLandmarker = createFace()
-    if (handsOn) handLandmarker = createHands()
-    val exec = Executors.newSingleThreadExecutor().also { executor = it }
     val future = ProcessCameraProvider.getInstance(context)
     future.addListener({
       try {
@@ -259,6 +276,8 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
         val selector = if (frontFacing) CameraSelector.DEFAULT_FRONT_CAMERA else CameraSelector.DEFAULT_BACK_CAMERA
         provider.unbindAll()
         provider.bindToLifecycle(owner, selector, preview, analysis)
+        // Diagnostics: the overlay is only aligned if both streams show the same field of view.
+        Log.i(TAG, "preview=${preview.resolutionInfo?.resolution} crop=${preview.resolutionInfo?.cropRect} analysis=${analysis.resolutionInfo?.resolution} crop=${analysis.resolutionInfo?.cropRect} rotation=${analysis.resolutionInfo?.rotationDegrees}")
       } catch (e: Exception) {
         onPoseError(mapOf("code" to "camera_unavailable", "message" to (e.message ?: "Camera could not start")))
       }
@@ -283,6 +302,7 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
           landmarker = try { createLandmarker(Delegate.CPU) } catch (_: Exception) { null }
           old?.close()
         } else {
+          inFlight = false
           post { onPoseError(mapOf("code" to "inference_error", "message" to (e.message ?: ""))) }
         }
       }
@@ -292,7 +312,9 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
 
   private fun analyse(image: ImageProxy) {
     val model = landmarker
-    if (model == null) {
+    // The model would drop this frame anyway while busy, but only after we had paid for the
+    // bitmap conversion and rotation (and the garbage they leave). Skip it up front.
+    if (model == null || (inFlight && SystemClock.uptimeMillis() - inFlightSince < 500L)) {
       image.close()
       return
     }
@@ -308,6 +330,8 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
       frameH = upright.height
       val ts = SystemClock.uptimeMillis()
       val mp = BitmapImageBuilder(upright).build()
+      inFlight = true
+      inFlightSince = ts
       model.detectAsync(mp, ts)
       // Face and hands share the remaining budget: alternate frames when both are on.
       frameCount++
@@ -322,26 +346,36 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
     }
   }
 
+  private var emitted = 0L
+
   private fun emit(result: PoseLandmarkerResult) {
+    inFlight = false
     val now = SystemClock.uptimeMillis()
+    // Diagnostics (no image data): how often results arrive and whether a body is in them.
+    if (++emitted % 30L == 0L) {
+      val nose = result.landmarks().firstOrNull()?.firstOrNull()
+      Log.i(TAG, "result #$emitted landmarks=${result.landmarks().firstOrNull()?.size ?: 0} gpu=$usingGpu latencyMs=${now - result.timestampMs()} frame=${frameW}x$frameH nose=${nose?.x()},${nose?.y()}")
+    }
     if (now - lastEmit < MIN_EMIT_INTERVAL_MS) return
     lastEmit = now
     val pose = result.landmarks().firstOrNull()
-    val landmarks = pose?.map { lm ->
-      mapOf(
-        "x" to lm.x().toDouble(),
-        "y" to lm.y().toDouble(),
-        "z" to lm.z().toDouble(),
-        "visibility" to lm.visibility().orElse(0f).toDouble(),
-      )
-    } ?: emptyList()
+    // One flat array [x, y, z, visibility] * 33: far cheaper to hand to JS than 33 objects.
+    val points = if (pose == null) DoubleArray(0) else DoubleArray(pose.size * 4).also { out ->
+      for (i in pose.indices) {
+        val lm = pose[i]
+        out[i * 4] = lm.x().toDouble()
+        out[i * 4 + 1] = lm.y().toDouble()
+        out[i * 4 + 2] = lm.z().toDouble()
+        out[i * 4 + 3] = lm.visibility().orElse(0f).toDouble()
+      }
+    }
     val face = if (faceOn && now - latestFaceAt < STALE_MS) latestFace else emptyList()
     val hands = if (handsOn && now - latestHandsAt < STALE_MS) latestHands else emptyList()
     post {
       onPose(
         mapOf(
           "timestamp" to result.timestampMs(),
-          "landmarks" to landmarks,
+          "points" to points,
           "frameWidth" to frameW,
           "frameHeight" to frameH,
           "face" to face,
@@ -357,14 +391,27 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
     } catch (_: Exception) {
     }
     cameraProvider = null
-    executor?.shutdown()
-    executor = null
-    landmarker?.close()
+    // Close the models on the analysis thread, after any frame in flight, never under it.
+    val pose = landmarker
+    val face = faceLandmarker
+    val hands = handLandmarker
     landmarker = null
-    faceLandmarker?.close()
     faceLandmarker = null
-    handLandmarker?.close()
     handLandmarker = null
+    val exec = executor
+    executor = null
+    if (exec != null) {
+      exec.execute {
+        pose?.close()
+        face?.close()
+        hands?.close()
+      }
+      exec.shutdown()
+    } else {
+      pose?.close()
+      face?.close()
+      hands?.close()
+    }
   }
 
   fun release() {

@@ -7,11 +7,14 @@ import {
   PoseCameraView,
   poseLandmarkerAvailable,
   poseModelVersion,
+  landmarksOf,
   type PoseFrame,
 } from 'pose-landmarker';
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   BackHandler,
+  InteractionManager,
   PermissionsAndroid,
   Platform,
   ScrollView,
@@ -122,20 +125,27 @@ export default function CoachScreen() {
   // Landmarks go straight to the overlay through shared values; React only hears about
   // whether someone is in view, so the screen doesn't re-render for every camera frame.
   const [hasPerson, setHasPerson] = useState(false);
+  /** Models finished loading in the background; until then the stage says "Starting camera". */
+  const [trackingReady, setTrackingReady] = useState(false);
+  /** The tutorial WebView mounts after the start-up work settles, not at the same moment. */
+  const [videoMounted, setVideoMounted] = useState(false);
+  const countdownArmed = useRef(false);
   const feedPoints = useSharedValue<number[]>([]);
   const feedW = useSharedValue(0);
   const feedH = useSharedValue(0);
   const feedFace = useSharedValue<number[]>([]);
   const feedHands = useSharedValue<number[]>([]);
+  const feedSeq = useSharedValue(0);
   const feed = useRef({
     points: feedPoints,
     frameW: feedW,
     frameH: feedH,
     face: feedFace,
     hands: feedHands,
+    seq: feedSeq,
   }).current;
   /** Body only, or body plus face (eyes, irises, brows, lips) and hands. */
-  const [fullTracking, setFullTracking] = useState(true);
+  const [fullTracking, setFullTracking] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [done, setDone] = useState<DoneSummary | null>(null);
   /** 3-2-1 before each set; reps are not counted until it reaches 0. */
@@ -406,7 +416,8 @@ export default function CoachScreen() {
 
   const handlePose = useCallback(
     (e: { nativeEvent: PoseFrame }) => {
-      const { landmarks, frameWidth, frameHeight, timestamp } = e.nativeEvent;
+      const { frameWidth, frameHeight, timestamp } = e.nativeEvent;
+      const landmarks = landmarksOf(e.nativeEvent.points);
       const now = Date.now();
       const flat = new Array(landmarks.length * 3);
       for (let i = 0; i < landmarks.length; i++) {
@@ -417,6 +428,7 @@ export default function CoachScreen() {
       feed.frameW.value = frameWidth;
       feed.frameH.value = frameHeight;
       feed.points.value = flat;
+      feed.seq.value = feed.seq.value + 1;
       feed.face.value = e.nativeEvent.face ?? [];
       feed.hands.value = (e.nativeEvent.hands ?? []).flat();
       const seen = landmarks.length > 0;
@@ -500,6 +512,7 @@ export default function CoachScreen() {
   const poseHandler = useRef(handlePose);
   poseHandler.current = handlePose;
   const onPose = useCallback((e: { nativeEvent: PoseFrame }) => poseHandler.current(e), []);
+  const onPoseReady = useCallback(() => setTrackingReady(true), []);
   const onPoseError = useCallback(
     (e: { nativeEvent: { message: string } }) =>
       setCameraError(e.nativeEvent.message || 'The camera stopped.'),
@@ -530,14 +543,37 @@ export default function CoachScreen() {
       );
     }
     setCameraOn(allowed);
+    setTrackingReady(false);
     startedAt.current = new Date().toISOString();
     setPhase('live');
     showControls();
     say(
       `${exercise?.name ?? 'Get ready'}. ${item?.target ?? ''} ${movementForExercise(item?.exerciseId ?? '')?.kind === 'hold' ? 'seconds' : 'reps'}.`,
     );
-    setTimeout(() => setCountdown(3), 1600);
+    // Without the camera, count in after a moment. With it, the effect below counts in once
+    // tracking is live and the person is in frame (or after 8 s regardless).
+    countdownArmed.current = true;
+    if (!allowed) {
+      countdownArmed.current = false;
+      setTimeout(() => setCountdown(3), 1600);
+    } else {
+      setTimeout(() => {
+        if (countdownArmed.current) {
+          countdownArmed.current = false;
+          setCountdown(3);
+        }
+      }, 8000);
+    }
+    InteractionManager.runAfterInteractions(() => setTimeout(() => setVideoMounted(true), 400));
   };
+
+  // Count in automatically as soon as the camera can see you.
+  useEffect(() => {
+    if (countdownArmed.current && trackingReady && hasPerson) {
+      countdownArmed.current = false;
+      setCountdown(3);
+    }
+  }, [trackingReady, hasPerson]);
 
   const confirmEnd = useCallback(() => {
     useRootStore.getState().showAlert({
@@ -770,7 +806,11 @@ export default function CoachScreen() {
   const nextItem = rest > 0 ? (setIdx === 0 ? plan.items[itemIdx] : item) : null;
 
   // Every exercise has a tutorial in the app: the verified video, or YouTube search for it.
-  const videoTile = (
+  const videoTile = !videoMounted ? (
+    <View style={[StyleSheet.absoluteFill, styles.center, { backgroundColor: colors.callBackground }]}>
+      <ActivityIndicator color={colors.callMuted} />
+    </View>
+  ) : (
     <TutorialVideo
       key={item.exerciseId}
       ref={player}
@@ -790,6 +830,7 @@ export default function CoachScreen() {
         face={fullTracking}
         hands={fullTracking}
         onPose={onPose}
+        onPoseReady={onPoseReady}
         onPoseError={onPoseError}
       />
     ) : (
@@ -928,7 +969,10 @@ export default function CoachScreen() {
               />
             </PressableScale>
             <PressableScale
-              onPress={() => setFacing((f) => (f === 'front' ? 'back' : 'front'))}
+              onPress={() => {
+                setTrackingReady(false);
+                setFacing((f) => (f === 'front' ? 'back' : 'front'));
+              }}
               accessibilityRole="button"
               accessibilityLabel="Flip camera"
               hitSlop={8}
@@ -1268,6 +1312,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 36,
   },
+  startingCam: { alignItems: 'center', alignSelf: 'center', borderRadius: 999, flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 10, position: 'absolute', top: '45%' },
   stageTop: {
     alignItems: 'center',
     flexDirection: 'row',

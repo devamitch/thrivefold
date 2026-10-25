@@ -5,7 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useRef, useState } from 'react';
 import { PermissionsAndroid, Platform, StyleSheet, Text, View } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
-import { PoseCameraView, poseLandmarkerAvailable, poseModelVersion, type PoseFrame } from 'pose-landmarker';
+import { landmarksOf, PoseCameraView, poseLandmarkerAvailable, poseModelVersion, type PoseFrame } from 'pose-landmarker';
 
 import { AppHeader } from '../../../components/ui/AppHeader';
 import { PoseOverlay } from '../../../components/workout/PoseOverlay';
@@ -62,7 +62,8 @@ export default function PoseCheckScreen() {
   const feedH = useSharedValue(0);
   const feedFace = useSharedValue<number[]>([]);
   const feedHands = useSharedValue<number[]>([]);
-  const feed = useRef({ points: feedPoints, frameW: feedW, frameH: feedH, face: feedFace, hands: feedHands }).current;
+  const feedSeq = useSharedValue(0);
+  const feed = useRef({ points: feedPoints, frameW: feedW, frameH: feedH, face: feedFace, hands: feedHands, seq: feedSeq }).current;
   const lastUi = useRef(0);
   const [tile, setTile] = useState({ width: 0, height: 0 });
   const reps = useRef<RepState>(initialRepState());
@@ -88,8 +89,8 @@ export default function PoseCheckScreen() {
   const onPose = useCallback(
     (e: { nativeEvent: PoseFrame }) => {
       const before = reps.current.reps;
-      reps.current = stepReps(movement, reps.current, e.nativeEvent.landmarks, e.nativeEvent.timestamp);
-      const lm = e.nativeEvent.landmarks;
+      const lm = landmarksOf(e.nativeEvent.points);
+      reps.current = stepReps(movement, reps.current, lm, e.nativeEvent.timestamp);
       const flat = new Array(lm.length * 3);
       for (let i = 0; i < lm.length; i++) {
         flat[i * 3] = lm[i].x;
@@ -99,6 +100,7 @@ export default function PoseCheckScreen() {
       feed.frameW.value = e.nativeEvent.frameWidth;
       feed.frameH.value = e.nativeEvent.frameHeight;
       feed.points.value = flat;
+      feed.seq.value = feed.seq.value + 1;
       feed.face.value = e.nativeEvent.face ?? [];
       feed.hands.value = (e.nativeEvent.hands ?? []).flat();
       const counted = reps.current.reps > before;

@@ -11,8 +11,8 @@ export interface PoseLandmark {
 
 export interface PoseFrame {
   timestamp: number;
-  /** 33 MediaPipe pose landmarks, normalized to the frame; empty when nobody is in view. */
-  landmarks: PoseLandmark[];
+  /** Flat [x, y, z, visibility] * 33, normalised to the frame; empty when nobody is in view. */
+  points: number[];
   /** Size of the analysed (upright, mirrored for the front camera) frame, for overlay mapping. */
   frameWidth: number;
   frameHeight: number;
@@ -20,6 +20,16 @@ export interface PoseFrame {
   face?: number[];
   /** Up to two hands, each flat [x, y] * 21 (MediaPipe hand order); empty when off. */
   hands?: number[][];
+}
+
+/** The flat `points` array as landmark objects (for rep counting). */
+export function landmarksOf(points: number[] | undefined): PoseLandmark[] {
+  if (!points || points.length < 4) return [];
+  const out: PoseLandmark[] = new Array(points.length / 4);
+  for (let i = 0; i < out.length; i++) {
+    out[i] = { x: points[i * 4], y: points[i * 4 + 1], z: points[i * 4 + 2], visibility: points[i * 4 + 3] };
+  }
+  return out;
 }
 
 /** Slices of `face`, by point count, in the order the native view sends them. */
@@ -51,6 +61,8 @@ export interface PoseCameraViewProps extends ViewProps {
   hands?: boolean;
   onPose?: (event: NativeSyntheticEvent<PoseFrame>) => void;
   onPoseError?: (event: NativeSyntheticEvent<{ code: string; message: string }>) => void;
+  /** Models are loaded (in the background) and tracking is live. */
+  onPoseReady?: (event: NativeSyntheticEvent<{ delegate: 'gpu' | 'cpu' }>) => void;
 }
 
 interface PoseLandmarkerNative {

@@ -1,6 +1,7 @@
-import { Redirect } from 'expo-router';
+import { Redirect, type Href } from 'expo-router';
 
 import { ONBOARDING_STEPS, type OnboardingStep } from '../components/onboarding/OnboardingScaffold';
+import { restorableRoute } from '../navigation/restore';
 import { useRootStore } from '../stores/useRootStore';
 
 /**
@@ -13,6 +14,7 @@ export default function BootstrapResolver() {
   const isOnboarded = useRootStore((s) => s.isOnboarded);
   const step = useRootStore((s) => s.onboardingStep);
   const lastActiveRoute = useRootStore((s) => s.lastActiveRoute);
+  const lastActiveAt = useRootStore((s) => s.lastActiveAt);
 
   if (!isAuthenticated) return <Redirect href="/(auth)/sign-in" />;
   if (!isOnboarded) {
@@ -22,14 +24,10 @@ export default function BootstrapResolver() {
     return <Redirect href={`/(onboarding)/${resume}`} />;
   }
 
-  // Restore previous screen if user closed app forcefully while on an active screen
-  if (
-    lastActiveRoute &&
-    typeof lastActiveRoute === 'string' &&
-    lastActiveRoute.startsWith('/(app)') &&
-    !lastActiveRoute.includes('complete')
-  ) {
-    return <Redirect href={lastActiveRoute as any} />;
+  // A recent screen is reopened by the app layout on top of Home, so Back still works.
+  const resume = restorableRoute(lastActiveRoute, lastActiveAt);
+  if (resume && ['/today', '/progress', '/settings'].includes(resume)) {
+    return <Redirect href={`/(app)/(tabs)${resume}` as Href} />;
   }
 
   return <Redirect href="/(app)/(tabs)" />;
