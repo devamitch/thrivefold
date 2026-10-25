@@ -102,11 +102,7 @@ export function AppBottomSheetModal({
       translateY.value = screenHeight;
       backdropOpacity.value = 0;
       backdropOpacity.value = withTiming(1, { duration: 220 });
-      translateY.value = withSpring(0, {
-        damping: 26,
-        stiffness: 240,
-        mass: 0.8,
-      });
+      translateY.value = withSpring(0, { damping: 30, stiffness: 300, overshootClamping: true });
     }
   }, [visible, backdropOpacity, translateY, screenHeight]);
 
@@ -125,7 +121,7 @@ export function AppBottomSheetModal({
       if (e.translationY > SWIPE_CLOSE_THRESHOLD || e.velocityY > SWIPE_VELOCITY_THRESHOLD) {
         runOnJS(startCloseAnimation)();
       } else {
-        translateY.value = withSpring(0, { damping: 24, stiffness: 260 });
+        translateY.value = withSpring(0, { damping: 30, stiffness: 300, overshootClamping: true });
       }
     });
 
@@ -143,7 +139,7 @@ export function AppBottomSheetModal({
       if (e.translationY > SWIPE_CLOSE_THRESHOLD || e.velocityY > SWIPE_VELOCITY_THRESHOLD) {
         runOnJS(startCloseAnimation)();
       } else {
-        translateY.value = withSpring(0, { damping: 24, stiffness: 260 });
+        translateY.value = withSpring(0, { damping: 30, stiffness: 300, overshootClamping: true });
       }
     });
 
