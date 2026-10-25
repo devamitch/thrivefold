@@ -19,7 +19,12 @@ import { currentLevelProgress } from '../../../domain/game/gameCatalogService';
 import { questFamily, type QuestFamily } from '../../../domain/game/progression';
 import { SETUP_REWARDS } from '../../../domain/game/setupProfile';
 import { DAY_PART_LABEL, dayPartAt, splitByTime } from '../../../domain/game/timeOfDay';
-import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngine';
+import { formatLocalDate, generateDayAgenda, type CalendarEvent } from '../../../domain/calendar/universalCalendarEngine';
+import { useAgendaSources } from '../../../hooks/useAgendaSources';
+import { routeForEvent } from '../../../navigation/eventRoutes';
+import { TodayHero } from '../../../components/home/TodayHero';
+import { WeekGlance } from '../../../components/home/WeekGlance';
+import { SettingsRow } from '../../../components/ui/SettingsRow';
 import type { Quest } from '../../../stores/slices/questSlice';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import type { ProductExperience } from '../../../theme/tokens';
@@ -46,13 +51,20 @@ const TOOLS: Record<ProductExperience, Tool[]> = {
   ],
 };
 const SHARED_TOOLS: Tool[] = [
+  { icon: 'restaurant-outline', label: 'Food', route: '/(app)/health/nutrition' },
   { icon: 'moon-outline', label: 'Sleep', route: '/(app)/health/sleep' },
   { icon: 'book-outline', label: 'Journal', route: '/(app)/journal' },
-  { icon: 'analytics-outline', label: 'Patterns', route: '/(app)/ai' },
-  { icon: 'school-outline', label: 'Learn', route: '/(app)/learn' },
-  { icon: 'restaurant-outline', label: 'Food', route: '/(app)/health/nutrition' },
-  { icon: 'grid-outline', label: 'All health', route: '/(app)/health' },
 ];
+
+const EVENT_ICON: Partial<Record<CalendarEvent['kind'], keyof typeof Ionicons.glyphMap>> = {
+  exercise: 'barbell-outline',
+  habit: 'restaurant-outline',
+  personal_event: 'calendar-outline',
+  health_appointment: 'medkit-outline',
+  period: 'water-outline',
+  medication_reminder: 'medical-outline',
+  holiday: 'flag-outline',
+};
 
 const FAMILY_META: Record<QuestFamily, { label: string; icon: keyof typeof Ionicons.glyphMap }> = {
   movement: { label: 'Movement', icon: 'walk-outline' },
@@ -95,6 +107,7 @@ export default function HomeScreen() {
     })),
   );
 
+  const agendaSources = useAgendaSources();
   const [filter, setFilter] = useState<'all' | QuestFamily>('all');
   const [openQuest, setOpenQuest] = useState<string | null>(null);
 
@@ -163,6 +176,9 @@ export default function HomeScreen() {
     heart ? { label: 'Avg heart rate', value: `${Math.round(heart.value)} bpm` } : null,
   ].filter((t): t is { label: string; value: string } => t !== null);
   const setupOpen = SETUP_REWARDS.length - s.setupClaimed;
+  const alsoToday = generateDayAgenda(today(), { experience, cycleData: s.cycleData, ...agendaSources }).filter(
+    (e) => !['task', 'cycle_phase'].includes(e.kind) && !e.id.startsWith('checkin_'),
+  );
 
   const enter = (i: number) => (reduceMotion ? undefined : FadeIn.duration(180));
 
@@ -174,67 +190,33 @@ export default function HomeScreen() {
           title={name ? `${greeting()}, ${name}` : greeting()}
           subtitle={subtitle}
           rightAction={
-            <View style={styles.headerActions}>
-              <HeaderIconButton icon="menu-outline" label="Open menu" onPress={() => useRootStore.getState().setDrawerOpen(true)} />
-              <HeaderIconButton icon="calendar-outline" label="Calendar" onPress={() => router.push('/(app)/calendar')} />
-              <HeaderIconButton icon="person-outline" label="You" onPress={() => router.push('/(app)/(tabs)/settings')} />
-            </View>
+            <HeaderIconButton icon="menu-outline" label="Open menu" onPress={() => useRootStore.getState().setDrawerOpen(true)} />
           }
         />
       }
       scrollMode="shell-scroll-view"
     >
-      {/* Today's check-in */}
       <Animated.View entering={enter(0)}>
-        <Card style={{ padding: spacing.base }}>
-          {todaysCheckIn ? (
-            <>
-              <View style={styles.rowBetween}>
-                <Text style={[typography.subheading, { color: colors.text.primary }]}>Today</Text>
-                <Pressable onPress={() => router.push('/(app)/check-in')} hitSlop={10} accessibilityRole="button">
-                  <Text style={[typography.subbodyBold, { color: colors.primary }]}>Update</Text>
-                </Pressable>
-              </View>
-              <View style={[styles.metrics, { marginTop: spacing.sm }]}>
-                {(
-                  [
-                    ['Energy', `${todaysCheckIn.energy}`],
-                    ['Mood', `${todaysCheckIn.mood}`],
-                    ['Stress', `${todaysCheckIn.stress}`],
-                    ['Sleep', `${todaysCheckIn.sleepHours}h`],
-                  ] as const
-                ).map(([label, value]) => (
-                  <View key={label} style={[styles.metric, { backgroundColor: colors.surface1 }]}>
-                    <Text style={[typography.subheading, { color: colors.text.primary }]}>{value}</Text>
-                    <Text style={[typography.caption, { color: colors.text.muted }]}>{label}</Text>
-                  </View>
-                ))}
-              </View>
-              {topInsight ? (
-                <Pressable
-                  onPress={() => router.push('/(app)/ai')}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Your pattern: ${topInsight.title}`}
-                  style={[styles.insight, { borderTopColor: colors.border }]}
-                >
-                  <Ionicons name="analytics-outline" size={18} color={colors.primary} />
-                  <Text style={[typography.subbody, styles.flex, { color: colors.text.primary, marginLeft: 8 }]} numberOfLines={2}>
-                    {topInsight.title}
-                  </Text>
-                  <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
-                </Pressable>
-              ) : null}
-            </>
-          ) : (
-            <>
-              <Text style={[typography.subheading, { color: colors.text.primary }]}>How are you today?</Text>
-              <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>
-                Energy, mood, stress and sleep. It takes a minute and shapes today&apos;s suggestions.
-              </Text>
-              <Button label="Check in" onPress={() => router.push('/(app)/check-in')} style={{ marginTop: spacing.md }} />
-            </>
-          )}
-        </Card>
+        <TodayHero
+          done={done}
+          total={active}
+          points={s.dailyPoints}
+          target={s.dailyPointsTarget}
+          level={progress.level}
+          xpToNext={progress.next ? Math.max(0, progress.xpForNext - progress.xpIntoLevel) : null}
+          checkIn={todaysCheckIn ?? null}
+          onCheckIn={() => router.push('/(app)/check-in')}
+          onRoadmap={() => router.push('/(app)/roadmap' as Href)}
+        />
+        {topInsight ? (
+          <SettingsRow
+            icon="analytics-outline"
+            title={topInsight.title}
+            subtitle="A pattern from your check-ins"
+            onPress={() => router.push('/(app)/ai')}
+          />
+        ) : null}
+        <WeekGlance onOpen={() => router.push('/(app)/calendar')} />
       </Animated.View>
 
       <HomeGuide />
@@ -289,21 +271,10 @@ export default function HomeScreen() {
       {/* Quests */}
       <Animated.View entering={enter(2)}>
         <View style={[styles.sectionHeader, { marginTop: spacing.lg }]}>
-          <Text style={[typography.subheading, { color: colors.text.primary }]}>Today&apos;s quests</Text>
-          <Text style={[typography.captionBold, { color: s.dailyGoalReached ? colors.success : colors.text.secondary }]}>
-            {s.dailyPoints} / {s.dailyPointsTarget} pts
-          </Text>
-        </View>
-        <View style={[styles.track, { backgroundColor: colors.surface1 }]}>
-          <View
-            style={[
-              styles.fill,
-              {
-                backgroundColor: s.dailyGoalReached ? colors.success : colors.primary,
-                width: `${Math.min(100, (s.dailyPoints / Math.max(1, s.dailyPointsTarget)) * 100)}%`,
-              },
-            ]}
-          />
+          <Text style={[typography.subheading, { color: colors.text.primary }]}>Today&apos;s plan</Text>
+          <Pressable onPress={() => router.push('/(app)/calendar')} hitSlop={10} accessibilityRole="button">
+            <Text style={[typography.subbodyBold, { color: colors.primary }]}>Calendar</Text>
+          </Pressable>
         </View>
 
         {families.length > 1 ? (
@@ -351,6 +322,23 @@ export default function HomeScreen() {
             </>
           )}
         </View>
+        {alsoToday.length > 0 ? (
+          <>
+            <Text style={[typography.label, styles.groupLabel, { color: colors.text.muted }]}>Also today</Text>
+            {alsoToday.map((e) => (
+              <SettingsRow
+                key={e.id}
+                icon={EVENT_ICON[e.kind] ?? 'calendar-outline'}
+                title={e.title}
+                subtitle={[e.startTime, e.description].filter(Boolean).join(' · ')}
+                onPress={() => {
+                  const route = routeForEvent(e);
+                  router.push((route ?? '/(app)/calendar') as Href);
+                }}
+              />
+            ))}
+          </>
+        ) : null}
       </Animated.View>
 
       {/* Experience focus */}
@@ -381,28 +369,13 @@ export default function HomeScreen() {
           />
         )}
 
-        <Card onPress={() => router.push('/(app)/roadmap' as Href)} style={{ padding: spacing.base, marginTop: spacing.sm }}>
-          <View style={styles.rowBetween}>
-            <View style={[styles.iconTile, { backgroundColor: colors.primaryAlpha }]}>
-              <Ionicons name="trending-up-outline" size={20} color={colors.primary} />
-            </View>
-            <View style={[styles.flex, { marginLeft: 12 }]}>
-              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Level {progress.level}</Text>
-              <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                {progress.next ? `${Math.max(0, progress.xpForNext - progress.xpIntoLevel)} XP to level ${progress.next.level}` : `${s.xp} XP`}
-                {` · ${s.diamonds} diamonds`}
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
-          </View>
-        </Card>
       </Animated.View>
 
       {/* Tools */}
       <Animated.View entering={enter(4)}>
         <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm }]}>Tools</Text>
         <View style={styles.grid}>
-          {[...TOOLS[experience], ...SHARED_TOOLS].map((t) => (
+          {[...TOOLS[experience], ...SHARED_TOOLS].slice(0, 6).map((t) => (
             <PressableScale
               key={t.label}
               onPress={() => router.push(t.route)}
@@ -410,8 +383,10 @@ export default function HomeScreen() {
               accessibilityLabel={t.label}
               style={[styles.tool, { backgroundColor: colors.surface }]}
             >
-              <Ionicons name={t.icon} size={22} color={colors.primary} />
-              <Text style={[typography.subbodyBold, { color: colors.text.primary, marginTop: 8 }]}>{t.label}</Text>
+              <Ionicons name={t.icon} size={20} color={colors.primary} />
+              <Text style={[typography.captionBold, { color: colors.text.primary, marginTop: 6 }]} numberOfLines={1}>
+                {t.label}
+              </Text>
             </PressableScale>
           ))}
         </View>
@@ -491,17 +466,13 @@ function FocusCard({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  headerActions: { alignItems: 'center', flexDirection: 'row', gap: 8 },
   rowBetween: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   metrics: { flexDirection: 'row', gap: 8 },
   groupLabel: { marginBottom: 6, marginTop: 10 },
   metric: { alignItems: 'center', borderRadius: 14, flex: 1, paddingVertical: 10 },
-  insight: { alignItems: 'center', flexDirection: 'row', marginTop: 12, minHeight: 48, paddingTop: 8 },
-  track: { height: 6, borderRadius: 3, overflow: 'hidden' },
-  fill: { height: '100%', borderRadius: 3 },
   chips: { gap: 8 },
   iconTile: { alignItems: 'center', borderRadius: 12, height: 40, justifyContent: 'center', width: 40 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  tool: { borderCurve: 'continuous', borderRadius: 18, flexBasis: '47%', flexGrow: 1, padding: 16 },
+  tool: { alignItems: 'center', borderCurve: 'continuous', borderRadius: 18, flexBasis: '30%', flexGrow: 1, paddingVertical: 14 },
 });

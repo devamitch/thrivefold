@@ -27,6 +27,9 @@ export interface ThemeColors {
   };
   primary: string;
   onPrimary: string;
+  /** Secondary text and quiet fills on a primary-coloured hero. */
+  onPrimaryMuted: string;
+  onPrimarySurface: string;
   primaryAlpha: string;
   primaryGradient: readonly [string, string, ...string[]];
   accent: string;
@@ -87,6 +90,8 @@ function palette(r: Recipe): ThemeColors {
     text: { primary: inkPrimary, secondary: inkSecondary, muted: inkMuted, inverse: dark ? background : '#FFFFFF' },
     primary: r.primary,
     onPrimary: r.onPrimary,
+    onPrimaryMuted: alpha(r.onPrimary, 0.74),
+    onPrimarySurface: alpha(r.onPrimary, dark ? 0.16 : 0.14),
     primaryAlpha: alpha(r.primary, dark ? 0.18 : 0.1),
     primaryGradient: r.gradient,
     accent: r.accent,
