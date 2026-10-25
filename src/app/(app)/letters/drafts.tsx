@@ -1,6 +1,6 @@
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import React from 'react';
-import { Text, StyleSheet, ScrollView } from 'react-native';
+import { Text, StyleSheet, ScrollView, View } from 'react-native';
 import { Link, type Href } from 'expo-router';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
@@ -23,12 +23,12 @@ export default function LetterDraftsScreen() {
         {drafts.length > 0 ? (
           drafts.map((draft) => (
             <Card key={draft.id} style={{ marginBottom: spacing.md, padding: spacing.lg }}>
-              <SquircleSurface style={styles.headerRow}>
+              <View style={styles.headerRow}>
                 <Badge label="Saved Draft" variant="neutral" />
                 <Text style={[typography.caption, { color: colors.text.muted }]}>
                   {new Date(draft.createdAt).toLocaleDateString()}
                 </Text>
-              </SquircleSurface>
+              </View>
 
               <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 8 }]}>
                 {draft.chipIds.length} Curated Cards Selected

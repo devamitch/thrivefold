@@ -1,6 +1,6 @@
 import { SquircleSurface } from '../../../../components/ui/SquircleSurface';
 import React from 'react';
-import { Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import { Link, useRouter, type Href } from 'expo-router';
 
@@ -28,15 +28,15 @@ export default function MenHealthScreen() {
 
   return (
     <ScreenContainer header={<AppHeader title="Men's Health" subtitle="Strength, recovery and health basics" showBack />} scrollMode="shell-scroll-view">
-      <SquircleSurface style={{ paddingBottom: spacing.xxl }}>
+      <View style={{ paddingBottom: spacing.xxl }}>
         <Card style={{ marginBottom: spacing.md, padding: spacing.lg }}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>Today</Text>
           {todays ? (
-            <SquircleSurface style={[styles.statusRow, { marginTop: spacing.sm }]}>
+            <View style={[styles.statusRow, { marginTop: spacing.sm }]}>
               <Stat label="Energy" value={`${todays.energy}/10`} />
               <Stat label="Stress" value={`${todays.stress}/10`} />
               <Stat label="Sleep" value={`${todays.sleepHours}h`} />
-            </SquircleSurface>
+            </View>
           ) : (
             <>
               <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>
@@ -55,21 +55,21 @@ export default function MenHealthScreen() {
         </Card>
 
         <Card style={{ marginBottom: spacing.md, padding: spacing.base }}>
-          <SquircleSurface style={styles.imageWrap}>
+          <View style={styles.imageWrap}>
             <Image source={require('../../../../../assets/illustrations/workout-strength.jpg')} style={styles.cardImage} contentFit="cover" />
-          </SquircleSurface>
+          </View>
           <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 14 }]}>Strength training</Text>
           <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>
             {week} workout{week === 1 ? '' : 's'} this week
             {last ? ` · last: ${planById(last.planId)?.title ?? 'workout'}` : ''}
           </Text>
-          <SquircleSurface style={[styles.actions, { marginTop: spacing.md }]}>
+          <View style={[styles.actions, { marginTop: spacing.md }]}>
             <Button label="Home basics" size="sm" onPress={() => openPlan('home_beginner')} />
             <Button label="Gym A" size="sm" variant="outline" onPress={() => openPlan('gym_full_a')} />
             <Link href={'/(app)/health/exercise' as Href} asChild>
               <Button label="All plans" size="sm" variant="ghost" />
             </Link>
-          </SquircleSurface>
+          </View>
           <Link href={'/(app)/health/pose-check' as Href} asChild>
             <Button
               label="Count squats with the camera"
@@ -81,17 +81,17 @@ export default function MenHealthScreen() {
         </Card>
 
         <Card style={{ marginBottom: spacing.md, padding: spacing.base }}>
-          <SquircleSurface style={styles.imageWrap}>
+          <View style={styles.imageWrap}>
             <Image source={require('../../../../../assets/illustrations/workout-mobility.jpg')} style={styles.cardImage} contentFit="cover" />
-          </SquircleSurface>
+          </View>
           <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 14 }]}>Mobility and recovery</Text>
           <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>
             A ten-minute desk reset, or an easy walk and stretch on rest days.
           </Text>
-          <SquircleSurface style={[styles.actions, { marginTop: spacing.md }]}>
+          <View style={[styles.actions, { marginTop: spacing.md }]}>
             <Button label="Desk reset" size="sm" variant="outline" onPress={() => openPlan('desk_reset')} />
             <Button label="Recovery day" size="sm" variant="outline" onPress={() => openPlan('recovery_walk')} />
-          </SquircleSurface>
+          </View>
         </Card>
 
         <Card style={{ marginBottom: spacing.md, padding: spacing.lg }}>
@@ -100,14 +100,14 @@ export default function MenHealthScreen() {
             Short reads on handling work frustration, listening well and saying what you need. Write things down
             privately on this device.
           </Text>
-          <SquircleSurface style={[styles.actions, { marginTop: spacing.md }]}>
+          <View style={[styles.actions, { marginTop: spacing.md }]}>
             <Link href={'/(app)/learn' as Href} asChild>
               <Button label="Read" size="sm" variant="outline" />
             </Link>
             <Link href={'/(app)/journal/new' as Href} asChild>
               <Button label="Write a private note" size="sm" variant="ghost" />
             </Link>
-          </SquircleSurface>
+          </View>
         </Card>
 
         <Card style={{ marginBottom: spacing.md, padding: spacing.lg }}>
@@ -115,16 +115,16 @@ export default function MenHealthScreen() {
           <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>
             Reproductive, urinary and pelvic-floor information, and when to see a clinician.
           </Text>
-          <SquircleSurface style={[styles.actions, { marginTop: spacing.md }]}>
+          <View style={[styles.actions, { marginTop: spacing.md }]}>
             <Link href={'/(app)/health/reproductive' as Href} asChild>
               <Button label="Reproductive health" size="sm" variant="outline" />
             </Link>
             <Link href={'/(app)/health/pelvic-floor' as Href} asChild>
               <Button label="Pelvic floor" size="sm" variant="ghost" />
             </Link>
-          </SquircleSurface>
+          </View>
         </Card>
-      </SquircleSurface>
+      </View>
     </ScreenContainer>
   );
 }
@@ -132,10 +132,10 @@ export default function MenHealthScreen() {
 function Stat({ label, value }: { label: string; value: string }) {
   const { colors, typography } = useTheme();
   return (
-    <SquircleSurface style={styles.statusItem}>
+    <View style={styles.statusItem}>
       <Text style={[typography.caption, { color: colors.text.muted }]}>{label}</Text>
       <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{value}</Text>
-    </SquircleSurface>
+    </View>
   );
 }
 

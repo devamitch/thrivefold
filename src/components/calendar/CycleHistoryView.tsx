@@ -1,6 +1,6 @@
 import { SquircleSurface } from '../ui/SquircleSurface';
 import React from 'react';
-import { Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useTheme } from '../../theme/useTheme';
@@ -40,57 +40,57 @@ export const CycleHistoryView: React.FC<CycleHistoryViewProps> = ({
     <Card style={{ marginTop: spacing.md, padding: spacing.md }}>
       {isWomen ? (
         <>
-          <SquircleSurface style={styles.rowBetween}>
-            <SquircleSurface style={{ flex: 1, paddingRight: 8 }}>
+          <View style={styles.rowBetween}>
+            <View style={{ flex: 1, paddingRight: 8 }}>
               <Text style={[typography.subheading, { color: colors.text.primary }]}>
                 Period & Cycle History
               </Text>
               <Text style={[typography.caption, { color: colors.text.muted, marginTop: 1 }]}>
                 Audited bleed records and calculated interval metrics
               </Text>
-            </SquircleSurface>
+            </View>
             <Button
               label="+ Log Period"
               size="sm"
               variant="primary"
               onPress={onLogPeriod}
             />
-          </SquircleSurface>
+          </View>
 
           {/* Advanced Metrics Summary */}
           {advancedCycleMetrics && (
-            <SquircleSurface style={[styles.statsRow, { backgroundColor: colors.surface1, marginTop: spacing.md }]}>
-              <SquircleSurface style={styles.statItem}>
+            <View style={[styles.statsRow, { backgroundColor: colors.surface1, marginTop: spacing.md }]}>
+              <View style={styles.statItem}>
                 <Text style={[typography.caption, { color: colors.text.muted }]}>Average</Text>
                 <Text style={[typography.subheading, { color: colors.primary, marginTop: 2 }]}>
                   {advancedCycleMetrics.averageCycleLength}d
                 </Text>
-              </SquircleSurface>
-              <SquircleSurface style={styles.statItem}>
+              </View>
+              <View style={styles.statItem}>
                 <Text style={[typography.caption, { color: colors.text.muted }]}>Median</Text>
                 <Text style={[typography.subheading, { color: colors.primary, marginTop: 2 }]}>
                   {advancedCycleMetrics.medianCycleLength}d
                 </Text>
-              </SquircleSurface>
-              <SquircleSurface style={styles.statItem}>
+              </View>
+              <View style={styles.statItem}>
                 <Text style={[typography.caption, { color: colors.text.muted }]}>Variability</Text>
                 <Text style={[typography.subheading, { color: colors.primary, marginTop: 2 }]}>
                   ±{advancedCycleMetrics.cycleLengthVariabilityDays}d
                 </Text>
-              </SquircleSurface>
-              <SquircleSurface style={styles.statItem}>
+              </View>
+              <View style={styles.statItem}>
                 <Text style={[typography.caption, { color: colors.text.muted }]}>Recorded</Text>
                 <Text style={[typography.subheading, { color: colors.primary, marginTop: 2 }]}>
                   {cycleData?.periodHistory?.length ?? 0}
                 </Text>
-              </SquircleSurface>
-            </SquircleSurface>
+              </View>
+            </View>
           )}
 
           {/* Historical Records List */}
-          <SquircleSurface style={{ marginTop: spacing.md }}>
+          <View style={{ marginTop: spacing.md }}>
             {(!cycleData?.periodHistory || cycleData.periodHistory.length === 0) ? (
-              <SquircleSurface style={{ alignItems: 'center', padding: spacing.lg }}>
+              <View style={{ alignItems: 'center', padding: spacing.lg }}>
                 <Ionicons name="water-outline" size={32} color={colors.text.muted} />
                 <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 8 }]}>
                   No Period Records Logged Yet
@@ -98,15 +98,15 @@ export const CycleHistoryView: React.FC<CycleHistoryViewProps> = ({
                 <Text style={[typography.caption, { color: colors.text.secondary, textAlign: 'center', marginTop: 4 }]}>
                   Tap "+ Log Period" to record bleeding dates, flow intensity, and pain ratings.
                 </Text>
-              </SquircleSurface>
+              </View>
             ) : (
               cycleData.periodHistory.map((rec) => (
-                <SquircleSurface
+                <View
                   key={rec.id}
                   style={[styles.historyRecordCard, { backgroundColor: colors.surface1, marginTop: 8 }]}
                 >
-                  <SquircleSurface style={styles.rowBetween}>
-                    <SquircleSurface style={{ flex: 1, paddingRight: 8 }}>
+                  <View style={styles.rowBetween}>
+                    <View style={{ flex: 1, paddingRight: 8 }}>
                       <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
                         {rec.startDate} {rec.isOngoing ? '— Ongoing' : rec.endDate ? `— ${rec.endDate}` : ''}
                       </Text>
@@ -118,8 +118,8 @@ export const CycleHistoryView: React.FC<CycleHistoryViewProps> = ({
                           "{rec.notes}"
                         </Text>
                       ) : null}
-                    </SquircleSurface>
-                    <SquircleSurface style={{ flexDirection: 'row', gap: 6 }}>
+                    </View>
+                    <View style={{ flexDirection: 'row', gap: 6 }}>
                       <PressableScale
                         onPress={() => onEditPeriod(rec)}
                         scaleTo={0.9}
@@ -138,35 +138,35 @@ export const CycleHistoryView: React.FC<CycleHistoryViewProps> = ({
                       >
                         <Ionicons name="trash-outline" size={14} color={colors.error} />
                       </PressableScale>
-                    </SquircleSurface>
-                  </SquircleSurface>
-                </SquircleSurface>
+                    </View>
+                  </View>
+                </View>
               ))
             )}
-          </SquircleSurface>
+          </View>
         </>
       ) : (
         <>
-          <SquircleSurface style={styles.rowBetween}>
-            <SquircleSurface style={{ flex: 1, paddingRight: 8 }}>
+          <View style={styles.rowBetween}>
+            <View style={{ flex: 1, paddingRight: 8 }}>
               <Text style={[typography.subheading, { color: colors.text.primary }]}>
                 Milestones & Anniversaries
               </Text>
               <Text style={[typography.caption, { color: colors.text.muted, marginTop: 1 }]}>
                 Birthdays, family celebrations, and financial reminders
               </Text>
-            </SquircleSurface>
+            </View>
             <Button
               label="+ Add Event"
               size="sm"
               variant="primary"
               onPress={onAddMilestone}
             />
-          </SquircleSurface>
+          </View>
 
-          <SquircleSurface style={{ marginTop: spacing.md }}>
+          <View style={{ marginTop: spacing.md }}>
             {(!personalEvents || personalEvents.length === 0) ? (
-              <SquircleSurface style={{ alignItems: 'center', padding: spacing.lg }}>
+              <View style={{ alignItems: 'center', padding: spacing.lg }}>
                 <Ionicons name="calendar-outline" size={32} color={colors.text.muted} />
                 <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 8 }]}>
                   No Milestones Added Yet
@@ -174,21 +174,21 @@ export const CycleHistoryView: React.FC<CycleHistoryViewProps> = ({
                 <Text style={[typography.caption, { color: colors.text.secondary, textAlign: 'center', marginTop: 4 }]}>
                   Save your spouse's birthday, anniversary, or financial deadlines.
                 </Text>
-              </SquircleSurface>
+              </View>
             ) : (
               personalEvents.map((pe) => (
-                <SquircleSurface
+                <View
                   key={pe.id}
                   style={[styles.historyRecordCard, { backgroundColor: colors.surface1, marginTop: 8 }]}
                 >
-                  <SquircleSurface style={styles.rowBetween}>
-                    <SquircleSurface style={{ flex: 1, paddingRight: 8 }}>
-                      <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <View style={styles.rowBetween}>
+                    <View style={{ flex: 1, paddingRight: 8 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         <Ionicons name="gift-outline" size={14} color={colors.primary} style={{ marginRight: 6 }} />
                         <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
                           {pe.title}
                         </Text>
-                      </SquircleSurface>
+                      </View>
                       <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
                         {pe.date} • {pe.category.toUpperCase()} {pe.recurrence === 'yearly' ? '(Annual)' : ''}
                         {pe.relationship ? ` • ${pe.relationship}` : ''}
@@ -198,8 +198,8 @@ export const CycleHistoryView: React.FC<CycleHistoryViewProps> = ({
                           {pe.notes}
                         </Text>
                       ) : null}
-                    </SquircleSurface>
-                    <SquircleSurface style={{ flexDirection: 'row', gap: 6 }}>
+                    </View>
+                    <View style={{ flexDirection: 'row', gap: 6 }}>
                       <PressableScale
                         onPress={() => onEditMilestone(pe)}
                         scaleTo={0.9}
@@ -218,12 +218,12 @@ export const CycleHistoryView: React.FC<CycleHistoryViewProps> = ({
                       >
                         <Ionicons name="trash-outline" size={14} color={colors.error} />
                       </PressableScale>
-                    </SquircleSurface>
-                  </SquircleSurface>
-                </SquircleSurface>
+                    </View>
+                  </View>
+                </View>
               ))
             )}
-          </SquircleSurface>
+          </View>
         </>
       )}
     </Card>

@@ -1,6 +1,6 @@
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import React from 'react';
-import { Text, StyleSheet, ScrollView } from 'react-native';
+import { Text, StyleSheet, ScrollView, View } from 'react-native';
 import { Link, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
@@ -87,15 +87,15 @@ export default function NutritionScreen() {
       >
         {/* Active Dietary Preference Banner */}
         <Card variant="tinted" style={{ marginBottom: spacing.md, padding: spacing.lg }}>
-          <SquircleSurface style={styles.headerRow}>
-            <SquircleSurface>
+          <View style={styles.headerRow}>
+            <View>
               <Text style={[typography.captionBold, { color: colors.text.muted }]}>DIETARY RHYTHM</Text>
               <Text style={[typography.heading, { color: colors.primary, marginTop: 2 }]}>
                 {activeDiet ? `${activeDiet} Focus` : 'Balanced Whole Foods'}
               </Text>
-            </SquircleSurface>
+            </View>
             <Badge label={activeDiet ? 'Personalized' : 'Flexible'} variant="primary" />
-          </SquircleSurface>
+          </View>
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 6 }]}>
             {activeDiet
               ? `Meal ideas below follow your ${activeDiet} preference.`
@@ -115,17 +115,17 @@ export default function NutritionScreen() {
 
         {/* Hydration Tracker */}
         <Card style={{ marginBottom: spacing.md, padding: spacing.lg }}>
-          <SquircleSurface style={styles.headerRow}>
-            <SquircleSurface>
+          <View style={styles.headerRow}>
+            <View>
               <Text style={[typography.captionBold, { color: colors.text.muted }]}>DAILY HYDRATION</Text>
               <Text style={[typography.heading, { color: colors.primary, marginTop: 2 }]}>
                 {waterGlasses * 250} ml / 2000 ml
               </Text>
-            </SquircleSurface>
+            </View>
             <Badge label={`${waterGlasses}/8 Glasses`} variant="primary" />
-          </SquircleSurface>
+          </View>
 
-          <SquircleSurface style={styles.glassRow}>
+          <View style={styles.glassRow}>
             {Array.from({ length: 8 }).map((_, i) => (
               <Ionicons
                 key={i}
@@ -135,9 +135,9 @@ export default function NutritionScreen() {
                 style={{ marginHorizontal: 4 }}
               />
             ))}
-          </SquircleSurface>
+          </View>
 
-          <SquircleSurface style={styles.stepperRow}>
+          <View style={styles.stepperRow}>
             <Button
               label="- Glass"
               variant="outline"
@@ -151,32 +151,32 @@ export default function NutritionScreen() {
               onPress={() => setWaterGlasses((v) => Math.min(12, v + 1))}
               style={{ marginLeft: 12 }}
             />
-          </SquircleSurface>
+          </View>
         </Card>
 
         {/* Meal Logs */}
-        <SquircleSurface style={styles.headerRow}>
+        <View style={styles.headerRow}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>
             {activeDiet ? `${activeDiet} meal ideas` : 'Meal ideas'}
           </Text>
-        </SquircleSurface>
+        </View>
 
         {meals.map((meal) => (
           <Card key={meal.id} style={{ marginTop: spacing.sm, padding: spacing.md }}>
-            <SquircleSurface style={styles.headerRow}>
+            <View style={styles.headerRow}>
               <Badge label={meal.type} variant="neutral" />
               <Text style={[typography.caption, { color: colors.text.muted }]}>Idea</Text>
-            </SquircleSurface>
+            </View>
             <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 8 }]}>
               {meal.title}
             </Text>
-            <SquircleSurface style={[styles.tagRow, { marginTop: 6 }]}>
+            <View style={[styles.tagRow, { marginTop: 6 }]}>
               {meal.tags.map((t) => (
                 <Text key={t} style={[typography.caption, { color: colors.primary, marginRight: 8, marginTop: 4 }]}>
                   #{t}
                 </Text>
               ))}
-            </SquircleSurface>
+            </View>
           </Card>
         ))}
       </ScrollView>

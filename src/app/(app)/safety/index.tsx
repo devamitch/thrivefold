@@ -1,6 +1,6 @@
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import React, { useState } from 'react';
-import { Linking, ScrollView, StyleSheet, Text, TextInput } from 'react-native';
+import { Linking, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Link, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
@@ -70,7 +70,7 @@ export default function SafetyScreen() {
       <Header title="Safety" subtitle="Crisis lines, blocking and reports" showBack />
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: spacing.xxl }]}>
         {/* Quick Safety Hub Links */}
-        <SquircleSurface style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
           <Link href={'/(app)/safety/urgent-support' as Href} asChild>
             <Button
               label="24/7 Helplines"
@@ -103,16 +103,16 @@ export default function SafetyScreen() {
               icon={<Ionicons name="refresh-outline" size={14} color={colors.text.secondary} />}
             />
           </Link>
-        </SquircleSurface>
+        </View>
         {/* Safety Sanctuary Hero */}
         <Card style={{ marginBottom: spacing.md, padding: 14, backgroundColor: colors.surface }}>
-          <SquircleSurface style={styles.heroWrap}>
+          <View style={styles.heroWrap}>
             <Image
               source={require('../../../../assets/illustrations/safety-sanctuary.jpg')}
               style={styles.heroImage}
               contentFit="cover"
             />
-          </SquircleSurface>
+          </View>
           <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 12 }]}>
             Your safety
           </Text>
@@ -123,24 +123,24 @@ export default function SafetyScreen() {
 
         {/* Emergency Resources */}
         <Card style={{ marginBottom: spacing.md, backgroundColor: colors.errorSurface, borderColor: colors.error }}>
-          <SquircleSurface style={styles.emergencyHeader}>
+          <View style={styles.emergencyHeader}>
             <Ionicons name="shield-checkmark" size={24} color={colors.error} />
             <Text style={[typography.heading, { color: colors.error, marginLeft: 8 }]}>
               Immediate Crisis Hotlines
             </Text>
-          </SquircleSurface>
+          </View>
           <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 6, marginBottom: 16 }]}>
             Confidential, free support available 24/7. Tapping will open your phone dialer or SMS app directly.
           </Text>
 
           {emergencyResources.map((res) => (
-            <SquircleSurface key={res.name} style={[styles.resourceRow, { borderBottomColor: colors.border }]}>
-              <SquircleSurface style={{ flex: 1, paddingRight: 10 }}>
+            <View key={res.name} style={[styles.resourceRow, { borderBottomColor: colors.border }]}>
+              <View style={{ flex: 1, paddingRight: 10 }}>
                 <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{res.name}</Text>
                 <Text style={[typography.caption, { color: colors.text.muted, marginTop: 2 }]}>
                   {res.country} · {res.isSms ? `SMS: ${res.phone}` : res.phone}
                 </Text>
-              </SquircleSurface>
+              </View>
               <Button
                 label={res.isSms ? 'Text' : 'Call'}
                 size="sm"
@@ -148,26 +148,26 @@ export default function SafetyScreen() {
                 onPress={() => handleResourceAction(res)}
                 icon={<Ionicons name={res.isSms ? 'chatbubble-ellipses' : 'call'} size={14} color={colors.onPrimary} />}
               />
-            </SquircleSurface>
+            </View>
           ))}
         </Card>
 
         {/* Report a User / Violation */}
         <Card style={{ marginBottom: spacing.md }}>
-          <SquircleSurface style={styles.rowBetween}>
-            <SquircleSurface style={{ flex: 1 }}>
+          <View style={styles.rowBetween}>
+            <View style={{ flex: 1 }}>
               <Text style={[typography.subheading, { color: colors.text.primary }]}>
                 Report an Account or Interaction
               </Text>
               <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
                 Violations of chip etiquette, abusive solicitations, or safety threats
               </Text>
-            </SquircleSurface>
+            </View>
             <Badge label="Confidential" variant="neutral" />
-          </SquircleSurface>
+          </View>
 
           {showReportCard ? (
-            <SquircleSurface style={{ marginTop: 14 }}>
+            <View style={{ marginTop: 14 }}>
               <TextInput
                 value={reportText}
                 onChangeText={setReportText}
@@ -183,11 +183,11 @@ export default function SafetyScreen() {
                   },
                 ]}
               />
-              <SquircleSurface style={[styles.rowEnd, { marginTop: 10 }]}>
+              <View style={[styles.rowEnd, { marginTop: 10 }]}>
                 <Button label="Cancel" variant="ghost" size="sm" onPress={() => setShowReportCard(false)} style={{ marginRight: 8 }} />
                 <Button label="Submit Report" size="sm" onPress={handleReportSubmit} />
-              </SquircleSurface>
-            </SquircleSurface>
+              </View>
+            </View>
           ) : (
             <Button
               label="File Confidential Report"
@@ -201,19 +201,19 @@ export default function SafetyScreen() {
 
         {/* Blocked Accounts Management */}
         <Card style={{ marginBottom: spacing.md }}>
-          <SquircleSurface style={styles.rowBetween}>
+          <View style={styles.rowBetween}>
             <Text style={[typography.subheading, { color: colors.text.primary }]}>
               Blocked Accounts ({blockedUserIds.length})
             </Text>
             <Badge label="Zero Contact" variant="warning" />
-          </SquircleSurface>
+          </View>
           <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 6, marginBottom: 12 }]}>
             Blocked accounts cannot find your pseudonym, see shared circles, or send letters. Blocked interactions immediately halt in-transit delivery.
           </Text>
 
           {blockedUserIds.length > 0 ? (
             blockedUserIds.map((id) => (
-              <SquircleSurface key={id} style={[styles.blockedRow, { borderColor: colors.border }]}>
+              <View key={id} style={[styles.blockedRow, { borderColor: colors.border }]}>
                 <Text style={[typography.subbodyBold, { color: colors.text.primary }]}>{id}</Text>
                 <Button
                   label="Unblock"
@@ -221,7 +221,7 @@ export default function SafetyScreen() {
                   variant="ghost"
                   onPress={() => unblockUser(id)}
                 />
-              </SquircleSurface>
+              </View>
             ))
           ) : (
             <Text style={[typography.caption, { color: colors.text.muted, fontStyle: 'italic' }]}>
@@ -232,13 +232,13 @@ export default function SafetyScreen() {
 
         {/* Quick Panic Lock */}
         <Card variant="surface1" style={{ marginBottom: spacing.md, padding: spacing.base }}>
-          <SquircleSurface style={styles.rowBetween}>
-            <SquircleSurface style={{ flex: 1, paddingRight: 8 }}>
+          <View style={styles.rowBetween}>
+            <View style={{ flex: 1, paddingRight: 8 }}>
               <Text style={[typography.subbodyBold, { color: colors.primary }]}>Quick Disconnect (Panic Mode)</Text>
               <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
                 Immediately closes all open sessions and switches the screen to a discreet journal cover.
               </Text>
-            </SquircleSurface>
+            </View>
             <Button
               label="Lock"
               size="sm"
@@ -246,7 +246,7 @@ export default function SafetyScreen() {
               onPress={() => router.replace('/(app)/journal')}
               icon={<Ionicons name="lock-closed-outline" size={14} color={colors.primary} />}
             />
-          </SquircleSurface>
+          </View>
         </Card>
       </ScrollView>
     </ScreenWrapper>

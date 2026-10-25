@@ -1,6 +1,6 @@
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import React, { useState } from 'react';
-import { Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
@@ -47,7 +47,7 @@ export default function MedicationsScreen() {
   return (
     <ScreenWrapper scrollable>
       <Header title="Medications" subtitle="Your own list, kept on this device" showBack />
-      <SquircleSurface style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
+      <View style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
         <Card variant="surface1" style={{ marginBottom: spacing.md }}>
           <Text style={[typography.caption, { color: colors.text.secondary }]}>
             Thrivefold only records what you enter. It never recommends, doses or changes a medication or supplement.
@@ -55,10 +55,10 @@ export default function MedicationsScreen() {
           </Text>
         </Card>
 
-        <SquircleSurface style={styles.row}>
+        <View style={styles.row}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>Today</Text>
           {!adding ? <Button label="Add" variant="outline" size="sm" onPress={() => setAdding(true)} /> : null}
-        </SquircleSurface>
+        </View>
 
         {adding ? (
           <Card style={{ marginTop: spacing.sm }}>
@@ -73,10 +73,10 @@ export default function MedicationsScreen() {
               error={time && !isTime(time) ? 'Use HH:MM, e.g. 21:30' : undefined}
               containerStyle={{ marginTop: spacing.sm }}
             />
-            <SquircleSurface style={[styles.actions, { marginTop: spacing.md }]}>
+            <View style={[styles.actions, { marginTop: spacing.md }]}>
               <Button label="Save" size="sm" disabled={!valid} onPress={save} />
               <Button label="Cancel" size="sm" variant="ghost" onPress={() => setAdding(false)} />
-            </SquircleSurface>
+            </View>
           </Card>
         ) : null}
 
@@ -90,7 +90,7 @@ export default function MedicationsScreen() {
           const done = taken.includes(`${today}|${m.id}`);
           return (
             <Card key={m.id} style={{ marginTop: spacing.sm }}>
-              <SquircleSurface style={styles.row}>
+              <View style={styles.row}>
                 <PressableScale
                   onPress={() => toggleMedicationTaken(m.id, today)}
                   accessibilityRole="checkbox"
@@ -99,12 +99,12 @@ export default function MedicationsScreen() {
                   style={styles.main}
                 >
                   <Ionicons name={done ? 'checkmark-circle' : 'ellipse-outline'} size={26} color={done ? colors.success : colors.text.muted} />
-                  <SquircleSurface style={{ flex: 1, marginLeft: 12 }}>
+                  <View style={{ flex: 1, marginLeft: 12 }}>
                     <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{m.name}</Text>
                     <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
                       {[m.dose, m.time].filter(Boolean).join(' · ')} · {done ? 'taken today' : 'not marked yet'}
                     </Text>
-                  </SquircleSurface>
+                  </View>
                 </PressableScale>
                 <PressableScale
                   onPress={() =>
@@ -122,11 +122,11 @@ export default function MedicationsScreen() {
                 >
                   <Ionicons name="trash-outline" size={18} color={colors.text.muted} />
                 </PressableScale>
-              </SquircleSurface>
+              </View>
             </Card>
           );
         })}
-      </SquircleSurface>
+      </View>
     </ScreenWrapper>
   );
 }

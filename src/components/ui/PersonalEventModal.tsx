@@ -8,7 +8,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { formatLocalDate } from '../../domain/calendar/universalCalendarEngine';
 import { useRootStore, useShallow, type PersonalCalendarEvent } from '../../stores/useRootStore';
@@ -201,7 +201,7 @@ export function PersonalEventModal({
         }
       >
         {/* Event Title */}
-        <SquircleSurface style={{ marginTop: spacing.md }}>
+        <View style={{ marginTop: spacing.md }}>
           <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 6 }]}>
             EVENT OR MILESTONE TITLE *
           </Text>
@@ -211,14 +211,14 @@ export function PersonalEventModal({
             onChangeText={setTitle}
             autoFocus={!existingEvent}
           />
-        </SquircleSurface>
+        </View>
 
         {/* Category Selector */}
-        <SquircleSurface style={{ marginTop: spacing.lg }}>
+        <View style={{ marginTop: spacing.lg }}>
           <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 8 }]}>
             EVENT TYPE
           </Text>
-          <SquircleSurface style={styles.categoryGrid}>
+          <View style={styles.categoryGrid}>
             {CATEGORIES.map((cat) => {
               const isSelected = category === cat.id;
               return (
@@ -257,11 +257,11 @@ export function PersonalEventModal({
                 </PressableScale>
               );
             })}
-          </SquircleSurface>
-        </SquircleSurface>
+          </View>
+        </View>
 
         {/* Date Selector */}
-        <SquircleSurface style={{ marginTop: spacing.lg }}>
+        <View style={{ marginTop: spacing.lg }}>
           <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 6 }]}>
             DATE *
           </Text>
@@ -283,12 +283,12 @@ export function PersonalEventModal({
               strokeWidth={1}
               style={styles.datePickerTrigger}
             >
-              <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Ionicons name="calendar-outline" size={18} color={colors.primary} style={{ marginRight: 10 }} />
                 <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
                   {dateStr || 'Select date'}
                 </Text>
-              </SquircleSurface>
+              </View>
               <SquircleSurface
                 radius={8}
                 smoothing={1}
@@ -299,14 +299,14 @@ export function PersonalEventModal({
               </SquircleSurface>
             </SquircleSurface>
           </PressableScale>
-        </SquircleSurface>
+        </View>
 
         {/* Recurrence Selection */}
-        <SquircleSurface style={{ marginTop: spacing.lg }}>
+        <View style={{ marginTop: spacing.lg }}>
           <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 8 }]}>
             RECURRENCE
           </Text>
-          <SquircleSurface style={styles.recurrenceRow}>
+          <View style={styles.recurrenceRow}>
             {RECURRENCE_OPTIONS.map((opt) => {
               const isSelected = recurrence === opt.id;
               return (
@@ -340,16 +340,16 @@ export function PersonalEventModal({
                 </PressableScale>
               );
             })}
-          </SquircleSurface>
-        </SquircleSurface>
+          </View>
+        </View>
 
         {/* Relationship (For Birthdays / Anniversaries) */}
         {(category === 'birthday' || category === 'anniversary') && (
-          <SquircleSurface style={{ marginTop: spacing.lg }}>
+          <View style={{ marginTop: spacing.lg }}>
             <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 8 }]}>
               WHO IS THIS FOR?
             </Text>
-            <SquircleSurface style={styles.categoryGrid}>
+            <View style={styles.categoryGrid}>
               {RELATIONSHIPS.map((rel) => {
                 const isSelected = relationship === rel.id;
                 return (
@@ -382,12 +382,12 @@ export function PersonalEventModal({
                   </PressableScale>
                 );
               })}
-            </SquircleSurface>
-          </SquircleSurface>
+            </View>
+          </View>
         )}
 
         {/* Time of Day (Optional) */}
-        <SquircleSurface style={{ marginTop: spacing.lg }}>
+        <View style={{ marginTop: spacing.lg }}>
           <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 6 }]}>
             TIME OF DAY (OPTIONAL)
           </Text>
@@ -396,10 +396,10 @@ export function PersonalEventModal({
             value={time}
             onChangeText={setTime}
           />
-        </SquircleSurface>
+        </View>
 
         {/* Notes (Optional) */}
-        <SquircleSurface style={{ marginTop: spacing.lg }}>
+        <View style={{ marginTop: spacing.lg }}>
           <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 6 }]}>
             NOTES / GIFT IDEAS / LOCATION
           </Text>
@@ -410,7 +410,7 @@ export function PersonalEventModal({
             multiline
             numberOfLines={2}
           />
-        </SquircleSurface>
+        </View>
 
       </AppBottomSheetModal>
 

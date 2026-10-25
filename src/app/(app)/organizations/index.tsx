@@ -1,6 +1,6 @@
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import React from 'react';
-import { ScrollView, StyleSheet, Text } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Link, type Href } from 'expo-router';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
@@ -33,30 +33,30 @@ export default function OrganizationsScreen() {
           <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: 12 }]}>
             Organization Benefits
           </Text>
-          <SquircleSurface style={styles.benefitRow}>
+          <View style={styles.benefitRow}>
             <Text style={[typography.bodyBold, { color: colors.text.primary }]}>•</Text>
             <Text style={[typography.subbody, { color: colors.text.secondary, marginLeft: 8 }]}>
               Create and manage private communities
             </Text>
-          </SquircleSurface>
-          <SquircleSurface style={styles.benefitRow}>
+          </View>
+          <View style={styles.benefitRow}>
             <Text style={[typography.bodyBold, { color: colors.text.primary }]}>•</Text>
             <Text style={[typography.subbody, { color: colors.text.secondary, marginLeft: 8 }]}>
               Host events and programs
             </Text>
-          </SquircleSurface>
-          <SquircleSurface style={styles.benefitRow}>
+          </View>
+          <View style={styles.benefitRow}>
             <Text style={[typography.bodyBold, { color: colors.text.primary }]}>•</Text>
             <Text style={[typography.subbody, { color: colors.text.secondary, marginLeft: 8 }]}>
               Assign facilitator roles
             </Text>
-          </SquircleSurface>
-          <SquircleSurface style={styles.benefitRow}>
+          </View>
+          <View style={styles.benefitRow}>
             <Text style={[typography.bodyBold, { color: colors.text.primary }]}>•</Text>
             <Text style={[typography.subbody, { color: colors.text.secondary, marginLeft: 8 }]}>
               Access moderation tools
             </Text>
-          </SquircleSurface>
+          </View>
         </Card>
 
         {/* Verification Requirements */}

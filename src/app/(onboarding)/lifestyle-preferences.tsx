@@ -1,7 +1,7 @@
 import { SquircleSurface } from '../../components/ui/SquircleSurface';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { OnboardingScaffold } from '../../components/onboarding/OnboardingScaffold';
 import { Button } from '../../components/ui/Button';
@@ -76,7 +76,7 @@ export default function LifestylePreferencesScreen() {
   };
 
   const content = (
-    <SquircleSurface>
+    <View>
       <Card style={{ padding: spacing.base, marginBottom: spacing.lg }}>
         <Text style={[typography.subbody, { color: colors.text.secondary }]}>
           Only used to tailor meal ideas and the reminders you pick. Never used to guess anything
@@ -89,7 +89,7 @@ export default function LifestylePreferencesScreen() {
       >
         Eating preference
       </Text>
-      <SquircleSurface style={styles.chips}>
+      <View style={styles.chips}>
         {DIETS.map((d) => (
           <Chip
             key={d}
@@ -98,7 +98,7 @@ export default function LifestylePreferencesScreen() {
             onPress={() => setOnboardingAnswers({ diet: diet === d ? null : d })}
           />
         ))}
-      </SquircleSurface>
+      </View>
 
       <Text
         style={[
@@ -108,7 +108,7 @@ export default function LifestylePreferencesScreen() {
       >
         Reminders you'd like
       </Text>
-      <SquircleSurface style={styles.chips}>
+      <View style={styles.chips}>
         {REMINDERS.map((r) => (
           <Chip
             key={r}
@@ -117,7 +117,7 @@ export default function LifestylePreferencesScreen() {
             onPress={() => toggleReminder(r)}
           />
         ))}
-      </SquircleSurface>
+      </View>
 
       {isOnboarded && (
         <>
@@ -130,7 +130,7 @@ export default function LifestylePreferencesScreen() {
           />
         </>
       )}
-    </SquircleSurface>
+    </View>
   );
 
   if (!isOnboarded) {
@@ -152,7 +152,7 @@ export default function LifestylePreferencesScreen() {
   return (
     <ScreenWrapper scrollable disableScrollAwareDock>
       <Header title="Food & reminders" subtitle="Optional" showBack />
-      <SquircleSurface style={{ padding: spacing.base }}>{content}</SquircleSurface>
+      <View style={{ padding: spacing.base }}>{content}</View>
     </ScreenWrapper>
   );
 }

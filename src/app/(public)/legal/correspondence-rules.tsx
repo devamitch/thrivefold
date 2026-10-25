@@ -1,6 +1,6 @@
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import React from 'react';
-import { Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet, View } from 'react-native';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
 import { Header } from '../../../components/ui/Header';
@@ -12,7 +12,7 @@ export default function CorrespondenceRulesScreen() {
   return (
     <ScreenWrapper scrollable>
       <Header title="Letter rules" subtitle="Slow letters, written with cards" showBack />
-      <SquircleSurface style={[styles.content, { padding: spacing.base }]}>
+      <View style={[styles.content, { padding: spacing.base }]}>
         <Card style={{ marginBottom: spacing.md }}>
           <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: spacing.xs }]}>
             1. No Raw-Text Inputs in Social Chat
@@ -48,7 +48,7 @@ export default function CorrespondenceRulesScreen() {
             Attempting to encode phone numbers, email addresses, social handles, or physical meeting coordinates into card sequences triggers automatic interception and warning.
           </Text>
         </Card>
-      </SquircleSurface>
+      </View>
     </ScreenWrapper>
   );
 }

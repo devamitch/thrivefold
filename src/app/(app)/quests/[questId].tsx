@@ -1,3 +1,4 @@
+import { View } from 'react-native';
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import React from 'react';
 
@@ -17,9 +18,9 @@ export default function QuestDetailScreen() {
 
   return (
     <ScreenContainer header={<AppHeader title={(taskId && getTaskById(taskId)?.title) || 'Quest'} showBack />} scrollMode="shell-scroll-view">
-      <SquircleSurface>
+      <View>
         <QuestPanel assignmentId={questId ?? ''} onDone={() => router.back()} />
-      </SquircleSurface>
+      </View>
     </ScreenContainer>
   );
 }

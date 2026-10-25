@@ -1,6 +1,6 @@
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import React, { useMemo, useState } from 'react';
-import { Text, StyleSheet, Switch } from 'react-native';
+import { Text, StyleSheet, Switch, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
@@ -87,23 +87,23 @@ export default function AiMemoryScreen() {
   return (
     <ScreenWrapper scrollable>
       <Header title="Memory" subtitle="Things you chose to keep, stored only on this device" showBack />
-      <SquircleSurface style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
+      <View style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
         <Card style={{ marginBottom: spacing.md }}>
-          <SquircleSurface style={styles.row}>
-            <SquircleSurface style={{ flex: 1, paddingRight: 12 }}>
+          <View style={styles.row}>
+            <View style={{ flex: 1, paddingRight: 12 }}>
               <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Use memory</Text>
               <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
                 When off, nothing new is kept and existing memories are not used or searched. They stay until you
                 remove them.
               </Text>
-            </SquircleSurface>
+            </View>
             <Switch
               value={aiMemoryEnabled}
               onValueChange={setAiMemoryEnabled}
               trackColor={{ false: colors.surface1, true: colors.primary }}
               accessibilityLabel="Use memory"
             />
-          </SquircleSurface>
+          </View>
         </Card>
 
         {aiMemoryEnabled ? (
@@ -129,10 +129,10 @@ export default function AiMemoryScreen() {
           </Card>
         ) : null}
 
-        <SquircleSurface style={[styles.row, { marginBottom: spacing.sm }]}>
+        <View style={[styles.row, { marginBottom: spacing.sm }]}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>Kept ({memories.length})</Text>
           {memories.length > 0 ? <Button label="Forget all" variant="ghost" size="sm" onPress={confirmClear} /> : null}
-        </SquircleSurface>
+        </View>
 
         {memories.length === 0 ? (
           <Card variant="surface1" style={{ padding: spacing.lg }}>
@@ -144,12 +144,12 @@ export default function AiMemoryScreen() {
         ) : (
           memories.map((m) => (
             <Card key={m.id} style={{ marginBottom: spacing.sm, opacity: aiMemoryEnabled ? 1 : 0.6 }}>
-              <SquircleSurface style={styles.row}>
+              <View style={styles.row}>
                 <Badge label={m.source === 'insight' ? 'From a pattern' : 'Added by you'} variant="neutral" />
                 <Text style={[typography.caption, { color: colors.text.muted }]}>
                   {new Date(m.updatedAt ?? m.createdAt).toLocaleDateString()}
                 </Text>
-              </SquircleSurface>
+              </View>
               {editingId === m.id ? (
                 <>
                   <TextField
@@ -161,10 +161,10 @@ export default function AiMemoryScreen() {
                     accessibilityLabel="Edit memory"
                     containerStyle={{ marginTop: spacing.sm }}
                   />
-                  <SquircleSurface style={[styles.actions, { marginTop: spacing.sm }]}>
+                  <View style={[styles.actions, { marginTop: spacing.sm }]}>
                     <Button label="Save" size="sm" disabled={!editText.trim()} onPress={saveEdit} />
                     <Button label="Cancel" size="sm" variant="ghost" onPress={() => setEditingId(null)} />
-                  </SquircleSurface>
+                  </View>
                 </>
               ) : (
                 <>
@@ -176,16 +176,16 @@ export default function AiMemoryScreen() {
                       Forgotten automatically on {new Date(m.expiresAt).toLocaleDateString()}
                     </Text>
                   ) : null}
-                  <SquircleSurface style={[styles.actions, { marginTop: spacing.sm }]}>
+                  <View style={[styles.actions, { marginTop: spacing.sm }]}>
                     <IconAction icon="create-outline" label="Edit" onPress={() => startEdit(m)} />
                     <IconAction icon="trash-outline" label="Forget" onPress={() => confirmDelete(m.id)} />
-                  </SquircleSurface>
+                  </View>
                 </>
               )}
             </Card>
           ))
         )}
-      </SquircleSurface>
+      </View>
     </ScreenWrapper>
   );
 }

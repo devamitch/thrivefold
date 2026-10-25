@@ -1,6 +1,6 @@
 import { SquircleSurface } from '../ui/SquircleSurface';
 import React from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import type { Baseline } from '../../domain/game/setupProfile';
 import { useRootStore, useShallow } from '../../stores/useRootStore';
@@ -67,11 +67,11 @@ export function BaselineQuestions() {
   );
 
   return (
-    <SquircleSurface>
+    <View>
       {QUESTIONS.map((q, i) => (
-        <SquircleSurface key={q.key} style={{ marginTop: i === 0 ? 0 : spacing.lg }}>
+        <View key={q.key} style={{ marginTop: i === 0 ? 0 : spacing.lg }}>
           <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: spacing.sm }]}>{q.title}</Text>
-          <SquircleSurface style={styles.chips} accessibilityRole="radiogroup" accessibilityLabel={q.title}>
+          <View style={styles.chips} accessibilityRole="radiogroup" accessibilityLabel={q.title}>
             {q.options.map((o) => {
               const selected = baseline[q.key] === o.value;
               return (
@@ -83,10 +83,10 @@ export function BaselineQuestions() {
                 />
               );
             })}
-          </SquircleSurface>
-        </SquircleSurface>
+          </View>
+        </View>
       ))}
-    </SquircleSurface>
+    </View>
   );
 }
 

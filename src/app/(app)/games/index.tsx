@@ -2,7 +2,7 @@ import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import React, { useEffect, useState } from 'react';
-import { Modal, StyleSheet, Text } from 'react-native';
+import { Modal, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 
 import { Badge } from '../../../components/ui/Badge';
@@ -163,15 +163,15 @@ export default function GamesScreen() {
   return (
     <ScreenWrapper scrollable>
       <Header title="Games" subtitle="Short breathing, focus and memory practice" showBack />
-      <SquircleSurface style={[styles.content, { paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }]}>
+      <View style={[styles.content, { paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }]}>
         <Card style={{ marginBottom: spacing.md, padding: 14, backgroundColor: colors.surface }}>
-          <SquircleSurface style={styles.heroWrap}>
+          <View style={styles.heroWrap}>
             <Image
               source={require('../../../../assets/illustrations/games-focus.jpg')}
               style={styles.heroImage}
               contentFit="cover"
             />
-          </SquircleSurface>
+          </View>
           <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 12 }]}>
             Gentle Cognitive Rhythm
           </Text>
@@ -182,17 +182,17 @@ export default function GamesScreen() {
 
         {games.map((g) => (
           <Card key={g.id} style={{ marginBottom: spacing.md, padding: spacing.md }}>
-            <SquircleSurface style={styles.cardHeader}>
-              <SquircleSurface style={[styles.iconBox, { backgroundColor: colors.surface1 }]}>
+            <View style={styles.cardHeader}>
+              <View style={[styles.iconBox, { backgroundColor: colors.surface1 }]}>
                 <Ionicons name={g.icon} size={24} color={colors.primary} />
-              </SquircleSurface>
-              <SquircleSurface style={{ flex: 1, marginLeft: 12 }}>
+              </View>
+              <View style={{ flex: 1, marginLeft: 12 }}>
                 <Badge label={g.type} variant="primary" style={{ marginBottom: 4 }} />
                 <Text style={[typography.subheading, { color: colors.text.primary }]}>
                   {g.title}
                 </Text>
-              </SquircleSurface>
-            </SquircleSurface>
+              </View>
+            </View>
             <Text style={[typography.subbody, { color: colors.text.secondary, marginVertical: spacing.sm, lineHeight: 20 }]}>
               {g.desc}
             </Text>
@@ -207,19 +207,19 @@ export default function GamesScreen() {
 
         {/* Breathing Exercise Modal */}
         <Modal visible={activeSession === 'game_breathe'} transparent animationType="fade">
-          <SquircleSurface style={[styles.modalOverlay, { backgroundColor: colors.scrim }]}>
-            <SquircleSurface style={[styles.modalCard, { backgroundColor: colors.surface }]}>
-              <SquircleSurface style={styles.modalHeader}>
+          <View style={[styles.modalOverlay, { backgroundColor: colors.scrim }]}>
+            <View style={[styles.modalCard, { backgroundColor: colors.surface }]}>
+              <View style={styles.modalHeader}>
                 <Text style={[typography.subheading, { color: colors.text.primary }]}>
                   Harmonic Box Breathing
                 </Text>
                 <PressableScale onPress={() => setActiveSession(null)}>
                   <Ionicons name="close-circle-outline" size={26} color={colors.text.muted} />
                 </PressableScale>
-              </SquircleSurface>
+              </View>
 
-              <SquircleSurface style={styles.orbWrapper}>
-                <SquircleSurface
+              <View style={styles.orbWrapper}>
+                <View
                   style={[
                     styles.breathingOrb,
                     {
@@ -241,8 +241,8 @@ export default function GamesScreen() {
                   <Text style={[typography.display, { color: colors.primary, marginTop: 4 }]}>
                     {breathTimer}
                   </Text>
-                </SquircleSurface>
-              </SquircleSurface>
+                </View>
+              </View>
 
               <Text style={[typography.caption, { color: colors.text.secondary, textAlign: 'center', marginTop: 12 }]}>
                 Completed Cycles: {cycleCount} · Inhale for 4, hold for 4, exhale for 4, rest for 4.
@@ -255,28 +255,28 @@ export default function GamesScreen() {
                 style={{ marginTop: 20 }}
                 onPress={() => setActiveSession(null)}
               />
-            </SquircleSurface>
-          </SquircleSurface>
+            </View>
+          </View>
         </Modal>
 
         {/* Memory Game Modal */}
         <Modal visible={activeSession === 'game_memory'} transparent animationType="fade">
-          <SquircleSurface style={[styles.modalOverlay, { backgroundColor: colors.scrim }]}>
-            <SquircleSurface style={[styles.modalCard, { backgroundColor: colors.surface }]}>
-              <SquircleSurface style={styles.modalHeader}>
+          <View style={[styles.modalOverlay, { backgroundColor: colors.scrim }]}>
+            <View style={[styles.modalCard, { backgroundColor: colors.surface }]}>
+              <View style={styles.modalHeader}>
                 <Text style={[typography.subheading, { color: colors.text.primary }]}>
                   Flora Memory Match
                 </Text>
                 <PressableScale onPress={() => setActiveSession(null)}>
                   <Ionicons name="close-circle-outline" size={26} color={colors.text.muted} />
                 </PressableScale>
-              </SquircleSurface>
+              </View>
 
               <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: 16 }]}>
                 Pairs Found: {matchedPairs} of {INITIAL_CARDS.length}
               </Text>
 
-              <SquircleSurface style={styles.grid}>
+              <View style={styles.grid}>
                 {cards.map((c, i) => {
                   const isFlipped = flippedIndices.includes(i) || c.matched;
                   return (
@@ -307,10 +307,10 @@ export default function GamesScreen() {
                     </PressableScale>
                   );
                 })}
-              </SquircleSurface>
+              </View>
 
               {matchedPairs === INITIAL_CARDS.length && (
-                <SquircleSurface style={{ alignItems: 'center', marginTop: 16 }}>
+                <View style={{ alignItems: 'center', marginTop: 16 }}>
                   <Text style={[typography.bodyBold, { color: colors.primary }]}>
                     All Flora Matched!
                   </Text>
@@ -321,7 +321,7 @@ export default function GamesScreen() {
                     onPress={initMemoryGame}
                     style={{ marginTop: 8 }}
                   />
-                </SquircleSurface>
+                </View>
               )}
 
               <Button
@@ -331,24 +331,24 @@ export default function GamesScreen() {
                 style={{ marginTop: 16 }}
                 onPress={() => setActiveSession(null)}
               />
-            </SquircleSurface>
-          </SquircleSurface>
+            </View>
+          </View>
         </Modal>
 
         {/* Sensory Grounding Modal */}
         <Modal visible={activeSession === 'game_focus'} transparent animationType="fade">
-          <SquircleSurface style={[styles.modalOverlay, { backgroundColor: colors.scrim }]}>
-            <SquircleSurface style={[styles.modalCard, { backgroundColor: colors.surface }]}>
-              <SquircleSurface style={styles.modalHeader}>
+          <View style={[styles.modalOverlay, { backgroundColor: colors.scrim }]}>
+            <View style={[styles.modalCard, { backgroundColor: colors.surface }]}>
+              <View style={styles.modalHeader}>
                 <Text style={[typography.subheading, { color: colors.text.primary }]}>
                   Sensory Grounding
                 </Text>
                 <PressableScale onPress={() => setActiveSession(null)}>
                   <Ionicons name="close-circle-outline" size={26} color={colors.text.muted} />
                 </PressableScale>
-              </SquircleSurface>
+              </View>
 
-              <SquircleSurface style={[styles.groundingStepBox, { backgroundColor: colors.surface1 }]}>
+              <View style={[styles.groundingStepBox, { backgroundColor: colors.surface1 }]}>
                 <Text style={[typography.display, { color: colors.primary, fontSize: 36 }]}>
                   {groundingPrompts[groundingStep].count}
                 </Text>
@@ -358,9 +358,9 @@ export default function GamesScreen() {
                 <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 6, textAlign: 'center' }]}>
                   {groundingPrompts[groundingStep].hint}
                 </Text>
-              </SquircleSurface>
+              </View>
 
-              <SquircleSurface style={{ flexDirection: 'row', gap: 10, marginTop: 20 }}>
+              <View style={{ flexDirection: 'row', gap: 10, marginTop: 20 }}>
                 {groundingStep < groundingPrompts.length - 1 ? (
                   <Button
                     label="Next Step"
@@ -376,11 +376,11 @@ export default function GamesScreen() {
                     onPress={() => setActiveSession(null)}
                   />
                 )}
-              </SquircleSurface>
-            </SquircleSurface>
-          </SquircleSurface>
+              </View>
+            </View>
+          </View>
         </Modal>
-      </SquircleSurface>
+      </View>
     </ScreenWrapper>
   );
 }

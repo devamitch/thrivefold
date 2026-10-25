@@ -1,6 +1,6 @@
 import { SquircleSurface } from '../ui/SquircleSurface';
 import React, { memo } from 'react';
-import { Text, StyleSheet, StyleProp, ViewStyle, ImageSourcePropType } from 'react-native';
+import { Text, StyleSheet, StyleProp, ViewStyle, ImageSourcePropType, View } from 'react-native';
 import { Image } from 'expo-image';
 import Animated, {
   useAnimatedStyle,
@@ -181,7 +181,7 @@ export const LettermarkIcon = memo(function LettermarkIcon({
 
   const iconElement = (
     <Animated.View style={animatedStyle}>
-      <SquircleSurface
+      <View
         style={[
           styles.squircleContainer,
           {
@@ -200,7 +200,7 @@ export const LettermarkIcon = memo(function LettermarkIcon({
           cachePolicy="memory-disk"
           accessibilityLabel={`${meta.name} (${meta.letter}) icon`}
         />
-      </SquircleSurface>
+      </View>
     </Animated.View>
   );
 

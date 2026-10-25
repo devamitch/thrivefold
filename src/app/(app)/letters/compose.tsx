@@ -1,6 +1,6 @@
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -98,8 +98,8 @@ export default function LetterComposeScreen() {
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: spacing.xxl }]}>
         {/* Selected Stamp Preview Banner */}
         <Card style={{ marginBottom: spacing.md, backgroundColor: colors.surface1 }}>
-          <SquircleSurface style={styles.stampHeaderRow}>
-            <SquircleSurface style={styles.stampLeftCol}>
+          <View style={styles.stampHeaderRow}>
+            <View style={styles.stampLeftCol}>
               <Text style={[typography.caption, { color: colors.text.muted }]}>ACTIVE POSTAGE STAMP</Text>
               <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 2 }]}>
                 {activeStamp.name}
@@ -107,8 +107,8 @@ export default function LetterComposeScreen() {
               <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
                 {activeStamp.description}
               </Text>
-            </SquircleSurface>
-            <SquircleSurface style={[styles.stampPill, { borderColor: activeStamp.color, backgroundColor: colors.surface }]}>
+            </View>
+            <View style={[styles.stampPill, { borderColor: activeStamp.color, backgroundColor: colors.surface }]}>
               <Ionicons
                 name={
                   activeStamp.icon === 'flower'
@@ -124,8 +124,8 @@ export default function LetterComposeScreen() {
                 size={28}
                 color={activeStamp.color}
               />
-            </SquircleSurface>
-          </SquircleSurface>
+            </View>
+          </View>
         </Card>
 
         {/* Category Pill Bar */}
@@ -147,7 +147,7 @@ export default function LetterComposeScreen() {
         <Text style={[typography.subbodyBold, { color: colors.text.primary, marginTop: spacing.md, marginBottom: spacing.sm }]}>
           2. Tap Cards to Add (Up to 5)
         </Text>
-        <SquircleSurface style={styles.chipsGrid}>
+        <View style={styles.chipsGrid}>
           {categoryChips.map((chip) => {
             const isSelected = selectedChips.includes(chip.id);
             return (
@@ -162,8 +162,8 @@ export default function LetterComposeScreen() {
                   },
                 ]}
               >
-                <SquircleSurface style={styles.chipRow}>
-                  <SquircleSurface style={{ flex: 1 }}>
+                <View style={styles.chipRow}>
+                  <View style={{ flex: 1 }}>
                     <Text style={[typography.body, { color: isSelected ? colors.primary : colors.text.primary }]}>
                       {chip.text}
                     </Text>
@@ -172,15 +172,15 @@ export default function LetterComposeScreen() {
                         {chip.subtext}
                       </Text>
                     )}
-                  </SquircleSurface>
-                  <SquircleSurface style={[styles.selectIndicator, { borderColor: isSelected ? colors.primary : colors.borderStrong }]}>
+                  </View>
+                  <View style={[styles.selectIndicator, { borderColor: isSelected ? colors.primary : colors.borderStrong }]}>
                     {isSelected && <Ionicons name="checkmark" size={14} color={colors.primary} />}
-                  </SquircleSurface>
-                </SquircleSurface>
+                  </View>
+                </View>
               </Card>
             );
           })}
-        </SquircleSurface>
+        </View>
 
         {/* Choose Collectible Stamp */}
         <Text style={[typography.subbodyBold, { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm }]}>
@@ -230,17 +230,17 @@ export default function LetterComposeScreen() {
 
         {/* Transit Estimation Card */}
         <Card style={{ marginTop: spacing.lg, marginBottom: spacing.lg, backgroundColor: colors.surface2 }}>
-          <SquircleSurface style={styles.transitRow}>
+          <View style={styles.transitRow}>
             <Ionicons name="airplane-outline" size={22} color={colors.primary} />
-            <SquircleSurface style={{ flex: 1, marginLeft: 12 }}>
+            <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={[typography.subbodyBold, { color: colors.text.primary }]}>
                 Estimated Transit: ~{estimatedDelayHours} Hours
               </Text>
               <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
                 Calculated by geographic distance (~{estimatedDistanceKm.toLocaleString()} km). No instant dopamine rushes—just peaceful anticipation.
               </Text>
-            </SquircleSurface>
-          </SquircleSurface>
+            </View>
+          </View>
         </Card>
 
         {/* Send Button */}

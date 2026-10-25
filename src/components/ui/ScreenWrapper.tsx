@@ -71,9 +71,9 @@ export const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
     if (isValidElement(child) && child.type === ScrollView && !(child.props as { horizontal?: boolean }).horizontal) {
       const props = child.props as { contentContainerStyle?: StyleProp<ViewStyle>; children?: ReactNode };
       body.push(
-        <SquircleSurface key={child.key ?? 'unwrapped-scroll'} style={withoutSidePadding(props.contentContainerStyle)}>
+        <View key={child.key ?? 'unwrapped-scroll'} style={withoutSidePadding(props.contentContainerStyle)}>
           {props.children}
-        </SquircleSurface>,
+        </View>,
       );
       return;
     }

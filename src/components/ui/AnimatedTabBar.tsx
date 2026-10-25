@@ -2,7 +2,7 @@ import { SquircleSurface } from './SquircleSurface';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import React, { useEffect } from 'react';
-import { LayoutChangeEvent, StyleSheet, Text } from 'react-native';
+import { LayoutChangeEvent, StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
 import { useTheme } from '../../theme/useTheme';
@@ -54,7 +54,7 @@ export const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({ tabs, activeTab,
   });
 
   return (
-    <SquircleSurface
+    <View
       onLayout={onContainerLayout}
       style={[styles.container, { backgroundColor: colors.surface1 }]}
     >
@@ -110,7 +110,7 @@ export const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({ tabs, activeTab,
           </PressableScale>
         );
       })}
-    </SquircleSurface>
+    </View>
   );
 };
 

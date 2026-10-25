@@ -1,7 +1,7 @@
 import { SquircleSurface } from '../../components/ui/SquircleSurface';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { OnboardingScaffold } from '../../components/onboarding/OnboardingScaffold';
 import { Card } from '../../components/ui/Card';
@@ -63,22 +63,22 @@ export default function ChooseExperienceScreen() {
               { marginBottom: spacing.md, borderColor: selected ? colors.primary : colors.border },
             ]}
           >
-            <SquircleSurface
+            <View
               style={styles.row}
               accessible
               accessibilityRole="radio"
               accessibilityState={{ selected }}
               accessibilityLabel={`${item.title}. ${item.desc}`}
             >
-              <SquircleSurface
+              <View
                 style={[
                   styles.icon,
                   { backgroundColor: selected ? colors.primaryAlpha : colors.surface1 },
                 ]}
               >
                 <Icon name={item.icon} size={22} color={selected ? colors.primary : colors.text.secondary} />
-              </SquircleSurface>
-              <SquircleSurface style={styles.text}>
+              </View>
+              <View style={styles.text}>
                 <Text style={[typography.subheading, { color: colors.text.primary }]}>{item.title}</Text>
                 <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>
                   {item.desc}
@@ -86,16 +86,16 @@ export default function ChooseExperienceScreen() {
                 {suggested === item.id ? (
                   <Text style={[typography.captionBold, { color: colors.primary, marginTop: 4 }]}>Suggested from your Google profile</Text>
                 ) : null}
-              </SquircleSurface>
-              <SquircleSurface
+              </View>
+              <View
                 style={[
                   styles.radio,
                   { borderColor: selected ? colors.primary : colors.border },
                 ]}
               >
-                {selected ? <SquircleSurface style={[styles.radioDot, { backgroundColor: colors.primary }]} /> : null}
-              </SquircleSurface>
-            </SquircleSurface>
+                {selected ? <View style={[styles.radioDot, { backgroundColor: colors.primary }]} /> : null}
+              </View>
+            </View>
           </Card>
         );
       })}

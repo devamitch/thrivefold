@@ -1,6 +1,6 @@
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import React from 'react';
-import { Text, StyleSheet, ScrollView } from 'react-native';
+import { Text, StyleSheet, ScrollView, View } from 'react-native';
 import { Link, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
@@ -34,13 +34,13 @@ export default function HealthIndexScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Card style={{ marginTop: spacing.md, padding: 14, backgroundColor: colors.surface }}>
-          <SquircleSurface style={styles.heroWrap}>
+          <View style={styles.heroWrap}>
             <Image
               source={require('../../../../assets/illustrations/health-holistic.jpg')}
               style={styles.heroImage}
               contentFit="cover"
             />
-          </SquircleSurface>
+          </View>
           <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 12 }]}>
             Your body, your records
           </Text>
@@ -53,20 +53,20 @@ export default function HealthIndexScreen() {
           <Card
             style={{ marginTop: spacing.sm, padding: spacing.base }}
           >
-            <SquircleSurface style={styles.rowBetween}>
-              <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                <SquircleSurface style={[styles.iconWrap, { backgroundColor: colors.primaryAlpha }]}>
+            <View style={styles.rowBetween}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <View style={[styles.iconWrap, { backgroundColor: colors.primaryAlpha }]}>
                   <Ionicons name="water-outline" size={20} color={colors.primary} />
-                </SquircleSurface>
-                <SquircleSurface style={{ marginLeft: 14, flex: 1 }}>
+                </View>
+                <View style={{ marginLeft: 14, flex: 1 }}>
                   <Text style={[typography.subheading, { color: colors.text.primary }]}>Cycle calendar</Text>
                   <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
                     Log periods and see estimated phases and next dates
                   </Text>
-                </SquircleSurface>
-              </SquircleSurface>
+                </View>
+              </View>
               <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
-            </SquircleSurface>
+            </View>
           </Card>
         </Link>
 
@@ -74,20 +74,20 @@ export default function HealthIndexScreen() {
           <Card
             style={{ marginTop: spacing.sm, padding: spacing.base }}
           >
-            <SquircleSurface style={styles.rowBetween}>
-              <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                <SquircleSurface style={[styles.iconWrap, { backgroundColor: colors.primaryAlpha }]}>
+            <View style={styles.rowBetween}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <View style={[styles.iconWrap, { backgroundColor: colors.primaryAlpha }]}>
                   <Ionicons name="pulse-outline" size={20} color={colors.accent} />
-                </SquircleSurface>
-                <SquircleSurface style={{ marginLeft: 14, flex: 1 }}>
+                </View>
+                <View style={{ marginLeft: 14, flex: 1 }}>
                   <Text style={[typography.subheading, { color: colors.text.primary }]}>Symptoms</Text>
                   <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
                     Cramps, headaches, mood and anything else you notice
                   </Text>
-                </SquircleSurface>
-              </SquircleSurface>
+                </View>
+              </View>
               <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
-            </SquircleSurface>
+            </View>
           </Card>
         </Link>
 
@@ -95,20 +95,20 @@ export default function HealthIndexScreen() {
           <Card
             style={{ marginTop: spacing.sm, padding: spacing.base }}
           >
-            <SquircleSurface style={styles.rowBetween}>
-              <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                <SquircleSurface style={[styles.iconWrap, { backgroundColor: colors.surface1 }]}>
+            <View style={styles.rowBetween}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <View style={[styles.iconWrap, { backgroundColor: colors.surface1 }]}>
                   <Ionicons name="moon-outline" size={20} color={colors.text.primary} />
-                </SquircleSurface>
-                <SquircleSurface style={{ marginLeft: 14, flex: 1 }}>
+                </View>
+                <View style={{ marginLeft: 14, flex: 1 }}>
                   <Text style={[typography.subheading, { color: colors.text.primary }]}>Sleep</Text>
                   <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
                     Hours, regularity and a wind-down routine
                   </Text>
-                </SquircleSurface>
-              </SquircleSurface>
+                </View>
+              </View>
               <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
-            </SquircleSurface>
+            </View>
           </Card>
         </Link>
 
@@ -116,20 +116,20 @@ export default function HealthIndexScreen() {
           <Card
             style={{ marginTop: spacing.sm, padding: spacing.base }}
           >
-            <SquircleSurface style={styles.rowBetween}>
-              <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                <SquircleSurface style={[styles.iconWrap, { backgroundColor: colors.primaryAlpha }]}>
+            <View style={styles.rowBetween}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <View style={[styles.iconWrap, { backgroundColor: colors.primaryAlpha }]}>
                   <Ionicons name="fitness-outline" size={20} color={colors.primary} />
-                </SquircleSurface>
-                <SquircleSurface style={{ marginLeft: 14, flex: 1 }}>
+                </View>
+                <View style={{ marginLeft: 14, flex: 1 }}>
                   <Text style={[typography.subheading, { color: colors.text.primary }]}>Pelvic floor and core</Text>
                   <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
                     Guided squeeze-and-relax sets with a timer
                   </Text>
-                </SquircleSurface>
-              </SquircleSurface>
+                </View>
+              </View>
               <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
-            </SquircleSurface>
+            </View>
           </Card>
         </Link>
 
@@ -137,20 +137,20 @@ export default function HealthIndexScreen() {
           <Card
             style={{ marginTop: spacing.sm, padding: spacing.base }}
           >
-            <SquircleSurface style={styles.rowBetween}>
-              <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                <SquircleSurface style={[styles.iconWrap, { backgroundColor: colors.surface1 }]}>
+            <View style={styles.rowBetween}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <View style={[styles.iconWrap, { backgroundColor: colors.surface1 }]}>
                   <Ionicons name="link-outline" size={20} color={colors.text.primary} />
-                </SquircleSurface>
-                <SquircleSurface style={{ marginLeft: 14, flex: 1 }}>
+                </View>
+                <View style={{ marginLeft: 14, flex: 1 }}>
                   <Text style={[typography.subheading, { color: colors.text.primary }]}>Connected apps</Text>
                   <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
                     Health Connect, heart-rate straps, FHIR export
                   </Text>
-                </SquircleSurface>
-              </SquircleSurface>
+                </View>
+              </View>
               <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
-            </SquircleSurface>
+            </View>
           </Card>
         </Link>
       </ScrollView>

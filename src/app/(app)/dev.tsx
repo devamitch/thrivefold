@@ -1,6 +1,6 @@
 import { SquircleSurface } from '../../components/ui/SquircleSurface';
 import React from 'react';
-import { Share, StyleSheet, Text } from 'react-native';
+import { Share, StyleSheet, Text, View } from 'react-native';
 import { Link, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -213,18 +213,18 @@ export default function DevToolsScreen() {
     <ScreenWrapper scrollable disableScrollAwareDock>
       <Header title="Developer tools" subtitle="Developer tools" showBack />
 
-      <SquircleSurface style={{ paddingHorizontal: spacing.base, paddingBottom: spacing['4xl'] }}>
+      <View style={{ paddingHorizontal: spacing.base, paddingBottom: spacing['4xl'] }}>
         {/* ── 1. Live System Status ── */}
         <Card style={styles.card}>
-          <SquircleSurface style={styles.rowBetween}>
+          <View style={styles.rowBetween}>
             <Text style={[typography.subheading, { color: colors.text.primary }]}>Live System State</Text>
             <Badge
               label={store.user?.isAgeVerified ? 'Adult 18+' : 'Under-18 / Unverified'}
               variant={store.user?.isAgeVerified ? 'success' : 'warning'}
             />
-          </SquircleSurface>
+          </View>
 
-          <SquircleSurface style={{ marginTop: spacing.md, gap: 6 }}>
+          <View style={{ marginTop: spacing.md, gap: 6 }}>
             {[
               ['User Pseudonym', store.user?.pseudonym ?? 'None (Signed out)'],
               ['User ID', store.user?.id ? `${store.user.id.slice(0, 16)}...` : 'None'],
@@ -235,12 +235,12 @@ export default function DevToolsScreen() {
               ['Records', `${store.checkIns} check-ins · ${store.journal} journal`],
               ['Progress', `Level ${store.level} · ${store.xp} XP · Streak ${store.currentStreak}d`],
             ].map(([k, v]) => (
-              <SquircleSurface key={k} style={styles.infoRow}>
+              <View key={k} style={styles.infoRow}>
                 <Text style={[typography.caption, { color: colors.text.muted, width: 110 }]}>{k}</Text>
                 <Text style={[typography.subbodyBold, { color: colors.text.primary, flex: 1 }]}>{v}</Text>
-              </SquircleSurface>
+              </View>
             ))}
-          </SquircleSurface>
+          </View>
         </Card>
 
         {/* ── 2. User & Profile Management ── */}
@@ -251,7 +251,7 @@ export default function DevToolsScreen() {
           <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: spacing.sm }]}>
             Change active pseudonym:
           </Text>
-          <SquircleSurface style={styles.chipRow}>
+          <View style={styles.chipRow}>
             {['SolsticeSeeker', 'Alex', 'Rowan', 'Morgan'].map((p) => (
               <Chip
                 key={p}
@@ -260,9 +260,9 @@ export default function DevToolsScreen() {
                 onPress={() => handleSetPseudonym(p)}
               />
             ))}
-          </SquircleSurface>
+          </View>
 
-          <SquircleSurface style={{ marginTop: spacing.md, gap: 8 }}>
+          <View style={{ marginTop: spacing.md, gap: 8 }}>
             <Button
               variant="secondary"
               label={store.user?.isAgeVerified ? 'Set Age to Minor (<18)' : 'Verify as Adult (18+)'}
@@ -311,7 +311,7 @@ export default function DevToolsScreen() {
                 }
               }}
             />
-          </SquircleSurface>
+          </View>
         </Card>
 
         {/* ── 3. Cohort Experience & Theme Palette Switcher ── */}
@@ -322,7 +322,7 @@ export default function DevToolsScreen() {
           <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: spacing.sm }]}>
             Active Experience (Colors & Fonts adapt automatically):
           </Text>
-          <SquircleSurface style={{ gap: 8 }}>
+          <View style={{ gap: 8 }}>
             {experiences.map((exp) => {
               const isSelected = store.experience === exp.id;
               return (
@@ -337,24 +337,24 @@ export default function DevToolsScreen() {
                   ]}
                   scaleTo={0.98}
                 >
-                  <SquircleSurface style={{ flex: 1 }}>
+                  <View style={{ flex: 1 }}>
                     <Text style={[typography.bodyBold, { color: isSelected ? colors.primary : colors.text.primary }]}>
                       {exp.label}
                     </Text>
                     <Text style={[typography.caption, { color: colors.text.muted, marginTop: 2 }]}>
                       {exp.sub}
                     </Text>
-                  </SquircleSurface>
+                  </View>
                   {isSelected && <Badge label="Active" variant="primary" />}
                 </PressableScale>
               );
             })}
-          </SquircleSurface>
+          </View>
 
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: spacing.md, marginBottom: spacing.sm }]}>
             Appearance Theme:
           </Text>
-          <SquircleSurface style={styles.themeRow}>
+          <View style={styles.themeRow}>
             {themes.map((t) => (
               <PressableScale
                 key={t.id}
@@ -377,10 +377,10 @@ export default function DevToolsScreen() {
                 </Text>
               </PressableScale>
             ))}
-          </SquircleSurface>
+          </View>
 
           {/* Palette Swatches */}
-          <SquircleSurface style={styles.swatchGrid}>
+          <View style={styles.swatchGrid}>
             {[
               ['Background', colors.background],
               ['Surface', colors.surface],
@@ -390,12 +390,12 @@ export default function DevToolsScreen() {
               ['Dock', colors.dock],
               ['Dock Active', colors.dockActive],
             ].map(([name, col]) => (
-              <SquircleSurface key={name} style={styles.swatchItem}>
-                <SquircleSurface style={[styles.swatchCircle, { backgroundColor: col }]} />
+              <View key={name} style={styles.swatchItem}>
+                <View style={[styles.swatchCircle, { backgroundColor: col }]} />
                 <Text style={[typography.caption, { color: colors.text.muted, fontSize: 10 }]}>{name}</Text>
-              </SquircleSurface>
+              </View>
             ))}
-          </SquircleSurface>
+          </View>
         </Card>
 
         {/* ── 4. Local Storage & Mock Data Engine ── */}
@@ -403,7 +403,7 @@ export default function DevToolsScreen() {
           STORAGE & MOCK DATA
         </Text>
         <Card style={styles.card}>
-          <SquircleSurface style={{ gap: 8 }}>
+          <View style={{ gap: 8 }}>
             <Button
               variant="primary"
               label="Seed 7-Day Health & Journal Records"
@@ -459,7 +459,7 @@ export default function DevToolsScreen() {
                 );
               }}
             />
-          </SquircleSurface>
+          </View>
         </Card>
 
         {/* ── 5. Feature Flags & Policies ── */}
@@ -467,17 +467,17 @@ export default function DevToolsScreen() {
           FEATURE FLAGS & LOCAL PRIVACY
         </Text>
         <Card style={styles.card}>
-          <SquircleSurface style={{ gap: 8 }}>
+          <View style={{ gap: 8 }}>
             <PressableScale
               onPress={() => store.setSocialPathRevealed(!store.isSocialPathRevealed)}
               style={styles.flagRow}
             >
-              <SquircleSurface style={{ flex: 1 }}>
+              <View style={{ flex: 1 }}>
                 <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Social Path Unlocked</Text>
                 <Text style={[typography.caption, { color: colors.text.secondary }]}>
                   Controls gradual reveal of correspondence & letter features
                 </Text>
-              </SquircleSurface>
+              </View>
               <Badge
                 label={store.isSocialPathRevealed ? 'Enabled' : 'Hidden'}
                 variant={store.isSocialPathRevealed ? 'success' : 'neutral'}
@@ -488,12 +488,12 @@ export default function DevToolsScreen() {
               onPress={() => store.setQuietHours(!store.quietHoursEnabled)}
               style={styles.flagRow}
             >
-              <SquircleSurface style={{ flex: 1 }}>
+              <View style={{ flex: 1 }}>
                 <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Quiet Hours Filter</Text>
                 <Text style={[typography.caption, { color: colors.text.secondary }]}>
                   Suppresses non-urgent prompts 22:00 - 07:00
                 </Text>
-              </SquircleSurface>
+              </View>
               <Badge
                 label={store.quietHoursEnabled ? 'Active' : 'Disabled'}
                 variant={store.quietHoursEnabled ? 'primary' : 'neutral'}
@@ -504,12 +504,12 @@ export default function DevToolsScreen() {
               onPress={store.toggleOfflineMode}
               style={styles.flagRow}
             >
-              <SquircleSurface style={{ flex: 1 }}>
+              <View style={{ flex: 1 }}>
                 <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Forced Offline Mode</Text>
                 <Text style={[typography.caption, { color: colors.text.secondary }]}>
                   Blocks any external network requests (strict on-device)
                 </Text>
-              </SquircleSurface>
+              </View>
               <Badge
                 label={store.offlineModeForced ? 'Forced Offline' : 'Online OK'}
                 variant={store.offlineModeForced ? 'warning' : 'neutral'}
@@ -525,7 +525,7 @@ export default function DevToolsScreen() {
                 store.showToast({ type: 'success', message: 'Daily quota reset.' });
               }}
             />
-          </SquircleSurface>
+          </View>
         </Card>
 
         {/* ── 6. Direct Screen Jump Menu ── */}
@@ -536,7 +536,7 @@ export default function DevToolsScreen() {
           <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: spacing.sm }]}>
             Instantly navigate to any screen in Thrivefold:
           </Text>
-          <SquircleSurface style={{ gap: 6 }}>
+          <View style={{ gap: 6 }}>
             {screenJumps.map((jump) => (
               <Link key={jump.name} href={jump.route as Href} asChild>
                 <PressableScale
@@ -544,15 +544,15 @@ export default function DevToolsScreen() {
                   scaleTo={0.98}
                 >
                   <Ionicons name={jump.icon} size={18} color={colors.primary} />
-                  <SquircleSurface style={{ flex: 1, marginLeft: 10 }}>
+                  <View style={{ flex: 1, marginLeft: 10 }}>
                     <Text style={[typography.subbodyBold, { color: colors.text.primary }]}>{jump.name}</Text>
                     <Text style={[typography.caption, { color: colors.text.muted, fontSize: 10 }]}>{jump.group}</Text>
-                  </SquircleSurface>
+                  </View>
                   <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
                 </PressableScale>
               </Link>
             ))}
-          </SquircleSurface>
+          </View>
         </Card>
 
         {/* ── 7. Interactive Toast & Haptics Tester ── */}
@@ -563,7 +563,7 @@ export default function DevToolsScreen() {
           <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: spacing.sm }]}>
             Test System Toasts:
           </Text>
-          <SquircleSurface style={styles.chipRow}>
+          <View style={styles.chipRow}>
             <Chip
               label="Success Toast"
               onPress={() =>
@@ -604,12 +604,12 @@ export default function DevToolsScreen() {
                 })
               }
             />
-          </SquircleSurface>
+          </View>
 
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: spacing.md, marginBottom: spacing.sm }]}>
             Test Hardware Haptics:
           </Text>
-          <SquircleSurface style={styles.chipRow}>
+          <View style={styles.chipRow}>
             <Chip
               label="Light Impact"
               onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
@@ -626,9 +626,9 @@ export default function DevToolsScreen() {
               label="Selection Tap"
               onPress={() => Haptics.selectionAsync()}
             />
-          </SquircleSurface>
+          </View>
         </Card>
-      </SquircleSurface>
+      </View>
     </ScreenWrapper>
   );
 }

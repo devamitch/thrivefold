@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
 import { useTheme } from '../../theme/useTheme';
@@ -31,8 +31,8 @@ export function TodayHero({ done, total, points, target, level, xpToNext, checkI
 
   return (
     <SquircleSurface radius={28} fill={colors.primary} style={[styles.hero, { padding: spacing.lg }]}>
-      <SquircleSurface style={styles.row}>
-        <SquircleSurface style={styles.flex}>
+      <View style={styles.row}>
+        <View style={styles.flex}>
           <Text style={[typography.label, { color: colors.onPrimaryMuted }]}>Today</Text>
           <Text style={[typography.display, { color: colors.onPrimary, marginTop: 2 }]}>
             {total ? `${done} of ${total}` : 'No quests'}
@@ -40,8 +40,8 @@ export function TodayHero({ done, total, points, target, level, xpToNext, checkI
           <Text style={[typography.subbody, { color: colors.onPrimaryMuted }]}>
             {total ? (done >= total ? 'All quests done. Well done.' : 'quests done') : 'They appear once setup is finished.'}
           </Text>
-        </SquircleSurface>
-        <SquircleSurface accessible accessibilityLabel={`${points} of ${target} points today`}>
+        </View>
+        <View accessible accessibilityLabel={`${points} of ${target} points today`}>
           <Svg width={RING} height={RING}>
             <Circle cx={RING / 2} cy={RING / 2} r={r} stroke={colors.onPrimarySurface} strokeWidth={STROKE} fill="none" />
             {share > 0 ? (
@@ -59,16 +59,16 @@ export function TodayHero({ done, total, points, target, level, xpToNext, checkI
             />
             ) : null}
           </Svg>
-          <SquircleSurface style={[StyleSheet.absoluteFill, styles.center]}>
+          <View style={[StyleSheet.absoluteFill, styles.center]}>
             <Text style={[typography.subheading, { color: colors.onPrimary }]}>{points}</Text>
             <Text style={[typography.caption, { color: colors.onPrimaryMuted }]}>of {target} pts</Text>
-          </SquircleSurface>
-        </SquircleSurface>
-      </SquircleSurface>
+          </View>
+        </View>
+      </View>
 
       {checkIn ? (
         <PressableScale onPress={onCheckIn} accessibilityRole="button" accessibilityLabel="Update today's check-in">
-          <SquircleSurface style={[styles.metrics, { marginTop: spacing.md }]}>
+          <View style={[styles.metrics, { marginTop: spacing.md }]}>
             {(
               [
                 ['Energy', `${checkIn.energy}`],
@@ -82,7 +82,7 @@ export function TodayHero({ done, total, points, target, level, xpToNext, checkI
                 <Text style={[typography.caption, { color: colors.onPrimaryMuted }]}>{label}</Text>
               </SquircleSurface>
             ))}
-          </SquircleSurface>
+          </View>
         </PressableScale>
       ) : (
         <PressableScale onPress={onCheckIn} accessibilityRole="button" accessibilityLabel="Check in">
@@ -94,13 +94,13 @@ export function TodayHero({ done, total, points, target, level, xpToNext, checkI
       )}
 
       <PressableScale onPress={onRoadmap} accessibilityRole="button" accessibilityLabel={`Level ${level}. Open roadmap`}>
-        <SquircleSurface style={[styles.levelRow, { marginTop: spacing.md }]}>
+        <View style={[styles.levelRow, { marginTop: spacing.md }]}>
           <Text style={[typography.subbodyBold, { color: colors.onPrimary }]}>Level {level}</Text>
           <Text style={[typography.caption, styles.flex, { color: colors.onPrimaryMuted }]}>
             {xpToNext !== null ? ` · ${xpToNext} XP to level ${level + 1}` : ''}
           </Text>
           <Ionicons name="chevron-forward" size={16} color={colors.onPrimaryMuted} />
-        </SquircleSurface>
+        </View>
       </PressableScale>
     </SquircleSurface>
   );

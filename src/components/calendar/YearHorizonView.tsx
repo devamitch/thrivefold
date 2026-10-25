@@ -1,6 +1,6 @@
 import { SquircleSurface } from '../ui/SquircleSurface';
 import React from 'react';
-import { Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
@@ -38,8 +38,8 @@ export const YearHorizonView: React.FC<YearHorizonViewProps> = ({
 
   return (
     <Card style={{ marginTop: spacing.md, padding: spacing.md }}>
-      <SquircleSurface style={styles.rowBetween}>
-        <SquircleSurface style={{ flex: 1, paddingRight: 8 }}>
+      <View style={styles.rowBetween}>
+        <View style={{ flex: 1, paddingRight: 8 }}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>
             {currentYear} Annual Horizon
           </Text>
@@ -48,16 +48,16 @@ export const YearHorizonView: React.FC<YearHorizonViewProps> = ({
               ? 'Precalculated period ranges & annual personal milestones'
               : 'Year-at-a-glance milestones and focal dates'}
           </Text>
-        </SquircleSurface>
+        </View>
         <Button
           label="+ Milestone"
           size="sm"
           variant="primary"
           onPress={onAddMilestone}
         />
-      </SquircleSurface>
+      </View>
 
-      <SquircleSurface style={[styles.yearGrid, { marginTop: spacing.md }]}>
+      <View style={[styles.yearGrid, { marginTop: spacing.md }]}>
         {yearForecastData.map((yf) => (
           <PressableScale
             key={yf.monthIndex}
@@ -73,12 +73,12 @@ export const YearHorizonView: React.FC<YearHorizonViewProps> = ({
             accessibilityRole="button"
             accessibilityLabel={`${yf.monthName} ${yf.year}`}
           >
-            <SquircleSurface style={styles.rowBetween}>
+            <View style={styles.rowBetween}>
               <Text style={[typography.captionBold, { color: colors.text.primary }]}>
                 {yf.monthName.slice(0, 3)}
               </Text>
               <Ionicons name="chevron-forward" size={12} color={colors.text.muted} />
-            </SquircleSurface>
+            </View>
             {isWomen ? (
               <Text style={[typography.caption, { color: colors.primary, marginTop: 4, fontSize: 10 }]}>
                 Cycle: {yf.estimatedPeriodStart.slice(5)} – {yf.estimatedPeriodEnd.slice(5)}
@@ -89,9 +89,9 @@ export const YearHorizonView: React.FC<YearHorizonViewProps> = ({
               </Text>
             )}
             {yf.milestones.length > 0 ? (
-              <SquircleSurface style={{ marginTop: 4 }}>
+              <View style={{ marginTop: 4 }}>
                 {yf.milestones.slice(0, 2).map((m: PersonalCalendarEvent) => (
-                  <SquircleSurface key={m.id} style={{ flexDirection: 'row', alignItems: 'center', marginTop: 1 }}>
+                  <View key={m.id} style={{ flexDirection: 'row', alignItems: 'center', marginTop: 1 }}>
                     <Ionicons name="gift-outline" size={8} color={colors.primary} style={{ marginRight: 3 }} />
                     <Text
                       style={[typography.caption, { color: colors.text.secondary, fontSize: 9, flex: 1 }]}
@@ -99,13 +99,13 @@ export const YearHorizonView: React.FC<YearHorizonViewProps> = ({
                     >
                       {m.title}
                     </Text>
-                  </SquircleSurface>
+                  </View>
                 ))}
-              </SquircleSurface>
+              </View>
             ) : null}
           </PressableScale>
         ))}
-      </SquircleSurface>
+      </View>
     </Card>
   );
 };

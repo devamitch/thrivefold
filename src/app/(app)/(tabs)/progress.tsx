@@ -2,7 +2,7 @@ import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter, type Href } from 'expo-router';
 import React, { useState } from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { AppHeader } from '../../../components/ui/AppHeader';
@@ -203,25 +203,25 @@ export default function ProgressScreen() {
       }
       scrollMode="shell-scroll-view"
     >
-      <SquircleSurface style={{ paddingBottom: spacing.xxl }}>
+      <View style={{ paddingBottom: spacing.xxl }}>
         <Link href={'/(app)/roadmap' as Href} asChild>
           <Card variant="tinted" style={{ padding: spacing.base, marginTop: spacing.sm }}>
-            <SquircleSurface style={styles.rowBetween}>
+            <View style={styles.rowBetween}>
               <Ionicons name="map-outline" size={22} color={colors.primary} />
-              <SquircleSurface style={{ flex: 1, marginLeft: 12 }}>
+              <View style={{ flex: 1, marginLeft: 12 }}>
                 <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Your roadmap</Text>
                 <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
                   20 chapters, their stages, and where you are now
                 </Text>
-              </SquircleSurface>
+              </View>
               <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
-            </SquircleSurface>
+            </View>
           </Card>
         </Link>
         <ProgressionPanel />
 
         {/* View Switcher Tabs (Roadmap vs Badges) */}
-        <SquircleSurface style={[styles.tabBar, { backgroundColor: colors.surface1, marginTop: spacing.md }]}>
+        <View style={[styles.tabBar, { backgroundColor: colors.surface1, marginTop: spacing.md }]}>
           <PressableScale
             onPress={() => setActiveTab('roadmap')}
             style={[
@@ -271,45 +271,45 @@ export default function ProgressScreen() {
               Stats
             </Text>
           </PressableScale>
-        </SquircleSurface>
+        </View>
 
         {/* Roadmap View */}
         {activeTab === 'roadmap' && (
           <Animated.View entering={FadeIn.duration(180)}>
             {/* Roadmap Progress Summary */}
             <Card style={[styles.roadmapBanner, { backgroundColor: colors.surface, marginTop: spacing.md }]}>
-              <SquircleSurface style={styles.rowBetween}>
-                <SquircleSurface>
+              <View style={styles.rowBetween}>
+                <View>
                   <Text style={[typography.subheading, { color: colors.text.primary }]}>
                     Milestones
                   </Text>
                   <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
                     {completedStepsCount} of {ROADMAP_STEPS.length} reached
                   </Text>
-                </SquircleSurface>
+                </View>
                 <Badge label={`${roadmapPct}% Complete`} variant="primary" />
-              </SquircleSurface>
-              <SquircleSurface style={[styles.xpTrack, { backgroundColor: colors.surface1, marginTop: 12 }]}>
-                <SquircleSurface
+              </View>
+              <View style={[styles.xpTrack, { backgroundColor: colors.surface1, marginTop: 12 }]}>
+                <View
                   style={[
                     styles.xpFill,
                     { backgroundColor: colors.accent, width: `${roadmapPct}%` },
                   ]}
                 />
-              </SquircleSurface>
+              </View>
             </Card>
 
             {/* Interactive Timeline Steps */}
-            <SquircleSurface style={styles.timelineContainer}>
+            <View style={styles.timelineContainer}>
               {ROADMAP_STEPS.map((step, idx) => {
                 const isComp = step.isCompleted(stats);
                 const isUnl = step.isUnlocked(stats);
 
                 return (
-                  <SquircleSurface key={step.id} style={styles.timelineItem}>
+                  <View key={step.id} style={styles.timelineItem}>
                     {/* Left node indicator & vertical connecting line */}
-                    <SquircleSurface style={styles.nodeColumn}>
-                      <SquircleSurface
+                    <View style={styles.nodeColumn}>
+                      <View
                         style={[
                           styles.nodeCircle,
                           {
@@ -328,9 +328,9 @@ export default function ProgressScreen() {
                         ) : (
                           <Ionicons name="lock-closed" size={12} color={colors.text.muted} />
                         )}
-                      </SquircleSurface>
+                      </View>
                       {idx < ROADMAP_STEPS.length - 1 && (
-                        <SquircleSurface
+                        <View
                           style={[
                             styles.nodeLine,
                             {
@@ -339,10 +339,10 @@ export default function ProgressScreen() {
                           ]}
                         />
                       )}
-                    </SquircleSurface>
+                    </View>
 
                     {/* Right Step Card */}
-                    <SquircleSurface style={{ flex: 1, paddingBottom: 16 }}>
+                    <View style={{ flex: 1, paddingBottom: 16 }}>
                       <Card
                         onPress={() => {
                           if (step.targetRoute) {
@@ -357,7 +357,7 @@ export default function ProgressScreen() {
                           },
                         ]}
                       >
-                        <SquircleSurface style={styles.rowBetween}>
+                        <View style={styles.rowBetween}>
                           <Text style={[typography.captionBold, { color: colors.primary, fontSize: 11 }]}>
                             {step.phase.toUpperCase()}
                           </Text>
@@ -368,7 +368,7 @@ export default function ProgressScreen() {
                           ) : (
                             <Badge label="Locked" variant="neutral" />
                           )}
-                        </SquircleSurface>
+                        </View>
 
                         <Text
                           style={[
@@ -389,19 +389,19 @@ export default function ProgressScreen() {
 
                         {/* Interactive Action CTA */}
                         {isUnl && !isComp && (
-                          <SquircleSurface style={styles.stepCtaRow}>
+                          <View style={styles.stepCtaRow}>
                             <Text style={[typography.captionBold, { color: colors.primary }]}>
                               Go
                             </Text>
                             <Ionicons name="arrow-forward" size={14} color={colors.primary} />
-                          </SquircleSurface>
+                          </View>
                         )}
                       </Card>
-                    </SquircleSurface>
-                  </SquircleSurface>
+                    </View>
+                  </View>
                 );
               })}
-            </SquircleSurface>
+            </View>
           </Animated.View>
         )}
 
@@ -409,55 +409,55 @@ export default function ProgressScreen() {
         {activeTab === 'badges' && (
           <Animated.View entering={FadeIn.duration(180)}>
             {/* Stats Grid */}
-            <SquircleSurface style={[styles.statsGrid, { marginTop: spacing.md }]}>
-              <SquircleSurface style={[styles.statCard, { backgroundColor: colors.surface }]}>
-                <SquircleSurface style={[styles.statIconWrap, { backgroundColor: colors.primaryAlpha }]}>
+            <View style={[styles.statsGrid, { marginTop: spacing.md }]}>
+              <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
+                <View style={[styles.statIconWrap, { backgroundColor: colors.primaryAlpha }]}>
                   <Ionicons name="checkmark-circle-outline" size={20} color={colors.primary} />
-                </SquircleSurface>
+                </View>
                 <Text style={[typography.display, { color: colors.text.primary, marginTop: 10, fontSize: 24 }]}>
                   {questsCompleted}
                 </Text>
                 <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
                   Quests Finished
                 </Text>
-              </SquircleSurface>
+              </View>
 
-              <SquircleSurface style={[styles.statCard, { backgroundColor: colors.surface }]}>
-                <SquircleSurface style={[styles.statIconWrap, { backgroundColor: colors.surface1 }]}>
+              <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
+                <View style={[styles.statIconWrap, { backgroundColor: colors.surface1 }]}>
                   <Ionicons name="flame-outline" size={20} color={colors.accent} />
-                </SquircleSurface>
+                </View>
                 <Text style={[typography.display, { color: colors.text.primary, marginTop: 10, fontSize: 24 }]}>
                   {currentStreak}d
                 </Text>
                 <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
                   Active Streak
                 </Text>
-              </SquircleSurface>
+              </View>
 
-              <SquircleSurface style={[styles.statCard, { backgroundColor: colors.surface }]}>
-                <SquircleSurface style={[styles.statIconWrap, { backgroundColor: colors.surface1 }]}>
+              <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
+                <View style={[styles.statIconWrap, { backgroundColor: colors.surface1 }]}>
                   <Ionicons name="calendar-outline" size={20} color={colors.primary} />
-                </SquircleSurface>
+                </View>
                 <Text style={[typography.display, { color: colors.text.primary, marginTop: 10, fontSize: 24 }]}>
                   {daysActive}
                 </Text>
                 <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
                   Days Active
                 </Text>
-              </SquircleSurface>
+              </View>
 
-              <SquircleSurface style={[styles.statCard, { backgroundColor: colors.surface }]}>
-                <SquircleSurface style={[styles.statIconWrap, { backgroundColor: colors.surface1 }]}>
+              <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
+                <View style={[styles.statIconWrap, { backgroundColor: colors.surface1 }]}>
                   <Ionicons name="mail-outline" size={20} color={colors.accent} />
-                </SquircleSurface>
+                </View>
                 <Text style={[typography.display, { color: colors.text.primary, marginTop: 10, fontSize: 24 }]}>
                   {journalCount}
                 </Text>
                 <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
                   Journal entries
                 </Text>
-              </SquircleSurface>
-            </SquircleSurface>
+              </View>
+            </View>
 
             {/* Badges Section */}
             <Text
@@ -475,24 +475,24 @@ export default function ProgressScreen() {
             ) : (
               earned.map((ach) => (
                 <Card key={ach.id} style={[styles.achCard, { marginBottom: 8, backgroundColor: colors.surface }]}>
-                  <SquircleSurface style={styles.achRow}>
-                    <SquircleSurface style={[styles.achIcon, { backgroundColor: colors.primaryAlpha }]}>
+                  <View style={styles.achRow}>
+                    <View style={[styles.achIcon, { backgroundColor: colors.primaryAlpha }]}>
                       <Ionicons name={ach.icon} size={20} color={colors.primary} />
-                    </SquircleSurface>
-                    <SquircleSurface style={{ flex: 1, marginLeft: 12 }}>
+                    </View>
+                    <View style={{ flex: 1, marginLeft: 12 }}>
                       <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{ach.title}</Text>
                       <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
                         {ach.phase}
                       </Text>
-                    </SquircleSurface>
+                    </View>
                     <Badge label="Reached" variant="success" />
-                  </SquircleSurface>
+                  </View>
                 </Card>
               ))
             )}
           </Animated.View>
         )}
-      </SquircleSurface>
+      </View>
     </ScreenContainer>
   );
 }

@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import React from 'react';
-import { StyleProp, StyleSheet, Text, TextStyle, ViewStyle } from 'react-native';
+import { StyleProp, StyleSheet, Text, TextStyle, ViewStyle, View } from 'react-native';
 import { useTheme } from '../../theme/useTheme';
 import { PressableScale } from './PressableScale';
 import { SquircleSurface } from './SquircleSurface';
@@ -68,13 +68,13 @@ export const Chip: React.FC<ChipProps> = ({
           },
         ]}
       >
-        <SquircleSurface style={styles.content}>
-          {icon ? <SquircleSurface style={styles.iconWrap}>{icon}</SquircleSurface> : null}
-          <SquircleSurface>
+        <View style={styles.content}>
+          {icon ? <View style={styles.iconWrap}>{icon}</View> : null}
+          <View>
             <Text style={labelStyle}>{label}</Text>
             {subtext && <Text style={subtextStyle}>{subtext}</Text>}
-          </SquircleSurface>
-        </SquircleSurface>
+          </View>
+        </View>
       </SquircleSurface>
     </PressableScale>
   );

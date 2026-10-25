@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { formatLocalDate, generateDayAgenda, parseLocalDate } from '../../domain/calendar/universalCalendarEngine';
 import { useAgendaSources } from '../../hooks/useAgendaSources';
@@ -41,7 +41,7 @@ export function WeekGlance({ onOpen }: { onOpen: () => void }) {
         {days.map((d, i) => {
           const on = d.date === today;
           return (
-            <SquircleSurface key={d.date} style={styles.cell}>
+            <View key={d.date} style={styles.cell}>
               <Text style={[typography.caption, { color: colors.text.muted }]}>{LETTERS[i]}</Text>
               <SquircleSurface
                 radius={12}
@@ -52,8 +52,8 @@ export function WeekGlance({ onOpen }: { onOpen: () => void }) {
                   {d.day}
                 </Text>
               </SquircleSurface>
-              <SquircleSurface style={[styles.dot, { backgroundColor: d.saved ? colors.primary : 'transparent' }]} />
-            </SquircleSurface>
+              <View style={[styles.dot, { backgroundColor: d.saved ? colors.primary : 'transparent' }]} />
+            </View>
           );
         })}
       </SquircleSurface>

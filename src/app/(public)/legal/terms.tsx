@@ -1,6 +1,6 @@
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import React from 'react';
-import { Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet, View } from 'react-native';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
 import { Header } from '../../../components/ui/Header';
@@ -12,7 +12,7 @@ export default function TermsScreen() {
   return (
     <ScreenWrapper scrollable>
       <Header title="Terms of service" showBack />
-      <SquircleSurface style={[styles.content, { padding: spacing.base }]}>
+      <View style={[styles.content, { padding: spacing.base }]}>
         <Card style={{ marginBottom: spacing.md }}>
           <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: spacing.xs }]}>
             1. Who can use Thrivefold
@@ -30,7 +30,7 @@ export default function TermsScreen() {
             User-to-user introductions and letters are strictly composed using curated, approved message cards. Deceptive recruitment, MLM solicitations, and sharing prohibited contact details are strictly barred.
           </Text>
         </Card>
-      </SquircleSurface>
+      </View>
     </ScreenWrapper>
   );
 }

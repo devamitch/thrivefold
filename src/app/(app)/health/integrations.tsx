@@ -1,7 +1,7 @@
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Linking, Platform, Share, StyleSheet, Switch, Text } from 'react-native';
+import { Linking, Platform, Share, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { AppHeader } from '../../../components/ui/AppHeader';
 import { Badge } from '../../../components/ui/Badge';
@@ -278,10 +278,10 @@ export default function IntegrationsScreen() {
   const latest = (kind: string) => last7.find((r) => r.kind === kind);
 
   const row = (label: string, value: string) => (
-    <SquircleSurface style={[styles.row, { borderBottomColor: colors.border }]}>
+    <View style={[styles.row, { borderBottomColor: colors.border }]}>
       <Text style={[typography.subbody, { color: colors.text.secondary }]}>{label}</Text>
       <Text style={[typography.subbodyBold, { color: colors.text.primary }]}>{value}</Text>
-    </SquircleSurface>
+    </View>
   );
 
   return (
@@ -293,7 +293,7 @@ export default function IntegrationsScreen() {
     >
       {/* Health Connect */}
       <Card style={{ padding: spacing.base }}>
-        <SquircleSurface style={styles.titleRow}>
+        <View style={styles.titleRow}>
           <Ionicons name="fitness-outline" size={22} color={colors.primary} />
           <Text
             style={[typography.subheading, { color: colors.text.primary, marginLeft: 8, flex: 1 }]}
@@ -312,7 +312,7 @@ export default function IntegrationsScreen() {
             }
             variant={s.healthConnect ? 'success' : 'neutral'}
           />
-        </SquircleSurface>
+        </View>
         <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 6 }]}>
           Samsung Health, Google Fit, Fitbit, Garmin and many other apps share through Health
           Connect. Turn sharing on in those apps, then connect here. Thrivefold reads only what you
@@ -353,7 +353,7 @@ export default function IntegrationsScreen() {
                 ? ` · last synced ${new Date(s.healthConnect.lastSyncAt).toLocaleString()}`
                 : ''}
             </Text>
-            <SquircleSurface style={[styles.actions, { marginTop: spacing.md }]}>
+            <View style={[styles.actions, { marginTop: spacing.md }]}>
               <Button
                 label={busy ? 'Syncing…' : 'Sync now'}
                 size="sm"
@@ -362,22 +362,22 @@ export default function IntegrationsScreen() {
               />
               <Button label="Manage" size="sm" variant="outline" onPress={openHealthConnect} />
               <Button label="Disconnect" size="sm" variant="ghost" onPress={disconnect} />
-            </SquircleSurface>
+            </View>
           </>
         ) : hcStatus === 'available' ? (
           <>
             {HC_DATA_TYPES.map((t) => {
               const on = chosen.includes(t.type);
               return (
-                <SquircleSurface key={t.type} style={[styles.toggleRow, { borderBottomColor: colors.border }]}>
-                  <SquircleSurface style={{ flex: 1, paddingRight: 12 }}>
+                <View key={t.type} style={[styles.toggleRow, { borderBottomColor: colors.border }]}>
+                  <View style={{ flex: 1, paddingRight: 12 }}>
                     <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
                       {t.label}
                     </Text>
                     <Text style={[typography.caption, { color: colors.text.secondary }]}>
                       {t.why}
                     </Text>
-                  </SquircleSurface>
+                  </View>
                   <Switch
                     value={on}
                     onValueChange={() =>
@@ -386,24 +386,24 @@ export default function IntegrationsScreen() {
                     trackColor={{ false: colors.surface2, true: colors.primary }}
                     accessibilityLabel={`Read ${t.label}`}
                   />
-                </SquircleSurface>
+                </View>
               );
             })}
-            <SquircleSurface style={[styles.toggleRow, { borderBottomColor: colors.border }]}>
-              <SquircleSurface style={{ flex: 1, paddingRight: 12 }}>
+            <View style={[styles.toggleRow, { borderBottomColor: colors.border }]}>
+              <View style={{ flex: 1, paddingRight: 12 }}>
                 <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
                   Save my workouts there
                 </Text>
                 <Text style={[typography.caption, { color: colors.text.secondary }]}>
                   Finished Thrivefold workouts appear in your other apps.
                 </Text>
-              </SquircleSurface>
+              </View>
               <Switch
                 value={writeWorkouts}
                 onValueChange={setWriteWorkouts}
                 trackColor={{ false: colors.surface2, true: colors.primary }}
               />
-            </SquircleSurface>
+            </View>
             <Button
               label={busy ? 'Connecting…' : 'Connect Health Connect'}
               disabled={busy || chosen.length === 0}
@@ -414,7 +414,7 @@ export default function IntegrationsScreen() {
         ) : null}
 
         {last7.length > 0 ? (
-          <SquircleSurface style={{ marginTop: spacing.md }}>
+          <View style={{ marginTop: spacing.md }}>
             {latest('steps')
               ? row('Steps (latest day)', `${latest('steps')!.value.toLocaleString()}`)
               : null}
@@ -433,13 +433,13 @@ export default function IntegrationsScreen() {
             {latest('exercise_minutes')
               ? row('Workouts (latest day)', `${latest('exercise_minutes')!.value} min`)
               : null}
-          </SquircleSurface>
+          </View>
         ) : null}
       </Card>
 
       {/* Bluetooth heart rate */}
       <Card style={{ padding: spacing.base, marginTop: spacing.md }}>
-        <SquircleSurface style={styles.titleRow}>
+        <View style={styles.titleRow}>
           <Ionicons name="bluetooth-outline" size={22} color={colors.primary} />
           <Text
             style={[typography.subheading, { color: colors.text.primary, marginLeft: 8, flex: 1 }]}
@@ -447,7 +447,7 @@ export default function IntegrationsScreen() {
             Heart-rate monitor
           </Text>
           {s.bleDevice ? <Badge label="Connected" variant="success" /> : null}
-        </SquircleSurface>
+        </View>
         <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 6 }]}>
           Chest straps and watches that broadcast standard Bluetooth heart rate. Live readings are
           summarised for the day when you disconnect.
@@ -529,14 +529,14 @@ export default function IntegrationsScreen() {
 
       {/* FHIR export */}
       <Card style={{ padding: spacing.base, marginTop: spacing.md }}>
-        <SquircleSurface style={styles.titleRow}>
+        <View style={styles.titleRow}>
           <Ionicons name="document-text-outline" size={22} color={colors.primary} />
           <Text
             style={[typography.subheading, { color: colors.text.primary, marginLeft: 8, flex: 1 }]}
           >
             Share with a clinician
           </Text>
-        </SquircleSurface>
+        </View>
         <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 6 }]}>
           Export your records as an HL7 FHIR R4 bundle, the standard many health systems and apps
           can read. It is labelled as recorded by you, not clinically verified. You choose where it
@@ -569,8 +569,8 @@ export default function IntegrationsScreen() {
         <Text style={[typography.subbody, { color: colors.text.secondary }]}>Nothing yet.</Text>
       ) : (
         s.auditLog.slice(0, 40).map((e) => (
-          <SquircleSurface key={e.id} style={[styles.row, { borderBottomColor: colors.border }]}>
-            <SquircleSurface style={{ flex: 1, paddingRight: 8 }}>
+          <View key={e.id} style={[styles.row, { borderBottomColor: colors.border }]}>
+            <View style={{ flex: 1, paddingRight: 8 }}>
               <Text style={[typography.subbodyBold, { color: colors.text.primary }]}>
                 {ACTION_LABEL[e.action] ?? e.action} · {SOURCE_LABEL[e.source] ?? e.source}
               </Text>
@@ -580,11 +580,11 @@ export default function IntegrationsScreen() {
               >
                 {e.detail}
               </Text>
-            </SquircleSurface>
+            </View>
             <Text style={[typography.caption, { color: colors.text.muted }]}>
               {new Date(e.at).toLocaleDateString()}
             </Text>
-          </SquircleSurface>
+          </View>
         ))
       )}
       <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.md }]}>

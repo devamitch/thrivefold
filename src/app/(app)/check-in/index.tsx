@@ -1,7 +1,7 @@
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import React, { useMemo, useRef, useState } from 'react';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { StyleSheet, Text, TextInput, type AccessibilityActionEvent } from 'react-native';
+import { StyleSheet, Text, TextInput, type AccessibilityActionEvent, View } from 'react-native';
 import { Link, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -92,20 +92,20 @@ export default function CheckInScreen() {
       </Card>
 
       <Card style={styles.card}>
-        <SquircleSurface style={styles.rowBetween}>
+        <View style={styles.rowBetween}>
           <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Sleep last night</Text>
           <Text style={[typography.subheading, { color: colors.primary }]}>{sleep}h</Text>
-        </SquircleSurface>
-        <SquircleSurface style={[styles.chips, { marginTop: spacing.sm }]}>
+        </View>
+        <View style={[styles.chips, { marginTop: spacing.sm }]}>
           {SLEEP_PRESETS.map((h) => (
             <Chip key={h} label={`${h}h`} selected={sleep === h} onPress={() => setSleep(h)} />
           ))}
-        </SquircleSurface>
-        <SquircleSurface style={[styles.stepper, { marginTop: spacing.sm }]}>
+        </View>
+        <View style={[styles.stepper, { marginTop: spacing.sm }]}>
           <StepButton icon="remove" label="Half an hour less" onPress={() => setSleep((v) => Math.max(0, v - 0.5))} />
           <Text style={[typography.caption, { color: colors.text.secondary }]}>Adjust by 30 minutes</Text>
           <StepButton icon="add" label="Half an hour more" onPress={() => setSleep((v) => Math.min(16, v + 0.5))} />
-        </SquircleSurface>
+        </View>
       </Card>
 
       <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.md, marginBottom: spacing.xs }]}>
@@ -114,16 +114,16 @@ export default function CheckInScreen() {
       <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: spacing.sm }]}>
         Optional. Today&apos;s quests follow your choice.
       </Text>
-      <SquircleSurface style={styles.chips}>
+      <View style={styles.chips}>
         {INTENSITIES.map((i) => (
           <Chip key={i.value} label={i.label} selected={intensity === i.value} onPress={() => setIntensity(intensity === i.value ? undefined : i.value)} />
         ))}
-      </SquircleSurface>
+      </View>
 
       <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm }]}>
         Anything you noticed?
       </Text>
-      <SquircleSurface style={styles.chips}>
+      <View style={styles.chips}>
         {(SYMPTOMS_BY_EXPERIENCE[experience] ?? SYMPTOMS_BY_EXPERIENCE.men_health).map((sym) => (
           <Chip
             key={sym}
@@ -132,7 +132,7 @@ export default function CheckInScreen() {
             onPress={() => setSymptoms((cur) => (cur.includes(sym) ? cur.filter((x) => x !== sym) : [...cur, sym]))}
           />
         ))}
-      </SquircleSurface>
+      </View>
 
       <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm }]}>
         A private note (optional)
@@ -238,7 +238,7 @@ function Scale({
   const combinedGesture = Gesture.Race(panGesture, tapGesture);
 
   return (
-    <SquircleSurface
+    <View
       accessible
       accessibilityRole="adjustable"
       accessibilityLabel={label}
@@ -249,12 +249,12 @@ function Scale({
         onChange(next);
       }}
     >
-      <SquircleSurface style={styles.rowBetween}>
-        <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <View style={styles.rowBetween}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <Ionicons name={SCALE_ICONS[kind]} size={18} color={colors.primary} style={{ marginRight: 6 }} />
           <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{label}</Text>
-        </SquircleSurface>
-        <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center' }}>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <PressableScale
             hitSlop={8}
             onPress={() => {
@@ -284,22 +284,22 @@ function Scale({
           >
             <Ionicons name="add" size={14} color={colors.text.primary} />
           </PressableScale>
-        </SquircleSurface>
-      </SquircleSurface>
+        </View>
+      </View>
 
       <GestureDetector gesture={combinedGesture}>
-        <SquircleSurface
+        <View
           style={[styles.scaleTrackContainer, { marginTop: spacing.sm }]}
           onLayout={(e) => {
             trackWidth.current = e.nativeEvent.layout.width;
           }}
         >
-          <SquircleSurface style={styles.scale}>
+          <View style={styles.scale}>
             {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
               const active = n <= value;
               const isThumb = n === value;
               return (
-                <SquircleSurface
+                <View
                   key={n}
                   style={[
                     styles.segment,
@@ -312,16 +312,16 @@ function Scale({
                 />
               );
             })}
-          </SquircleSurface>
-        </SquircleSurface>
+          </View>
+        </View>
       </GestureDetector>
 
-      <SquircleSurface style={[styles.rowBetween, { marginTop: 6 }]}>
+      <View style={[styles.rowBetween, { marginTop: 6 }]}>
         <Text style={[typography.caption, { color: colors.text.muted }]}>{low}</Text>
         <Text style={[typography.caption, { color: colors.primary, opacity: 0.8 }]}>Swipe or tap along bar</Text>
         <Text style={[typography.caption, { color: colors.text.muted }]}>{high}</Text>
-      </SquircleSurface>
-    </SquircleSurface>
+      </View>
+    </View>
   );
 }
 

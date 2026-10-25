@@ -1,6 +1,6 @@
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import React from 'react';
-import { Text, StyleSheet, ScrollView, Linking } from 'react-native';
+import { Text, StyleSheet, ScrollView, Linking, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
@@ -55,12 +55,12 @@ export default function UrgentSupportScreen() {
       <Header title="Get help now" subtitle="Free, confidential help" showBack />
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
         <Card style={{ marginBottom: spacing.md, backgroundColor: colors.surface1, borderColor: colors.border }}>
-          <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
             <Ionicons name="heart" size={20} color={colors.primary} />
             <Text style={[typography.subbodyBold, { color: colors.text.primary, marginLeft: 6 }]}>
               You Are Not Alone
             </Text>
-          </SquircleSurface>
+          </View>
           <Text style={[typography.caption, { color: colors.text.secondary, lineHeight: 18 }]}>
             If you or someone you know is in acute distress or experiencing thoughts of self-harm, please connect with a compassionate professional immediately. Thrivefold does not substitute emergency intervention.
           </Text>
@@ -68,10 +68,10 @@ export default function UrgentSupportScreen() {
 
         {helplines.map((hl) => (
           <Card key={hl.country} style={{ marginBottom: spacing.sm, padding: spacing.lg }}>
-            <SquircleSurface style={styles.headerRow}>
+            <View style={styles.headerRow}>
               <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{hl.country}</Text>
               <Badge label={hl.hours} variant="primary" />
-            </SquircleSurface>
+            </View>
             <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>
               {hl.service}
             </Text>

@@ -2,7 +2,7 @@ import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter, type Href } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 
 import { ActivityRow } from '../../../components/game/ActivityRow';
@@ -267,18 +267,18 @@ export default function HomeScreen() {
               variant="tinted"
               style={{ padding: spacing.base, marginTop: spacing.md }}
             >
-              <SquircleSurface style={styles.rowBetween}>
+              <View style={styles.rowBetween}>
                 <Ionicons name="trophy-outline" size={20} color={colors.primary} />
-                <SquircleSurface style={[styles.flex, { marginLeft: 12 }]}>
+                <View style={[styles.flex, { marginLeft: 12 }]}>
                   <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
                     {setupOpen} setup step{setupOpen === 1 ? '' : 's'} left
                   </Text>
                   <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
                     {setupOpen === 1 ? 'Answer it' : 'Answer them'} to fit your quests and earn the setup XP.
                   </Text>
-                </SquircleSurface>
+                </View>
                 <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
-              </SquircleSurface>
+              </View>
             </Card>
           </Link>
         </Animated.View>
@@ -299,7 +299,7 @@ export default function HomeScreen() {
 
       {/* Quests */}
       <Animated.View entering={enter(2)}>
-        <SquircleSurface style={[styles.sectionHeader, { marginTop: spacing.lg }]}>
+        <View style={[styles.sectionHeader, { marginTop: spacing.lg }]}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>
             Today&apos;s plan
           </Text>
@@ -313,7 +313,7 @@ export default function HomeScreen() {
               </PressableScale>
             </Link>
           </Link>
-        </SquircleSurface>
+        </View>
 
         {families.length > 1 ? (
           <ScrollView
@@ -334,7 +334,7 @@ export default function HomeScreen() {
           </ScrollView>
         ) : null}
 
-        <SquircleSurface style={{ marginTop: spacing.sm }}>
+        <View style={{ marginTop: spacing.sm }}>
           {visible.length === 0 ? (
             <Card variant="surface1" style={{ padding: spacing.base }}>
               <Text style={[typography.subbody, { color: colors.text.secondary }]}>
@@ -352,14 +352,14 @@ export default function HomeScreen() {
                 <QuestRow key={q.id} quest={q} onPress={() => setOpenQuest(q.id)} />
               ))}
               {timed.later.map((g) => (
-                <SquircleSurface key={g.part}>
+                <View key={g.part}>
                   <Text style={[typography.label, styles.groupLabel, { color: colors.text.muted }]}>
                     Later · {DAY_PART_LABEL[g.part]}
                   </Text>
                   {g.quests.map((q) => (
                     <QuestRow key={q.id} quest={q} onPress={() => setOpenQuest(q.id)} />
                   ))}
-                </SquircleSurface>
+                </View>
               ))}
               {finished.length > 0 ? (
                 <Text style={[typography.label, styles.groupLabel, { color: colors.text.muted }]}>
@@ -371,7 +371,7 @@ export default function HomeScreen() {
               ))}
             </>
           )}
-        </SquircleSurface>
+        </View>
         {alsoToday.length > 0 ? (
           <>
             <Text style={[typography.label, styles.groupLabel, { color: colors.text.muted }]}>
@@ -434,9 +434,9 @@ export default function HomeScreen() {
       </Animated.View>
 
       <Animated.View entering={enter(3)}>
-        <SquircleSurface style={[styles.sectionHeader, { marginTop: spacing.lg }]}>
+        <View style={[styles.sectionHeader, { marginTop: spacing.lg }]}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>This week</Text>
-        </SquircleSurface>
+        </View>
         <WeekGlance onOpen={() => router.push('/(app)/calendar')} />
         {topInsight ? (
           <Link href={'/(app)/ai' as Href} asChild>
@@ -454,26 +454,26 @@ export default function HomeScreen() {
           <Card
             style={{ padding: spacing.base, marginTop: spacing.md }}
           >
-            <SquircleSurface style={styles.rowBetween}>
+            <View style={styles.rowBetween}>
               <Text style={[typography.label, { color: colors.text.muted }]}>
                 From Health Connect
               </Text>
               <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
-            </SquircleSurface>
-            <SquircleSurface style={[styles.metrics, { marginTop: spacing.sm }]}>
+            </View>
+            <View style={[styles.metrics, { marginTop: spacing.sm }]}>
               {deviceTiles.map((t) => (
-                <SquircleSurface key={t.label} style={[styles.metric, { backgroundColor: colors.surface1 }]}>
+                <View key={t.label} style={[styles.metric, { backgroundColor: colors.surface1 }]}>
                   <Text style={[typography.subheading, { color: colors.text.primary }]}>
                     {t.value}
                   </Text>
                   <Text style={[typography.caption, { color: colors.text.muted }]}>{t.label}</Text>
-                </SquircleSurface>
+                </View>
               ))}
-            </SquircleSurface>
+            </View>
           </Card>
         </Link>
       ) : (
-        <SquircleSurface style={{ marginTop: spacing.md }}>
+        <View style={{ marginTop: spacing.md }}>
           <Link href={'/(app)/health/integrations' as Href} asChild>
             <SettingsRow
               icon="sync-outline"
@@ -481,7 +481,7 @@ export default function HomeScreen() {
               subtitle="Bring in steps, sleep and heart rate"
             />
           </Link>
-        </SquircleSurface>
+        </View>
       )}
 
       {/* Wellness Tools */}
@@ -489,9 +489,9 @@ export default function HomeScreen() {
         entering={enter(4)}
         style={{ marginTop: spacing.xl, marginBottom: spacing.xl }}
       >
-        <SquircleSurface style={styles.sectionHeader}>
+        <View style={styles.sectionHeader}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>Tools</Text>
-        </SquircleSurface>
+        </View>
         <ToolsGrid todayCount={alsoToday.length + active} />
       </Animated.View>
 
@@ -532,11 +532,11 @@ function FocusCard({
   const { colors, typography, spacing } = useTheme();
   return (
     <Card onPress={onPress} style={{ padding: spacing.base, marginTop: spacing.lg }}>
-      <SquircleSurface style={styles.rowBetween}>
-        <SquircleSurface style={[styles.iconTile, { backgroundColor: colors.primaryAlpha }]}>
+      <View style={styles.rowBetween}>
+        <View style={[styles.iconTile, { backgroundColor: colors.primaryAlpha }]}>
           <Ionicons name={icon} size={20} color={colors.primary} />
-        </SquircleSurface>
-        <SquircleSurface style={[styles.flex, { marginLeft: 12 }]}>
+        </View>
+        <View style={[styles.flex, { marginLeft: 12 }]}>
           <Text style={[typography.label, { color: colors.text.muted }]}>{label}</Text>
           <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 2 }]}>
             {title}
@@ -544,9 +544,9 @@ function FocusCard({
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
             {body}
           </Text>
-        </SquircleSurface>
+        </View>
         <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
-      </SquircleSurface>
+      </View>
     </Card>
   );
 }

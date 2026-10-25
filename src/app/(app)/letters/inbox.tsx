@@ -1,6 +1,6 @@
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import React from 'react';
-import { Text, StyleSheet, ScrollView } from 'react-native';
+import { Text, StyleSheet, ScrollView, View } from 'react-native';
 import { Link, type Href } from 'expo-router';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
@@ -24,7 +24,7 @@ export default function LetterInboxDetailScreen() {
           const isTransit = letter.status === 'in_transit';
           return (
             <Card key={letter.id} style={{ marginBottom: spacing.md, padding: spacing.lg }}>
-              <SquircleSurface style={styles.headerRow}>
+              <View style={styles.headerRow}>
                 <Badge
                   label={isTransit ? 'Traveling' : 'Delivered'}
                   variant={isTransit ? 'warning' : 'success'}
@@ -32,7 +32,7 @@ export default function LetterInboxDetailScreen() {
                 <Text style={[typography.caption, { color: colors.text.muted }]}>
                   {letter.distanceKm.toLocaleString()} km
                 </Text>
-              </SquircleSurface>
+              </View>
 
               <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 8 }]}>
                 Letter from {letter.senderPseudonym ?? 'AuroraSeeker'}

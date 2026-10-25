@@ -1,6 +1,6 @@
 import { SquircleSurface } from '../ui/SquircleSurface';
 import React from 'react';
-import { Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
@@ -34,17 +34,17 @@ export const PersonalizedNourishmentCard: React.FC<PersonalizedNourishmentCardPr
     <>
       {/* Personalized Dietary Rhythm Card */}
       <Card variant="tinted" style={{ marginTop: spacing.md, padding: spacing.lg }}>
-        <SquircleSurface style={styles.rowBetween}>
-          <SquircleSurface style={{ flex: 1, paddingRight: 8 }}>
+        <View style={styles.rowBetween}>
+          <View style={{ flex: 1, paddingRight: 8 }}>
             <Text style={[typography.captionBold, { color: colors.text.muted }]}>
               PERSONALIZED NOURISHMENT
             </Text>
             <Text style={[typography.heading, { color: colors.primary, marginTop: 2 }]}>
               {activeDiet ? `${activeDiet} Rhythm` : 'Balanced Whole Foods'}
             </Text>
-          </SquircleSurface>
+          </View>
           <Badge label="Active Diet" variant="primary" />
-        </SquircleSurface>
+        </View>
         <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 6 }]}>
           {activeDiet
             ? `Recipes and daily meal guidance tailored to your ${activeDiet} onboarding choice.`
@@ -61,18 +61,18 @@ export const PersonalizedNourishmentCard: React.FC<PersonalizedNourishmentCardPr
 
       {/* Hydration Tracker */}
       <Card style={{ marginTop: spacing.md, padding: spacing.lg }}>
-        <SquircleSurface style={styles.rowBetween}>
-          <SquircleSurface>
+        <View style={styles.rowBetween}>
+          <View>
             <Text style={[typography.subheading, { color: colors.text.primary }]}>
               Cellular Hydration
             </Text>
             <Text style={[typography.caption, { color: colors.text.muted }]}>
               Target: 8 glasses daily (2.0L)
             </Text>
-          </SquircleSurface>
+          </View>
           <Badge label={`${waterGlasses}/8 glasses`} variant="primary" />
-        </SquircleSurface>
-        <SquircleSurface style={[styles.waterRow, { marginTop: spacing.md }]}>
+        </View>
+        <View style={[styles.waterRow, { marginTop: spacing.md }]}>
           {[1, 2, 3, 4, 5, 6, 7, 8].map((g) => (
             <PressableScale
               key={g}
@@ -99,11 +99,11 @@ export const PersonalizedNourishmentCard: React.FC<PersonalizedNourishmentCardPr
               />
             </PressableScale>
           ))}
-        </SquircleSurface>
+        </View>
       </Card>
 
       {/* Daily Precalculated Agenda Events */}
-      <SquircleSurface style={{ marginTop: spacing.lg }}>
+      <View style={{ marginTop: spacing.lg }}>
         <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: spacing.sm }]}>
           Calculated Daily Schedule
         </Text>
@@ -122,7 +122,7 @@ export const PersonalizedNourishmentCard: React.FC<PersonalizedNourishmentCardPr
                 },
               ]}
             >
-              <SquircleSurface style={styles.agendaRow}>
+              <View style={styles.agendaRow}>
                 <PressableScale
                   onPress={() => onToggleEvent(evt)}
                   scaleTo={0.9}
@@ -137,7 +137,7 @@ export const PersonalizedNourishmentCard: React.FC<PersonalizedNourishmentCardPr
                   {isDone && <Ionicons name="checkmark" size={14} color="#FFF" />}
                 </PressableScale>
 
-                <SquircleSurface style={{ flex: 1, marginLeft: 12 }}>
+                <View style={{ flex: 1, marginLeft: 12 }}>
                   <Text
                     style={[
                       typography.bodyBold,
@@ -154,14 +154,14 @@ export const PersonalizedNourishmentCard: React.FC<PersonalizedNourishmentCardPr
                       {evt.description}
                     </Text>
                   )}
-                </SquircleSurface>
+                </View>
 
                 <Badge label={evt.kind.replace('_', ' ')} variant="neutral" />
-              </SquircleSurface>
+              </View>
             </Card>
           );
         })}
-      </SquircleSurface>
+      </View>
     </>
   );
 };

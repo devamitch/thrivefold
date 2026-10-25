@@ -2,7 +2,7 @@ import { SquircleSurface } from '../../components/ui/SquircleSurface';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
-import { StatusBar, StyleSheet, Text } from 'react-native';
+import { StatusBar, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PressableScale } from '../../components/ui/PressableScale';
@@ -20,9 +20,9 @@ export default function WatchScreen() {
   const { v, q, title } = useLocalSearchParams<{ v?: string; q?: string; title?: string }>();
 
   return (
-    <SquircleSurface style={[styles.root, { backgroundColor: colors.text.primary, paddingTop: insets.top }]}>
+    <View style={[styles.root, { backgroundColor: colors.text.primary, paddingTop: insets.top }]}>
       <StatusBar barStyle="light-content" />
-      <SquircleSurface style={styles.bar}>
+      <View style={styles.bar}>
         <PressableScale
           onPress={() => router.back()}
           hitSlop={10}
@@ -32,7 +32,7 @@ export default function WatchScreen() {
         >
           <Ionicons name="chevron-back" size={22} color={colors.onPrimary} />
         </PressableScale>
-        <SquircleSurface style={styles.flex}>
+        <View style={styles.flex}>
           <Text style={[typography.bodyBold, { color: colors.onPrimary }]} numberOfLines={1}>
             {title ?? 'Tutorial'}
           </Text>
@@ -42,14 +42,14 @@ export default function WatchScreen() {
           >
             {v ? 'Checked tutorial video' : 'Pick a video below; it plays here'}
           </Text>
-        </SquircleSurface>
-      </SquircleSurface>
+        </View>
+      </View>
       <YouTubePlayer
         videoId={v || undefined}
         query={q}
         style={{ flex: 1, marginBottom: insets.bottom }}
       />
-    </SquircleSurface>
+    </View>
   );
 }
 

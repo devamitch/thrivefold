@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { useTheme } from '../../theme/useTheme';
 import { Button } from '../ui/Button';
@@ -37,7 +37,7 @@ export function ActivityRow({ icon, title, meta, done, dimmed, action, onPress, 
         <SquircleSurface radius={12} fill={done ? colors.successSurface : highlight ? colors.surface : colors.primaryAlpha} style={styles.tile}>
           <Ionicons name={done ? 'checkmark' : icon} size={20} color={done ? colors.success : colors.primary} />
         </SquircleSurface>
-        <SquircleSurface style={styles.flex}>
+        <View style={styles.flex}>
           <Text
             style={[typography.bodyBold, { color: colors.text.primary, textDecorationLine: done ? 'line-through' : 'none' }]}
             numberOfLines={2}
@@ -49,7 +49,7 @@ export function ActivityRow({ icon, title, meta, done, dimmed, action, onPress, 
               {meta}
             </Text>
           ) : null}
-        </SquircleSurface>
+        </View>
         {trailing ?? (action && !done ? <Button label={action} size="sm" onPress={onPress} /> : <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />)}
       </SquircleSurface>
     </PressableScale>

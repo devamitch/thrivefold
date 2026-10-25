@@ -1,6 +1,6 @@
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { Header } from '../../../components/ui/Header';
@@ -52,7 +52,7 @@ export default function JournalScreen() {
             multiline
             numberOfLines={6}
           />
-          <SquircleSurface style={styles.buttonRow}>
+          <View style={styles.buttonRow}>
             <Button
               label="Cancel"
               variant="outline"
@@ -70,7 +70,7 @@ export default function JournalScreen() {
               onPress={handleSave}
               style={{ flex: 1, marginLeft: 8 }}
             />
-          </SquircleSurface>
+          </View>
         </Card>
 
         {/* Journal Entries */}
@@ -79,16 +79,16 @@ export default function JournalScreen() {
         </Text>
         {journalEntries.map((entry) => (
           <Card key={entry.id} style={{ marginBottom: 16, padding: 24 }}>
-            <SquircleSurface style={styles.entryHeader}>
+            <View style={styles.entryHeader}>
               <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{entry.title}</Text>
               <Text style={[typography.caption, { color: colors.text.muted }]}>
                 {new Date(entry.createdAt).toLocaleDateString()}
               </Text>
-            </SquircleSurface>
+            </View>
             <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 8 }]}>
               {entry.content}
             </Text>
-            <SquircleSurface style={styles.entryFooter}>
+            <View style={styles.entryFooter}>
               <Text style={[typography.caption, { color: colors.primary }]}>
                 Mood: {entry.moodTag}/10
               </Text>
@@ -98,7 +98,7 @@ export default function JournalScreen() {
                 size="sm"
                 onPress={() => deleteJournalEntry(entry.id)}
               />
-            </SquircleSurface>
+            </View>
           </Card>
         ))}
 

@@ -1,6 +1,6 @@
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import React from 'react';
-import { Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
@@ -15,7 +15,7 @@ export default function StampsAlbumScreen() {
   return (
     <ScreenWrapper scrollable>
       <Header title="Stamps" subtitle="Stamps you have collected" showBack />
-      <SquircleSurface style={[styles.content, { paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }]}>
+      <View style={[styles.content, { paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }]}>
         <Card variant="tinted" style={{ marginBottom: spacing.md, padding: spacing.base }}>
           <Text style={[typography.captionBold, { color: colors.primary }]}>
             Earned Through Consistency
@@ -25,10 +25,10 @@ export default function StampsAlbumScreen() {
           </Text>
         </Card>
 
-        <SquircleSurface style={styles.grid}>
+        <View style={styles.grid}>
           {STAMP_CATALOG.map((stamp) => (
             <Card key={stamp.id} style={styles.stampCard}>
-              <SquircleSurface style={[styles.stampFrame, { borderColor: stamp.color, backgroundColor: colors.surface1 }]}>
+              <View style={[styles.stampFrame, { borderColor: stamp.color, backgroundColor: colors.surface1 }]}>
                 <Ionicons
                   name={
                     stamp.icon === 'flower'
@@ -44,7 +44,7 @@ export default function StampsAlbumScreen() {
                   size={30}
                   color={stamp.color}
                 />
-              </SquircleSurface>
+              </View>
               <Text style={[typography.subbodyBold, { color: colors.text.primary, marginTop: 8, textAlign: 'center' }]}>
                 {stamp.name}
               </Text>
@@ -54,8 +54,8 @@ export default function StampsAlbumScreen() {
               </Text>
             </Card>
           ))}
-        </SquircleSurface>
-      </SquircleSurface>
+        </View>
+      </View>
     </ScreenWrapper>
   );
 }

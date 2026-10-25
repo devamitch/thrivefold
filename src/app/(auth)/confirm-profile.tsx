@@ -3,7 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '../../components/ui/Button';
@@ -58,11 +58,11 @@ export default function ConfirmProfileScreen() {
 
   if (!profile) {
     return (
-      <SquircleSurface style={[styles.root, { backgroundColor: colors.background, paddingTop: insets.top + spacing.xl, paddingHorizontal: spacing.lg }]}>
+      <View style={[styles.root, { backgroundColor: colors.background, paddingTop: insets.top + spacing.xl, paddingHorizontal: spacing.lg }]}>
         <Text style={[typography.heading, { color: colors.text.primary }]}>Please sign in again</Text>
         <Text style={[typography.body, { color: colors.text.secondary, marginTop: spacing.xs }]}>Your sign-in expired before it was confirmed.</Text>
         <Button label="Back to sign in" onPress={() => router.replace('/(auth)/sign-in')} style={{ marginTop: spacing.lg }} />
-      </SquircleSurface>
+      </View>
     );
   }
 
@@ -101,9 +101,9 @@ export default function ConfirmProfileScreen() {
   };
 
   return (
-    <SquircleSurface style={[styles.root, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+    <View style={[styles.root, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xl }} showsVerticalScrollIndicator={false}>
-        <SquircleSurface style={styles.center}>
+        <View style={styles.center}>
           <SquircleSurface radius={24} fill={colors.surface1} style={styles.avatar}>
             {profile.photo ? (
               <Image source={{ uri: profile.photo }} style={styles.avatarImg} accessibilityLabel="Profile photo" />
@@ -117,13 +117,13 @@ export default function ConfirmProfileScreen() {
           <Text style={[typography.subbody, styles.centerText, { color: colors.text.secondary, marginTop: 2 }]} numberOfLines={1}>
             {profile.email}
           </Text>
-        </SquircleSurface>
+        </View>
 
         <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.xl }]}>Date of birth</Text>
         <PressableScale onPress={() => setPicker(true)} accessibilityRole="button" accessibilityLabel={birthDate ? `Date of birth ${showDate(birthDate)}. Change` : 'Add your date of birth'}>
           <SquircleSurface radius={18} fill={colors.surface1} style={[styles.row, { marginTop: spacing.sm }]}>
             <Ionicons name="calendar-outline" size={20} color={colors.primary} />
-            <SquircleSurface style={styles.flex}>
+            <View style={styles.flex}>
               <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{birthDate ? showDate(birthDate) : 'Add your date of birth'}</Text>
               <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
                 {birthDate
@@ -132,7 +132,7 @@ export default function ConfirmProfileScreen() {
                     ? `Google shared only your birth year (${profile.birthYear}). Add the full date.`
                     : 'Google did not share it. It stays on this phone.'}
               </Text>
-            </SquircleSurface>
+            </View>
             <Text style={[typography.subbodyBold, { color: colors.primary }]}>{birthDate ? 'Change' : 'Add'}</Text>
           </SquircleSurface>
         </PressableScale>
@@ -152,10 +152,10 @@ export default function ConfirmProfileScreen() {
             <PressableScale key={s.id} onPress={() => setSpace(s.id)} accessibilityRole="radio" accessibilityState={{ selected: on }} accessibilityLabel={`${s.title}. ${s.body}`}>
               <SquircleSurface radius={18} fill={on ? colors.primaryAlpha : colors.surface1} style={[styles.row, { marginTop: spacing.sm }]}>
                 <Ionicons name={s.icon} size={22} color={on ? colors.primary : colors.text.secondary} />
-                <SquircleSurface style={styles.flex}>
+                <View style={styles.flex}>
                   <Text style={[typography.bodyBold, { color: on ? colors.primary : colors.text.primary }]}>{s.title}</Text>
                   <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>{s.body}</Text>
-                </SquircleSurface>
+                </View>
                 <Ionicons name={on ? 'radio-button-on' : 'radio-button-off'} size={20} color={on ? colors.primary : colors.text.muted} />
               </SquircleSurface>
             </PressableScale>
@@ -168,10 +168,10 @@ export default function ConfirmProfileScreen() {
         </Text>
       </ScrollView>
 
-      <SquircleSurface style={{ paddingHorizontal: spacing.lg, paddingBottom: insets.bottom + spacing.md, paddingTop: spacing.sm }}>
+      <View style={{ paddingHorizontal: spacing.lg, paddingBottom: insets.bottom + spacing.md, paddingTop: spacing.sm }}>
         <Button label={ready ? 'Continue' : !birthDate ? 'Add your date of birth' : !space ? 'Choose a space' : 'Continue'} size="lg" disabled={!ready} onPress={confirm} />
         <Button label="Not me, sign out" variant="ghost" onPress={cancel} style={{ marginTop: spacing.xs }} />
-      </SquircleSurface>
+      </View>
 
       <DatePickerModal
         visible={picker}
@@ -186,7 +186,7 @@ export default function ConfirmProfileScreen() {
         }}
         onClose={() => setPicker(false)}
       />
-    </SquircleSurface>
+    </View>
   );
 }
 

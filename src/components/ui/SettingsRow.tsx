@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { useTheme } from '../../theme/useTheme';
 import { PressableScale } from './PressableScale';
@@ -25,10 +25,10 @@ export function SettingsRow({ icon, title, subtitle, onPress, right, tone = 'def
       <SquircleSurface radius={12} fill={tone === 'danger' ? colors.errorSurface : colors.primaryAlpha} style={styles.icon}>
         <Ionicons name={icon} size={18} color={tone === 'danger' ? colors.error : colors.primary} />
       </SquircleSurface>
-      <SquircleSurface style={styles.flex}>
+      <View style={styles.flex}>
         <Text style={[typography.bodyBold, { color: fg }]}>{title}</Text>
         {subtitle ? <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>{subtitle}</Text> : null}
-      </SquircleSurface>
+      </View>
       {right ?? (onPress ? <Ionicons name="chevron-forward" size={18} color={colors.text.muted} /> : null)}
     </SquircleSurface>
   );

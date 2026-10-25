@@ -1,6 +1,6 @@
 import { SquircleSurface } from '../ui/SquircleSurface';
 import React from 'react';
-import { Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet, View } from 'react-native';
 
 import { useTheme } from '../../theme/useTheme';
 import { Card } from '../ui/Card';
@@ -55,11 +55,11 @@ export const AthleticCheckInCard: React.FC<AthleticCheckInCardProps> = ({
       </Text>
 
       {/* Energy Rating */}
-      <SquircleSurface style={styles.rowBetween}>
+      <View style={styles.rowBetween}>
         <Text style={[typography.captionBold, { color: colors.text.primary }]}>Energy</Text>
         <Badge label={ENERGY_LABELS[energy] ?? 'Good'} variant="primary" />
-      </SquircleSurface>
-      <SquircleSurface style={[styles.ratingRow, { marginTop: 8 }]}>
+      </View>
+      <View style={[styles.ratingRow, { marginTop: 8 }]}>
         {[1, 3, 5, 7, 9, 10].map((v) => (
           <PressableScale
             key={v}
@@ -84,14 +84,14 @@ export const AthleticCheckInCard: React.FC<AthleticCheckInCardProps> = ({
             </Text>
           </PressableScale>
         ))}
-      </SquircleSurface>
+      </View>
 
       {/* Mood / Focus Rating */}
-      <SquircleSurface style={[styles.rowBetween, { marginTop: spacing.md }]}>
+      <View style={[styles.rowBetween, { marginTop: spacing.md }]}>
         <Text style={[typography.captionBold, { color: colors.text.primary }]}>Focus</Text>
         <Badge label={MOOD_LABELS[mood] ?? 'Positive'} variant="primary" />
-      </SquircleSurface>
-      <SquircleSurface style={[styles.ratingRow, { marginTop: 8 }]}>
+      </View>
+      <View style={[styles.ratingRow, { marginTop: 8 }]}>
         {[1, 3, 5, 7, 9, 10].map((v) => (
           <PressableScale
             key={v}
@@ -116,7 +116,7 @@ export const AthleticCheckInCard: React.FC<AthleticCheckInCardProps> = ({
             </Text>
           </PressableScale>
         ))}
-      </SquircleSurface>
+      </View>
 
       <Button
         label={checkedInToday ? 'Update Check-In' : 'Save Check-In'}

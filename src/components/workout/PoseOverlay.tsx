@@ -1,6 +1,6 @@
 import { SquircleSurface } from '../ui/SquircleSurface';
 import React, { useEffect } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -87,7 +87,7 @@ export function PoseOverlay({ landmarks, frameWidth, frameHeight, width, height,
   const hot = new Set(highlight);
 
   return (
-    <SquircleSurface style={[StyleSheet.absoluteFill, { width, height }]} pointerEvents="none">
+    <View style={[StyleSheet.absoluteFill, { width, height }]} pointerEvents="none">
       {SKELETON.map(([a, b]) => (
         <Bone key={`${a}-${b}`} a={a} b={b} shown={shown} color={hot.has(a) || hot.has(b) ? colors.error : colors.onPrimary} />
       ))}
@@ -95,7 +95,7 @@ export function PoseOverlay({ landmarks, frameWidth, frameHeight, width, height,
         <Joint key={i} i={i} shown={shown} breath={breath} color={hot.has(i) ? colors.error : colors.primary} ring={colors.onPrimary} hot={hot.has(i)} />
       ))}
       <Head shown={shown} color={colors.onPrimary} />
-    </SquircleSurface>
+    </View>
   );
 }
 
@@ -151,7 +151,7 @@ function Joint({
     <>
       {hot ? <Animated.View style={[styles.abs, { width: halo, height: halo, borderRadius: halo / 2, backgroundColor: color }, glow]} /> : null}
       <Animated.View style={[styles.abs, { width: size + 4, height: size + 4, borderRadius: (size + 4) / 2, backgroundColor: ring, padding: 2 }, dot]}>
-        <SquircleSurface style={{ flex: 1, borderRadius: size / 2, backgroundColor: color }} />
+        <View style={{ flex: 1, borderRadius: size / 2, backgroundColor: color }} />
       </Animated.View>
     </>
   );

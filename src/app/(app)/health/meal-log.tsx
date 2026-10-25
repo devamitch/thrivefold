@@ -5,7 +5,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { StyleSheet, Text, TextInput } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { AppHeader } from '../../../components/ui/AppHeader';
 import { Button } from '../../../components/ui/Button';
@@ -86,11 +86,11 @@ export default function MealLogScreen() {
       scrollMode="shell-scroll-view"
       footer={<Button label={items.length ? `Save meal · ${sum.kcal} kcal` : 'Add at least one food'} size="lg" disabled={items.length === 0} onPress={save} />}
     >
-      <SquircleSurface style={styles.chips}>
+      <View style={styles.chips}>
         {TYPES.map((t) => (
           <Chip key={t.id} label={t.label} selected={type === t.id} onPress={() => setType(t.id)} />
         ))}
-      </SquircleSurface>
+      </View>
 
       {photo ? (
         <PressableScale onPress={() => setPhoto(null)} accessibilityLabel="Remove photo" style={{ marginTop: spacing.md }}>
@@ -98,14 +98,14 @@ export default function MealLogScreen() {
           <Text style={[typography.caption, { color: colors.text.muted, marginTop: 4 }]}>Kept only on this phone. Tap to remove.</Text>
         </PressableScale>
       ) : (
-        <SquircleSurface style={[styles.row, { marginTop: spacing.md, gap: 8 }]}>
+        <View style={[styles.row, { marginTop: spacing.md, gap: 8 }]}>
           <Button label="Take a photo" variant="outline" size="sm" onPress={() => pick(true)} style={styles.flex} />
           <Button label="From gallery" variant="ghost" size="sm" onPress={() => pick(false)} style={styles.flex} />
-        </SquircleSurface>
+        </View>
       )}
 
       <Card style={{ padding: spacing.base, marginTop: spacing.md }}>
-        <SquircleSurface style={styles.macros}>
+        <View style={styles.macros}>
           {(
             [
               ['kcal', `${sum.kcal}`],
@@ -114,30 +114,30 @@ export default function MealLogScreen() {
               ['Fat', `${sum.fat} g`],
             ] as const
           ).map(([label, value]) => (
-            <SquircleSurface key={label} style={styles.macro}>
+            <View key={label} style={styles.macro}>
               <Text style={[typography.subheading, { color: colors.text.primary }]}>{value}</Text>
               <Text style={[typography.caption, { color: colors.text.muted }]}>{label}</Text>
-            </SquircleSurface>
+            </View>
           ))}
-        </SquircleSurface>
+        </View>
         {items.map((i) => {
           const f = foodById(i.foodId);
           if (!f) return null;
           return (
-            <SquircleSurface key={i.foodId} style={[styles.row, styles.itemRow, { borderTopColor: colors.border }]}>
-              <SquircleSurface style={styles.flex}>
+            <View key={i.foodId} style={[styles.row, styles.itemRow, { borderTopColor: colors.border }]}>
+              <View style={styles.flex}>
                 <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{f.name}</Text>
                 <Text style={[typography.caption, { color: colors.text.secondary }]}>
                   {i.servings} x {f.serving} · {Math.round(f.kcal * i.servings)} kcal
                 </Text>
-              </SquircleSurface>
+              </View>
               <PressableScale onPress={() => change(i.foodId, -0.5)} hitSlop={8} accessibilityLabel={`Less ${f.name}`} style={[styles.step, { backgroundColor: colors.surface1 }]}>
                 <Ionicons name="remove" size={16} color={colors.text.primary} />
               </PressableScale>
               <PressableScale onPress={() => change(i.foodId, 0.5)} hitSlop={8} accessibilityLabel={`More ${f.name}`} style={[styles.step, { backgroundColor: colors.surface1, marginLeft: 8 }]}>
                 <Ionicons name="add" size={16} color={colors.text.primary} />
               </PressableScale>
-            </SquircleSurface>
+            </View>
           );
         })}
         {items.length === 0 ? (
@@ -155,12 +155,12 @@ export default function MealLogScreen() {
       />
       {results.map((f) => (
         <PressableScale key={f.id} onPress={() => add(f.id)} accessibilityRole="button" style={[styles.row, styles.food, { borderBottomColor: colors.border }]}>
-          <SquircleSurface style={styles.flex}>
+          <View style={styles.flex}>
             <Text style={[typography.subbodyBold, { color: colors.text.primary }]}>{f.name}</Text>
             <Text style={[typography.caption, { color: colors.text.secondary }]}>
               {f.serving} · {f.kcal} kcal · P {f.protein} g · C {f.carbs} g · F {f.fat} g
             </Text>
-          </SquircleSurface>
+          </View>
           <Ionicons name="add-circle-outline" size={22} color={colors.primary} />
         </PressableScale>
       ))}

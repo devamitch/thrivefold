@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useRef, useState } from 'react';
-import { PermissionsAndroid, Platform, StyleSheet, Text } from 'react-native';
+import { PermissionsAndroid, Platform, StyleSheet, Text, View } from 'react-native';
 import { PoseCameraView, poseLandmarkerAvailable, poseModelVersion, type PoseFrame } from 'pose-landmarker';
 
 import { AppHeader } from '../../../components/ui/AppHeader';
@@ -122,9 +122,9 @@ export default function PoseCheckScreen() {
 
   if (phase === 'live' && PoseCameraView) {
     return (
-      <SquircleSurface style={[styles.live, { backgroundColor: colors.background }]}>
+      <View style={[styles.live, { backgroundColor: colors.background }]}>
         <AppHeader title={movement.title} subtitle="Processed on this phone" showBack />
-        <SquircleSurface style={styles.cameraWrap} onLayout={(ev) => setTile({ width: ev.nativeEvent.layout.width, height: ev.nativeEvent.layout.height })}>
+        <View style={styles.cameraWrap} onLayout={(ev) => setTile({ width: ev.nativeEvent.layout.width, height: ev.nativeEvent.layout.height })}>
           <PoseCameraView
             style={StyleSheet.absoluteFill}
             active
@@ -142,7 +142,7 @@ export default function PoseCheckScreen() {
               highlight={view.reps.fault?.joints ?? []}
             />
           ) : null}
-          <SquircleSurface style={[styles.overlay, { backgroundColor: colors.scrim }]}>
+          <View style={[styles.overlay, { backgroundColor: colors.scrim }]}>
             <Text style={[typography.display, styles.repCount, { color: colors.onPrimary }]} accessibilityLiveRegion="polite">
               {movement.kind === 'hold' ? Math.floor(view.reps.holdMs / 1000) : view.reps.reps}
               <Text style={typography.subheading}> / {movement.targetReps}</Text>
@@ -154,7 +154,7 @@ export default function PoseCheckScreen() {
               {view.reps.lastAngle !== null ? `Joint angle ${Math.round(view.reps.lastAngle)}°` : 'Looking for you'}
               {view.reps.validFrames ? ` · tracking ${Math.round(confidence * 100)}%` : ''}
             </Text>
-          </SquircleSurface>
+          </View>
           <PressableScale
             onPress={() => setFacing(facing === 'front' ? 'back' : 'front')}
             accessibilityRole="button"
@@ -163,12 +163,12 @@ export default function PoseCheckScreen() {
           >
             <Ionicons name="camera-reverse-outline" size={22} color={colors.text.primary} />
           </PressableScale>
-        </SquircleSurface>
+        </View>
         {error ? <Text style={[typography.caption, { color: colors.error, padding: spacing.sm }]}>{error}</Text> : null}
-        <SquircleSurface style={{ padding: spacing.base }}>
+        <View style={{ padding: spacing.base }}>
           <Button label="Finish" size="lg" onPress={finish} />
-        </SquircleSurface>
-      </SquircleSurface>
+        </View>
+      </View>
     );
   }
 
@@ -194,11 +194,11 @@ export default function PoseCheckScreen() {
       ) : null}
 
       <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: spacing.sm }]}>Movement</Text>
-      <SquircleSurface style={styles.chips}>
+      <View style={styles.chips}>
         {MOVEMENTS.map((m) => (
           <Chip key={m.id} label={m.title} selected={movement.id === m.id} onPress={() => setMovement(m)} />
         ))}
-      </SquircleSurface>
+      </View>
       <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: spacing.sm }]}>{movement.cue}</Text>
       {lastForMovement ? (
         <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.xs }]}>
@@ -214,10 +214,10 @@ export default function PoseCheckScreen() {
           ['information-circle-outline', 'Counts visible movement only. It does not judge fitness, injury or your body.'],
           ['hand-left-outline', 'Stop if anything hurts. Clear the space around you first.'],
         ].map(([icon, text]) => (
-          <SquircleSurface key={text} style={[styles.row, { marginBottom: spacing.sm }]}>
+          <View key={text} style={[styles.row, { marginBottom: spacing.sm }]}>
             <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={18} color={colors.primary} />
             <Text style={[typography.subbody, styles.flex, { color: colors.text.secondary, marginLeft: 10 }]}>{text}</Text>
-          </SquircleSurface>
+          </View>
         ))}
       </Card>
       {error ? <Text style={[typography.caption, { color: colors.error, marginTop: spacing.sm }]}>{error}</Text> : null}

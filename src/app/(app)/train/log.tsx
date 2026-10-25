@@ -2,7 +2,7 @@ import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { StyleSheet, Text, TextInput } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { AppHeader } from '../../../components/ui/AppHeader';
 import { Button } from '../../../components/ui/Button';
@@ -58,12 +58,12 @@ export default function ManualLogScreen() {
     >
       {ex ? (
         <Card style={{ padding: spacing.base }}>
-          <SquircleSurface style={styles.row}>
+          <View style={styles.row}>
             <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>{ex.name}</Text>
             <Button label="Change" size="sm" variant="ghost" onPress={() => setExerciseId(null)} />
-          </SquircleSurface>
+          </View>
           {sets.map((v, i) => (
-            <SquircleSurface key={i} style={[styles.row, { marginTop: spacing.sm }]}>
+            <View key={i} style={[styles.row, { marginTop: spacing.sm }]}>
               <Text style={[typography.body, { color: colors.text.secondary, width: 60 }]}>Set {i + 1}</Text>
               <TextInput
                 value={v}
@@ -78,7 +78,7 @@ export default function ManualLogScreen() {
                   <Ionicons name="close-circle-outline" size={20} color={colors.text.muted} />
                 </PressableScale>
               ) : null}
-            </SquircleSurface>
+            </View>
           ))}
           <Button label="Add a set" size="sm" variant="outline" onPress={() => setSets((cur) => [...cur, cur[cur.length - 1] ?? '10'])} style={{ marginTop: spacing.md, alignSelf: 'flex-start' }} />
           <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.md }]}>

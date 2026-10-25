@@ -1,6 +1,6 @@
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import React, { useState } from 'react';
-import { Text, StyleSheet, ScrollView, Switch } from 'react-native';
+import { Text, StyleSheet, ScrollView, Switch, View } from 'react-native';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
 import { Header } from '../../../components/ui/Header';
@@ -27,21 +27,21 @@ export default function LetterPreferencesScreen() {
       <Header title="Delivery preferences" subtitle="Pace, distance and boundaries" showBack />
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
         <Card style={{ marginBottom: spacing.md }}>
-          <SquircleSurface style={styles.switchRow}>
-            <SquircleSurface style={{ flex: 1, paddingRight: 12 }}>
+          <View style={styles.switchRow}>
+            <View style={{ flex: 1, paddingRight: 12 }}>
               <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
                 Accept New Letters & Introductions
               </Text>
               <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
                 When turned off, no new correspondents can find your card in discovery.
               </Text>
-            </SquircleSurface>
+            </View>
             <Switch
               value={acceptingLetters}
               onValueChange={setAcceptingLetters}
               trackColor={{ false: colors.surface1, true: colors.primary }}
             />
-          </SquircleSurface>
+          </View>
         </Card>
 
         {/* Distance Band */}
@@ -49,7 +49,7 @@ export default function LetterPreferencesScreen() {
           <Text style={[typography.subbodyBold, { color: colors.text.primary, marginBottom: 8 }]}>
             Geographic Distance Scope
           </Text>
-          <SquircleSurface style={styles.chipRow}>
+          <View style={styles.chipRow}>
             {distanceBands.map((band) => (
               <Chip
                 key={band}
@@ -59,7 +59,7 @@ export default function LetterPreferencesScreen() {
                 style={{ marginRight: 6, marginBottom: 6 }}
               />
             ))}
-          </SquircleSurface>
+          </View>
         </Card>
 
         {/* Pacing Speed */}
@@ -67,7 +67,7 @@ export default function LetterPreferencesScreen() {
           <Text style={[typography.subbodyBold, { color: colors.text.primary, marginBottom: 8 }]}>
             Postal Transit Simulation Pacing
           </Text>
-          <SquircleSurface style={styles.chipRow}>
+          <View style={styles.chipRow}>
             {pacingOptions.map((opt) => (
               <Chip
                 key={opt}
@@ -77,7 +77,7 @@ export default function LetterPreferencesScreen() {
                 style={{ marginRight: 6, marginBottom: 6 }}
               />
             ))}
-          </SquircleSurface>
+          </View>
         </Card>
 
         <Button

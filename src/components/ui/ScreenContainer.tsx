@@ -123,13 +123,13 @@ export function ScreenContainer({
   );
 
   const footerNode = footer ? (
-    <SquircleSurface
+    <View
       style={[
         styles.footerWrapper,
         { backgroundColor: colors.background, borderTopColor: colors.border },
       ]}
     >
-      <SquircleSurface
+      <View
         style={[
           column,
           styles.footerContent,
@@ -137,8 +137,8 @@ export function ScreenContainer({
         ]}
       >
         {footer}
-      </SquircleSurface>
-    </SquircleSurface>
+      </View>
+    </View>
   ) : null;
 
   const headerProps =
@@ -198,7 +198,7 @@ export function ScreenContainer({
   /* ── Pinned compact or custom header node ─────────────── */
   const pinnedHeaderNode =
     header && stickyHeader && headerMode !== 'none' ? (
-      <SquircleSurface
+      <View
         style={[
           styles.pinnedHeader,
           { backgroundColor: colors.background, paddingTop: statusInset + 4 },
@@ -206,7 +206,7 @@ export function ScreenContainer({
         ]}
       >
         {header}
-      </SquircleSurface>
+      </View>
     ) : null;
 
   /* ── Collapsing animated header (when not compact) ─────────────── */
@@ -238,11 +238,11 @@ export function ScreenContainer({
               {children}
             </Animated.ScrollView>
           ) : resolvedScrollMode === 'external' ? (
-            <SquircleSurface style={[styles.externalBody, column]}>{children}</SquircleSurface>
+            <View style={[styles.externalBody, column]}>{children}</View>
           ) : (
-            <SquircleSurface style={[styles.fixedColumn, column, { paddingTop: contentTop }]}>
-              <SquircleSurface>{largeTitle}</SquircleSurface>
-              <SquircleSurface
+            <View style={[styles.fixedColumn, column, { paddingTop: contentTop }]}>
+              <View>{largeTitle}</View>
+              <View
                 style={[
                   styles.nonScrollContent,
                   styles.noTop,
@@ -252,8 +252,8 @@ export function ScreenContainer({
                 ]}
               >
                 {children}
-              </SquircleSurface>
-            </SquircleSurface>
+              </View>
+            </View>
           )}
           {footerNode}
           <CollapsingHeaderBar
@@ -288,12 +288,12 @@ export function ScreenContainer({
             {children}
           </Animated.ScrollView>
         ) : resolvedScrollMode === 'external' ? (
-          <SquircleSurface style={[styles.externalBody, column]}>{children}</SquircleSurface>
+          <View style={[styles.externalBody, column]}>{children}</View>
         ) : (
-          <SquircleSurface style={[styles.nonScrollContent, column, userContent, { paddingBottom }]}>
+          <View style={[styles.nonScrollContent, column, userContent, { paddingBottom }]}>
             {stickyHeader ? null : header}
             {children}
-          </SquircleSurface>
+          </View>
         )}
         {footerNode}
       </ContainerComponent>

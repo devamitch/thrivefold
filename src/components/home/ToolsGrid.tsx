@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link, type Href } from 'expo-router';
 import React, { useMemo } from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { formatLocalDate, parseLocalDate } from '../../domain/calendar/universalCalendarEngine';
 import { totals } from '../../domain/nutrition/foods';
@@ -85,7 +85,7 @@ export function ToolsGrid({ todayCount }: { todayCount: number }) {
   }, [today, sessions, meals, checkIns, journal, todayCount, experience]);
 
   return (
-    <SquircleSurface style={[styles.grid, { gap: spacing.sm }]}>
+    <View style={[styles.grid, { gap: spacing.sm }]}>
       {tiles.map((tile) => (
         <Link key={tile.label} href={tile.route} asChild>
           <PressableScale style={styles.cell} accessibilityRole="button" accessibilityLabel={`${tile.label}. ${tile.meta}`}>
@@ -103,7 +103,7 @@ export function ToolsGrid({ todayCount }: { todayCount: number }) {
           </PressableScale>
         </Link>
       ))}
-    </SquircleSurface>
+    </View>
   );
 }
 

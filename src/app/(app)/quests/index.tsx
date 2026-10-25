@@ -1,3 +1,4 @@
+import { View } from 'react-native';
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import React, { useEffect, useMemo, useState } from 'react';
 
@@ -34,7 +35,7 @@ export default function QuestsScreen() {
 
   return (
     <ScreenContainer header={<AppHeader title="Quests" subtitle="Today's quests and your level" showBack />} scrollMode="shell-scroll-view">
-      <SquircleSurface>
+      <View>
         <QuestsSection
           progress={progress}
           xp={s.xp}
@@ -46,7 +47,7 @@ export default function QuestsScreen() {
           todayQuests={s.todayQuests}
           onOpenQuest={setOpen}
         />
-      </SquircleSurface>
+      </View>
       <QuestSheet assignmentId={open} onClose={() => setOpen(null)} />
     </ScreenContainer>
   );

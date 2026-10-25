@@ -2,7 +2,7 @@ import { SquircleSurface } from '../../components/ui/SquircleSurface';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Link, type Href } from 'expo-router';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 
 import { AppHeader } from '../../components/ui/AppHeader';
@@ -36,14 +36,14 @@ export default function LearnScreen() {
             onPress={() => setOpen(expanded ? null : art.id)}
             style={{ marginBottom: spacing.md }}
           >
-            <SquircleSurface style={styles.cardHeader}>
+            <View style={styles.cardHeader}>
               <Badge label={art.category} variant="primary" />
               <Text style={[typography.caption, { color: colors.text.muted }]}>{art.minutes} min read</Text>
-            </SquircleSurface>
-            <SquircleSurface style={[styles.cardHeader, { marginTop: spacing.xs }]}>
+            </View>
+            <View style={[styles.cardHeader, { marginTop: spacing.xs }]}>
               <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>{art.title}</Text>
               <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.text.muted} />
-            </SquircleSurface>
+            </View>
             {expanded ? (
               <Animated.View entering={reduceMotion ? undefined : FadeIn.duration(200)}>
                 {art.body.map((p) => (
@@ -61,10 +61,10 @@ export default function LearnScreen() {
                   </PressableScale>
                 </Link>
                 {art.seekHelp ? (
-                  <SquircleSurface style={[styles.help, { backgroundColor: colors.warningSurface, marginTop: spacing.md }]}>
+                  <View style={[styles.help, { backgroundColor: colors.warningSurface, marginTop: spacing.md }]}>
                     <Ionicons name="medkit-outline" size={18} color={colors.warning} />
                     <Text style={[typography.subbody, styles.flex, { color: colors.text.primary, marginLeft: 8 }]}>{art.seekHelp}</Text>
-                  </SquircleSurface>
+                  </View>
                 ) : null}
               </Animated.View>
             ) : null}

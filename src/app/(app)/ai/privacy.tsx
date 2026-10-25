@@ -1,6 +1,6 @@
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import React from 'react';
-import { Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
@@ -37,30 +37,30 @@ export default function AiPrivacyScreen() {
   return (
     <ScreenWrapper scrollable>
       <Header title="AI Privacy" subtitle="What happens to your data" showBack />
-      <SquircleSurface style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
+      <View style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
         {FACTS.map((f) => (
           <Card key={f.title} style={{ marginBottom: spacing.sm }}>
-            <SquircleSurface style={styles.row}>
+            <View style={styles.row}>
               <Ionicons name={f.icon} size={20} color={colors.primary} />
               <Text style={[typography.bodyBold, { color: colors.text.primary, marginLeft: 10, flex: 1 }]}>
                 {f.title}
               </Text>
-            </SquircleSurface>
+            </View>
             <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 6 }]}>{f.body}</Text>
           </Card>
         ))}
 
         <Card variant="surface1" style={{ marginTop: spacing.sm }}>
-          <SquircleSurface style={[styles.row, { justifyContent: 'space-between' }]}>
+          <View style={[styles.row, { justifyContent: 'space-between' }]}>
             <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Cloud AI</Text>
             <Badge label="Not available" variant="neutral" />
-          </SquircleSurface>
+          </View>
           <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 6 }]}>
             This build has no cloud AI. If it is added later, it will be off until you turn it on for a specific
             feature, and it will never receive your journal or intimate health records.
           </Text>
         </Card>
-      </SquircleSurface>
+      </View>
     </ScreenWrapper>
   );
 }

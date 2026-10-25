@@ -1,7 +1,7 @@
 import { SquircleSurface } from '../../components/ui/SquircleSurface';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect } from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
   FadeIn,
@@ -67,15 +67,15 @@ export default function RoadmapScreen() {
           </Text>
           <Text style={[typography.heading, { color: colors.text.primary, marginTop: 4 }]}>{chapter.title}</Text>
           <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>{chapter.outcome}</Text>
-          <SquircleSurface style={[styles.track, { backgroundColor: colors.surface1, marginTop: spacing.md }]}>
-            <SquircleSurface style={[styles.fill, { width: `${Math.max(3, chapterPct)}%`, backgroundColor: colors.primary }]} />
-          </SquircleSurface>
-          <SquircleSurface style={[styles.rowBetween, { marginTop: 6 }]}>
+          <View style={[styles.track, { backgroundColor: colors.surface1, marginTop: spacing.md }]}>
+            <View style={[styles.fill, { width: `${Math.max(3, chapterPct)}%`, backgroundColor: colors.primary }]} />
+          </View>
+          <View style={[styles.rowBetween, { marginTop: 6 }]}>
             <Text style={[typography.caption, { color: colors.text.muted }]}>
               Level {inChapter} of {chapter.levelRange[1] - chapter.levelRange[0] + 1} in this chapter
             </Text>
             <Text style={[typography.captionBold, { color: colors.text.secondary }]}>{toNext} XP to level {level + 1}</Text>
-          </SquircleSurface>
+          </View>
           <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.sm }]}>
             XP comes from finishing quests and workouts. Each level needs a little more than the last.
           </Text>
@@ -90,32 +90,32 @@ export default function RoadmapScreen() {
         const to = chapter.levelRange[0] + s.range[1] - 1;
         return (
           <Animated.View key={s.id} entering={enter(i + 1)} style={styles.stageRow}>
-            <SquircleSurface style={styles.rail}>
+            <View style={styles.rail}>
               <Node state={state} icon={s.id === 'chapter_capstone' ? 'trophy' : undefined} />
-              {i < stages.length - 1 ? <SquircleSurface style={[styles.railLine, { backgroundColor: state === 'done' ? colors.success : colors.surface2 }]} /> : null}
-            </SquircleSurface>
-            <SquircleSurface style={[styles.flex, { paddingBottom: spacing.md }]}>
-              <SquircleSurface style={styles.rowBetween}>
+              {i < stages.length - 1 ? <View style={[styles.railLine, { backgroundColor: state === 'done' ? colors.success : colors.surface2 }]} /> : null}
+            </View>
+            <View style={[styles.flex, { paddingBottom: spacing.md }]}>
+              <View style={styles.rowBetween}>
                 <Text style={[typography.bodyBold, { color: state === 'locked' ? colors.text.muted : colors.text.primary }]}>
                   {STAGE_NAME[s.id] ?? s.id}
                 </Text>
                 <Text style={[typography.caption, { color: colors.text.muted }]}>{from === to ? `Level ${from}` : `Levels ${from}-${to}`}</Text>
-              </SquircleSurface>
+              </View>
               <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>{s.purpose}</Text>
               {state === 'current' && s.id !== 'chapter_capstone' ? (
                 <LevelTrail from={from} to={to} current={level} pulse={!reduceMotion} />
               ) : null}
-            </SquircleSurface>
+            </View>
           </Animated.View>
         );
       })}
 
       {chapter.capstone ? (
         <Card variant="tinted" style={{ padding: spacing.base, marginTop: spacing.sm }}>
-          <SquircleSurface style={styles.row}>
+          <View style={styles.row}>
             <Ionicons name="trophy-outline" size={20} color={colors.primary} />
             <Text style={[typography.bodyBold, styles.flex, { color: colors.text.primary, marginLeft: 8 }]}>{chapter.capstone.title}</Text>
-          </SquircleSurface>
+          </View>
           <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>{chapter.capstone.purpose}</Text>
           <Text style={[typography.caption, { color: colors.text.muted, marginTop: 6 }]}>
             Opens at level {chapter.capstone.requiredAtLevel}. Finishing it moves you to the next chapter.
@@ -135,20 +135,20 @@ export default function RoadmapScreen() {
         .filter((t): t is NonNullable<typeof t> => Boolean(t))
         .slice(0, 8)
         .map((t) => (
-          <SquircleSurface key={t.id} style={[styles.questRow, { borderBottomColor: colors.border }]}>
+          <View key={t.id} style={[styles.questRow, { borderBottomColor: colors.border }]}>
             <Ionicons
               name={todayTaskIds.includes(t.id) ? 'today-outline' : 'ellipse-outline'}
               size={16}
               color={todayTaskIds.includes(t.id) ? colors.primary : colors.text.muted}
             />
-            <SquircleSurface style={[styles.flex, { marginLeft: 10 }]}>
+            <View style={[styles.flex, { marginLeft: 10 }]}>
               <Text style={[typography.subbodyBold, { color: colors.text.primary }]}>{t.title}</Text>
               <Text style={[typography.caption, { color: colors.text.secondary }]} numberOfLines={2}>
                 {t.shortDescription}
               </Text>
-            </SquircleSurface>
+            </View>
             {todayTaskIds.includes(t.id) ? <Text style={[typography.captionBold, { color: colors.primary }]}>Today</Text> : null}
-          </SquircleSurface>
+          </View>
         ))}
 
       {/* The whole journey */}
@@ -156,26 +156,26 @@ export default function RoadmapScreen() {
       {chapters.map((c, i) => {
         const state = chapterState(c.number);
         return (
-          <SquircleSurface key={c.id} style={styles.stageRow}>
-            <SquircleSurface style={styles.rail}>
+          <View key={c.id} style={styles.stageRow}>
+            <View style={styles.rail}>
               <Node state={state} label={String(c.number)} />
-              {i < chapters.length - 1 ? <SquircleSurface style={[styles.railLine, { backgroundColor: state === 'done' ? colors.success : colors.surface2 }]} /> : null}
-            </SquircleSurface>
-            <SquircleSurface style={[styles.flex, { paddingBottom: spacing.md, opacity: state === 'locked' ? 0.6 : 1 }]}>
-              <SquircleSurface style={styles.rowBetween}>
+              {i < chapters.length - 1 ? <View style={[styles.railLine, { backgroundColor: state === 'done' ? colors.success : colors.surface2 }]} /> : null}
+            </View>
+            <View style={[styles.flex, { paddingBottom: spacing.md, opacity: state === 'locked' ? 0.6 : 1 }]}>
+              <View style={styles.rowBetween}>
                 <Text style={[typography.bodyBold, styles.flex, { color: colors.text.primary }]}>{c.title}</Text>
                 <Text style={[typography.caption, { color: colors.text.muted }]}>
                   {c.levelRange[0]}-{c.levelRange[1]}
                 </Text>
-              </SquircleSurface>
+              </View>
               <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]} numberOfLines={2}>
                 {c.description}
               </Text>
-            </SquircleSurface>
-          </SquircleSurface>
+            </View>
+          </View>
         );
       })}
-      <SquircleSurface style={{ height: spacing.xl }} />
+      <View style={{ height: spacing.xl }} />
     </ScreenContainer>
   );
 }
@@ -185,7 +185,7 @@ function Node({ state, icon, label }: { state: NodeState; icon?: keyof typeof Io
   const bg = state === 'done' ? colors.success : state === 'current' ? colors.primary : colors.surface1;
   const fg = state === 'locked' ? colors.text.muted : colors.onPrimary;
   return (
-    <SquircleSurface style={[styles.node, { backgroundColor: bg }]}>
+    <View style={[styles.node, { backgroundColor: bg }]}>
       {state === 'done' ? (
         <Ionicons name="checkmark" size={14} color={fg} />
       ) : icon ? (
@@ -195,9 +195,9 @@ function Node({ state, icon, label }: { state: NodeState; icon?: keyof typeof Io
       ) : state === 'locked' ? (
         <Ionicons name="lock-closed" size={12} color={fg} />
       ) : (
-        <SquircleSurface style={[styles.dot, { backgroundColor: fg }]} />
+        <View style={[styles.dot, { backgroundColor: fg }]} />
       )}
-    </SquircleSurface>
+    </View>
   );
 }
 
@@ -211,22 +211,22 @@ function LevelTrail({ from, to, current, pulse }: { from: number; to: number; cu
   const halo = useAnimatedStyle(() => ({ opacity: 0.25 + 0.35 * breath.value, transform: [{ scale: 1 + 0.35 * breath.value }] }));
   const levels = Array.from({ length: to - from + 1 }, (_, i) => from + i).slice(0, 12);
   return (
-    <SquircleSurface style={styles.trail}>
+    <View style={styles.trail}>
       {levels.map((lv, i) => {
         const done = lv < current;
         const here = lv === current;
         const offset = [0, 28, 56, 28][i % 4];
         return (
-          <SquircleSurface key={lv} style={[styles.trailNode, { marginLeft: offset }]}>
+          <View key={lv} style={[styles.trailNode, { marginLeft: offset }]}>
             {here ? <Animated.View style={[styles.halo, { backgroundColor: colors.primary }, halo]} /> : null}
-            <SquircleSurface style={[styles.levelDot, { backgroundColor: done ? colors.success : here ? colors.primary : colors.surface1 }]}>
+            <View style={[styles.levelDot, { backgroundColor: done ? colors.success : here ? colors.primary : colors.surface1 }]}>
               <Text style={[typography.captionBold, { color: done || here ? colors.onPrimary : colors.text.muted }]}>{lv}</Text>
-            </SquircleSurface>
+            </View>
             {here ? <Text style={[typography.captionBold, { color: colors.primary, marginLeft: 8 }]}>You are here</Text> : null}
-          </SquircleSurface>
+          </View>
         );
       })}
-    </SquircleSurface>
+    </View>
   );
 }
 

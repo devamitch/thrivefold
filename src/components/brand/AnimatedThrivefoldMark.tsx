@@ -7,7 +7,7 @@ import { SquircleSurface } from '../ui/SquircleSurface';
  * Everything runs on the UI thread. With Reduce Motion the mark appears at rest and still.
  */
 import React, { useEffect } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -103,7 +103,7 @@ export function AnimatedThrivefoldMark({ size = 96, entrance = true, living = tr
   );
 
   return (
-    <SquircleSurface style={box} accessibilityRole="image" accessibilityLabel="Thrivefold">
+    <View style={box} accessibilityRole="image" accessibilityLabel="Thrivefold">
       <Animated.View style={[StyleSheet.absoluteFill, tStyle]}>{layer(<Path d={T_PATH} fill={T_COLOR} />)}</Animated.View>
       <Animated.View style={[StyleSheet.absoluteFill, styles.leafOrigin, leafStyle]}>
         {layer(
@@ -115,7 +115,7 @@ export function AnimatedThrivefoldMark({ size = 96, entrance = true, living = tr
       </Animated.View>
       <Animated.View style={[StyleSheet.absoluteFill, styles.sunOrigin, glowStyle]}>{layer(<Circle cx={585} cy={421} r={42} fill={SUN_COLOR} />)}</Animated.View>
       <Animated.View style={[StyleSheet.absoluteFill, styles.sunOrigin, sunStyle]}>{layer(<Circle cx={585} cy={421} r={42} fill={SUN_COLOR} />)}</Animated.View>
-    </SquircleSurface>
+    </View>
   );
 }
 

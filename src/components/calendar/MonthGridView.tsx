@@ -2,7 +2,7 @@ import { SquircleSurface } from '../ui/SquircleSurface';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import React from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import {
   CalendarEvent,
@@ -51,7 +51,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
   return (
     <Card style={{ marginTop: spacing.md, padding: spacing.md }}>
       {/* Month Navigation Row */}
-      <SquircleSurface style={styles.calendarNavRow}>
+      <View style={styles.calendarNavRow}>
         <PressableScale
           onPress={() => {
             try {
@@ -67,7 +67,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
           <Ionicons name="chevron-back" size={18} color={colors.text.primary} />
         </PressableScale>
 
-        <SquircleSurface style={{ alignItems: 'center' }}>
+        <View style={{ alignItems: 'center' }}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>{monthName}</Text>
           <Text style={[typography.caption, { color: colors.text.muted, marginTop: 1 }]}>
             {isWomen
@@ -78,9 +78,9 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
                   : `Estimate from your ${cycleData.periodHistory.length} logged periods`
               : 'Monthly milestones & habit calendar'}
           </Text>
-        </SquircleSurface>
+        </View>
 
-        <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <PressableScale
             onPress={() => {
               try {
@@ -110,20 +110,20 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
           >
             <Ionicons name="chevron-forward" size={18} color={colors.text.primary} />
           </PressableScale>
-        </SquircleSurface>
-      </SquircleSurface>
+        </View>
+      </View>
 
       {/* Weekday Labels (Monday to Sunday) */}
-      <SquircleSurface style={[styles.weekDaysRow, { marginTop: spacing.md }]}>
+      <View style={[styles.weekDaysRow, { marginTop: spacing.md }]}>
         {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, idx) => (
           <Text key={idx} style={[styles.weekDayHeader, { color: colors.text.muted }]}>
             {day}
           </Text>
         ))}
-      </SquircleSurface>
+      </View>
 
       {/* 42-Cell Month Grid with Continuous Date Range Highlights */}
-      <SquircleSurface style={styles.monthGrid}>
+      <View style={styles.monthGrid}>
         {monthGrid.map((cell, cellIdx) => {
           const isSelected = cell.date === selectedDateStr;
           const rangeInfo = getDayRangeInfo(
@@ -149,7 +149,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
             >
               {/* Multi-day connected continuous range highlight bar */}
               {rangeInfo.rangeType !== 'none' && (
-                <SquircleSurface
+                <View
                   style={[
                     styles.rangeHighlightBar,
                     rangeInfo.rangePosition === 'start' && styles.rangeBarStart,
@@ -174,7 +174,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
               )}
 
               {/* Date Circle / Selection Squircle */}
-              <SquircleSurface
+              <View
                 style={[
                   styles.datePill,
                   isSelected && { backgroundColor: colors.primary },
@@ -199,7 +199,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
                 >
                   {cell.dayOfMonth}
                 </Text>
-              </SquircleSurface>
+              </View>
 
               {/* Bottom Cell Markers: Personal milestone icon, holiday icon, or ovulation sparkles */}
               {/* <SquircleSurface style={styles.cellBottomRow}>
@@ -226,35 +226,35 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
             </PressableScale>
           );
         })}
-      </SquircleSurface>
+      </View>
 
       {/* Continuous Range Legend */}
-      <SquircleSurface style={[styles.legendRow, { borderTopColor: colors.surface1, marginTop: spacing.md }]}>
+      <View style={[styles.legendRow, { borderTopColor: colors.surface1, marginTop: spacing.md }]}>
         {isWomen && (
           <>
-            <SquircleSurface style={styles.legendItem}>
-              <SquircleSurface style={[styles.legendPill, { backgroundColor: 'rgba(218, 119, 86, 0.44)' }]} />
+            <View style={styles.legendItem}>
+              <View style={[styles.legendPill, { backgroundColor: 'rgba(218, 119, 86, 0.44)' }]} />
               <Text style={[typography.caption, { color: colors.text.secondary }]}>Recorded</Text>
-            </SquircleSurface>
-            <SquircleSurface style={styles.legendItem}>
-              <SquircleSurface style={[styles.legendPill, { backgroundColor: 'rgba(218, 119, 86, 0.22)' }]} />
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendPill, { backgroundColor: 'rgba(218, 119, 86, 0.22)' }]} />
               <Text style={[typography.caption, { color: colors.text.secondary }]}>Predicted</Text>
-            </SquircleSurface>
-            <SquircleSurface style={styles.legendItem}>
-              <SquircleSurface style={[styles.legendPill, { backgroundColor: 'rgba(132, 175, 142, 0.36)' }]} />
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendPill, { backgroundColor: 'rgba(132, 175, 142, 0.36)' }]} />
               <Text style={[typography.caption, { color: colors.text.secondary }]}>Follicular</Text>
-            </SquircleSurface>
-            <SquircleSurface style={styles.legendItem}>
-              <SquircleSurface style={[styles.legendPill, { backgroundColor: 'rgba(226, 178, 88, 0.38)' }]} />
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendPill, { backgroundColor: 'rgba(226, 178, 88, 0.38)' }]} />
               <Text style={[typography.caption, { color: colors.text.secondary }]}>Fertile</Text>
-            </SquircleSurface>
-            <SquircleSurface style={styles.legendItem}>
-              <SquircleSurface style={[styles.legendPill, { backgroundColor: 'rgba(176, 150, 195, 0.36)' }]} />
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendPill, { backgroundColor: 'rgba(176, 150, 195, 0.36)' }]} />
               <Text style={[typography.caption, { color: colors.text.secondary }]}>Luteal</Text>
-            </SquircleSurface>
+            </View>
           </>
         )}
-        <SquircleSurface style={styles.legendItem}>
+        <View style={styles.legendItem}>
           <Ionicons
             name="gift-outline"
             size={11}
@@ -262,16 +262,16 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
             style={{ marginRight: 4 }}
           />
           <Text style={[typography.caption, { color: colors.text.secondary }]}>Milestone</Text>
-        </SquircleSurface>
-        <SquircleSurface style={styles.legendItem}>
+        </View>
+        <View style={styles.legendItem}>
           <Ionicons name="flag-outline" size={11} color={colors.warning} style={{ marginRight: 4 }} />
           <Text style={[typography.caption, { color: colors.text.secondary }]}>Holiday</Text>
-        </SquircleSurface>
-        <SquircleSurface style={styles.legendItem}>
-          <SquircleSurface style={[styles.taskMiniDot, { backgroundColor: colors.success, marginRight: 4 }]} />
+        </View>
+        <View style={styles.legendItem}>
+          <View style={[styles.taskMiniDot, { backgroundColor: colors.success, marginRight: 4 }]} />
           <Text style={[typography.caption, { color: colors.text.secondary }]}>Done</Text>
-        </SquircleSurface>
-      </SquircleSurface>
+        </View>
+      </View>
     </Card>
   );
 };

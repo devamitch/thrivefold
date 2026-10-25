@@ -1,6 +1,6 @@
 import { SquircleSurface } from './SquircleSurface';
 import React from 'react';
-import { StyleProp, StyleSheet, Text, TextStyle, ViewStyle } from 'react-native';
+import { StyleProp, StyleSheet, Text, TextStyle, ViewStyle, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -86,7 +86,7 @@ export function HeaderLargeTitle({
 }: Pick<AppHeaderProps, 'eyebrow' | 'title' | 'subtitle'>) {
   const { colors, typography, spacing } = useTheme();
   return (
-    <SquircleSurface style={styles.largeTitleBlock}>
+    <View style={styles.largeTitleBlock}>
       {eyebrow ? (
         <Text
           style={[
@@ -112,7 +112,7 @@ export function HeaderLargeTitle({
           {subtitle}
         </Text>
       ) : null}
-    </SquircleSurface>
+    </View>
   );
 }
 
@@ -138,14 +138,14 @@ export function AppHeader({
   if (isCompact) {
     const hasLeft = showBack;
     return (
-      <SquircleSurface style={[styles.compactToolbar, style]}>
+      <View style={[styles.compactToolbar, style]}>
         {hasLeft ? (
-          <SquircleSurface style={styles.left}>
+          <View style={styles.left}>
             <HeaderBackButton />
-          </SquircleSurface>
+          </View>
         ) : null}
 
-        <SquircleSurface
+        <View
           style={[
             styles.compactCenter,
             hasLeft ? { paddingLeft: 12, paddingRight: 8 } : { paddingHorizontal: 0 },
@@ -184,25 +184,25 @@ export function AppHeader({
               {subtitle}
             </Text>
           ) : null}
-        </SquircleSurface>
+        </View>
 
         {rightAction ? (
-          <SquircleSurface style={styles.right}>{rightAction}</SquircleSurface>
+          <View style={styles.right}>{rightAction}</View>
         ) : null}
-      </SquircleSurface>
+      </View>
     );
   }
 
   return (
-    <SquircleSurface style={[styles.container, style]}>
+    <View style={[styles.container, style]}>
       {showBack || rightAction ? (
-        <SquircleSurface style={[styles.toolbar, !showBack && { justifyContent: 'flex-end' }]}>
+        <View style={[styles.toolbar, !showBack && { justifyContent: 'flex-end' }]}>
           {showBack ? <HeaderBackButton /> : null}
-          {rightAction ? <SquircleSurface style={styles.right}>{rightAction}</SquircleSurface> : null}
-        </SquircleSurface>
+          {rightAction ? <View style={styles.right}>{rightAction}</View> : null}
+        </View>
       ) : null}
       <HeaderLargeTitle eyebrow={eyebrow} title={title} subtitle={subtitle} />
-    </SquircleSurface>
+    </View>
   );
 }
 

@@ -1,6 +1,6 @@
 import { SquircleSurface } from '../ui/SquircleSurface';
 import React from 'react';
-import { Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
@@ -47,7 +47,7 @@ export const SingleDayDetailView: React.FC<SingleDayDetailViewProps> = ({
 
   return (
     <Card style={{ marginTop: spacing.md, padding: spacing.md }}>
-      <SquircleSurface style={styles.calendarNavRow}>
+      <View style={styles.calendarNavRow}>
         <PressableScale
           onPress={() => {
             try {
@@ -63,16 +63,16 @@ export const SingleDayDetailView: React.FC<SingleDayDetailViewProps> = ({
           <Ionicons name="chevron-back" size={18} color={colors.text.primary} />
         </PressableScale>
 
-        <SquircleSurface style={{ alignItems: 'center' }}>
+        <View style={{ alignItems: 'center' }}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>
             {formattedDate}
           </Text>
           <Text style={[typography.caption, { color: colors.text.muted, marginTop: 1 }]}>
             {isToday ? 'Today' : 'Single Day View'}
           </Text>
-        </SquircleSurface>
+        </View>
 
-        <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <PressableScale
             onPress={() => {
               try {
@@ -102,15 +102,15 @@ export const SingleDayDetailView: React.FC<SingleDayDetailViewProps> = ({
           >
             <Ionicons name="chevron-forward" size={18} color={colors.text.primary} />
           </PressableScale>
-        </SquircleSurface>
-      </SquircleSurface>
+        </View>
+      </View>
 
       {/* Day Physiology / Rhythm Info */}
       {isWomen && (
-        <SquircleSurface style={[styles.dayPhysiologyBox, { backgroundColor: colors.surface1, marginTop: spacing.md }]}>
-          <SquircleSurface style={styles.rowBetween}>
-            <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center', flexShrink: 1, paddingRight: 8 }}>
-              <SquircleSurface
+        <View style={[styles.dayPhysiologyBox, { backgroundColor: colors.surface1, marginTop: spacing.md }]}>
+          <View style={styles.rowBetween}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', flexShrink: 1, paddingRight: 8 }}>
+              <View
                 style={[
                   styles.phaseDot,
                   {
@@ -126,16 +126,16 @@ export const SingleDayDetailView: React.FC<SingleDayDetailViewProps> = ({
               <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
                 {selectedDateRangeInfo.phaseLabel}
               </Text>
-            </SquircleSurface>
+            </View>
             <Badge
               label={selectedDateRangeInfo.isFollicular && selectedDateRangeInfo.isRecordedPeriod ? 'Follicular Overlap' : phaseConfig.label}
               variant="neutral"
             />
-          </SquircleSurface>
+          </View>
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 6 }]}>
             {phaseConfig.energyDesc} • {phaseConfig.description}
           </Text>
-        </SquircleSurface>
+        </View>
       )}
     </Card>
   );

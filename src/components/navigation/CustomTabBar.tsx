@@ -14,7 +14,7 @@ import * as Haptics from 'expo-haptics';
 import type { Tabs } from 'expo-router';
 import { router } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, type ComponentProps } from 'react';
-import { StyleSheet, useWindowDimensions } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, {
   Easing,
   interpolateColor,
@@ -306,7 +306,7 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
       pointerEvents="box-none"
       style={[styles.dock, containerAnimStyle]}
     >
-      <SquircleSurface
+      <View
         style={{ width: barW, height: barH, alignSelf: 'center' }}
         pointerEvents="box-none"
       >
@@ -323,18 +323,18 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
         </Svg>
 
         {/* Tab buttons row */}
-        <SquircleSurface
+        <View
           style={[styles.row, { paddingHorizontal: bleed }]}
           accessibilityRole="tablist"
         >
-          <SquircleSurface style={styles.side}>
+          <View style={styles.side}>
             {left.map((route, i) => renderTab(route, i))}
-          </SquircleSurface>
-          <SquircleSurface style={styles.centerSlot} />
-          <SquircleSurface style={styles.side}>
+          </View>
+          <View style={styles.centerSlot} />
+          <View style={styles.side}>
             {right.map((route, i) => renderTab(route, i + left.length))}
-          </SquircleSurface>
-        </SquircleSurface>
+          </View>
+        </View>
 
         {/* Central Action Orb with brand logo */}
         <Animated.View pointerEvents="box-none" style={[styles.centerWrap, orbPress]}>
@@ -353,9 +353,9 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
             scaleTo={0.94}
             style={styles.orbButton}
           >
-            <SquircleSurface style={[styles.centerOrb, { backgroundColor: colors.dockActive }]}>
+            <View style={[styles.centerOrb, { backgroundColor: colors.dockActive }]}>
               <Ionicons name={experienceIcons.orb.icon} size={26} color={colors.dock} />
-            </SquircleSurface>
+            </View>
 
             <Animated.Text
               style={[
@@ -368,7 +368,7 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
             </Animated.Text>
           </PressableScale>
         </Animated.View>
-      </SquircleSurface>
+      </View>
     </Animated.View>
   );
 }

@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Link, type Href } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { formatLocalDate } from '../../domain/calendar/universalCalendarEngine';
 import { totals } from '../../domain/nutrition/foods';
@@ -23,7 +23,7 @@ export function TodayMeals() {
   return (
     <Card style={{ marginBottom: spacing.md, padding: spacing.lg }}>
       <Text style={[typography.captionBold, { color: colors.text.muted }]}>TODAY'S FOOD</Text>
-      <SquircleSurface style={[styles.row, { marginTop: 6 }]}>
+      <View style={[styles.row, { marginTop: 6 }]}>
         {(
           [
             ['kcal', `${sum.kcal}`],
@@ -32,30 +32,30 @@ export function TodayMeals() {
             ['Fat', `${sum.fat} g`],
           ] as const
         ).map(([label, value]) => (
-          <SquircleSurface key={label} style={styles.macro}>
+          <View key={label} style={styles.macro}>
             <Text style={[typography.subheading, { color: colors.text.primary }]}>{value}</Text>
             <Text style={[typography.caption, { color: colors.text.muted }]}>{label}</Text>
-          </SquircleSurface>
+          </View>
         ))}
-      </SquircleSurface>
+      </View>
       {todays.map((m) => {
         const t = totals(m.items);
         return (
-          <SquircleSurface key={m.id} style={[styles.meal, { borderTopColor: colors.border }]}>
+          <View key={m.id} style={[styles.meal, { borderTopColor: colors.border }]}>
             {m.photoUri ? (
               <Image source={{ uri: m.photoUri }} style={styles.thumb} contentFit="cover" />
             ) : (
-              <SquircleSurface style={[styles.thumb, styles.center, { backgroundColor: colors.surface1 }]}>
+              <View style={[styles.thumb, styles.center, { backgroundColor: colors.surface1 }]}>
                 <Ionicons name="restaurant-outline" size={18} color={colors.text.muted} />
-              </SquircleSurface>
+              </View>
             )}
-            <SquircleSurface style={styles.flex}>
+            <View style={styles.flex}>
               <Text style={[typography.bodyBold, { color: colors.text.primary, textTransform: 'capitalize' }]}>{m.type}</Text>
               <Text style={[typography.caption, { color: colors.text.secondary }]}>
                 {t.kcal} kcal · P {t.protein} g · C {t.carbs} g · F {t.fat} g
               </Text>
-            </SquircleSurface>
-          </SquircleSurface>
+            </View>
+          </View>
         );
       })}
       <Link href={'/(app)/health/meal-log' as Href} asChild>

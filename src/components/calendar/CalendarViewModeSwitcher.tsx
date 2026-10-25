@@ -1,6 +1,6 @@
 import { SquircleSurface } from '../ui/SquircleSurface';
 import React from 'react';
-import { Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
@@ -30,7 +30,7 @@ export const CalendarViewModeSwitcher: React.FC<CalendarViewModeSwitcherProps> =
   ];
 
   return (
-    <SquircleSurface
+    <View
       style={[
         styles.container,
         {
@@ -82,7 +82,7 @@ export const CalendarViewModeSwitcher: React.FC<CalendarViewModeSwitcherProps> =
           </PressableScale>
         );
       })}
-    </SquircleSurface>
+    </View>
   );
 };
 

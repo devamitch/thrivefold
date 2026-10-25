@@ -2,7 +2,7 @@ import { SquircleSurface } from '../../components/ui/SquircleSurface';
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter, type Href } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { OnboardingScaffold } from '../../components/onboarding/OnboardingScaffold';
 import { Card } from '../../components/ui/Card';
@@ -52,15 +52,15 @@ export default function PrivacyChoicesScreen() {
     >
       <Card style={{ padding: spacing.base, marginBottom: spacing.lg }}>
         {POINTS.map((p, i) => (
-          <SquircleSurface key={p.title} style={[styles.point, i > 0 && { marginTop: spacing.md }]}>
-            <SquircleSurface style={[styles.pointIcon, { backgroundColor: colors.primaryAlpha }]}>
+          <View key={p.title} style={[styles.point, i > 0 && { marginTop: spacing.md }]}>
+            <View style={[styles.pointIcon, { backgroundColor: colors.primaryAlpha }]}>
               <Ionicons name={p.icon} size={18} color={colors.primary} />
-            </SquircleSurface>
-            <SquircleSurface style={styles.flex}>
+            </View>
+            <View style={styles.flex}>
               <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{p.title}</Text>
               <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 2 }]}>{p.body}</Text>
-            </SquircleSurface>
-          </SquircleSurface>
+            </View>
+          </View>
         ))}
       </Card>
 
@@ -75,7 +75,7 @@ export default function PrivacyChoicesScreen() {
           { backgroundColor: adult ? colors.primaryAlpha : colors.surface },
         ]}
       >
-        <SquircleSurface
+        <View
           style={[
             styles.box,
             {
@@ -84,16 +84,16 @@ export default function PrivacyChoicesScreen() {
           ]}
         >
           {adult ? <Ionicons name="checkmark" size={16} color={colors.onPrimary} /> : null}
-        </SquircleSurface>
-        <SquircleSurface style={styles.flex}>
+        </View>
+        <View style={styles.flex}>
           <Text style={[typography.bodyBold, { color: colors.text.primary }]}>I meet the minimum age</Text>
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
             Your own statement, never pre-ticked. Letters and groups also need a real age check later.
           </Text>
-        </SquircleSurface>
+        </View>
       </PressableScale>
 
-      <SquircleSurface style={[styles.links, { marginTop: spacing.lg }]}>
+      <View style={[styles.links, { marginTop: spacing.lg }]}>
         <Link href={'/(public)/legal/privacy' as Href} asChild>
           <PressableScale hitSlop={10} accessibilityRole="link">
             <Text style={[typography.subbody, { color: colors.primary }]}>Privacy policy</Text>
@@ -104,7 +104,7 @@ export default function PrivacyChoicesScreen() {
             <Text style={[typography.subbody, { color: colors.primary }]}>Terms</Text>
           </PressableScale>
         </Link>
-      </SquircleSurface>
+      </View>
     </OnboardingScaffold>
   );
 }

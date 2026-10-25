@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link, type Href } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { useRootStore, useShallow } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
@@ -53,12 +53,12 @@ export function HomeGuide() {
 
   return (
     <Card style={{ padding: spacing.base, marginTop: spacing.md }}>
-      <SquircleSurface style={styles.rowBetween}>
+      <View style={styles.rowBetween}>
         <Text style={[typography.subheading, { color: colors.text.primary }]}>How Thrivefold works</Text>
         <PressableScale onPress={dismiss} hitSlop={10} scaleTo={0.9} accessibilityRole="button" accessibilityLabel="Hide this guide">
           <Ionicons name="close" size={18} color={colors.text.muted} />
         </PressableScale>
-      </SquircleSurface>
+      </View>
       {steps.map((s, i) => (
         <Link key={s.title} href={s.route as Href} asChild>
           <PressableScale
@@ -74,12 +74,12 @@ export function HomeGuide() {
             >
               <Ionicons name={s.done ? 'checkmark' : s.icon} size={18} color={s.done ? colors.success : colors.primary} />
             </SquircleSurface>
-            <SquircleSurface style={styles.flex}>
+            <View style={styles.flex}>
               <Text style={[typography.bodyBold, { color: colors.text.primary, textDecorationLine: s.done ? 'line-through' : 'none' }]}>
                 {i + 1}. {s.title}
               </Text>
               <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>{s.body}</Text>
-            </SquircleSurface>
+            </View>
             {!s.done ? <Ionicons name="chevron-forward" size={16} color={colors.text.muted} /> : null}
           </PressableScale>
         </Link>

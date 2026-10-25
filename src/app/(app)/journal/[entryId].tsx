@@ -1,6 +1,6 @@
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import React from 'react';
-import { Text, StyleSheet, ScrollView } from 'react-native';
+import { Text, StyleSheet, ScrollView, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
@@ -44,10 +44,10 @@ export default function JournalEntryDetailScreen() {
     return (
       <ScreenWrapper>
         <Header title="Journal" showBack />
-        <SquircleSurface style={{ padding: spacing.base, alignItems: 'center' }}>
+        <View style={{ padding: spacing.base, alignItems: 'center' }}>
           <Text style={[typography.body, { color: colors.text.secondary }]}>Entry not found.</Text>
           <Button label="Back to Journal" onPress={() => router.back()} style={{ marginTop: 12 }} />
-        </SquircleSurface>
+        </View>
       </ScreenWrapper>
     );
   }
@@ -57,12 +57,12 @@ export default function JournalEntryDetailScreen() {
       <Header title="Journal entry" subtitle={new Date(entry.createdAt).toLocaleDateString()} showBack />
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
         <Card style={{ marginBottom: spacing.md, padding: spacing.lg }}>
-          <SquircleSurface style={styles.headerRow}>
+          <View style={styles.headerRow}>
             <Text style={[typography.heading, { color: colors.text.primary, flex: 1 }]}>
               {entry.title}
             </Text>
             <Badge label={`Mood: ${entry.moodTag}/10`} variant="primary" />
-          </SquircleSurface>
+          </View>
           <Text style={[typography.caption, { color: colors.text.muted, marginTop: 4, marginBottom: 16 }]}>
             Logged at {new Date(entry.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · Kept on this phone
           </Text>
@@ -74,12 +74,12 @@ export default function JournalEntryDetailScreen() {
 
         {/* Local AI Reflection Prompt (Section 5.3) */}
         <Card style={{ marginBottom: spacing.lg, backgroundColor: colors.surface1 }}>
-          <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
             <Ionicons name="leaf-outline" size={18} color={colors.primary} />
             <Text style={[typography.subbodyBold, { color: colors.primary, marginLeft: 6 }]}>
               On-Device Gentle Insight
             </Text>
-          </SquircleSurface>
+          </View>
           <Text style={[typography.caption, { color: colors.text.secondary, lineHeight: 20 }]}>
             You highlighted feelings of restoration. Notice what conditions helped you feel settled today, and consider protecting that quiet space tomorrow.
           </Text>

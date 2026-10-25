@@ -11,7 +11,7 @@
   */
 
 import React, { useEffect, useMemo, useRef } from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
@@ -137,7 +137,7 @@ export function MindfulNotificationBanner() {
   const tone = getTone(activeToast.type);
 
   return (
-    <SquircleSurface style={[styles.container, { top: insets.top + 8 }]} pointerEvents="box-none">
+    <View style={[styles.container, { top: insets.top + 8 }]} pointerEvents="box-none">
       <GestureDetector gesture={pan}>
         <Animated.View style={[styles.bannerWrapper, animatedStyle]}>
           <SquircleSurface
@@ -147,7 +147,7 @@ export function MindfulNotificationBanner() {
             strokeWidth={1}
             style={styles.surface}
           >
-            <SquircleSurface style={styles.contentRow}>
+            <View style={styles.contentRow}>
               {/* Tone Icon Tile with SquircleSurface */}
               <SquircleSurface
                 radius={12}
@@ -159,12 +159,12 @@ export function MindfulNotificationBanner() {
               </SquircleSurface>
 
               {/* Notification Body */}
-              <SquircleSurface style={styles.textColumn}>
-                <SquircleSurface style={styles.headerRow}>
+              <View style={styles.textColumn}>
+                <View style={styles.headerRow}>
                   <Text style={[typography.captionBold, styles.categoryPill, { color: tone.color }]}>
                     {tone.category}
                   </Text>
-                </SquircleSurface>
+                </View>
 
                 {activeToast.title || tone.defaultTitle ? (
                   <Text style={[typography.bodyBold, styles.titleText, { color: colors.text.primary }]} numberOfLines={1}>
@@ -194,7 +194,7 @@ export function MindfulNotificationBanner() {
                     </SquircleSurface>
                   </PressableScale>
                 )}
-              </SquircleSurface>
+              </View>
 
               {/* Dismiss Button */}
               <PressableScale
@@ -213,11 +213,11 @@ export function MindfulNotificationBanner() {
                   <Ionicons name="close" size={15} color={colors.text.muted} />
                 </SquircleSurface>
               </PressableScale>
-            </SquircleSurface>
+            </View>
           </SquircleSurface>
         </Animated.View>
       </GestureDetector>
-    </SquircleSurface>
+    </View>
   );
 }
 

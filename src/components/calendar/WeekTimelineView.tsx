@@ -1,6 +1,6 @@
 import { SquircleSurface } from '../ui/SquircleSurface';
 import React from 'react';
-import { Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
@@ -34,15 +34,15 @@ export const WeekTimelineView: React.FC<WeekTimelineViewProps> = ({
 
   return (
     <Card style={{ marginTop: spacing.md, padding: spacing.md }}>
-      <SquircleSurface style={styles.rowBetween}>
+      <View style={styles.rowBetween}>
         <Text style={[typography.subheading, { color: colors.text.primary }]}>
           Week Overview
         </Text>
         <Text style={[typography.caption, { color: colors.text.muted }]}>
           Selected: {selectedDateStr}
         </Text>
-      </SquircleSurface>
-      <SquircleSurface style={[styles.weekStripRow, { marginTop: spacing.md }]}>
+      </View>
+      <View style={[styles.weekStripRow, { marginTop: spacing.md }]}>
         {weekGrid.map((dayCell, idx) => {
           const isSelected = dayCell.date === selectedDateStr;
           const dayName = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][idx];
@@ -90,19 +90,19 @@ export const WeekTimelineView: React.FC<WeekTimelineViewProps> = ({
               >
                 {dayCell.dayOfMonth}
               </Text>
-              <SquircleSurface style={{ height: 14, alignItems: 'center', justifyContent: 'center', marginTop: 2 }}>
+              <View style={{ height: 14, alignItems: 'center', justifyContent: 'center', marginTop: 2 }}>
                 {rangeInfo.personalEvents && rangeInfo.personalEvents.length > 0 ? (
                   <Ionicons name="gift-outline" size={9} color={isSelected ? colors.onPrimary : colors.primary} />
                 ) : isWomen && rangeInfo.isRecordedPeriod ? (
-                  <SquircleSurface style={[styles.weekMiniDot, { backgroundColor: isSelected ? colors.onPrimary : '#DA7756' }]} />
+                  <View style={[styles.weekMiniDot, { backgroundColor: isSelected ? colors.onPrimary : '#DA7756' }]} />
                 ) : isWomen && rangeInfo.isFertile ? (
-                  <SquircleSurface style={[styles.weekMiniDot, { backgroundColor: isSelected ? colors.onPrimary : '#E2B258' }]} />
+                  <View style={[styles.weekMiniDot, { backgroundColor: isSelected ? colors.onPrimary : '#E2B258' }]} />
                 ) : null}
-              </SquircleSurface>
+              </View>
             </PressableScale>
           );
         })}
-      </SquircleSurface>
+      </View>
     </Card>
   );
 };

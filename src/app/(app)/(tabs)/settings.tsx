@@ -70,11 +70,11 @@ export default function SettingsScreen() {
 
   return (
     <ScreenContainer header={<AppHeader title="You" subtitle="Profile, spaces and settings" />} scrollMode="shell-scroll-view">
-      <SquircleSurface style={[styles.content, { paddingBottom: spacing.xxl }]}>
+      <View style={[styles.content, { paddingBottom: spacing.xxl }]}>
         {/* Profile Card Header */}
         <Animated.View entering={FadeIn.duration(180)}>
           <Card style={[styles.profileCard, { backgroundColor: colors.surface }]}>
-            <SquircleSurface style={styles.profileHeader}>
+            <View style={styles.profileHeader}>
               <PressableScale
                 onPress={() => setIsEditingProfile(true)}
                 scaleTo={0.94}
@@ -95,8 +95,8 @@ export default function SettingsScreen() {
                 </View>
               </PressableScale>
 
-              <SquircleSurface style={{ flex: 1, marginLeft: 16 }}>
-                <SquircleSurface style={styles.rowBetween}>
+              <View style={{ flex: 1, marginLeft: 16 }}>
+                <View style={styles.rowBetween}>
                   <Text style={[typography.heading, { color: colors.text.primary, fontSize: 20 }]}>
                     {user?.pseudonym ?? 'Friend'}
                   </Text>
@@ -116,7 +116,7 @@ export default function SettingsScreen() {
                       <Text style={[typography.captionBold, { color: colors.primary }]}>Edit</Text>
                     </SquircleSurface>
                   </PressableScale>
-                </SquircleSurface>
+                </View>
 
                 {user?.profileSource === 'google' ? (
                   <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
@@ -125,37 +125,37 @@ export default function SettingsScreen() {
                       .join(' · ')}
                   </Text>
                 ) : null}
-                <SquircleSurface style={styles.badgeRow}>
+                <View style={styles.badgeRow}>
                   <Badge label={`Level ${level}`} variant="primary" />
                   {currentStreak > 0 ? <Badge label={`${currentStreak} day streak`} variant="primary" /> : null}
                   <Badge label={user?.isGuest ? 'Guest' : user?.email ? 'Signed in' : 'On this phone'} variant="neutral" />
-                </SquircleSurface>
-              </SquircleSurface>
-            </SquircleSurface>
+                </View>
+              </View>
+            </View>
 
             {/* Quick Metrics Bar */}
-            <SquircleSurface style={[styles.metricsBar, { borderTopColor: colors.surface1 }]}>
-              <SquircleSurface style={styles.metricItem}>
+            <View style={[styles.metricsBar, { borderTopColor: colors.surface1 }]}>
+              <View style={styles.metricItem}>
                 <Text style={[typography.captionBold, { color: colors.primary, fontSize: 16 }]}>
                   {questsCompleted}
                 </Text>
                 <Text style={[typography.caption, { color: colors.text.secondary }]}>Quests</Text>
-              </SquircleSurface>
-              <SquircleSurface style={[styles.metricDivider, { backgroundColor: colors.surface1 }]} />
-              <SquircleSurface style={styles.metricItem}>
+              </View>
+              <View style={[styles.metricDivider, { backgroundColor: colors.surface1 }]} />
+              <View style={styles.metricItem}>
                 <Text style={[typography.captionBold, { color: colors.accent, fontSize: 16 }]}>
                   {checkInDays}
                 </Text>
                 <Text style={[typography.caption, { color: colors.text.secondary }]}>Check-ins</Text>
-              </SquircleSurface>
-              <SquircleSurface style={[styles.metricDivider, { backgroundColor: colors.surface1 }]} />
-              <SquircleSurface style={styles.metricItem}>
+              </View>
+              <View style={[styles.metricDivider, { backgroundColor: colors.surface1 }]} />
+              <View style={styles.metricItem}>
                 <Text style={[typography.captionBold, { color: colors.text.primary, fontSize: 16 }]}>
                   {xp}
                 </Text>
                 <Text style={[typography.caption, { color: colors.text.secondary }]}>XP Earned</Text>
-              </SquircleSurface>
-            </SquircleSurface>
+              </View>
+            </View>
           </Card>
         </Animated.View>
 
@@ -203,7 +203,7 @@ export default function SettingsScreen() {
             <SettingsRow icon="construct-outline" title="Developer tools" subtitle="Development builds only" />
           </Link>
         ) : null}
-      </SquircleSurface>
+      </View>
 
       {/* Profile Edit Bottom Sheet Modal */}
       <AppBottomSheetModal
@@ -225,7 +225,7 @@ export default function SettingsScreen() {
         <Text style={[typography.captionBold, { color: colors.text.primary, marginBottom: 8 }]}>
           Emblem
         </Text>
-        <SquircleSurface style={styles.avatarGrid}>
+        <View style={styles.avatarGrid}>
           {AVATAR_OPTIONS.map((a) => {
             const isSelected = selectedAvatar === a.id;
             return (
@@ -263,10 +263,10 @@ export default function SettingsScreen() {
               </PressableScale>
             );
           })}
-        </SquircleSurface>
+        </View>
 
         {/* Name Input */}
-        <SquircleSurface style={{ marginTop: 14 }}>
+        <View style={{ marginTop: 14 }}>
           <TextField
             label="Pseudonym"
             value={editedName}
@@ -274,7 +274,7 @@ export default function SettingsScreen() {
             placeholder="Enter name"
             maxLength={24}
           />
-        </SquircleSurface>
+        </View>
 
       </AppBottomSheetModal>
     </ScreenContainer>

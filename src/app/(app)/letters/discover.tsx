@@ -1,6 +1,6 @@
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import React, { useState } from 'react';
-import { Text, StyleSheet, ScrollView } from 'react-native';
+import { Text, StyleSheet, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
@@ -78,12 +78,12 @@ export default function DiscoverPenPalsScreen() {
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
         {/* Pacing Rules Banner */}
         <Card style={{ marginBottom: spacing.md, backgroundColor: colors.surface1, borderColor: colors.border }}>
-          <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
             <Ionicons name="time-outline" size={18} color={colors.primary} />
             <Text style={[typography.subbodyBold, { color: colors.text.primary, marginLeft: 6 }]}>
               Slow Postal Pacing
             </Text>
-          </SquircleSurface>
+          </View>
           <Text style={[typography.caption, { color: colors.text.secondary, lineHeight: 18 }]}>
             Profiles are matched exclusively by shared interests and languages. No live messaging or instant dopamine loops: letters take hours to travel.
           </Text>
@@ -115,25 +115,25 @@ export default function DiscoverPenPalsScreen() {
         {/* Candidate Cards */}
         {candidates.map((cand) => (
           <Card key={cand.id} style={{ marginBottom: spacing.md, padding: spacing.lg }}>
-            <SquircleSurface style={styles.candidateHeader}>
-              <SquircleSurface style={[styles.avatarBox, { backgroundColor: colors.surface1, borderColor: colors.border }]}>
+            <View style={styles.candidateHeader}>
+              <View style={[styles.avatarBox, { backgroundColor: colors.surface1, borderColor: colors.border }]}>
                 <Ionicons name="person-outline" size={24} color={colors.primary} />
-              </SquircleSurface>
-              <SquircleSurface style={{ marginLeft: 12, flex: 1 }}>
+              </View>
+              <View style={{ marginLeft: 12, flex: 1 }}>
                 <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{cand.pseudonym}</Text>
                 <Text style={[typography.caption, { color: colors.text.muted }]}>{cand.region}</Text>
-              </SquircleSurface>
-            </SquircleSurface>
+              </View>
+            </View>
 
             <Text style={[typography.subbody, { color: colors.text.secondary, marginVertical: 10, lineHeight: 20 }]}>
               {cand.bio}
             </Text>
 
-            <SquircleSurface style={styles.tagRow}>
+            <View style={styles.tagRow}>
               {cand.interests.map((i) => (
                 <Badge key={i} label={i} variant="neutral" style={{ marginRight: 6, marginBottom: 6 }} />
               ))}
-            </SquircleSurface>
+            </View>
 
             <Button
               label={`Write Letter to ${cand.pseudonym}`}

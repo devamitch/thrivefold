@@ -1,6 +1,6 @@
 import { SquircleSurface } from '../ui/SquircleSurface';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Text, StyleSheet, TextInput } from 'react-native';
+import { Text, StyleSheet, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
@@ -210,14 +210,14 @@ export function QuestPanel({ assignmentId, onDone, onLeave }: QuestPanelProps) {
   };
 
   return (
-    <SquircleSurface>
-      <SquircleSurface style={styles.metaRow}>
+    <View>
+      <View style={styles.metaRow}>
         <Badge label={FAMILY_LABEL[questFamily(task.category)]} variant="neutral" />
         <Text style={[typography.captionBold, { color: colors.text.secondary }]}>{task.estimatedDurationMinutes} min</Text>
         <Text style={[typography.captionBold, { color: colors.primary }]}>
           +{task.points.taskPoints} pts · +{task.points.xp} XP
         </Text>
-      </SquircleSurface>
+      </View>
 
       {task.purpose ? (
         <>
@@ -233,12 +233,12 @@ export function QuestPanel({ assignmentId, onDone, onLeave }: QuestPanelProps) {
           style={[styles.coach, { backgroundColor: colors.primary, marginTop: spacing.md }]}
         >
           <Ionicons name="videocam" size={20} color={colors.onPrimary} />
-          <SquircleSurface style={{ flex: 1, marginLeft: 10 }}>
+          <View style={{ flex: 1, marginLeft: 10 }}>
             <Text style={[typography.bodyBold, { color: colors.onPrimary }]}>Do it with the camera coach</Text>
             <Text style={[typography.caption, { color: colors.onPrimary, opacity: 0.9 }]}>
               A short guided workout. Finishing it completes this quest; good form earns 10x workout XP.
             </Text>
-          </SquircleSurface>
+          </View>
           <Ionicons name="chevron-forward" size={18} color={colors.onPrimary} />
         </PressableScale>
       ) : null}
@@ -253,12 +253,12 @@ export function QuestPanel({ assignmentId, onDone, onLeave }: QuestPanelProps) {
           style={[styles.coach, { backgroundColor: colors.primary, marginTop: spacing.md }]}
         >
           <Ionicons name="camera" size={20} color={colors.onPrimary} />
-          <SquircleSurface style={{ flex: 1, marginLeft: 10 }}>
+          <View style={{ flex: 1, marginLeft: 10 }}>
             <Text style={[typography.bodyBold, { color: colors.onPrimary }]}>Log a meal with a photo</Text>
             <Text style={[typography.caption, { color: colors.onPrimary, opacity: 0.9 }]}>
               Snap your plate, pick the foods and see calories and protein. Logging a meal completes meal quests.
             </Text>
-          </SquircleSurface>
+          </View>
           <Ionicons name="chevron-forward" size={18} color={colors.onPrimary} />
         </PressableScale>
       ) : null}
@@ -276,7 +276,7 @@ export function QuestPanel({ assignmentId, onDone, onLeave }: QuestPanelProps) {
       </PressableScale>
 
       <Text style={[typography.captionBold, { color: colors.text.muted, marginTop: spacing.md }]}>WHAT TO DO</Text>
-      <SquircleSurface style={[styles.box, { backgroundColor: colors.surface, borderColor: colors.border, marginTop: spacing.xs }]}>
+      <View style={[styles.box, { backgroundColor: colors.surface, borderColor: colors.border, marginTop: spacing.xs }]}>
         {task.instructions.map((step, idx) => {
           const checked = steps.includes(step.id);
           const content = (
@@ -288,9 +288,9 @@ export function QuestPanel({ assignmentId, onDone, onLeave }: QuestPanelProps) {
                   color={checked ? colors.primary : colors.text.muted}
                 />
               ) : (
-                <SquircleSurface style={[styles.stepBadge, { backgroundColor: colors.primaryAlpha }]}>
+                <View style={[styles.stepBadge, { backgroundColor: colors.primaryAlpha }]}>
                   <Text style={[typography.captionBold, { color: colors.primary }]}>{idx + 1}</Text>
-                </SquircleSurface>
+                </View>
               )}
               <Text style={[typography.subbody, { color: colors.text.primary, flex: 1, marginLeft: 10 }]}>{step.body}</Text>
             </>
@@ -306,31 +306,31 @@ export function QuestPanel({ assignmentId, onDone, onLeave }: QuestPanelProps) {
               {content}
             </PressableScale>
           ) : (
-            <SquircleSurface key={step.id} style={[styles.stepRow, idx > 0 && { marginTop: 10 }]}>
+            <View key={step.id} style={[styles.stepRow, idx > 0 && { marginTop: 10 }]}>
               {content}
-            </SquircleSurface>
+            </View>
           );
         })}
-      </SquircleSurface>
+      </View>
 
       {task.safetyConstraints && task.safetyConstraints.length > 0 ? (
-        <SquircleSurface style={[styles.box, { backgroundColor: colors.warningSurface, marginTop: spacing.sm }]}>
+        <View style={[styles.box, { backgroundColor: colors.warningSurface, marginTop: spacing.sm }]}>
           {task.safetyConstraints.map((c) => (
             <Text key={c} style={[typography.caption, { color: colors.text.secondary }]}>
               {c}
             </Text>
           ))}
-        </SquircleSurface>
+        </View>
       ) : null}
 
       {done ? (
-        <SquircleSurface style={[styles.box, { backgroundColor: colors.successSurface, marginTop: spacing.md, flexDirection: 'row', alignItems: 'center' }]}>
+        <View style={[styles.box, { backgroundColor: colors.successSurface, marginTop: spacing.md, flexDirection: 'row', alignItems: 'center' }]}>
           <Ionicons name="checkmark-circle" size={22} color={colors.success} />
           <Text style={[typography.subbodyBold, { color: colors.text.primary, marginLeft: 10, flex: 1 }]}>
             {assignment.status === 'verified' ? 'Verified' : 'Recorded'}: +{assignment.earnedTaskPoints} points, +
             {assignment.earnedXp} XP
           </Text>
-        </SquircleSurface>
+        </View>
       ) : closed ? (
         <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: spacing.md }]}>
           {assignment.status === 'replaced' ? 'Replaced with another quest today.' : 'Skipped for today.'}
@@ -344,7 +344,7 @@ export function QuestPanel({ assignmentId, onDone, onLeave }: QuestPanelProps) {
           <Button label="Find a replacement" variant="outline" onPress={startReplacing} style={{ marginTop: spacing.sm }} />
         </>
       ) : replacing ? (
-        <SquircleSurface style={{ marginTop: spacing.md }}>
+        <View style={{ marginTop: spacing.md }}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>Do something else instead</Text>
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
             Same kind of quest with a similar reward. Skipping alone earns nothing and loses nothing.
@@ -361,36 +361,36 @@ export function QuestPanel({ assignmentId, onDone, onLeave }: QuestPanelProps) {
               accessibilityRole="button"
               style={[styles.option, { backgroundColor: colors.surface, borderColor: colors.border }]}
             >
-              <SquircleSurface style={{ flex: 1 }}>
+              <View style={{ flex: 1 }}>
                 <Text style={[typography.subbodyBold, { color: colors.text.primary }]}>{o.task.title}</Text>
                 <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
                   {o.task.estimatedDurationMinutes} min · +{o.task.points.taskPoints} pts · +{o.task.points.xp} XP
                   {o.specialQuestTitle ? ` · ${o.specialQuestTitle}` : ''}
                 </Text>
-              </SquircleSurface>
+              </View>
               <Ionicons name="add-circle-outline" size={22} color={colors.primary} />
             </PressableScale>
           ))}
-          <SquircleSurface style={[styles.row, { marginTop: spacing.sm }]}>
+          <View style={[styles.row, { marginTop: spacing.sm }]}>
             <Button label="Just skip today" variant="ghost" size="sm" onPress={skipOnly} style={{ flex: 1 }} />
             <Button label="Back" variant="ghost" size="sm" onPress={() => setReplacing(false)} style={{ flex: 1 }} />
-          </SquircleSurface>
-        </SquircleSurface>
+          </View>
+        </View>
       ) : (
         <>
           {minimum > 0 ? (
-            <SquircleSurface style={[styles.box, { backgroundColor: colors.surface, borderColor: colors.border, marginTop: spacing.md }]}>
+            <View style={[styles.box, { backgroundColor: colors.surface, borderColor: colors.border, marginTop: spacing.md }]}>
               <Text style={[typography.display, { color: colors.text.primary, textAlign: 'center' }]}>
                 {formatClock(elapsed)}
               </Text>
               <Text style={[typography.caption, { color: colors.text.secondary, textAlign: 'center' }]}>
                 {elapsed >= minimum ? 'Time reached' : `At least ${formatClock(minimum)} needed`}
               </Text>
-              <SquircleSurface style={[styles.track, { backgroundColor: colors.surface1 }]}>
-                <SquircleSurface
+              <View style={[styles.track, { backgroundColor: colors.surface1 }]}>
+                <View
                   style={[styles.fill, { backgroundColor: colors.primary, width: `${Math.min(100, (elapsed / minimum) * 100)}%` }]}
                 />
-              </SquircleSurface>
+              </View>
               <Button
                 label={running ? 'Pause' : elapsed > 0 ? 'Resume' : 'Start timer'}
                 variant={running ? 'outline' : 'primary'}
@@ -398,7 +398,7 @@ export function QuestPanel({ assignmentId, onDone, onLeave }: QuestPanelProps) {
                 onPress={toggleTimer}
                 style={{ marginTop: 10 }}
               />
-            </SquircleSurface>
+            </View>
           ) : null}
 
           {form.allowSafeStop ? (
@@ -418,20 +418,20 @@ export function QuestPanel({ assignmentId, onDone, onLeave }: QuestPanelProps) {
           ) : null}
 
           {errors.length > 0 ? (
-            <SquircleSurface style={{ marginTop: spacing.sm }}>
+            <View style={{ marginTop: spacing.sm }}>
               {errors.slice(0, 3).map((code) => (
                 <Text key={code} style={[typography.caption, { color: colors.error }]}>
                   {describeReason(code, form)}
                 </Text>
               ))}
-            </SquircleSurface>
+            </View>
           ) : null}
 
           <Button label="Submit" onPress={submit} style={{ marginTop: spacing.md }} />
           <Button label="Skip or replace" variant="ghost" size="sm" onPress={startReplacing} style={{ marginTop: 6 }} />
         </>
       )}
-    </SquircleSurface>
+    </View>
   );
 }
 
@@ -483,10 +483,10 @@ function FieldInput({
   }
 
   return (
-    <SquircleSurface style={{ marginTop: spacing.md }}>
+    <View style={{ marginTop: spacing.md }}>
       {label}
       {field.kind === 'rating' || field.kind === 'choice' ? (
-        <SquircleSurface style={styles.chips}>
+        <View style={styles.chips}>
           {(field.kind === 'rating'
             ? Array.from({ length: (field.max ?? 5) - (field.min ?? 1) + 1 }, (_, i) => String((field.min ?? 1) + i))
             : field.options ?? []
@@ -501,7 +501,7 @@ function FieldInput({
               />
             );
           })}
-        </SquircleSurface>
+        </View>
       ) : field.kind === 'number' ? (
         <TextInput
           value={typeof value === 'number' ? String(value) : ''}
@@ -527,7 +527,7 @@ function FieldInput({
           style={[inputStyle, (field.kind === 'longtext' || field.kind === 'lines') && styles.multiline]}
         />
       )}
-    </SquircleSurface>
+    </View>
   );
 }
 

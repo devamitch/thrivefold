@@ -1,6 +1,6 @@
 import { SquircleSurface } from '../components/ui/SquircleSurface';
 import React from 'react';
-import { Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet, View } from 'react-native';
 import { Link } from 'expo-router';
 import { useTheme } from '../theme/useTheme';
 
@@ -8,7 +8,7 @@ export default function NotFoundScreen() {
   const { colors, typography, spacing } = useTheme();
 
   return (
-    <SquircleSurface style={[styles.container, { backgroundColor: colors.background, padding: spacing.xl }]}>
+    <View style={[styles.container, { backgroundColor: colors.background, padding: spacing.xl }]}>
       <Text style={[typography.heading, { color: colors.text.primary, marginBottom: spacing.sm }]}>
         Screen Not Found
       </Text>
@@ -18,7 +18,7 @@ export default function NotFoundScreen() {
       <Link href="/(app)/(tabs)" style={[styles.link, { color: colors.primary }]}>
         Return to Health Home
       </Link>
-    </SquircleSurface>
+    </View>
   );
 }
 

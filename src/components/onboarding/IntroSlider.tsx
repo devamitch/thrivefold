@@ -11,7 +11,7 @@ import { SquircleSurface } from '../ui/SquircleSurface';
  */
 import { Image } from 'expo-image';
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { BackHandler, ScrollView, StatusBar, StyleSheet, Text, useWindowDimensions, type ImageSourcePropType, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { BackHandler, ScrollView, StatusBar, StyleSheet, Text, useWindowDimensions, type ImageSourcePropType, type NativeScrollEvent, type NativeSyntheticEvent, View } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -179,13 +179,13 @@ export function IntroSlider({ onFinish }: { onFinish: () => void }) {
   }));
 
   return (
-    <SquircleSurface style={[StyleSheet.absoluteFill, { backgroundColor: colors.background }]}>
+    <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background }]}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent />
       <Animated.View style={[styles.root, rootStyle]}>
-        <SquircleSurface style={[styles.header, { paddingTop: insets.top + 12, paddingHorizontal: side }]}>
+        <View style={[styles.header, { paddingTop: insets.top + 12, paddingHorizontal: side }]}>
           <AnimatedThrivefoldMark size={30} entrance={false} />
           <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Thrivefold</Text>
-        </SquircleSurface>
+        </View>
 
         <Animated.ScrollView
           ref={scrollRef as never}
@@ -220,13 +220,13 @@ export function IntroSlider({ onFinish }: { onFinish: () => void }) {
           ))}
         </Animated.ScrollView>
 
-        <SquircleSurface style={{ paddingHorizontal: side, paddingBottom: insets.bottom + 16, paddingTop: 8 }}>
-          <SquircleSurface style={styles.footerRow}>
-            <SquircleSurface style={styles.dots} accessibilityRole="tablist">
+        <View style={{ paddingHorizontal: side, paddingBottom: insets.bottom + 16, paddingTop: 8 }}>
+          <View style={styles.footerRow}>
+            <View style={styles.dots} accessibilityRole="tablist">
               {SLIDES.map((slide, index) => (
                 <Dot key={slide.id} index={index} width={width} scrollX={scrollX} selected={index === active} onPress={goTo} />
               ))}
-            </SquircleSurface>
+            </View>
             <Animated.View style={fadeOnLast} pointerEvents={isLast ? 'none' : 'auto'}>
               <PressableScale
                 onPress={finish}
@@ -239,7 +239,7 @@ export function IntroSlider({ onFinish }: { onFinish: () => void }) {
                 <Text style={[typography.subbody, { color: colors.text.secondary }]}>Skip</Text>
               </PressableScale>
             </Animated.View>
-          </SquircleSurface>
+          </View>
 
           <PressableScale
             onPress={next}
@@ -247,18 +247,18 @@ export function IntroSlider({ onFinish }: { onFinish: () => void }) {
             accessibilityRole="button"
             accessibilityLabel={isLast ? 'Get started' : 'Continue'}
           >
-            <SquircleSurface style={[styles.cta, { backgroundColor: colors.primary }]}>
+            <View style={[styles.cta, { backgroundColor: colors.primary }]}>
               <Animated.View style={[styles.ctaLabel, fadeOnLast]}>
                 <Text style={[typography.bodyBold, { color: colors.onPrimary }]}>Continue</Text>
               </Animated.View>
               <Animated.View style={[styles.ctaLabel, fadeInLast]}>
                 <Text style={[typography.bodyBold, { color: colors.onPrimary }]}>Get started</Text>
               </Animated.View>
-            </SquircleSurface>
+            </View>
           </PressableScale>
-        </SquircleSurface>
+        </View>
       </Animated.View>
-    </SquircleSurface>
+    </View>
   );
 }
 
@@ -298,16 +298,16 @@ const SlidePage = memo(function SlidePage({ slide, index, width, height, side, s
   });
 
   return (
-    <SquircleSurface
+    <View
       style={[styles.page, { width, height: height || undefined, paddingHorizontal: side }]}
       accessible
       accessibilityLabel={`${slide.title}. ${slide.description}`}
     >
       <Animated.View style={[styles.art, artStyle]}>
         <BreathingAura index={index} motion={motion} />
-        <SquircleSurface style={[styles.artCard, { backgroundColor: colors.surface1 }]}>
+        <View style={[styles.artCard, { backgroundColor: colors.surface1 }]}>
           <Image source={slide.image} style={styles.artImage} contentFit="cover" priority="high" transition={0} accessible={false} />
-        </SquircleSurface>
+        </View>
       </Animated.View>
       <Animated.View style={[styles.copy, copyStyle]}>
         <Text style={[typography.label, styles.eyebrow, { color: colors.accentText }]} maxFontSizeMultiplier={1.2}>
@@ -324,7 +324,7 @@ const SlidePage = memo(function SlidePage({ slide, index, width, height, side, s
           {slide.description}
         </Text>
       </Animated.View>
-    </SquircleSurface>
+    </View>
   );
 });
 

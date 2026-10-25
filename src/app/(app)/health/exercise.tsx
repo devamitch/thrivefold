@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet, View } from 'react-native';
 import { useRouter, type Href , Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ActivityRow } from '../../../components/game/ActivityRow';
@@ -74,7 +74,7 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
   return (
     <ScreenWrapper scrollable>
       <Header title="Train" subtitle="Camera coach, plans and your progress" showBack={!asTab} />
-      <SquircleSurface style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
+      <View style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
         <Card variant="surface1" style={{ padding: spacing.base }}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>
             {minutes} active minutes in the last 7 days
@@ -84,7 +84,7 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
             Many adults aim for about 150 minutes of moderate activity a week.
           </Text>
           <WeekStrip />
-          <SquircleSurface style={[styles.tools, { marginTop: spacing.md }]}>
+          <View style={[styles.tools, { marginTop: spacing.md }]}>
             {TRAIN_TOOLS.map((t) => (
               <Link key={t.label} href={t.route} asChild>
                 <PressableScale style={styles.toolCell} accessibilityRole="button" accessibilityLabel={t.label}>
@@ -97,7 +97,7 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
                 </PressableScale>
               </Link>
             ))}
-          </SquircleSurface>
+          </View>
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>
             Never train through sharp pain, chest pain or dizziness. General fitness guidance, not medical advice.
           </Text>
@@ -125,7 +125,7 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
             <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
               Tap to start with video, rep counting and form check. Saved to your history and calendar.
             </Text>
-            <SquircleSurface style={{ marginTop: spacing.sm }}>
+            <View style={{ marginTop: spacing.sm }}>
               {suggestions.map(({ plan, reason }) => (
                 <Link key={plan.id} href={`/(app)/health/coach/${plan.id}` as Href} asChild>
                   <ActivityRow
@@ -136,18 +136,18 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
                   />
                 </Link>
               ))}
-            </SquircleSurface>
+            </View>
             <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg }]}>All plans</Text>
           </>
         ) : null}
 
-        <SquircleSurface style={[styles.chips, { marginTop: spacing.md }]}>
+        <View style={[styles.chips, { marginTop: spacing.md }]}>
           {SETTINGS.map((s) => (
             <Chip key={s.id} label={s.label} selected={filter === s.id} onPress={() => setFilter(s.id)} />
           ))}
-        </SquircleSurface>
+        </View>
 
-        <SquircleSurface style={{ marginTop: spacing.sm }}>
+        <View style={{ marginTop: spacing.sm }}>
           {plans.map((plan) => (
             <Link key={plan.id} href={`/(app)/health/workout/${plan.id}` as Href} asChild>
               <ActivityRow
@@ -157,7 +157,7 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
               />
             </Link>
           ))}
-        </SquircleSurface>
+        </View>
 
         <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg }]}>History</Text>
         {sessions.length === 0 ? (
@@ -165,7 +165,7 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
             No workouts logged yet. Start a plan above; every set you log shows up here.
           </Text>
         ) : (
-          <SquircleSurface style={{ marginTop: spacing.sm }}>
+          <View style={{ marginTop: spacing.sm }}>
             {sessions.slice(0, 20).map((s) => {
               const sets = s.entries.reduce((n, e) => n + e.sets.length, 0);
               const title =
@@ -208,9 +208,9 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
                 </Link>
               );
             })}
-          </SquircleSurface>
+          </View>
         )}
-      </SquircleSurface>
+      </View>
     </ScreenWrapper>
   );
 }
@@ -248,9 +248,9 @@ function WeekStrip() {
     <Link href={'/(app)/calendar' as Href} asChild>
       <PressableScale accessibilityRole="button" accessibilityLabel="Open calendar" style={StyleSheet.flatten([styles.week, { marginTop: spacing.md }])}>
         {days.map((d) => (
-          <SquircleSurface key={d.key} style={styles.weekDay}>
+          <View key={d.key} style={styles.weekDay}>
             <Text style={[typography.caption, { color: d.today ? colors.primary : colors.text.muted }]}>{d.label}</Text>
-            <SquircleSurface
+            <View
               style={[
                 styles.weekDot,
                 {
@@ -260,8 +260,8 @@ function WeekStrip() {
               ]}
             >
               {active.has(d.key) ? <Ionicons name="checkmark" size={12} color={colors.onPrimary} /> : null}
-            </SquircleSurface>
-          </SquircleSurface>
+            </View>
+          </View>
         ))}
         <Ionicons name="calendar-outline" size={18} color={colors.text.muted} style={{ marginLeft: 6 }} />
       </PressableScale>

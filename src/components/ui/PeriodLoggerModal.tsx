@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import type { PeriodLogRecord, FlowIntensity } from '../../stores/slices/healthSlice';
 import { useRootStore } from '../../stores/useRootStore';
@@ -190,7 +190,7 @@ export function PeriodLoggerModal({
         }
       >
         {/* Start Date Field */}
-        <SquircleSurface style={{ marginTop: spacing.md }}>
+        <View style={{ marginTop: spacing.md }}>
           <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 6 }]}>
             PERIOD START DATE *
           </Text>
@@ -212,12 +212,12 @@ export function PeriodLoggerModal({
               strokeWidth={1}
               style={styles.datePickerTrigger}
             >
-              <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Ionicons name="calendar" size={18} color={colors.primary} style={{ marginRight: 10 }} />
                 <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
                   {startDate || 'Select start date'}
                 </Text>
-              </SquircleSurface>
+              </View>
               <SquircleSurface
                 radius={8}
                 smoothing={1}
@@ -228,7 +228,7 @@ export function PeriodLoggerModal({
               </SquircleSurface>
             </SquircleSurface>
           </PressableScale>
-        </SquircleSurface>
+        </View>
 
         {/* Ongoing Bleeding Switch */}
         <PressableScale
@@ -248,7 +248,7 @@ export function PeriodLoggerModal({
             strokeWidth={1}
             style={styles.ongoingCard}
           >
-            <SquircleSurface style={{ flex: 1, paddingRight: 12 }}>
+            <View style={{ flex: 1, paddingRight: 12 }}>
               <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
                 Bleeding is ongoing today
               </Text>
@@ -257,7 +257,7 @@ export function PeriodLoggerModal({
                   ? 'Continuous active flow. An end date can be added once bleeding finishes.'
                   : 'Bleeding has concluded. Enter the end date below.'}
               </Text>
-            </SquircleSurface>
+            </View>
             <SquircleSurface
               radius={7}
               smoothing={1}
@@ -272,7 +272,7 @@ export function PeriodLoggerModal({
 
         {/* End Date Field (if not ongoing) */}
         {!isOngoing && (
-          <SquircleSurface style={{ marginTop: spacing.md }}>
+          <View style={{ marginTop: spacing.md }}>
             <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 6 }]}>
               PERIOD END DATE *
             </Text>
@@ -294,12 +294,12 @@ export function PeriodLoggerModal({
                 strokeWidth={1}
                 style={styles.datePickerTrigger}
               >
-                <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <Ionicons name="calendar-outline" size={18} color={colors.primary} style={{ marginRight: 10 }} />
                   <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
                     {endDate || startDate || 'Select end date'}
                   </Text>
-                </SquircleSurface>
+                </View>
                 <SquircleSurface
                   radius={8}
                   smoothing={1}
@@ -310,15 +310,15 @@ export function PeriodLoggerModal({
                 </SquircleSurface>
               </SquircleSurface>
             </PressableScale>
-          </SquircleSurface>
+          </View>
         )}
 
         {/* Flow Intensity Selection */}
-        <SquircleSurface style={{ marginTop: spacing.lg }}>
+        <View style={{ marginTop: spacing.lg }}>
           <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 8 }]}>
             FLOW INTENSITY
           </Text>
-          <SquircleSurface style={styles.flowGrid}>
+          <View style={styles.flowGrid}>
             {FLOW_OPTIONS.map((opt) => {
               const isSelected = flowIntensity === opt.intensity;
               return (
@@ -340,7 +340,7 @@ export function PeriodLoggerModal({
                     strokeWidth={1}
                     style={styles.flowCard}
                   >
-                    <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                       <SquircleSurface
                         radius={5}
                         smoothing={1}
@@ -355,7 +355,7 @@ export function PeriodLoggerModal({
                       >
                         {opt.label}
                       </Text>
-                    </SquircleSurface>
+                    </View>
                     <Text style={[typography.caption, { color: colors.text.muted, marginTop: 4 }]}>
                       {opt.desc}
                     </Text>
@@ -363,12 +363,12 @@ export function PeriodLoggerModal({
                 </PressableScale>
               );
             })}
-          </SquircleSurface>
-        </SquircleSurface>
+          </View>
+        </View>
 
         {/* Pain & Cramp Level */}
-        <SquircleSurface style={{ marginTop: spacing.lg }}>
-          <SquircleSurface style={styles.rowBetween}>
+        <View style={{ marginTop: spacing.lg }}>
+          <View style={styles.rowBetween}>
             <Text style={[typography.captionBold, { color: colors.text.muted }]}>
               CRAMPS & PHYSICAL DISCOMFORT
             </Text>
@@ -381,9 +381,9 @@ export function PeriodLoggerModal({
                 ? `${painLevel}/10 (Moderate)`
                 : `${painLevel}/10 (Severe)`}
             </Text>
-          </SquircleSurface>
+          </View>
 
-          <SquircleSurface style={styles.painStrip}>
+          <View style={styles.painStrip}>
             {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => {
               const isSelected = painLevel === num;
               return (
@@ -420,15 +420,15 @@ export function PeriodLoggerModal({
                 </PressableScale>
               );
             })}
-          </SquircleSurface>
-        </SquircleSurface>
+          </View>
+        </View>
 
         {/* Physical Symptoms */}
-        <SquircleSurface style={{ marginTop: spacing.lg }}>
+        <View style={{ marginTop: spacing.lg }}>
           <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 8 }]}>
             PHYSICAL & EMOTIONAL SENSATIONS
           </Text>
-          <SquircleSurface style={styles.chipsWrap}>
+          <View style={styles.chipsWrap}>
             {COMMON_SYMPTOMS.map((sym) => {
               const isSelected = selectedSymptoms.includes(sym);
               return (
@@ -459,11 +459,11 @@ export function PeriodLoggerModal({
                 </PressableScale>
               );
             })}
-          </SquircleSurface>
-        </SquircleSurface>
+          </View>
+        </View>
 
         {/* Personal Notes */}
-        <SquircleSurface style={{ marginTop: spacing.lg }}>
+        <View style={{ marginTop: spacing.lg }}>
           <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 6 }]}>
             PERSONAL NOTES (OPTIONAL)
           </Text>
@@ -474,7 +474,7 @@ export function PeriodLoggerModal({
             multiline
             numberOfLines={2}
           />
-        </SquircleSurface>
+        </View>
 
       </AppBottomSheetModal>
 

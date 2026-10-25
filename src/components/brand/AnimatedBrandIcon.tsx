@@ -4,7 +4,7 @@ import { SquircleSurface } from '../ui/SquircleSurface';
  * Zero gradients, clean organic lines, soft pulse on mount.
  */
 import React, { memo, useEffect } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import Animated, {
   Easing,
@@ -65,7 +65,7 @@ export const AnimatedBrandIcon = memo(function AnimatedBrandIcon({
   if (!withBackground) return icon;
 
   return (
-    <SquircleSurface style={[styles.container, { width: size, height: size, borderRadius: size / 2 }]}>
+    <View style={[styles.container, { width: size, height: size, borderRadius: size / 2 }]}>
       <Animated.View
         style={[
           styles.glow,
@@ -78,7 +78,7 @@ export const AnimatedBrandIcon = memo(function AnimatedBrandIcon({
           glowStyle,
         ]}
       />
-      <SquircleSurface
+      <View
         style={[
           styles.bg,
           {
@@ -96,8 +96,8 @@ export const AnimatedBrandIcon = memo(function AnimatedBrandIcon({
           contentFit="contain"
           cachePolicy="memory-disk"
         />
-      </SquircleSurface>
-    </SquircleSurface>
+      </View>
+    </View>
   );
 });
 
