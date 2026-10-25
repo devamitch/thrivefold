@@ -47,18 +47,6 @@ export const LM = {
 
 /** Bones drawn on the camera overlay. */
 export const SKELETON: [number, number][] = [
-  // Facial and head landmarks
-  [LM.leftEye, LM.rightEye],
-  [LM.leftEye, LM.nose],
-  [LM.rightEye, LM.nose],
-  [LM.leftEar, LM.leftEye],
-  [LM.rightEar, LM.rightEye],
-  [LM.mouthLeft, LM.mouthRight],
-  [LM.nose, LM.mouthLeft],
-  [LM.nose, LM.mouthRight],
-  [LM.leftEar, LM.leftShoulder],
-  [LM.rightEar, LM.rightShoulder],
-  // Body skeleton
   [LM.leftShoulder, LM.rightShoulder],
   [LM.leftShoulder, LM.leftElbow],
   [LM.leftElbow, LM.leftWrist],

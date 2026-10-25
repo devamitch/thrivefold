@@ -52,6 +52,12 @@ export interface ThemeColors {
   dock: string;
   dockActive: string;
   dockMuted: string;
+  /** Video-call screen (coach): always dark, whatever the theme. */
+  callBackground: string;
+  callSurface: string;
+  callSurfaceStrong: string;
+  callText: string;
+  callMuted: string;
 }
 
 const alpha = (hex: string, a: number) => {
@@ -110,6 +116,11 @@ function palette(r: Recipe): ThemeColors {
     dock: r.dock,
     dockActive: r.dockActive,
     dockMuted: dark ? '#7A7570' : '#948D86',
+    callBackground: '#0B0D10',
+    callSurface: 'rgba(18, 20, 24, 0.62)',
+    callSurfaceStrong: 'rgba(255, 255, 255, 0.16)',
+    callText: '#FFFFFF',
+    callMuted: 'rgba(255, 255, 255, 0.72)',
   };
 }
 

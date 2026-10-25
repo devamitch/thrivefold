@@ -11,7 +11,7 @@ import Animated, {
   type SharedValue,
 } from 'react-native-reanimated';
 
-import { SKELETON, LM, type Landmark } from '../../domain/pose/movement';
+import { LM, SKELETON, type Landmark } from '../../domain/pose/movement';
 import { useTheme } from '../../theme/useTheme';
 
 interface Props {
@@ -30,13 +30,14 @@ const N = 33;
 /** Share of the remaining distance covered each display frame (~60 fps easing). */
 const FOLLOW = 0.3;
 const BREATH_MS = 2400;
-const DOT = 10;
+const DOT = 9;
+const BONE = 3;
 
 /**
- * Skeleton over a centre-cropped camera preview, drawn with plain native views moved on
- * the UI thread. Detections arrive ~15 times a second; drawn points ease towards each one
- * every display frame, so the skeleton glides. Facial landmarks and eyes are drawn with
- * high-precision optical reticles and gentle breathing pulse.
+ * A clean body skeleton over a centre-cropped camera preview: thin bones, small joints and
+ * one head marker, drawn with plain native views moved on the UI thread. Detections arrive
+ * ~15 times a second and drawn points ease towards each one every frame, so the skeleton
+ * glides. Joints breathe gently; only joints that need fixing turn red and glow.
  */
 export function PoseOverlay({ landmarks, frameWidth, frameHeight, width, height, highlight }: Props) {
   const { colors } = useTheme();
@@ -86,70 +87,32 @@ export function PoseOverlay({ landmarks, frameWidth, frameHeight, width, height,
 
   return (
     <View style={[StyleSheet.absoluteFill, { width, height }]} pointerEvents="none">
-      {SKELETON.map(([a, b]) => {
-        const isFace = a <= 10 && b <= 10;
-        return (
-          <Bone
-            key={`${a}-${b}`}
-            a={a}
-            b={b}
-            shown={shown}
-            color={hot.has(a) || hot.has(b) ? colors.error : isFace ? 'rgba(255, 255, 255, 0.65)' : colors.onPrimary}
-            thick={hot.has(a) || hot.has(b)}
-            isFace={isFace}
-          />
-        );
-      })}
-      {JOINTS.map((i) => {
-        const isEye = i === LM.leftEye || i === LM.rightEye;
-        return (
-          <Joint
-            key={i}
-            i={i}
-            shown={shown}
-            breath={breath}
-            color={hot.has(i) ? colors.error : isEye ? colors.accentText : colors.primary}
-            ring={colors.onPrimary}
-            big={hot.has(i)}
-            isEye={isEye}
-          />
-        );
-      })}
+      {SKELETON.map(([a, b]) => (
+        <Bone key={`${a}-${b}`} a={a} b={b} shown={shown} color={hot.has(a) || hot.has(b) ? colors.error : colors.onPrimary} />
+      ))}
+      {JOINTS.map((i) => (
+        <Joint key={i} i={i} shown={shown} breath={breath} color={hot.has(i) ? colors.error : colors.primary} ring={colors.onPrimary} hot={hot.has(i)} />
+      ))}
+      <Head shown={shown} color={colors.onPrimary} />
     </View>
   );
 }
 
-function Bone({
-  a,
-  b,
-  shown,
-  color,
-  thick,
-  isFace,
-}: {
-  a: number;
-  b: number;
-  shown: SharedValue<number[]>;
-  color: string;
-  thick: boolean;
-  isFace?: boolean;
-}) {
-  const h = isFace ? 2 : thick ? 5 : 3;
+function Bone({ a, b, shown, color }: { a: number; b: number; shown: SharedValue<number[]>; color: string }) {
   const style = useAnimatedStyle(() => {
     const s = shown.value;
     const x1 = s[a * 3];
     const y1 = s[a * 3 + 1];
     const x2 = s[b * 3];
     const y2 = s[b * 3 + 1];
-    const len = Math.hypot(x2 - x1, y2 - y1);
     const visible = s[a * 3 + 2] >= 0.5 && s[b * 3 + 2] >= 0.5;
     return {
-      opacity: visible ? (isFace ? 0.7 : 0.85) : 0,
-      width: len,
-      transform: [{ translateX: x1 }, { translateY: y1 - h / 2 }, { rotate: `${Math.atan2(y2 - y1, x2 - x1)}rad` }],
+      opacity: visible ? 0.9 : 0,
+      width: Math.hypot(x2 - x1, y2 - y1),
+      transform: [{ translateX: x1 }, { translateY: y1 - BONE / 2 }, { rotate: `${Math.atan2(y2 - y1, x2 - x1)}rad` }],
     };
   });
-  return <Animated.View style={[styles.bone, { height: h, borderRadius: h / 2, backgroundColor: color }, style]} />;
+  return <Animated.View style={[styles.bone, { backgroundColor: color }, style]} />;
 }
 
 function Joint({
@@ -158,64 +121,63 @@ function Joint({
   breath,
   color,
   ring,
-  big,
-  isEye,
+  hot,
 }: {
   i: number;
   shown: SharedValue<number[]>;
   breath: SharedValue<number>;
   color: string;
   ring: string;
-  big: boolean;
-  isEye?: boolean;
+  hot: boolean;
 }) {
-  const baseSize = isEye ? 14 : big ? DOT * 1.6 : DOT;
+  const size = hot ? DOT * 1.5 : DOT;
+  const halo = size * 2.6;
   const dot = useAnimatedStyle(() => {
     const s = shown.value;
     return {
       opacity: s[i * 3 + 2] >= 0.5 ? 1 : 0,
-      transform: [
-        { translateX: s[i * 3] - baseSize / 2 },
-        { translateY: s[i * 3 + 1] - baseSize / 2 },
-        { scale: 1 + (isEye ? 0.35 : 0.22) * breath.value },
-      ],
+      transform: [{ translateX: s[i * 3] - size / 2 }, { translateY: s[i * 3 + 1] - size / 2 }, { scale: 1 + 0.15 * breath.value }],
     };
   });
   const glow = useAnimatedStyle(() => {
     const s = shown.value;
-    const g = baseSize * (isEye ? 2.8 : 2.4);
     return {
-      opacity: s[i * 3 + 2] >= 0.5 ? (isEye ? 0.28 : 0.16) + 0.22 * breath.value : 0,
-      transform: [
-        { translateX: s[i * 3] - g / 2 },
-        { translateY: s[i * 3 + 1] - g / 2 },
-        { scale: 0.85 + 0.35 * breath.value },
-      ],
+      opacity: hot && s[i * 3 + 2] >= 0.5 ? 0.2 + 0.25 * breath.value : 0,
+      transform: [{ translateX: s[i * 3] - halo / 2 }, { translateY: s[i * 3 + 1] - halo / 2 }, { scale: 0.85 + 0.3 * breath.value }],
     };
   });
-  const g = baseSize * (isEye ? 2.8 : 2.4);
   return (
     <>
-      <Animated.View style={[styles.abs, { width: g, height: g, borderRadius: g / 2, backgroundColor: color }, glow]} />
-      <Animated.View
-        style={[
-          styles.abs,
-          {
-            width: baseSize,
-            height: baseSize,
-            borderRadius: baseSize / 2,
-            backgroundColor: color,
-            borderColor: ring,
-            borderWidth: isEye ? 1.5 : 1,
-          },
-          dot,
-        ]}
-      />
+      {hot ? <Animated.View style={[styles.abs, { width: halo, height: halo, borderRadius: halo / 2, backgroundColor: color }, glow]} /> : null}
+      <Animated.View style={[styles.abs, { width: size + 4, height: size + 4, borderRadius: (size + 4) / 2, backgroundColor: ring, padding: 2 }, dot]}>
+        <View style={{ flex: 1, borderRadius: size / 2, backgroundColor: color }} />
+      </Animated.View>
     </>
   );
 }
 
+/** One soft ring around the head, sized from the shoulder width, instead of a face mesh. */
+function Head({ shown, color }: { shown: SharedValue<number[]>; color: string }) {
+  const style = useAnimatedStyle(() => {
+    const s = shown.value;
+    const nose = LM.nose * 3;
+    const ls = LM.leftShoulder * 3;
+    const rs = LM.rightShoulder * 3;
+    const seen = s[nose + 2] >= 0.5;
+    const d = Math.max(28, Math.min(140, Math.hypot(s[ls] - s[rs], s[ls + 1] - s[rs + 1]) * 0.55));
+    return {
+      opacity: seen ? 0.85 : 0,
+      width: d,
+      height: d,
+      borderRadius: d / 2,
+      transform: [{ translateX: s[nose] - d / 2 }, { translateY: s[nose + 1] - d / 2 }],
+    };
+  });
+  return <Animated.View style={[styles.abs, styles.head, { borderColor: color }, style]} />;
+}
+
 const styles = StyleSheet.create({
   abs: { left: 0, position: 'absolute', top: 0 },
-  bone: { left: 0, position: 'absolute', top: 0, transformOrigin: '0% 50%' },
+  bone: { borderRadius: BONE / 2, height: BONE, left: 0, position: 'absolute', top: 0, transformOrigin: '0% 50%' },
+  head: { borderWidth: 2.5 },
 });
