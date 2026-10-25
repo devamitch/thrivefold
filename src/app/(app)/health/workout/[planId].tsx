@@ -1,5 +1,6 @@
+import { SquircleSurface } from '@/components/ui';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, TextInput } from 'react-native';
+import { Text, StyleSheet, TextInput } from 'react-native';
 import { watchHref } from '../../../../content/exerciseVideos';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -138,13 +139,13 @@ export default function WorkoutSessionScreen() {
   return (
     <ScreenWrapper scrollable>
       <Header title={plan.title} subtitle={`${plan.minutes} min · ${plan.items.length} exercises`} showBack />
-      <View style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
+      <SquircleSurface style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
         {rest > 0 ? (
           <Card variant="tinted" style={{ padding: spacing.base, marginBottom: spacing.sm }}>
-            <View style={styles.row}>
+            <SquircleSurface style={styles.row}>
               <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Rest {rest}s</Text>
               <Button label="Skip rest" size="sm" variant="ghost" onPress={() => setRest(0)} />
-            </View>
+            </SquircleSurface>
           </Card>
         ) : null}
 
@@ -153,16 +154,16 @@ export default function WorkoutSessionScreen() {
           onPress={() => router.push(`/(app)/health/coach/${plan.id}${assignmentId ? `?assignmentId=${assignmentId}` : ''}` as Href)}
           style={{ padding: spacing.base, marginBottom: spacing.sm }}
         >
-          <View style={styles.row}>
+          <SquircleSurface style={styles.row}>
             <Ionicons name="videocam-outline" size={22} color={colors.primary} />
-            <View style={{ flex: 1, marginLeft: 12 }}>
+            <SquircleSurface style={{ flex: 1, marginLeft: 12 }}>
               <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Train with the camera coach</Text>
               <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
                 Tutorial video and live form check side by side. Good form earns 10x XP.
               </Text>
-            </View>
+            </SquircleSurface>
             <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
-          </View>
+          </SquircleSurface>
         </Card>
 
         {plan.items.map((item) => {
@@ -200,7 +201,7 @@ export default function WorkoutSessionScreen() {
               </PressableScale>
 
               {draft[item.exerciseId].map((set, idx) => (
-                <View key={idx} style={[styles.setRow, { borderTopColor: colors.border }]}>
+                <SquircleSurface key={idx} style={[styles.setRow, { borderTopColor: colors.border }]}>
                   <Text style={[typography.captionBold, { color: colors.text.muted, width: 44 }]}>Set {idx + 1}</Text>
                   <TextInput
                     value={set.value}
@@ -239,18 +240,18 @@ export default function WorkoutSessionScreen() {
                       color={set.done ? colors.success : colors.text.muted}
                     />
                   </PressableScale>
-                </View>
+                </SquircleSurface>
               ))}
             </Card>
           );
         })}
 
         <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg }]}>How hard was it?</Text>
-        <View style={[styles.chips, { marginTop: spacing.sm }]}>
+        <SquircleSurface style={[styles.chips, { marginTop: spacing.sm }]}>
           {[2, 4, 6, 8, 10].map((n) => (
             <Chip key={n} label={`${n}/10`} selected={effort === n} onPress={() => setEffort(n)} />
           ))}
-        </View>
+        </SquircleSurface>
         <PressableScale
           onPress={() => setPain((p) => !p)}
           accessibilityRole="checkbox"
@@ -269,7 +270,7 @@ export default function WorkoutSessionScreen() {
         ) : null}
 
         <Button label={`Save workout (${loggedSets} sets)`} onPress={finish} style={{ marginTop: spacing.lg }} />
-      </View>
+      </SquircleSurface>
     </ScreenWrapper>
   );
 }

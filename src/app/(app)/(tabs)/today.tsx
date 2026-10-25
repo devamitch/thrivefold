@@ -1,18 +1,11 @@
+import { SquircleSurface } from '@/components/ui';
 /**
  * Today: the day's quests and points toward the daily goal, the calendar, and quick
  * routines for the selected experience.
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Modal,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-} from 'react-native';
+import { View, Text, StyleSheet, Modal, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, type Href } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -401,13 +394,13 @@ export default function TodayScreen() {
       scrollMode="shell-scroll-view"
     >
       {/* Reanimated Animated Tab Bar with Spring Indicator */}
-      <View style={{ marginTop: spacing.xs, marginBottom: spacing.sm }}>
+      <SquircleSurface style={{ marginTop: spacing.xs, marginBottom: spacing.sm }}>
         <AnimatedTabBar
           tabs={tabItems}
           activeTab={activeTab}
           onTabChange={(tabId) => setActiveTab(tabId as ActiveTab)}
         />
-      </View>
+      </SquircleSurface>
 
       {/* SECTION 1: QUESTS & GAME ENGINE (PRIMARY TAB) */}
       {activeTab === 'quests' && (
@@ -430,7 +423,7 @@ export default function TodayScreen() {
       {activeTab === 'calendar' && (
         <Animated.View entering={FadeIn.duration(180)}>
           {/* Quick Header Row with History Modal Button */}
-          <View style={styles.calendarHeaderRow}>
+          <SquircleSurface style={styles.calendarHeaderRow}>
             <Text style={[typography.captionBold, { color: colors.text.muted }]}>
               {currentMonthDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase()}
             </Text>
@@ -440,7 +433,7 @@ export default function TodayScreen() {
               variant="ghost"
               onPress={() => setShowHistoryModal(true)}
             />
-          </View>
+          </SquircleSurface>
 
           {/* Month Grid View */}
           <MonthGridView

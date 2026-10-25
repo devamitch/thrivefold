@@ -1,3 +1,4 @@
+import { SquircleSurface } from '@/components/ui';
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -24,7 +25,7 @@ export default function LetterInboxDetailScreen() {
           const isTransit = letter.status === 'in_transit';
           return (
             <Card key={letter.id} style={{ marginBottom: spacing.md, padding: spacing.lg }}>
-              <View style={styles.headerRow}>
+              <SquircleSurface style={styles.headerRow}>
                 <Badge
                   label={isTransit ? 'Traveling' : 'Delivered'}
                   variant={isTransit ? 'warning' : 'success'}
@@ -32,7 +33,7 @@ export default function LetterInboxDetailScreen() {
                 <Text style={[typography.caption, { color: colors.text.muted }]}>
                   {letter.distanceKm.toLocaleString()} km
                 </Text>
-              </View>
+              </SquircleSurface>
 
               <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 8 }]}>
                 Letter from {letter.senderPseudonym ?? 'AuroraSeeker'}

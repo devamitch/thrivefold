@@ -1,3 +1,4 @@
+import { SquircleSurface } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter, type Href } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
@@ -8,6 +9,7 @@ import { ActivityRow } from '../../../components/game/ActivityRow';
 import { QuestSheet } from '../../../components/game/QuestSheet';
 import { HomeGuide } from '../../../components/home/HomeGuide';
 import { TodayHero } from '../../../components/home/TodayHero';
+import { ToolsGrid } from '../../../components/home/ToolsGrid';
 import { WeekGlance } from '../../../components/home/WeekGlance';
 import { AppHeader, HeaderIconButton } from '../../../components/ui/AppHeader';
 import { Card } from '../../../components/ui/Card';
@@ -38,82 +40,6 @@ import type { Quest } from '../../../stores/slices/questSlice';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import type { ProductExperience } from '../../../theme/tokens';
 import { useTheme } from '../../../theme/useTheme';
-
-type Tool = { icon: keyof typeof Ionicons.glyphMap; label: string; subtitle: string; route: Href };
-
-/** The tools that matter most per experience, plus shared ones. */
-const TOOLS: Record<ProductExperience, Tool[]> = {
-  women_health: [
-    {
-      icon: 'water-outline',
-      label: 'Cycle',
-      subtitle: 'Phase & dates',
-      route: '/(app)/health/cycle',
-    },
-    {
-      icon: 'pulse-outline',
-      label: 'Symptoms',
-      subtitle: 'Body insights',
-      route: '/(app)/health/symptoms',
-    },
-    {
-      icon: 'barbell-outline',
-      label: 'Workouts',
-      subtitle: 'Guided plans',
-      route: '/(app)/health/exercise',
-    },
-  ],
-  men_health: [
-    {
-      icon: 'barbell-outline',
-      label: 'Workouts',
-      subtitle: 'Strength & reps',
-      route: '/(app)/health/exercise',
-    },
-    {
-      icon: 'body-outline',
-      label: "Men's health",
-      subtitle: 'Targeted care',
-      route: '/(app)/health/men',
-    },
-    {
-      icon: 'calendar-outline',
-      label: 'Calendar',
-      subtitle: 'Habits & plans',
-      route: '/(app)/calendar',
-    },
-  ],
-  pride_wellbeing: [
-    {
-      icon: 'heart-outline',
-      label: 'Self-care',
-      subtitle: 'Affirming care',
-      route: '/(app)/health/pride',
-    },
-    {
-      icon: 'barbell-outline',
-      label: 'Workouts',
-      subtitle: 'Guided plans',
-      route: '/(app)/health/exercise',
-    },
-    {
-      icon: 'calendar-outline',
-      label: 'Calendar',
-      subtitle: 'Habits & plans',
-      route: '/(app)/calendar',
-    },
-  ],
-};
-const SHARED_TOOLS: Tool[] = [
-  {
-    icon: 'restaurant-outline',
-    label: 'Nutrition',
-    subtitle: 'Meals & macros',
-    route: '/(app)/health/nutrition',
-  },
-  { icon: 'moon-outline', label: 'Rest', subtitle: 'Bedtime log', route: '/(app)/health/sleep' },
-  { icon: 'book-outline', label: 'Journal', subtitle: 'Reflections', route: '/(app)/journal' },
-];
 
 const EVENT_ICON: Partial<Record<CalendarEvent['kind'], keyof typeof Ionicons.glyphMap>> = {
   exercise: 'barbell-outline',
@@ -341,18 +267,18 @@ export default function HomeScreen() {
             variant="tinted"
             style={{ padding: spacing.base, marginTop: spacing.md }}
           >
-            <View style={styles.rowBetween}>
+            <SquircleSurface style={styles.rowBetween}>
               <Ionicons name="trophy-outline" size={20} color={colors.primary} />
-              <View style={[styles.flex, { marginLeft: 12 }]}>
+              <SquircleSurface style={[styles.flex, { marginLeft: 12 }]}>
                 <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
                   {setupOpen} setup step{setupOpen === 1 ? '' : 's'} left
                 </Text>
                 <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
                   Answer them to fit your quests and earn the setup XP.
                 </Text>
-              </View>
+              </SquircleSurface>
               <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
-            </View>
+            </SquircleSurface>
           </Card>
         </Animated.View>
       ) : null}
@@ -372,7 +298,7 @@ export default function HomeScreen() {
 
       {/* Quests */}
       <Animated.View entering={enter(2)}>
-        <View style={[styles.sectionHeader, { marginTop: spacing.lg }]}>
+        <SquircleSurface style={[styles.sectionHeader, { marginTop: spacing.lg }]}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>
             Today&apos;s plan
           </Text>
@@ -385,7 +311,7 @@ export default function HomeScreen() {
               <Text style={[typography.subbodyBold, { color: colors.primary }]}>Calendar</Text>
             </PressableScale>
           </Link>
-        </View>
+        </SquircleSurface>
 
         {families.length > 1 ? (
           <ScrollView
@@ -406,7 +332,7 @@ export default function HomeScreen() {
           </ScrollView>
         ) : null}
 
-        <View style={{ marginTop: spacing.sm }}>
+        <SquircleSurface style={{ marginTop: spacing.sm }}>
           {visible.length === 0 ? (
             <Card variant="surface1" style={{ padding: spacing.base }}>
               <Text style={[typography.subbody, { color: colors.text.secondary }]}>
@@ -424,14 +350,14 @@ export default function HomeScreen() {
                 <QuestRow key={q.id} quest={q} onPress={() => setOpenQuest(q.id)} />
               ))}
               {timed.later.map((g) => (
-                <View key={g.part}>
+                <SquircleSurface key={g.part}>
                   <Text style={[typography.label, styles.groupLabel, { color: colors.text.muted }]}>
                     Later · {DAY_PART_LABEL[g.part]}
                   </Text>
                   {g.quests.map((q) => (
                     <QuestRow key={q.id} quest={q} onPress={() => setOpenQuest(q.id)} />
                   ))}
-                </View>
+                </SquircleSurface>
               ))}
               {finished.length > 0 ? (
                 <Text style={[typography.label, styles.groupLabel, { color: colors.text.muted }]}>
@@ -443,7 +369,7 @@ export default function HomeScreen() {
               ))}
             </>
           )}
-        </View>
+        </SquircleSurface>
         {alsoToday.length > 0 ? (
           <>
             <Text style={[typography.label, styles.groupLabel, { color: colors.text.muted }]}>
@@ -503,9 +429,9 @@ export default function HomeScreen() {
       </Animated.View>
 
       <Animated.View entering={enter(3)}>
-        <View style={[styles.sectionHeader, { marginTop: spacing.lg }]}>
+        <SquircleSurface style={[styles.sectionHeader, { marginTop: spacing.lg }]}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>This week</Text>
-        </View>
+        </SquircleSurface>
         <WeekGlance onOpen={() => router.push('/(app)/calendar')} />
         {topInsight ? (
           <SettingsRow
@@ -522,32 +448,32 @@ export default function HomeScreen() {
           onPress={() => router.push('/(app)/health/integrations')}
           style={{ padding: spacing.base, marginTop: spacing.md }}
         >
-          <View style={styles.rowBetween}>
+          <SquircleSurface style={styles.rowBetween}>
             <Text style={[typography.label, { color: colors.text.muted }]}>
               From Health Connect
             </Text>
             <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
-          </View>
-          <View style={[styles.metrics, { marginTop: spacing.sm }]}>
+          </SquircleSurface>
+          <SquircleSurface style={[styles.metrics, { marginTop: spacing.sm }]}>
             {deviceTiles.map((t) => (
-              <View key={t.label} style={[styles.metric, { backgroundColor: colors.surface1 }]}>
+              <SquircleSurface key={t.label} style={[styles.metric, { backgroundColor: colors.surface1 }]}>
                 <Text style={[typography.subheading, { color: colors.text.primary }]}>
                   {t.value}
                 </Text>
                 <Text style={[typography.caption, { color: colors.text.muted }]}>{t.label}</Text>
-              </View>
+              </SquircleSurface>
             ))}
-          </View>
+          </SquircleSurface>
         </Card>
       ) : (
-        <View style={{ marginTop: spacing.md }}>
+        <SquircleSurface style={{ marginTop: spacing.md }}>
           <SettingsRow
             icon="sync-outline"
             title="Connect Health Connect"
             subtitle="Bring in steps, sleep and heart rate"
             onPress={() => router.push('/(app)/health/integrations')}
           />
-        </View>
+        </SquircleSurface>
       )}
 
       {/* Wellness Tools */}
@@ -555,45 +481,10 @@ export default function HomeScreen() {
         entering={enter(4)}
         style={{ marginTop: spacing.xl, marginBottom: spacing.xl }}
       >
-        <View style={styles.sectionHeader}>
+        <SquircleSurface style={styles.sectionHeader}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>Tools</Text>
-        </View>
-        <View style={styles.toolsGrid}>
-          {[...TOOLS[experience], ...SHARED_TOOLS].slice(0, 6).map((t) => (
-            <Link key={t.label} href={t.route as Href} asChild>
-              <PressableScale
-                accessibilityRole="button"
-                accessibilityLabel={t.label}
-                style={[
-                  styles.toolTile,
-                  { backgroundColor: colors.surface, borderColor: colors.border },
-                ]}
-              >
-                <View style={[styles.toolIconTile, { backgroundColor: colors.primaryAlpha }]}>
-                  <Ionicons name={t.icon} size={22} color={colors.primary} />
-                </View>
-                <Text
-                  style={[
-                    typography.subbodyBold,
-                    { color: colors.text.primary, marginTop: 8, textAlign: 'center' },
-                  ]}
-                  numberOfLines={1}
-                >
-                  {t.label}
-                </Text>
-                <Text
-                  style={[
-                    typography.caption,
-                    { color: colors.text.muted, marginTop: 2, textAlign: 'center' },
-                  ]}
-                  numberOfLines={1}
-                >
-                  {t.subtitle}
-                </Text>
-              </PressableScale>
-            </Link>
-          ))}
-        </View>
+        </SquircleSurface>
+        <ToolsGrid todayCount={alsoToday.length + active} />
       </Animated.View>
 
       <QuestSheet assignmentId={openQuest} onClose={() => setOpenQuest(null)} />
@@ -633,11 +524,11 @@ function FocusCard({
   const { colors, typography, spacing } = useTheme();
   return (
     <Card onPress={onPress} style={{ padding: spacing.base, marginTop: spacing.lg }}>
-      <View style={styles.rowBetween}>
-        <View style={[styles.iconTile, { backgroundColor: colors.primaryAlpha }]}>
+      <SquircleSurface style={styles.rowBetween}>
+        <SquircleSurface style={[styles.iconTile, { backgroundColor: colors.primaryAlpha }]}>
           <Ionicons name={icon} size={20} color={colors.primary} />
-        </View>
-        <View style={[styles.flex, { marginLeft: 12 }]}>
+        </SquircleSurface>
+        <SquircleSurface style={[styles.flex, { marginLeft: 12 }]}>
           <Text style={[typography.label, { color: colors.text.muted }]}>{label}</Text>
           <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 2 }]}>
             {title}
@@ -645,9 +536,9 @@ function FocusCard({
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
             {body}
           </Text>
-        </View>
+        </SquircleSurface>
         <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
-      </View>
+      </SquircleSurface>
     </Card>
   );
 }
@@ -671,29 +562,5 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     width: 40,
-  },
-  toolsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginTop: 6,
-  },
-  toolTile: {
-    width: '31.3%',
-    flexGrow: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 6,
-    borderRadius: 18,
-    borderCurve: 'continuous',
-  },
-  toolIconTile: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    borderCurve: 'continuous',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });

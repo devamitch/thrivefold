@@ -1,5 +1,6 @@
+import { SquircleSurface } from '@/components/ui';
 import React from 'react';
-import { View, Text } from 'react-native';
+import { Text } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -46,7 +47,7 @@ export default function CircleScreen() {
   return (
     <ScreenWrapper scrollable>
       <Header title="Circle" subtitle="Private peer support" showBack />
-      <View style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
+      <SquircleSurface style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
         <Card variant="surface1" style={{ padding: spacing.lg }}>
           <Ionicons name="people-outline" size={26} color={colors.text.muted} />
           <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.sm }]}>
@@ -61,7 +62,7 @@ export default function CircleScreen() {
           </Text>
           <Button label="Back to circles" size="sm" variant="outline" onPress={() => router.replace('/(app)/circles')} style={{ marginTop: spacing.md, alignSelf: 'flex-start' }} />
         </Card>
-      </View>
+      </SquircleSurface>
     </ScreenWrapper>
   );
 }

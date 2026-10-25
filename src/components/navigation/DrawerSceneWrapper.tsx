@@ -1,3 +1,4 @@
+import { SquircleSurface } from '@/components/ui';
 import * as Haptics from 'expo-haptics';
 import { useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -157,13 +158,13 @@ export function DrawerSceneWrapper({ children }: { children: ReactNode }) {
   return (
     <GestureDetector gesture={pan}>
       <Animated.View style={[styles.container, { backgroundColor: colors.background }, sceneStyle]}>
-        <View
+        <SquircleSurface
           style={styles.fill}
           importantForAccessibility={drawerOpen ? 'no-hide-descendants' : 'auto'}
           accessibilityElementsHidden={drawerOpen}
         >
           {children}
-        </View>
+        </SquircleSurface>
 
         <Animated.View
           pointerEvents="none"

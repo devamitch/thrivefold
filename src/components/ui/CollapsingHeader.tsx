@@ -1,10 +1,6 @@
+import { SquircleSurface } from '@/components/ui';
 import React, { useState } from 'react';
-import {
-  LayoutChangeEvent,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { LayoutChangeEvent, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Extrapolation,
   interpolate,
@@ -71,9 +67,9 @@ export function CollapsingLargeTitle({
 
   return (
     <Animated.View style={[styles.largeTitleWrapper, style]}>
-      <View onLayout={onLayout}>
+      <SquircleSurface onLayout={onLayout}>
         <HeaderLargeTitle eyebrow={props.eyebrow} title={props.title} subtitle={props.subtitle} />
-      </View>
+      </SquircleSurface>
     </Animated.View>
   );
 }
@@ -119,7 +115,7 @@ export function CollapsingHeaderBar({
   const hasLeft = Boolean(props.showBack);
 
   return (
-    <View
+    <SquircleSurface
       pointerEvents="box-none"
       style={[
         styles.bar,
@@ -139,13 +135,13 @@ export function CollapsingHeaderBar({
       />
 
       {/* Toolbar row with height locked to HEADER_BAR_HEIGHT */}
-      <View style={[styles.toolbar, { paddingHorizontal: gutter }]} pointerEvents="box-none">
+      <SquircleSurface style={[styles.toolbar, { paddingHorizontal: gutter }]} pointerEvents="box-none">
         {hasLeft ? (
-          <View style={styles.leftAction} pointerEvents="box-none">
+          <SquircleSurface style={styles.leftAction} pointerEvents="box-none">
             <HeaderBackButton />
-          </View>
+          </SquircleSurface>
         ) : (
-          <View style={styles.zeroWidth} />
+          <SquircleSurface style={styles.zeroWidth} />
         )}
 
         {/* Compact center title that appears when scrolled */}
@@ -170,18 +166,18 @@ export function CollapsingHeaderBar({
         </Animated.View>
 
         {props.rightAction ? (
-          <View
+          <SquircleSurface
             style={styles.right}
             onLayout={(e) => setRightWidth(Math.round(e.nativeEvent.layout.width))}
             pointerEvents="box-none"
           >
             {props.rightAction}
-          </View>
+          </SquircleSurface>
         ) : (
-          <View style={styles.zeroWidth} />
+          <SquircleSurface style={styles.zeroWidth} />
         )}
-      </View>
-    </View>
+      </SquircleSurface>
+    </SquircleSurface>
   );
 }
 

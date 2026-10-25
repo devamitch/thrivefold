@@ -1,5 +1,6 @@
+import { SquircleSurface } from '@/components/ui';
 import React, { forwardRef, isValidElement, useMemo } from 'react';
-import { FlatList, FlatListProps, StyleSheet, View, ViewStyle } from 'react-native';
+import { FlatList, FlatListProps, StyleSheet, ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useScreenRootScrollProps, useScreenScrollContext } from './ScreenScrollContext';
 import { CollapsingLargeTitle } from './CollapsingHeader';
@@ -51,10 +52,10 @@ function ScreenFlatListInner<T>(
         : null;
 
     return (
-      <View>
+      <SquircleSurface>
         {largeTitle}
         {originalHeader}
-      </View>
+      </SquircleSurface>
     );
   }, [ListHeaderComponent, headerProps, scrollY]);
 

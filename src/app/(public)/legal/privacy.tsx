@@ -1,5 +1,6 @@
+import { SquircleSurface } from '@/components/ui';
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
 import { Header } from '../../../components/ui/Header';
@@ -44,7 +45,7 @@ export default function PrivacyPolicyScreen() {
   return (
     <ScreenWrapper scrollable>
       <Header title="Privacy policy" showBack />
-      <View style={[styles.content, { padding: spacing.base }]}>
+      <SquircleSurface style={[styles.content, { padding: spacing.base }]}>
         {SECTIONS.map((section) => (
           <Card key={section.title} style={{ marginBottom: spacing.md }}>
             <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: spacing.xs }]}>
@@ -53,7 +54,7 @@ export default function PrivacyPolicyScreen() {
             <Text style={[typography.body, { color: colors.text.secondary, lineHeight: 22 }]}>{section.body}</Text>
           </Card>
         ))}
-      </View>
+      </SquircleSurface>
     </ScreenWrapper>
   );
 }

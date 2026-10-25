@@ -1,3 +1,4 @@
+import { SquircleSurface } from '@/components/ui';
 /**
  * Animated Thrivefold Minimalist Terracotta T and Leaf Emblem.
  * Zero gradients, clean organic lines, soft pulse on mount.
@@ -64,7 +65,7 @@ export const AnimatedBrandIcon = memo(function AnimatedBrandIcon({
   if (!withBackground) return icon;
 
   return (
-    <View style={[styles.container, { width: size, height: size, borderRadius: size / 2 }]}>
+    <SquircleSurface style={[styles.container, { width: size, height: size, borderRadius: size / 2 }]}>
       <Animated.View
         style={[
           styles.glow,
@@ -77,7 +78,7 @@ export const AnimatedBrandIcon = memo(function AnimatedBrandIcon({
           glowStyle,
         ]}
       />
-      <View
+      <SquircleSurface
         style={[
           styles.bg,
           {
@@ -95,8 +96,8 @@ export const AnimatedBrandIcon = memo(function AnimatedBrandIcon({
           contentFit="contain"
           cachePolicy="memory-disk"
         />
-      </View>
-    </View>
+      </SquircleSurface>
+    </SquircleSurface>
   );
 });
 

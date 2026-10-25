@@ -1,7 +1,8 @@
+import { SquircleSurface } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 
 import { OnboardingScaffold } from '../../components/onboarding/OnboardingScaffold';
 import { Card } from '../../components/ui/Card';
@@ -51,15 +52,15 @@ export default function PrivacyChoicesScreen() {
     >
       <Card style={{ padding: spacing.base, marginBottom: spacing.lg }}>
         {POINTS.map((p, i) => (
-          <View key={p.title} style={[styles.point, i > 0 && { marginTop: spacing.md }]}>
-            <View style={[styles.pointIcon, { backgroundColor: colors.primaryAlpha }]}>
+          <SquircleSurface key={p.title} style={[styles.point, i > 0 && { marginTop: spacing.md }]}>
+            <SquircleSurface style={[styles.pointIcon, { backgroundColor: colors.primaryAlpha }]}>
               <Ionicons name={p.icon} size={18} color={colors.primary} />
-            </View>
-            <View style={styles.flex}>
+            </SquircleSurface>
+            <SquircleSurface style={styles.flex}>
               <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{p.title}</Text>
               <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 2 }]}>{p.body}</Text>
-            </View>
-          </View>
+            </SquircleSurface>
+          </SquircleSurface>
         ))}
       </Card>
 
@@ -74,7 +75,7 @@ export default function PrivacyChoicesScreen() {
           { borderColor: adult ? colors.primary : colors.border, backgroundColor: colors.surface },
         ]}
       >
-        <View
+        <SquircleSurface
           style={[
             styles.box,
             {
@@ -84,23 +85,23 @@ export default function PrivacyChoicesScreen() {
           ]}
         >
           {adult ? <Ionicons name="checkmark" size={16} color={colors.onPrimary} /> : null}
-        </View>
-        <View style={styles.flex}>
+        </SquircleSurface>
+        <SquircleSurface style={styles.flex}>
           <Text style={[typography.bodyBold, { color: colors.text.primary }]}>I'm 18 or older</Text>
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
             Thrivefold is for adults. Letters and communities also need an age check later.
           </Text>
-        </View>
+        </SquircleSurface>
       </PressableScale>
 
-      <View style={[styles.links, { marginTop: spacing.lg }]}>
+      <SquircleSurface style={[styles.links, { marginTop: spacing.lg }]}>
         <PressableScale onPress={() => router.push('/(public)/legal/privacy')} hitSlop={10} accessibilityRole="link">
           <Text style={[typography.subbody, { color: colors.primary }]}>Privacy policy</Text>
         </PressableScale>
         <PressableScale onPress={() => router.push('/(public)/legal/terms')} hitSlop={10} accessibilityRole="link">
           <Text style={[typography.subbody, { color: colors.primary }]}>Terms</Text>
         </PressableScale>
-      </View>
+      </SquircleSurface>
     </OnboardingScaffold>
   );
 }

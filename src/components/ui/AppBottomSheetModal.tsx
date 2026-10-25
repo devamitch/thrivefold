@@ -190,18 +190,18 @@ export function AppBottomSheetModal({
             >
               {/* Draggable header zone with direct pan gesture */}
               <GestureDetector gesture={headerPanGesture}>
-                <View style={styles.handleAndHeaderArea}>
+                <SquircleSurface style={styles.handleAndHeaderArea}>
                   {/* Drag handle pill */}
                   {showHandle && (
-                    <View style={styles.handleContainer}>
-                      <View style={[styles.handlePill, { backgroundColor: colors.borderStrong || colors.border }]} />
-                    </View>
+                    <SquircleSurface style={styles.handleContainer}>
+                      <SquircleSurface style={[styles.handlePill, { backgroundColor: colors.borderStrong || colors.border }]} />
+                    </SquircleSurface>
                   )}
 
                   {/* Sheet header row */}
                   {(Boolean(title) || Boolean(showCloseButton) || Boolean(headerRight)) && (
-                    <View style={styles.headerRow}>
-                      <View style={styles.titleColumn}>
+                    <SquircleSurface style={styles.headerRow}>
+                      <SquircleSurface style={styles.titleColumn}>
                         {eyebrow ? (
                           <Text
                             style={[
@@ -234,9 +234,9 @@ export function AppBottomSheetModal({
                             {subtitle}
                           </Text>
                         ) : null}
-                      </View>
+                      </SquircleSurface>
 
-                      <View style={styles.headerActions}>
+                      <SquircleSurface style={styles.headerActions}>
                         {headerRight}
                         {showCloseButton && (
                           <PressableScale
@@ -257,10 +257,10 @@ export function AppBottomSheetModal({
                             </SquircleSurface>
                           </PressableScale>
                         )}
-                      </View>
-                    </View>
+                      </SquircleSurface>
+                    </SquircleSurface>
                   )}
-                </View>
+                </SquircleSurface>
               </GestureDetector>
 
               {/* Sheet body */}

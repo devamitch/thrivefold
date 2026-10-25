@@ -1,5 +1,6 @@
+import { SquircleSurface } from '@/components/ui';
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { Text, StyleSheet, ScrollView } from 'react-native';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
 import { Header } from '../../../components/ui/Header';
@@ -34,41 +35,41 @@ export default function HealthHistoryScreen() {
         {/* Summary Stats */}
         <Card style={{ marginBottom: spacing.md, padding: spacing.lg }}>
           <Text style={[typography.caption, { color: colors.text.muted }]}>TOTAL PARTICIPATION</Text>
-          <View style={styles.statsRow}>
-            <View style={styles.statBox}>
+          <SquircleSurface style={styles.statsRow}>
+            <SquircleSurface style={styles.statBox}>
               <Text style={[typography.heading, { color: colors.primary }]}>{completedCheckInDaysCount}</Text>
               <Text style={[typography.caption, { color: colors.text.secondary }]}>Check-In Days</Text>
-            </View>
-            <View style={styles.statBox}>
+            </SquircleSurface>
+            <SquircleSurface style={styles.statBox}>
               <Text style={[typography.heading, { color: colors.success }]}>{currentStreak}</Text>
               <Text style={[typography.caption, { color: colors.text.secondary }]}>Day Streak</Text>
-            </View>
-            <View style={styles.statBox}>
+            </SquircleSurface>
+            <SquircleSurface style={styles.statBox}>
               <Text style={[typography.heading, { color: colors.text.primary }]}>100%</Text>
               <Text style={[typography.caption, { color: colors.text.secondary }]}>Local Privacy</Text>
-            </View>
-          </View>
+            </SquircleSurface>
+          </SquircleSurface>
         </Card>
 
-        <View style={styles.headerRow}>
+        <SquircleSurface style={styles.headerRow}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>Daily Health Timeline</Text>
           <Button label="Export JSON" variant="outline" size="sm" onPress={handleExport} />
-        </View>
+        </SquircleSurface>
 
         {checkInHistory.map((item) => (
           <Card key={item.id} style={{ marginTop: spacing.sm }}>
-            <View style={styles.historyRow}>
+            <SquircleSurface style={styles.historyRow}>
               <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
                 {new Date(item.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' })}
               </Text>
               <Badge label={`Sleep: ${item.sleepHours}h`} variant="neutral" />
-            </View>
+            </SquircleSurface>
 
-            <View style={styles.metricsGrid}>
+            <SquircleSurface style={styles.metricsGrid}>
               <Text style={[typography.caption, { color: colors.text.secondary }]}>Energy: {item.energy}/10</Text>
               <Text style={[typography.caption, { color: colors.text.secondary }]}>Mood: {item.mood}/10</Text>
               <Text style={[typography.caption, { color: colors.text.secondary }]}>Stress: {item.stress}/10</Text>
-            </View>
+            </SquircleSurface>
 
             {item.symptoms.length > 0 && (
               <Text style={[typography.caption, { color: colors.primary, marginTop: 6 }]}>

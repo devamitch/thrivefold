@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { useRouter, type Href } from 'expo-router';
+import { Text, StyleSheet } from 'react-native';
+import { useRouter, type Href , Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ActivityRow } from '../../../components/game/ActivityRow';
 import { PressableScale } from '../../../components/ui/PressableScale';
@@ -75,7 +75,7 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
   return (
     <ScreenWrapper scrollable>
       <Header title="Train" subtitle="Camera coach, plans and your progress" showBack={!asTab} />
-      <View style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
+      <SquircleSurface style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
         <Card variant="surface1" style={{ padding: spacing.base }}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>
             {minutes} active minutes in the last 7 days
@@ -85,18 +85,20 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
             Many adults aim for about 150 minutes of moderate activity a week.
           </Text>
           <WeekStrip />
-          <View style={[styles.tools, { marginTop: spacing.md }]}>
+          <SquircleSurface style={[styles.tools, { marginTop: spacing.md }]}>
             {TRAIN_TOOLS.map((t) => (
-              <PressableScale key={t.label} onPress={() => router.push(t.route)} style={styles.toolCell} accessibilityRole="button" accessibilityLabel={t.label}>
-                <SquircleSurface radius={16} fill={colors.surface} style={styles.tool}>
-                  <Ionicons name={t.icon} size={20} color={colors.primary} />
-                  <Text style={[typography.captionBold, { color: colors.text.primary, marginTop: 6 }]} numberOfLines={1}>
-                    {t.label}
-                  </Text>
-                </SquircleSurface>
-              </PressableScale>
+              <Link key={t.label} href={t.route} asChild>
+                <PressableScale style={styles.toolCell} accessibilityRole="button" accessibilityLabel={t.label}>
+                  <SquircleSurface radius={16} fill={colors.surface} style={styles.tool}>
+                    <Ionicons name={t.icon} size={20} color={colors.primary} />
+                    <Text style={[typography.captionBold, { color: colors.text.primary, marginTop: 6 }]} numberOfLines={1}>
+                      {t.label}
+                    </Text>
+                  </SquircleSurface>
+                </PressableScale>
+              </Link>
             ))}
-          </View>
+          </SquircleSurface>
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>
             Never train through sharp pain, chest pain or dizziness. General fitness guidance, not medical advice.
           </Text>
@@ -123,7 +125,7 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
             <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
               Tap to start with video, rep counting and form check. Saved to your history and calendar.
             </Text>
-            <View style={{ marginTop: spacing.sm }}>
+            <SquircleSurface style={{ marginTop: spacing.sm }}>
               {suggestions.map(({ plan, reason }) => (
                 <ActivityRow
                   key={plan.id}
@@ -134,18 +136,18 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
                   onPress={() => router.push(`/(app)/health/coach/${plan.id}` as Href)}
                 />
               ))}
-            </View>
+            </SquircleSurface>
             <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg }]}>All plans</Text>
           </>
         ) : null}
 
-        <View style={[styles.chips, { marginTop: spacing.md }]}>
+        <SquircleSurface style={[styles.chips, { marginTop: spacing.md }]}>
           {SETTINGS.map((s) => (
             <Chip key={s.id} label={s.label} selected={filter === s.id} onPress={() => setFilter(s.id)} />
           ))}
-        </View>
+        </SquircleSurface>
 
-        <View style={{ marginTop: spacing.sm }}>
+        <SquircleSurface style={{ marginTop: spacing.sm }}>
           {plans.map((plan) => (
             <ActivityRow
               key={plan.id}
@@ -155,7 +157,7 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
               onPress={() => router.push(`/(app)/health/workout/${plan.id}` as Href)}
             />
           ))}
-        </View>
+        </SquircleSurface>
 
         <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg }]}>History</Text>
         {sessions.length === 0 ? (
@@ -163,7 +165,7 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
             No workouts logged yet. Start a plan above; every set you log shows up here.
           </Text>
         ) : (
-          <View style={{ marginTop: spacing.sm }}>
+          <SquircleSurface style={{ marginTop: spacing.sm }}>
             {sessions.slice(0, 20).map((s) => {
               const sets = s.entries.reduce((n, e) => n + e.sets.length, 0);
               const title =
@@ -206,9 +208,9 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
                 />
               );
             })}
-          </View>
+          </SquircleSurface>
         )}
-      </View>
+      </SquircleSurface>
     </ScreenWrapper>
   );
 }
@@ -246,9 +248,9 @@ function WeekStrip() {
   return (
     <PressableScale onPress={() => router.push('/(app)/calendar' as Href)} accessibilityRole="button" accessibilityLabel="Open calendar" style={[styles.week, { marginTop: spacing.md }]}>
       {days.map((d) => (
-        <View key={d.key} style={styles.weekDay}>
+        <SquircleSurface key={d.key} style={styles.weekDay}>
           <Text style={[typography.caption, { color: d.today ? colors.primary : colors.text.muted }]}>{d.label}</Text>
-          <View
+          <SquircleSurface
             style={[
               styles.weekDot,
               {
@@ -258,8 +260,8 @@ function WeekStrip() {
             ]}
           >
             {active.has(d.key) ? <Ionicons name="checkmark" size={12} color={colors.onPrimary} /> : null}
-          </View>
-        </View>
+          </SquircleSurface>
+        </SquircleSurface>
       ))}
       <Ionicons name="calendar-outline" size={18} color={colors.text.muted} style={{ marginLeft: 6 }} />
     </PressableScale>

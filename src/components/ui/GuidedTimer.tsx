@@ -1,5 +1,6 @@
+import { SquircleSurface } from '@/components/ui';
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 import * as Haptics from 'expo-haptics';
 
 import { useTheme } from '../../theme/useTheme';
@@ -45,19 +46,19 @@ export function GuidedTimer({ minutes, cues = [], startLabel = 'Start', onFinish
   const ss = String(left % 60).padStart(2, '0');
 
   return (
-    <View style={{ marginTop: spacing.sm }}>
+    <SquircleSurface style={{ marginTop: spacing.sm }}>
       {started || running ? (
         <>
           <Text style={[typography.heading, { color: colors.text.primary }]} accessibilityLiveRegion="polite">
             {left === 0 ? 'Done' : `${mm}:${ss}`}
           </Text>
           {cue && left > 0 ? <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>{cue}</Text> : null}
-          <View style={[styles.track, { backgroundColor: colors.surface2, marginTop: spacing.sm }]}>
-            <View style={[styles.fill, { backgroundColor: colors.primary, width: `${(elapsed / Math.max(1, total)) * 100}%` }]} />
-          </View>
+          <SquircleSurface style={[styles.track, { backgroundColor: colors.surface2, marginTop: spacing.sm }]}>
+            <SquircleSurface style={[styles.fill, { backgroundColor: colors.primary, width: `${(elapsed / Math.max(1, total)) * 100}%` }]} />
+          </SquircleSurface>
         </>
       ) : null}
-      <View style={[styles.row, { marginTop: spacing.sm }]}>
+      <SquircleSurface style={[styles.row, { marginTop: spacing.sm }]}>
         {left > 0 ? (
           <Button
             label={running ? 'Pause' : started ? 'Resume' : startLabel}
@@ -78,8 +79,8 @@ export function GuidedTimer({ minutes, cues = [], startLabel = 'Start', onFinish
             }}
           />
         ) : null}
-      </View>
-    </View>
+      </SquircleSurface>
+    </SquircleSurface>
   );
 }
 

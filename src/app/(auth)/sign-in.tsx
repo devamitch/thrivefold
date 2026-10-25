@@ -1,5 +1,6 @@
+import { SquircleSurface } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter , Link } from 'expo-router';
 import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, {
@@ -109,7 +110,7 @@ export default function SignInScreen() {
   };
 
   const legal = (
-    <View style={[styles.links, { marginTop: spacing.md }]}>
+    <SquircleSurface style={[styles.links, { marginTop: spacing.md }]}>
       {(
         [
           ['Terms', '/(public)/legal/terms'],
@@ -119,12 +120,16 @@ export default function SignInScreen() {
       ).map(([label, href], i) => (
         <React.Fragment key={href}>
           {i > 0 ? <Text style={[typography.caption, { color: colors.text.muted }]}> · </Text> : null}
-          <PressableScale onPress={() => router.push(href)} hitSlop={10} accessibilityRole="link">
+          <Link href={href} asChild>
+  <PressableScale  hitSlop={10} accessibilityRole="link">
+
             <Text style={[typography.caption, { color: colors.text.muted }]}>{label}</Text>
-          </PressableScale>
+          
+  </PressableScale>
+</Link>
         </React.Fragment>
       ))}
-    </View>
+    </SquircleSurface>
   );
 
   if (!introSeen) {
@@ -133,7 +138,7 @@ export default function SignInScreen() {
 
   if (step === 'account') {
     return (
-      <View style={[styles.root, { backgroundColor: colors.background, paddingTop: insets.top + spacing.md, paddingHorizontal: spacing.lg }]}>
+      <SquircleSurface style={[styles.root, { backgroundColor: colors.background, paddingTop: insets.top + spacing.md, paddingHorizontal: spacing.lg }]}>
         <PressableScale
           onPress={() => {
             setAuthError(null);
@@ -145,7 +150,7 @@ export default function SignInScreen() {
         >
           <Ionicons name="chevron-back" size={20} color={colors.text.primary} />
         </PressableScale>
-        <View style={styles.hero}>
+        <SquircleSurface style={styles.hero}>
           <AnimatedThrivefoldMark size={132} />
           <Text style={[typography.display, styles.center, { color: colors.text.primary, marginTop: spacing.lg }]} accessibilityRole="header">
             Welcome to Thrivefold
@@ -154,7 +159,7 @@ export default function SignInScreen() {
             Sign in with Google and we will show you what your account shares so you can confirm it. Your health records
             stay on this phone either way.
           </Text>
-        </View>
+        </SquircleSurface>
         {googleAvailable() ? (
           <PressableScale
             onPress={google}
@@ -177,8 +182,8 @@ export default function SignInScreen() {
         ) : null}
         <Button label="Continue without an account" variant="ghost" onPress={() => setStep('name')} style={{ marginTop: spacing.xs }} />
         <Button label="Explore as guest" variant="ghost" onPress={guest} />
-        <View style={{ paddingBottom: insets.bottom + spacing.md }}>{legal}</View>
-      </View>
+        <SquircleSurface style={{ paddingBottom: insets.bottom + spacing.md }}>{legal}</SquircleSurface>
+      </SquircleSurface>
     );
   }
 
@@ -217,7 +222,7 @@ export default function SignInScreen() {
                 : `We sent a code to ${email.trim()}.`}
           </Text>
 
-          <View style={{ marginTop: spacing.lg }}>
+          <SquircleSurface style={{ marginTop: spacing.lg }}>
             {step === 'name' ? (
               <TextField
                 label="Name or nickname"
@@ -261,10 +266,10 @@ export default function SignInScreen() {
                 error={authError ?? undefined}
               />
             )}
-          </View>
+          </SquircleSurface>
         </Animated.View>
 
-        <View style={styles.flex} />
+        <SquircleSurface style={styles.flex} />
 
         <Button
           label={step === 'name' ? 'Continue' : step === 'email' ? 'Send code' : 'Sign in'}

@@ -8,11 +8,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import React, { useEffect, useState } from 'react';
-import {
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 
 import { formatLocalDate } from '../../domain/calendar/universalCalendarEngine';
 import { useRootStore, useShallow, type PersonalCalendarEvent } from '../../stores/useRootStore';
@@ -199,7 +195,7 @@ export function PersonalEventModal({
         contentContainerStyle={{ paddingHorizontal: spacing.base, paddingBottom: 24 }}
       >
         {/* Event Title */}
-        <View style={{ marginTop: spacing.md }}>
+        <SquircleSurface style={{ marginTop: spacing.md }}>
           <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 6 }]}>
             EVENT OR MILESTONE TITLE *
           </Text>
@@ -209,14 +205,14 @@ export function PersonalEventModal({
             onChangeText={setTitle}
             autoFocus={!existingEvent}
           />
-        </View>
+        </SquircleSurface>
 
         {/* Category Selector */}
-        <View style={{ marginTop: spacing.lg }}>
+        <SquircleSurface style={{ marginTop: spacing.lg }}>
           <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 8 }]}>
             EVENT TYPE
           </Text>
-          <View style={styles.categoryGrid}>
+          <SquircleSurface style={styles.categoryGrid}>
             {CATEGORIES.map((cat) => {
               const isSelected = category === cat.id;
               return (
@@ -255,11 +251,11 @@ export function PersonalEventModal({
                 </PressableScale>
               );
             })}
-          </View>
-        </View>
+          </SquircleSurface>
+        </SquircleSurface>
 
         {/* Date Selector */}
-        <View style={{ marginTop: spacing.lg }}>
+        <SquircleSurface style={{ marginTop: spacing.lg }}>
           <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 6 }]}>
             DATE *
           </Text>
@@ -281,12 +277,12 @@ export function PersonalEventModal({
               strokeWidth={1}
               style={styles.datePickerTrigger}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Ionicons name="calendar-outline" size={18} color={colors.primary} style={{ marginRight: 10 }} />
                 <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
                   {dateStr || 'Select date'}
                 </Text>
-              </View>
+              </SquircleSurface>
               <SquircleSurface
                 radius={8}
                 smoothing={1}
@@ -297,14 +293,14 @@ export function PersonalEventModal({
               </SquircleSurface>
             </SquircleSurface>
           </PressableScale>
-        </View>
+        </SquircleSurface>
 
         {/* Recurrence Selection */}
-        <View style={{ marginTop: spacing.lg }}>
+        <SquircleSurface style={{ marginTop: spacing.lg }}>
           <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 8 }]}>
             RECURRENCE
           </Text>
-          <View style={styles.recurrenceRow}>
+          <SquircleSurface style={styles.recurrenceRow}>
             {RECURRENCE_OPTIONS.map((opt) => {
               const isSelected = recurrence === opt.id;
               return (
@@ -338,16 +334,16 @@ export function PersonalEventModal({
                 </PressableScale>
               );
             })}
-          </View>
-        </View>
+          </SquircleSurface>
+        </SquircleSurface>
 
         {/* Relationship (For Birthdays / Anniversaries) */}
         {(category === 'birthday' || category === 'anniversary') && (
-          <View style={{ marginTop: spacing.lg }}>
+          <SquircleSurface style={{ marginTop: spacing.lg }}>
             <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 8 }]}>
               WHO IS THIS FOR?
             </Text>
-            <View style={styles.categoryGrid}>
+            <SquircleSurface style={styles.categoryGrid}>
               {RELATIONSHIPS.map((rel) => {
                 const isSelected = relationship === rel.id;
                 return (
@@ -380,12 +376,12 @@ export function PersonalEventModal({
                   </PressableScale>
                 );
               })}
-            </View>
-          </View>
+            </SquircleSurface>
+          </SquircleSurface>
         )}
 
         {/* Time of Day (Optional) */}
-        <View style={{ marginTop: spacing.lg }}>
+        <SquircleSurface style={{ marginTop: spacing.lg }}>
           <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 6 }]}>
             TIME OF DAY (OPTIONAL)
           </Text>
@@ -394,10 +390,10 @@ export function PersonalEventModal({
             value={time}
             onChangeText={setTime}
           />
-        </View>
+        </SquircleSurface>
 
         {/* Notes (Optional) */}
-        <View style={{ marginTop: spacing.lg }}>
+        <SquircleSurface style={{ marginTop: spacing.lg }}>
           <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 6 }]}>
             NOTES / GIFT IDEAS / LOCATION
           </Text>
@@ -408,10 +404,10 @@ export function PersonalEventModal({
             multiline
             numberOfLines={2}
           />
-        </View>
+        </SquircleSurface>
 
         {/* Action Buttons */}
-        <View style={{ marginTop: spacing.xl, gap: 10 }}>
+        <SquircleSurface style={{ marginTop: spacing.xl, gap: 10 }}>
           <Button
             label={existingEvent ? 'Update Milestone' : 'Save Milestone'}
             onPress={handleSave}
@@ -425,7 +421,7 @@ export function PersonalEventModal({
               size="md"
             />
           )}
-        </View>
+        </SquircleSurface>
       </AppBottomSheetModal>
 
       {/* DatePicker Modal */}

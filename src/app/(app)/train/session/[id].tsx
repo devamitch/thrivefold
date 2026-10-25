@@ -1,7 +1,8 @@
+import { SquircleSurface } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 
 import { AppHeader } from '../../../../components/ui/AppHeader';
 import { Button } from '../../../../components/ui/Button';
@@ -36,10 +37,10 @@ export default function WorkoutSessionScreen() {
       scrollMode="shell-scroll-view"
     >
       <Card style={{ padding: spacing.base }}>
-        <View style={styles.row}>
+        <SquircleSurface style={styles.row}>
           <Ionicons name={session.verification === 'camera' ? 'scan-outline' : 'create-outline'} size={18} color={colors.primary} />
           <Text style={[typography.bodyBold, { color: colors.text.primary, marginLeft: 8 }]}>{how}</Text>
-        </View>
+        </SquircleSurface>
         <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>
           {minutes} min{session.effort ? ` · effort ${session.effort}/10` : ''}{session.painReported ? ' · discomfort noted' : ''}
           {session.assignmentId ? ' · completed a quest' : ''}

@@ -1,5 +1,6 @@
+import { SquircleSurface } from '@/components/ui';
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView } from 'react-native';
+import { Text, StyleSheet, TextInput, ScrollView } from 'react-native';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
 import { Header } from '../../../components/ui/Header';
@@ -63,7 +64,7 @@ export default function LetterProfileScreen() {
           <Text style={[typography.subbodyBold, { color: colors.text.primary, marginBottom: 8 }]}>
             Languages You Write In
           </Text>
-          <View style={styles.chipRow}>
+          <SquircleSurface style={styles.chipRow}>
             {allLanguages.map((lang) => (
               <Chip
                 key={lang}
@@ -73,7 +74,7 @@ export default function LetterProfileScreen() {
                 style={{ marginRight: 6, marginBottom: 6 }}
               />
             ))}
-          </View>
+          </SquircleSurface>
         </Card>
 
         {/* Interests */}
@@ -81,7 +82,7 @@ export default function LetterProfileScreen() {
           <Text style={[typography.subbodyBold, { color: colors.text.primary, marginBottom: 8 }]}>
             Topic Interests (Used for Match Pacing)
           </Text>
-          <View style={styles.chipRow}>
+          <SquircleSurface style={styles.chipRow}>
             {allInterests.map((interest) => (
               <Chip
                 key={interest}
@@ -91,7 +92,7 @@ export default function LetterProfileScreen() {
                 style={{ marginRight: 6, marginBottom: 6 }}
               />
             ))}
-          </View>
+          </SquircleSurface>
         </Card>
 
         <Button label="Save Changes" onPress={handleSave} />

@@ -1,3 +1,4 @@
+import { SquircleSurface } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
@@ -421,10 +422,10 @@ export default function CoachScreen() {
 
   if (!plan || !item || !exercise) {
     return (
-      <View style={[styles.center, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+      <SquircleSurface style={[styles.center, { backgroundColor: colors.background, paddingTop: insets.top }]}>
         <Text style={[typography.body, { color: colors.text.secondary }]}>This workout plan was not found.</Text>
         <Button label="Back" variant="ghost" onPress={() => router.back()} />
-      </View>
+      </SquircleSurface>
     );
   }
 
@@ -437,12 +438,12 @@ export default function CoachScreen() {
         </PressableScale>
         <Text style={[typography.display, { color: colors.text.primary, marginTop: spacing.lg }]}>{plan.title}</Text>
         {linkedQuest ? (
-          <View style={[styles.row, { marginTop: spacing.sm }]}>
+          <SquircleSurface style={[styles.row, { marginTop: spacing.sm }]}>
             <Ionicons name="flag-outline" size={16} color={colors.primary} />
             <Text style={[typography.subbodyBold, styles.flex, { color: colors.primary, marginLeft: 6 }]}>
               For today's quest: {linkedQuest.title}. Finishing completes it.
             </Text>
-          </View>
+          </SquircleSurface>
         ) : (
           <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.sm }]}>
             A standalone workout: saved to your history and calendar. Start from a quest to complete it too.
@@ -461,17 +462,17 @@ export default function CoachScreen() {
             ['eye-off-outline', 'Everything runs on this phone. No photos or video are saved or sent.'],
             ['phone-portrait-outline', 'Prop the phone up about two metres away, side-on, with your whole body in view.'],
           ].map(([icon, text]) => (
-            <View key={text} style={[styles.row, { marginBottom: spacing.sm }]}>
+            <SquircleSurface key={text} style={[styles.row, { marginBottom: spacing.sm }]}>
               <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={18} color={colors.primary} />
               <Text style={[typography.subbody, styles.flex, { color: colors.text.secondary, marginLeft: 10 }]}>{text}</Text>
-            </View>
+            </SquircleSurface>
           ))}
         </Card>
         <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg }]}>In this workout</Text>
         {plan.items.map((i) => {
           const ex = exerciseById(i.exerciseId);
           return (
-            <View key={i.exerciseId} style={[styles.row, { marginTop: spacing.sm }]}>
+            <SquircleSurface key={i.exerciseId} style={[styles.row, { marginTop: spacing.sm }]}>
               <Ionicons
                 name={movementForExercise(i.exerciseId) ? 'scan-outline' : 'list-outline'}
                 size={16}
@@ -481,7 +482,7 @@ export default function CoachScreen() {
               <Text style={[typography.caption, { color: colors.text.muted }]}>
                 {i.sets} x {i.target} {ex?.timed ? 's' : 'reps'}
               </Text>
-            </View>
+            </SquircleSurface>
           );
         })}
         <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.sm }]}>
@@ -496,23 +497,23 @@ export default function CoachScreen() {
   // ---------------------------------------------------------------- done
   if (phase === 'done' && done) {
     return (
-      <View style={[styles.flex, { backgroundColor: colors.background, paddingTop: insets.top + spacing.xl, paddingHorizontal: spacing.base, paddingBottom: insets.bottom + spacing.base }]}>
+      <SquircleSurface style={[styles.flex, { backgroundColor: colors.background, paddingTop: insets.top + spacing.xl, paddingHorizontal: spacing.base, paddingBottom: insets.bottom + spacing.base }]}>
         <Animated.View entering={reduceMotion ? undefined : FadeInDown.duration(300)} style={styles.flex}>
           <Text style={[typography.display, { color: colors.text.primary }]}>Workout done</Text>
           <Text style={[typography.body, { color: colors.text.secondary, marginTop: spacing.xs }]}>{clock(elapsed)} · {plan.title}</Text>
-          <View style={[styles.xpBox, { backgroundColor: colors.primaryAlpha, marginTop: spacing.lg }]}>
+          <SquircleSurface style={[styles.xpBox, { backgroundColor: colors.primaryAlpha, marginTop: spacing.lg }]}>
             <Text style={[typography.display, { color: colors.primary }]}>+{done.xp} XP</Text>
             <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4, textAlign: 'center' }]}>{done.rewardNote}</Text>
-          </View>
+          </SquircleSurface>
           {done.lines.map((l) => (
-            <View key={l.name} style={styles.summaryRow}>
+            <SquircleSurface key={l.name} style={styles.summaryRow}>
               <Text style={[typography.bodyBold, styles.flex, { color: colors.text.primary }]}>{l.name}</Text>
               <Text style={[typography.subbody, { color: colors.text.secondary }]}>{l.detail}</Text>
-            </View>
+            </SquircleSurface>
           ))}
         </Animated.View>
         <Button label="Done" size="lg" onPress={() => router.replace('/(app)/health/exercise' as Href)} />
-      </View>
+      </SquircleSurface>
     );
   }
 
@@ -543,10 +544,10 @@ export default function CoachScreen() {
         onPoseError={(e) => setCameraError(e.nativeEvent.message || 'The camera stopped.')}
       />
     ) : (
-      <View style={[StyleSheet.absoluteFill, styles.center, { backgroundColor: colors.callBackground }]}>
+      <SquircleSurface style={[StyleSheet.absoluteFill, styles.center, { backgroundColor: colors.callBackground }]}>
         <Ionicons name="videocam-off-outline" size={22} color={colors.callMuted} />
         <Text style={[typography.caption, { color: colors.callMuted, marginTop: 4, textAlign: 'center' }]}>Camera off</Text>
-      </View>
+      </SquircleSurface>
     );
 
   const remaining = Math.max(0, item.target - counted);
@@ -557,20 +558,20 @@ export default function CoachScreen() {
   const cameraMain = cameraOn && Boolean(PoseCameraView);
 
   return (
-    <View style={[styles.flex, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+    <SquircleSurface style={[styles.flex, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <StatusBar barStyle={colors.scheme === 'dark' ? 'light-content' : 'dark-content'} />
 
       {/* Header: what you're doing and where you are in the plan */}
-      <View style={[styles.header, { paddingHorizontal: spacing.base }]}>
+      <SquircleSurface style={[styles.header, { paddingHorizontal: spacing.base }]}>
         <RoundButton icon="close" label="End workout" onPress={confirmEnd} />
-        <View style={[styles.flex, { marginHorizontal: 12 }]}>
+        <SquircleSurface style={[styles.flex, { marginHorizontal: 12 }]}>
           <Text style={[typography.subheading, { color: colors.text.primary }]} numberOfLines={1}>
             {exercise.name}
           </Text>
           <Text style={[typography.caption, { color: colors.text.secondary }]} numberOfLines={1}>
             Exercise {itemIdx + 1} of {plan.items.length} · {clock(elapsed)}
           </Text>
-        </View>
+        </SquircleSurface>
         <RoundButton
           icon={voiceOn ? 'volume-high-outline' : 'volume-mute-outline'}
           label={voiceOn ? 'Mute voice coach' : 'Turn on voice coach'}
@@ -579,18 +580,18 @@ export default function CoachScreen() {
             setVoiceOn((v) => !v);
           }}
         />
-      </View>
-      <View style={[styles.sets, { paddingHorizontal: spacing.base }]} accessibilityLabel={`Set ${setIdx + 1} of ${item.sets}`}>
+      </SquircleSurface>
+      <SquircleSurface style={[styles.sets, { paddingHorizontal: spacing.base }]} accessibilityLabel={`Set ${setIdx + 1} of ${item.sets}`}>
         {Array.from({ length: item.sets }, (_, i) => (
-          <View
+          <SquircleSurface
             key={i}
             style={[styles.setSeg, { backgroundColor: i < setIdx ? colors.primary : i === setIdx ? colors.primaryAlpha : colors.surface1 }]}
           />
         ))}
-      </View>
+      </SquircleSurface>
 
       {/* Stage: your camera with the skeleton, or the tutorial when the camera is off */}
-      <View
+      <SquircleSurface
         style={[styles.stage, { marginHorizontal: spacing.base, backgroundColor: colors.callBackground }]}
         onLayout={(e) => setStage({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}
         collapsable={false}
@@ -599,14 +600,14 @@ export default function CoachScreen() {
         {cameraMain && frame && stage.width > 0 ? (
           <PoseOverlay landmarks={frame.landmarks} frameWidth={frame.w} frameHeight={frame.h} width={stage.width} height={stage.height} highlight={fault?.joints ?? []} />
         ) : null}
-        {fault ? <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.faultEdge, { borderColor: colors.error }]} /> : null}
+        {fault ? <SquircleSurface pointerEvents="none" style={[StyleSheet.absoluteFill, styles.faultEdge, { borderColor: colors.error }]} /> : null}
 
         {cameraMain ? (
-          <View style={styles.stageTop} pointerEvents="box-none">
-            <View style={[styles.chip, { backgroundColor: colors.callSurface }]}>
-              <View style={[styles.dot, { backgroundColor: movement ? colors.success : colors.callMuted }]} />
+          <SquircleSurface style={styles.stageTop} pointerEvents="box-none">
+            <SquircleSurface style={[styles.chip, { backgroundColor: colors.callSurface }]}>
+              <SquircleSurface style={[styles.dot, { backgroundColor: movement ? colors.success : colors.callMuted }]} />
               <Text style={[typography.captionBold, { color: colors.callText }]}>{movement ? 'Checking form' : 'Camera on'}</Text>
-            </View>
+            </SquircleSurface>
             <PressableScale
               onPress={() => setFacing((f) => (f === 'front' ? 'back' : 'front'))}
               accessibilityRole="button"
@@ -616,20 +617,20 @@ export default function CoachScreen() {
             >
               <Ionicons name="camera-reverse-outline" size={18} color={colors.callText} />
             </PressableScale>
-          </View>
+          </SquircleSurface>
         ) : null}
 
         {/* What to fix, a gesture in progress, or the live cue */}
         {gestureProgress.g && gestureProgress.p > 0 ? (
-          <View pointerEvents="none" style={[styles.stageBanner, { backgroundColor: colors.primary }]}>
+          <SquircleSurface pointerEvents="none" style={[styles.stageBanner, { backgroundColor: colors.primary }]}>
             <Ionicons name="hand-left-outline" size={18} color={colors.onPrimary} />
             <Text style={[typography.bodyBold, styles.flex, { color: colors.onPrimary, marginLeft: 8 }]}>
               {gestureProgress.g === 'one_hand' ? (videoPlaying ? 'Pausing video' : 'Playing video') : rest > 0 ? 'Skipping rest' : 'Finishing set'}
             </Text>
-            <View style={[styles.gestureTrack, { backgroundColor: colors.callSurfaceStrong }]}>
-              <View style={[styles.gestureFill, { width: `${Math.round(gestureProgress.p * 100)}%`, backgroundColor: colors.onPrimary }]} />
-            </View>
-          </View>
+            <SquircleSurface style={[styles.gestureTrack, { backgroundColor: colors.callSurfaceStrong }]}>
+              <SquircleSurface style={[styles.gestureFill, { width: `${Math.round(gestureProgress.p * 100)}%`, backgroundColor: colors.onPrimary }]} />
+            </SquircleSurface>
+          </SquircleSurface>
         ) : fault ? (
           <Animated.View
             entering={reduceMotion ? undefined : FadeIn.duration(180)}
@@ -637,54 +638,54 @@ export default function CoachScreen() {
             style={[styles.stageBanner, { backgroundColor: colors.callSurface }]}
             accessibilityLiveRegion="assertive"
           >
-            <View style={[styles.faultDot, { backgroundColor: colors.error }]}>
+            <SquircleSurface style={[styles.faultDot, { backgroundColor: colors.error }]}>
               <Ionicons name="alert" size={16} color={colors.callText} />
-            </View>
-            <View style={[styles.flex, { marginLeft: 10 }]}>
+            </SquircleSurface>
+            <SquircleSurface style={[styles.flex, { marginLeft: 10 }]}>
               <Text style={[typography.bodyBold, { color: colors.callText }]}>{fault.title}</Text>
               <Text style={[typography.subbody, { color: colors.callMuted, marginTop: 1 }]}>{fault.fix}</Text>
-            </View>
+            </SquircleSurface>
           </Animated.View>
         ) : checking ? (
-          <View pointerEvents="none" style={[styles.stageBanner, styles.cue, { backgroundColor: colors.callSurface }]}>
+          <SquircleSurface pointerEvents="none" style={[styles.stageBanner, styles.cue, { backgroundColor: colors.callSurface }]}>
             <Text style={[typography.subbody, { color: colors.callText, textAlign: 'center' }]} numberOfLines={2}>
               {liveCue(movement!, rep, (frame?.landmarks.length ?? 0) > 0)}
             </Text>
-          </View>
+          </SquircleSurface>
         ) : null}
 
         {/* The count */}
-        <View
+        <SquircleSurface
           style={[styles.counter, { backgroundColor: fault ? colors.error : colors.callSurface }]}
           accessibilityLabel={`${counted} of ${item.target} ${unit}. ${remaining} to go`}
           accessibilityLiveRegion="polite"
         >
-          <View style={styles.counterRow}>
+          <SquircleSurface style={styles.counterRow}>
             <Animated.Text style={[typography.display, styles.counterBig, { color: colors.callText }, counterStyle]}>{counted}</Animated.Text>
             <Text style={[typography.bodyBold, { color: colors.callMuted, marginLeft: 6 }]}>/ {item.target} {unit}</Text>
-          </View>
-          <View style={[styles.counterTrack, { backgroundColor: colors.callSurfaceStrong }]}>
-            <View style={[styles.counterFill, { width: `${Math.round(share * 100)}%`, backgroundColor: colors.callText }]} />
-          </View>
+          </SquircleSurface>
+          <SquircleSurface style={[styles.counterTrack, { backgroundColor: colors.callSurfaceStrong }]}>
+            <SquircleSurface style={[styles.counterFill, { width: `${Math.round(share * 100)}%`, backgroundColor: colors.callText }]} />
+          </SquircleSurface>
           <Text style={[typography.caption, { color: colors.callMuted, marginTop: 4 }]}>
             {remaining > 0 ? `${remaining} to go` : 'Target reached'}
           </Text>
-        </View>
-      </View>
+        </SquircleSurface>
+      </SquircleSurface>
 
       {/* Tutorial and what's next */}
-      <View style={[styles.lower, { marginHorizontal: spacing.base }]}>
-        <View style={[styles.tutorial, { backgroundColor: colors.callBackground }]}>
+      <SquircleSurface style={[styles.lower, { marginHorizontal: spacing.base }]}>
+        <SquircleSurface style={[styles.tutorial, { backgroundColor: colors.callBackground }]}>
           {cameraMain ? videoTile : (
-            <View style={[StyleSheet.absoluteFill, styles.center, { backgroundColor: colors.surface1 }]}>
+            <SquircleSurface style={[StyleSheet.absoluteFill, styles.center, { backgroundColor: colors.surface1 }]}>
               <Ionicons name="videocam-off-outline" size={20} color={colors.text.muted} />
               <Text style={[typography.caption, { color: colors.text.muted, marginTop: 4, textAlign: 'center' }]}>
                 {cameraBuilt ? 'Camera off' : 'No camera check in this build'}
               </Text>
-            </View>
+            </SquircleSurface>
           )}
-        </View>
-        <View style={[styles.flex, styles.nextCol]}>
+        </SquircleSurface>
+        <SquircleSurface style={[styles.flex, styles.nextCol]}>
           <Text style={[typography.label, { color: colors.text.muted }]}>Up next</Text>
           <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 2 }]} numberOfLines={2}>
             {upNext ? `${upNext.ex?.name ?? 'Exercise'}` : 'Last set'}
@@ -704,16 +705,16 @@ export default function CoachScreen() {
             <Ionicons name={videoPlaying ? 'pause' : 'play'} size={16} color={colors.text.primary} />
             <Text style={[typography.captionBold, { color: colors.text.primary, marginLeft: 6 }]}>{videoPlaying ? 'Pause tutorial' : 'Play tutorial'}</Text>
           </PressableScale>
-        </View>
-      </View>
+        </SquircleSurface>
+      </SquircleSurface>
 
       {cameraError ? (
         <Text style={[typography.caption, { color: colors.error, marginHorizontal: spacing.base, marginTop: 6 }]}>{cameraError}</Text>
       ) : null}
 
-      <View style={{ paddingHorizontal: spacing.base, paddingTop: spacing.md, paddingBottom: insets.bottom + spacing.sm }}>
+      <SquircleSurface style={{ paddingHorizontal: spacing.base, paddingTop: spacing.md, paddingBottom: insets.bottom + spacing.sm }}>
         <Button label={remaining > 0 ? 'Set done' : 'Next'} size="lg" onPress={manualSetDone} />
-      </View>
+      </SquircleSurface>
 
       {/* 3-2-1 before each set */}
       {countdown > 0 ? (
@@ -746,7 +747,7 @@ export default function CoachScreen() {
           </PressableScale>
         </Animated.View>
       ) : null}
-    </View>
+    </SquircleSurface>
   );
 }
 

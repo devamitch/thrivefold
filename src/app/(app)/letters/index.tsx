@@ -1,5 +1,6 @@
+import { SquircleSurface } from '@/components/ui';
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
@@ -48,33 +49,33 @@ export default function LettersInboxScreen() {
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: spacing.xxl }]}>
         {/* Write Letter CTA Card */}
         <Card style={{ marginBottom: spacing.lg, backgroundColor: colors.surface, padding: 14 }}>
-          <View style={styles.heroWrap}>
+          <SquircleSurface style={styles.heroWrap}>
             <Image
               source={require('../../../../assets/illustrations/letters-collection.jpg')}
               style={styles.heroImage}
               contentFit="cover"
             />
-          </View>
-          <View style={[styles.ctaRow, { marginTop: 12 }]}>
-            <View style={{ flex: 1, paddingRight: 12 }}>
+          </SquircleSurface>
+          <SquircleSurface style={[styles.ctaRow, { marginTop: 12 }]}>
+            <SquircleSurface style={{ flex: 1, paddingRight: 12 }}>
               <Text style={[typography.subheading, { color: colors.text.primary }]}>
                 Compose a Slow Letter
               </Text>
               <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>
                 Share gentle reflections sealed with collectible artisanal wax stamps.
               </Text>
-            </View>
+            </SquircleSurface>
             <Button
               label="Write"
               size="md"
               onPress={() => router.push('/(app)/letters/compose')}
               icon={<Ionicons name="create-outline" size={18} color="#FFFFFF" />}
             />
-          </View>
+          </SquircleSurface>
         </Card>
 
         {/* Quick Postal Navigation */}
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: spacing.lg }}>
+        <SquircleSurface style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: spacing.lg }}>
           <Button
             label="Discover"
             size="sm"
@@ -117,34 +118,34 @@ export default function LettersInboxScreen() {
             icon={<Ionicons name="options-outline" size={14} color={colors.text.secondary} />}
             onPress={() => router.push('/(app)/letters/preferences')}
           />
-        </View>
+        </SquircleSurface>
 
         {/* Active Pen-Pal Connections */}
-        <View style={styles.sectionHeader}>
+        <SquircleSurface style={styles.sectionHeader}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>
             Pen-Pal Friends ({connections.length})
           </Text>
-        </View>
+        </SquircleSurface>
 
         {connections.length > 0 ? (
           connections.map((conn) => (
             <Card key={conn.id} style={{ marginBottom: spacing.md }}>
-              <View style={styles.connectionHeader}>
-                <View style={styles.avatarRow}>
-                  <View style={[styles.avatarCircle, { backgroundColor: colors.surface1, borderColor: colors.border }]}>
+              <SquircleSurface style={styles.connectionHeader}>
+                <SquircleSurface style={styles.avatarRow}>
+                  <SquircleSurface style={[styles.avatarCircle, { backgroundColor: colors.surface1, borderColor: colors.border }]}>
                     <Ionicons name="paper-plane-outline" size={18} color={colors.primary} />
-                  </View>
-                  <View style={{ marginLeft: 12 }}>
+                  </SquircleSurface>
+                  <SquircleSurface style={{ marginLeft: 12 }}>
                     <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
                       {conn.partnerPseudonym}
                     </Text>
                     <Text style={[typography.caption, { color: colors.text.muted, marginTop: 2 }]}>
                       Last letter: {new Date(conn.lastActivityAt).toLocaleDateString()}
                     </Text>
-                  </View>
-                </View>
+                  </SquircleSurface>
+                </SquircleSurface>
                 <Badge label={`${conn.letterCount} Letters`} variant="neutral" />
-              </View>
+              </SquircleSurface>
             </Card>
           ))
         ) : (
@@ -163,18 +164,18 @@ export default function LettersInboxScreen() {
         )}
 
         {/* In-Transit & Delivered Letters */}
-        <View style={[styles.sectionHeader, { marginTop: spacing.md }]}>
+        <SquircleSurface style={[styles.sectionHeader, { marginTop: spacing.md }]}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>
             Mailbox ({inbox.length})
           </Text>
-        </View>
+        </SquircleSurface>
 
         {inbox.length > 0 ? (
           inbox.map((letter) => {
             const isTransit = letter.status === 'in_transit';
             return (
               <Card key={letter.id} style={{ marginBottom: spacing.md }}>
-                <View style={styles.letterHeader}>
+                <SquircleSurface style={styles.letterHeader}>
                   <Badge
                     label={isTransit ? 'Traveling' : 'Delivered'}
                     variant={isTransit ? 'warning' : 'success'}
@@ -182,9 +183,9 @@ export default function LettersInboxScreen() {
                   <Text style={[typography.caption, { color: colors.text.muted }]}>
                     {letter.distanceKm.toLocaleString()} km
                   </Text>
-                </View>
+                </SquircleSurface>
 
-                <View style={styles.letterBody}>
+                <SquircleSurface style={styles.letterBody}>
                   <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
                     Letter from {letter.senderPseudonym ?? 'SolsticeFriend'}
                   </Text>
@@ -193,7 +194,7 @@ export default function LettersInboxScreen() {
                       ? `In transit across regional postal channels · Arrives in ~${letter.deliveryHours}h`
                       : `Received on ${new Date(letter.scheduledDeliveryAt).toLocaleDateString()}`}
                   </Text>
-                </View>
+                </SquircleSurface>
 
                 <Button
                   label={isTransit ? 'Track Transit' : 'Open Letter'}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
@@ -69,16 +69,16 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
   return (
     <>
       <Card style={{ marginTop: spacing.md, padding: spacing.md }}>
-        <View style={styles.rowBetween}>
-          <View style={{ flex: 1, paddingRight: 8 }}>
+        <SquircleSurface style={styles.rowBetween}>
+          <SquircleSurface style={{ flex: 1, paddingRight: 8 }}>
             <Text style={[typography.captionBold, { color: colors.text.muted }]}>
               {isToday ? "TODAY'S RHYTHM & FOCUS" : 'DAY FOCUS'}
             </Text>
             <Text style={[typography.heading, { color: colors.text.primary, marginTop: 2 }]}>
               {formattedDate}
             </Text>
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          </SquircleSurface>
+          <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center' }}>
             <PressableScale
               onPress={() => {
                 try {
@@ -145,8 +145,8 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
                 <Ionicons name="chevron-forward" size={16} color={colors.text.primary} />
               </SquircleSurface>
             </PressableScale>
-          </View>
-        </View>
+          </SquircleSurface>
+        </SquircleSurface>
 
         {/* Phase Badge & Biological Summary (For Women) */}
         {isWomen && (
@@ -157,8 +157,8 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
             strokeWidth={1}
             style={[styles.phaseDetailCard, { marginTop: spacing.md }]}
           >
-            <View style={styles.rowBetween}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', flexShrink: 1, paddingRight: 6 }}>
+            <SquircleSurface style={styles.rowBetween}>
+              <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center', flexShrink: 1, paddingRight: 6 }}>
                 <SquircleSurface
                   radius={6}
                   smoothing={1}
@@ -176,7 +176,7 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
                 <Text style={[typography.bodyBold, { color: colors.text.primary, marginLeft: 8 }]}>
                   {selectedDateRangeInfo.phaseLabel}
                 </Text>
-              </View>
+              </SquircleSurface>
               <Badge
                 label={
                   selectedDateRangeInfo.isFollicular && selectedDateRangeInfo.isRecordedPeriod
@@ -185,7 +185,7 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
                 }
                 variant="neutral"
               />
-            </View>
+            </SquircleSurface>
             <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>
               {phaseConfig.energyDesc} • {phaseConfig.description}
             </Text>
@@ -210,7 +210,7 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
 
         {/* Personal Milestones (Birthdays, Anniversaries) */}
         {selectedDateMilestones.length > 0 && (
-          <View style={{ marginTop: spacing.sm, gap: 6 }}>
+          <SquircleSurface style={{ marginTop: spacing.sm, gap: 6 }}>
             {selectedDateMilestones.map((ms) => (
               <SquircleSurface
                 key={ms.id}
@@ -221,7 +221,7 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
                 style={styles.milestoneNotice}
               >
                 <Ionicons name="gift" size={16} color={colors.primary} style={{ marginRight: 8 }} />
-                <View style={{ flex: 1 }}>
+                <SquircleSurface style={{ flex: 1 }}>
                   <Text style={[typography.captionBold, { color: colors.text.primary }]}>
                     {ms.title}
                   </Text>
@@ -229,11 +229,11 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
                     {ms.category.toUpperCase()} {ms.relationship ? `• ${ms.relationship}` : ''}
                     {ms.notes ? ` • "${ms.notes}"` : ''}
                   </Text>
-                </View>
+                </SquircleSurface>
                 <Badge label={ms.recurrence === 'yearly' ? 'Annual' : 'Milestone'} variant="neutral" />
               </SquircleSurface>
             ))}
-          </View>
+          </SquircleSurface>
         )}
 
         {/* Bleeding Log summary if already recorded on this date */}
@@ -245,16 +245,16 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
             strokeWidth={1}
             style={[styles.recordedBleedBanner, { marginTop: spacing.sm }]}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Ionicons name="water" size={16} color={colors.primary} style={{ marginRight: 8 }} />
-              <View style={{ flex: 1 }}>
+              <SquircleSurface style={{ flex: 1 }}>
                 <Text style={[typography.captionBold, { color: colors.text.primary }]}>
                   Recorded Menstrual Bleeding
                 </Text>
                 <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 1 }]}>
                   {existingPeriodRecord.flowIntensity.toUpperCase()} flow • Pain {existingPeriodRecord.painLevel ?? 0}/10
                 </Text>
-              </View>
+              </SquircleSurface>
               <PressableScale
                 onPress={onLogPeriod}
                 scaleTo={0.92}
@@ -271,12 +271,12 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
                   <Text style={[typography.captionBold, { color: colors.primary }]}>Edit</Text>
                 </SquircleSurface>
               </PressableScale>
-            </View>
+            </SquircleSurface>
           </SquircleSurface>
         )}
 
         {/* Action Buttons: Log Period Bleeding & Add Personal Milestone */}
-        <View style={[styles.actionRow, { marginTop: spacing.md }]}>
+        <SquircleSurface style={[styles.actionRow, { marginTop: spacing.md }]}>
           {isWomen && (
             <Button
               label={existingPeriodRecord ? 'Edit Period Entry' : 'Log Period Bleeding'}
@@ -293,25 +293,25 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
             onPress={onAddMilestone}
             style={{ flex: 1 }}
           />
-        </View>
+        </SquircleSurface>
       </Card>
 
       {/* Daily Tasks & Verification Checklist */}
       <Card style={{ marginTop: spacing.md, padding: spacing.md }}>
-        <View style={styles.rowBetween}>
-          <View style={{ flex: 1, paddingRight: 8 }}>
+        <SquircleSurface style={styles.rowBetween}>
+          <SquircleSurface style={{ flex: 1, paddingRight: 8 }}>
             <Text style={[typography.captionBold, { color: colors.text.muted }]}>
               TASKS & VERIFICATIONS FOR {selectedDateStr}
             </Text>
             <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 2 }]}>
               Daily Tasks, Rituals & Habits
             </Text>
-          </View>
+          </SquircleSurface>
           <Badge
             label={`${agendaEvents.filter((e) => e.status === 'completed').length}/${agendaEvents.length} Done`}
             variant="primary"
           />
-        </View>
+        </SquircleSurface>
 
         {/* Progress Track */}
         {agendaEvents.length > 0 && (
@@ -321,7 +321,7 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
             fill={colors.surface1}
             style={styles.taskProgressBarTrack}
           >
-            <View
+            <SquircleSurface
               style={[
                 styles.taskProgressBarFill,
                 {
@@ -337,7 +337,7 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
           </SquircleSurface>
         )}
 
-        <View style={{ marginTop: spacing.md }}>
+        <SquircleSurface style={{ marginTop: spacing.md }}>
           {agendaEvents.map((event) => {
             const isDone = event.status === 'completed';
             return (
@@ -359,7 +359,7 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
                   strokeWidth={1}
                   style={styles.agendaTaskCard}
                 >
-                  <View style={styles.agendaCheckRow}>
+                  <SquircleSurface style={styles.agendaCheckRow}>
                     <PressableScale
                       onPress={() => onToggleEvent(event)}
                       hitSlop={8}
@@ -378,7 +378,7 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
                       </SquircleSurface>
                     </PressableScale>
 
-                    <View style={{ flex: 1, marginLeft: 12 }}>
+                    <SquircleSurface style={{ flex: 1, marginLeft: 12 }}>
                       <Text
                         style={[
                           typography.bodyBold,
@@ -400,20 +400,20 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
                           Scheduled: {event.startTime} {event.endTime ? `– ${event.endTime}` : ''}
                         </Text>
                       ) : null}
-                    </View>
+                    </SquircleSurface>
 
-                    <View style={{ alignItems: 'flex-end', flexShrink: 0, marginLeft: 8 }}>
+                    <SquircleSurface style={{ alignItems: 'flex-end', flexShrink: 0, marginLeft: 8 }}>
                       <Badge label={event.kind.replace('_', ' ')} variant="neutral" />
-                      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}>
+                      <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}>
                         <Ionicons name="chevron-forward" size={14} color={colors.text.muted} />
-                      </View>
-                    </View>
-                  </View>
+                      </SquircleSurface>
+                    </SquircleSurface>
+                  </SquircleSurface>
                 </SquircleSurface>
               </PressableScale>
             );
           })}
-        </View>
+        </SquircleSurface>
       </Card>
     </>
   );

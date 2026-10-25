@@ -1,5 +1,6 @@
+import { SquircleSurface } from '@/components/ui';
 import React from 'react';
-import { View, Text, StyleSheet, ViewStyle, StyleProp } from 'react-native';
+import { Text, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import Animated, {
   SharedValue,
   useAnimatedStyle,
@@ -64,7 +65,7 @@ export const SanctuaryHeader: React.FC<HeaderProps> = ({
   });
 
   return (
-    <View
+    <SquircleSurface
       style={[
         styles.fixedBar,
         {
@@ -76,12 +77,12 @@ export const SanctuaryHeader: React.FC<HeaderProps> = ({
         style,
       ]}
     >
-      <View style={styles.barRow}>
+      <SquircleSurface style={styles.barRow}>
         {showBack ? (
           <HeaderBackButton />
         ) : null}
 
-        <View style={[styles.centerSlot, showBack ? { paddingLeft: 8 } : { paddingLeft: 0 }]}>
+        <SquircleSurface style={[styles.centerSlot, showBack ? { paddingLeft: 8 } : { paddingLeft: 0 }]}>
           {eyebrow ? (
             <Animated.Text
               style={[
@@ -105,15 +106,15 @@ export const SanctuaryHeader: React.FC<HeaderProps> = ({
           >
             {title}
           </Animated.Text>
-        </View>
+        </SquircleSurface>
 
         {rightAction ? (
-          <View style={styles.rightSlot}>{rightAction}</View>
+          <SquircleSurface style={styles.rightSlot}>{rightAction}</SquircleSurface>
         ) : showBack ? (
-          <View style={styles.emptySlot} />
+          <SquircleSurface style={styles.emptySlot} />
         ) : null}
-      </View>
-    </View>
+      </SquircleSurface>
+    </SquircleSurface>
   );
 };
 
@@ -139,9 +140,9 @@ export const SanctuaryLargeTitle: React.FC<SanctuaryLargeTitleProps> = ({
   const { colors, typography, spacing } = useTheme();
 
   return (
-    <View style={[styles.largeTitleContainer, { paddingHorizontal: spacing.base, marginBottom: spacing.md }, style]}>
-      <View style={styles.largeTitleRow}>
-        <View style={styles.flex}>
+    <SquircleSurface style={[styles.largeTitleContainer, { paddingHorizontal: spacing.base, marginBottom: spacing.md }, style]}>
+      <SquircleSurface style={styles.largeTitleRow}>
+        <SquircleSurface style={styles.flex}>
           {eyebrow ? (
             <Text style={[typography.label, { color: colors.primary, marginBottom: spacing.xxs }]}>
               {eyebrow}
@@ -155,10 +156,10 @@ export const SanctuaryLargeTitle: React.FC<SanctuaryLargeTitleProps> = ({
               {subtitle}
             </Text>
           ) : null}
-        </View>
-        {rightAction ? <View style={styles.largeRightAction}>{rightAction}</View> : null}
-      </View>
-    </View>
+        </SquircleSurface>
+        {rightAction ? <SquircleSurface style={styles.largeRightAction}>{rightAction}</SquircleSurface> : null}
+      </SquircleSurface>
+    </SquircleSurface>
   );
 };
 
@@ -177,7 +178,7 @@ export const Header: React.FC<HeaderProps> = ({
   const { colors, typography, spacing } = useTheme();
 
   return (
-    <View
+    <SquircleSurface
       style={[
         styles.container,
         {
@@ -188,11 +189,11 @@ export const Header: React.FC<HeaderProps> = ({
         style,
       ]}
     >
-      <View style={styles.leftRow}>
+      <SquircleSurface style={styles.leftRow}>
         {showBack && (
           <HeaderBackButton />
         )}
-        <View style={[styles.titleCol, showBack && { marginLeft: spacing.sm }]}>
+        <SquircleSurface style={[styles.titleCol, showBack && { marginLeft: spacing.sm }]}>
           {eyebrow ? (
             <Text
               style={[
@@ -212,10 +213,10 @@ export const Header: React.FC<HeaderProps> = ({
               {subtitle}
             </Text>
           )}
-        </View>
-      </View>
-      {rightAction && <View style={styles.rightSlot}>{rightAction}</View>}
-    </View>
+        </SquircleSurface>
+      </SquircleSurface>
+      {rightAction && <SquircleSurface style={styles.rightSlot}>{rightAction}</SquircleSurface>}
+    </SquircleSurface>
   );
 };
 

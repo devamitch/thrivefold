@@ -1,5 +1,6 @@
+import { SquircleSurface } from '@/components/ui';
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 
 import { useTheme } from '../../theme/useTheme';
 import { Card } from '../ui/Card';
@@ -48,19 +49,19 @@ export const QuestsSection: React.FC<QuestsSectionProps> = ({
   return (
     <>
       <Card style={{ marginTop: spacing.md, padding: spacing.lg }}>
-        <View style={styles.rowBetween}>
-          <View style={{ flex: 1, paddingRight: 8 }}>
+        <SquircleSurface style={styles.rowBetween}>
+          <SquircleSurface style={{ flex: 1, paddingRight: 8 }}>
             <Text style={[typography.captionBold, { color: colors.text.muted }]}>Chapter {def.chapterNumber}</Text>
             <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 2 }]}>{def.title}</Text>
-          </View>
+          </SquircleSurface>
           <Badge label={`Level ${progress.level}`} variant="primary" />
-        </View>
+        </SquircleSurface>
 
-        <View style={[styles.statsRow, { backgroundColor: colors.surface1, marginTop: spacing.md }]}>
+        <SquircleSurface style={[styles.statsRow, { backgroundColor: colors.surface1, marginTop: spacing.md }]}>
           <Stat label="XP" value={String(xp)} />
           <Stat label="Diamonds" value={String(diamonds)} />
           <Stat label="Goal streak" value={`${streak}d`} />
-        </View>
+        </SquircleSurface>
 
         {progress.next ? (
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: spacing.sm }]}>
@@ -70,15 +71,15 @@ export const QuestsSection: React.FC<QuestsSectionProps> = ({
           </Text>
         ) : null}
 
-        <View style={{ marginTop: spacing.md }}>
-          <View style={styles.rowBetween}>
+        <SquircleSurface style={{ marginTop: spacing.md }}>
+          <SquircleSurface style={styles.rowBetween}>
             <Text style={[typography.captionBold, { color: colors.text.primary }]}>Today&apos;s points</Text>
             <Text style={[typography.captionBold, { color: colors.primary }]}>
               {dailyPoints} / {dailyPointsTarget}
             </Text>
-          </View>
-          <View style={[styles.track, { backgroundColor: colors.surface1, marginTop: 6 }]}>
-            <View
+          </SquircleSurface>
+          <SquircleSurface style={[styles.track, { backgroundColor: colors.surface1, marginTop: 6 }]}>
+            <SquircleSurface
               style={[
                 styles.fill,
                 {
@@ -87,14 +88,14 @@ export const QuestsSection: React.FC<QuestsSectionProps> = ({
                 },
               ]}
             />
-          </View>
+          </SquircleSurface>
           {dailyGoalReached ? (
             <Text style={[typography.caption, { color: colors.success, marginTop: 4 }]}>Daily goal reached.</Text>
           ) : null}
-        </View>
+        </SquircleSurface>
       </Card>
 
-      <View style={{ marginTop: spacing.lg }}>
+      <SquircleSurface style={{ marginTop: spacing.lg }}>
         <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: spacing.sm }]}>
           Today&apos;s quests ({doneCount}/{active.filter((q) => q.status !== 'skipped').length})
         </Text>
@@ -128,7 +129,7 @@ export const QuestsSection: React.FC<QuestsSectionProps> = ({
             );
           })
         )}
-      </View>
+      </SquircleSurface>
     </>
   );
 };
@@ -136,10 +137,10 @@ export const QuestsSection: React.FC<QuestsSectionProps> = ({
 function Stat({ label, value }: { label: string; value: string }) {
   const { colors, typography } = useTheme();
   return (
-    <View style={styles.stat}>
+    <SquircleSurface style={styles.stat}>
       <Text style={[typography.caption, { color: colors.text.muted }]}>{label}</Text>
       <Text style={[typography.subbodyBold, { color: colors.text.primary }]}>{value}</Text>
-    </View>
+    </SquircleSurface>
   );
 }
 

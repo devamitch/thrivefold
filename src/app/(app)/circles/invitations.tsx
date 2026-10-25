@@ -1,5 +1,6 @@
+import { SquircleSurface } from '@/components/ui';
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { Text, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
@@ -40,12 +41,12 @@ export default function CircleInvitationsScreen() {
       <Header title="Circle invitations" subtitle="Invitations to private circles" showBack />
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
         <Card style={{ marginBottom: spacing.md, backgroundColor: colors.surface1, borderColor: colors.border }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+          <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
             <Ionicons name="shield-outline" size={18} color={colors.primary} />
             <Text style={[typography.subbodyBold, { color: colors.text.primary, marginLeft: 6 }]}>
               You always choose
             </Text>
-          </View>
+          </SquircleSurface>
           <Text style={[typography.caption, { color: colors.text.secondary, lineHeight: 18 }]}>
             No user is ever auto-enrolled or imported into a group without explicit consent. You choose whether to join, and can quietly leave at any time.
           </Text>
@@ -54,10 +55,10 @@ export default function CircleInvitationsScreen() {
         {invitations.length > 0 ? (
           invitations.map((inv) => (
             <Card key={inv.id} style={{ marginBottom: spacing.md }}>
-              <View style={styles.headerRow}>
+              <SquircleSurface style={styles.headerRow}>
                 <Badge label={inv.type} variant="primary" />
                 <Text style={[typography.caption, { color: colors.text.muted }]}>{inv.membersCount} Members</Text>
-              </View>
+              </SquircleSurface>
 
               <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 8 }]}>
                 {inv.communityName}
@@ -69,7 +70,7 @@ export default function CircleInvitationsScreen() {
                 {inv.description}
               </Text>
 
-              <View style={styles.actionsRow}>
+              <SquircleSurface style={styles.actionsRow}>
                 <Button
                   label="Decline"
                   variant="outline"
@@ -84,7 +85,7 @@ export default function CircleInvitationsScreen() {
                   onPress={() => handleAccept(inv.id, inv.communityName)}
                   style={{ flex: 1, marginLeft: 8 }}
                 />
-              </View>
+              </SquircleSurface>
             </Card>
           ))
         ) : (

@@ -1,3 +1,4 @@
+import { SquircleSurface } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -81,8 +82,8 @@ export function OnboardingScaffold({
   }, [setOnboardingStep, step]);
 
   return (
-    <View style={[styles.root, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-      <View style={[styles.topBar, { paddingHorizontal: spacing.base }]}>
+    <SquircleSurface style={[styles.root, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+      <SquircleSurface style={[styles.topBar, { paddingHorizontal: spacing.base }]}>
         {index > 0 ? (
           <PressableScale
             onPress={() => router.back()}
@@ -94,15 +95,15 @@ export function OnboardingScaffold({
             <Ionicons name="chevron-back" size={22} color={colors.text.primary} />
           </PressableScale>
         ) : (
-          <View style={styles.topButton} />
+          <SquircleSurface style={styles.topButton} />
         )}
-        <View
+        <SquircleSurface
           style={styles.progress}
           accessibilityRole="progressbar"
           accessibilityLabel={`Step ${index + 1} of ${ONBOARDING_STEPS.length}`}
         >
           {ONBOARDING_STEPS.map((s, i) => (
-            <View
+            <SquircleSurface
               key={s}
               style={[
                 styles.progressDot,
@@ -110,7 +111,7 @@ export function OnboardingScaffold({
               ]}
             />
           ))}
-        </View>
+        </SquircleSurface>
         {onSkip ? (
           <PressableScale
             onPress={onSkip}
@@ -122,12 +123,12 @@ export function OnboardingScaffold({
             <Text style={[typography.subbody, { color: colors.text.secondary }]}>Skip</Text>
           </PressableScale>
         ) : (
-          <View style={styles.topButton} />
+          <SquircleSurface style={styles.topButton} />
         )}
-      </View>
+      </SquircleSurface>
 
       {setupXp > 0 || stepReward ? (
-        <View style={[styles.xpRow, { paddingHorizontal: spacing.base }]}>
+        <SquircleSurface style={[styles.xpRow, { paddingHorizontal: spacing.base }]}>
           <Animated.View
             key={setupXp}
             entering={reduceMotion ? undefined : FadeIn.duration(200)}
@@ -144,7 +145,7 @@ export function OnboardingScaffold({
               {claimed ? `Earned ${stepReward.xp} XP here` : `+${stepReward.xp} XP for answering`}
             </Text>
           ) : null}
-        </View>
+        </SquircleSurface>
       ) : null}
 
       <ScrollView
@@ -168,7 +169,7 @@ export function OnboardingScaffold({
         {children}
       </ScrollView>
 
-      <View
+      <SquircleSurface
         style={[
           styles.footer,
           {
@@ -179,8 +180,8 @@ export function OnboardingScaffold({
         ]}
       >
         <Button label={primaryLabel} onPress={continueStep} disabled={primaryDisabled} size="lg" />
-      </View>
-    </View>
+      </SquircleSurface>
+    </SquircleSurface>
   );
 }
 

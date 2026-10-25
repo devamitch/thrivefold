@@ -1,5 +1,6 @@
+import { SquircleSurface } from '@/components/ui';
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { Text, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
@@ -36,12 +37,12 @@ export default function BlockedUsersScreen() {
       <Header title="Blocked people" subtitle="People you have blocked" showBack />
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
         <Card style={{ marginBottom: spacing.md, backgroundColor: colors.surface1, borderColor: colors.border }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+          <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
             <Ionicons name="ban-outline" size={18} color={colors.primary} />
             <Text style={[typography.subbodyBold, { color: colors.text.primary, marginLeft: 6 }]}>
               Immediate Invariant Enforcement
             </Text>
-          </View>
+          </SquircleSurface>
           <Text style={[typography.caption, { color: colors.text.secondary, lineHeight: 18 }]}>
             When a user is blocked, their letters in transit are immediately halted. No payment or premium subscription can ever bypass or remove a block.
           </Text>
@@ -50,18 +51,18 @@ export default function BlockedUsersScreen() {
         {blockedUserIds.length > 0 ? (
           blockedUserIds.map((id) => (
             <Card key={id} style={{ marginBottom: spacing.sm }}>
-              <View style={styles.headerRow}>
-                <View>
+              <SquircleSurface style={styles.headerRow}>
+                <SquircleSurface>
                   <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{id}</Text>
                   <Text style={[typography.caption, { color: colors.text.muted }]}>Blocked from all letters & circles</Text>
-                </View>
+                </SquircleSurface>
                 <Button
                   label="Unblock"
                   variant="outline"
                   size="sm"
                   onPress={() => handleUnblock(id)}
                 />
-              </View>
+              </SquircleSurface>
             </Card>
           ))
         ) : (

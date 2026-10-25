@@ -1,5 +1,6 @@
+import { SquircleSurface } from '@/components/ui';
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView } from 'react-native';
+import { Text, StyleSheet, TextInput, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
@@ -47,12 +48,12 @@ export default function OrganizationApplyScreen() {
       <Header title="Register an organization" subtitle="For NGOs, clinics and employers" showBack />
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
         <Card style={{ marginBottom: spacing.md, backgroundColor: colors.surface1, borderColor: colors.border }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+          <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
             <Ionicons name="business-outline" size={20} color={colors.primary} />
             <Text style={[typography.subbodyBold, { color: colors.text.primary, marginLeft: 6 }]}>
               Verification standards
             </Text>
-          </View>
+          </SquircleSurface>
           <Text style={[typography.caption, { color: colors.text.secondary, lineHeight: 18 }]}>
             Organization accounts require a verified representative. Clinical therapy groups must furnish accredited licensure. Peer leaders cannot be falsely represented as licensed clinicians.
           </Text>
@@ -84,7 +85,7 @@ export default function OrganizationApplyScreen() {
           <Text style={[typography.captionBold, { color: colors.text.secondary, marginTop: 14, marginBottom: 8 }]}>
             ORGANIZATION SECTOR
           </Text>
-          <View style={styles.chipRow}>
+          <SquircleSurface style={styles.chipRow}>
             {types.map((t) => (
               <Chip
                 key={t}
@@ -94,7 +95,7 @@ export default function OrganizationApplyScreen() {
                 style={{ marginRight: 6, marginBottom: 6 }}
               />
             ))}
-          </View>
+          </SquircleSurface>
 
           <Text style={[typography.captionBold, { color: colors.text.secondary, marginTop: 14, marginBottom: 4 }]}>
             MISSION & CONFIDENTIALITY STATEMENT

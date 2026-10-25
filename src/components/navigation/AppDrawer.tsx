@@ -106,7 +106,7 @@ const Reveal = memo(function Reveal({
 /** Lets the list dissolve into the footer instead of being cut off. */
 const BottomFade = memo(function BottomFade({ color }: { color: string }) {
   return (
-    <View pointerEvents="none" style={styles.fade}>
+    <SquircleSurface pointerEvents="none" style={styles.fade}>
       <Svg width="100%" height="100%">
         <Defs>
           <LinearGradient id="drawerFade" x1="0" y1="0" x2="0" y2="1">
@@ -116,7 +116,7 @@ const BottomFade = memo(function BottomFade({ color }: { color: string }) {
         </Defs>
         <Rect x="0" y="0" width="100%" height="100%" fill="url(#drawerFade)" />
       </Svg>
-    </View>
+    </SquircleSurface>
   );
 });
 
@@ -191,7 +191,7 @@ const DrawerRow = memo(function DrawerRow({
         >
           {item.label}
         </Text>
-        {active ? <View style={[styles.activeDot, { backgroundColor: palette.accent }]} /> : null}
+        {active ? <SquircleSurface style={[styles.activeDot, { backgroundColor: palette.accent }]} /> : null}
       </SquircleSurface>
     </PressableScale>
   );
@@ -288,7 +288,7 @@ export function AppDrawer() {
   const hasStreak = currentStreak > 0;
 
   return (
-    <View
+    <SquircleSurface
       style={[styles.root, { backgroundColor: palette.bg }]}
       pointerEvents={open ? 'auto' : 'none'}
       importantForAccessibility={open ? 'auto' : 'no-hide-descendants'}
@@ -310,7 +310,7 @@ export function AppDrawer() {
       >
         {/* Brand + close */}
         <Reveal index={0} progress={progress} style={styles.brandRow}>
-          <View style={styles.brandLeft}>
+          <SquircleSurface style={styles.brandLeft}>
             <SquircleSurface radius={11} fill={palette.accent} style={styles.brandMark}>
               <Ionicons name={orbIcon} size={16} color={palette.onAccent} />
             </SquircleSurface>
@@ -319,7 +319,7 @@ export function AppDrawer() {
             >
               Thrivefold
             </Text>
-          </View>
+          </SquircleSurface>
           <PressableScale
             onPress={close}
             hitSlop={8}
@@ -347,7 +347,7 @@ export function AppDrawer() {
               fill={palette.wash}
               style={styles.profileCard}
             >
-              <View style={styles.profileTop}>
+              <SquircleSurface style={styles.profileTop}>
                 <SquircleSurface
                   radius={20}
                   smoothing={1}
@@ -356,7 +356,7 @@ export function AppDrawer() {
                 >
                   <Ionicons name={AVATAR_ICON[experience]} size={26} color={palette.accent} />
                 </SquircleSurface>
-                <View style={styles.profileText}>
+                <SquircleSurface style={styles.profileText}>
                   <Text
                     numberOfLines={1}
                     style={[
@@ -372,10 +372,10 @@ export function AppDrawer() {
                   >
                     {EXPERIENCE_LABEL[experience]}
                   </Text>
-                </View>
+                </SquircleSurface>
                 <Ionicons name="chevron-forward" size={18} color={palette.inkMuted} />
-              </View>
-              <View style={styles.chipRow}>
+              </SquircleSurface>
+              <SquircleSurface style={styles.chipRow}>
                 <StatChip
                   icon="ribbon-outline"
                   label={`Level ${level}`}
@@ -388,13 +388,13 @@ export function AppDrawer() {
                   iconColor={hasStreak ? palette.accent : palette.inkMuted}
                   palette={palette}
                 />
-              </View>
+              </SquircleSurface>
             </SquircleSurface>
           </PressableScale>
         </Reveal>
 
         {/* Navigation */}
-        <View style={styles.listWrap}>
+        <SquircleSurface style={styles.listWrap}>
           <ScrollView
             showsVerticalScrollIndicator={false}
             overScrollMode="never"
@@ -426,7 +426,7 @@ export function AppDrawer() {
             )}
           </ScrollView>
           <BottomFade color={palette.bg} />
-        </View>
+        </SquircleSurface>
 
         {/* Footer */}
         <Reveal index={rows.length + 2} progress={progress} style={styles.footer}>
@@ -451,7 +451,7 @@ export function AppDrawer() {
           </PressableScale>
         </Reveal>
       </Animated.View>
-    </View>
+    </SquircleSurface>
   );
 }
 

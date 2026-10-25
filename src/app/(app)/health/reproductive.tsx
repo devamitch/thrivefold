@@ -1,5 +1,6 @@
+import { SquircleSurface } from '@/components/ui';
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { Text, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
@@ -53,12 +54,12 @@ export default function ReproductiveHealthScreen() {
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
         {/* Clinician Advisory Banner */}
         <Card style={{ marginBottom: spacing.md, backgroundColor: colors.surface1, borderColor: colors.border }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+          <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
             <Ionicons name="medical-outline" size={20} color={colors.primary} />
             <Text style={[typography.subbodyBold, { color: colors.text.primary, marginLeft: 8 }]}>
               Non-Diagnostic Educational Library
             </Text>
-          </View>
+          </SquircleSurface>
           <Text style={[typography.caption, { color: colors.text.secondary, lineHeight: 18 }]}>
             Thrivefold provides educational literacy and clinician care signposting. It does not replace individualized diagnosis, ultrasound, or blood biomarker testing.
           </Text>
@@ -70,10 +71,10 @@ export default function ReproductiveHealthScreen() {
 
         {articles.map((art) => (
           <Card key={art.id} style={{ marginBottom: spacing.md }}>
-            <View style={styles.articleHeader}>
+            <SquircleSurface style={styles.articleHeader}>
               <Badge label={art.category} variant="primary" />
               <Text style={[typography.caption, { color: colors.text.muted }]}>{art.readTime}</Text>
-            </View>
+            </SquircleSurface>
             <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 8 }]}>
               {art.title}
             </Text>

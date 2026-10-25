@@ -1,5 +1,6 @@
+import { SquircleSurface } from '@/components/ui';
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
@@ -119,20 +120,20 @@ export const SomaticWellnessArcade: React.FC<SomaticWellnessArcadeProps> = React
     <>
       {/* Game 1: Somatic Breath Blossom */}
       <Card style={{ marginTop: spacing.md, padding: spacing.lg }}>
-        <View style={styles.rowBetween}>
-          <View>
+        <SquircleSurface style={styles.rowBetween}>
+          <SquircleSurface>
             <Text style={[typography.subheading, { color: colors.text.primary }]}>
               Breathing pace
             </Text>
             <Text style={[typography.caption, { color: colors.text.muted }]}>
               4-7-8 parasympathetic tone release
             </Text>
-          </View>
+          </SquircleSurface>
           <Badge label="+10 Pts" variant="primary" />
-        </View>
+        </SquircleSurface>
 
-        <View style={styles.breathCircleWrap}>
-          <View
+        <SquircleSurface style={styles.breathCircleWrap}>
+          <SquircleSurface
             style={[
               styles.breathCircle,
               {
@@ -162,8 +163,8 @@ export const SomaticWellnessArcade: React.FC<SomaticWellnessArcadeProps> = React
             >
               {breathPhase}
             </Text>
-          </View>
-        </View>
+          </SquircleSurface>
+        </SquircleSurface>
 
         <Button
           label={breathActive ? 'Pause Breathwork' : 'Start 4-7-8 Blossom'}
@@ -180,19 +181,19 @@ export const SomaticWellnessArcade: React.FC<SomaticWellnessArcadeProps> = React
 
       {/* Game 2: Pelvic Floor Rhythm Sync */}
       <Card style={{ marginTop: spacing.md, padding: spacing.lg }}>
-        <View style={styles.rowBetween}>
-          <View>
+        <SquircleSurface style={styles.rowBetween}>
+          <SquircleSurface>
             <Text style={[typography.subheading, { color: colors.text.primary }]}>
               Pelvic Floor Rhythm Sync
             </Text>
             <Text style={[typography.caption, { color: colors.text.muted }]}>
               5s gentle pelvic lift • 5s complete release
             </Text>
-          </View>
+          </SquircleSurface>
           <Badge label={`Rep ${pelvicReps}/3`} variant="primary" />
-        </View>
+        </SquircleSurface>
 
-        <View style={[styles.pelvicIndicator, { backgroundColor: colors.surface1, marginTop: spacing.md }]}>
+        <SquircleSurface style={[styles.pelvicIndicator, { backgroundColor: colors.surface1, marginTop: spacing.md }]}>
           <Text style={[typography.heading, { color: colors.primary }]}>
             {pelvicActive ? `${pelvicPhase.toUpperCase()} (${pelvicSeconds}s)` : 'Ready'}
           </Text>
@@ -201,7 +202,7 @@ export const SomaticWellnessArcade: React.FC<SomaticWellnessArcadeProps> = React
               ? 'Gently draw the pelvic muscles inward and upward.'
               : 'Completely soften, relax, and let go.'}
           </Text>
-        </View>
+        </SquircleSurface>
 
         <Button
           label={pelvicActive ? 'Stop Exercise' : 'Start Pelvic Sync (3 Reps)'}
@@ -218,17 +219,17 @@ export const SomaticWellnessArcade: React.FC<SomaticWellnessArcadeProps> = React
 
       {/* Game 3: Zen Harmonic Tap (NO SPARKLE ICONS!) */}
       <Card style={{ marginTop: spacing.md, padding: spacing.lg }}>
-        <View style={styles.rowBetween}>
-          <View>
+        <SquircleSurface style={styles.rowBetween}>
+          <SquircleSurface>
             <Text style={[typography.subheading, { color: colors.text.primary }]}>
               Zen Harmonic Rhythm
             </Text>
             <Text style={[typography.caption, { color: colors.text.muted }]}>
               Tap to start a short pause
             </Text>
-          </View>
+          </SquircleSurface>
           <Badge label={`${zenTaps} Taps`} variant="neutral" />
-        </View>
+        </SquircleSurface>
 
         <PressableScale
           onPress={handleTapZen}

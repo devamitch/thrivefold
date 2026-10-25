@@ -1,3 +1,4 @@
+import { SquircleSurface } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { useRouter, type Href } from 'expo-router';
@@ -36,14 +37,14 @@ export default function LearnScreen() {
             onPress={() => setOpen(expanded ? null : art.id)}
             style={{ marginBottom: spacing.md }}
           >
-            <View style={styles.cardHeader}>
+            <SquircleSurface style={styles.cardHeader}>
               <Badge label={art.category} variant="primary" />
               <Text style={[typography.caption, { color: colors.text.muted }]}>{art.minutes} min read</Text>
-            </View>
-            <View style={[styles.cardHeader, { marginTop: spacing.xs }]}>
+            </SquircleSurface>
+            <SquircleSurface style={[styles.cardHeader, { marginTop: spacing.xs }]}>
               <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>{art.title}</Text>
               <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.text.muted} />
-            </View>
+            </SquircleSurface>
             {expanded ? (
               <Animated.View entering={reduceMotion ? undefined : FadeIn.duration(200)}>
                 {art.body.map((p) => (
@@ -60,10 +61,10 @@ export default function LearnScreen() {
                   <Text style={[typography.captionBold, { color: colors.text.secondary, marginLeft: 6 }]}>Watch videos on this topic</Text>
                 </PressableScale>
                 {art.seekHelp ? (
-                  <View style={[styles.help, { backgroundColor: colors.warningSurface, marginTop: spacing.md }]}>
+                  <SquircleSurface style={[styles.help, { backgroundColor: colors.warningSurface, marginTop: spacing.md }]}>
                     <Ionicons name="medkit-outline" size={18} color={colors.warning} />
                     <Text style={[typography.subbody, styles.flex, { color: colors.text.primary, marginLeft: 8 }]}>{art.seekHelp}</Text>
-                  </View>
+                  </SquircleSurface>
                 ) : null}
               </Animated.View>
             ) : null}

@@ -1,6 +1,7 @@
+import { SquircleSurface } from '@/components/ui';
 import React, { useMemo } from 'react';
 import { useRouter } from 'expo-router';
-import { View, Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
@@ -22,7 +23,7 @@ export default function SleepScreen() {
   return (
     <ScreenWrapper scrollable>
       <Header title="Sleep" subtitle="From your daily check-ins" showBack />
-      <View>
+      <SquircleSurface>
         <Card style={{ marginBottom: spacing.md, padding: spacing.lg }}>
           <Text style={[typography.caption, { color: colors.text.muted }]}>LAST NIGHT</Text>
           <Text style={[typography.hero, { color: colors.primary, marginVertical: 4 }]}>
@@ -35,9 +36,9 @@ export default function SleepScreen() {
             onPress={() => router.push('/(app)/check-in')}
             style={{ alignSelf: 'flex-start', marginTop: spacing.xs }}
           />
-          <View style={{ marginTop: spacing.md }}>
+          <SquircleSurface style={{ marginTop: spacing.md }}>
             <TrendBars label="Last 14 nights" unit="h" max={10} points={lastDays(14, (d) => byDate.get(d)?.sleepHours ?? null)} />
-          </View>
+          </SquircleSurface>
         </Card>
 
         {/* Circadian Wind-Down */}
@@ -45,18 +46,18 @@ export default function SleepScreen() {
           <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: 8 }]}>
             Habits that help sleep
           </Text>
-          <View style={styles.tipRow}>
+          <SquircleSurface style={styles.tipRow}>
             <Ionicons name="sunny-outline" size={20} color={colors.primary} />
             <Text style={[typography.subbody, { color: colors.text.secondary, marginLeft: 10, flex: 1 }]}>
               Early Sunlight: Get 10–15 minutes of outdoor light exposure within 1 hour of waking to anchor cortisol.
             </Text>
-          </View>
-          <View style={[styles.tipRow, { marginTop: 12 }]}>
+          </SquircleSurface>
+          <SquircleSurface style={[styles.tipRow, { marginTop: 12 }]}>
             <Ionicons name="moon-outline" size={20} color={colors.primary} />
             <Text style={[typography.subbody, { color: colors.text.secondary, marginLeft: 10, flex: 1 }]}>
               Night Wind-Down: Dim screens 60 minutes before bed; engage parasympathetic 4-7-8 box breathing.
             </Text>
-          </View>
+          </SquircleSurface>
         </Card>
 
         {/* Wind-Down Practice */}
@@ -78,7 +79,7 @@ export default function SleepScreen() {
             ]}
           />
         </Card>
-      </View>
+      </SquircleSurface>
     </ScreenWrapper>
   );
 }

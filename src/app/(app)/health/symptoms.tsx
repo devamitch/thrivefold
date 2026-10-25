@@ -1,5 +1,6 @@
+import { SquircleSurface } from '@/components/ui';
 import React, { useMemo } from 'react';
-import { Text, View, StyleSheet } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
@@ -44,11 +45,11 @@ export default function SymptomsScreen() {
       <Card style={{ padding: spacing.base }}>
         <Text style={[typography.subheading, { color: colors.text.primary }]}>Today</Text>
         {today ? (
-          <View style={[styles.chips, { marginTop: spacing.sm }]}>
+          <SquircleSurface style={[styles.chips, { marginTop: spacing.sm }]}>
             {options.map((sym) => (
               <Chip key={sym} label={sym} selected={today.symptoms.includes(sym)} onPress={() => toggle(sym)} />
             ))}
-          </View>
+          </SquircleSurface>
         ) : (
           <>
             <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>
@@ -64,10 +65,10 @@ export default function SymptomsScreen() {
         <Text style={[typography.subbody, { color: colors.text.secondary }]}>Nothing logged yet.</Text>
       ) : (
         counts.map(([sym, n]) => (
-          <View key={sym} style={[styles.row, { borderBottomColor: colors.border }]}>
+          <SquircleSurface key={sym} style={[styles.row, { borderBottomColor: colors.border }]}>
             <Text style={[typography.body, { color: colors.text.primary }]}>{sym}</Text>
             <Text style={[typography.subbodyBold, { color: colors.text.secondary }]}>{n} day{n === 1 ? '' : 's'}</Text>
-          </View>
+          </SquircleSurface>
         ))
       )}
       <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.md }]}>

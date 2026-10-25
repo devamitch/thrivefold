@@ -1,6 +1,7 @@
+import { SquircleSurface } from '@/components/ui';
 import { Image } from 'expo-image';
 import React, { forwardRef, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, type ViewStyle } from 'react-native';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 
 export interface YouTubePlayerHandle {
@@ -92,7 +93,7 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandle, Props>(function You
   };
 
   return (
-    <View style={[styles.root, style]}>
+    <SquircleSurface style={[styles.root, style]}>
       <WebView
         ref={web}
         source={source}
@@ -111,20 +112,20 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandle, Props>(function You
         allowsBackForwardNavigationGestures
       />
       {!ready || failed ? (
-        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        <SquircleSurface style={StyleSheet.absoluteFill} pointerEvents="none">
           {videoId ? (
             <Image source={{ uri: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` }} style={StyleSheet.absoluteFill} contentFit="cover" />
           ) : null}
-          <View style={[StyleSheet.absoluteFill, styles.center]}>
+          <SquircleSurface style={[StyleSheet.absoluteFill, styles.center]}>
             {failed ? (
               <Text style={styles.note}>The video could not load on this connection. Try again in a moment.</Text>
             ) : (
               <ActivityIndicator size="large" color="#FFFFFF" />
             )}
-          </View>
-        </View>
+          </SquircleSurface>
+        </SquircleSurface>
       ) : null}
-    </View>
+    </SquircleSurface>
   );
 });
 

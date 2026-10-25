@@ -1,6 +1,7 @@
+import { SquircleSurface } from '@/components/ui';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 import { OnboardingScaffold } from '../../components/onboarding/OnboardingScaffold';
 import { Chip } from '../../components/ui/Chip';
@@ -38,11 +39,11 @@ export default function GoalsScreen() {
       onPrimary={next}
       onSkip={next}
     >
-      <View style={styles.chips}>
+      <SquircleSurface style={styles.chips}>
         {goalsFor(experience).map((goal) => (
           <Chip key={goal} label={goal} selected={goals.includes(goal)} onPress={() => toggle(goal)} />
         ))}
-      </View>
+      </SquircleSurface>
     </OnboardingScaffold>
   );
 }

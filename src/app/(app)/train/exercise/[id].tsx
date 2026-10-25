@@ -1,7 +1,8 @@
+import { SquircleSurface } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 
 import { AppHeader } from '../../../../components/ui/AppHeader';
 import { Button } from '../../../../components/ui/Button';
@@ -31,9 +32,9 @@ export default function ExerciseDetailScreen() {
 
   return (
     <ScreenContainer header={<AppHeader title={ex.name} subtitle={`${ex.pattern} · ${ex.equipment === 'none' ? 'no equipment' : ex.equipment}`} showBack />} scrollMode="shell-scroll-view">
-      <View style={[styles.video, { backgroundColor: colors.surface1 }]}>
+      <SquircleSurface style={[styles.video, { backgroundColor: colors.surface1 }]}>
         <YouTubePlayer videoId={video?.videoId} query={`${ex.name} proper form tutorial`} style={StyleSheet.absoluteFill} />
-      </View>
+      </SquircleSurface>
       <Text style={[typography.caption, { color: colors.text.muted, marginTop: 6 }]}>
         {video ? `${video.title} · ${video.channel} (YouTube)` : 'YouTube search results: pick a video, it plays here. Not a checked tutorial.'}
       </Text>
@@ -47,10 +48,10 @@ export default function ExerciseDetailScreen() {
         ))}
         <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: spacing.md }]}>Easier: {ex.easier}</Text>
         <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>Harder: {ex.harder}</Text>
-        <View style={[styles.row, { marginTop: spacing.md }]}>
+        <SquircleSurface style={[styles.row, { marginTop: spacing.md }]}>
           <Ionicons name="warning-outline" size={16} color={colors.warning} />
           <Text style={[typography.subbody, styles.flex, { color: colors.text.primary, marginLeft: 6 }]}>{ex.safety} Stop if anything hurts.</Text>
-        </View>
+        </SquircleSurface>
       </Card>
 
       {movement ? (
@@ -65,7 +66,7 @@ export default function ExerciseDetailScreen() {
         </Text>
       )}
       <Button label="Log reps I already did" variant="outline" onPress={() => router.push(`/(app)/train/log?exercise=${ex.id}` as Href)} style={{ marginTop: spacing.sm }} />
-      <View style={{ height: spacing.xl }} />
+      <SquircleSurface style={{ height: spacing.xl }} />
     </ScreenContainer>
   );
 }

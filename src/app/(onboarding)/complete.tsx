@@ -1,7 +1,8 @@
+import { SquircleSurface } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '../../components/ui/Button';
@@ -72,7 +73,7 @@ export default function CompleteOnboardingScreen() {
   ];
 
   return (
-    <View
+    <SquircleSurface
       style={[
         styles.root,
         {
@@ -84,10 +85,10 @@ export default function CompleteOnboardingScreen() {
       ]}
     >
       <ScrollView style={styles.flex} showsVerticalScrollIndicator={false}>
-        <View style={styles.headerBlock}>
-          <View style={[styles.successIconBadge, { backgroundColor: colors.primaryAlpha }]}>
+        <SquircleSurface style={styles.headerBlock}>
+          <SquircleSurface style={[styles.successIconBadge, { backgroundColor: colors.primaryAlpha }]}>
             <Ionicons name="checkmark-circle" size={36} color={colors.primary} />
-          </View>
+          </SquircleSurface>
           <Text
             style={[typography.display, styles.center, { color: colors.text.primary, marginTop: spacing.md }]}
             accessibilityRole="header"
@@ -97,45 +98,45 @@ export default function CompleteOnboardingScreen() {
           <Text style={[typography.body, styles.center, { color: colors.text.secondary, marginTop: spacing.xs }]}>
             Your daily quests now fit your goals, pace and limits.
           </Text>
-        </View>
+        </SquircleSurface>
 
         {/* Level, setup XP and diamonds actually earned */}
-        <View style={[styles.rewardsContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <View style={styles.rewardTile}>
-            <View style={[styles.tileIconContainer, { backgroundColor: colors.primaryAlpha }]}>
+        <SquircleSurface style={[styles.rewardsContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <SquircleSurface style={styles.rewardTile}>
+            <SquircleSurface style={[styles.tileIconContainer, { backgroundColor: colors.primaryAlpha }]}>
               <Ionicons name="trending-up-outline" size={18} color={colors.primary} />
-            </View>
+            </SquircleSurface>
             <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 4 }]}>{level}</Text>
             <Text style={[typography.captionBold, { color: colors.text.muted, marginTop: 1 }]}>Level</Text>
-          </View>
+          </SquircleSurface>
 
-          <View style={[styles.tileDivider, { backgroundColor: colors.border }]} />
+          <SquircleSurface style={[styles.tileDivider, { backgroundColor: colors.border }]} />
 
-          <View style={styles.rewardTile}>
-            <View style={[styles.tileIconContainer, { backgroundColor: colors.primaryAlpha }]}>
+          <SquircleSurface style={styles.rewardTile}>
+            <SquircleSurface style={[styles.tileIconContainer, { backgroundColor: colors.primaryAlpha }]}>
               <Ionicons name="flash-outline" size={18} color={colors.primary} />
-            </View>
+            </SquircleSurface>
             <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 4 }]}>+{setupXp}</Text>
             <Text style={[typography.captionBold, { color: colors.text.muted, marginTop: 1 }]}>Setup XP</Text>
-          </View>
+          </SquircleSurface>
 
-          <View style={[styles.tileDivider, { backgroundColor: colors.border }]} />
+          <SquircleSurface style={[styles.tileDivider, { backgroundColor: colors.border }]} />
 
-          <View style={styles.rewardTile}>
-            <View style={[styles.tileIconContainer, { backgroundColor: colors.primaryAlpha }]}>
+          <SquircleSurface style={styles.rewardTile}>
+            <SquircleSurface style={[styles.tileIconContainer, { backgroundColor: colors.primaryAlpha }]}>
               <Ionicons name="diamond-outline" size={18} color={colors.primary} />
-            </View>
+            </SquircleSurface>
             <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 4 }]}>{diamonds}</Text>
             <Text style={[typography.captionBold, { color: colors.text.muted, marginTop: 1 }]}>Diamonds</Text>
-          </View>
-        </View>
+          </SquircleSurface>
+        </SquircleSurface>
 
         <Card style={{ marginTop: spacing.lg, padding: spacing.base }}>
           <Text style={[typography.label, { color: colors.text.muted, marginBottom: 12 }]}>
             Your plan
           </Text>
           {rows.map((r) => (
-            <View
+            <SquircleSurface
               key={r.label}
               style={[
                 styles.row,
@@ -146,7 +147,7 @@ export default function CompleteOnboardingScreen() {
               <Text style={[typography.subbodyBold, styles.flex, { color: colors.text.primary }]} numberOfLines={2}>
                 {r.value}
               </Text>
-            </View>
+            </SquircleSurface>
           ))}
         </Card>
 
@@ -163,11 +164,11 @@ export default function CompleteOnboardingScreen() {
         </PressableScale>
       </ScrollView>
 
-      <View style={{ gap: 8 }}>
+      <SquircleSurface style={{ gap: 8 }}>
         <Button label="Start today's check-in" size="lg" onPress={() => finish('/(app)/check-in')} />
         <Button label="Go to home" variant="ghost" onPress={() => finish()} />
-      </View>
-    </View>
+      </SquircleSurface>
+    </SquircleSurface>
   );
 }
 

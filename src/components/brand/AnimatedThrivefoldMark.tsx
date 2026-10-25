@@ -1,3 +1,4 @@
+import { SquircleSurface } from '@/components/ui';
 /**
  * The living Thrivefold mark: terracotta T, sage leaf, golden sun (same geometry as the
  * app icon, on a 1024 grid). Three stacked layers so each part moves on its own:
@@ -102,7 +103,7 @@ export function AnimatedThrivefoldMark({ size = 96, entrance = true, living = tr
   );
 
   return (
-    <View style={box} accessibilityRole="image" accessibilityLabel="Thrivefold">
+    <SquircleSurface style={box} accessibilityRole="image" accessibilityLabel="Thrivefold">
       <Animated.View style={[StyleSheet.absoluteFill, tStyle]}>{layer(<Path d={T_PATH} fill={T_COLOR} />)}</Animated.View>
       <Animated.View style={[StyleSheet.absoluteFill, styles.leafOrigin, leafStyle]}>
         {layer(
@@ -114,7 +115,7 @@ export function AnimatedThrivefoldMark({ size = 96, entrance = true, living = tr
       </Animated.View>
       <Animated.View style={[StyleSheet.absoluteFill, styles.sunOrigin, glowStyle]}>{layer(<Circle cx={585} cy={421} r={42} fill={SUN_COLOR} />)}</Animated.View>
       <Animated.View style={[StyleSheet.absoluteFill, styles.sunOrigin, sunStyle]}>{layer(<Circle cx={585} cy={421} r={42} fill={SUN_COLOR} />)}</Animated.View>
-    </View>
+    </SquircleSurface>
   );
 }
 

@@ -1,13 +1,5 @@
 import React, { type ReactNode } from 'react';
-import {
-  ActivityIndicator,
-  StyleProp,
-  StyleSheet,
-  Text,
-  TextStyle,
-  View,
-  ViewStyle,
-} from 'react-native';
+import { ActivityIndicator, StyleProp, StyleSheet, Text, TextStyle, ViewStyle } from 'react-native';
 import { useTheme } from '../../theme/useTheme';
 import { PressableScale, type PressableScaleProps } from './PressableScale';
 import { SquircleSurface } from './SquircleSurface';
@@ -135,21 +127,21 @@ export const Button: React.FC<ButtonProps> = ({
           },
         ]}
       >
-        <View style={styles.content}>
-          <View style={[styles.row, loading && styles.hidden]}>
+        <SquircleSurface style={styles.content}>
+          <SquircleSurface style={[styles.row, loading && styles.hidden]}>
             {icon}
             {displayLabel ? (
               <Text numberOfLines={1} style={[textStyle, icon ? { marginLeft: 8 } : null]}>
                 {displayLabel}
               </Text>
             ) : null}
-          </View>
+          </SquircleSurface>
           {loading ? (
-            <View style={styles.spinner} pointerEvents="none">
+            <SquircleSurface style={styles.spinner} pointerEvents="none">
               <ActivityIndicator color={palette.text} size="small" />
-            </View>
+            </SquircleSurface>
           ) : null}
-        </View>
+        </SquircleSurface>
       </SquircleSurface>
     </PressableScale>
   );

@@ -1,7 +1,8 @@
+import { SquircleSurface } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, type Href } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { FlatList, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TextInput } from 'react-native';
 
 import { AppHeader } from '../../../components/ui/AppHeader';
 import { Chip } from '../../../components/ui/Chip';
@@ -35,7 +36,7 @@ export default function ExerciseLibraryScreen() {
 
   return (
     <ScreenContainer header={<AppHeader title="Exercise library" subtitle={`${EXERCISES.length} movements with steps and videos`} showBack />} scrollMode="none">
-      <View style={{ paddingHorizontal: spacing.base }}>
+      <SquircleSurface style={{ paddingHorizontal: spacing.base }}>
         <TextInput
           value={query}
           onChangeText={setQuery}
@@ -43,12 +44,12 @@ export default function ExerciseLibraryScreen() {
           placeholderTextColor={colors.text.muted}
           style={[styles.input, typography.body, { backgroundColor: colors.surface, color: colors.text.primary, borderColor: colors.border }]}
         />
-        <View style={[styles.chips, { marginTop: spacing.sm }]}>
+        <SquircleSurface style={[styles.chips, { marginTop: spacing.sm }]}>
           {EQUIP.map((e) => (
             <Chip key={e.id} label={e.label} selected={equip === e.id} onPress={() => setEquip(e.id)} />
           ))}
-        </View>
-      </View>
+        </SquircleSurface>
+      </SquircleSurface>
       <FlatList
         data={list}
         keyExtractor={(e) => e.id}
@@ -61,12 +62,12 @@ export default function ExerciseLibraryScreen() {
             accessibilityRole="button"
             style={[styles.row, { borderBottomColor: colors.border }]}
           >
-            <View style={styles.flex}>
+            <SquircleSurface style={styles.flex}>
               <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{item.name}</Text>
               <Text style={[typography.caption, { color: colors.text.secondary }]}>
                 {item.pattern} · {item.equipment === 'none' ? 'no equipment' : item.equipment}
               </Text>
-            </View>
+            </SquircleSurface>
             {videoFor(item.id) ? <Ionicons name="play-circle-outline" size={18} color={colors.primary} style={styles.icon} /> : null}
             {movementForExercise(item.id) ? <Ionicons name="scan-outline" size={18} color={colors.primary} style={styles.icon} /> : null}
             <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />

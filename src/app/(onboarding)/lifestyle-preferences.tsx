@@ -1,6 +1,7 @@
+import { SquircleSurface } from '@/components/ui';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 
 import { OnboardingScaffold } from '../../components/onboarding/OnboardingScaffold';
 import { Button } from '../../components/ui/Button';
@@ -75,7 +76,7 @@ export default function LifestylePreferencesScreen() {
   };
 
   const content = (
-    <View>
+    <SquircleSurface>
       <Card style={{ padding: spacing.base, marginBottom: spacing.lg }}>
         <Text style={[typography.subbody, { color: colors.text.secondary }]}>
           Only used to tailor meal ideas and the reminders you pick. Never used to guess anything
@@ -88,7 +89,7 @@ export default function LifestylePreferencesScreen() {
       >
         Eating preference
       </Text>
-      <View style={styles.chips}>
+      <SquircleSurface style={styles.chips}>
         {DIETS.map((d) => (
           <Chip
             key={d}
@@ -97,7 +98,7 @@ export default function LifestylePreferencesScreen() {
             onPress={() => setOnboardingAnswers({ diet: diet === d ? null : d })}
           />
         ))}
-      </View>
+      </SquircleSurface>
 
       <Text
         style={[
@@ -107,7 +108,7 @@ export default function LifestylePreferencesScreen() {
       >
         Reminders you'd like
       </Text>
-      <View style={styles.chips}>
+      <SquircleSurface style={styles.chips}>
         {REMINDERS.map((r) => (
           <Chip
             key={r}
@@ -116,7 +117,7 @@ export default function LifestylePreferencesScreen() {
             onPress={() => toggleReminder(r)}
           />
         ))}
-      </View>
+      </SquircleSurface>
 
       {isOnboarded && (
         <>
@@ -129,7 +130,7 @@ export default function LifestylePreferencesScreen() {
           />
         </>
       )}
-    </View>
+    </SquircleSurface>
   );
 
   if (!isOnboarded) {
@@ -151,7 +152,7 @@ export default function LifestylePreferencesScreen() {
   return (
     <ScreenWrapper scrollable disableScrollAwareDock>
       <Header title="Food & reminders" subtitle="Optional" showBack />
-      <View style={{ padding: spacing.base }}>{content}</View>
+      <SquircleSurface style={{ padding: spacing.base }}>{content}</SquircleSurface>
     </ScreenWrapper>
   );
 }

@@ -1,7 +1,8 @@
+import { SquircleSurface } from '@/components/ui';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 
 import { AppHeader } from '../../../../components/ui/AppHeader';
 import { Button } from '../../../../components/ui/Button';
@@ -34,7 +35,7 @@ export default function MealScreen() {
     >
       {meal.photoUri ? <Image source={{ uri: meal.photoUri }} style={styles.photo} contentFit="cover" /> : null}
       <Card style={{ padding: spacing.base, marginTop: spacing.md }}>
-        <View style={styles.row}>
+        <SquircleSurface style={styles.row}>
           {(
             [
               ['kcal', `${t.kcal}`],
@@ -43,12 +44,12 @@ export default function MealScreen() {
               ['Fat', `${t.fat} g`],
             ] as const
           ).map(([label, value]) => (
-            <View key={label} style={styles.macro}>
+            <SquircleSurface key={label} style={styles.macro}>
               <Text style={[typography.subheading, { color: colors.text.primary }]}>{value}</Text>
               <Text style={[typography.caption, { color: colors.text.muted }]}>{label}</Text>
-            </View>
+            </SquircleSurface>
           ))}
-        </View>
+        </SquircleSurface>
         {meal.items.map((i) => {
           const f = foodById(i.foodId);
           return (

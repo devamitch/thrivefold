@@ -1,5 +1,6 @@
+import { SquircleSurface } from '@/components/ui';
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
@@ -108,16 +109,16 @@ export default function InsightsScreen() {
   return (
     <ScreenWrapper scrollable>
       <Header title="Your patterns" subtitle="Worked out on this phone from your own records" showBack />
-      <View style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
+      <SquircleSurface style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
         {/* Hero */}
         <Card style={{ marginBottom: spacing.md, padding: 14, backgroundColor: colors.surface }}>
-          <View style={styles.heroWrap}>
+          <SquircleSurface style={styles.heroWrap}>
             <Image
               source={require('../../../../assets/illustrations/intro-vault.jpg')}
               style={styles.heroImage}
               contentFit="cover"
             />
-          </View>
+          </SquircleSurface>
           <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 12 }]}>
             On-Device Cryptographic Memory
           </Text>
@@ -149,13 +150,13 @@ export default function InsightsScreen() {
             const kept = keptRefs.has(insight.id);
             return (
               <Card key={insight.id} style={{ marginBottom: spacing.sm }}>
-                <View style={styles.rowBetween}>
+                <SquircleSurface style={styles.rowBetween}>
                   <Badge label={KIND_LABEL[insight.kind]} variant="neutral" />
                   <Badge
                     label={insight.strength === 'clear' ? 'Clear' : 'Emerging'}
                     variant={insight.strength === 'clear' ? 'success' : 'info'}
                   />
-                </View>
+                </SquircleSurface>
                 <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: spacing.sm }]}>
                   {insight.title}
                 </Text>
@@ -224,14 +225,14 @@ export default function InsightsScreen() {
             }
             style={{ marginTop: spacing.sm }}
           >
-            <View style={styles.rowBetween}>
+            <SquircleSurface style={styles.rowBetween}>
               <Text style={[typography.subbodyBold, { color: colors.text.primary, flex: 1 }]} numberOfLines={1}>
                 {hit.doc.kind === 'journal' ? hit.doc.title || 'Journal entry' : 'Memory'}
               </Text>
               <Text style={[typography.caption, { color: colors.text.muted }]}>
                 {new Date(hit.doc.date).toLocaleDateString()}
               </Text>
-            </View>
+            </SquircleSurface>
             <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>{hit.snippet}</Text>
           </Card>
         ))}
@@ -242,13 +243,13 @@ export default function InsightsScreen() {
             Patterns come from simple statistics on your own check-ins and logged periods, and only appear once
             there is enough data. They describe your records; they are not medical advice or a diagnosis.
           </Text>
-          <View style={styles.links}>
+          <SquircleSurface style={styles.links}>
             <LinkRow label={`Memory (${memories.length})`} icon="bookmark-outline" onPress={() => router.push('/(app)/ai/memory')} />
             <LinkRow label="Privacy" icon="shield-checkmark-outline" onPress={() => router.push('/(app)/ai/privacy')} />
             <LinkRow label="What runs on this device" icon="hardware-chip-outline" onPress={() => router.push('/(app)/ai/model-status')} />
-          </View>
+          </SquircleSurface>
         </Card>
-      </View>
+      </SquircleSurface>
     </ScreenWrapper>
   );
 }

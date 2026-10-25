@@ -1,9 +1,10 @@
+import { SquircleSurface } from '@/components/ui';
 /**
  * Error Boundary Component for Thrivefold matching Neev's architecture.
  * Catches JavaScript errors in child components and displays a clean recovery UI.
  */
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import { AppButton } from './ui/Button';
 import { Card } from './ui/Card';
 
@@ -37,7 +38,7 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <View style={styles.container}>
+        <SquircleSurface style={styles.container}>
           <Card style={styles.card}>
             <Text style={styles.title}>Something went wrong</Text>
             <Text style={styles.message}>
@@ -50,7 +51,7 @@ export class ErrorBoundary extends Component<Props, State> {
             )}
             <AppButton title="Try Again" onPress={this.handleReset} style={styles.button} />
           </Card>
-        </View>
+        </SquircleSurface>
       );
     }
 

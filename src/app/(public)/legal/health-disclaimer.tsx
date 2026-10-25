@@ -1,5 +1,6 @@
+import { SquircleSurface } from '@/components/ui';
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
 import { Header } from '../../../components/ui/Header';
@@ -11,7 +12,7 @@ export default function HealthDisclaimerScreen() {
   return (
     <ScreenWrapper scrollable>
       <Header title="Not medical advice" showBack />
-      <View style={[styles.content, { padding: spacing.base }]}>
+      <SquircleSurface style={[styles.content, { padding: spacing.base }]}>
         <Card variant="tinted" style={{ marginBottom: spacing.md, padding: spacing.base }}>
           <Text style={[typography.subheading, { color: colors.primary, marginBottom: spacing.xs }]}>
             Educational & Self-Care Purpose Only
@@ -29,7 +30,7 @@ export default function HealthDisclaimerScreen() {
             Always consult a qualified doctor or healthcare specialist if experiencing acute pelvic pain, abnormal bleeding, severe urinary discomfort, or persistent depressive distress.
           </Text>
         </Card>
-      </View>
+      </SquircleSurface>
     </ScreenWrapper>
   );
 }

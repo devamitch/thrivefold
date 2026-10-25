@@ -1,5 +1,6 @@
+import { SquircleSurface } from '@/components/ui';
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
@@ -54,11 +55,11 @@ export default function ModelStatusScreen() {
   return (
     <ScreenWrapper scrollable>
       <Header title="On this device" subtitle="What powers suggestions and patterns" showBack />
-      <View style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
+      <SquircleSurface style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
         {COMPONENTS.map((c) => (
           <Card key={c.title} style={{ marginBottom: spacing.sm }}>
-            <View style={styles.row}>
-              <View style={[styles.row, { flex: 1 }]}>
+            <SquircleSurface style={styles.row}>
+              <SquircleSurface style={[styles.row, { flex: 1 }]}>
                 <Ionicons
                   name={c.status === 'active' ? 'checkmark-circle' : 'remove-circle-outline'}
                   size={20}
@@ -67,16 +68,16 @@ export default function ModelStatusScreen() {
                 <Text style={[typography.bodyBold, { color: colors.text.primary, marginLeft: 8, flex: 1 }]}>
                   {c.title}
                 </Text>
-              </View>
+              </SquircleSurface>
               <Badge label={BADGE[c.status].label} variant={BADGE[c.status].variant} />
-            </View>
+            </SquircleSurface>
             <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 6 }]}>{c.body}</Text>
           </Card>
         ))}
         <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.sm }]}>
           All of these work offline. None of them diagnose; they describe your own records.
         </Text>
-      </View>
+      </SquircleSurface>
     </ScreenWrapper>
   );
 }

@@ -1,3 +1,4 @@
+import { SquircleSurface } from '@/components/ui';
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -23,7 +24,7 @@ export default function LetterOutboxScreen() {
         {outbox.length > 0 ? (
           outbox.map((letter) => (
             <Card key={letter.id} style={{ marginBottom: spacing.md, padding: spacing.lg }}>
-              <View style={styles.headerRow}>
+              <SquircleSurface style={styles.headerRow}>
                 <Badge
                   label={letter.status === 'opened' ? 'Opened & Read' : 'Dispatched'}
                   variant={letter.status === 'opened' ? 'success' : 'primary'}
@@ -31,7 +32,7 @@ export default function LetterOutboxScreen() {
                 <Text style={[typography.caption, { color: colors.text.muted }]}>
                   {letter.distanceKm.toLocaleString()} km
                 </Text>
-              </View>
+              </SquircleSurface>
 
               <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 8 }]}>
                 Letter to {letter.recipientPseudonym ?? 'your pen pal'}

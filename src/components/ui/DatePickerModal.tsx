@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text } from 'react-native';
 
 import { formatLocalDate, parseLocalDate } from '../../domain/calendar/universalCalendarEngine';
 import { useTheme } from '../../theme/useTheme';
@@ -104,7 +104,7 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
       maxHeight="90%"
       contentContainerStyle={{ paddingBottom: 16 }}
     >
-      <View style={[styles.nav, { marginTop: spacing.xs }]}>
+      <SquircleSurface style={[styles.nav, { marginTop: spacing.xs }]}>
         <PressableScale
           onPress={() => {
             tick();
@@ -122,7 +122,7 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
           </SquircleSurface>
         </PressableScale>
         {mode === 'day' ? (
-          <View style={styles.arrows}>
+          <SquircleSurface style={styles.arrows}>
             <PressableScale onPress={() => shift(-1)} disabled={!canPrev} scaleTo={0.94} accessibilityRole="button" accessibilityLabel="Previous month">
               <SquircleSurface radius={12} fill={colors.surface1} style={[styles.arrow, { opacity: canPrev ? 1 : 0.35 }]}>
                 <Ionicons name="chevron-back" size={18} color={colors.text.primary} />
@@ -133,11 +133,11 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
                 <Ionicons name="chevron-forward" size={18} color={colors.text.primary} />
               </SquircleSurface>
             </PressableScale>
-          </View>
+          </SquircleSurface>
         ) : null}
-      </View>
+      </SquircleSurface>
 
-      <View style={[styles.body, { marginTop: spacing.md }]}>
+      <SquircleSurface style={[styles.body, { marginTop: spacing.md }]}>
         {mode === 'year' ? (
           <ScrollView
             ref={yearScroll}
@@ -147,7 +147,7 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
               yearScroll.current?.scrollTo({ y: Math.max(0, (row - 2) * YEAR_ROW), animated: false });
             }}
           >
-            <View style={styles.grid}>
+            <SquircleSurface style={styles.grid}>
               {years.map((y) => {
                 const on = y === year;
                 return (
@@ -169,10 +169,10 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
                   </PressableScale>
                 );
               })}
-            </View>
+            </SquircleSurface>
           </ScrollView>
         ) : mode === 'month' ? (
-          <View style={styles.grid}>
+          <SquircleSurface style={styles.grid}>
             {MONTHS.map((m, i) => {
               const on = i === month;
               const ok = monthAllowed(year, i);
@@ -196,19 +196,19 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
                 </PressableScale>
               );
             })}
-          </View>
+          </SquircleSurface>
         ) : (
           <>
-            <View style={styles.week}>
+            <SquircleSurface style={styles.week}>
               {WEEKDAYS.map((d, i) => (
                 <Text key={i} style={[typography.captionBold, styles.weekCell, { color: colors.text.muted }]}>
                   {d}
                 </Text>
               ))}
-            </View>
-            <View style={styles.grid}>
+            </SquircleSurface>
+            <SquircleSurface style={styles.grid}>
               {cells.map((d, i) => {
-                if (d === null) return <View key={`e${i}`} style={styles.dayCell} />;
+                if (d === null) return <SquircleSurface key={`e${i}`} style={styles.dayCell} />;
                 const ds = iso(year, month, d);
                 const on = ds === selected;
                 const ok = allowed(ds);
@@ -244,15 +244,15 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
                   </PressableScale>
                 );
               })}
-            </View>
+            </SquircleSurface>
           </>
         )}
-      </View>
+      </SquircleSurface>
 
-      <View style={[styles.actions, { marginTop: spacing.md }]}>
+      <SquircleSurface style={[styles.actions, { marginTop: spacing.md }]}>
         <Button label="Cancel" variant="ghost" onPress={onClose} style={styles.flex} />
         <Button label="Done" onPress={() => allowed(selected) && onChange(selected)} disabled={!allowed(selected)} style={styles.flex} />
-      </View>
+      </SquircleSurface>
     </AppBottomSheetModal>
   );
 };

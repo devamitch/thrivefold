@@ -1,3 +1,4 @@
+import { SquircleSurface } from '@/components/ui';
 /**
  * Thrivefold Sanctuary Bottom Dock (Traced from Neev/BlinkQuest canonical dock architecture):
  * - Edge-to-edge, anchored to bottom: no side or bottom gaps; runs under system navigation area
@@ -305,7 +306,7 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
       pointerEvents="box-none"
       style={[styles.dock, containerAnimStyle]}
     >
-      <View style={{ width: barW, height: barH, alignSelf: 'center' }} pointerEvents="box-none">
+      <SquircleSurface style={{ width: barW, height: barH, alignSelf: 'center' }} pointerEvents="box-none">
         <Svg width={barW} height={barH} style={StyleSheet.absoluteFill} pointerEvents="none">
           <Defs>
             <ClipPath id="dockClip">
@@ -319,13 +320,13 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
         </Svg>
 
         {/* Tab buttons row */}
-        <View style={[styles.row, { paddingHorizontal: bleed }]} accessibilityRole="tablist">
-          <View style={styles.side}>{left.map((route, i) => renderTab(route, i))}</View>
-          <View style={styles.centerSlot} />
-          <View style={styles.side}>
+        <SquircleSurface style={[styles.row, { paddingHorizontal: bleed }]} accessibilityRole="tablist">
+          <SquircleSurface style={styles.side}>{left.map((route, i) => renderTab(route, i))}</SquircleSurface>
+          <SquircleSurface style={styles.centerSlot} />
+          <SquircleSurface style={styles.side}>
             {right.map((route, i) => renderTab(route, i + left.length))}
-          </View>
-        </View>
+          </SquircleSurface>
+        </SquircleSurface>
 
         {/* Central Action Orb with brand logo */}
         <Animated.View pointerEvents="box-none" style={[styles.centerWrap, orbPress]}>
@@ -344,9 +345,9 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
             scaleTo={0.94}
             style={styles.orbButton}
           >
-            <View style={[styles.centerOrb, { backgroundColor: colors.dockActive }]}>
+            <SquircleSurface style={[styles.centerOrb, { backgroundColor: colors.dockActive }]}>
               <Ionicons name={experienceIcons.orb.icon} size={26} color={colors.dock} />
-            </View>
+            </SquircleSurface>
 
             <Animated.Text
               style={[
@@ -359,7 +360,7 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
             </Animated.Text>
           </PressableScale>
         </Animated.View>
-      </View>
+      </SquircleSurface>
     </Animated.View>
   );
 }

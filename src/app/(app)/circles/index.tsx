@@ -1,6 +1,6 @@
 import { useRouter, type Href } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text } from 'react-native';
 
 import { AppHeader } from '../../../components/ui/AppHeader';
 import { Button } from '../../../components/ui/Button';
@@ -88,9 +88,9 @@ export default function CirclesScreen() {
           <Text style={[typography.subheading, { color: colors.text.primary }]}>{lock.title}</Text>
           <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>{lock.body}</Text>
           {signedIn && level < JOIN_AT ? (
-            <View style={[styles.track, { backgroundColor: colors.surface1, marginTop: spacing.md }]}>
-              <View style={[styles.fill, { backgroundColor: colors.primary, width: `${Math.min(100, (level / JOIN_AT) * 100)}%` }]} />
-            </View>
+            <SquircleSurface style={[styles.track, { backgroundColor: colors.surface1, marginTop: spacing.md }]}>
+              <SquircleSurface style={[styles.fill, { backgroundColor: colors.primary, width: `${Math.min(100, (level / JOIN_AT) * 100)}%` }]} />
+            </SquircleSurface>
           ) : null}
           <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.md }]}>
             Join from level {JOIN_AT}. Start your own group from level {CREATE_AT}.
@@ -101,12 +101,12 @@ export default function CirclesScreen() {
         </SquircleSurface>
       ) : (
         <>
-          <View style={[styles.chips, { marginBottom: spacing.md }]}>
+          <SquircleSurface style={[styles.chips, { marginBottom: spacing.md }]}>
             <Chip label="All" selected={!topic} onPress={() => setTopic(null)} />
             {TOPICS.map((t) => (
               <Chip key={t} label={t} selected={topic === t} onPress={() => setTopic(t)} />
             ))}
-          </View>
+          </SquircleSurface>
 
           {list.isPending ? (
             <ActivityIndicator color={colors.primary} style={{ marginVertical: spacing.lg }} />
@@ -151,18 +151,18 @@ export default function CirclesScreen() {
                   multiline
                   placeholder="Who it's for, where and when you meet"
                 />
-                <View style={[styles.chips, { marginTop: spacing.sm }]}>
+                <SquircleSurface style={[styles.chips, { marginTop: spacing.sm }]}>
                   {TOPICS.map((t) => (
                     <Chip key={t} label={t} selected={form.topic === t} onPress={() => setForm({ ...form, topic: t })} />
                   ))}
-                </View>
+                </SquircleSurface>
                 <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.md }]}>
                   Your group works for you and anyone you invite right away. Before others can find it, we verify the organiser on a short call.
                 </Text>
-                <View style={[styles.row, { marginTop: spacing.md }]}>
+                <SquircleSurface style={[styles.row, { marginTop: spacing.md }]}>
                   <Button label="Cancel" variant="ghost" onPress={() => setForm(null)} style={styles.flex} />
                   <Button label="Create" onPress={submit} loading={create.isPending} disabled={form.name.trim().length < 3 || form.purpose.trim().length < 10} style={styles.flex} />
-                </View>
+                </SquircleSurface>
               </SquircleSurface>
             ) : (
               <SettingsRow icon="add-circle-outline" title="Start a group" subtitle="Gym, therapy, meditation, sports and more" onPress={() => setForm({ name: '', purpose: '', topic: topic ?? TOPICS[0] })} />

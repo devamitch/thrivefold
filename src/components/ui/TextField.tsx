@@ -1,14 +1,5 @@
 import React, { useState } from 'react';
-import {
-  StyleProp,
-  StyleSheet,
-  Text,
-  TextInput,
-  TextInputProps,
-  TextStyle,
-  View,
-  ViewStyle,
-} from 'react-native';
+import { StyleProp, StyleSheet, Text, TextInput, TextInputProps, TextStyle, ViewStyle } from 'react-native';
 import { useTheme } from '../../theme/useTheme';
 import { SquircleSurface } from './SquircleSurface';
 
@@ -34,7 +25,7 @@ export function TextField({
   const [isFocused, setIsFocused] = useState(false);
 
   return (
-    <View style={[styles.container, containerStyle]}>
+    <SquircleSurface style={[styles.container, containerStyle]}>
       {label ? (
         <Text style={[styles.label, typography.caption, { color: colors.text.secondary }]}>
           {label}
@@ -48,7 +39,7 @@ export function TextField({
         strokeWidth={error ? 1 : 0}
         style={styles.surface}
       >
-        <View style={styles.inputWrapper}>
+        <SquircleSurface style={styles.inputWrapper}>
           {leftIcon}
           <TextInput
             placeholderTextColor={colors.text.muted}
@@ -63,14 +54,14 @@ export function TextField({
             {...rest}
           />
           {rightIcon}
-        </View>
+        </SquircleSurface>
       </SquircleSurface>
       {error ? (
         <Text style={[styles.error, typography.caption, { color: colors.error }]}>
           {error}
         </Text>
       ) : null}
-    </View>
+    </SquircleSurface>
   );
 }
 

@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter, type Href } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text } from 'react-native';
 
 import { AppHeader, HeaderIconButton } from '../../../components/ui/AppHeader';
 import { Chip } from '../../../components/ui/Chip';
@@ -161,7 +161,7 @@ export default function CalendarScreen() {
         ))}
       </ScrollView>
 
-      <View style={[styles.nav, { marginTop: spacing.md }]}>
+      <SquircleSurface style={[styles.nav, { marginTop: spacing.md }]}>
         <PressableScale
           onPress={() => setPicker(true)}
           accessibilityRole="button"
@@ -181,9 +181,9 @@ export default function CalendarScreen() {
         ) : null}
         <Arrow icon="chevron-back" label="Previous" onPress={() => step(-1)} />
         <Arrow icon="chevron-forward" label="Next" onPress={() => step(1)} />
-      </View>
+      </SquircleSurface>
 
-      <View style={{ marginTop: spacing.md }}>
+      <SquircleSurface style={{ marginTop: spacing.md }}>
         {mode === 'month' ? (
           <>
             <MonthGrid year={y} month={m} selected={selected} onSelect={setSelected} agendaFor={agendaFor} tone={tone} />
@@ -214,21 +214,21 @@ export default function CalendarScreen() {
           />
         ) : (
           <>
-            <View style={styles.chips}>
+            <SquircleSurface style={styles.chips}>
               {RANGES.map((r) => (
                 <Chip key={r} label={`${r} days`} selected={range === r} onPress={() => setRange(r)} />
               ))}
-            </View>
+            </SquircleSurface>
             {agendaDays.length ? (
               agendaDays.map(({ d, ev }) => <DayList key={d} date={d} events={ev} tone={tone} onOpen={open} compact />)
             ) : (
-              <View style={{ marginTop: spacing.md }}>
+              <SquircleSurface style={{ marginTop: spacing.md }}>
                 <Empty text="Nothing saved in this range." />
-              </View>
+              </SquircleSurface>
             )}
           </>
         )}
-      </View>
+      </SquircleSurface>
 
       <Legend women={experience === 'women_health'} />
 
@@ -267,11 +267,11 @@ function Arrow({ icon, label, onPress }: { icon: 'chevron-back' | 'chevron-forwa
 function Dots({ events, tone }: { events: CalendarEvent[]; tone: Tone }) {
   const shown = events.filter((e) => !isBackground(e) && e.kind !== 'holiday' && e.kind !== 'period').slice(0, 3);
   return (
-    <View style={styles.dots}>
+    <SquircleSurface style={styles.dots}>
       {shown.map((e) => (
-        <View key={e.id} style={[styles.dot, { backgroundColor: tone(e) }]} />
+        <SquircleSurface key={e.id} style={[styles.dot, { backgroundColor: tone(e) }]} />
       ))}
-    </View>
+    </SquircleSurface>
   );
 }
 
@@ -294,14 +294,14 @@ function MonthGrid({
   const cells = useMemo(() => generateMonthGrid(year, month), [year, month]);
   return (
     <SquircleSurface radius={22} fill={colors.surface} style={styles.gridCard}>
-      <View style={styles.row7}>
+      <SquircleSurface style={styles.row7}>
         {WEEKDAYS.map((d, i) => (
           <Text key={i} style={[typography.captionBold, styles.cell7, styles.center, { color: colors.text.muted }]}>
             {d}
           </Text>
         ))}
-      </View>
-      <View style={styles.row7}>
+      </SquircleSurface>
+      <SquircleSurface style={styles.row7}>
         {cells.map((c) => {
           const ev = agendaFor(c.date);
           const on = c.date === selected;
@@ -337,7 +337,7 @@ function MonthGrid({
             </PressableScale>
           );
         })}
-      </View>
+      </SquircleSurface>
     </SquircleSurface>
   );
 }
@@ -358,7 +358,7 @@ function WeekStrip({
   const { colors, typography } = useTheme();
   const today = formatLocalDate(new Date());
   return (
-    <View style={styles.row7}>
+    <SquircleSurface style={styles.row7}>
       {days.map((d, i) => {
         const on = d === selected;
         return (
@@ -371,26 +371,26 @@ function WeekStrip({
           </PressableScale>
         );
       })}
-    </View>
+    </SquircleSurface>
   );
 }
 
 function YearGrid({ year, agendaFor, onMonth }: { year: number; agendaFor: (d: string) => CalendarEvent[]; onMonth: (m: number) => void }) {
   const { colors, typography } = useTheme();
   return (
-    <View style={styles.yearGrid}>
+    <SquircleSurface style={styles.yearGrid}>
       {MONTHS.map((name, mi) => (
         <PressableScale key={name} onPress={() => onMonth(mi)} style={styles.yearCell} accessibilityRole="button" accessibilityLabel={`${name} ${year}`}>
           <SquircleSurface radius={18} fill={colors.surface} style={styles.yearCard}>
             <Text style={[typography.captionBold, { color: colors.text.primary, marginBottom: 4 }]}>{name.slice(0, 3)}</Text>
-            <View style={styles.row7}>
+            <SquircleSurface style={styles.row7}>
               {generateMonthGrid(year, mi).map((c) => {
                 const ev = c.isCurrentMonth ? agendaFor(c.date).filter((e) => !isBackground(e) && e.kind !== 'holiday') : [];
                 const period = ev.some((e) => e.kind === 'period' && e.status === 'recorded');
                 const real = ev.some((e) => e.status !== 'predicted');
                 return (
-                  <View key={c.date} style={styles.miniCell}>
-                    <View
+                  <SquircleSurface key={c.date} style={styles.miniCell}>
+                    <SquircleSurface
                       style={[
                         styles.miniDot,
                         {
@@ -406,14 +406,14 @@ function YearGrid({ year, agendaFor, onMonth }: { year: number; agendaFor: (d: s
                         },
                       ]}
                     />
-                  </View>
+                  </SquircleSurface>
                 );
               })}
-            </View>
+            </SquircleSurface>
           </SquircleSurface>
         </PressableScale>
       ))}
-    </View>
+    </SquircleSurface>
   );
 }
 
@@ -437,7 +437,7 @@ function DayList({
   const { colors, typography, spacing } = useTheme();
   const sorted = [...events].sort((a, b) => (a.startTime ?? '').localeCompare(b.startTime ?? ''));
   return (
-    <View style={{ marginTop: compact ? spacing.md : spacing.lg }}>
+    <SquircleSurface style={{ marginTop: compact ? spacing.md : spacing.lg }}>
       {hideTitle ? null : (
         <Text
           style={[
@@ -462,8 +462,8 @@ function DayList({
             .join(' · ');
           const row = (
             <SquircleSurface radius={16} fill={colors.surface} style={styles.event}>
-              <View style={[styles.bar, { backgroundColor: tone(e) }]} />
-              <View style={styles.flex}>
+              <SquircleSurface style={[styles.bar, { backgroundColor: tone(e) }]} />
+              <SquircleSurface style={styles.flex}>
                 <Text style={[typography.bodyBold, { color: colors.text.primary }]} numberOfLines={2}>
                   {e.title}
                 </Text>
@@ -472,7 +472,7 @@ function DayList({
                     {meta}
                   </Text>
                 ) : null}
-              </View>
+              </SquircleSurface>
               {tappable ? <Ionicons name="chevron-forward" size={16} color={colors.text.muted} /> : null}
             </SquircleSurface>
           );
@@ -481,11 +481,11 @@ function DayList({
               {row}
             </PressableScale>
           ) : (
-            <View key={e.id}>{row}</View>
+            <SquircleSurface key={e.id}>{row}</SquircleSurface>
           );
         })
       )}
-    </View>
+    </SquircleSurface>
   );
 }
 
@@ -513,14 +513,14 @@ function Legend({ women }: { women: boolean }) {
     ...(women ? ([['Period', colors.error]] as [string, string][]) : []),
   ];
   return (
-    <View style={[styles.legend, { marginTop: spacing.lg }]}>
+    <SquircleSurface style={[styles.legend, { marginTop: spacing.lg }]}>
       {items.map(([label, c]) => (
-        <View key={label} style={styles.legendItem}>
-          <View style={[styles.dot, { backgroundColor: c }]} />
+        <SquircleSurface key={label} style={styles.legendItem}>
+          <SquircleSurface style={[styles.dot, { backgroundColor: c }]} />
           <Text style={[typography.caption, { color: colors.text.secondary }]}>{label}</Text>
-        </View>
+        </SquircleSurface>
       ))}
-    </View>
+    </SquircleSurface>
   );
 }
 

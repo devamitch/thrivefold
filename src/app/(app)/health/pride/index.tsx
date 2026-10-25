@@ -1,5 +1,6 @@
+import { SquircleSurface } from '@/components/ui';
 import React, { useState } from 'react';
-import { View, Text } from 'react-native';
+import { Text } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { ScreenWrapper } from '../../../../components/ui/ScreenWrapper';
@@ -32,14 +33,14 @@ export default function PrideWellbeingScreen() {
     <Card style={{ marginBottom: spacing.md, padding: spacing.lg }}>
       <Text style={[typography.subheading, { color: colors.text.primary }]}>{title}</Text>
       <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>{body}</Text>
-      <View style={{ marginTop: spacing.md }}>{children}</View>
+      <SquircleSurface style={{ marginTop: spacing.md }}>{children}</SquircleSurface>
     </Card>
   );
 
   return (
     <ScreenWrapper scrollable>
       <Header title="LGBTQ+ wellbeing" subtitle="Affirming care, on your terms" showBack />
-      <View style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
+      <SquircleSurface style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
         {section(
           'Your identity',
           identity.pronouns || identity.genderDescription
@@ -49,10 +50,10 @@ export default function PrideWellbeingScreen() {
             <>
               <TextField label="Pronouns" value={pronouns} onChangeText={setPronouns} placeholder="e.g. they/them" maxLength={40} />
               <TextField label="Gender, in your words" value={gender} onChangeText={setGender} maxLength={80} containerStyle={{ marginTop: spacing.sm }} />
-              <View style={{ flexDirection: 'row', gap: 8, marginTop: spacing.md }}>
+              <SquircleSurface style={{ flexDirection: 'row', gap: 8, marginTop: spacing.md }}>
                 <Button label="Save" size="sm" onPress={saveIdentity} />
                 <Button label="Cancel" size="sm" variant="ghost" onPress={() => setEditing(false)} />
-              </View>
+              </SquircleSurface>
             </>
           ) : (
             <Button label={identity.pronouns || identity.genderDescription ? 'Edit' : 'Add'} size="sm" variant="outline" onPress={() => setEditing(true)} style={{ alignSelf: 'flex-start' }} />
@@ -74,10 +75,10 @@ export default function PrideWellbeingScreen() {
               startLabel="3-minute grounding"
               cues={['Name 5 things you can see.', 'Name 4 things you can feel.', 'Name 3 things you can hear.', 'Take slow breaths, longer out than in.']}
             />
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: spacing.sm }}>
+            <SquircleSurface style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: spacing.sm }}>
               <Button label="Write a private note" size="sm" variant="outline" onPress={() => router.push('/(app)/journal/new')} />
               <Button label="Urgent support" size="sm" variant="ghost" onPress={() => router.push('/(app)/safety/urgent-support')} />
-            </View>
+            </SquircleSurface>
           </>,
         )}
 
@@ -98,7 +99,7 @@ export default function PrideWellbeingScreen() {
           'Peer support spaces open once communities are available to you; membership is never shown outside the group.',
           <Button label="Circles" size="sm" variant="outline" onPress={() => router.push('/(app)/circles')} style={{ alignSelf: 'flex-start' }} />,
         )}
-      </View>
+      </SquircleSurface>
     </ScreenWrapper>
   );
 }

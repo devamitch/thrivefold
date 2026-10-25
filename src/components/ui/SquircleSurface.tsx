@@ -102,7 +102,7 @@ export const SquircleSurface = memo(function SquircleSurface({
   const paint =
     fill ??
     (typeof flat.backgroundColor === 'string' ? flat.backgroundColor : undefined) ??
-    colors.surface;
+    'transparent';
   const edge = stroke ? strokeWidth : 0;
   const clip = clipContent && flat.overflow !== 'visible';
 
@@ -123,19 +123,33 @@ export const SquircleSurface = memo(function SquircleSurface({
   );
 
   const drawn = Boolean(path);
+  const hasVisual = paint !== 'transparent' || edge > 0;
   const viewStyle = useMemo(
     () => [
       flat,
-      drawn
-        ? styles.clear
-        : {
-            backgroundColor: paint,
-            borderColor: stroke,
-          },
+      hasVisual
+        ? drawn
+          ? styles.clear
+          : {
+              backgroundColor: paint,
+              borderColor: stroke,
+            }
+        : null,
       clip ? { borderRadius: effectiveRadius, overflow: 'hidden' as const } : null,
     ],
-    [clip, drawn, edge, effectiveRadius, flat, paint, stroke]
+    [clip, drawn, effectiveRadius, flat, hasVisual, paint, stroke]
   );
+
+  // Nothing to paint: behave exactly like a plain View. No layout tracking, no extra render,
+  // and no rounded clip, so a SquircleSurface used for layout costs nothing and never cuts
+  // off its children.
+  if (!hasVisual) {
+    return (
+      <View {...rest} onLayout={onLayout} style={style}>
+        {children}
+      </View>
+    );
+  }
 
   // Hardware-accelerated clipping when the native Android view is available.
   if (NativeSquircleView) {
@@ -143,14 +157,14 @@ export const SquircleSurface = memo(function SquircleSurface({
       <NativeSquircleView
         {...rest}
         onLayout={handleLayout}
-        squircleBackgroundColor={processColor(paint) as number | null}
+        squircleBackgroundColor={paint !== 'transparent' ? (processColor(paint) as number | null) : null}
         squircleBorderColor={stroke ? (processColor(stroke) as number | null) : null}
         squircleBorderWidth={edge}
         squircleRadius={effectiveRadius}
         cornerSmoothing={Math.round(smoothing * 100)}
         shape={shape}
         clipContent={clip}
-        style={[flat, styles.clear]}
+        style={[flat, hasVisual ? styles.clear : null]}
       >
         {children}
       </NativeSquircleView>
@@ -159,7 +173,7 @@ export const SquircleSurface = memo(function SquircleSurface({
 
   return (
     <View {...rest} onLayout={handleLayout} style={viewStyle}>
-      {path ? (
+      {path && hasVisual ? (
         <Svg
           pointerEvents="none"
           width={size.width}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
+import { StyleProp, StyleSheet, ViewStyle } from 'react-native';
 import { useTheme } from '../../theme/useTheme';
 import { PressableScale } from './PressableScale';
 import { SquircleSurface } from './SquircleSurface';
@@ -50,7 +50,7 @@ export const Card: React.FC<CardProps> = ({
 
   if (nativeSurface) {
     const content = (
-      <View
+      <SquircleSurface
         style={[
           styles.base,
           {
@@ -64,7 +64,7 @@ export const Card: React.FC<CardProps> = ({
         ]}
       >
         {children}
-      </View>
+      </SquircleSurface>
     );
 
     if (onPress) {

@@ -1,7 +1,8 @@
+import { SquircleSurface } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 
 import { BaselineQuestions } from '../../components/onboarding/BaselineQuestions';
 import { OnboardingScaffold } from '../../components/onboarding/OnboardingScaffold';
@@ -50,12 +51,12 @@ export default function BaselineScreen() {
       <BaselineQuestions />
       {fit.reasons.length > 0 ? (
         <Card style={{ padding: spacing.base, marginTop: spacing.lg }}>
-          <View style={styles.row}>
+          <SquircleSurface style={styles.row}>
             <Ionicons name="options-outline" size={18} color={colors.primary} />
             <Text style={[typography.bodyBold, { color: colors.text.primary, marginLeft: 8 }]}>
               How your quests will fit
             </Text>
-          </View>
+          </SquircleSurface>
           {fit.reasons.map((r) => (
             <Text
               key={r}

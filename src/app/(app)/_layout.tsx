@@ -1,5 +1,6 @@
+import { SquircleSurface } from '@/components/ui';
 import React, { useEffect } from 'react';
-import { AppState, StyleSheet, View } from 'react-native';
+import { AppState, StyleSheet } from 'react-native';
 import { Redirect, Stack, usePathname } from 'expo-router';
 
 import { useRootStore } from '../../stores/useRootStore';
@@ -77,7 +78,7 @@ export default function AppLayout() {
   }
 
   return (
-    <View style={[styles.root, { backgroundColor: colors.surface1 }]}>
+    <SquircleSurface style={[styles.root, { backgroundColor: colors.surface1 }]}>
       <AppDrawer />
       <DrawerSceneWrapper>
         <Stack
@@ -109,7 +110,7 @@ export default function AppLayout() {
           <Stack.Screen name="watch" options={{ animation: 'slide_from_bottom' }} />
         </Stack>
       </DrawerSceneWrapper>
-    </View>
+    </SquircleSurface>
   );
 }
 

@@ -1,5 +1,6 @@
+import { SquircleSurface } from '@/components/ui';
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView } from 'react-native';
+import { Text, StyleSheet, TextInput, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
@@ -62,7 +63,7 @@ export default function NewJournalEntryScreen() {
           <Text style={[typography.captionBold, { color: colors.text.secondary, marginTop: 14, marginBottom: 6 }]}>
             HOW ARE YOU FEELING RIGHT NOW? (MOOD TAG)
           </Text>
-          <View style={styles.moodRow}>
+          <SquircleSurface style={styles.moodRow}>
             {moodOptions.map((m) => (
               <Chip
                 key={m}
@@ -72,7 +73,7 @@ export default function NewJournalEntryScreen() {
                 style={{ width: 44, height: 38, marginRight: 6, marginBottom: 6, justifyContent: 'center', alignItems: 'center' }}
               />
             ))}
-          </View>
+          </SquircleSurface>
 
           <Text style={[typography.captionBold, { color: colors.text.secondary, marginTop: 14, marginBottom: 6 }]}>
             YOUR PRIVATE THOUGHTS
@@ -89,12 +90,12 @@ export default function NewJournalEntryScreen() {
         </Card>
 
         <Card variant="surface1" style={{ marginBottom: spacing.lg }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Ionicons name="lock-closed" size={16} color={colors.primary} />
             <Text style={[typography.captionBold, { color: colors.primary, marginLeft: 6 }]}>
               Stored only on this phone
             </Text>
-          </View>
+          </SquircleSurface>
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
             Zero central cloud upload. Not accessible by community members, employers, or AI cloud proxies.
           </Text>

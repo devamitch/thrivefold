@@ -1,5 +1,6 @@
+import { SquircleSurface } from '@/components/ui';
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { Text, StyleSheet, ScrollView } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../../components/ui/ScreenWrapper';
@@ -24,36 +25,36 @@ export default function OrganizationDetailScreen() {
       />
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
         <Card style={{ marginBottom: spacing.md, padding: spacing.lg }}>
-          <View style={styles.headerRow}>
-            <View>
+          <SquircleSurface style={styles.headerRow}>
+            <SquircleSurface>
               <Text style={[typography.subheading, { color: colors.text.primary }]}>
                 Mind & Body Foundation
               </Text>
               <Text style={[typography.caption, { color: colors.text.muted }]}>
                 ID: {organizationId ?? 'org_default_01'} · Verified Non-Profit
               </Text>
-            </View>
+            </SquircleSurface>
             <Badge label="Verified Credential" variant="success" />
-          </View>
+          </SquircleSurface>
 
-          <View style={styles.statsRow}>
-            <View style={styles.statBox}>
+          <SquircleSurface style={styles.statsRow}>
+            <SquircleSurface style={styles.statBox}>
               <Text style={[typography.heading, { color: colors.primary }]}>3</Text>
               <Text style={[typography.caption, { color: colors.text.secondary }]}>Programs</Text>
-            </View>
-            <View style={styles.statBox}>
+            </SquircleSurface>
+            <SquircleSurface style={styles.statBox}>
               <Text style={[typography.heading, { color: colors.text.primary }]}>42</Text>
               <Text style={[typography.caption, { color: colors.text.secondary }]}>Consented Members</Text>
-            </View>
-            <View style={styles.statBox}>
+            </SquircleSurface>
+            <SquircleSurface style={styles.statBox}>
               <Text style={[typography.heading, { color: colors.success }]}>0</Text>
               <Text style={[typography.caption, { color: colors.text.secondary }]}>Open Incidents</Text>
-            </View>
-          </View>
+            </SquircleSurface>
+          </SquircleSurface>
         </Card>
 
         {/* Tab Switcher */}
-        <View style={[styles.tabBar, { backgroundColor: colors.surface1, borderColor: colors.border }]}>
+        <SquircleSurface style={[styles.tabBar, { backgroundColor: colors.surface1, borderColor: colors.border }]}>
           {(['programs', 'members', 'safety'] as const).map((tab) => (
             <Button
               key={tab}
@@ -64,10 +65,10 @@ export default function OrganizationDetailScreen() {
               style={{ flex: 1 }}
             />
           ))}
-        </View>
+        </SquircleSurface>
 
         {activeTab === 'programs' && (
-          <View>
+          <SquircleSurface>
             <Card style={{ marginBottom: spacing.sm }}>
               <Badge label="Active Cohort" variant="primary" />
               <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 6 }]}>
@@ -87,43 +88,43 @@ export default function OrganizationDetailScreen() {
                 Facilitated by certified peer guides · Audio-only safe space
               </Text>
             </Card>
-          </View>
+          </SquircleSurface>
         )}
 
         {activeTab === 'members' && (
-          <View>
+          <SquircleSurface>
             <Card style={{ marginBottom: spacing.sm }}>
-              <View style={styles.headerRow}>
+              <SquircleSurface style={styles.headerRow}>
                 <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Dr. Astrid Lindgren</Text>
                 <Badge label="Owner / Lead Clinician" variant="primary" />
-              </View>
+              </SquircleSurface>
               <Text style={[typography.caption, { color: colors.text.muted }]}>Verified License: Clinical Psychologist</Text>
             </Card>
 
             <Card style={{ marginBottom: spacing.sm }}>
-              <View style={styles.headerRow}>
+              <SquircleSurface style={styles.headerRow}>
                 <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Elena S.</Text>
                 <Badge label="Peer Facilitator" variant="neutral" />
-              </View>
+              </SquircleSurface>
               <Text style={[typography.caption, { color: colors.text.muted }]}>Trained Peer Facilitator (Non-Clinical)</Text>
             </Card>
-          </View>
+          </SquircleSurface>
         )}
 
         {activeTab === 'safety' && (
-          <View>
+          <SquircleSurface>
             <Card style={{ backgroundColor: colors.surface1 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Ionicons name="checkmark-done-circle" size={20} color={colors.success} />
                 <Text style={[typography.subbodyBold, { color: colors.text.primary, marginLeft: 8 }]}>
                   All Circles Compliant
                 </Text>
-              </View>
+              </SquircleSurface>
               <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>
                 Zero anti-recruitment or harassment incidents flagged across this organization's support groups.
               </Text>
             </Card>
-          </View>
+          </SquircleSurface>
         )}
       </ScrollView>
     </ScreenWrapper>

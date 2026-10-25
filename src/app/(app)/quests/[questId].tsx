@@ -1,5 +1,6 @@
+import { SquircleSurface } from '@/components/ui';
 import React from 'react';
-import { View } from 'react-native';
+
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
@@ -16,9 +17,9 @@ export default function QuestDetailScreen() {
 
   return (
     <ScreenContainer header={<AppHeader title={(taskId && getTaskById(taskId)?.title) || 'Quest'} showBack />} scrollMode="shell-scroll-view">
-      <View>
+      <SquircleSurface>
         <QuestPanel assignmentId={questId ?? ''} onDone={() => router.back()} />
-      </View>
+      </SquircleSurface>
     </ScreenContainer>
   );
 }

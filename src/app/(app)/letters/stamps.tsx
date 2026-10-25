@@ -1,5 +1,6 @@
+import { SquircleSurface } from '@/components/ui';
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
@@ -14,7 +15,7 @@ export default function StampsAlbumScreen() {
   return (
     <ScreenWrapper scrollable>
       <Header title="Stamps" subtitle="Stamps you have collected" showBack />
-      <View style={[styles.content, { paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }]}>
+      <SquircleSurface style={[styles.content, { paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }]}>
         <Card variant="tinted" style={{ marginBottom: spacing.md, padding: spacing.base }}>
           <Text style={[typography.captionBold, { color: colors.primary }]}>
             Earned Through Consistency
@@ -24,10 +25,10 @@ export default function StampsAlbumScreen() {
           </Text>
         </Card>
 
-        <View style={styles.grid}>
+        <SquircleSurface style={styles.grid}>
           {STAMP_CATALOG.map((stamp) => (
             <Card key={stamp.id} style={styles.stampCard}>
-              <View style={[styles.stampFrame, { borderColor: stamp.color, backgroundColor: colors.surface1 }]}>
+              <SquircleSurface style={[styles.stampFrame, { borderColor: stamp.color, backgroundColor: colors.surface1 }]}>
                 <Ionicons
                   name={
                     stamp.icon === 'flower'
@@ -43,7 +44,7 @@ export default function StampsAlbumScreen() {
                   size={30}
                   color={stamp.color}
                 />
-              </View>
+              </SquircleSurface>
               <Text style={[typography.subbodyBold, { color: colors.text.primary, marginTop: 8, textAlign: 'center' }]}>
                 {stamp.name}
               </Text>
@@ -53,8 +54,8 @@ export default function StampsAlbumScreen() {
               </Text>
             </Card>
           ))}
-        </View>
-      </View>
+        </SquircleSurface>
+      </SquircleSurface>
     </ScreenWrapper>
   );
 }

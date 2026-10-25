@@ -1,5 +1,6 @@
+import { SquircleSurface } from '@/components/ui';
 import React, { useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
@@ -63,11 +64,11 @@ export default function ActivityLogScreen() {
       footer={<Button label="Save activity" size="lg" disabled={!valid} onPress={save} />}
     >
       <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: spacing.sm }]}>What did you do?</Text>
-      <View style={styles.chips}>
+      <SquircleSurface style={styles.chips}>
         {ACTIVITY_TYPES.map((t) => (
           <Chip key={t} label={t} selected={type === t} onPress={() => setType(t)} />
         ))}
-      </View>
+      </SquircleSurface>
 
       <TextField
         label="Minutes"
@@ -91,11 +92,11 @@ export default function ActivityLogScreen() {
       <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm }]}>
         How hard was it? (optional)
       </Text>
-      <View style={styles.chips}>
+      <SquircleSurface style={styles.chips}>
         {[2, 4, 6, 8, 10].map((n) => (
           <Chip key={n} label={`${n}/10`} selected={effort === n} onPress={() => setEffort(effort === n ? null : n)} />
         ))}
-      </View>
+      </SquircleSurface>
       <TextField label="Note (optional)" value={note} onChangeText={setNote} maxLength={200} containerStyle={{ marginTop: spacing.lg }} />
 
       <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.xl, marginBottom: spacing.sm }]}>Recent</Text>
@@ -104,8 +105,8 @@ export default function ActivityLogScreen() {
       ) : (
         logs.slice(0, 30).map((l) => (
           <Card key={l.id} style={{ padding: spacing.md, marginBottom: spacing.sm }}>
-            <View style={styles.row}>
-              <View style={{ flex: 1 }}>
+            <SquircleSurface style={styles.row}>
+              <SquircleSurface style={{ flex: 1 }}>
                 <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{l.type}</Text>
                 <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
                   {new Date(`${l.date}T12:00:00`).toLocaleDateString()} · {l.minutes} min
@@ -113,7 +114,7 @@ export default function ActivityLogScreen() {
                   {l.effort ? ` · effort ${l.effort}/10` : ''}
                 </Text>
                 {l.note ? <Text style={[typography.caption, { color: colors.text.muted, marginTop: 2 }]}>{l.note}</Text> : null}
-              </View>
+              </SquircleSurface>
               <PressableScale
                 onPress={() =>
                   showAlert({
@@ -130,7 +131,7 @@ export default function ActivityLogScreen() {
               >
                 <Ionicons name="trash-outline" size={18} color={colors.text.muted} />
               </PressableScale>
-            </View>
+            </SquircleSurface>
           </Card>
         ))
       )}

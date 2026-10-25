@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 
 import { AgendaDayGroup, CalendarEvent } from '../../domain/calendar/universalCalendarEngine';
 import { useTheme } from '../../theme/useTheme';
@@ -33,19 +33,19 @@ export const ContinuousAgendaView: React.FC<ContinuousAgendaViewProps> = ({
 
   return (
     <Card style={{ marginTop: spacing.md, padding: spacing.md }}>
-      <View style={styles.rowBetween}>
-        <View style={{ flex: 1, paddingRight: 8 }}>
+      <SquircleSurface style={styles.rowBetween}>
+        <SquircleSurface style={{ flex: 1, paddingRight: 8 }}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>
             Rolling 30-Day Agenda
           </Text>
           <Text style={[typography.caption, { color: colors.text.muted, marginTop: 1 }]}>
             Starting from {selectedDateStr}
           </Text>
-        </View>
+        </SquircleSurface>
         <Button label="+ Milestone" size="sm" variant="outline" onPress={onOpenMilestoneModal} />
-      </View>
+      </SquircleSurface>
 
-      <View style={{ marginTop: spacing.md }}>
+      <SquircleSurface style={{ marginTop: spacing.md }}>
         {agendaRangeData.map((dayGroup) => {
           const hasItems =
             dayGroup.events.length > 0 ||
@@ -69,7 +69,7 @@ export const ContinuousAgendaView: React.FC<ContinuousAgendaViewProps> = ({
                 accessibilityRole="button"
                 accessibilityLabel={`${dayGroup.date} group`}
               >
-                <View style={{ flexDirection: 'row', alignItems: 'center', flexShrink: 1 }}>
+                <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center', flexShrink: 1 }}>
                   <SquircleSurface
                     radius={12}
                     smoothing={1}
@@ -97,7 +97,7 @@ export const ContinuousAgendaView: React.FC<ContinuousAgendaViewProps> = ({
                     </Text>
                   </SquircleSurface>
 
-                  <View style={{ marginLeft: 10, flexShrink: 1 }}>
+                  <SquircleSurface style={{ marginLeft: 10, flexShrink: 1 }}>
                     <Text style={[typography.captionBold, { color: colors.text.primary }]}>
                       {dayGroup.monthName} {dayGroup.dayOfMonth}, {dayGroup.date.slice(0, 4)}
                     </Text>
@@ -108,18 +108,18 @@ export const ContinuousAgendaView: React.FC<ContinuousAgendaViewProps> = ({
                         {dayGroup.rangeInfo.phaseLabel}
                       </Text>
                     )}
-                  </View>
-                </View>
+                  </SquircleSurface>
+                </SquircleSurface>
 
-                <View style={{ flexDirection: 'row', gap: 4, flexShrink: 0 }}>
+                <SquircleSurface style={{ flexDirection: 'row', gap: 4, flexShrink: 0 }}>
                   {dayGroup.holiday && <Badge label={dayGroup.holiday.name} variant="warning" />}
                   {dayGroup.isToday && <Badge label="Today" variant="primary" />}
-                </View>
+                </SquircleSurface>
               </PressableScale>
 
               {/* Milestones on this day */}
               {dayGroup.personalEvents && dayGroup.personalEvents.length > 0 && (
-                <View style={{ marginTop: 8, gap: 4 }}>
+                <SquircleSurface style={{ marginTop: 8, gap: 4 }}>
                   {dayGroup.personalEvents.map((pe) => (
                     <SquircleSurface
                       key={pe.id}
@@ -143,12 +143,12 @@ export const ContinuousAgendaView: React.FC<ContinuousAgendaViewProps> = ({
                       <Badge label={pe.category} variant="neutral" />
                     </SquircleSurface>
                   ))}
-                </View>
+                </SquircleSurface>
               )}
 
               {/* Tasks on this day */}
               {dayGroup.events.length > 0 ? (
-                <View style={{ marginTop: 8, gap: 6 }}>
+                <SquircleSurface style={{ marginTop: 8, gap: 6 }}>
                   {dayGroup.events.map((ev) => {
                     const isDone = ev.status === 'completed';
                     return (
@@ -207,7 +207,7 @@ export const ContinuousAgendaView: React.FC<ContinuousAgendaViewProps> = ({
                       </PressableScale>
                     );
                   })}
-                </View>
+                </SquircleSurface>
               ) : (
                 <Text
                   style={[
@@ -221,7 +221,7 @@ export const ContinuousAgendaView: React.FC<ContinuousAgendaViewProps> = ({
             </SquircleSurface>
           );
         })}
-      </View>
+      </SquircleSurface>
     </Card>
   );
 };

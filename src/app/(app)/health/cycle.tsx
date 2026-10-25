@@ -1,6 +1,7 @@
+import { SquircleSurface } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text } from 'react-native';
 import { Image } from 'expo-image';
 
 import { Badge } from '../../../components/ui/Badge';
@@ -177,16 +178,16 @@ export default function CycleScreen() {
         showBack
       />
 
-      <View style={[styles.content, { paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }]}>
+      <SquircleSurface style={[styles.content, { paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }]}>
         {/* HERO BANNER CARD */}
         <Card style={{ marginBottom: spacing.md, padding: 14, backgroundColor: colors.surface }}>
-          <View style={styles.heroWrap}>
+          <SquircleSurface style={styles.heroWrap}>
             <Image
               source={require('../../../../assets/illustrations/intro-cycle.jpg')}
               style={styles.heroImage}
               contentFit="cover"
             />
-          </View>
+          </SquircleSurface>
           <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 12 }]}>
             Your cycle
           </Text>
@@ -197,15 +198,15 @@ export default function CycleScreen() {
 
         {/* ACTION BAR: Log Bleeding / Period */}
         <Card style={{ marginBottom: spacing.md, padding: spacing.md, backgroundColor: colors.surface }}>
-          <View style={styles.rowBetween}>
-            <View style={{ flex: 1, paddingRight: 8 }}>
+          <SquircleSurface style={styles.rowBetween}>
+            <SquircleSurface style={{ flex: 1, paddingRight: 8 }}>
               <Text style={[typography.subheading, { color: colors.text.primary }]}>
                 Real Period Logging
               </Text>
               <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
                 Record start/end dates, flow volume, cramps, and symptoms without synthetic fabrication.
               </Text>
-            </View>
+            </SquircleSurface>
             <Button
               label="Log Bleeding"
               size="sm"
@@ -215,35 +216,35 @@ export default function CycleScreen() {
               }}
               style={{ alignSelf: 'center' }}
             />
-          </View>
+          </SquircleSurface>
         </Card>
 
         {/* PREGNANCY PROGRESS (OPT-IN CONTEXT) */}
         {currentContext === 'pregnant' && pregnancyProgress && (
           <Card style={{ marginBottom: spacing.md, padding: spacing.lg, backgroundColor: colors.surface1, borderColor: colors.accent }}>
-            <View style={styles.rowBetween}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <SquircleSurface style={styles.rowBetween}>
+              <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Ionicons name="heart" size={20} color={colors.accent} />
                 <Text style={[typography.heading, { color: colors.text.primary, marginLeft: 8 }]}>
                   Week {pregnancyProgress.gestationalWeeks} + {pregnancyProgress.gestationalDays} Days
                 </Text>
-              </View>
+              </SquircleSurface>
               <Badge label={`Trimester ${pregnancyProgress.trimester}`} variant="primary" />
-            </View>
+            </SquircleSurface>
             <Text style={[typography.bodyBold, { color: colors.accentText, marginTop: 10 }]}>
               Estimated Due Date: {pregnancyProgress.estimatedDueDate.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
             </Text>
             <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>
               {pregnancyProgress.daysUntilDelivery} days remaining until delivery window.
             </Text>
-            <View style={{ marginTop: 12, backgroundColor: colors.surface, padding: 12, borderRadius: 12 }}>
+            <SquircleSurface style={{ marginTop: 12, backgroundColor: colors.surface, padding: 12, borderRadius: 12 }}>
               <Text style={[typography.captionBold, { color: colors.text.primary }]}>
                 Fetal Development Milestone
               </Text>
               <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4, lineHeight: 18 }]}>
                 {pregnancyProgress.developmentMilestone}
               </Text>
-            </View>
+            </SquircleSurface>
             <Text style={[typography.caption, { color: colors.text.muted, marginTop: 10, fontStyle: 'italic' }]}>
               {pregnancyProgress.clinicalGuidance}
             </Text>
@@ -253,12 +254,12 @@ export default function CycleScreen() {
         {/* PCOS / IRREGULAR CLINICAL GUIDANCE */}
         {(currentContext === 'pcos_pcod' || currentContext === 'irregular') && (
           <Card style={{ marginBottom: spacing.md, padding: spacing.md, backgroundColor: colors.surface1 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+            <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
               <Ionicons name="information-circle-outline" size={20} color={colors.primary} />
               <Text style={[typography.subbodyBold, { color: colors.text.primary, marginLeft: 6 }]}>
                 {currentContext === 'pcos_pcod' ? 'PCOS / PCOD Context Active' : 'Irregular Cycle Window Active'}
               </Text>
-            </View>
+            </SquircleSurface>
             <Text style={[typography.caption, { color: colors.text.secondary, lineHeight: 18 }]}>
               Standard ovulation calculations are widened or suppressed because follicular phases vary significantly. Thrivefold statistical estimates cannot diagnose endocrinological conditions or be used as contraception.
             </Text>
@@ -267,12 +268,12 @@ export default function CycleScreen() {
 
         {/* REPRODUCTIVE CONTEXT SELECTOR (PRIVATE) */}
         <Card style={{ marginBottom: spacing.md, padding: spacing.md }}>
-          <View style={styles.rowBetween}>
+          <SquircleSurface style={styles.rowBetween}>
             <Text style={[typography.subheading, { color: colors.text.primary }]}>
               Reproductive Health Context
             </Text>
             <Badge label={currentContext.replace('_', ' ').toUpperCase()} variant="neutral" />
-          </View>
+          </SquircleSurface>
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2, marginBottom: spacing.sm }]}>
             Stored privately on this device. Adapts predictions without guessing sensitive facts.
           </Text>
@@ -320,7 +321,7 @@ export default function CycleScreen() {
         {/* ADVANCED CYCLE METRICS (WHEN NOT PREGNANT) */}
         {currentContext !== 'pregnant' && (
           <Card style={{ marginBottom: spacing.md, padding: spacing.md }}>
-            <View style={styles.rowBetween}>
+            <SquircleSurface style={styles.rowBetween}>
               <Text style={[typography.subheading, { color: colors.text.primary }]}>
                 Deterministic Cycle Statistics
               </Text>
@@ -328,37 +329,37 @@ export default function CycleScreen() {
                 label={`${advancedMetrics.confidenceScore.toUpperCase()} CONFIDENCE`}
                 variant={advancedMetrics.confidenceScore === 'high' ? 'primary' : 'neutral'}
               />
-            </View>
+            </SquircleSurface>
 
-            <View style={styles.metricRow}>
-              <View style={styles.metricItem}>
+            <SquircleSurface style={styles.metricRow}>
+              <SquircleSurface style={styles.metricItem}>
                 <Text style={[typography.caption, { color: colors.text.muted }]}>Average Cycle</Text>
                 <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
                   {advancedMetrics.averageCycleLength} Days
                 </Text>
-              </View>
-              <View style={styles.metricItem}>
+              </SquircleSurface>
+              <SquircleSurface style={styles.metricItem}>
                 <Text style={[typography.caption, { color: colors.text.muted }]}>Bleed Duration</Text>
                 <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
                   {advancedMetrics.averagePeriodDuration} Days
                 </Text>
-              </View>
-              <View style={styles.metricItem}>
+              </SquircleSurface>
+              <SquircleSurface style={styles.metricItem}>
                 <Text style={[typography.caption, { color: colors.text.muted }]}>Variability</Text>
                 <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
                   ±{advancedMetrics.cycleLengthVariabilityDays} Days
                 </Text>
-              </View>
-              <View style={styles.metricItem}>
+              </SquircleSurface>
+              <SquircleSurface style={styles.metricItem}>
                 <Text style={[typography.caption, { color: colors.text.muted }]}>Logged Cycles</Text>
                 <Text style={[typography.bodyBold, { color: colors.primary }]}>
                   {advancedMetrics.recordedCyclesCount} Recorded
                 </Text>
-              </View>
-            </View>
+              </SquircleSurface>
+            </SquircleSurface>
 
             {advancedMetrics.isLate && (
-              <View style={{ marginTop: 12, backgroundColor: colors.warningSurface, padding: 10, borderRadius: 10 }}>
+              <SquircleSurface style={{ marginTop: 12, backgroundColor: colors.warningSurface, padding: 10, borderRadius: 10 }}>
                 <Text style={[typography.captionBold, { color: colors.warning }]}>
                   {advancedMetrics.isConfirmedMissed
                     ? `Confirmed Missed Period (${advancedMetrics.daysLate}d late)`
@@ -367,21 +368,21 @@ export default function CycleScreen() {
                 <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
                   {advancedMetrics.explanationText}
                 </Text>
-              </View>
+              </SquircleSurface>
             )}
           </Card>
         )}
 
         {/* CONFIRMED PERIOD HISTORY LIST */}
         <Card style={{ marginBottom: spacing.md, padding: spacing.md }}>
-          <View style={styles.rowBetween}>
+          <SquircleSurface style={styles.rowBetween}>
             <Text style={[typography.subheading, { color: colors.text.primary }]}>
               Confirmed Bleed Records
             </Text>
             <Text style={[typography.caption, { color: colors.text.muted }]}>
               {cycleData?.periodHistory?.length ?? 0} saved
             </Text>
-          </View>
+          </SquircleSurface>
 
           {(!cycleData?.periodHistory || cycleData.periodHistory.length === 0) ? (
             <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 8 }]}>
@@ -400,19 +401,19 @@ export default function CycleScreen() {
                   { backgroundColor: colors.surface1, marginTop: 8, borderColor: colors.border },
                 ]}
               >
-                <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <SquircleSurface style={{ flex: 1 }}>
+                  <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <Ionicons name="water" size={14} color={colors.accent} style={{ marginRight: 6 }} />
                     <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
                       {new Date(rec.startDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                       {rec.endDate ? ` → ${new Date(rec.endDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}` : ' (Ongoing)'}
                     </Text>
-                  </View>
+                  </SquircleSurface>
                   <Text style={[typography.caption, { color: colors.text.muted, marginTop: 2 }]}>
                     Flow: {rec.flowIntensity.toUpperCase()} {rec.painLevel !== undefined ? `• Cramps: ${rec.painLevel}/10` : ''}
                     {rec.symptoms && rec.symptoms.length > 0 ? ` • ${rec.symptoms.join(', ')}` : ''}
                   </Text>
-                </View>
+                </SquircleSurface>
                 <Text style={[typography.captionBold, { color: colors.primary }]}>Edit</Text>
               </PressableScale>
             ))
@@ -441,12 +442,12 @@ export default function CycleScreen() {
         {/* FOLLICULAR & CYCLE RHYTHM STRIP */}
         {currentContext !== 'pregnant' && predictions && (
           <Card style={{ marginBottom: spacing.md, padding: spacing.md }}>
-            <View style={styles.rowBetween}>
+            <SquircleSurface style={styles.rowBetween}>
               <Text style={[typography.subheading, { color: colors.text.primary }]}>
                 Cycle Rhythm Strip
               </Text>
               <Badge label={activeDay.isToday ? 'Today' : activeDay.weekday} variant="primary" />
-            </View>
+            </SquircleSurface>
             <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2, marginBottom: spacing.sm }]}>
               Menstruation overlaps the early follicular phase. Tap any day to inspect hormonal phase guidance.
             </Text>
@@ -483,7 +484,7 @@ export default function CycleScreen() {
                     >
                       {d.dayNumber}
                     </Text>
-                    <View
+                    <SquircleSurface
                       style={[
                         styles.phaseDot,
                         { backgroundColor: isSelected ? colors.onPrimary : d.cfg.color },
@@ -499,15 +500,15 @@ export default function CycleScreen() {
         {/* Selected Phase Vitality Card */}
         {currentContext !== 'pregnant' && predictions && (
           <Card style={{ marginBottom: spacing.md, padding: spacing.lg, backgroundColor: colors.surface }}>
-            <View style={styles.rowBetween}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View style={[styles.phaseIndicator, { backgroundColor: activePhaseConfig.color }]} />
+            <SquircleSurface style={styles.rowBetween}>
+              <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <SquircleSurface style={[styles.phaseIndicator, { backgroundColor: activePhaseConfig.color }]} />
                 <Text style={[typography.heading, { color: colors.text.primary, marginLeft: 8 }]}>
                   {activePhaseConfig.label} Phase
                 </Text>
-              </View>
+              </SquircleSurface>
               <Badge label={`Day ${predictions.currentPhase.day}`} variant="primary" />
-            </View>
+            </SquircleSurface>
 
             <Text style={[typography.body, { color: colors.text.secondary, marginTop: 10, lineHeight: 22 }]}>
               {activePhaseConfig.description}
@@ -518,7 +519,7 @@ export default function CycleScreen() {
             </Text>
 
             {/* Energy Profile Meters */}
-            <View style={{ marginTop: spacing.md }}>
+            <SquircleSurface style={{ marginTop: spacing.md }}>
               <Text style={[typography.captionBold, { color: colors.text.primary, marginBottom: 8 }]}>
                 Hormonal Vitality Profile
               </Text>
@@ -526,22 +527,22 @@ export default function CycleScreen() {
               <EnergyBar label="Cognitive Focus" value={energy.cognitiveSharpness} color={colors.primary} />
               <EnergyBar label="Social Battery" value={energy.socialBattery} color={colors.accent} />
               <EnergyBar label="Emotional Sensitivity" value={energy.emotionalSensitivity} color={colors.text.muted} />
-            </View>
+            </SquircleSurface>
 
             {/* Tips for this phase */}
-            <View style={{ marginTop: spacing.md }}>
+            <SquircleSurface style={{ marginTop: spacing.md }}>
               <Text style={[typography.captionBold, { color: colors.text.primary, marginBottom: 6 }]}>
                 Nutritional & Movement Guidance
               </Text>
               {activePhaseConfig.tips.slice(0, 3).map((tip) => (
-                <View key={tip} style={styles.tipRow}>
+                <SquircleSurface key={tip} style={styles.tipRow}>
                   <Ionicons name="leaf-outline" size={14} color={activePhaseConfig.color} />
                   <Text style={[typography.caption, { color: colors.text.secondary, marginLeft: 8, flex: 1 }]}>
                     {tip}
                   </Text>
-                </View>
+                </SquircleSurface>
               ))}
-            </View>
+            </SquircleSurface>
           </Card>
         )}
 
@@ -570,32 +571,32 @@ export default function CycleScreen() {
           </Card>
         ) : (
           <Card style={{ marginBottom: spacing.md, padding: spacing.md }} onPress={() => setEditingParams(true)}>
-            <View style={styles.rowBetween}>
+            <SquircleSurface style={styles.rowBetween}>
               <Text style={[typography.subheading, { color: colors.text.primary }]}>
                 Baseline Parameters
               </Text>
               <Text style={[typography.caption, { color: colors.primary }]}>Edit</Text>
-            </View>
-            <View style={styles.metricRow}>
-              <View style={styles.metricItem}>
+            </SquircleSurface>
+            <SquircleSurface style={styles.metricRow}>
+              <SquircleSurface style={styles.metricItem}>
                 <Text style={[typography.caption, { color: colors.text.muted }]}>Cycle Length</Text>
                 <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
                   {cycleData?.cycleLengthDays ?? 28} Days
                 </Text>
-              </View>
-              <View style={styles.metricItem}>
+              </SquircleSurface>
+              <SquircleSurface style={styles.metricItem}>
                 <Text style={[typography.caption, { color: colors.text.muted }]}>Bleed Length</Text>
                 <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
                   {cycleData?.periodLengthDays ?? 5} Days
                 </Text>
-              </View>
-              <View style={styles.metricItem}>
+              </SquircleSurface>
+              <SquircleSurface style={styles.metricItem}>
                 <Text style={[typography.caption, { color: colors.text.muted }]}>Next Period</Text>
                 <Text style={[typography.bodyBold, { color: colors.primary }]}>
                   {predictions ? new Date(predictions.nextPeriodDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Estimated'}
                 </Text>
-              </View>
-            </View>
+              </SquircleSurface>
+            </SquircleSurface>
           </Card>
         )}
 
@@ -604,7 +605,7 @@ export default function CycleScreen() {
           <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: 8 }]}>
             Log Daily Sensations
           </Text>
-          <View style={styles.chipsContainer}>
+          <SquircleSurface style={styles.chipsContainer}>
             {symptomsList.map((sym) => (
               <Chip
                 key={sym}
@@ -613,10 +614,10 @@ export default function CycleScreen() {
                 onPress={() => toggleSymptom(sym)}
               />
             ))}
-          </View>
+          </SquircleSurface>
           <Button label="Save Sensations" size="sm" onPress={saveSymptoms} style={{ marginTop: 14 }} />
         </Card>
-      </View>
+      </SquircleSurface>
 
       {/* Period Logger Modal */}
       <PeriodLoggerModal
@@ -635,15 +636,15 @@ export default function CycleScreen() {
 function EnergyBar({ label, value, color }: { label: string; value: number; color: string }) {
   const { colors, typography } = useTheme();
   return (
-    <View style={styles.energyRow}>
+    <SquircleSurface style={styles.energyRow}>
       <Text style={[typography.caption, { color: colors.text.secondary, width: 120 }]}>{label}</Text>
-      <View style={[styles.energyTrack, { backgroundColor: colors.surface1 }]}>
-        <View style={[styles.energyFill, { width: `${value}%`, backgroundColor: color }]} />
-      </View>
+      <SquircleSurface style={[styles.energyTrack, { backgroundColor: colors.surface1 }]}>
+        <SquircleSurface style={[styles.energyFill, { width: `${value}%`, backgroundColor: color }]} />
+      </SquircleSurface>
       <Text style={[typography.captionBold, { color: colors.text.primary, width: 36, textAlign: 'right' }]}>
         {value}%
       </Text>
-    </View>
+    </SquircleSurface>
   );
 }
 
@@ -660,15 +661,15 @@ function Stepper({
 }) {
   const { colors, typography } = useTheme();
   return (
-    <View style={styles.stepperRow}>
-      <View style={{ flex: 1 }}>
+    <SquircleSurface style={styles.stepperRow}>
+      <SquircleSurface style={{ flex: 1 }}>
         <Text style={[typography.caption, { color: colors.text.muted }]}>{label}</Text>
         <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{value}</Text>
-      </View>
+      </SquircleSurface>
       <Button label="−" variant="ghost" size="sm" onPress={onMinus} accessibilityLabel={`Decrease ${label}`} />
-      <View style={{ width: 8 }} />
+      <SquircleSurface style={{ width: 8 }} />
       <Button label="+" variant="ghost" size="sm" onPress={onPlus} accessibilityLabel={`Increase ${label}`} />
-    </View>
+    </SquircleSurface>
   );
 }
 

@@ -1,12 +1,9 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, LayoutChangeEvent } from 'react-native';
+import { SquircleSurface } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from 'react-native-reanimated';
+import React, { useEffect } from 'react';
+import { LayoutChangeEvent, StyleSheet, Text } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
 import { useTheme } from '../../theme/useTheme';
 import { PressableScale } from './PressableScale';
@@ -23,11 +20,7 @@ export interface AnimatedTabBarProps {
   onTabChange: (id: string) => void;
 }
 
-export const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
-  tabs,
-  activeTab,
-  onTabChange,
-}) => {
+export const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({ tabs, activeTab, onTabChange }) => {
   const { colors, typography } = useTheme();
   const activeIndex = tabs.findIndex((t) => t.id === activeTab);
   const safeIndex = activeIndex >= 0 ? activeIndex : 0;
@@ -61,7 +54,7 @@ export const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
   });
 
   return (
-    <View
+    <SquircleSurface
       onLayout={onContainerLayout}
       style={[styles.container, { backgroundColor: colors.surface1 }]}
     >
@@ -117,7 +110,7 @@ export const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({
           </PressableScale>
         );
       })}
-    </View>
+    </SquircleSurface>
   );
 };
 

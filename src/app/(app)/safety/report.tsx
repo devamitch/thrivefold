@@ -1,5 +1,6 @@
+import { SquircleSurface } from '@/components/ui';
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView, Switch } from 'react-native';
+import { Text, StyleSheet, TextInput, ScrollView, Switch } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
@@ -65,12 +66,12 @@ export default function SafetyReportScreen() {
       <Header title="Report" subtitle="Send details privately" showBack />
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
         <Card style={{ marginBottom: spacing.md, backgroundColor: colors.surface1, borderColor: colors.border }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+          <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
             <Ionicons name="shield-half-outline" size={20} color={colors.primary} />
             <Text style={[typography.subbodyBold, { color: colors.text.primary, marginLeft: 6 }]}>
               We act on behaviour, not identity
             </Text>
-          </View>
+          </SquircleSurface>
           <Text style={[typography.caption, { color: colors.text.secondary, lineHeight: 18 }]}>
             Thrivefold enforces conduct rules based on verifiable evidence. We never restrict accounts based on identity stereotypes, nationality, or faith labels.
           </Text>
@@ -91,7 +92,7 @@ export default function SafetyReportScreen() {
           <Text style={[typography.captionBold, { color: colors.text.secondary, marginTop: 14, marginBottom: 8 }]}>
             VIOLATION CATEGORY
           </Text>
-          <View style={styles.chipRow}>
+          <SquircleSurface style={styles.chipRow}>
             {categories.map((c) => (
               <Chip
                 key={c.id}
@@ -101,7 +102,7 @@ export default function SafetyReportScreen() {
                 style={{ marginRight: 6, marginBottom: 6 }}
               />
             ))}
-          </View>
+          </SquircleSurface>
 
           <Text style={[typography.captionBold, { color: colors.text.secondary, marginTop: 14, marginBottom: 4 }]}>
             EVIDENCE SUMMARY
@@ -118,21 +119,21 @@ export default function SafetyReportScreen() {
         </Card>
 
         <Card style={{ marginBottom: spacing.lg }}>
-          <View style={styles.switchRow}>
-            <View style={{ flex: 1, paddingRight: 12 }}>
+          <SquircleSurface style={styles.switchRow}>
+            <SquircleSurface style={{ flex: 1, paddingRight: 12 }}>
               <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
                 Immediately Block Participant
               </Text>
               <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
                 Permanently cancels any in-transit letters and prevents future introductions.
               </Text>
-            </View>
+            </SquircleSurface>
             <Switch
               value={alsoBlock}
               onValueChange={setAlsoBlock}
               trackColor={{ false: colors.surface1, true: colors.primary }}
             />
-          </View>
+          </SquircleSurface>
         </Card>
 
         <Button label="Submit Safety Report" variant="danger" onPress={handleSubmit} />

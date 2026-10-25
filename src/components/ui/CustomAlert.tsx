@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Modal, Platform, StyleSheet, View, Text } from 'react-native';
+import { Modal, Platform, StyleSheet, Text } from 'react-native';
 import { BlurView } from 'expo-blur';
 
 import { useRootStore } from '../../stores/useRootStore';
@@ -37,7 +37,7 @@ export function CustomAlert() {
       visible={Boolean(alert)}
       onRequestClose={handleCancel}
     >
-      <View style={styles.overlay}>
+      <SquircleSurface style={styles.overlay}>
         <BlurView
           intensity={Platform.OS === 'ios' ? 25 : 10}
           tint="light"
@@ -56,7 +56,7 @@ export function CustomAlert() {
           strokeWidth={0}
           style={styles.dialog}
         >
-          <View style={styles.content}>
+          <SquircleSurface style={styles.content}>
             <Text style={[typography.subheading, styles.title, { color: colors.text.primary }]}>
               {alert.title}
             </Text>
@@ -72,7 +72,7 @@ export function CustomAlert() {
               </Text>
             ) : null}
 
-            <View style={styles.actions}>
+            <SquircleSurface style={styles.actions}>
               {alert.cancelText !== null ? (
                 <Button
                   label={alert.cancelText || 'Cancel'}
@@ -89,10 +89,10 @@ export function CustomAlert() {
                 style={styles.button}
                 onPress={handleConfirm}
               />
-            </View>
-          </View>
+            </SquircleSurface>
+          </SquircleSurface>
         </SquircleSurface>
-      </View>
+      </SquircleSurface>
     </Modal>
   );
 }

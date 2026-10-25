@@ -1,5 +1,6 @@
+import { SquircleSurface } from '@/components/ui';
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
@@ -35,13 +36,13 @@ export default function SocialIntroScreen() {
   return (
     <ScreenWrapper scrollable>
       <Header title="Introductions" subtitle="Slow pace, and both sides agree" showBack />
-      <View style={[styles.content, { paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }]}>
+      <SquircleSurface style={[styles.content, { paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }]}>
         {/* Policy Decision Banner */}
         <Card
           variant={decision.allowed ? 'tinted' : 'surface1'}
           style={[styles.banner, { borderColor: decision.allowed ? colors.primary : colors.warning }]}
         >
-          <View style={styles.rowBetween}>
+          <SquircleSurface style={styles.rowBetween}>
             <Text style={[typography.subbodyBold, { color: decision.allowed ? colors.primary : colors.text.primary }]}>
               Eligibility Status
             </Text>
@@ -49,7 +50,7 @@ export default function SocialIntroScreen() {
               label={decision.allowed ? 'Eligible' : decision.reasonCode}
               variant={decision.allowed ? 'success' : 'warning'}
             />
-          </View>
+          </SquircleSurface>
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>
             Policy: {decision.policyVersion} · Quota: {introsSentToday}/1 sent today
           </Text>
@@ -84,7 +85,7 @@ export default function SocialIntroScreen() {
             </Text>
           </Card>
         )}
-      </View>
+      </SquircleSurface>
     </ScreenWrapper>
   );
 }

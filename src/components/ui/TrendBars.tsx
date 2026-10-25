@@ -1,5 +1,6 @@
+import { SquircleSurface } from '@/components/ui';
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 
 import { useTheme } from '../../theme/useTheme';
 
@@ -14,17 +15,17 @@ export function TrendBars({ points, max, label, unit = '' }: { points: TrendPoin
   const values = points.map((p) => p.value).filter((v): v is number => v !== null);
   const avg = values.length ? Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 10) / 10 : null;
   return (
-    <View accessible accessibilityLabel={`${label}: ${values.length ? `average ${avg}${unit} over ${values.length} days` : 'no data yet'}`}>
-      <View style={styles.row}>
+    <SquircleSurface accessible accessibilityLabel={`${label}: ${values.length ? `average ${avg}${unit} over ${values.length} days` : 'no data yet'}`}>
+      <SquircleSurface style={styles.row}>
         <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{label}</Text>
         <Text style={[typography.caption, { color: colors.text.secondary }]}>
           {avg !== null ? `avg ${avg}${unit} · ${values.length} days` : 'No entries yet'}
         </Text>
-      </View>
-      <View style={styles.bars}>
+      </SquircleSurface>
+      <SquircleSurface style={styles.bars}>
         {points.map((p) => (
-          <View key={p.date} style={styles.slot}>
-            <View
+          <SquircleSurface key={p.date} style={styles.slot}>
+            <SquircleSurface
               style={[
                 styles.bar,
                 p.value === null
@@ -32,10 +33,10 @@ export function TrendBars({ points, max, label, unit = '' }: { points: TrendPoin
                   : { height: `${Math.max(6, (p.value / max) * 100)}%`, backgroundColor: colors.primary },
               ]}
             />
-          </View>
+          </SquircleSurface>
         ))}
-      </View>
-    </View>
+      </SquircleSurface>
+    </SquircleSurface>
   );
 }
 

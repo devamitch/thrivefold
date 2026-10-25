@@ -1,3 +1,4 @@
+import { SquircleSurface } from '@/components/ui';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -82,58 +83,58 @@ export const MultiMonthCycleForecast: React.FC<MultiMonthCycleForecastProps> = (
     <>
       {/* Cycle Health & Rhythm Overview */}
       <Card variant="tinted" style={{ marginTop: spacing.md, padding: spacing.lg }}>
-        <View style={styles.rowBetween}>
-          <View>
+        <SquircleSurface style={styles.rowBetween}>
+          <SquircleSurface>
             <Text style={[typography.captionBold, { color: colors.text.muted }]}>
               CYCLE HEALTH SUMMARY
             </Text>
             <Text style={[typography.heading, { color: colors.primary, marginTop: 2 }]}>
               28-Day Biological Rhythm
             </Text>
-          </View>
+          </SquircleSurface>
           <Badge label="Active Pattern" variant="primary" />
-        </View>
+        </SquircleSurface>
 
-        <View style={[styles.statsGrid, { marginTop: spacing.md }]}>
-          <View style={[styles.statBox, { backgroundColor: colors.surface }]}>
+        <SquircleSurface style={[styles.statsGrid, { marginTop: spacing.md }]}>
+          <SquircleSurface style={[styles.statBox, { backgroundColor: colors.surface }]}>
             <Text style={[typography.caption, { color: colors.text.secondary }]}>Avg Cycle</Text>
             <Text style={[typography.display, { color: colors.primary, marginTop: 2 }]}>
               {cycleData?.cycleLengthDays ?? 28}d
             </Text>
             <Text style={[typography.caption, { color: colors.text.muted }]}>Normal 21–35d</Text>
-          </View>
-          <View style={[styles.statBox, { backgroundColor: colors.surface }]}>
+          </SquircleSurface>
+          <SquircleSurface style={[styles.statBox, { backgroundColor: colors.surface }]}>
             <Text style={[typography.caption, { color: colors.text.secondary }]}>Period Flow</Text>
             <Text style={[typography.display, { color: colors.primary, marginTop: 2 }]}>
               {cycleData?.periodLengthDays ?? 5}d
             </Text>
             <Text style={[typography.caption, { color: colors.text.muted }]}>Regular</Text>
-          </View>
-          <View style={[styles.statBox, { backgroundColor: colors.surface }]}>
+          </SquircleSurface>
+          <SquircleSurface style={[styles.statBox, { backgroundColor: colors.surface }]}>
             <Text style={[typography.caption, { color: colors.text.secondary }]}>Luteal Phase</Text>
             <Text style={[typography.display, { color: colors.primary, marginTop: 2 }]}>
               14d
             </Text>
             <Text style={[typography.caption, { color: colors.text.muted }]}>Consistent</Text>
-          </View>
-        </View>
+          </SquircleSurface>
+        </SquircleSurface>
       </Card>
 
       {/* 12-Month Calculated Future Calendar Forecast */}
       <Card style={{ marginTop: spacing.md, padding: spacing.lg }}>
-        <View style={styles.rowBetween}>
-          <View style={{ flex: 1, paddingRight: 8 }}>
+        <SquircleSurface style={styles.rowBetween}>
+          <SquircleSurface style={{ flex: 1, paddingRight: 8 }}>
             <Text style={[typography.subheading, { color: colors.text.primary }]}>
               12-Month Calculated Forecast
             </Text>
             <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
               Deterministic projections extending across the rolling horizon.
             </Text>
-          </View>
+          </SquircleSurface>
           <Badge label="12 Months" variant="neutral" />
-        </View>
+        </SquircleSurface>
 
-        <View style={{ marginTop: spacing.md }}>
+        <SquircleSurface style={{ marginTop: spacing.md }}>
           {twelveMonthForecast.map((item) => (
             <PressableScale
               key={item.estimatedPeriodStart}
@@ -149,52 +150,52 @@ export const MultiMonthCycleForecast: React.FC<MultiMonthCycleForecastProps> = (
               accessibilityRole="button"
               accessibilityLabel={`${item.monthLabel} forecast`}
             >
-              <View style={styles.rowBetween}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <SquircleSurface style={styles.rowBetween}>
+                <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <Ionicons name="calendar-outline" size={18} color={colors.primary} />
                   <Text style={[typography.bodyBold, { color: colors.text.primary, marginLeft: 8 }]}>
                     {item.monthLabel}
                   </Text>
-                </View>
+                </SquircleSurface>
                 <Badge label={`Cycle #${item.cycleNumber}`} variant="primary" />
-              </View>
+              </SquircleSurface>
 
-              <View style={[styles.rowBetween, { marginTop: 8 }]}>
-                <View>
+              <SquircleSurface style={[styles.rowBetween, { marginTop: 8 }]}>
+                <SquircleSurface>
                   <Text style={[typography.caption, { color: colors.text.muted }]}>Predicted Period</Text>
                   <Text style={[typography.captionBold, { color: colors.primary, marginTop: 2 }]}>
                     {item.estimatedPeriodStart} → {item.estimatedPeriodEnd}
                   </Text>
-                </View>
-                <View style={{ alignItems: 'flex-end' }}>
+                </SquircleSurface>
+                <SquircleSurface style={{ alignItems: 'flex-end' }}>
                   <Text style={[typography.caption, { color: colors.text.muted }]}>Fertile Window</Text>
                   <Text style={[typography.captionBold, { color: colors.accent, marginTop: 2 }]}>
                     {item.estimatedFertileStart} → {item.estimatedFertileEnd}
                   </Text>
-                </View>
-              </View>
+                </SquircleSurface>
+              </SquircleSurface>
 
-              <View style={[styles.rowBetween, { marginTop: 8 }]}>
+              <SquircleSurface style={[styles.rowBetween, { marginTop: 8 }]}>
                 <Text style={[typography.caption, { color: colors.text.secondary }]}>
                   Ovulation est. {item.estimatedOvulation}
                 </Text>
                 <Text style={[typography.captionBold, { color: colors.primary }]}>
                   View in Calendar →
                 </Text>
-              </View>
+              </SquircleSurface>
             </PressableScale>
           ))}
-        </View>
+        </SquircleSurface>
       </Card>
 
       {/* Biological Follicular Development Arc */}
       <Card style={{ marginTop: spacing.md, padding: spacing.lg }}>
-        <View style={styles.rowBetween}>
+        <SquircleSurface style={styles.rowBetween}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>
             Biological Follicular Stages
           </Text>
           <Badge label="Educational" variant="neutral" />
-        </View>
+        </SquircleSurface>
         <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2, marginBottom: spacing.md }]}>
           Cellular development of ovarian follicles from dormant reserve to dominant maturity.
         </Text>
@@ -219,12 +220,12 @@ export const MultiMonthCycleForecast: React.FC<MultiMonthCycleForecastProps> = (
             accessibilityRole="button"
             accessibilityLabel={`${stage.stage} details`}
           >
-            <View style={styles.rowBetween}>
+            <SquircleSurface style={styles.rowBetween}>
               <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
                 {idx + 1}. {stage.stage}
               </Text>
               <Badge label={stage.dayRange} variant="primary" />
-            </View>
+            </SquircleSurface>
             <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>
               {stage.desc}
             </Text>

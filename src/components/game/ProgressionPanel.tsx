@@ -1,5 +1,6 @@
+import { SquircleSurface } from '@/components/ui';
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useTheme } from '../../theme/useTheme';
@@ -63,24 +64,24 @@ export function ProgressionPanel() {
     });
 
   return (
-    <View>
+    <SquircleSurface>
       <Card style={{ padding: spacing.lg, marginTop: spacing.sm }}>
-        <View style={styles.row}>
-          <View style={[styles.emblem, { backgroundColor: colors.primaryAlpha }]}>
+        <SquircleSurface style={styles.row}>
+          <SquircleSurface style={[styles.emblem, { backgroundColor: colors.primaryAlpha }]}>
             <Ionicons name={s.selectedEmblem as keyof typeof Ionicons.glyphMap} size={26} color={colors.primary} />
-          </View>
-          <View style={{ flex: 1, marginLeft: 14 }}>
+          </SquircleSurface>
+          <SquircleSurface style={{ flex: 1, marginLeft: 14 }}>
             <Text style={[typography.caption, { color: colors.text.muted }]}>Chapter {progress.definition.chapterNumber}</Text>
             <Text style={[typography.subheading, { color: colors.text.primary }]}>Level {progress.level}</Text>
-          </View>
-          <View style={styles.diamonds}>
+          </SquircleSurface>
+          <SquircleSurface style={styles.diamonds}>
             <Ionicons name="diamond-outline" size={18} color={colors.primary} />
             <Text style={[typography.bodyBold, { color: colors.text.primary, marginLeft: 4 }]}>{s.diamonds}</Text>
-          </View>
-        </View>
-        <View style={[styles.track, { backgroundColor: colors.surface1, marginTop: spacing.md }]}>
-          <View style={[styles.fill, { backgroundColor: colors.primary, width: `${pct}%` }]} />
-        </View>
+          </SquircleSurface>
+        </SquircleSurface>
+        <SquircleSurface style={[styles.track, { backgroundColor: colors.surface1, marginTop: spacing.md }]}>
+          <SquircleSurface style={[styles.fill, { backgroundColor: colors.primary, width: `${pct}%` }]} />
+        </SquircleSurface>
         <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 6 }]}>
           {progress.blockedByCheckpointId
             ? 'You have the XP for the next level; this chapter ends with a checkpoint that is not available yet.'
@@ -89,7 +90,7 @@ export function ProgressionPanel() {
               : `${s.xp} XP total`}
         </Text>
         {s.signedIn ? (
-          <View style={[styles.row, { marginTop: spacing.sm }]}>
+          <SquircleSurface style={[styles.row, { marginTop: spacing.sm }]}>
             <Ionicons
               name={s.pending > 0 ? 'cloud-upload-outline' : server.data ? 'cloud-done-outline' : 'cloud-offline-outline'}
               size={14}
@@ -102,7 +103,7 @@ export function ProgressionPanel() {
                   ? `Saved to your account: level ${server.data.level}, ${server.data.xp} XP`
                   : 'Not synced yet'}
             </Text>
-          </View>
+          </SquircleSurface>
         ) : null}
       </Card>
 
@@ -115,14 +116,14 @@ export function ProgressionPanel() {
         const owned = status.block === 'OWNED';
         return (
           <Card key={u.id} style={{ marginTop: spacing.sm, padding: spacing.md }}>
-            <View style={styles.row}>
-              <View style={{ flex: 1, paddingRight: 8 }}>
+            <SquircleSurface style={styles.row}>
+              <SquircleSurface style={{ flex: 1, paddingRight: 8 }}>
                 <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{u.title}</Text>
                 <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>{u.description}</Text>
                 <Text style={[typography.caption, { color: colors.text.muted, marginTop: 4 }]}>
                   {u.cost} diamonds · from level {u.minLevel}
                 </Text>
-              </View>
+              </SquircleSurface>
               {owned ? (
                 <Badge label="Owned" variant="success" />
               ) : (
@@ -134,13 +135,13 @@ export function ProgressionPanel() {
                   onPress={() => buy(u.id, u.title, u.cost)}
                 />
               )}
-            </View>
+            </SquircleSurface>
           </Card>
         );
       })}
 
       <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg }]}>Emblem</Text>
-      <View style={[styles.emblemRow, { marginTop: spacing.sm }]}>
+      <SquircleSurface style={[styles.emblemRow, { marginTop: spacing.sm }]}>
         {emblems.map((e) => {
           const selected = e === s.selectedEmblem;
           return (
@@ -159,7 +160,7 @@ export function ProgressionPanel() {
             </PressableScale>
           );
         })}
-      </View>
+      </SquircleSurface>
 
       <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg }]}>Recent rewards</Text>
       {recent.length === 0 ? (
@@ -168,17 +169,17 @@ export function ProgressionPanel() {
         </Text>
       ) : (
         recent.map((e) => (
-          <View key={e.key} style={[styles.row, styles.ledgerRow, { borderBottomColor: colors.border }]}>
+          <SquircleSurface key={e.key} style={[styles.row, styles.ledgerRow, { borderBottomColor: colors.border }]}>
             <Text style={[typography.subbody, { color: colors.text.primary, flex: 1 }]}>{KIND_LABEL[e.kind]}</Text>
             <Text style={[typography.caption, { color: colors.text.secondary }]}>
               {[e.xp ? `+${e.xp} XP` : '', e.taskPoints ? `+${e.taskPoints} pts` : '', e.diamonds ? `${e.diamonds > 0 ? '+' : ''}${e.diamonds} diamonds` : '']
                 .filter(Boolean)
                 .join(' · ')}
             </Text>
-          </View>
+          </SquircleSurface>
         ))
       )}
-    </View>
+    </SquircleSurface>
   );
 }
 

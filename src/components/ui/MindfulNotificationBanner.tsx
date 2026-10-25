@@ -137,7 +137,7 @@ export function MindfulNotificationBanner() {
   const tone = getTone(activeToast.type);
 
   return (
-    <View style={[styles.container, { top: insets.top + 8 }]} pointerEvents="box-none">
+    <SquircleSurface style={[styles.container, { top: insets.top + 8 }]} pointerEvents="box-none">
       <GestureDetector gesture={pan}>
         <Animated.View style={[styles.bannerWrapper, animatedStyle]}>
           <SquircleSurface
@@ -147,7 +147,7 @@ export function MindfulNotificationBanner() {
             strokeWidth={1}
             style={styles.surface}
           >
-            <View style={styles.contentRow}>
+            <SquircleSurface style={styles.contentRow}>
               {/* Tone Icon Tile with SquircleSurface */}
               <SquircleSurface
                 radius={12}
@@ -159,12 +159,12 @@ export function MindfulNotificationBanner() {
               </SquircleSurface>
 
               {/* Notification Body */}
-              <View style={styles.textColumn}>
-                <View style={styles.headerRow}>
+              <SquircleSurface style={styles.textColumn}>
+                <SquircleSurface style={styles.headerRow}>
                   <Text style={[typography.captionBold, styles.categoryPill, { color: tone.color }]}>
                     {tone.category}
                   </Text>
-                </View>
+                </SquircleSurface>
 
                 {activeToast.title || tone.defaultTitle ? (
                   <Text style={[typography.bodyBold, styles.titleText, { color: colors.text.primary }]} numberOfLines={1}>
@@ -194,7 +194,7 @@ export function MindfulNotificationBanner() {
                     </SquircleSurface>
                   </PressableScale>
                 )}
-              </View>
+              </SquircleSurface>
 
               {/* Dismiss Button */}
               <PressableScale
@@ -213,11 +213,11 @@ export function MindfulNotificationBanner() {
                   <Ionicons name="close" size={15} color={colors.text.muted} />
                 </SquircleSurface>
               </PressableScale>
-            </View>
+            </SquircleSurface>
           </SquircleSurface>
         </Animated.View>
       </GestureDetector>
-    </View>
+    </SquircleSurface>
   );
 }
 

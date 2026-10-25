@@ -1,6 +1,7 @@
+import { SquircleSurface } from '@/components/ui';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 
 import { PressableScale } from '../../components/ui/PressableScale';
 import { OnboardingScaffold } from '../../components/onboarding/OnboardingScaffold';
@@ -46,16 +47,16 @@ export default function ActivityConstraintsScreen() {
       onPrimary={next}
       onSkip={next}
     >
-      <View style={styles.chips}>
+      <SquircleSurface style={styles.chips}>
         {activeConstraints.map((c) => (
           <Chip key={c} label={c} selected={constraints.includes(c)} onPress={() => toggle(c)} />
         ))}
-      </View>
+      </SquircleSurface>
 
       <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.xl }]}>
         How long can a daily routine be?
       </Text>
-      <View style={[styles.segment, { backgroundColor: colors.surface1, marginTop: spacing.sm }]}>
+      <SquircleSurface style={[styles.segment, { backgroundColor: colors.surface1, marginTop: spacing.sm }]}>
         {ROUTINE_LENGTHS.map((l) => {
           const selected = routineMinutes === l.value;
           return (
@@ -80,7 +81,7 @@ export default function ActivityConstraintsScreen() {
             </PressableScale>
           );
         })}
-      </View>
+      </SquircleSurface>
     </OnboardingScaffold>
   );
 }
