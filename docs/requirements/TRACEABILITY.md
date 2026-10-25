@@ -1,5 +1,19 @@
 # Requirements Traceability Matrix
 
+## Update — 2026-10-25 (7): Coach workspace, landmark alignment, store performance
+
+Checks: compile 0, lint 0, `pnpm test` 188/188, Android release build PASS (includes another
+agent's uncommitted drawer/Home edits present in the tree). Device install BLOCKED: installed
+build is signed with the upload key (`INSTALL_FAILED_UPDATE_INCOMPATIBLE`).
+
+| Issue | Root cause | Fix | Commit |
+| --- | --- | --- | --- |
+| Landmarks drift / wrong scale over camera | preview and analysis used different aspect ratios, so the overlay's cover maths did not match | both use a 4:3 `ResolutionSelector` | 0cb718c |
+| Coach looked like a call, not coaching | layout | workspace: header, set progress, camera stage with skeleton, fix banner and big count, tutorial + up next, one Set done | 0cb718c |
+| App-wide lag on state changes | every store update stringified the whole state into encrypted MMKV synchronously | writes coalesced (300 ms) and flushed on background; erase cancels pending | 9effa15 |
+| Fake rewards on setup complete | `Math.max(setupXp, 165)`, `Math.max(diamonds, 5)` | real values | d29e79e |
+| Google Sign-In ERR_MODULE_NOT_FOUND (v4 §5) | Node ESM resolution of extensionless imports; file exists in 16.1.5 | none needed for app: Metro release bundle builds | — |
+
 ## Update — 2026-10-25 (6): repair after 47dc0c3 (borders, drawer, Home, coach)
 
 Checks: compile 0, lint 0, `pnpm test` 188/188. `expo config --type prebuild` OK (Firebase
