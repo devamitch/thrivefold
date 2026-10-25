@@ -306,7 +306,7 @@ function Scale({
                     {
                       backgroundColor: active ? colors.primary : colors.surface1,
                       opacity: active ? 0.6 + n * 0.04 : 0.8,
-                      transform: isThumb ? [{ scaleY: 1.15 }] : undefined,
+                      transform: [{ scaleY: isThumb ? 1.15 : 1 }],
                     },
                   ]}
                 />
