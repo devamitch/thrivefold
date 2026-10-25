@@ -1,5 +1,20 @@
 # Requirements Traceability Matrix
 
+## Update — 2026-10-26 (18): groups, AI companion, social gate, coach tracking
+
+Checks: compile 0, lint 0, `pnpm test` 232/232, `pnpm test:db` 145/145. Migrations 14 and 15
+pushed live; `ai-chat` function deployed with provider keys as function secrets (never in the app;
+local copy in git-ignored `supabase/functions/.env`).
+
+| Item | Status |
+| --- | --- |
+| Therapy / practice groups (spec 9.3-9.5) | group page: kind (peer / professional / practice) and rules shown before joining; open or approval joining; card chat with reactions, reports (3 hide for review), moderator hide; facilitator notes (no links/handles/phone numbers); sessions with RSVPs; roles owner/admin/moderator/facilitator/member with ranked server checks; remove (no rejoin) |
+| AI support (spec: optional, consent, cost-capped, server keys) | Ask Thrive chat; consent screen first; only typed text sent; Gemini then Groq then OpenRouter; 40 requests/person/day counted server-side; no content stored; toggle in Privacy. Providers checked with curl: Groq and OpenRouter answer; Gemini key valid but its model was overloaded at the time (falls back) |
+| Letters/dating opened to Home silently | gate screen with the missing steps |
+| Coach tracking | One Euro filter + display-time prediction; luminous skeleton with angle arc |
+| Not used | Apollo, Snov, Instantly, Enrich, EXA (sales/search tools, not app features); ElevenLabs, Deepgram, Cohere, Voyage, Mem0 stored as secrets for later (voice needs an audio module and rebuild) |
+| NOT TESTED on device | all of the above (phone disconnected); groups/dating need verified level-gated accounts |
+
 ## Update — 2026-10-26 (17): dating finished (preferences, ranking, report)
 
 Checks: compile 0, lint 0, `pnpm test` 232/232, `pnpm test:db` 132/132 (+9 dating checks).
