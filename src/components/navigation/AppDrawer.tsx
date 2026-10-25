@@ -293,7 +293,7 @@ export function AppDrawer() {
             scaleTo={0.98}
             style={styles.flex}
             accessibilityRole="button"
-            accessibilityLabel={`${user?.pseudonym || 'You'}, level ${level}. Open profile`}
+            accessibilityLabel={`${user?.pseudonym || 'You'}, level ${level}, ${EXPERIENCE_LABEL[experience]}. Open profile`}
           >
             <SquircleSurface radius={22} fill={palette.wash} style={styles.profileCard}>
               <SquircleSurface radius={16} fill={palette.accentWash} style={styles.avatar}>
@@ -309,7 +309,7 @@ export function AppDrawer() {
                 </Text>
                 <Text style={[typography.caption, { color: palette.inkMuted, marginTop: 1 }]} numberOfLines={1}>
                   Level {level}
-                  {hasStreak ? ` · ${currentStreak} day streak` : ''} · {EXPERIENCE_LABEL[experience]}
+                  {hasStreak ? ` · ${currentStreak} day streak` : ''}
                 </Text>
               </SquircleSurface>
             </SquircleSurface>
