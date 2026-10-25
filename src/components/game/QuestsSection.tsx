@@ -1,11 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
 import { useTheme } from '../../theme/useTheme';
 import { Card } from '../ui/Card';
+import { ActivityRow } from './ActivityRow';
 import { Badge } from '../ui/Badge';
-import { Button } from '../ui/Button';
 import type { Quest } from '../../stores/slices/questSlice';
 import type { LevelProgress } from '../../domain/game/progression';
 
@@ -109,35 +108,23 @@ export const QuestsSection: React.FC<QuestsSectionProps> = ({
         ) : (
           active.map((quest) => {
             const label = STATUS_LABEL[quest.status];
-            const open = !quest.isCompleted && quest.status !== 'skipped';
             return (
-              <Card key={quest.id} onPress={() => onOpenQuest(quest.id)} style={{ marginBottom: 10, padding: spacing.md }}>
-                <View style={styles.rowBetween}>
-                  <View style={{ flex: 1, paddingRight: 8 }}>
-                    <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{quest.title}</Text>
-                    <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]} numberOfLines={2}>
-                      {quest.description}
-                    </Text>
-                    <Text style={[typography.caption, { color: colors.text.muted, marginTop: 4 }]}>
-                      {quest.durationMinutes} min · +{quest.taskPoints} pts · +{quest.xpReward} XP
-                      {quest.isReplacement ? ' · replacement' : ''}
-                    </Text>
-                  </View>
-                  {label ? (
-                    <Badge label={label} variant={quest.isCompleted ? 'success' : 'neutral'} />
-                  ) : (
-                    <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
-                  )}
-                </View>
-                {open ? (
-                  <Button
-                    label={quest.status === 'rejected' ? 'Continue' : 'Start'}
-                    size="sm"
-                    onPress={() => onOpenQuest(quest.id)}
-                    style={{ marginTop: 10, alignSelf: 'flex-start' }}
-                  />
-                ) : null}
-              </Card>
+              <ActivityRow
+                key={quest.id}
+                icon={quest.durationMinutes >= 10 ? 'barbell-outline' : 'flag-outline'}
+                title={quest.title}
+                meta={[
+                  quest.description,
+                  `${quest.durationMinutes} min · +${quest.taskPoints} pts · +${quest.xpReward} XP${quest.isReplacement ? ' · replacement' : ''}`,
+                  label,
+                ]
+                  .filter(Boolean)
+                  .join('\n')}
+                done={quest.isCompleted}
+                dimmed={quest.status === 'skipped'}
+                action={quest.status === 'skipped' ? undefined : quest.status === 'rejected' ? 'Continue' : 'Start'}
+                onPress={() => onOpenQuest(quest.id)}
+              />
             );
           })
         )}

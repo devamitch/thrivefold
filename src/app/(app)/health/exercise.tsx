@@ -2,12 +2,13 @@ import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { ActivityRow } from '../../../components/game/ActivityRow';
+import { PressableScale } from '../../../components/ui/PressableScale';
+import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Header } from '../../../components/ui/Header';
 import { Card } from '../../../components/ui/Card';
-import { Button } from '../../../components/ui/Button';
-import { Badge } from '../../../components/ui/Badge';
 import { Chip } from '../../../components/ui/Chip';
 import { useTheme } from '../../../theme/useTheme';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
@@ -32,6 +33,13 @@ const SETTINGS: { id: 'all' | WorkoutPlan['setting']; label: string }[] = [
 
 /** Workouts hub: plans to start, this week's count and logged history. */
 /** The Train tab and the Workouts screen share this hub. */
+const TRAIN_TOOLS: { icon: keyof typeof Ionicons.glyphMap; label: string; route: Href }[] = [
+  { icon: 'library-outline', label: 'Library', route: '/(app)/train/library' as Href },
+  { icon: 'create-outline', label: 'Log reps', route: '/(app)/train/log' as Href },
+  { icon: 'bicycle-outline', label: 'Run or sport', route: '/(app)/health/activity' as Href },
+  { icon: 'scan-outline', label: 'Form check', route: '/(app)/health/pose-check' as Href },
+];
+
 export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
@@ -77,41 +85,36 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
             Many adults aim for about 150 minutes of moderate activity a week.
           </Text>
           <WeekStrip />
-          <View style={[styles.row, { marginTop: spacing.sm, justifyContent: 'flex-start', gap: 8 }]}>
-            <Button label="Exercise library" size="sm" variant="outline" onPress={() => router.push('/(app)/train/library' as Href)} />
-            <Button label="Log what I did" size="sm" variant="ghost" onPress={() => router.push('/(app)/train/log' as Href)} />
+          <View style={[styles.tools, { marginTop: spacing.md }]}>
+            {TRAIN_TOOLS.map((t) => (
+              <PressableScale key={t.label} onPress={() => router.push(t.route)} style={styles.toolCell} accessibilityRole="button" accessibilityLabel={t.label}>
+                <SquircleSurface radius={16} fill={colors.surface} style={styles.tool}>
+                  <Ionicons name={t.icon} size={20} color={colors.primary} />
+                  <Text style={[typography.captionBold, { color: colors.text.primary, marginTop: 6 }]} numberOfLines={1}>
+                    {t.label}
+                  </Text>
+                </SquircleSurface>
+              </PressableScale>
+            ))}
           </View>
-          <Button
-            label="Log a run, ride, class or sport"
-            size="sm"
-            variant="outline"
-            onPress={() => router.push('/(app)/health/activity' as Href)}
-            style={{ marginTop: spacing.sm, alignSelf: 'flex-start' }}
-          />
-          <Button
-            label="Movement check with camera"
-            size="sm"
-            variant="ghost"
-            onPress={() => router.push('/(app)/health/pose-check' as Href)}
-            style={{ marginTop: spacing.xs, alignSelf: 'flex-start' }}
-          />
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>
             Never train through sharp pain, chest pain or dizziness. General fitness guidance, not medical advice.
           </Text>
         </Card>
 
         {movementQuest ? (
-          <Card
-            variant="tinted"
-            onPress={() => router.push(`/(app)/health/coach/${suggestions[0]?.plan.id ?? 'desk_reset'}?assignmentId=${movementQuest.id}` as Href)}
-            style={{ marginTop: spacing.lg, padding: spacing.base }}
-          >
-            <Text style={[typography.captionBold, { color: colors.primary }]}>TODAY'S MOVEMENT QUEST</Text>
-            <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 2 }]}>{movementQuest.title}</Text>
-            <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-              Do it with the camera coach. Finishing the workout completes this quest (+{movementQuest.xpReward} XP).
-            </Text>
-          </Card>
+          <>
+            <Text style={[typography.label, { color: colors.text.muted, marginTop: spacing.lg, marginBottom: spacing.sm }]}>Today&apos;s movement quest</Text>
+            <ActivityRow
+              icon="flag-outline"
+              title={movementQuest.title}
+              meta={`With the camera coach · finishing it completes the quest · +${movementQuest.xpReward} XP`}
+              done={movementQuest.isCompleted}
+              action="Start"
+              highlight
+              onPress={() => router.push(`/(app)/health/coach/${suggestions[0]?.plan.id ?? 'desk_reset'}?assignmentId=${movementQuest.id}` as Href)}
+            />
+          </>
         ) : null}
 
         {suggestions.length > 0 ? (
@@ -120,26 +123,18 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
             <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
               Tap to start with video, rep counting and form check. Saved to your history and calendar.
             </Text>
-            {suggestions.map(({ plan, reason }, i) => (
-              <Card
-                key={plan.id}
-                variant={i === 0 ? 'tinted' : 'surface'}
-                onPress={() => router.push(`/(app)/health/coach/${plan.id}` as Href)}
-                style={{ marginTop: spacing.sm }}
-              >
-                {i === 0 ? (
-                  <View style={[styles.row, { marginBottom: 6 }]}>
-                    <Text style={[typography.captionBold, { color: colors.primary }]}>START WITH THE CAMERA COACH</Text>
-                    <Ionicons name="videocam" size={16} color={colors.primary} />
-                  </View>
-                ) : null}
-                <View style={styles.row}>
-                  <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{plan.title}</Text>
-                  <Text style={[typography.captionBold, { color: colors.primary }]}>{plan.minutes} min</Text>
-                </View>
-                <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>{reason}</Text>
-              </Card>
-            ))}
+            <View style={{ marginTop: spacing.sm }}>
+              {suggestions.map(({ plan, reason }) => (
+                <ActivityRow
+                  key={plan.id}
+                  icon="videocam-outline"
+                  title={plan.title}
+                  meta={`${plan.minutes} min · ${reason}`}
+                  action="Start"
+                  onPress={() => router.push(`/(app)/health/coach/${plan.id}` as Href)}
+                />
+              ))}
+            </View>
             <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg }]}>All plans</Text>
           </>
         ) : null}
@@ -150,24 +145,17 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
           ))}
         </View>
 
-        {plans.map((plan) => (
-          <Card
-            key={plan.id}
-            // Typed routes regenerate on the next `expo start`; the route file exists.
-            onPress={() => router.push(`/(app)/health/workout/${plan.id}` as Href)}
-            style={{ marginTop: spacing.sm }}
-          >
-            <View style={styles.row}>
-              <Badge label={plan.level === 'beginner' ? 'Beginner' : 'Intermediate'} variant="neutral" />
-              <Text style={[typography.captionBold, { color: colors.primary }]}>{plan.minutes} min</Text>
-            </View>
-            <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.xs }]}>{plan.title}</Text>
-            <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 2 }]}>{plan.summary}</Text>
-            <Text style={[typography.caption, { color: colors.text.muted, marginTop: 6 }]}>
-              {plan.items.map((i) => exerciseById(i.exerciseId)?.name).join(' · ')}
-            </Text>
-          </Card>
-        ))}
+        <View style={{ marginTop: spacing.sm }}>
+          {plans.map((plan) => (
+            <ActivityRow
+              key={plan.id}
+              icon="barbell-outline"
+              title={plan.title}
+              meta={`${plan.level === 'beginner' ? 'Beginner' : 'Intermediate'} · ${plan.minutes} min · ${plan.items.map((i) => exerciseById(i.exerciseId)?.name).join(', ')}`}
+              onPress={() => router.push(`/(app)/health/workout/${plan.id}` as Href)}
+            />
+          ))}
+        </View>
 
         <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg }]}>History</Text>
         {sessions.length === 0 ? (
@@ -175,43 +163,50 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
             No workouts logged yet. Start a plan above; every set you log shows up here.
           </Text>
         ) : (
-          sessions.slice(0, 20).map((s) => {
-            const sets = s.entries.reduce((n, e) => n + e.sets.length, 0);
-            return (
-              <View key={s.id} style={[styles.row, styles.historyRow, { borderBottomColor: colors.border }]}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[typography.subbodyBold, { color: colors.text.primary }]}>
-                    {planById(s.planId)?.title ??
-                      (s.entries.length === 1 ? exerciseById(s.entries[0].exerciseId)?.name ?? 'Workout' : 'Workout')}
-                  </Text>
-                  <Text style={[typography.caption, { color: colors.text.secondary }]}>
-                    {new Date(`${s.date}T12:00:00`).toLocaleDateString()} · {sets} sets
-                    {s.entries.length === 1 ? ` · ${s.entries[0].sets.map((x) => x.value).join('+')}` : ''}
-                    {s.verification === 'camera' ? ' · camera-checked' : s.verification === 'manual' ? ' · self-reported' : ''}
-                    {s.effort ? ` · effort ${s.effort}/10` : ''}
-                    {s.painReported ? ' · discomfort noted' : ''}
-                  </Text>
-                </View>
-                <Pressable
-                  onPress={() =>
-                    showAlert({
-                      title: 'Delete this workout?',
-                      message: 'It will be removed from this device.',
-                      confirmText: 'Delete',
-                      destructive: true,
-                      onConfirm: () => deleteWorkoutSession(s.id),
-                    })
+          <View style={{ marginTop: spacing.sm }}>
+            {sessions.slice(0, 20).map((s) => {
+              const sets = s.entries.reduce((n, e) => n + e.sets.length, 0);
+              const title =
+                planById(s.planId)?.title ?? (s.entries.length === 1 ? exerciseById(s.entries[0].exerciseId)?.name ?? 'Workout' : 'Workout');
+              const meta = [
+                new Date(`${s.date}T12:00:00`).toLocaleDateString(),
+                `${sets} sets`,
+                s.verification === 'camera' ? 'camera-checked' : s.verification === 'manual' ? 'self-reported' : null,
+                s.effort ? `effort ${s.effort}/10` : null,
+                s.painReported ? 'discomfort noted' : null,
+              ]
+                .filter(Boolean)
+                .join(' · ');
+              return (
+                <ActivityRow
+                  key={s.id}
+                  icon="checkmark"
+                  title={title}
+                  meta={meta}
+                  onPress={() => router.push(`/(app)/train/session/${s.id}` as Href)}
+                  trailing={
+                    <Pressable
+                      onPress={() =>
+                        showAlert({
+                          title: 'Delete this workout?',
+                          message: 'It will be removed from this device.',
+                          confirmText: 'Delete',
+                          destructive: true,
+                          onConfirm: () => deleteWorkoutSession(s.id),
+                        })
+                      }
+                      accessibilityRole="button"
+                      accessibilityLabel="Delete workout"
+                      hitSlop={8}
+                      style={styles.iconBtn}
+                    >
+                      <Ionicons name="trash-outline" size={18} color={colors.text.muted} />
+                    </Pressable>
                   }
-                  accessibilityRole="button"
-                  accessibilityLabel="Delete workout"
-                  hitSlop={8}
-                  style={styles.iconBtn}
-                >
-                  <Ionicons name="trash-outline" size={18} color={colors.text.muted} />
-                </Pressable>
-              </View>
-            );
-          })
+                />
+              );
+            })}
+          </View>
         )}
       </View>
     </ScreenWrapper>
@@ -224,7 +219,9 @@ const styles = StyleSheet.create({
   weekDay: { alignItems: 'center', gap: 4 },
   weekDot: { alignItems: 'center', borderRadius: 13, height: 26, justifyContent: 'center', width: 26 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  historyRow: { paddingVertical: 10, minHeight: 52 },
+  tools: { flexDirection: 'row', gap: 8 },
+  toolCell: { flex: 1 },
+  tool: { alignItems: 'center', paddingVertical: 12 },
   iconBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 });
 

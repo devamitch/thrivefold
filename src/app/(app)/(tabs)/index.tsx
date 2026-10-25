@@ -4,12 +4,12 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 
-import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { Chip } from '../../../components/ui/Chip';
 import { PressableScale } from '../../../components/ui/PressableScale';
 import { AppHeader, HeaderIconButton } from '../../../components/ui/AppHeader';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
+import { ActivityRow } from '../../../components/game/ActivityRow';
 import { QuestSheet } from '../../../components/game/QuestSheet';
 import { HomeGuide } from '../../../components/home/HomeGuide';
 import { evaluateDeterministicRoutine } from '../../../domain/ai/deterministicRules';
@@ -398,38 +398,18 @@ export default function HomeScreen() {
 }
 
 function QuestRow({ quest, onPress }: { quest: Quest; onPress: () => void }) {
-  const { colors, typography, spacing } = useTheme();
   const meta = FAMILY_META[questFamily(quest.category)];
   const skipped = quest.status === 'skipped';
   return (
-    <Card onPress={onPress} style={{ padding: spacing.md, marginBottom: spacing.sm, opacity: skipped ? 0.6 : 1 }}>
-      <View style={styles.rowBetween}>
-        <View style={[styles.iconTile, { backgroundColor: quest.isCompleted ? colors.successSurface : colors.primaryAlpha }]}>
-          <Ionicons
-            name={quest.isCompleted ? 'checkmark' : meta.icon}
-            size={20}
-            color={quest.isCompleted ? colors.success : colors.primary}
-          />
-        </View>
-        <View style={[styles.flex, { marginLeft: 12, marginRight: 8 }]}>
-          <Text
-            style={[typography.bodyBold, { color: colors.text.primary, textDecorationLine: quest.isCompleted ? 'line-through' : 'none' }]}
-            numberOfLines={2}
-          >
-            {quest.title}
-          </Text>
-          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-            {meta.label} · {quest.durationMinutes} min · +{quest.taskPoints} pts
-            {skipped ? ' · skipped' : quest.status === 'rejected' ? ' · needs more' : ''}
-          </Text>
-        </View>
-        {quest.isCompleted || skipped ? (
-          <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
-        ) : (
-          <Button label={quest.status === 'rejected' ? 'Continue' : 'Start'} size="sm" onPress={onPress} />
-        )}
-      </View>
-    </Card>
+    <ActivityRow
+      icon={meta.icon}
+      title={quest.title}
+      meta={`${meta.label} · ${quest.durationMinutes} min · +${quest.taskPoints} pts${skipped ? ' · skipped' : quest.status === 'rejected' ? ' · needs more' : ''}`}
+      done={quest.isCompleted}
+      dimmed={skipped}
+      action={skipped ? undefined : quest.status === 'rejected' ? 'Continue' : 'Start'}
+      onPress={onPress}
+    />
   );
 }
 
