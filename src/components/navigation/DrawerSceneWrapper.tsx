@@ -5,7 +5,6 @@ import {
   Pressable,
   StyleSheet,
   useWindowDimensions,
-  View,
 } from 'react-native';
 import Animated, {
   Easing,
@@ -14,7 +13,6 @@ import Animated, {
   runOnJS,
   useAnimatedStyle,
   useReducedMotion,
-  useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -22,6 +20,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useSegments } from 'expo-router';
 
 import { useRootStore } from '../../stores/useRootStore';
+import { drawerProgress, drawerWidthFor } from './drawerProgress';
 import { useTheme } from '../../theme/useTheme';
 
 export function DrawerSceneWrapper({ children }: { children: ReactNode }) {
@@ -33,7 +32,8 @@ export function DrawerSceneWrapper({ children }: { children: ReactNode }) {
   const drawerOpen = useRootStore((s) => s.drawerOpen);
   const setDrawerOpen = useRootStore((s) => s.setDrawerOpen);
 
-  const progress = useSharedValue(0);
+  const progress = drawerProgress;
+  const slide = drawerWidthFor(width);
 
   // Drawer gestures only activate on primary tab roots, preventing conflict with back swipes in nested screens
   const isTabRoot = Array.isArray(segments) && segments[1] === '(tabs)' && segments.length <= 3;
@@ -67,8 +67,7 @@ export function DrawerSceneWrapper({ children }: { children: ReactNode }) {
     .failOffsetY([-18, 18])
     .onChange((event) => {
       'worklet';
-      const drawerWidth = width * 0.72;
-      const delta = event.changeX / drawerWidth;
+      const delta = event.changeX / slide;
       const next = progress.value + delta;
       progress.value = Math.min(Math.max(next, 0), 1);
     })
@@ -94,7 +93,7 @@ export function DrawerSceneWrapper({ children }: { children: ReactNode }) {
       const translateX = interpolate(
         progress.value,
         [0, 1],
-        [0, width * 0.72],
+        [0, slide],
         Extrapolation.CLAMP,
       );
       return {
@@ -111,15 +110,12 @@ export function DrawerSceneWrapper({ children }: { children: ReactNode }) {
     const translateX = interpolate(
       progress.value,
       [0, 1],
-      [0, width * 0.72],
+      [0, slide],
       Extrapolation.CLAMP,
     );
-    const borderRadius = interpolate(
-      progress.value,
-      [0, 1],
-      [0, 24],
-      Extrapolation.CLAMP,
-    );
+    // Round the corners once the screen starts to move (animating the radius every frame
+    // re-clips the whole screen and drops frames on Android).
+    const borderRadius = progress.value > 0.01 ? 24 : 0;
 
     if (Platform.OS === 'ios') {
       const rotateY = interpolate(

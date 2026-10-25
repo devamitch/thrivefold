@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { usePathname, useRouter, type Href } from 'expo-router';
-import React, { useEffect } from 'react';
+import React from 'react';
 import {
   Pressable,
   ScrollView,
@@ -10,28 +10,23 @@ import {
   View,
 } from 'react-native';
 import Animated, {
-  Easing,
   Extrapolation,
   interpolate,
   useAnimatedStyle,
-  useReducedMotion,
-  useSharedValue,
-  withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useRootStore, useShallow } from '../../stores/useRootStore';
 import { DRAWER_SECTIONS } from '../../navigation/drawerItems';
+import { drawerProgress, drawerWidthFor } from './drawerProgress';
 import { useTheme } from '../../theme/useTheme';
 import { Badge } from '../ui/Badge';
-import { SquircleSurface } from '../ui/SquircleSurface';
 
 export function AppDrawer() {
   const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const reduceMotion = useReducedMotion();
   const { colors, typography, spacing, experience } = useTheme();
 
   const { open, setOpen, socialOpen, user, level, currentStreak } = useRootStore(
@@ -45,16 +40,9 @@ export function AppDrawer() {
     })),
   );
 
-  const drawerWidth = Math.min(320, width * 0.72);
-  const progress = useSharedValue(0);
-
-  useEffect(() => {
-    if (reduceMotion) {
-      progress.value = open ? 1 : 0;
-    } else {
-      progress.value = withTiming(open ? 1 : 0, { duration: 250, easing: Easing.out(Easing.cubic) });
-    }
-  }, [open, reduceMotion, progress]);
+  const drawerWidth = drawerWidthFor(width);
+  // Driven by DrawerSceneWrapper (state changes and drags), so panel and screen stay in step.
+  const progress = drawerProgress;
 
   const animatedDrawerStyle = useAnimatedStyle(() => {
     const opacity = interpolate(
