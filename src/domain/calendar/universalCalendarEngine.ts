@@ -52,6 +52,20 @@ export type EventCategory =
 
 export type PrivacyLevel = 'public' | 'private' | 'sensitive_encrypted';
 
+// The forecast depends only on these inputs and today, so a calendar view rendering many days
+// computes it once instead of once per day.
+const cycleMemo = new Map<string, ReturnType<typeof getCyclePredictions>>();
+function cachedCyclePredictions(lastPeriodDate: string, cycleLength: number, periodLength: number) {
+  const key = `${lastPeriodDate}|${cycleLength}|${periodLength}|${formatLocalDate(new Date())}`;
+  let hit = cycleMemo.get(key);
+  if (hit === undefined) {
+    if (cycleMemo.size > 8) cycleMemo.clear();
+    hit = getCyclePredictions(lastPeriodDate, cycleLength, periodLength);
+    cycleMemo.set(key, hit);
+  }
+  return hit;
+}
+
 const PHASE_LABEL = { menstrual: 'Menstrual', follicular: 'Follicular', ovulation: 'Ovulation', luteal: 'Luteal' } as const;
 
 const PERSONAL_EVENT_LABEL: Record<PersonalCalendarEvent['category'], string> = {
@@ -269,7 +283,7 @@ export function generateDayAgenda(
   // Cycle estimates for women's health, only when the person has logged a period.
   if (options.experience === 'women_health') {
     if (options.cycleData) {
-      const cycle = getCyclePredictions(
+      const cycle = cachedCyclePredictions(
         options.cycleData.lastPeriodDate,
         options.cycleData.cycleLengthDays,
         options.cycleData.periodLengthDays

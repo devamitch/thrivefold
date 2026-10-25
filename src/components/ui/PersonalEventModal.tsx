@@ -20,7 +20,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
 import { useTheme } from '../../theme/useTheme';
-import { useRootStore, PersonalCalendarEvent } from '../../stores/useRootStore';
+import { useRootStore, useShallow, type PersonalCalendarEvent } from '../../stores/useRootStore';
 import { Button } from './Button';
 import { TextField } from './TextField';
 import { PressableScale } from './PressableScale';
@@ -79,8 +79,15 @@ export function PersonalEventModal({
 }: PersonalEventModalProps) {
   const { colors, typography, spacing } = useTheme();
   const insets = useSafeAreaInsets();
-  const { addPersonalEvent, editPersonalEvent, deletePersonalEvent, showToast, showAlert } =
-    useRootStore();
+  const { addPersonalEvent, editPersonalEvent, deletePersonalEvent, showToast, showAlert } = useRootStore(
+    useShallow((s) => ({
+      addPersonalEvent: s.addPersonalEvent,
+      editPersonalEvent: s.editPersonalEvent,
+      deletePersonalEvent: s.deletePersonalEvent,
+      showToast: s.showToast,
+      showAlert: s.showAlert,
+    })),
+  );
 
   const [title, setTitle] = useState('');
   const [dateStr, setDateStr] = useState(initialDateStr);
