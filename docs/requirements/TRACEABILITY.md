@@ -1,5 +1,21 @@
 # Requirements Traceability Matrix
 
+## Update — 2026-10-25 (6): repair after 47dc0c3 (borders, drawer, Home, coach)
+
+Checks: compile 0, lint 0, `pnpm test` 188/188. `expo config --type prebuild` OK (Firebase
+plugins resolve); non-clean `expo prebuild` linked Firebase. Not seen on device.
+
+| Issue | Root cause | Fix | Commit |
+| --- | --- | --- | --- |
+| Borders on squircles, cards, chips, badges, buttons | 47dc0c3 added 1px hairlines in `theme/squircle.ts` and default strokes | strokes removed at the source; selected chips use solid fill | 9296a8b |
+| Drawer tears while dragging | panel and screen had separate animations and widths; radius animated per frame | one shared `drawerProgress`, one width, radius set once | 05f18b6 |
+| Home "setup steps left" hidden by `isOnboarded` | cosmetic short-circuit | counts only unanswered, unclaimed sections | e1d6665 |
+| Home order unclear | sections appended without hierarchy | today → plan → space → week → devices → tools | e1d6665 |
+| Coach not a video call; GPU stalls | split view default; 8 Skia canvases over camera + WebView | restored verified logic; full-bleed call stage + corner window; Skia buttons removed | 3e8fab5 |
+| Messy landmarks | face mesh lines and halos on every joint | body bones, small joints, one head ring; halos only on faults | 3e8fab5 |
+| Bouncy sheet | spring overshoot | overshoot clamped | ac8dcb3 |
+| Duplicate components | `BottomSheetModal`, `Squircle`, `GlassOrbButton` unused | deleted | 3e8fab5 |
+
 ## Update — 2026-10-25 (5): calendar views, groups, Home, unified activities
 
 Checks: compile 0, lint 0, `pnpm test` 177/177, `pnpm test:db` 87/87. Not seen on device.
