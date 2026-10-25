@@ -2,14 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { ReactNode, useEffect, useMemo, useState } from 'react';
-import {
-  BackHandler,
-  Platform,
-  Pressable,
-  StyleSheet,
-  useWindowDimensions,
-  View,
-} from 'react-native';
+import { BackHandler, Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   cancelAnimation,
@@ -33,6 +26,7 @@ import {
   drawerTarget,
   drawerWidthFor,
 } from './drawerProgress';
+import { PressableScale } from '../ui/PressableScale';
 
 const CLAMP = Extrapolation.CLAMP;
 const IS_IOS = Platform.OS === 'ios';
@@ -178,7 +172,8 @@ export function DrawerSceneWrapper({ children }: { children: ReactNode }) {
 
         {/* Tap anywhere on the receded screen to close */}
         {drawerOpen ? (
-          <Pressable
+          <PressableScale
+            scaleTo={1}
             style={StyleSheet.absoluteFill}
             onPress={() => setDrawerOpen(false)}
             accessibilityRole="button"

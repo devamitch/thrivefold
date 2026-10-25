@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import React, { useEffect } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -10,6 +10,7 @@ import { setupLedgerKey, setupReward, SETUP_XP_TOTAL, type SetupSection } from '
 import { useRootStore, useShallow } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
 import { Button } from '../ui/Button';
+import { PressableScale } from '../ui/PressableScale';
 
 /** The short, linear onboarding (master spec §3.3). Everything else is optional later. */
 export const ONBOARDING_STEPS = [
@@ -83,7 +84,7 @@ export function OnboardingScaffold({
     <View style={[styles.root, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <View style={[styles.topBar, { paddingHorizontal: spacing.base }]}>
         {index > 0 ? (
-          <Pressable
+          <PressableScale
             onPress={() => router.back()}
             hitSlop={12}
             accessibilityRole="button"
@@ -91,7 +92,7 @@ export function OnboardingScaffold({
             style={styles.topButton}
           >
             <Ionicons name="chevron-back" size={22} color={colors.text.primary} />
-          </Pressable>
+          </PressableScale>
         ) : (
           <View style={styles.topButton} />
         )}
@@ -111,7 +112,7 @@ export function OnboardingScaffold({
           ))}
         </View>
         {onSkip ? (
-          <Pressable
+          <PressableScale
             onPress={onSkip}
             hitSlop={12}
             accessibilityRole="button"
@@ -119,7 +120,7 @@ export function OnboardingScaffold({
             style={[styles.topButton, styles.skip]}
           >
             <Text style={[typography.subbody, { color: colors.text.secondary }]}>Skip</Text>
-          </Pressable>
+          </PressableScale>
         ) : (
           <View style={styles.topButton} />
         )}

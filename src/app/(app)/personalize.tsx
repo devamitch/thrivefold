@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { BaselineQuestions } from '../../components/onboarding/BaselineQuestions';
 import { AppHeader } from '../../components/ui/AppHeader';
@@ -13,6 +13,7 @@ import { EMPTY_BASELINE, fitFor, isSetupSectionAnswered, SETUP_REWARDS, setupLed
 import { constraintsFor, goalsFor, ROUTINE_LENGTHS } from '../../domain/onboarding/options';
 import { useRootStore, useShallow } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
+import { PressableScale } from '../../components/ui/PressableScale';
 
 /**
  * Everything onboarding asked, editable at any time. Each change re-fits today's quests that
@@ -99,7 +100,7 @@ export default function PersonalizeScreen() {
       </Card>
 
       {unanswered.length > 0 ? (
-        <Pressable
+        <PressableScale
           onPress={claimAll}
           accessibilityRole="button"
           style={[styles.claim, { backgroundColor: colors.primaryAlpha, marginTop: spacing.md }]}
@@ -108,7 +109,7 @@ export default function PersonalizeScreen() {
           <Text style={[typography.subbodyBold, styles.flex, { color: colors.primary, marginLeft: 8 }]}>
             {unanswered.reduce((sum, r) => sum + r.xp, 0)} setup XP open. Answer below to earn them automatically.
           </Text>
-        </Pressable>
+        </PressableScale>
       ) : null}
 
       <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.xl, marginBottom: spacing.xs }]}>

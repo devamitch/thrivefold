@@ -2,16 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { usePathname, useRouter, type Href } from 'expo-router';
 import React, { memo, useCallback, useMemo, type ReactNode } from 'react';
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
-  type StyleProp,
-  type ViewStyle,
-} from 'react-native';
+import { ScrollView, StyleSheet, Text, useWindowDimensions, View, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, {
   Extrapolation,
   interpolate,
@@ -304,7 +295,7 @@ export function AppDrawer() {
       accessibilityElementsHidden={!open}
     >
       {/* Empty space around the panel closes it too */}
-      <Pressable style={StyleSheet.absoluteFill} onPress={close} accessible={false} />
+      <PressableScale scaleTo={1} style={StyleSheet.absoluteFill} onPress={close} accessible={false} />
 
       <Animated.View
         style={[

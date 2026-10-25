@@ -3,7 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { BackHandler, PermissionsAndroid, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { BackHandler, PermissionsAndroid, Platform, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   FadeIn,
   FadeInDown,
@@ -40,6 +40,7 @@ import { initialGestureState, stepGesture, type Gesture } from '../../../../doma
 import { writeWorkoutToHealthConnect } from '../../../../services/integrations/healthConnect';
 import { useRootStore } from '../../../../stores/useRootStore';
 import { useTheme } from '../../../../theme/useTheme';
+import { PressableScale } from '../../../../components/ui/PressableScale';
 
 type Phase = 'intro' | 'live' | 'done';
 
@@ -431,9 +432,9 @@ export default function CoachScreen() {
   if (phase === 'intro') {
     return (
       <ScrollView style={{ backgroundColor: colors.background }} contentContainerStyle={{ paddingTop: insets.top + spacing.lg, paddingBottom: insets.bottom + spacing.lg, paddingHorizontal: spacing.base }}>
-        <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back" style={[styles.round, { backgroundColor: colors.surface1 }]}>
+        <PressableScale onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back" style={[styles.round, { backgroundColor: colors.surface1 }]}>
           <Ionicons name="chevron-back" size={20} color={colors.text.primary} />
-        </Pressable>
+        </PressableScale>
         <Text style={[typography.display, { color: colors.text.primary, marginTop: spacing.lg }]}>{plan.title}</Text>
         {linkedQuest ? (
           <View style={[styles.row, { marginTop: spacing.sm }]}>
@@ -606,7 +607,7 @@ export default function CoachScreen() {
               <View style={[styles.dot, { backgroundColor: movement ? colors.success : colors.callMuted }]} />
               <Text style={[typography.captionBold, { color: colors.callText }]}>{movement ? 'Checking form' : 'Camera on'}</Text>
             </View>
-            <Pressable
+            <PressableScale
               onPress={() => setFacing((f) => (f === 'front' ? 'back' : 'front'))}
               accessibilityRole="button"
               accessibilityLabel="Flip camera"
@@ -614,7 +615,7 @@ export default function CoachScreen() {
               style={[styles.stageBtn, { backgroundColor: colors.callSurface }]}
             >
               <Ionicons name="camera-reverse-outline" size={18} color={colors.callText} />
-            </Pressable>
+            </PressableScale>
           </View>
         ) : null}
 
@@ -691,18 +692,18 @@ export default function CoachScreen() {
           {upNext ? (
             <Text style={[typography.caption, { color: colors.text.secondary }]}>Set {upNext.set} of {upNext.of}</Text>
           ) : null}
-          <Pressable
+          <PressableScale
             onPress={() => {
               autoPaused.current = false;
               if (videoPlaying) player.current?.pause();
               else player.current?.play();
             }}
             accessibilityRole="button"
-            style={({ pressed }) => [styles.playBtn, { backgroundColor: colors.surface1, opacity: pressed ? 0.8 : 1 }]}
+            style={[styles.playBtn, { backgroundColor: colors.surface1, opacity: 1 }]}
           >
             <Ionicons name={videoPlaying ? 'pause' : 'play'} size={16} color={colors.text.primary} />
             <Text style={[typography.captionBold, { color: colors.text.primary, marginLeft: 6 }]}>{videoPlaying ? 'Pause tutorial' : 'Play tutorial'}</Text>
-          </Pressable>
+          </PressableScale>
         </View>
       </View>
 
@@ -736,13 +737,13 @@ export default function CoachScreen() {
               Next: {exerciseById(nextItem.exerciseId)?.name}, set {setIdx + 1}
             </Text>
           ) : null}
-          <Pressable
+          <PressableScale
             onPress={() => setRest(0)}
             accessibilityRole="button"
-            style={({ pressed }) => [styles.skip, { backgroundColor: colors.callSurfaceStrong, opacity: pressed ? 0.8 : 1 }]}
+            style={[styles.skip, { backgroundColor: colors.callSurfaceStrong, opacity: 1 }]}
           >
             <Text style={[typography.bodyBold, { color: colors.callText }]}>Skip rest</Text>
-          </Pressable>
+          </PressableScale>
         </Animated.View>
       ) : null}
     </View>
@@ -752,15 +753,15 @@ export default function CoachScreen() {
 function RoundButton({ icon, label, onPress }: { icon: keyof typeof Ionicons.glyphMap; label: string; onPress: () => void }) {
   const { colors } = useTheme();
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={label}
       hitSlop={6}
-      style={({ pressed }) => [styles.round, { backgroundColor: colors.surface1, opacity: pressed ? 0.8 : 1 }]}
+      style={[styles.round, { backgroundColor: colors.surface1, opacity: 1 }]}
     >
       <Ionicons name={icon} size={20} color={colors.text.primary} />
-    </Pressable>
+    </PressableScale>
   );
 }
 

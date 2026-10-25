@@ -1,12 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, type Href } from 'expo-router';
 import React, { useState } from 'react';
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { AppHeader } from '../../../components/ui/AppHeader';
@@ -17,6 +12,7 @@ import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { ProgressionPanel } from '../../../components/game/ProgressionPanel';
 import { SETUP_REWARDS } from '../../../domain/game/setupProfile';
 import { useTheme } from '../../../theme/useTheme';
+import { PressableScale } from '../../../components/ui/PressableScale';
 
 interface Stats {
   questsCompleted: number;
@@ -223,7 +219,7 @@ export default function ProgressScreen() {
 
         {/* View Switcher Tabs (Roadmap vs Badges) */}
         <View style={[styles.tabBar, { backgroundColor: colors.surface1, marginTop: spacing.md }]}>
-          <Pressable
+          <PressableScale
             onPress={() => setActiveTab('roadmap')}
             style={[
               styles.tabBtn,
@@ -246,9 +242,9 @@ export default function ProgressScreen() {
             >
               Milestones ({roadmapPct}%)
             </Text>
-          </Pressable>
+          </PressableScale>
 
-          <Pressable
+          <PressableScale
             onPress={() => setActiveTab('badges')}
             style={[
               styles.tabBtn,
@@ -271,7 +267,7 @@ export default function ProgressScreen() {
             >
               Stats
             </Text>
-          </Pressable>
+          </PressableScale>
         </View>
 
         {/* Roadmap View */}

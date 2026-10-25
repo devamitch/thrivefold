@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Pressable } from 'react-native';
+import { View, Text, StyleSheet, TextInput } from 'react-native';
 import { watchHref } from '../../../../content/exerciseVideos';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,6 +20,7 @@ import {
   suggestNext,
   type LoggedSet,
 } from '../../../../domain/fitness/workouts';
+import { PressableScale } from '../../../../components/ui/PressableScale';
 
 type Draft = Record<string, { value: string; weight: string; done: boolean }[]>;
 
@@ -187,7 +188,7 @@ export default function WorkoutSessionScreen() {
                 Easier: {ex.easier} Harder: {ex.harder}
               </Text>
               <Text style={[typography.caption, { color: colors.warning, marginTop: 4 }]}>{ex.safety}</Text>
-              <Pressable
+              <PressableScale
                 onPress={() => router.push(watchHref(ex.name, ex.id) as Href)}
                 accessibilityRole="link"
                 style={styles.link}
@@ -196,7 +197,7 @@ export default function WorkoutSessionScreen() {
                 <Text style={[typography.captionBold, { color: colors.text.secondary, marginLeft: 6 }]}>
                   Watch how (video)
                 </Text>
-              </Pressable>
+              </PressableScale>
 
               {draft[item.exerciseId].map((set, idx) => (
                 <View key={idx} style={[styles.setRow, { borderTopColor: colors.border }]}>
@@ -225,7 +226,7 @@ export default function WorkoutSessionScreen() {
                       <Text style={[typography.caption, { color: colors.text.muted }]}>kg</Text>
                     </>
                   ) : null}
-                  <Pressable
+                  <PressableScale
                     onPress={() => completeSet(item.exerciseId, idx, item.restSeconds, item.target)}
                     accessibilityRole="checkbox"
                     accessibilityState={{ checked: set.done }}
@@ -237,7 +238,7 @@ export default function WorkoutSessionScreen() {
                       size={28}
                       color={set.done ? colors.success : colors.text.muted}
                     />
-                  </Pressable>
+                  </PressableScale>
                 </View>
               ))}
             </Card>
@@ -250,7 +251,7 @@ export default function WorkoutSessionScreen() {
             <Chip key={n} label={`${n}/10`} selected={effort === n} onPress={() => setEffort(n)} />
           ))}
         </View>
-        <Pressable
+        <PressableScale
           onPress={() => setPain((p) => !p)}
           accessibilityRole="checkbox"
           accessibilityState={{ checked: pain }}
@@ -260,7 +261,7 @@ export default function WorkoutSessionScreen() {
           <Text style={[typography.subbody, { color: colors.text.primary, marginLeft: 10, flex: 1 }]}>
             I felt pain or discomfort
           </Text>
-        </Pressable>
+        </PressableScale>
         {pain ? (
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 6 }]}>
             Next time this plan will suggest easier versions. If pain is sharp, persists or worries you, see a clinician.

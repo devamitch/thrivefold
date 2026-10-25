@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import React, { useEffect, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 
 import { Badge } from '../../../components/ui/Badge';
@@ -10,6 +10,7 @@ import { Card } from '../../../components/ui/Card';
 import { Header } from '../../../components/ui/Header';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { useTheme } from '../../../theme/useTheme';
+import { PressableScale } from '../../../components/ui/PressableScale';
 
 interface MemoryCard {
   id: number;
@@ -211,9 +212,9 @@ export default function GamesScreen() {
                 <Text style={[typography.subheading, { color: colors.text.primary }]}>
                   Harmonic Box Breathing
                 </Text>
-                <Pressable onPress={() => setActiveSession(null)}>
+                <PressableScale onPress={() => setActiveSession(null)}>
                   <Ionicons name="close-circle-outline" size={26} color={colors.text.muted} />
-                </Pressable>
+                </PressableScale>
               </View>
 
               <View style={styles.orbWrapper}>
@@ -265,9 +266,9 @@ export default function GamesScreen() {
                 <Text style={[typography.subheading, { color: colors.text.primary }]}>
                   Flora Memory Match
                 </Text>
-                <Pressable onPress={() => setActiveSession(null)}>
+                <PressableScale onPress={() => setActiveSession(null)}>
                   <Ionicons name="close-circle-outline" size={26} color={colors.text.muted} />
-                </Pressable>
+                </PressableScale>
               </View>
 
               <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: 16 }]}>
@@ -278,7 +279,7 @@ export default function GamesScreen() {
                 {cards.map((c, i) => {
                   const isFlipped = flippedIndices.includes(i) || c.matched;
                   return (
-                    <Pressable
+                    <PressableScale
                       key={c.id}
                       onPress={() => handleCardPress(i)}
                       style={[
@@ -302,7 +303,7 @@ export default function GamesScreen() {
                       ) : (
                         <Ionicons name="cube-outline" size={20} color={colors.text.muted} />
                       )}
-                    </Pressable>
+                    </PressableScale>
                   );
                 })}
               </View>
@@ -341,9 +342,9 @@ export default function GamesScreen() {
                 <Text style={[typography.subheading, { color: colors.text.primary }]}>
                   Sensory Grounding
                 </Text>
-                <Pressable onPress={() => setActiveSession(null)}>
+                <PressableScale onPress={() => setActiveSession(null)}>
                   <Ionicons name="close-circle-outline" size={26} color={colors.text.muted} />
-                </Pressable>
+                </PressableScale>
               </View>
 
               <View style={[styles.groundingStepBox, { backgroundColor: colors.surface1 }]}>

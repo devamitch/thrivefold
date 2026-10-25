@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
@@ -10,6 +10,7 @@ import { TextField } from '../../../components/ui/TextField';
 import { useTheme } from '../../../theme/useTheme';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngine';
+import { PressableScale } from '../../../components/ui/PressableScale';
 
 const isTime = (t: string) => /^([01]\d|2[0-3]):[0-5]\d$/.test(t);
 
@@ -89,7 +90,7 @@ export default function MedicationsScreen() {
           return (
             <Card key={m.id} style={{ marginTop: spacing.sm }}>
               <View style={styles.row}>
-                <Pressable
+                <PressableScale
                   onPress={() => toggleMedicationTaken(m.id, today)}
                   accessibilityRole="checkbox"
                   accessibilityState={{ checked: done }}
@@ -103,8 +104,8 @@ export default function MedicationsScreen() {
                       {[m.dose, m.time].filter(Boolean).join(' · ')} · {done ? 'taken today' : 'not marked yet'}
                     </Text>
                   </View>
-                </Pressable>
-                <Pressable
+                </PressableScale>
+                <PressableScale
                   onPress={() =>
                     showAlert({
                       title: `Remove ${m.name}?`,
@@ -119,7 +120,7 @@ export default function MedicationsScreen() {
                   style={styles.iconBtn}
                 >
                   <Ionicons name="trash-outline" size={18} color={colors.text.muted} />
-                </Pressable>
+                </PressableScale>
               </View>
             </Card>
           );

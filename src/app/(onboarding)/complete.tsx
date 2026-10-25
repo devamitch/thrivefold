@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '../../components/ui/Button';
@@ -9,6 +9,7 @@ import { Card } from '../../components/ui/Card';
 import { useRootStore, useShallow } from '../../stores/useRootStore';
 import { fitFor, SETUP_XP_TOTAL } from '../../domain/game/setupProfile';
 import { useTheme } from '../../theme/useTheme';
+import { PressableScale } from '../../components/ui/PressableScale';
 
 const CAPACITY_LABEL = {
   gentle: 'Starting gentle',
@@ -149,7 +150,7 @@ export default function CompleteOnboardingScreen() {
           ))}
         </Card>
 
-        <Pressable
+        <PressableScale
           onPress={() => router.push('/(onboarding)/lifestyle-preferences')}
           accessibilityRole="button"
           accessibilityLabel="Edit food and reminder preferences"
@@ -159,7 +160,7 @@ export default function CompleteOnboardingScreen() {
           <Text style={[typography.subbodyBold, { color: colors.primary, marginLeft: 6 }]}>
             Edit food & reminder preferences
           </Text>
-        </Pressable>
+        </PressableScale>
       </ScrollView>
 
       <View style={{ gap: 8 }}>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
@@ -11,6 +11,7 @@ import { Header } from '../../../components/ui/Header';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
+import { PressableScale } from '../../../components/ui/PressableScale';
 
 export default function LettersInboxScreen() {
   const router = useRouter();
@@ -26,22 +27,21 @@ export default function LettersInboxScreen() {
         subtitle="Asynchronous pen-pal letters"
         showBack
         rightAction={
-          <Pressable
+          <PressableScale
             onPress={() => {
               try {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               } catch {}
               router.push('/(app)/letters/stamps');
             }}
-            style={({ pressed }) => [
+            style={[
               styles.stampBtn,
               { backgroundColor: colors.surface1, borderColor: colors.border },
-              pressed && { opacity: 0.7 },
             ]}
           >
             <Ionicons name="albums-outline" size={18} color={colors.primary} />
             <Text style={[typography.captionBold, { color: colors.primary, marginLeft: 6 }]}>Stamps</Text>
-          </Pressable>
+          </PressableScale>
         }
       />
 

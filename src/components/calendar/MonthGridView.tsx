@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import {
   CalendarEvent,
@@ -134,7 +134,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
           );
 
           return (
-            <Pressable
+            <PressableScale
               key={cell.date}
               onPress={() => {
                 try {
@@ -222,7 +222,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
                   />
                 ) : null}
               </View> */}
-            </Pressable>
+            </PressableScale>
           );
         })}
       </View>

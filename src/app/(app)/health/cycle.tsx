@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 
 import { Badge } from '../../../components/ui/Badge';
@@ -22,6 +22,7 @@ import { useRootStore } from '../../../stores/useRootStore';
 import type { PeriodLogRecord, ReproductiveContext } from '../../../stores/slices/healthSlice';
 import { useTheme } from '../../../theme/useTheme';
 import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngine';
+import { PressableScale } from '../../../components/ui/PressableScale';
 
 const CONTEXT_OPTIONS: { id: ReproductiveContext; label: string; icon: string; desc: string }[] = [
   { id: 'regular', label: 'Regular (21–35d)', icon: 'checkmark-circle-outline', desc: 'Consistent cycle duration' },
@@ -280,7 +281,7 @@ export default function CycleScreen() {
             {CONTEXT_OPTIONS.map((opt) => {
               const isSelected = currentContext === opt.id;
               return (
-                <Pressable
+                <PressableScale
                   key={opt.id}
                   onPress={() => {
                     setReproductiveContext(opt.id);
@@ -310,7 +311,7 @@ export default function CycleScreen() {
                   >
                     {opt.label}
                   </Text>
-                </Pressable>
+                </PressableScale>
               );
             })}
           </ScrollView>
@@ -388,7 +389,7 @@ export default function CycleScreen() {
             </Text>
           ) : (
             cycleData.periodHistory.map((rec) => (
-              <Pressable
+              <PressableScale
                 key={rec.id}
                 onPress={() => {
                   setSelectedRecordToEdit(rec);
@@ -413,7 +414,7 @@ export default function CycleScreen() {
                   </Text>
                 </View>
                 <Text style={[typography.captionBold, { color: colors.primary }]}>Edit</Text>
-              </Pressable>
+              </PressableScale>
             ))
           )}
         </Card>
@@ -454,7 +455,7 @@ export default function CycleScreen() {
               {calendarDays.map((d) => {
                 const isSelected = d.offset === selectedDayOffset;
                 return (
-                  <Pressable
+                  <PressableScale
                     key={d.dateKey}
                     onPress={() => setSelectedDayOffset(d.offset)}
                     style={[
@@ -488,7 +489,7 @@ export default function CycleScreen() {
                         { backgroundColor: isSelected ? colors.onPrimary : d.cfg.color },
                       ]}
                     />
-                  </Pressable>
+                  </PressableScale>
                 );
               })}
             </ScrollView>

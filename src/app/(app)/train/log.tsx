@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { AppHeader } from '../../../components/ui/AppHeader';
 import { Button } from '../../../components/ui/Button';
@@ -11,6 +11,7 @@ import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngin
 import { EXERCISES, exerciseById } from '../../../domain/fitness/workouts';
 import { useRootStore } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
+import { PressableScale } from '../../../components/ui/PressableScale';
 
 /**
  * Record a workout already done, e.g. "10 squats tonight". Saved as self-reported (never as
@@ -72,9 +73,9 @@ export default function ManualLogScreen() {
               />
               <Text style={[typography.body, { color: colors.text.secondary, marginLeft: 8 }]}>{unit}</Text>
               {sets.length > 1 ? (
-                <Pressable onPress={() => setSets((cur) => cur.filter((_, j) => j !== i))} hitSlop={8} accessibilityLabel={`Remove set ${i + 1}`} style={{ marginLeft: 8 }}>
+                <PressableScale onPress={() => setSets((cur) => cur.filter((_, j) => j !== i))} hitSlop={8} accessibilityLabel={`Remove set ${i + 1}`} style={{ marginLeft: 8 }}>
                   <Ionicons name="close-circle-outline" size={20} color={colors.text.muted} />
-                </Pressable>
+                </PressableScale>
               ) : null}
             </View>
           ))}
@@ -93,10 +94,10 @@ export default function ManualLogScreen() {
             style={[styles.search, typography.body, { backgroundColor: colors.surface, color: colors.text.primary, borderColor: colors.border }]}
           />
           {options.map((e) => (
-            <Pressable key={e.id} onPress={() => setExerciseId(e.id)} accessibilityRole="button" style={[styles.option, { borderBottomColor: colors.border }]}>
+            <PressableScale key={e.id} onPress={() => setExerciseId(e.id)} accessibilityRole="button" style={[styles.option, { borderBottomColor: colors.border }]}>
               <Text style={[typography.body, styles.flex, { color: colors.text.primary }]}>{e.name}</Text>
               <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
-            </Pressable>
+            </PressableScale>
           ))}
         </>
       )}

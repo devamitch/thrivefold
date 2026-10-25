@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { Pressable, StyleSheet, Text, TextInput, View, type AccessibilityActionEvent } from 'react-native';
+import { StyleSheet, Text, TextInput, View, type AccessibilityActionEvent } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -16,6 +16,7 @@ import { useTheme } from '../../../theme/useTheme';
 import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngine';
 import { classifyLocalInput } from '../../../domain/ai/localClassifier';
 import { ProductExperience } from '../../../theme/tokens';
+import { PressableScale } from '../../../components/ui/PressableScale';
 
 const SYMPTOMS_BY_EXPERIENCE: Record<ProductExperience, string[]> = {
   women_health: ['Cramps', 'Bloating', 'Headache', 'Fatigue', 'Breast tenderness', 'Acne', 'Back pain', 'Nausea', 'Calm mood', 'High energy'],
@@ -251,7 +252,7 @@ function Scale({
           <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{label}</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Pressable
+          <PressableScale
             hitSlop={8}
             onPress={() => {
               if (value > 1) {
@@ -263,11 +264,11 @@ function Scale({
             accessibilityLabel={`Decrease ${label}`}
           >
             <Ionicons name="remove" size={14} color={colors.text.primary} />
-          </Pressable>
+          </PressableScale>
           <Text style={[typography.subheading, { color: colors.primary, minWidth: 84, textAlign: 'center' }]}>
             {WORDS[kind][value - 1]} · {value}
           </Text>
-          <Pressable
+          <PressableScale
             hitSlop={8}
             onPress={() => {
               if (value < 10) {
@@ -279,7 +280,7 @@ function Scale({
             accessibilityLabel={`Increase ${label}`}
           >
             <Ionicons name="add" size={14} color={colors.text.primary} />
-          </Pressable>
+          </PressableScale>
         </View>
       </View>
 
@@ -324,9 +325,9 @@ function Scale({
 function StepButton({ icon, label, onPress }: { icon: 'add' | 'remove'; label: string; onPress: () => void }) {
   const { colors } = useTheme();
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={[styles.stepBtn, { backgroundColor: colors.surface1 }]}>
+    <PressableScale onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={[styles.stepBtn, { backgroundColor: colors.surface1 }]}>
       <Ionicons name={icon} size={20} color={colors.text.primary} />
-    </Pressable>
+    </PressableScale>
   );
 }
 

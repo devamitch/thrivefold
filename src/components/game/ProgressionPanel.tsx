@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useTheme } from '../../theme/useTheme';
@@ -10,6 +10,7 @@ import { useRootStore, useShallow } from '../../stores/useRootStore';
 import { currentLevelProgress } from '../../domain/game/gameCatalogService';
 import { useServerProgress } from '../../services/supabase/queries';
 import { FEATURE_UNLOCKS, ownedEmblems, unlockStatus, type LedgerEntry } from '../../domain/game/progression';
+import { PressableScale } from '../ui/PressableScale';
 
 const KIND_LABEL: Record<LedgerEntry['kind'], string> = {
   task_reward: 'Quest',
@@ -143,7 +144,7 @@ export function ProgressionPanel() {
         {emblems.map((e) => {
           const selected = e === s.selectedEmblem;
           return (
-            <Pressable
+            <PressableScale
               key={e}
               onPress={() => s.setEmblem(e)}
               accessibilityRole="button"
@@ -155,7 +156,7 @@ export function ProgressionPanel() {
               ]}
             >
               <Ionicons name={e as keyof typeof Ionicons.glyphMap} size={22} color={selected ? colors.primary : colors.text.secondary} />
-            </Pressable>
+            </PressableScale>
           );
         })}
       </View>

@@ -29,7 +29,7 @@ import Animated, {
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 /** Firm and quick: the surface feels resisted and tactile, never floaty. */
-const PRESS_SPRING = { damping: 18, stiffness: 420, mass: 0.6 } as const;
+const PRESS_SPRING = { damping: 26, stiffness: 420, mass: 0.6, overshootClamping: true } as const;
 
 export interface PressableScaleProps extends Omit<PressableProps, 'style'> {
   /**

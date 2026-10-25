@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, type Href } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { AppHeader } from '../../../components/ui/AppHeader';
 import { Chip } from '../../../components/ui/Chip';
@@ -10,6 +10,7 @@ import { videoFor } from '../../../content/exerciseVideos';
 import { EXERCISES, type Equipment } from '../../../domain/fitness/workouts';
 import { movementForExercise } from '../../../domain/pose/movement';
 import { useTheme } from '../../../theme/useTheme';
+import { PressableScale } from '../../../components/ui/PressableScale';
 
 const EQUIP: { id: 'all' | Equipment; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -55,7 +56,7 @@ export default function ExerciseLibraryScreen() {
         initialNumToRender={12}
         ListEmptyComponent={<Text style={[typography.subbody, { color: colors.text.secondary }]}>No exercise matches. Try another word.</Text>}
         renderItem={({ item }) => (
-          <Pressable
+          <PressableScale
             onPress={() => router.push(`/(app)/train/exercise/${item.id}` as Href)}
             accessibilityRole="button"
             style={[styles.row, { borderBottomColor: colors.border }]}
@@ -69,7 +70,7 @@ export default function ExerciseLibraryScreen() {
             {videoFor(item.id) ? <Ionicons name="play-circle-outline" size={18} color={colors.primary} style={styles.icon} /> : null}
             {movementForExercise(item.id) ? <Ionicons name="scan-outline" size={18} color={colors.primary} style={styles.icon} /> : null}
             <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
-          </Pressable>
+          </PressableScale>
         )}
       />
     </ScreenContainer>

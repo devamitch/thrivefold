@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
@@ -16,6 +16,7 @@ import { searchDocuments, type RetrievalDocument } from '../../../domain/ai/loca
 import { activeMemories } from '../../../domain/ai/types';
 import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngine';
 import { totals } from '../../../domain/nutrition/foods';
+import { PressableScale } from '../../../components/ui/PressableScale';
 
 const KIND_LABEL: Record<Insight['kind'], string> = {
   trend: 'This week',
@@ -255,11 +256,11 @@ export default function InsightsScreen() {
 function LinkRow({ label, icon, onPress }: { label: string; icon: keyof typeof Ionicons.glyphMap; onPress: () => void }) {
   const { colors, typography } = useTheme();
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" style={styles.linkRow} hitSlop={4}>
+    <PressableScale onPress={onPress} accessibilityRole="button" style={styles.linkRow} hitSlop={4}>
       <Ionicons name={icon} size={18} color={colors.primary} />
       <Text style={[typography.subbody, { color: colors.text.primary, flex: 1, marginLeft: 10 }]}>{label}</Text>
       <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
-    </Pressable>
+    </PressableScale>
   );
 }
 

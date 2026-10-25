@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { useRouter, type Href } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 
 import { AppHeader } from '../../components/ui/AppHeader';
@@ -10,6 +10,7 @@ import { Card } from '../../components/ui/Card';
 import { ScreenContainer } from '../../components/ui/ScreenContainer';
 import { articlesFor } from '../../content/learn';
 import { useTheme } from '../../theme/useTheme';
+import { PressableScale } from '../../components/ui/PressableScale';
 
 /** Plain-language health basics for the selected experience; tap an article to read it. */
 export default function LearnScreen() {
@@ -50,14 +51,14 @@ export default function LearnScreen() {
                     {p}
                   </Text>
                 ))}
-                <Pressable
+                <PressableScale
                   onPress={() => router.push(`/(app)/watch?${new URLSearchParams({ title: art.title, q: art.videoQuery }).toString()}` as Href)}
                   accessibilityRole="link"
                   style={[styles.cardHeader, { justifyContent: 'flex-start', marginTop: spacing.md }]}
                 >
                   <Ionicons name="logo-youtube" size={16} color={colors.text.secondary} />
                   <Text style={[typography.captionBold, { color: colors.text.secondary, marginLeft: 6 }]}>Watch videos on this topic</Text>
-                </Pressable>
+                </PressableScale>
                 {art.seekHelp ? (
                   <View style={[styles.help, { backgroundColor: colors.warningSurface, marginTop: spacing.md }]}>
                     <Ionicons name="medkit-outline" size={18} color={colors.warning} />

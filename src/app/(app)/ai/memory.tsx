@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, Switch, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Switch } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
@@ -10,6 +10,7 @@ import { TextField } from '../../../components/ui/TextField';
 import { useTheme } from '../../../theme/useTheme';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { activeMemories, type MemoryItem } from '../../../domain/ai/types';
+import { PressableScale } from '../../../components/ui/PressableScale';
 
 const MAX_LENGTH = 280;
 
@@ -199,10 +200,10 @@ function IconAction({
 }) {
   const { colors, typography } = useTheme();
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={styles.iconAction}>
+    <PressableScale onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={styles.iconAction}>
       <Ionicons name={icon} size={16} color={colors.text.secondary} />
       <Text style={[typography.captionBold, { color: colors.text.secondary, marginLeft: 4 }]}>{label}</Text>
-    </Pressable>
+    </PressableScale>
   );
 }
 

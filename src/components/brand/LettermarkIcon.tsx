@@ -1,19 +1,12 @@
 import React, { memo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  StyleProp,
-  ViewStyle,
-  ImageSourcePropType,
-} from 'react-native';
+import { View, Text, StyleSheet, StyleProp, ViewStyle, ImageSourcePropType } from 'react-native';
 import { Image } from 'expo-image';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
+import { PressableScale } from '../ui/PressableScale';
 
 export type LettermarkCategoryKey =
   | 'womens-health'
@@ -213,7 +206,7 @@ export const LettermarkIcon = memo(function LettermarkIcon({
   if (!showLabel) {
     if (onPress) {
       return (
-        <Pressable
+        <PressableScale
           onPress={onPress}
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
@@ -222,7 +215,7 @@ export const LettermarkIcon = memo(function LettermarkIcon({
           accessibilityLabel={meta.name}
         >
           {iconElement}
-        </Pressable>
+        </PressableScale>
       );
     }
     return iconElement;
@@ -231,7 +224,7 @@ export const LettermarkIcon = memo(function LettermarkIcon({
   const isRow = labelPosition === 'right';
 
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
@@ -254,7 +247,7 @@ export const LettermarkIcon = memo(function LettermarkIcon({
       >
         {meta.name}
       </Text>
-    </Pressable>
+    </PressableScale>
   );
 });
 

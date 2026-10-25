@@ -4,7 +4,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { AppHeader } from '../../../components/ui/AppHeader';
 import { Button } from '../../../components/ui/Button';
@@ -16,6 +16,7 @@ import { foodById, searchFoods, totals, type MealItem } from '../../../domain/nu
 import { useRootStore } from '../../../stores/useRootStore';
 import type { MealLog } from '../../../stores/slices/healthSlice';
 import { useTheme } from '../../../theme/useTheme';
+import { PressableScale } from '../../../components/ui/PressableScale';
 
 const TYPES: { id: MealLog['type']; label: string }[] = [
   { id: 'breakfast', label: 'Breakfast' },
@@ -91,10 +92,10 @@ export default function MealLogScreen() {
       </View>
 
       {photo ? (
-        <Pressable onPress={() => setPhoto(null)} accessibilityLabel="Remove photo" style={{ marginTop: spacing.md }}>
+        <PressableScale onPress={() => setPhoto(null)} accessibilityLabel="Remove photo" style={{ marginTop: spacing.md }}>
           <Image source={{ uri: photo }} style={styles.photo} contentFit="cover" />
           <Text style={[typography.caption, { color: colors.text.muted, marginTop: 4 }]}>Kept only on this phone. Tap to remove.</Text>
-        </Pressable>
+        </PressableScale>
       ) : (
         <View style={[styles.row, { marginTop: spacing.md, gap: 8 }]}>
           <Button label="Take a photo" variant="outline" size="sm" onPress={() => pick(true)} style={styles.flex} />
@@ -129,12 +130,12 @@ export default function MealLogScreen() {
                   {i.servings} x {f.serving} · {Math.round(f.kcal * i.servings)} kcal
                 </Text>
               </View>
-              <Pressable onPress={() => change(i.foodId, -0.5)} hitSlop={8} accessibilityLabel={`Less ${f.name}`} style={[styles.step, { backgroundColor: colors.surface1 }]}>
+              <PressableScale onPress={() => change(i.foodId, -0.5)} hitSlop={8} accessibilityLabel={`Less ${f.name}`} style={[styles.step, { backgroundColor: colors.surface1 }]}>
                 <Ionicons name="remove" size={16} color={colors.text.primary} />
-              </Pressable>
-              <Pressable onPress={() => change(i.foodId, 0.5)} hitSlop={8} accessibilityLabel={`More ${f.name}`} style={[styles.step, { backgroundColor: colors.surface1, marginLeft: 8 }]}>
+              </PressableScale>
+              <PressableScale onPress={() => change(i.foodId, 0.5)} hitSlop={8} accessibilityLabel={`More ${f.name}`} style={[styles.step, { backgroundColor: colors.surface1, marginLeft: 8 }]}>
                 <Ionicons name="add" size={16} color={colors.text.primary} />
-              </Pressable>
+              </PressableScale>
             </View>
           );
         })}
@@ -152,7 +153,7 @@ export default function MealLogScreen() {
         style={[styles.input, typography.body, { backgroundColor: colors.surface, color: colors.text.primary, borderColor: colors.border }]}
       />
       {results.map((f) => (
-        <Pressable key={f.id} onPress={() => add(f.id)} accessibilityRole="button" style={[styles.row, styles.food, { borderBottomColor: colors.border }]}>
+        <PressableScale key={f.id} onPress={() => add(f.id)} accessibilityRole="button" style={[styles.row, styles.food, { borderBottomColor: colors.border }]}>
           <View style={styles.flex}>
             <Text style={[typography.subbodyBold, { color: colors.text.primary }]}>{f.name}</Text>
             <Text style={[typography.caption, { color: colors.text.secondary }]}>
@@ -160,7 +161,7 @@ export default function MealLogScreen() {
             </Text>
           </View>
           <Ionicons name="add-circle-outline" size={22} color={colors.primary} />
-        </Pressable>
+        </PressableScale>
       ))}
 
       <TextInput

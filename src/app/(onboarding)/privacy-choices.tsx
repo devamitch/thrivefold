@@ -1,12 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { OnboardingScaffold } from '../../components/onboarding/OnboardingScaffold';
 import { Card } from '../../components/ui/Card';
 import { useRootStore } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
+import { PressableScale } from '../../components/ui/PressableScale';
 
 const POINTS = [
   {
@@ -63,7 +64,7 @@ export default function PrivacyChoicesScreen() {
       </Card>
 
       {/* A plain statement, never pre-ticked (master spec §3.1). It is not age verification. */}
-      <Pressable
+      <PressableScale
         onPress={() => !adult && confirmAdult()}
         accessibilityRole="checkbox"
         accessibilityState={{ checked: adult }}
@@ -90,15 +91,15 @@ export default function PrivacyChoicesScreen() {
             Thrivefold is for adults. Letters and communities also need an age check later.
           </Text>
         </View>
-      </Pressable>
+      </PressableScale>
 
       <View style={[styles.links, { marginTop: spacing.lg }]}>
-        <Pressable onPress={() => router.push('/(public)/legal/privacy')} hitSlop={10} accessibilityRole="link">
+        <PressableScale onPress={() => router.push('/(public)/legal/privacy')} hitSlop={10} accessibilityRole="link">
           <Text style={[typography.subbody, { color: colors.primary }]}>Privacy policy</Text>
-        </Pressable>
-        <Pressable onPress={() => router.push('/(public)/legal/terms')} hitSlop={10} accessibilityRole="link">
+        </PressableScale>
+        <PressableScale onPress={() => router.push('/(public)/legal/terms')} hitSlop={10} accessibilityRole="link">
           <Text style={[typography.subbody, { color: colors.primary }]}>Terms</Text>
-        </Pressable>
+        </PressableScale>
       </View>
     </OnboardingScaffold>
   );

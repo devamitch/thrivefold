@@ -1,19 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import React, { useCallback, useEffect, useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleProp,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
-  ViewStyle,
-} from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, ScrollView, StyleProp, StyleSheet, Text, useWindowDimensions, View, ViewStyle } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
   runOnJS,
@@ -170,7 +158,8 @@ export function AppBottomSheetModal({
             tint="light"
             style={StyleSheet.absoluteFill}
           />
-          <Pressable
+          <PressableScale
+            scaleTo={1}
             style={StyleSheet.absoluteFill}
             onPress={startCloseAnimation}
             accessibilityRole="button"

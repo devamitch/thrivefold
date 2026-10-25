@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
@@ -22,6 +22,7 @@ import { suggestPlans } from '../../domain/fitness/workouts';
 import { fitFor } from '../../domain/game/setupProfile';
 import { useRouter, type Href } from 'expo-router';
 import { watchHref } from '../../content/exerciseVideos';
+import { PressableScale } from '../ui/PressableScale';
 
 type Answers = ObjectiveEvidence['answers'];
 
@@ -225,7 +226,7 @@ export function QuestPanel({ assignmentId, onDone, onLeave }: QuestPanelProps) {
       ) : null}
 
       {questFamily(task.category) === 'movement' && !done && !closed ? (
-        <Pressable
+        <PressableScale
           onPress={openCoach}
           accessibilityRole="button"
           style={[styles.coach, { backgroundColor: colors.primary, marginTop: spacing.md }]}
@@ -238,11 +239,11 @@ export function QuestPanel({ assignmentId, onDone, onLeave }: QuestPanelProps) {
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={colors.onPrimary} />
-        </Pressable>
+        </PressableScale>
       ) : null}
 
       {questFamily(task.category) === 'nutrition' && !done && !closed ? (
-        <Pressable
+        <PressableScale
           onPress={() => {
             onLeave?.();
             router.push('/(app)/health/meal-log' as Href);
@@ -258,10 +259,10 @@ export function QuestPanel({ assignmentId, onDone, onLeave }: QuestPanelProps) {
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={colors.onPrimary} />
-        </Pressable>
+        </PressableScale>
       ) : null}
 
-      <Pressable
+      <PressableScale
         onPress={() => {
           onLeave?.();
           router.push(watchHref(task.title, undefined, task.id) as Href);
@@ -271,7 +272,7 @@ export function QuestPanel({ assignmentId, onDone, onLeave }: QuestPanelProps) {
       >
         <Ionicons name="logo-youtube" size={16} color={colors.text.secondary} />
         <Text style={[typography.captionBold, { color: colors.text.secondary, marginLeft: 6 }]}>Watch how (video)</Text>
-      </Pressable>
+      </PressableScale>
 
       <Text style={[typography.captionBold, { color: colors.text.muted, marginTop: spacing.md }]}>WHAT TO DO</Text>
       <View style={[styles.box, { backgroundColor: colors.surface, borderColor: colors.border, marginTop: spacing.xs }]}>
@@ -294,7 +295,7 @@ export function QuestPanel({ assignmentId, onDone, onLeave }: QuestPanelProps) {
             </>
           );
           return form?.requireSteps && !done && !closed ? (
-            <Pressable
+            <PressableScale
               key={step.id}
               onPress={() => setSteps((s) => (checked ? s.filter((x) => x !== step.id) : [...s, step.id]))}
               accessibilityRole="checkbox"
@@ -302,7 +303,7 @@ export function QuestPanel({ assignmentId, onDone, onLeave }: QuestPanelProps) {
               style={[styles.stepRow, idx > 0 && { marginTop: 10 }]}
             >
               {content}
-            </Pressable>
+            </PressableScale>
           ) : (
             <View key={step.id} style={[styles.stepRow, idx > 0 && { marginTop: 10 }]}>
               {content}
@@ -353,7 +354,7 @@ export function QuestPanel({ assignmentId, onDone, onLeave }: QuestPanelProps) {
             </Text>
           ) : null}
           {(options ?? []).map((o) => (
-            <Pressable
+            <PressableScale
               key={o.task.id}
               onPress={() => replaceWith(o)}
               accessibilityRole="button"
@@ -367,7 +368,7 @@ export function QuestPanel({ assignmentId, onDone, onLeave }: QuestPanelProps) {
                 </Text>
               </View>
               <Ionicons name="add-circle-outline" size={22} color={colors.primary} />
-            </Pressable>
+            </PressableScale>
           ))}
           <View style={[styles.row, { marginTop: spacing.sm }]}>
             <Button label="Just skip today" variant="ghost" size="sm" onPress={skipOnly} style={{ flex: 1 }} />
@@ -442,7 +443,7 @@ function formatClock(totalSeconds: number) {
 function CheckRow({ label, checked, onToggle }: { label: string; checked: boolean; onToggle: () => void }) {
   const { colors, typography, spacing } = useTheme();
   return (
-    <Pressable
+    <PressableScale
       onPress={onToggle}
       accessibilityRole="checkbox"
       accessibilityState={{ checked }}
@@ -450,7 +451,7 @@ function CheckRow({ label, checked, onToggle }: { label: string; checked: boolea
     >
       <Ionicons name={checked ? 'checkbox' : 'square-outline'} size={22} color={checked ? colors.primary : colors.text.muted} />
       <Text style={[typography.subbody, { color: colors.text.primary, marginLeft: 10, flex: 1 }]}>{label}</Text>
-    </Pressable>
+    </PressableScale>
   );
 }
 

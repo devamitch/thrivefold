@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -14,6 +14,7 @@ import { STAMP_CATALOG } from '../../../domain/letters/stampCatalog';
 import { calculateDeliveryHours } from '../../../domain/letters/deliveryCalculator';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
+import { PressableScale } from '../../../components/ui/PressableScale';
 
 export default function LetterComposeScreen() {
   const router = useRouter();
@@ -188,7 +189,7 @@ export default function LetterComposeScreen() {
           {STAMP_CATALOG.map((stamp) => {
             const isSelected = selectedStamp === stamp.id;
             return (
-              <Pressable
+              <PressableScale
                 key={stamp.id}
                 onPress={() => {
                   try {
@@ -221,7 +222,7 @@ export default function LetterComposeScreen() {
                 <Text style={[typography.captionBold, { color: colors.text.primary, marginTop: 6, textAlign: 'center' }]}>
                   {stamp.name}
                 </Text>
-              </Pressable>
+              </PressableScale>
             );
           })}
         </ScrollView>

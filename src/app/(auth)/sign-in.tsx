@@ -1,15 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   FadeIn,
   useReducedMotion,
@@ -25,6 +17,7 @@ import { googleAvailable, signInWithGoogle } from '../../services/account/google
 import { IntroSlider } from '../../components/onboarding/IntroSlider';
 import { AnimatedThrivefoldMark } from '../../components/brand/AnimatedThrivefoldMark';
 import { useTheme } from '../../theme/useTheme';
+import { PressableScale } from '../../components/ui/PressableScale';
 
 
 type Step = 'account' | 'name' | 'email' | 'code';
@@ -126,9 +119,9 @@ export default function SignInScreen() {
       ).map(([label, href], i) => (
         <React.Fragment key={href}>
           {i > 0 ? <Text style={[typography.caption, { color: colors.text.muted }]}> · </Text> : null}
-          <Pressable onPress={() => router.push(href)} hitSlop={10} accessibilityRole="link">
+          <PressableScale onPress={() => router.push(href)} hitSlop={10} accessibilityRole="link">
             <Text style={[typography.caption, { color: colors.text.muted }]}>{label}</Text>
-          </Pressable>
+          </PressableScale>
         </React.Fragment>
       ))}
     </View>
@@ -141,7 +134,7 @@ export default function SignInScreen() {
   if (step === 'account') {
     return (
       <View style={[styles.root, { backgroundColor: colors.background, paddingTop: insets.top + spacing.md, paddingHorizontal: spacing.lg }]}>
-        <Pressable
+        <PressableScale
           onPress={() => {
             setAuthError(null);
             setIntroSeen(false);
@@ -151,7 +144,7 @@ export default function SignInScreen() {
           style={[styles.back, { backgroundColor: colors.surface1 }]}
         >
           <Ionicons name="chevron-back" size={20} color={colors.text.primary} />
-        </Pressable>
+        </PressableScale>
         <View style={styles.hero}>
           <AnimatedThrivefoldMark size={132} />
           <Text style={[typography.display, styles.center, { color: colors.text.primary, marginTop: spacing.lg }]} accessibilityRole="header">
@@ -163,7 +156,7 @@ export default function SignInScreen() {
           </Text>
         </View>
         {googleAvailable() ? (
-          <Pressable
+          <PressableScale
             onPress={google}
             disabled={busy}
             accessibilityRole="button"
@@ -174,7 +167,7 @@ export default function SignInScreen() {
             <Text style={[typography.bodyBold, { color: colors.text.primary, marginLeft: 12 }]}>
               {busy ? 'Opening Google…' : 'Continue with Google'}
             </Text>
-          </Pressable>
+          </PressableScale>
         ) : null}
         {authError ? (
           <Text style={[typography.caption, { color: colors.error, marginTop: spacing.sm, textAlign: 'center' }]}>{authError}</Text>
@@ -200,7 +193,7 @@ export default function SignInScreen() {
         }}
         keyboardShouldPersistTaps="handled"
       >
-        <Pressable
+        <PressableScale
           onPress={() => {
             setAuthError(null);
             setStep(step === 'code' ? 'email' : 'account');
@@ -210,7 +203,7 @@ export default function SignInScreen() {
           style={[styles.back, { backgroundColor: colors.surface1 }]}
         >
           <Ionicons name="chevron-back" size={20} color={colors.text.primary} />
-        </Pressable>
+        </PressableScale>
 
         <Animated.View entering={reduceMotion ? undefined : FadeIn.duration(250)} style={{ marginTop: spacing.xl }}>
           <Text style={[typography.display, { color: colors.text.primary }]} accessibilityRole="header">

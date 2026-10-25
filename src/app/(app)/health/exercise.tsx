@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ActivityRow } from '../../../components/game/ActivityRow';
@@ -185,7 +185,7 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
                   meta={meta}
                   onPress={() => router.push(`/(app)/train/session/${s.id}` as Href)}
                   trailing={
-                    <Pressable
+                    <PressableScale
                       onPress={() =>
                         showAlert({
                           title: 'Delete this workout?',
@@ -201,7 +201,7 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
                       style={styles.iconBtn}
                     >
                       <Ionicons name="trash-outline" size={18} color={colors.text.muted} />
-                    </Pressable>
+                    </PressableScale>
                   }
                 />
               );
@@ -244,7 +244,7 @@ function WeekStrip() {
     return { key: formatLocalDate(d), label: 'MTWTFSS'[i], today: formatLocalDate(d) === formatLocalDate(now) };
   });
   return (
-    <Pressable onPress={() => router.push('/(app)/calendar' as Href)} accessibilityRole="button" accessibilityLabel="Open calendar" style={[styles.week, { marginTop: spacing.md }]}>
+    <PressableScale onPress={() => router.push('/(app)/calendar' as Href)} accessibilityRole="button" accessibilityLabel="Open calendar" style={[styles.week, { marginTop: spacing.md }]}>
       {days.map((d) => (
         <View key={d.key} style={styles.weekDay}>
           <Text style={[typography.caption, { color: d.today ? colors.primary : colors.text.muted }]}>{d.label}</Text>
@@ -262,6 +262,6 @@ function WeekStrip() {
         </View>
       ))}
       <Ionicons name="calendar-outline" size={18} color={colors.text.muted} style={{ marginLeft: 6 }} />
-    </Pressable>
+    </PressableScale>
   );
 }

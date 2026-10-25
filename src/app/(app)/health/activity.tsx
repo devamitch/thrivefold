@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
@@ -12,6 +12,7 @@ import { useTheme } from '../../../theme/useTheme';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngine';
 import { ACTIVITY_TYPES } from '../../../domain/fitness/workouts';
+import { PressableScale } from '../../../components/ui/PressableScale';
 
 const DISTANCE_TYPES = new Set(['Walking', 'Running', 'Cycling', 'Swimming', 'Rowing', 'Hiking']);
 
@@ -113,7 +114,7 @@ export default function ActivityLogScreen() {
                 </Text>
                 {l.note ? <Text style={[typography.caption, { color: colors.text.muted, marginTop: 2 }]}>{l.note}</Text> : null}
               </View>
-              <Pressable
+              <PressableScale
                 onPress={() =>
                   showAlert({
                     title: 'Delete this activity?',
@@ -128,7 +129,7 @@ export default function ActivityLogScreen() {
                 style={styles.iconBtn}
               >
                 <Ionicons name="trash-outline" size={18} color={colors.text.muted} />
-              </Pressable>
+              </PressableScale>
             </View>
           </Card>
         ))

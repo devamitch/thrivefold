@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Linking, Platform, Pressable, Share, StyleSheet, Switch, Text, View } from 'react-native';
+import { Linking, Platform, Share, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { AppHeader } from '../../../components/ui/AppHeader';
 import { Badge } from '../../../components/ui/Badge';
@@ -29,6 +29,7 @@ import {
 } from '../../../services/integrations/healthConnect';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
+import { PressableScale } from '../../../components/ui/PressableScale';
 
 /** Stable empty list: a new [] in a store selector would re-render forever. */
 const NO_PERIODS: never[] = [];
@@ -479,7 +480,7 @@ export default function IntegrationsScreen() {
               style={{ marginTop: spacing.md, alignSelf: 'flex-start' }}
             />
             {found.map((d) => (
-              <Pressable
+              <PressableScale
                 key={d.id}
                 onPress={() => connectDevice(d)}
                 accessibilityRole="button"
@@ -495,7 +496,7 @@ export default function IntegrationsScreen() {
                   {d.name}
                 </Text>
                 <Text style={[typography.captionBold, { color: colors.primary }]}>Connect</Text>
-              </Pressable>
+              </PressableScale>
             ))}
             {scanning && found.length === 0 ? (
               <Text

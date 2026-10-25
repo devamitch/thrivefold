@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useRef, useState } from 'react';
-import { PermissionsAndroid, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { PermissionsAndroid, Platform, StyleSheet, Text, View } from 'react-native';
 import { PoseCameraView, poseLandmarkerAvailable, poseModelVersion, type PoseFrame } from 'pose-landmarker';
 
 import { AppHeader } from '../../../components/ui/AppHeader';
@@ -24,6 +24,7 @@ import {
 } from '../../../domain/pose/movement';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
+import { PressableScale } from '../../../components/ui/PressableScale';
 
 type Phase = 'setup' | 'live' | 'done';
 
@@ -153,14 +154,14 @@ export default function PoseCheckScreen() {
               {view.reps.validFrames ? ` · tracking ${Math.round(confidence * 100)}%` : ''}
             </Text>
           </View>
-          <Pressable
+          <PressableScale
             onPress={() => setFacing(facing === 'front' ? 'back' : 'front')}
             accessibilityRole="button"
             accessibilityLabel="Switch camera"
             style={[styles.flip, { backgroundColor: colors.surface }]}
           >
             <Ionicons name="camera-reverse-outline" size={22} color={colors.text.primary} />
-          </Pressable>
+          </PressableScale>
         </View>
         {error ? <Text style={[typography.caption, { color: colors.error, padding: spacing.sm }]}>{error}</Text> : null}
         <View style={{ padding: spacing.base }}>
