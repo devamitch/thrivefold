@@ -265,7 +265,7 @@ export default function DevToolsScreen() {
           <View style={{ marginTop: spacing.md, gap: 8 }}>
             <Button
               variant="secondary"
-              label={store.user?.isAgeVerified ? 'Set Age to Minor (<18)' : 'Verify as Adult (18+)'}
+              label={store.user?.isAgeVerified ? 'Preview UI as unverified' : 'Preview UI as verified (server still refuses)'}
               icon={
                 <Ionicons
                   name={store.user?.isAgeVerified ? 'lock-closed-outline' : 'shield-checkmark-outline'}

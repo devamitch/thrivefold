@@ -11,6 +11,7 @@ import { enqueueFinishedWeeks, flushSummaryOutbox } from '../../services/sync/su
 import { analytics } from '../../services/telemetry/analyticsService';
 import { firebaseAnalytics } from '../../services/telemetry/firebaseAnalytics';
 import { useTheme } from '../../theme/useTheme';
+import { syncServerProfile, useAgeCheckStatus, useSyncAgeVerified } from '../../services/supabase/ageCheck';
 
 /** Queues finished weeks and sends them if this person opted in; never throws. */
 function runSummaryQueue() {
@@ -69,6 +70,17 @@ export default function AppLayout() {
   useEffect(() => {
     if (pendingCount > 0) flushProgressionSync().catch(() => undefined);
   }, [pendingCount]);
+
+  // Signed-in accounts get their server profile rows (pseudonym, letter settings only), and
+  // the local age-verified flag follows the server, the only place it can change.
+  const user = useRootStore((s) => s.user);
+  const signedIn = isAuthenticated && Boolean(user) && !user?.isGuest;
+  const acceptingLetters = useRootStore((s) => s.letterPreferences.acceptingLetters);
+  useEffect(() => {
+    if (signedIn) syncServerProfile().catch(() => undefined);
+  }, [signedIn, user?.pseudonym, acceptingLetters]);
+  const ageStatus = useAgeCheckStatus(signedIn);
+  useSyncAgeVerified(ageStatus.data);
 
   const { colors } = useTheme();
   // The screens are the blur target for the frosted drawer behind them.

@@ -40,6 +40,12 @@ export default function AccountScreen() {
     <ScreenContainer header={<AppHeader title="Account" subtitle={how} showBack />} scrollMode="shell-scroll-view">
       {user?.email ? <SettingsRow icon="mail-outline" title={user.email} subtitle={how} /> : null}
       <SettingsRow
+        icon={user?.isAgeVerified ? 'shield-checkmark-outline' : 'id-card-outline'}
+        title="Age check"
+        subtitle={user?.isAgeVerified ? 'Verified adult. Letters and groups are open.' : 'Needed for letters and groups.'}
+        onPress={() => router.push('/(app)/you/age-check')}
+      />
+      <SettingsRow
         icon="refresh-outline"
         title="Redo setup"
         subtitle="Choose your space and goals again. Records are kept."

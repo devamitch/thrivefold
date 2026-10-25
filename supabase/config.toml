@@ -1,0 +1,7 @@
+# Only per-function settings are kept here; the project itself is linked with `supabase link`.
+project_id = "thrivefold"
+
+[functions.age-check]
+# The provider webhook has no user token. /start validates the caller's JWT itself and
+# /webhook validates the provider's HMAC signature.
+verify_jwt = false

@@ -356,6 +356,38 @@ await as('anon');
 r = await q(`select * from public.tf_intro_candidates(10)`);
 check('anon cannot discover pen pals', !!r.error, r.error);
 
+// Age assurance (migration 11): only a provider decision, via the service role, verifies
+await as('C');
+r = await q(`select public.tf_age_check_started('${ids.C}', 'veriff', 'sess-c1')`);
+check('a person cannot record their own age check', !!r.error, r.error);
+r = await q(`select public.tf_age_check_decided('veriff', 'sess-c1', 'approved', true)`);
+check('a person cannot approve their own age check', !!r.error, r.error);
+r = await q(`update public.thrivefold_profiles set is_age_verified = true where user_id = '${ids.C}'`);
+r = await q(`select is_age_verified from public.thrivefold_profiles where user_id = '${ids.C}'`);
+check('profile verification cannot be self-set', r.rows?.[0]?.is_age_verified === false, JSON.stringify(r.rows ?? r.error));
+await as('service');
+await db.exec(`select public.tf_age_check_started('${ids.C}', 'veriff', 'sess-c-minor')`);
+r = await q(`select public.tf_age_check_decided('veriff', 'sess-c-minor', 'approved', false) as d`);
+check('an approved check of a minor does not verify', r.rows?.[0]?.d?.status === 'under_age', JSON.stringify(r.rows ?? r.error));
+r = await q(`select is_age_verified from public.thrivefold_profiles where user_id = '${ids.C}'`);
+check('minor stays unverified', r.rows?.[0]?.is_age_verified === false);
+await db.exec(`select public.tf_age_check_started('${ids.C}', 'veriff', 'sess-c2')`);
+r = await q(`select public.tf_age_check_decided('veriff', 'sess-c2', 'approved', true) as d`);
+check('an approved adult check verifies', r.rows?.[0]?.d?.status === 'approved', JSON.stringify(r.rows ?? r.error));
+r = await q(`select public.tf_age_check_decided('veriff', 'no-such-session', 'approved', true)`);
+check('unknown provider sessions are refused', !!r.error, r.error);
+for (const n of [3, 4, 5]) await db.exec(`select public.tf_age_check_started('${ids.C}', 'veriff', 'sess-c${n}')`);
+r = await q(`select public.tf_age_check_started('${ids.C}', 'veriff', 'sess-c6')`);
+check('age checks are rate limited per day', !!r.error && r.error.includes('too_many_attempts'), r.error);
+await as('C');
+r = await q(`select public.tf_my_age_check() as s`);
+check('verified person sees their status', r.rows?.[0]?.s?.verified === true, JSON.stringify(r.rows ?? r.error));
+await as('A');
+r = await q(`select count(*)::int as n from public.thrivefold_age_checks where user_id = '${ids.C}'`);
+check("other people's age checks are hidden", r.rows?.[0]?.n === 0, JSON.stringify(r.rows ?? r.error));
+await as('service');
+await db.exec(`update public.thrivefold_profiles set is_age_verified = false where user_id = '${ids.C}'`);
+
 // Weekly summaries (migration 8): opt-in, own rows only, validated
 await as('B');
 r = await q(`select public.tf_upsert_weekly_summary(date_trunc('week', current_date - 7)::date, 3, 6.5, 7, 4, 7.2, 5, 2, 90, 1, 120) as r`);
