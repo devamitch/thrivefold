@@ -64,6 +64,9 @@ export interface AppSlice {
   onboardingStep: string | null;
   /** When the person stated they are 18+ (a self-declaration, not verification). */
   adultConfirmedAt: string | null;
+  /** Version of the Terms and Privacy policy the person agreed to, and when. */
+  termsAcceptedVersion: string | null;
+  termsAcceptedAt: string | null;
   quietHoursEnabled: boolean;
   /** Opt-in, generic reminders for open quests (off by default). */
   questRemindersEnabled: boolean;
@@ -101,6 +104,7 @@ export interface AppSlice {
   setOnboardingAnswers: (answers: Partial<OnboardingAnswers>) => void;
   setOnboardingStep: (step: string | null) => void;
   confirmAdult: () => void;
+  acceptTerms: (version: string) => void;
   resetOnboarding: () => void;
   setQuietHours: (enabled: boolean, start?: string, end?: string) => void;
   toggleOfflineMode: () => void;
@@ -126,6 +130,8 @@ export const createAppSlice: StateCreator<
   onboarding: EMPTY_ONBOARDING,
   onboardingStep: null,
   adultConfirmedAt: null,
+  termsAcceptedVersion: null,
+  termsAcceptedAt: null,
   quietHoursEnabled: true,
   questRemindersEnabled: false,
   homeGuideDone: false,
@@ -188,6 +194,7 @@ export const createAppSlice: StateCreator<
   },
   setOnboardingStep: (onboardingStep) => set({ onboardingStep }),
   confirmAdult: () => set({ adultConfirmedAt: new Date().toISOString() }),
+  acceptTerms: (version) => set({ termsAcceptedVersion: version, termsAcceptedAt: new Date().toISOString() }),
   // Starts onboarding again with blank answers; health records are untouched.
   resetOnboarding: () =>
     set({ isOnboarded: false, onboarding: EMPTY_ONBOARDING, onboardingStep: null }),

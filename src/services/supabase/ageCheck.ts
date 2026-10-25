@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 
+import { TERMS_VERSION } from '../../domain/legal/terms';
 import { useRootStore } from '../../stores/useRootStore';
 import { queryClient } from './queryClient';
 import { supabase } from './supabaseClient';
@@ -83,7 +84,7 @@ export function ageCheckErrorText(e: unknown): string {
 export async function syncServerProfile(): Promise<void> {
   const s = await session();
   if (!supabase || !s) return;
-  const { user, experience, letterPreferences } = useRootStore.getState();
+  const { user, experience, letterPreferences, termsAcceptedVersion, termsAcceptedAt } = useRootStore.getState();
   if (!user || user.isGuest) return;
   const pseudonym = (user.pseudonym || 'Member').slice(0, 40);
   await supabase.from('thrivefold_profiles').upsert(
@@ -100,4 +101,23 @@ export async function syncServerProfile(): Promise<void> {
     },
     { onConflict: 'user_id' },
   );
+  // The Terms the person agreed to during setup, recorded once per version.
+  if (termsAcceptedVersion === TERMS_VERSION) {
+    const { data: existing } = await supabase
+      .from('thrivefold_consents')
+      .select('id')
+      .eq('user_id', s.user.id)
+      .eq('feature_id', 'terms')
+      .eq('version', TERMS_VERSION)
+      .is('revoked_at', null)
+      .limit(1);
+    if (!existing?.length) {
+      await supabase.from('thrivefold_consents').insert({
+        user_id: s.user.id,
+        feature_id: 'terms',
+        version: TERMS_VERSION,
+        granted_at: termsAcceptedAt ?? new Date().toISOString(),
+      });
+    }
+  }
 }

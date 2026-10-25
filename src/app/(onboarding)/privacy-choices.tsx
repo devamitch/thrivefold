@@ -8,6 +8,7 @@ import { OnboardingScaffold } from '../../components/onboarding/OnboardingScaffo
 import { Card } from '../../components/ui/Card';
 import { useRootStore } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
+import { TERMS_VERSION } from '../../domain/legal/terms';
 import { PressableScale } from '../../components/ui/PressableScale';
 
 const POINTS = [
@@ -38,7 +39,9 @@ export default function PrivacyChoicesScreen() {
   const { colors, typography, spacing } = useTheme();
   const adultConfirmedAt = useRootStore((s) => s.adultConfirmedAt);
   const confirmAdult = useRootStore((s) => s.confirmAdult);
-  const adult = Boolean(adultConfirmedAt);
+  const acceptTerms = useRootStore((s) => s.acceptTerms);
+  const termsVersion = useRootStore((s) => s.termsAcceptedVersion);
+  const adult = Boolean(adultConfirmedAt) && termsVersion === TERMS_VERSION;
 
   return (
     <OnboardingScaffold
@@ -66,10 +69,14 @@ export default function PrivacyChoicesScreen() {
 
       {/* A plain statement, never pre-ticked (master spec §3.1). It is not age verification. */}
       <PressableScale
-        onPress={() => !adult && confirmAdult()}
+        onPress={() => {
+          if (adult) return;
+          confirmAdult();
+          acceptTerms(TERMS_VERSION);
+        }}
         accessibilityRole="checkbox"
         accessibilityState={{ checked: adult }}
-        accessibilityLabel="I meet the minimum age"
+        accessibilityLabel="I am 18 or older and agree to the Terms and Privacy policy"
         style={[
           styles.check,
           { backgroundColor: adult ? colors.primaryAlpha : colors.surface },
@@ -86,7 +93,7 @@ export default function PrivacyChoicesScreen() {
           {adult ? <Ionicons name="checkmark" size={16} color={colors.onPrimary} /> : null}
         </View>
         <View style={styles.flex}>
-          <Text style={[typography.bodyBold, { color: colors.text.primary }]}>I meet the minimum age</Text>
+          <Text style={[typography.bodyBold, { color: colors.text.primary }]}>I’m 18 or older and agree to the Terms and Privacy policy</Text>
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
             Your own statement, never pre-ticked. Letters and groups also need a real age check later.
           </Text>
