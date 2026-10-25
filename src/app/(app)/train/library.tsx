@@ -59,7 +59,7 @@ export default function ExerciseLibraryScreen() {
           <Link href={`/(app)/train/exercise/${item.id}` as Href} asChild>
             <PressableScale
               accessibilityRole="button"
-              style={[styles.row, { borderBottomColor: colors.border }]}
+              style={StyleSheet.flatten([styles.row, { borderBottomColor: colors.border }])}
             >
               <SquircleSurface style={styles.flex}>
                 <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{item.name}</Text>

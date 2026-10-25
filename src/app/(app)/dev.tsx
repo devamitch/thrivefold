@@ -540,7 +540,7 @@ export default function DevToolsScreen() {
             {screenJumps.map((jump) => (
               <Link key={jump.name} href={jump.route as Href} asChild>
                 <PressableScale
-                  style={[styles.jumpRow, { backgroundColor: colors.surface1 }]}
+                  style={StyleSheet.flatten([styles.jumpRow, { backgroundColor: colors.surface1 }])}
                   scaleTo={0.98}
                 >
                   <Ionicons name={jump.icon} size={18} color={colors.primary} />

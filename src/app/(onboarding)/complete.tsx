@@ -155,7 +155,7 @@ export default function CompleteOnboardingScreen() {
           <PressableScale
             accessibilityRole="button"
             accessibilityLabel="Edit food and reminder preferences"
-            style={[styles.optional, { marginTop: spacing.md, marginBottom: spacing.lg }]}
+            style={StyleSheet.flatten([styles.optional, { marginTop: spacing.md, marginBottom: spacing.lg }])}
           >
             <Ionicons name="options-outline" size={18} color={colors.primary} />
             <Text style={[typography.subbodyBold, { color: colors.primary, marginLeft: 6 }]}>

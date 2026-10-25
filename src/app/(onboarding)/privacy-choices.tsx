@@ -69,27 +69,26 @@ export default function PrivacyChoicesScreen() {
         onPress={() => !adult && confirmAdult()}
         accessibilityRole="checkbox"
         accessibilityState={{ checked: adult }}
-        accessibilityLabel="I'm 18 or older"
+        accessibilityLabel="I meet the minimum age"
         style={[
           styles.check,
-          { borderColor: adult ? colors.primary : colors.border, backgroundColor: colors.surface },
+          { backgroundColor: adult ? colors.primaryAlpha : colors.surface },
         ]}
       >
         <SquircleSurface
           style={[
             styles.box,
             {
-              borderColor: adult ? colors.primary : colors.text.muted,
-              backgroundColor: adult ? colors.primary : 'transparent',
+              backgroundColor: adult ? colors.primary : colors.surface2,
             },
           ]}
         >
           {adult ? <Ionicons name="checkmark" size={16} color={colors.onPrimary} /> : null}
         </SquircleSurface>
         <SquircleSurface style={styles.flex}>
-          <Text style={[typography.bodyBold, { color: colors.text.primary }]}>I'm 18 or older</Text>
+          <Text style={[typography.bodyBold, { color: colors.text.primary }]}>I meet the minimum age</Text>
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-            Thrivefold is for adults. Letters and communities also need an age check later.
+            Your own statement, never pre-ticked. Letters and groups also need a real age check later.
           </Text>
         </SquircleSurface>
       </PressableScale>

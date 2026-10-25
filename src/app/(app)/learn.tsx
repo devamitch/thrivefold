@@ -54,7 +54,7 @@ export default function LearnScreen() {
                 <Link href={`/(app)/watch?${new URLSearchParams({ title: art.title, q: art.videoQuery }).toString()}` as Href} asChild>
                   <PressableScale
                     accessibilityRole="link"
-                    style={[styles.cardHeader, { justifyContent: 'flex-start', marginTop: spacing.md }]}
+                    style={StyleSheet.flatten([styles.cardHeader, { justifyContent: 'flex-start', marginTop: spacing.md }])}
                   >
                     <Ionicons name="logo-youtube" size={16} color={colors.text.secondary} />
                     <Text style={[typography.captionBold, { color: colors.text.secondary, marginLeft: 6 }]}>Watch videos on this topic</Text>

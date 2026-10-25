@@ -246,7 +246,7 @@ function WeekStrip() {
   });
   return (
     <Link href={'/(app)/calendar' as Href} asChild>
-      <PressableScale accessibilityRole="button" accessibilityLabel="Open calendar" style={[styles.week, { marginTop: spacing.md }]}>
+      <PressableScale accessibilityRole="button" accessibilityLabel="Open calendar" style={StyleSheet.flatten([styles.week, { marginTop: spacing.md }])}>
         {days.map((d) => (
           <SquircleSurface key={d.key} style={styles.weekDay}>
             <Text style={[typography.caption, { color: d.today ? colors.primary : colors.text.muted }]}>{d.label}</Text>

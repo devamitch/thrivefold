@@ -75,7 +75,7 @@ export interface SquircleSurfaceProps extends ViewProps {
 export const SquircleSurface = memo(function SquircleSurface({
   children,
   style,
-  radius = 20,
+  radius: radiusProp,
   smoothing = 1,
   fill,
   stroke,
@@ -106,6 +106,9 @@ export const SquircleSurface = memo(function SquircleSurface({
   const edge = stroke ? strokeWidth : 0;
   const clip = clipContent && flat.overflow !== 'visible';
 
+  // An explicit radius wins; otherwise the style's own borderRadius; otherwise square. A View
+  // swapped for a SquircleSurface therefore keeps exactly the corners it had.
+  const radius = radiusProp ?? (typeof flat.borderRadius === 'number' ? flat.borderRadius : 0);
   const effectiveRadius = squircleRadius(shape, radius, size.width || 100, size.height || 100);
 
   // Inset by half the stroke so the line sits fully inside the box instead of being clipped.
@@ -123,7 +126,7 @@ export const SquircleSurface = memo(function SquircleSurface({
   );
 
   const drawn = Boolean(path);
-  const hasVisual = paint !== 'transparent' || edge > 0;
+  const hasVisual = (paint !== 'transparent' || edge > 0) && (radius > 0 || shape !== 'squircle');
   const viewStyle = useMemo(
     () => [
       flat,
@@ -140,12 +143,12 @@ export const SquircleSurface = memo(function SquircleSurface({
     [clip, drawn, effectiveRadius, flat, hasVisual, paint, stroke]
   );
 
-  // Nothing to paint: behave exactly like a plain View. No layout tracking, no extra render,
+  // Square corners or nothing to paint: behave exactly like a plain View (a fill still applies). No layout tracking, no extra render,
   // and no rounded clip, so a SquircleSurface used for layout costs nothing and never cuts
   // off its children.
   if (!hasVisual) {
     return (
-      <View {...rest} onLayout={onLayout} style={style}>
+      <View {...rest} onLayout={onLayout} style={fill ? [style, { backgroundColor: fill }] : style}>
         {children}
       </View>
     );

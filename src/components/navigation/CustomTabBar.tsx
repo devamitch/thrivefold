@@ -306,7 +306,10 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
       pointerEvents="box-none"
       style={[styles.dock, containerAnimStyle]}
     >
-      <SquircleSurface style={{ width: barW, height: barH, alignSelf: 'center' }} pointerEvents="box-none">
+      <SquircleSurface
+        style={{ width: barW, height: barH, alignSelf: 'center' }}
+        pointerEvents="box-none"
+      >
         <Svg width={barW} height={barH} style={StyleSheet.absoluteFill} pointerEvents="none">
           <Defs>
             <ClipPath id="dockClip">
@@ -320,8 +323,13 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
         </Svg>
 
         {/* Tab buttons row */}
-        <SquircleSurface style={[styles.row, { paddingHorizontal: bleed }]} accessibilityRole="tablist">
-          <SquircleSurface style={styles.side}>{left.map((route, i) => renderTab(route, i))}</SquircleSurface>
+        <SquircleSurface
+          style={[styles.row, { paddingHorizontal: bleed }]}
+          accessibilityRole="tablist"
+        >
+          <SquircleSurface style={styles.side}>
+            {left.map((route, i) => renderTab(route, i))}
+          </SquircleSurface>
           <SquircleSurface style={styles.centerSlot} />
           <SquircleSurface style={styles.side}>
             {right.map((route, i) => renderTab(route, i + left.length))}
@@ -384,6 +392,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: ORB_CENTER_Y - CENTER_SIZE / 2,
     width: CENTER_SIZE,
+    borderRadius: CENTER_SIZE / 2,
   },
   dock: {
     alignItems: 'center',
@@ -409,6 +418,7 @@ const styles = StyleSheet.create({
   orbButton: {
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: CENTER_SIZE / 2,
   },
   row: {
     flexDirection: 'row',
