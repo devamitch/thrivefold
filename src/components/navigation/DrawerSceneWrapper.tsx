@@ -3,7 +3,14 @@ import * as Haptics from 'expo-haptics';
 import { useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { ReactNode, useEffect, useMemo, useState, type RefObject } from 'react';
-import { BackHandler, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import {
+  BackHandler,
+  Platform,
+  Pressable,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   cancelAnimation,
@@ -18,6 +25,7 @@ import Animated, {
 
 import { useRootStore } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
+import { SquircleSurface } from '../ui';
 import {
   DRAWER_EDGE_WIDTH,
   DRAWER_SCENE_RADIUS,
@@ -112,7 +120,11 @@ export function DrawerSceneWrapper({
         const vx = event.velocityX;
         // Flick wins; otherwise distance, with a little hysteresis so it feels sticky either way.
         const open =
-          vx > FLICK_VELOCITY ? true : vx < -FLICK_VELOCITY ? false : progress.value > (drawerOpen ? 0.6 : 0.4);
+          vx > FLICK_VELOCITY
+            ? true
+            : vx < -FLICK_VELOCITY
+              ? false
+              : progress.value > (drawerOpen ? 0.6 : 0.4);
 
         drawerTarget.value = open ? 1 : 0;
         progress.value = reduceMotion
@@ -135,18 +147,22 @@ export function DrawerSceneWrapper({
 
   const sceneStyle = useAnimatedStyle(() => {
     const p = progress.value;
-    const translateX = interpolate(p, [0, 1], [0, slide], CLAMP);
+    let translateX = interpolate(p, [0, 1], [0, slide - 50], CLAMP);
     // Corners round off over the first 15% of travel: no pop when the screen starts to move,
     // and no per-frame re-clip for the rest of the drag.
     const borderRadius = interpolate(p, [0, 0.15], [0, DRAWER_SCENE_RADIUS], CLAMP);
 
-    if (reduceMotion) {
-      return { borderRadius, transform: [{ translateX }] };
-    }
+    // if (reduceMotion) {
+    //   return { borderRadius, transform: [{ translateX }] };
+    // }
 
     const scale = interpolate(p, [0, 1], [1, DRAWER_SCENE_SCALE], CLAMP);
-    if (IS_IOS) {
-      const rotateY = interpolate(p, [0, 1], [0, -8], CLAMP);
+    if (!IS_IOS) {
+      let rotateY = interpolate(p, [0, 1], [0, -28], CLAMP);
+
+      // translateX = interpolate(progress.value, [0, 1], [0, DRAWER_SCENE_SCALE], CLAMP);
+
+      // rotateY = interpolate(progress.value, [0, 1], [0, -25], CLAMP);
       return {
         borderRadius,
         transform: [{ perspective: 1000 }, { translateX }, { scale }, { rotateY: `${rotateY}deg` }],
@@ -159,18 +175,34 @@ export function DrawerSceneWrapper({
   const veilStyle = useAnimatedStyle(() => ({
     opacity: interpolate(progress.value, [0, 1], [0, 0.14], CLAMP),
   }));
-
   return (
     <GestureDetector gesture={pan}>
-      <Animated.View style={[styles.container, { backgroundColor: colors.background }, sceneStyle]}>
-        <BlurTargetView
-          ref={blurTarget}
-          style={styles.fill}
-          importantForAccessibility={drawerOpen ? 'no-hide-descendants' : 'auto'}
-          accessibilityElementsHidden={drawerOpen}
+      <Animated.View
+        style={[
+          styles.container,
+          // { backgroundColor: colors.background },
+          sceneStyle,
+          // animatedStyled,
+        ]}
+      >
+        <SquircleSurface
+          style={{
+            flex: 1,
+            overflow: 'hidden',
+            borderRadius: drawerOpen ? 40 : 20,
+            backgroundColor: colors.background,
+          }}
+          radius={drawerOpen ? 40 : 20}
         >
-          {children}
-        </BlurTargetView>
+          <BlurTargetView
+            ref={blurTarget}
+            style={styles.fill}
+            importantForAccessibility={drawerOpen ? 'no-hide-descendants' : 'auto'}
+            accessibilityElementsHidden={drawerOpen}
+          >
+            {children}
+          </BlurTargetView>
+        </SquircleSurface>
 
         <Animated.View
           pointerEvents="none"
