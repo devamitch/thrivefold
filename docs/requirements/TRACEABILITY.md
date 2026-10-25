@@ -1,5 +1,21 @@
 # Requirements Traceability Matrix
 
+## Update — 2026-10-25 (13): age assurance live, Terms, social invitation, check-in crash
+
+Checks: compile 0, lint 0, `pnpm test` 192/192, `pnpm test:db` 104/104, `deno test` 4/4.
+Supabase: migrations 1-11 live on lymbgfzngpkvcadrkvui; Edge Function `age-check` deployed (401 without
+token, 401 with a forged signature, 405 on GET).
+
+| Item | Status | Commit |
+| --- | --- | --- |
+| Check-in crashed on swipe (transform forEach of null) | fixed, verified on emulator | 0a6d953 |
+| Age assurance (REQ-013) | implemented + deployed: provider session, HMAC webhook, server-only verification, 5/day limit, outcome only stored | 4067bc6 |
+| Server profile rows were never created | synced after sign-in (pseudonym, experience, letter setting) | 4067bc6 |
+| Terms acceptance recorded | versioned locally + `thrivefold_consents` | 4c0920b |
+| Social path could only be revealed in dev | opt-in invitation after 2 check-in days, signed-in only | d40f796 |
+| Age check needs provider keys | BLOCKED (owner): Veriff account, then `supabase secrets set VERIFF_API_KEY=… VERIFF_SHARED_SECRET=…` and webhook URL `…/functions/v1/age-check/webhook` in Veriff | — |
+| Dating pathway, sexual/hookup or meetup features | not built: spec REVIEW_REQUIRED for dating; meetups and sexual services excluded by the spec | — |
+
 ## Update — 2026-10-25 (12): every screen visited, themed toggles
 
 Seen on the emulator (debug + Metro, `thrivefold:///route` deep links): Quests, Games, Medications,
