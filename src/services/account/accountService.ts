@@ -73,3 +73,23 @@ export async function signOutEverywhere(): Promise<void> {
   queryClient.clear();
   useRootStore.getState().signOut();
 }
+
+/**
+ * Deletes the Thrivefold account on the server (profile, letters, dating, group memberships,
+ * rewards, age checks, consents) and then everything on this phone. Guests have no server
+ * account, so only the phone is erased. Throws if the server refuses; nothing local is erased
+ * in that case, so the person can retry.
+ */
+export async function deleteAccountEverywhere(): Promise<void> {
+  const { supabase } = await import('../supabase/supabaseClient');
+  const { eraseLocalData } = await import('../privacy/localData');
+  if (supabase) {
+    const { data } = await supabase.auth.getSession();
+    if (data.session) {
+      const { error } = await supabase.functions.invoke('delete-account', { method: 'POST', body: { confirm: 'DELETE' } });
+      if (error) throw new Error('delete_failed');
+    }
+  }
+  await signOutEverywhere();
+  eraseLocalData();
+}
