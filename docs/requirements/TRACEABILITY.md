@@ -1,5 +1,17 @@
 # Requirements Traceability Matrix
 
+## Update — 2026-10-25 (14): dating (spec §18), letters cleanup
+
+Checks: compile 0, lint 0, `pnpm test` 192/192, `pnpm test:db` 123/123. Migration 12 pushed live.
+Not seen on screen: dating screens (need a signed-in, age-verified, level-20 account).
+
+| Item | Status | Commit |
+| --- | --- | --- |
+| Dating: profiles, compatibility, women-first first contact, chip-only chat, end/block, limits | implemented server-side + app; DB-tested (+19 checks) | 515d61b |
+| Dating safety scope | no photos, contact fields, location, calls or meetups; no religion/identity rule active (18.1) | 515d61b |
+| Letter card and settings were fake | server-backed card; only real setting kept | 5e881e2 |
+| Remaining for a live dating launch | owner: Veriff keys (age check), store-listing disclosure of the dating feature (spec §13, no concealment) | — |
+
 ## Update — 2026-10-25 (13): age assurance live, Terms, social invitation, check-in crash
 
 Checks: compile 0, lint 0, `pnpm test` 192/192, `pnpm test:db` 104/104, `deno test` 4/4.
