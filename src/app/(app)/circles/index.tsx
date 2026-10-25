@@ -1,4 +1,4 @@
-import { Link, type Href } from 'expo-router';
+import { Link, useRouter, type Href } from 'expo-router';
 import React, { useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
@@ -14,10 +14,8 @@ import {
   communityErrorText,
   useCommunities,
   useCreateCommunity,
-  useJoinCommunity,
   useMyMemberships,
   useServerGates,
-  type Community,
 } from '../../../services/supabase/queries';
 import { isBackendConfigured } from '../../../services/supabase/supabaseClient';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
@@ -33,6 +31,7 @@ const CREATE_AT = policyConfig.progressionGates.create_community;
  * group works for its organiser straight away and is listed after a verification call.
  */
 export default function CirclesScreen() {
+  const router = useRouter();
   const { colors, typography, spacing } = useTheme();
   const { user, localLevel, showToast } = useRootStore(
     useShallow((s) => ({ user: s.user, localLevel: s.level, showToast: s.showToast })),
@@ -46,7 +45,6 @@ export default function CirclesScreen() {
 
   const list = useCommunities(canJoin);
   const mine = useMyMemberships(canJoin);
-  const join = useJoinCommunity();
   const create = useCreateCommunity();
 
   const [topic, setTopic] = useState<string | null>(null);
@@ -55,17 +53,13 @@ export default function CirclesScreen() {
   const groups = (list.data ?? []).filter((c) => !topic || c.topic === topic);
   const member = new Set(mine.data ?? []);
 
-  const toggle = (c: Community) =>
-    join.mutate(
-      { id: c.id, leave: member.has(c.id) },
-      { onError: (e) => showToast({ type: 'error', message: communityErrorText(e) }) },
-    );
 
   const submit = () => {
     if (!form) return;
     create.mutate(form, {
-      onSuccess: () => {
+      onSuccess: (id) => {
         setForm(null);
+        router.push(`/(app)/circles/${id}` as Href);
         showToast({ type: 'success', message: 'Group created. It is listed for others after a short verification call.' });
       },
       onError: (e) => showToast({ type: 'error', message: communityErrorText(e) }),
@@ -130,17 +124,20 @@ export default function CirclesScreen() {
             </SquircleSurface>
           ) : (
             groups.map((c) => (
-              <SettingsRow
-                key={c.id}
-                icon={member.has(c.id) ? 'checkmark-circle' : 'people-outline'}
-                title={c.name}
-                subtitle={[c.topic, c.verification_status === 'pending_founder_call' ? 'Waiting for verification' : null, c.purpose].filter(Boolean).join(' · ')}
-                right={
-                  c.created_by === null || c.verification_status === 'verified' ? (
-                    <Button label={member.has(c.id) ? 'Leave' : 'Join'} size="sm" variant={member.has(c.id) ? 'outline' : 'primary'} onPress={() => toggle(c)} disabled={join.isPending} />
-                  ) : undefined
-                }
-              />
+              <Link key={c.id} href={`/(app)/circles/${c.id}` as Href} asChild>
+                <SettingsRow
+                  icon={member.has(c.id) ? 'checkmark-circle' : 'people-outline'}
+                  title={c.name}
+                  subtitle={[
+                    member.has(c.id) ? 'Member' : null,
+                    c.topic,
+                    c.verification_status === 'pending_founder_call' ? 'Waiting for verification' : null,
+                    c.purpose,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                />
+              </Link>
             ))
           )}
 

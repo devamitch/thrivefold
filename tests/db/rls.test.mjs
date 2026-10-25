@@ -490,6 +490,50 @@ check('the report carries the chip messages as evidence', /them: /.test(r.rows?.
 await as('service');
 await db.exec(`delete from public.thrivefold_blocks where user_id = '${ids.B}' and blocked_user_id = '${ids.A}'`);
 
+// Groups (migration 14): smoke checks of the group functions end to end
+await as('A');
+r = await q(`select public.tf_create_community('Evening calm', 'A peer group for winding down after work.', 'Therapy and support') as id`);
+const g = r.rows?.[0]?.id;
+await as('service');
+await db.exec(`update public.thrivefold_communities set verification_status = 'verified', join_mode = 'approval' where id = '${g}'`);
+await as('D');
+r = await q(`select public.tf_group_join('${g}') as s`);
+check('approval groups record a request', r.rows?.[0]?.s === 'pending', r.error ?? JSON.stringify(r.rows));
+r = await q(`select public.tf_group_post('${g}', array['group_checkin_01'])`);
+check('pending members cannot post', /not_a_member/.test(r.error ?? ''), r.error);
+await as('A');
+r = await q(`select public.tf_group_detail('${g}') as d`);
+check('organisers see join requests', r.rows?.[0]?.d?.pending?.length === 1, r.error ?? JSON.stringify(r.rows));
+await q(`select public.tf_group_decide('${g}', '${ids.D}', true)`);
+await as('D');
+r = await q(`select public.tf_group_post('${g}', array['group_checkin_02','group_share_05']) as id`);
+const gm = r.rows?.[0]?.id;
+check('members post cards', !r.error && gm, r.error);
+r = await q(`select public.tf_group_note('${g}', 'hello')`);
+check('members cannot write free text', /forbidden/.test(r.error ?? ''), r.error);
+await as('A');
+r = await q(`select public.tf_group_note('${g}', 'Tonight: one thing that helped this week. Call me on +44 7700 900123')`);
+check('notes refuse contact details', /contact_details/.test(r.error ?? ''), r.error);
+r = await q(`select public.tf_group_note('${g}', 'Tonight: share one thing that helped this week.') as id`);
+check('the owner writes a facilitator note', !r.error, r.error);
+await q(`select public.tf_group_react('${gm}', 'support')`);
+r = await q(`select body, reactions from public.tf_group_messages('${g}')`);
+check('members read the chat with reactions', r.rows?.length === 2 && r.rows[0].reactions?.support === 1, r.error ?? JSON.stringify(r.rows));
+r = await q(`select public.tf_group_set_role('${g}', '${ids.D}', 'facilitator')`);
+check('owners give roles', !r.error, r.error);
+r = await q(`select public.tf_group_create_event('${g}', 'Thursday circle', 'Gentle check-in', 'support_circle', now() + interval '1 day', 60) as id`);
+const ev = r.rows?.[0]?.id;
+check('organisers schedule sessions', !r.error && ev, r.error);
+await as('D');
+await q(`select public.tf_group_rsvp('${ev}', true)`);
+r = await q(`select public.tf_group_detail('${g}') as d`);
+check('members see sessions and their reply', r.rows?.[0]?.d?.events?.[0]?.me_going === true, r.error ?? JSON.stringify(r.rows));
+r = await q(`select public.tf_group_remove('${g}', '${ids.A}')`);
+check('nobody removes someone above them', /forbidden/.test(r.error ?? ''), r.error);
+await as('B');
+r = await q(`select * from public.tf_group_messages('${g}')`);
+check('outsiders cannot read a group chat', /not_a_member/.test(r.error ?? ''), r.error);
+
 // Weekly summaries (migration 8): opt-in, own rows only, validated
 await as('B');
 r = await q(`select public.tf_upsert_weekly_summary(date_trunc('week', current_date - 7)::date, 3, 6.5, 7, 4, 7.2, 5, 2, 90, 1, 120) as r`);

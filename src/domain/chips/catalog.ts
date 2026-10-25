@@ -12,14 +12,18 @@ export type ChipCategory =
   | 'dating_hello'
   | 'dating_reflection'
   | 'dating_playful'
-  | 'dating_reply';
+  | 'dating_reply'
+  | 'group_checkin'
+  | 'group_share'
+  | 'group_support'
+  | 'group_boundary';
 
 export interface MessageChip {
   id: string;
   category: ChipCategory;
   text: string;
   subtext?: string;
-  allowedModes: ('letters' | 'structured-introduction' | 'dating')[];
+  allowedModes: ('letters' | 'structured-introduction' | 'dating' | 'group')[];
   riskClass: 'safe' | 'boundary' | 'contact_sensitive';
   version: string;
 }
@@ -398,6 +402,223 @@ export const APPROVED_CHIPS: MessageChip[] = [
     allowedModes: ['dating'],
     riskClass: 'boundary',
     version: CHIP_CATALOG_VERSION,
+  },
+  // 12. Group chat in therapy and practice groups (spec 9.4 / 960: chip-first)
+  {
+    id: 'group_checkin_01',
+    category: 'group_checkin',
+    text: 'Checking in: today has been a good day.',
+    subtext: 'Good day',
+    allowedModes: ['group'],
+    riskClass: 'safe',
+    version: '2026.10.26-v1',
+  },
+  {
+    id: 'group_checkin_02',
+    category: 'group_checkin',
+    text: 'Checking in: today has been hard, but I am here.',
+    subtext: 'Hard day',
+    allowedModes: ['group'],
+    riskClass: 'safe',
+    version: '2026.10.26-v1',
+  },
+  {
+    id: 'group_checkin_03',
+    category: 'group_checkin',
+    text: 'I am feeling calmer than last week.',
+    subtext: 'Calmer',
+    allowedModes: ['group'],
+    riskClass: 'safe',
+    version: '2026.10.26-v1',
+  },
+  {
+    id: 'group_checkin_04',
+    category: 'group_checkin',
+    text: 'I am tired today and taking it slowly.',
+    subtext: 'Tired',
+    allowedModes: ['group'],
+    riskClass: 'safe',
+    version: '2026.10.26-v1',
+  },
+  {
+    id: 'group_checkin_05',
+    category: 'group_checkin',
+    text: 'I kept one small promise to myself today.',
+    subtext: 'Small win',
+    allowedModes: ['group'],
+    riskClass: 'safe',
+    version: '2026.10.26-v1',
+  },
+  {
+    id: 'group_checkin_06',
+    category: 'group_checkin',
+    text: 'I would like to listen today rather than share.',
+    subtext: 'Listening',
+    allowedModes: ['group'],
+    riskClass: 'safe',
+    version: '2026.10.26-v1',
+  },
+  {
+    id: 'group_share_01',
+    category: 'group_share',
+    text: 'Something that helped me this week was getting outside.',
+    subtext: 'Fresh air',
+    allowedModes: ['group'],
+    riskClass: 'safe',
+    version: '2026.10.26-v1',
+  },
+  {
+    id: 'group_share_02',
+    category: 'group_share',
+    text: 'Something that helped me this week was talking to someone I trust.',
+    subtext: 'Talking',
+    allowedModes: ['group'],
+    riskClass: 'safe',
+    version: '2026.10.26-v1',
+  },
+  {
+    id: 'group_share_03',
+    category: 'group_share',
+    text: 'Something that helped me this week was moving my body.',
+    subtext: 'Movement',
+    allowedModes: ['group'],
+    riskClass: 'safe',
+    version: '2026.10.26-v1',
+  },
+  {
+    id: 'group_share_04',
+    category: 'group_share',
+    text: 'Something that helped me this week was sleeping a little earlier.',
+    subtext: 'Sleep',
+    allowedModes: ['group'],
+    riskClass: 'safe',
+    version: '2026.10.26-v1',
+  },
+  {
+    id: 'group_share_05',
+    category: 'group_share',
+    text: 'I am finding it hard to stay motivated.',
+    subtext: 'Motivation',
+    allowedModes: ['group'],
+    riskClass: 'safe',
+    version: '2026.10.26-v1',
+  },
+  {
+    id: 'group_share_06',
+    category: 'group_share',
+    text: 'I am finding it hard to switch off at night.',
+    subtext: 'Switching off',
+    allowedModes: ['group'],
+    riskClass: 'safe',
+    version: '2026.10.26-v1',
+  },
+  {
+    id: 'group_share_07',
+    category: 'group_share',
+    text: 'I am finding it hard to ask for help.',
+    subtext: 'Asking for help',
+    allowedModes: ['group'],
+    riskClass: 'safe',
+    version: '2026.10.26-v1',
+  },
+  {
+    id: 'group_share_08',
+    category: 'group_share',
+    text: 'My goal for this week is one small, steady step.',
+    subtext: 'Goal',
+    allowedModes: ['group'],
+    riskClass: 'safe',
+    version: '2026.10.26-v1',
+  },
+  {
+    id: 'group_support_01',
+    category: 'group_support',
+    text: 'Thank you for sharing that.',
+    subtext: 'Thanks',
+    allowedModes: ['group'],
+    riskClass: 'safe',
+    version: '2026.10.26-v1',
+  },
+  {
+    id: 'group_support_02',
+    category: 'group_support',
+    text: 'That sounds really hard. You are not alone in it.',
+    subtext: 'Not alone',
+    allowedModes: ['group'],
+    riskClass: 'safe',
+    version: '2026.10.26-v1',
+  },
+  {
+    id: 'group_support_03',
+    category: 'group_support',
+    text: 'I have felt something similar.',
+    subtext: 'Me too',
+    allowedModes: ['group'],
+    riskClass: 'safe',
+    version: '2026.10.26-v1',
+  },
+  {
+    id: 'group_support_04',
+    category: 'group_support',
+    text: 'Well done for showing up today.',
+    subtext: 'Showing up',
+    allowedModes: ['group'],
+    riskClass: 'safe',
+    version: '2026.10.26-v1',
+  },
+  {
+    id: 'group_support_05',
+    category: 'group_support',
+    text: 'Sending you strength for the week.',
+    subtext: 'Strength',
+    allowedModes: ['group'],
+    riskClass: 'safe',
+    version: '2026.10.26-v1',
+  },
+  {
+    id: 'group_support_06',
+    category: 'group_support',
+    text: 'What helped you get through it?',
+    subtext: 'Question',
+    allowedModes: ['group'],
+    riskClass: 'safe',
+    version: '2026.10.26-v1',
+  },
+  {
+    id: 'group_support_07',
+    category: 'group_support',
+    text: 'Be gentle with yourself.',
+    subtext: 'Gentle',
+    allowedModes: ['group'],
+    riskClass: 'safe',
+    version: '2026.10.26-v1',
+  },
+  {
+    id: 'group_boundary_01',
+    category: 'group_boundary',
+    text: 'I would rather not go into detail, thank you.',
+    subtext: 'Boundary',
+    allowedModes: ['group'],
+    riskClass: 'boundary',
+    version: '2026.10.26-v1',
+  },
+  {
+    id: 'group_boundary_02',
+    category: 'group_boundary',
+    text: 'Please keep what is shared here inside the group.',
+    subtext: 'Confidentiality',
+    allowedModes: ['group'],
+    riskClass: 'boundary',
+    version: '2026.10.26-v1',
+  },
+  {
+    id: 'group_boundary_03',
+    category: 'group_boundary',
+    text: 'I would like the facilitator to look at this conversation.',
+    subtext: 'Ask facilitator',
+    allowedModes: ['group'],
+    riskClass: 'boundary',
+    version: '2026.10.26-v1',
   },
 ];
 
