@@ -1,134 +1,123 @@
-import { SquircleSurface } from '../../../../components/ui/SquircleSurface';
-import React from 'react';
-import { Text, StyleSheet, ScrollView, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { ScreenWrapper } from '../../../../components/ui/ScreenWrapper';
+import { Link, useLocalSearchParams, useRouter, type Href } from 'expo-router';
+import React, { useEffect, useRef } from 'react';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+
+import { Button } from '../../../../components/ui/Button';
 import { Card } from '../../../../components/ui/Card';
 import { Header } from '../../../../components/ui/Header';
-import { Button } from '../../../../components/ui/Button';
-import { Badge } from '../../../../components/ui/Badge';
+import { ScreenWrapper } from '../../../../components/ui/ScreenWrapper';
+import { SquircleSurface } from '../../../../components/ui/SquircleSurface';
+import {
+  hoursUntil,
+  letterErrorText,
+  useDeclineLetter,
+  useLetterInbox,
+  useLetterOutbox,
+  useOpenLetter,
+  usePseudonyms,
+} from '../../../../services/supabase/letters';
+import { useRootStore } from '../../../../stores/useRootStore';
 import { useTheme } from '../../../../theme/useTheme';
-import { useRootStore, useShallow } from '../../../../stores/useRootStore';
 
-export default function LetterDeliveryDetailScreen() {
+/** One letter. Opening an arrived letter marks it read; you can reply or decline. */
+export default function LetterScreen() {
   const router = useRouter();
   const { letterId } = useLocalSearchParams<{ letterId: string }>();
   const { colors, typography, spacing } = useTheme();
-  const { inbox, outbox } = useRootStore(
-    useShallow((s) => ({ inbox: s.inbox, outbox: s.outbox })),
-  );
+  const showAlert = useRootStore((s) => s.showAlert);
+  const inbox = useLetterInbox(true);
+  const outbox = useLetterOutbox(true);
+  const open = useOpenLetter();
+  const decline = useDeclineLetter();
 
-  const letter = [...inbox, ...outbox].find((l) => l.id === letterId) ?? inbox[0];
+  const incoming = inbox.data?.find((l) => l.id === letterId);
+  const letter = incoming ?? outbox.data?.find((l) => l.id === letterId);
+  const otherId = letter ? (incoming ? letter.sender_id : letter.recipient_id) : '';
+  const names = usePseudonyms(otherId ? [otherId] : [], Boolean(otherId));
+  const who = names.data?.[otherId] ?? (incoming ? 'A pen pal' : 'your pen pal');
+
+  // Mark read once, when an arrived letter is first shown to its recipient.
+  const marked = useRef(false);
+  useEffect(() => {
+    if (incoming && incoming.status !== 'opened' && !marked.current) {
+      marked.current = true;
+      open.mutate(incoming.id);
+    }
+  }, [incoming, open]);
+
+  if (inbox.isLoading || outbox.isLoading) {
+    return (
+      <ScreenWrapper scrollable>
+        <Header title="Letter" showBack />
+        <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} />
+      </ScreenWrapper>
+    );
+  }
+
+  if (!letter) {
+    return (
+      <ScreenWrapper scrollable>
+        <Header title="Letter" showBack />
+        <Card style={{ padding: spacing.lg }}>
+          <Text style={[typography.body, { color: colors.text.secondary }]}>
+            This letter isn’t available. It may have been declined or isn’t delivered yet.
+          </Text>
+        </Card>
+      </ScreenWrapper>
+    );
+  }
+
+  const waiting = hoursUntil(letter.scheduled_delivery_at);
+  const onDecline = () =>
+    showAlert({
+      title: 'Decline this letter?',
+      message: `${who} won’t be told why. You can still block them from Safety.`,
+      confirmText: 'Decline',
+      destructive: true,
+      onConfirm: () =>
+        decline.mutate(letter.id, {
+          onSuccess: () => router.back(),
+          onError: (e) => showAlert({ title: 'Couldn’t decline', message: letterErrorText(e), confirmText: 'OK', cancelText: null }),
+        }),
+    });
 
   return (
-    <ScreenWrapper scrollable>
-      <Header title="Letter on its way" subtitle="Letters take time to arrive, like post" showBack />
-      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
-        <Card style={{ marginBottom: spacing.md, alignItems: 'center', padding: spacing.xl }}>
-          <View style={[styles.stampCircle, { backgroundColor: colors.primaryAlpha }]}>
-            <Ionicons name="mail-unread" size={32} color={colors.primary} />
+    <ScreenWrapper
+      scrollable
+      footer={
+        incoming ? (
+          <View style={styles.actions}>
+            <Button label="Decline" variant="secondary" onPress={onDecline} style={styles.flex} />
+            <Link href={`/(app)/letters/compose?to=${letter.sender_id}&name=${encodeURIComponent(who)}` as Href} asChild>
+              <Button label="Reply" style={styles.flex} />
+            </Link>
           </View>
-          <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 12 }]}>
-            Letter ID: {letter.id}
-          </Text>
-          <Badge
-            label={letter.status === 'in_transit' ? 'In Transit Across Channels' : 'Arrived at Destination'}
-            variant={letter.status === 'in_transit' ? 'warning' : 'success'}
-            style={{ marginTop: 8 }}
-          />
-
-          <View style={styles.journeyMetrics}>
-            <View style={styles.metricItem}>
-              <Text style={[typography.caption, { color: colors.text.muted }]}>DISTANCE</Text>
-              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{letter.distanceKm.toLocaleString()} km</Text>
-            </View>
-            <View style={styles.metricItem}>
-              <Text style={[typography.caption, { color: colors.text.muted }]}>TRANSIT TIME</Text>
-              <Text style={[typography.bodyBold, { color: colors.primary }]}>~{letter.deliveryHours} Hours</Text>
-            </View>
-            <View style={styles.metricItem}>
-              <Text style={[typography.caption, { color: colors.text.muted }]}>STAMP</Text>
-              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{letter.stampId.replace('stamp_', '')}</Text>
-            </View>
-          </View>
-        </Card>
-
-        {/* Milestone Steps */}
-        <Card style={{ marginBottom: spacing.lg }}>
-          <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: 12 }]}>
-            Postal Waypoints
-          </Text>
-          <View style={styles.timelineRow}>
-            <Ionicons name="checkmark-circle" size={20} color={colors.success} />
-            <View style={{ marginLeft: 10 }}>
-              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Dispatched by Sender</Text>
-              <Text style={[typography.caption, { color: colors.text.muted }]}>
-                {new Date(letter.createdAt).toLocaleString()}
-              </Text>
-            </View>
-          </View>
-          <View style={[styles.timelineRow, { marginTop: 14 }]}>
-            <Ionicons
-              name={letter.status === 'in_transit' ? 'airplane' : 'checkmark-circle'}
-              size={20}
-              color={letter.status === 'in_transit' ? colors.primary : colors.success}
-            />
-            <View style={{ marginLeft: 10 }}>
-              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Cross-Regional Transit Routing</Text>
-              <Text style={[typography.caption, { color: colors.text.muted }]}>
-                Paced based on coarse geographic distance bands
-              </Text>
-            </View>
-          </View>
-          <View style={[styles.timelineRow, { marginTop: 14 }]}>
-            <Ionicons
-              name={letter.status === 'delivered' || letter.status === 'opened' ? 'checkmark-circle' : 'time-outline'}
-              size={20}
-              color={letter.status === 'delivered' || letter.status === 'opened' ? colors.success : colors.text.muted}
-            />
-            <View style={{ marginLeft: 10 }}>
-              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Delivery to Recipient Box</Text>
-              <Text style={[typography.caption, { color: colors.text.muted }]}>
-                Expected: {new Date(letter.scheduledDeliveryAt).toLocaleString()}
-              </Text>
-            </View>
-          </View>
-        </Card>
-
-        <Button label="Return to Mailbox" variant="outline" onPress={() => router.replace('/(app)/letters')} />
-      </ScrollView>
+        ) : undefined
+      }
+    >
+      <Header title={incoming ? `From ${who}` : `To ${who}`} subtitle={new Date(letter.sent_at).toLocaleDateString()} showBack />
+      <Card style={{ padding: spacing.lg }}>
+        <SquircleSurface shape="circle" fill={colors.primaryAlpha} style={styles.icon}>
+          <Ionicons name={waiting > 0 ? 'paper-plane-outline' : 'mail-open-outline'} size={22} color={colors.primary} />
+        </SquircleSurface>
+        <Text style={[typography.body, { color: colors.text.primary, marginTop: spacing.md, lineHeight: 24 }]}>
+          {letter.assembled_body}
+        </Text>
+        <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.md }]}>
+          {waiting > 0
+            ? `On its way. Arrives in about ${waiting} hour${waiting === 1 ? '' : 's'}.`
+            : letter.opened_at
+              ? `Read ${new Date(letter.opened_at).toLocaleString()}`
+              : `Arrived ${new Date(letter.scheduled_delivery_at).toLocaleString()}`}
+        </Text>
+      </Card>
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-  },
-  stampCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  journeyMetrics: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-    marginTop: 20,
-    borderTopColor: '#33333333',
-    paddingTop: 16,
-  },
-  metricItem: {
-    alignItems: 'center',
-  },
-  timelineRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
+  flex: { flex: 1 },
+  actions: { flexDirection: 'row', gap: 10 },
+  icon: { alignItems: 'center', height: 44, justifyContent: 'center', width: 44 },
 });

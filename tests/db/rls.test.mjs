@@ -339,6 +339,23 @@ check('third workout of the day is refused', /workout limit/.test(r.error ?? '')
 r = await q(`select public.tf_claim_workout_reward('wk_4', current_date - 3, 40, 0.9) as r`);
 check('stale workout date is refused', /stale game date/.test(r.error ?? ''), r.error);
 
+// Correspondence (migration 10): chip catalogue seeded, intro candidates gated
+await as('A');
+r = await q(`select count(*)::int as n from public.thrivefold_chip_catalog where id in ('intro_03','gratitude_01','close_01')`);
+check('approved chips are seeded by migration', (r.rows?.[0]?.n ?? 0) >= 2, JSON.stringify(r.rows ?? r.error));
+r = await q(`select user_id from public.tf_intro_candidates(50)`);
+const cands = (r.rows ?? []).map((x) => x.user_id);
+check('verified adult gets intro candidates', !r.error && cands.length > 0, r.error);
+check('candidates never include the caller', !cands.includes(ids.A));
+check('candidates never include unverified people', !cands.includes(ids.C));
+check('candidates exclude people already written to', !cands.includes(ids.B));
+await as('C');
+r = await q(`select * from public.tf_intro_candidates(10)`);
+check('unverified person cannot discover pen pals', !!r.error, r.error);
+await as('anon');
+r = await q(`select * from public.tf_intro_candidates(10)`);
+check('anon cannot discover pen pals', !!r.error, r.error);
+
 // Weekly summaries (migration 8): opt-in, own rows only, validated
 await as('B');
 r = await q(`select public.tf_upsert_weekly_summary(date_trunc('week', current_date - 7)::date, 3, 6.5, 7, 4, 7.2, 5, 2, 90, 1, 120) as r`);

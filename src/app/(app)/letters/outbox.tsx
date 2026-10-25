@@ -1,77 +1,41 @@
-import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import React from 'react';
-import { Text, StyleSheet, ScrollView, View } from 'react-native';
-import { Link, type Href } from 'expo-router';
-import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
+import { ActivityIndicator, Text, View } from 'react-native';
+
+import { LetterRow } from '../../../components/letters/LetterRow';
 import { Card } from '../../../components/ui/Card';
 import { Header } from '../../../components/ui/Header';
-import { Button } from '../../../components/ui/Button';
-import { Badge } from '../../../components/ui/Badge';
+import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
+import { letterErrorText, useLetterOutbox, usePseudonyms } from '../../../services/supabase/letters';
 import { useTheme } from '../../../theme/useTheme';
-import { useRootStore, useShallow } from '../../../stores/useRootStore';
 
 export default function LetterOutboxScreen() {
   const { colors, typography, spacing } = useTheme();
-  const { outbox } = useRootStore(
-    useShallow((s) => ({ outbox: s.outbox })),
-  );
+  const outbox = useLetterOutbox(true);
+  const names = usePseudonyms((outbox.data ?? []).map((l) => l.recipient_id), true);
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Sent" subtitle="Letters you have sent" showBack />
-      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
-        {outbox.length > 0 ? (
-          outbox.map((letter) => (
-            <Card key={letter.id} style={{ marginBottom: spacing.md, padding: spacing.lg }}>
-              <View style={styles.headerRow}>
-                <Badge
-                  label={letter.status === 'opened' ? 'Opened & Read' : 'Dispatched'}
-                  variant={letter.status === 'opened' ? 'success' : 'primary'}
-                />
-                <Text style={[typography.caption, { color: colors.text.muted }]}>
-                  {letter.distanceKm.toLocaleString()} km
-                </Text>
-              </View>
-
-              <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 8 }]}>
-                Letter to {letter.recipientPseudonym ?? 'your pen pal'}
-              </Text>
-              <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>
-                Dispatched on {new Date(letter.createdAt).toLocaleDateString()} · Delivered on {new Date(letter.scheduledDeliveryAt).toLocaleDateString()}
-              </Text>
-
-              <Link href={`/(app)/letters/delivery/${letter.id}` as any as Href} asChild>
-                <Button
-                  label="View Delivery Track"
-                  variant="outline"
-                  size="sm"
-                  style={{ marginTop: 12, alignSelf: 'flex-start' }}
-                />
-              </Link>
-            </Card>
-          ))
-        ) : (
-          <Card style={{ padding: spacing.xl, alignItems: 'center', marginTop: spacing.md }}>
-            <Text style={[typography.subbody, { color: colors.text.secondary }]}>
-              No dispatched letters yet. Compose a slow letter to begin!
+      <Header title="Sent" subtitle="Letters you sent and where they are" showBack />
+      <View>
+        {outbox.isLoading ? (
+          <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} />
+        ) : outbox.error ? (
+          <Card style={{ padding: spacing.lg }}>
+            <Text style={[typography.body, { color: colors.text.secondary }]}>{letterErrorText(outbox.error)}</Text>
+          </Card>
+        ) : (outbox.data ?? []).length === 0 ? (
+          <Card style={{ padding: spacing.lg }}>
+            <Text style={[typography.subheading, { color: colors.text.primary }]}>Nothing sent yet</Text>
+            <Text style={[typography.body, { color: colors.text.secondary, marginTop: 6 }]}>
+              Letters you send show here, with the time left until they arrive.
             </Text>
           </Card>
+        ) : (
+          (outbox.data ?? []).map((l) => (
+            <LetterRow key={l.id} letter={l} who={names.data?.[l.recipient_id] ?? 'your pen pal'} direction="out" />
+          ))
         )}
-      </ScrollView>
+      </View>
     </ScreenWrapper>
   );
 }
-
-const styles = StyleSheet.create({
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-});

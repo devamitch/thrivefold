@@ -1,74 +1,41 @@
-import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import React from 'react';
-import { Text, StyleSheet, ScrollView, View } from 'react-native';
-import { Link, type Href } from 'expo-router';
-import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
+import { ActivityIndicator, Text, View } from 'react-native';
+
+import { LetterRow } from '../../../components/letters/LetterRow';
 import { Card } from '../../../components/ui/Card';
 import { Header } from '../../../components/ui/Header';
-import { Button } from '../../../components/ui/Button';
-import { Badge } from '../../../components/ui/Badge';
+import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
+import { letterErrorText, useLetterInbox, usePseudonyms } from '../../../services/supabase/letters';
 import { useTheme } from '../../../theme/useTheme';
-import { useRootStore, useShallow } from '../../../stores/useRootStore';
 
-export default function LetterInboxDetailScreen() {
+export default function LetterInboxScreen() {
   const { colors, typography, spacing } = useTheme();
-  const { inbox } = useRootStore(
-    useShallow((s) => ({ inbox: s.inbox })),
-  );
+  const inbox = useLetterInbox(true);
+  const names = usePseudonyms((inbox.data ?? []).map((l) => l.sender_id), true);
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Inbox" subtitle="Letters to you and on their way" showBack />
-      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
-        {inbox.map((letter) => {
-          const isTransit = letter.status === 'in_transit';
-          return (
-            <Card key={letter.id} style={{ marginBottom: spacing.md, padding: spacing.lg }}>
-              <View style={styles.headerRow}>
-                <Badge
-                  label={isTransit ? 'Traveling' : 'Delivered'}
-                  variant={isTransit ? 'warning' : 'success'}
-                />
-                <Text style={[typography.caption, { color: colors.text.muted }]}>
-                  {letter.distanceKm.toLocaleString()} km
-                </Text>
-              </View>
-
-              <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 8 }]}>
-                Letter from {letter.senderPseudonym ?? 'AuroraSeeker'}
-              </Text>
-              <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>
-                {isTransit
-                  ? `In transit across regional postal channels · Arrives in ~${letter.deliveryHours}h`
-                  : `Delivered on ${new Date(letter.scheduledDeliveryAt).toLocaleDateString()}`}
-              </Text>
-
-              <Link href={`/(app)/letters/delivery/${letter.id}` as any as Href} asChild>
-                <Button
-                  label={isTransit ? 'View Postal Journey' : 'Read Letter'}
-                  variant={isTransit ? 'outline' : 'primary'}
-                  size="sm"
-                  style={{ marginTop: 12, alignSelf: 'flex-start' }}
-                />
-              </Link>
-            </Card>
-          );
-        })}
-      </ScrollView>
+      <Header title="Inbox" subtitle="Letters that have arrived for you" showBack />
+      <View>
+        {inbox.isLoading ? (
+          <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} />
+        ) : inbox.error ? (
+          <Card style={{ padding: spacing.lg }}>
+            <Text style={[typography.body, { color: colors.text.secondary }]}>{letterErrorText(inbox.error)}</Text>
+          </Card>
+        ) : (inbox.data ?? []).length === 0 ? (
+          <Card style={{ padding: spacing.lg }}>
+            <Text style={[typography.subheading, { color: colors.text.primary }]}>No letters yet</Text>
+            <Text style={[typography.body, { color: colors.text.secondary, marginTop: 6 }]}>
+              Letters appear here once they arrive, about 12 hours after someone sends one.
+            </Text>
+          </Card>
+        ) : (
+          (inbox.data ?? []).map((l) => (
+            <LetterRow key={l.id} letter={l} who={names.data?.[l.sender_id] ?? 'A pen pal'} direction="in" />
+          ))
+        )}
+      </View>
     </ScreenWrapper>
   );
 }
-
-const styles = StyleSheet.create({
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-});

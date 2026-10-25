@@ -1,173 +1,96 @@
-import { SquircleSurface } from '../../../components/ui/SquircleSurface';
-import React, { useState } from 'react';
-import { Text, StyleSheet, ScrollView, View } from 'react-native';
-import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
-import { Card } from '../../../components/ui/Card';
-import { Header } from '../../../components/ui/Header';
+import { Link, type Href } from 'expo-router';
+import React, { useMemo, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+
 import { Button } from '../../../components/ui/Button';
-import { Badge } from '../../../components/ui/Badge';
+import { Card } from '../../../components/ui/Card';
 import { Chip } from '../../../components/ui/Chip';
+import { Header } from '../../../components/ui/Header';
+import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
+import { SquircleSurface } from '../../../components/ui/SquircleSurface';
+import { letterErrorText, useIntroCandidates } from '../../../services/supabase/letters';
 import { useTheme } from '../../../theme/useTheme';
-import { useRootStore, useShallow } from '../../../stores/useRootStore';
 
+/**
+ * People open to a first letter, chosen by the server: verified adults who accept
+ * introductions, minus anyone blocked or already written to. One new introduction a day.
+ */
 export default function DiscoverPenPalsScreen() {
-  const router = useRouter();
   const { colors, typography, spacing } = useTheme();
-  const { introsSentToday, incrementIntroQuota, showAlert } = useRootStore(
-    useShallow((s) => ({
-      introsSentToday: s.introsSentToday,
-      incrementIntroQuota: s.incrementIntroQuota,
-      showAlert: s.showAlert,
-    })),
+  const candidates = useIntroCandidates(true);
+  const [interest, setInterest] = useState<string | null>(null);
+
+  const interests = useMemo(
+    () => [...new Set((candidates.data ?? []).flatMap((c) => c.interests))].sort().slice(0, 12),
+    [candidates.data],
   );
-
-  const [selectedTopic, setSelectedTopic] = useState('All Topics');
-
-  const topics = [
-    'All Topics',
-    'Mindful Habits',
-    'Shared Values & Faith Dialogue',
-    'Literature & Poetry',
-    'Nature & Hiking',
-    'Language Exchange',
-    'Tea & Quiet Living',
-  ];
-
-  // Real people only. Matching needs the correspondence service, which isn't live in
-  // this release, so there is nobody to show yet — never invented profiles.
-  const candidates: {
-    id: string;
-    pseudonym: string;
-    region: string;
-    bio: string;
-    interests: string[];
-  }[] = [];
-
-  const handleSendIntroduction = (cand: typeof candidates[0]) => {
-    if (introsSentToday >= 1) {
-      showAlert({
-        title: 'Daily Introduction Limit Reached',
-        message: 'To foster mindful, high-quality correspondence, Thrivefold limits users to 1 new introduction per day. You can continue sending letters to existing connections!',
-        confirmText: 'Understood',
-        cancelText: null,
-      });
-      return;
-    }
-
-    showAlert({
-      title: `Send Letter to ${cand.pseudonym}`,
-      message: `Would you like to open the postal composer? Letters travel with realistic distance-delayed delivery (~${Math.round(2100 / 200)} hours).`,
-      confirmText: 'Compose Letter',
-      onConfirm: () => {
-        incrementIntroQuota();
-        router.push('/(app)/letters/compose');
-      },
-    });
-  };
+  const shown = (candidates.data ?? []).filter((c) => !interest || c.interests.includes(interest));
 
   return (
     <ScreenWrapper scrollable>
-      <Header
-        title="Find pen pals"
-        subtitle="Slow, Consented Global Correspondence"
-        showBack
-        rightAction={<Badge label={`${introsSentToday}/1 Intro Today`} variant={introsSentToday >= 1 ? 'warning' : 'primary'} />}
-      />
-      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
-        {/* Pacing Rules Banner */}
-        <Card style={{ marginBottom: spacing.md, backgroundColor: colors.surface1, borderColor: colors.border }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+      <Header title="Find a pen pal" subtitle="One new introduction a day" showBack />
+      <View>
+        <Card variant="surface1" style={{ padding: spacing.base, marginBottom: spacing.md }}>
+          <View style={styles.row}>
             <Ionicons name="time-outline" size={18} color={colors.primary} />
-            <Text style={[typography.subbodyBold, { color: colors.text.primary, marginLeft: 6 }]}>
-              Slow Postal Pacing
+            <Text style={[typography.caption, styles.flex, { color: colors.text.secondary }]}>
+              Letters are made of cards and arrive about 12 hours after you send them. No live chat.
             </Text>
           </View>
-          <Text style={[typography.caption, { color: colors.text.secondary, lineHeight: 18 }]}>
-            Profiles are matched exclusively by shared interests and languages. No live messaging or instant dopamine loops: letters take hours to travel.
-          </Text>
         </Card>
 
-        {/* Filter Bar */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[{ flexGrow: 0 }, { marginBottom: 12 }]}>
-          {topics.map((t) => (
-            <Chip
-              key={t}
-              label={t}
-              selected={selectedTopic === t}
-              onPress={() => setSelectedTopic(t)}
-              style={{ marginRight: 6 }}
-            />
-          ))}
-        </ScrollView>
+        {interests.length > 0 ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.noGrow} contentContainerStyle={styles.chips}>
+            <Chip label="Everyone" selected={!interest} onPress={() => setInterest(null)} />
+            {interests.map((i) => (
+              <Chip key={i} label={i} selected={interest === i} onPress={() => setInterest(i)} />
+            ))}
+          </ScrollView>
+        ) : null}
 
-        {candidates.length === 0 && (
-          <Card style={{ marginBottom: spacing.md, padding: spacing.lg }}>
-            <Text style={[typography.bodyBold, { color: colors.text.primary }]}>No pen pals to show yet</Text>
-            <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 6, lineHeight: 18 }]}>
-              Pen-pal matching isn't available in this version of Thrivefold. When it opens, you'll only see
-              real people who chose to receive letters, and you'll need to confirm your age first.
+        {candidates.isLoading ? (
+          <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} />
+        ) : candidates.error ? (
+          <Card style={{ padding: spacing.lg }}>
+            <Text style={[typography.body, { color: colors.text.secondary }]}>{letterErrorText(candidates.error)}</Text>
+          </Card>
+        ) : shown.length === 0 ? (
+          <Card style={{ padding: spacing.lg }}>
+            <Text style={[typography.subheading, { color: colors.text.primary }]}>Nobody new right now</Text>
+            <Text style={[typography.body, { color: colors.text.secondary, marginTop: 6 }]}>
+              Only real, age-checked people who are open to letters appear here. Check back later.
             </Text>
           </Card>
+        ) : (
+          shown.map((c) => (
+            <SquircleSurface key={c.user_id} radius={20} fill={colors.surface} style={styles.person}>
+              <View style={styles.flex}>
+                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{c.pseudonym}</Text>
+                <Text numberOfLines={1} style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                  {[c.coarse_region, c.languages.join(', ')].filter(Boolean).join(' · ')}
+                </Text>
+                {c.interests.length > 0 ? (
+                  <Text numberOfLines={2} style={[typography.caption, { color: colors.text.muted, marginTop: 4 }]}>
+                    {c.interests.join(' · ')}
+                  </Text>
+                ) : null}
+              </View>
+              <Link href={`/(app)/letters/compose?to=${c.user_id}&name=${encodeURIComponent(c.pseudonym)}` as Href} asChild>
+                <Button label="Write" size="sm" />
+              </Link>
+            </SquircleSurface>
+          ))
         )}
-
-        {/* Candidate Cards */}
-        {candidates.map((cand) => (
-          <Card key={cand.id} style={{ marginBottom: spacing.md, padding: spacing.lg }}>
-            <View style={styles.candidateHeader}>
-              <View style={[styles.avatarBox, { backgroundColor: colors.surface1, borderColor: colors.border }]}>
-                <Ionicons name="person-outline" size={24} color={colors.primary} />
-              </View>
-              <View style={{ marginLeft: 12, flex: 1 }}>
-                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{cand.pseudonym}</Text>
-                <Text style={[typography.caption, { color: colors.text.muted }]}>{cand.region}</Text>
-              </View>
-            </View>
-
-            <Text style={[typography.subbody, { color: colors.text.secondary, marginVertical: 10, lineHeight: 20 }]}>
-              {cand.bio}
-            </Text>
-
-            <View style={styles.tagRow}>
-              {cand.interests.map((i) => (
-                <Badge key={i} label={i} variant="neutral" style={{ marginRight: 6, marginBottom: 6 }} />
-              ))}
-            </View>
-
-            <Button
-              label={`Write Letter to ${cand.pseudonym}`}
-              size="sm"
-              style={{ marginTop: 12 }}
-              onPress={() => handleSendIntroduction(cand)}
-            />
-          </Card>
-        ))}
-      </ScrollView>
+      </View>
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-  },
-  candidateHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avatarBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  tagRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
+  flex: { flex: 1 },
+  noGrow: { flexGrow: 0 },
+  row: { alignItems: 'center', flexDirection: 'row', gap: 8 },
+  chips: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  person: { alignItems: 'center', flexDirection: 'row', gap: 12, marginBottom: 8, padding: 14 },
 });
