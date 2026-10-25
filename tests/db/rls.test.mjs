@@ -209,7 +209,44 @@ check('private community requires invitation', /invitation_required/.test(r.erro
 r = await q(`insert into public.thrivefold_community_memberships (community_id, user_id) values ('c1111111-1111-1111-1111-111111111111','${ids.A}')`);
 check('cannot insert membership directly', !!r.error, r.error);
 r = await q(`select public.tf_join_community('c4444444-4444-4444-4444-444444444444')`);
+check('verified user below level 6 cannot join', /level_required/.test(r.error ?? ''), r.error);
+r = await q(`select public.tf_create_community('Lift club', 'Morning lifting partners in my area', 'gym')`);
+check('creating a community needs level 10', /level_required/.test(r.error ?? ''), r.error);
+await as('service');
+await db.exec(`insert into public.thrivefold_reward_ledger (user_id, key, kind, xp, game_date, source_id, policy_version)
+               values ('${ids.A}', 'fixture_xp_l6', 'legacy_import', (select min_xp from public.thrivefold_levels where level = 6), current_date, 'fixture', 'test')`);
+await as('A');
+r = await q(`insert into public.thrivefold_reward_ledger (user_id, key, kind, xp, game_date, source_id, policy_version)
+             values ('${ids.A}', 'self_xp', 'legacy_import', 99999, current_date, 'me', 'x')`);
+check('user cannot grant own XP', !!r.error, r.error);
+r = await q(`select public.tf_join_community('c4444444-4444-4444-4444-444444444444')`);
 check('verified user joins open community', !r.error, r.error);
+r = await q(`select public.tf_create_community('Lift club', 'Morning lifting partners in my area', 'gym')`);
+check('level 6 still cannot create a community', /level_required/.test(r.error ?? ''), r.error);
+await as('service');
+await db.exec(`insert into public.thrivefold_reward_ledger (user_id, key, kind, xp, game_date, source_id, policy_version)
+               values ('${ids.A}', 'fixture_xp_l10', 'legacy_import', (select min_xp from public.thrivefold_levels where level = 10), current_date, 'fixture', 'test')`);
+await as('A');
+r = await q(`select public.tf_create_community('Lift club', 'Morning lifting partners in my area', 'gym') as id`);
+const newCommunity = r.rows?.[0]?.id;
+check('level 10 creates a community', !r.error && newCommunity, r.error);
+r = await q(`select verification_status from public.thrivefold_communities where id = '${newCommunity}'`);
+check('organiser sees own pending community', r.rows?.[0]?.verification_status === 'pending_founder_call', JSON.stringify(r));
+await as('B');
+r = await q(`select id from public.thrivefold_communities where id = '${newCommunity}'`);
+check('pending community hidden from discovery', r.rows?.length === 0, JSON.stringify(r));
+r = await q(`select public.tf_admin_verify_community('${newCommunity}', true)`);
+check('non-admin cannot verify a community', /forbidden/.test(r.error ?? ''), r.error);
+await as('ADMIN');
+await q(`select public.tf_admin_verify_community('${newCommunity}', true)`);
+await as('B');
+r = await q(`select id from public.thrivefold_communities where id = '${newCommunity}'`);
+check('verified community is listed', r.rows?.length === 1, JSON.stringify(r));
+r = await q(`select public.tf_my_gates() as g`);
+check('gates report server level and thresholds', r.rows?.[0]?.g?.gates?.dating === 20, JSON.stringify(r.rows));
+await as('service');
+await db.exec(`delete from public.thrivefold_reward_ledger where key like 'fixture_xp_%'`);
+await as('A');
 await as('C');
 r = await q(`select public.tf_join_community('c4444444-4444-4444-4444-444444444444')`);
 check('unverified user cannot join communities', /age_verification_required/.test(r.error ?? ''), r.error);

@@ -5,7 +5,7 @@ import {
   PolicyReviewStatus,
 } from './types';
 
-export const POLICY_VERSION = '2026.10.23-v2';
+export const POLICY_VERSION = '2026.10.25-v3';
 
 /**
  * Every age/cohort social pathway ships disabled (master spec §23.2): enabling one is a
@@ -34,6 +34,21 @@ export const policyConfig = {
     maxAgeInclusive: 40,
     enabled: false,
   },
+  /**
+   * Progression gates (founder decision, 2026-10-25). Mirrored server-side in
+   * thrivefold_progression_gates; the server's ledger level is authoritative.
+   * New communities work for their organiser at once but stay unlisted until the
+   * founder verifies the organiser on a call.
+   */
+  progressionGates: {
+    join_community: 6,
+    create_community: 10,
+    dating_profile: 20,
+    dating_first_contact: 20,
+    dating_reply: 20,
+  } as Record<string, number>,
+  /** Dating first contact: only a woman may start a new conversation (propmt.md §18). */
+  datingFirstContact: 'women_only' as const,
   // Sensitive rules explicitly recorded as REVIEW_REQUIRED per founder specifications
   founderRequestedSensitiveRules: {
     muslimMen18To30WomenDating: 'REVIEW_REQUIRED' as PolicyReviewStatus,
@@ -143,6 +158,29 @@ export function evaluateFeatureEligibility(
     };
   }
 
+  // Precedence 3b: progression level
+  const minLevel = config.progressionGates[featureId];
+  if (minLevel !== undefined && (user.level ?? 0) < minLevel) {
+    return {
+      allowed: false,
+      featureId,
+      reasonCode: 'LEVEL_REQUIRED',
+      policyVersion: POLICY_VERSION,
+      message: `Opens at level ${minLevel}.`,
+    };
+  }
+
+  // Precedence 3c: in dating, only a woman (self-declared) may send the first message.
+  if (featureId === 'dating_first_contact' && config.datingFirstContact === 'women_only' && user.selfDeclaredGender !== 'woman') {
+    return {
+      allowed: false,
+      featureId,
+      reasonCode: 'FIRST_CONTACT_NOT_ALLOWED',
+      policyVersion: POLICY_VERSION,
+      message: 'In dating, women start new conversations. You can reply once someone writes to you.',
+    };
+  }
+
   // Precedence 4: Structural cohort safety gates
   // Community access check for trial users: strictly blocked during trial
   if (featureId === 'community_directory' || featureId === 'join_community') {
@@ -238,6 +276,17 @@ export function evaluateFeatureEligibility(
         message: 'The 7-day introductory period has ended. Your health tools stay available.',
       };
     }
+  }
+
+  if (featureId === 'create_community') {
+    return {
+      allowed: true,
+      featureId,
+      reasonCode: 'ELIGIBLE',
+      policyVersion: POLICY_VERSION,
+      entitlementId: 'pending_founder_call',
+      message: 'Your group works for you and people you invite now. It is listed for others after a short verification call.',
+    };
   }
 
   // Default allowed if all constraints pass

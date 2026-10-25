@@ -1,318 +1,190 @@
-import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Badge } from '../../../components/ui/Badge';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+
+import { AppHeader } from '../../../components/ui/AppHeader';
 import { Button } from '../../../components/ui/Button';
-import { Card } from '../../../components/ui/Card';
-import { Header } from '../../../components/ui/Header';
-import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
-import { evaluateFeatureEligibility } from '../../../domain/policy/engine';
-import { useRootStore } from '../../../stores/useRootStore';
+import { Chip } from '../../../components/ui/Chip';
+import { ScreenContainer } from '../../../components/ui/ScreenContainer';
+import { SettingsRow } from '../../../components/ui/SettingsRow';
+import { SquircleSurface } from '../../../components/ui/SquircleSurface';
+import { TextField } from '../../../components/ui/TextField';
+import { policyConfig } from '../../../domain/policy/engine';
+import {
+  communityErrorText,
+  useCommunities,
+  useCreateCommunity,
+  useJoinCommunity,
+  useMyMemberships,
+  useServerGates,
+  type Community,
+} from '../../../services/supabase/queries';
+import { isBackendConfigured } from '../../../services/supabase/supabaseClient';
+import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
 
-interface CircleItem {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-}
+const TOPICS = ['Gym partners', 'Therapy and support', 'Meditation', 'Aerobics', 'Sports', 'Running', 'Yoga'] as const;
+const JOIN_AT = policyConfig.progressionGates.join_community;
+const CREATE_AT = policyConfig.progressionGates.create_community;
 
-export default function CommunitiesScreen() {
+/**
+ * Groups for training, therapy and practice. Joining opens at level 6 and creating at
+ * level 10; the server re-checks both from its own ledger, plus the age check. A new
+ * group works for its organiser straight away and is listed after a verification call.
+ */
+export default function CirclesScreen() {
   const router = useRouter();
-  const { colors, typography, spacing, experience } = useTheme();
-  const user = useRootStore((s) => s.user);
-  const activeTrialStartDate = useRootStore((s) => s.activeTrialStartDate);
-  const showToast = useRootStore((s) => s.showToast);
-  const introsSentToday = useRootStore((s) => s.introsSentToday);
-  const consentedFeatures = useRootStore((s) => s.consentedFeatures);
-  const blockedUserIds = useRootStore((s) => s.blockedUserIds);
+  const { colors, typography, spacing } = useTheme();
+  const { user, localLevel, showToast } = useRootStore(
+    useShallow((s) => ({ user: s.user, localLevel: s.level, showToast: s.showToast })),
+  );
+  const signedIn = Boolean(user && !user.isGuest && user.email) && isBackendConfigured;
+  const gates = useServerGates(signedIn);
+  const level = gates.data?.level ?? localLevel;
+  const ageOk = gates.data?.age_verified ?? user?.isAgeVerified ?? false;
+  const canJoin = signedIn && level >= JOIN_AT && ageOk;
+  const canCreate = canJoin && level >= CREATE_AT;
 
-  const [joinedCircleIds, setJoinedCircleIds] = useState<string[]>([]);
+  const list = useCommunities(canJoin);
+  const mine = useMyMemberships(canJoin);
+  const join = useJoinCommunity();
+  const create = useCreateCommunity();
 
-  // Policy check for trial lockout
-  const completedCheckInDays = useRootStore((s) => s.completedCheckInDaysCount);
-  const eligibility = evaluateFeatureEligibility('community_directory', {
-    userId: user?.id ?? 'dev_user',
-    age: user?.age ?? null,
-    isAgeVerified: user?.isAgeVerified ?? false,
-    experience,
-    completedCheckInDays,
-    consentedFeatures,
-    activeTrialStartDate: activeTrialStartDate ?? undefined,
-    introsSentToday,
-    blockedUserIds,
-  });
+  const [topic, setTopic] = useState<string | null>(null);
+  const [form, setForm] = useState<{ name: string; purpose: string; topic: string } | null>(null);
 
-  const level = useRootStore((s) => s.level);
+  const groups = (list.data ?? []).filter((c) => !topic || c.topic === topic);
+  const member = new Set(mine.data ?? []);
 
-  const getCohorts = (): CircleItem[] => {
-    const commonActivityCircles: CircleItem[] = [
-      {
-        id: 'circle_gym_pals',
-        title: 'Gym Pal & Strength Partner Finding',
-        description:
-          'Connect with local, verified training partners for spotters, form checks, and workout accountability.',
-        category: 'Fitness & Gym',
-      },
-      {
-        id: 'circle_therapy_healing',
-        title: 'Therapy & Emotional Healing Groups',
-        description:
-          'Moderated peer reflection circles focused on cognitive reframing, emotional decompression, and trauma-informed support.',
-        category: 'Mental Wellness',
-      },
-      {
-        id: 'circle_meditation_mindfulness',
-        title: 'Meditation & Mindfulness Practice',
-        description:
-          'Daily breathwork, silent sitting, and sound meditation circles with verified local practice hubs.',
-        category: 'Mindfulness',
-      },
-      {
-        id: 'circle_sports_aerobics',
-        title: 'Aerobics, Running & Sports Hubs',
-        description:
-          'Community aerobics, trail running clubs, badminton groups, and local sports court meetups.',
-        category: 'Sports & Movement',
-      },
-    ];
+  const toggle = (c: Community) =>
+    join.mutate(
+      { id: c.id, leave: member.has(c.id) },
+      { onError: (e) => showToast({ type: 'error', message: communityErrorText(e) }) },
+    );
 
-    if (experience === 'men_health') {
-      return [
-        ...commonActivityCircles,
-        {
-          id: 'men_strength',
-          title: 'Strength, Stamina & Recovery',
-          description: 'Optimizing sleep, VO2 max endurance, and active longevity habits.',
-          category: "Men's Health",
-        },
-        {
-          id: 'men_mindset',
-          title: 'Mental Fortitude & Stress Grounding',
-          description: 'Stoic practices, decompressing after high-stress days, and presence.',
-          category: 'Resilience',
-        },
-      ];
-    }
-    if (experience === 'pride_wellbeing') {
-      return [
-        ...commonActivityCircles,
-        {
-          id: 'pride_affirming',
-          title: 'Affirming Care Navigation',
-          description:
-            'Safe healthcare resources, provider recommendations, and hormone therapy care.',
-          category: 'Affirming Care',
-        },
-        {
-          id: 'pride_chosen_family',
-          title: 'Chosen Family & Mental Haven',
-          description:
-            'Safe peer reflections, celebrating milestones, and unconditional community.',
-          category: 'Haven',
-        },
-      ];
-    }
-    return [
-      ...commonActivityCircles,
-      {
-        id: 'women_cycle',
-        title: 'Cycles and symptoms',
-        description:
-          'Sharing what helps with cramps, heavy days, energy and mood across the month.',
-        category: "Women's Health",
+  const submit = () => {
+    if (!form) return;
+    create.mutate(form, {
+      onSuccess: () => {
+        setForm(null);
+        showToast({ type: 'success', message: 'Group created. It is listed for others after a short verification call.' });
       },
-      {
-        id: 'women_pcos',
-        title: 'PCOS & Endometriosis Resilience',
-        description: 'Food, symptoms and day-to-day tips from people with the same condition.',
-        category: 'Hormonal Wellness',
-      },
-      {
-        id: 'women_matrescence',
-        title: 'Matrescence & Postpartum Care',
-        description:
-          'Gentle support for postpartum transitions, sleep shifts, and self-compassion.',
-        category: 'Maternal Care',
-      },
-    ];
+      onError: (e) => showToast({ type: 'error', message: communityErrorText(e) }),
+    });
   };
 
-  const circles = getCohorts();
-
-  const handleToggleJoin = (circleId: string, title: string) => {
-    if (joinedCircleIds.includes(circleId)) {
-      setJoinedCircleIds((prev) => prev.filter((id) => id !== circleId));
-      showToast({ type: 'info', title: 'Left Circle', message: `You have left ${title}.` });
-    } else {
-      setJoinedCircleIds((prev) => [...prev, circleId]);
-      showToast({
-        type: 'info',
-        title: 'Saved for later',
-        message: `${title} will open when community features launch.`,
-      });
-    }
-  };
+  const lock = !signedIn
+    ? { title: 'Groups need an account', body: 'Sign in with Google so the server can check your level and keep groups safe.' }
+    : level < JOIN_AT
+      ? { title: `Groups open at level ${JOIN_AT}`, body: `You're level ${level}. Quests, workouts and check-ins move you up.` }
+      : !ageOk
+        ? { title: 'Waiting for an age check', body: 'Groups are for verified adults. The age check isn’t available yet, so groups stay closed for everyone.' }
+        : null;
 
   return (
-    <ScreenWrapper scrollable>
-      <Header
-        title="Circles"
-        subtitle="Private groups for people with shared experiences"
-        showBack
-        rightAction={
-          <Button
-            label="Invites"
-            variant="outline"
-            size="sm"
-            onPress={() => router.push('/(app)/circles/invitations')}
-          />
-        }
-      />
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[styles.content, { paddingBottom: spacing.xxl }]}
-      >
-        {/* Policy Notice if Barred */}
-        {!eligibility.allowed && (
-          <Card
-            variant="surface1"
-            style={{ marginBottom: spacing.md, borderColor: colors.warning, }}
-          >
-            <Badge label="Restricted During Trial" variant="warning" />
-            <Text style={[typography.subbodyBold, { color: colors.text.primary, marginTop: 8 }]}>
-              Community Discovery Inactive
-            </Text>
-            <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-              {eligibility.message}
-            </Text>
-          </Card>
-        )}
-
-        {/* Safe Circles Info */}
-        <Card style={{ marginBottom: spacing.md, padding: 14, backgroundColor: colors.surface }}>
-          <View style={styles.heroWrap}>
-            <Image
-              source={require('../../../../assets/illustrations/circles-sanctuary.jpg')}
-              style={styles.heroImage}
-              contentFit="cover"
-            />
+    <ScreenContainer header={<AppHeader title="Circles" subtitle="Training, support and practice groups" showBack />} scrollMode="shell-scroll-view">
+      {lock ? (
+        <SquircleSurface radius={22} fill={colors.surface} style={[styles.card, { padding: spacing.lg }]}>
+          <Text style={[typography.subheading, { color: colors.text.primary }]}>{lock.title}</Text>
+          <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>{lock.body}</Text>
+          {signedIn && level < JOIN_AT ? (
+            <View style={[styles.track, { backgroundColor: colors.surface1, marginTop: spacing.md }]}>
+              <View style={[styles.fill, { backgroundColor: colors.primary, width: `${Math.min(100, (level / JOIN_AT) * 100)}%` }]} />
+            </View>
+          ) : null}
+          <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.md }]}>
+            Join from level {JOIN_AT}. Start your own group from level {CREATE_AT}.
+          </Text>
+          {signedIn && level < JOIN_AT ? (
+            <Button label="See today's quests" size="sm" variant="outline" onPress={() => router.push('/(app)/quests' as Href)} style={{ marginTop: spacing.md, alignSelf: 'flex-start' }} />
+          ) : null}
+        </SquircleSurface>
+      ) : (
+        <>
+          <View style={[styles.chips, { marginBottom: spacing.md }]}>
+            <Chip label="All" selected={!topic} onPress={() => setTopic(null)} />
+            {TOPICS.map((t) => (
+              <Chip key={t} label={t} selected={topic === t} onPress={() => setTopic(t)} />
+            ))}
           </View>
-          <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 12 }]}>
-            Private circles
-          </Text>
-          <Text
-            style={[
-              typography.caption,
-              { color: colors.text.secondary, marginTop: 4, lineHeight: 18 },
-            ]}
-          >
-            All circles are private and segmented by health journey. Conversations are conducted
-            exclusively through curated topic prompts to ensure a zero-harassment sanctuary.
-          </Text>
-        </Card>
 
-        {/* Level Progression Lock Notice */}
-        {level < 6 && (
-          <Card variant="surface1" style={{ marginBottom: spacing.md, padding: 14 }}>
-            <Badge label="Unlocks at Level 3" variant="neutral" />
-            <Text style={[typography.subbodyBold, { color: colors.text.primary, marginTop: 8 }]}>
-              Activity &amp; Support Circles are Locked
-            </Text>
-            <Text
-              style={[
-                typography.caption,
-                { color: colors.text.secondary, marginTop: 4, lineHeight: 18 },
-              ]}
-            >
-              Reach Level 3 by completing your daily quests, check-ins, and training to unlock Gym
-              Pal finding, Therapy groups, and Sports hubs. Current progress: Level {level}.
-            </Text>
-          </Card>
-        )}
-
-        {/* Circles List */}
-        <Text
-          style={[typography.subheading, { color: colors.text.primary, marginBottom: spacing.sm }]}
-        >
-          Recommended for Your Journey
-        </Text>
-
-        {circles.map((circle) => {
-          const isJoined = joinedCircleIds.includes(circle.id);
-          return (
-            <Card key={circle.id} style={{ marginBottom: spacing.md }}>
-              <View style={styles.cardHeader}>
-                <View style={{ flex: 1, paddingRight: 8 }}>
-                  <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                    {circle.title}
-                  </Text>
-                  <Text style={[typography.caption, { color: colors.primary, marginTop: 2 }]}>
-                    {circle.category}
-                  </Text>
-                </View>
-                <Badge
-                  label={isJoined ? 'Member' : 'Private'}
-                  variant={isJoined ? 'success' : 'neutral'}
-                />
-              </View>
-
-              <Text
-                style={[
-                  typography.subbody,
-                  { color: colors.text.secondary, marginTop: 8, marginBottom: 12 },
-                ]}
-              >
-                {circle.description}
+          {list.isPending ? (
+            <ActivityIndicator color={colors.primary} style={{ marginVertical: spacing.lg }} />
+          ) : list.isError ? (
+            <SquircleSurface radius={18} fill={colors.surface1} style={styles.card}>
+              <Text style={[typography.subbody, { color: colors.text.secondary }]}>{communityErrorText(list.error)}</Text>
+              <Button label="Try again" size="sm" variant="outline" onPress={() => list.refetch()} style={{ marginTop: spacing.sm, alignSelf: 'flex-start' }} />
+            </SquircleSurface>
+          ) : groups.length === 0 ? (
+            <SquircleSurface radius={18} fill={colors.surface1} style={styles.card}>
+              <Text style={[typography.subbody, { color: colors.text.secondary }]}>
+                {topic ? `No ${topic.toLowerCase()} groups yet.` : 'No groups yet.'}
+                {canCreate ? ' You can start the first one.' : ` Groups you can join will appear here; you can start one from level ${CREATE_AT}.`}
               </Text>
+            </SquircleSurface>
+          ) : (
+            groups.map((c) => (
+              <SettingsRow
+                key={c.id}
+                icon={member.has(c.id) ? 'checkmark-circle' : 'people-outline'}
+                title={c.name}
+                subtitle={[c.topic, c.verification_status === 'pending_founder_call' ? 'Waiting for verification' : null, c.purpose].filter(Boolean).join(' · ')}
+                right={
+                  c.created_by === null || c.verification_status === 'verified' ? (
+                    <Button label={member.has(c.id) ? 'Leave' : 'Join'} size="sm" variant={member.has(c.id) ? 'outline' : 'primary'} onPress={() => toggle(c)} disabled={join.isPending} />
+                  ) : undefined
+                }
+              />
+            ))
+          )}
 
-              <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
-                <Button
-                  label={isJoined ? 'Leave Circle' : 'Join Private Circle'}
-                  variant={isJoined ? 'outline' : 'primary'}
-                  size="sm"
-                  disabled={!eligibility.allowed}
-                  onPress={() => handleToggleJoin(circle.id, circle.title)}
-                  style={{ flex: 1 }}
+          {canCreate ? (
+            form ? (
+              <SquircleSurface radius={22} fill={colors.surface} style={[styles.card, { marginTop: spacing.md }]}>
+                <Text style={[typography.subheading, { color: colors.text.primary }]}>Start a group</Text>
+                <TextField label="Name" value={form.name} onChangeText={(name) => setForm({ ...form, name })} maxLength={60} placeholder="Morning lifting partners" />
+                <TextField
+                  label="What it's for"
+                  value={form.purpose}
+                  onChangeText={(purpose) => setForm({ ...form, purpose })}
+                  maxLength={280}
+                  multiline
+                  placeholder="Who it's for, where and when you meet"
                 />
-                <Button
-                  label="Open Hub"
-                  variant="outline"
-                  size="sm"
-                  onPress={() => router.push(`/(app)/circles/${circle.id}` as any)}
-                  style={{ flex: 1 }}
-                />
-              </View>
-            </Card>
-          );
-        })}
-      </ScrollView>
-    </ScreenWrapper>
+                <View style={[styles.chips, { marginTop: spacing.sm }]}>
+                  {TOPICS.map((t) => (
+                    <Chip key={t} label={t} selected={form.topic === t} onPress={() => setForm({ ...form, topic: t })} />
+                  ))}
+                </View>
+                <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.md }]}>
+                  Your group works for you and anyone you invite right away. Before others can find it, we verify the organiser on a short call.
+                </Text>
+                <View style={[styles.row, { marginTop: spacing.md }]}>
+                  <Button label="Cancel" variant="ghost" onPress={() => setForm(null)} style={styles.flex} />
+                  <Button label="Create" onPress={submit} loading={create.isPending} disabled={form.name.trim().length < 3 || form.purpose.trim().length < 10} style={styles.flex} />
+                </View>
+              </SquircleSurface>
+            ) : (
+              <SettingsRow icon="add-circle-outline" title="Start a group" subtitle="Gym, therapy, meditation, sports and more" onPress={() => setForm({ name: '', purpose: '', topic: topic ?? TOPICS[0] })} />
+            )
+          ) : (
+            <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.md }]}>
+              You can start your own group from level {CREATE_AT}. You&apos;re level {level}.
+            </Text>
+          )}
+        </>
+      )}
+
+      <SettingsRow icon="mail-open-outline" title="Invitations" subtitle="Groups that invited you" onPress={() => router.push('/(app)/circles/invitations')} />
+    </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    paddingHorizontal: 16,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  heroWrap: {
-    width: '100%',
-    height: 140,
-    borderRadius: 14,
-    overflow: 'hidden',
-    backgroundColor: '#F3EFEA',
-  },
-  heroImage: {
-    width: '100%',
-    height: '100%',
-  },
+  card: { marginBottom: 12, padding: 16 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  fill: { borderRadius: 3, height: '100%' },
+  flex: { flex: 1 },
+  row: { flexDirection: 'row', gap: 10 },
+  track: { borderRadius: 3, height: 6, overflow: 'hidden' },
 });

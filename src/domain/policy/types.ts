@@ -24,7 +24,9 @@ export type EligibilityReasonCode =
   | 'RECIPIENT_DECLINED'
   | 'ONE_NEW_INTRO_DAILY_QUOTA_EXHAUSTED'
   | 'FEATURE_DISABLED_BY_CHANNEL'
-  | 'INELIGIBLE_COHORT';
+  | 'INELIGIBLE_COHORT'
+  | 'LEVEL_REQUIRED'
+  | 'FIRST_CONTACT_NOT_ALLOWED';
 
 export interface EligibilityDecision {
   allowed: boolean;
@@ -49,6 +51,10 @@ export interface UserEvaluationContext {
   activeTrialStartDate?: string;
   introsSentToday: number;
   blockedUserIds: string[];
+  /** Current progression level (the server re-checks it from its own ledger). */
+  level?: number;
+  /** Only what the person stated themselves; never inferred. */
+  selfDeclaredGender?: 'woman' | 'man' | 'non_binary' | 'other' | null;
 }
 
 export interface RecipientEvaluationContext {
