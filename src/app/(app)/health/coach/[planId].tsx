@@ -4,7 +4,7 @@ import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { BackHandler, PermissionsAndroid, Platform, ScrollView, StatusBar, StyleSheet, Text } from 'react-native';
+import { BackHandler, PermissionsAndroid, Platform, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   FadeIn,
   FadeInDown,
@@ -432,7 +432,8 @@ export default function CoachScreen() {
   // ---------------------------------------------------------------- intro
   if (phase === 'intro') {
     return (
-      <ScrollView style={{ backgroundColor: colors.background }} contentContainerStyle={{ paddingTop: insets.top + spacing.lg, paddingBottom: insets.bottom + spacing.lg, paddingHorizontal: spacing.base }}>
+      <View style={[styles.flex, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+      <ScrollView contentContainerStyle={{ paddingTop: spacing.lg, paddingBottom: insets.bottom + spacing.lg, paddingHorizontal: spacing.base }}>
         <PressableScale onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back" style={[styles.round, { backgroundColor: colors.surface1 }]}>
           <Ionicons name="chevron-back" size={20} color={colors.text.primary} />
         </PressableScale>
@@ -491,6 +492,7 @@ export default function CoachScreen() {
         <Text style={[typography.caption, { color: colors.warning, marginTop: spacing.md }]}>{exercise.safety}</Text>
         <Button label={cameraBuilt ? 'Allow camera and start' : 'Start'} size="lg" onPress={start} style={{ marginTop: spacing.lg }} />
       </ScrollView>
+      </View>
     );
   }
 
