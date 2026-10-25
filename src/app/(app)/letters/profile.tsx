@@ -1,121 +1,89 @@
-import { SquircleSurface } from '../../../components/ui/SquircleSurface';
-import React, { useState } from 'react';
-import { Text, StyleSheet, TextInput, ScrollView, View } from 'react-native';
-import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
-import { Card } from '../../../components/ui/Card';
-import { Header } from '../../../components/ui/Header';
-import { Button } from '../../../components/ui/Button';
-import { Chip } from '../../../components/ui/Chip';
-import { useTheme } from '../../../theme/useTheme';
-import { useRootStore, useShallow } from '../../../stores/useRootStore';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
+import { Button } from '../../../components/ui/Button';
+import { Card } from '../../../components/ui/Card';
+import { Chip } from '../../../components/ui/Chip';
+import { Header } from '../../../components/ui/Header';
+import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
+import { TextField } from '../../../components/ui/TextField';
+import { letterErrorText, useMySocialProfile, useSaveSocialProfile } from '../../../services/supabase/letters';
+import { useRootStore, useShallow } from '../../../stores/useRootStore';
+import { useTheme } from '../../../theme/useTheme';
+
+const INTERESTS = ['Mindful habits', 'Books and poetry', 'Nature and walks', 'Language exchange', 'Tea and quiet living', 'Movement', 'Philosophy', 'Art and photography'];
+const LANGUAGES = ['English', 'Hindi', 'Spanish', 'French', 'German', 'Japanese', 'Swedish', 'Bengali'];
+
+/** The pseudonymous card other people see on your letters, stored on the server. */
 export default function LetterProfileScreen() {
   const { colors, typography, spacing } = useTheme();
-  const { user, setUser, showToast } = useRootStore(
-    useShallow((s) => ({ user: s.user, setUser: s.setUser, showToast: s.showToast })),
+  const { user, setUser, showToast, showAlert } = useRootStore(
+    useShallow((s) => ({ user: s.user, setUser: s.setUser, showToast: s.showToast, showAlert: s.showAlert })),
   );
+  const profile = useMySocialProfile(true);
+  const save = useSaveSocialProfile();
+  const [pseudonym, setPseudonym] = useState(user?.pseudonym ?? '');
+  const [interests, setInterests] = useState<string[]>([]);
+  const [languages, setLanguages] = useState<string[]>([]);
 
-  const [pseudonym, setPseudonym] = useState(user?.pseudonym ?? 'SolsticeSeeker');
-  const [selectedInterests, setSelectedInterests] = useState<string[]>(['Mindful Habits', 'Literature & Poetry']);
-  const [selectedLanguages, setSelectedLanguages] = useState<string[]>(['English']);
+  useEffect(() => {
+    if (!profile.data) return;
+    setPseudonym(profile.data.pseudonym);
+    setInterests(profile.data.interests);
+    setLanguages(profile.data.languages);
+  }, [profile.data]);
 
-  const allInterests = ['Mindful Habits', 'Literature & Poetry', 'Nature & Hiking', 'Language Exchange', 'Tea & Quiet Living', 'Body and movement', 'Philosophy', 'Art & Photography'];
-  const allLanguages = ['English', 'Spanish', 'French', 'German', 'Japanese', 'Swedish', 'Hindi'];
+  const toggle = (list: string[], v: string) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
+  const name = pseudonym.trim();
 
-  const toggleInterest = (item: string) => {
-    setSelectedInterests((prev) =>
-      prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item]
+  const onSave = () =>
+    save.mutate(
+      { pseudonym: name, interests, languages },
+      {
+        onSuccess: () => {
+          if (user) setUser({ ...user, pseudonym: name });
+          showToast({ type: 'success', message: 'Your letter card is saved.' });
+        },
+        onError: (e) => showAlert({ title: 'Not saved', message: letterErrorText(e), confirmText: 'OK', cancelText: null }),
+      },
     );
-  };
-
-  const toggleLanguage = (lang: string) => {
-    setSelectedLanguages((prev) =>
-      prev.includes(lang) ? prev.filter((l) => l !== lang) : [...prev, lang]
-    );
-  };
-
-  const handleSave = () => {
-    if (user) {
-      setUser({
-        ...user,
-        pseudonym: pseudonym.trim() || user.pseudonym,
-      });
-    }
-    showToast({ type: 'success', title: 'Profile Updated', message: 'Your pseudonymous card has been saved.' });
-  };
 
   return (
-    <ScreenWrapper scrollable>
-      <Header title="Letter profile" subtitle="The name others see on your letters" showBack />
-      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
-        <Card style={{ marginBottom: spacing.md }}>
-          <Text style={[typography.captionBold, { color: colors.text.secondary, marginBottom: 4 }]}>
-            PSEUDONYM DISPLAY NAME
-          </Text>
-          <TextInput
-            value={pseudonym}
-            onChangeText={setPseudonym}
-            style={[styles.input, { color: colors.text.primary, borderColor: colors.border, backgroundColor: colors.surface1 }]}
-          />
-        </Card>
-
-        {/* Languages */}
-        <Card style={{ marginBottom: spacing.md }}>
-          <Text style={[typography.subbodyBold, { color: colors.text.primary, marginBottom: 8 }]}>
-            Languages You Write In
-          </Text>
-          <View style={styles.chipRow}>
-            {allLanguages.map((lang) => (
-              <Chip
-                key={lang}
-                label={lang}
-                selected={selectedLanguages.includes(lang)}
-                onPress={() => toggleLanguage(lang)}
-                style={{ marginRight: 6, marginBottom: 6 }}
-              />
-            ))}
-          </View>
-        </Card>
-
-        {/* Interests */}
-        <Card style={{ marginBottom: spacing.lg }}>
-          <Text style={[typography.subbodyBold, { color: colors.text.primary, marginBottom: 8 }]}>
-            Topic Interests (Used for Match Pacing)
-          </Text>
-          <View style={styles.chipRow}>
-            {allInterests.map((interest) => (
-              <Chip
-                key={interest}
-                label={interest}
-                selected={selectedInterests.includes(interest)}
-                onPress={() => toggleInterest(interest)}
-                style={{ marginRight: 6, marginBottom: 6 }}
-              />
-            ))}
-          </View>
-        </Card>
-
-        <Button label="Save Changes" onPress={handleSave} />
-      </ScrollView>
+    <ScreenWrapper
+      scrollable
+      footer={<Button label="Save" onPress={onSave} loading={save.isPending} disabled={name.length < 2 || save.isPending} />}
+    >
+      <Header title="Letter card" subtitle="What others see. No real name needed." showBack />
+      {profile.isLoading ? (
+        <ActivityIndicator color={colors.primary} />
+      ) : (
+        <View>
+          <Card style={{ padding: spacing.base }}>
+            <Text style={[typography.subbodyBold, { color: colors.text.primary, marginBottom: 8 }]}>Pen name</Text>
+            <TextField value={pseudonym} onChangeText={setPseudonym} placeholder="e.g. QuietRiver" maxLength={24} />
+          </Card>
+          <Card style={{ padding: spacing.base, marginTop: spacing.md }}>
+            <Text style={[typography.subbodyBold, { color: colors.text.primary, marginBottom: 8 }]}>Languages you write in</Text>
+            <View style={styles.wrap}>
+              {LANGUAGES.map((l) => (
+                <Chip key={l} label={l} selected={languages.includes(l)} onPress={() => setLanguages((x) => toggle(x, l))} />
+              ))}
+            </View>
+          </Card>
+          <Card style={{ padding: spacing.base, marginTop: spacing.md }}>
+            <Text style={[typography.subbodyBold, { color: colors.text.primary, marginBottom: 8 }]}>Interests</Text>
+            <View style={styles.wrap}>
+              {INTERESTS.map((i) => (
+                <Chip key={i} label={i} selected={interests.includes(i)} onPress={() => setInterests((x) => toggle(x, i))} />
+              ))}
+            </View>
+          </Card>
+        </View>
+      )}
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-  },
-  input: {
-    height: 48,
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    fontSize: 16,
-  },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
+  wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
 });

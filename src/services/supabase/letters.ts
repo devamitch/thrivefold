@@ -183,3 +183,56 @@ export function letterErrorText(e: unknown): string {
 export function hoursUntil(iso: string, now = Date.now()): number {
   return Math.max(0, Math.ceil((new Date(iso).getTime() - now) / 3_600_000));
 }
+
+// ---------------------------------------------------------------------------
+// My pseudonymous card (thrivefold_social_profiles; owners write their own row).
+// ---------------------------------------------------------------------------
+
+export interface MySocialProfile {
+  pseudonym: string;
+  languages: string[];
+  interests: string[];
+}
+
+export function useMySocialProfile(enabled: boolean) {
+  return useQuery({
+    queryKey: ['server', 'social-profile'] as const,
+    enabled: enabled && Boolean(supabase),
+    queryFn: async (): Promise<MySocialProfile | null> => {
+      const s = await signedInClient();
+      if (!s) return null;
+      const { data, error } = await s.client
+        .from('thrivefold_social_profiles')
+        .select('pseudonym, languages, interests')
+        .eq('user_id', s.userId)
+        .maybeSingle();
+      if (error) throw error;
+      return (data as MySocialProfile | null) ?? null;
+    },
+  });
+}
+
+export function useSaveSocialProfile() {
+  return useMutation({
+    mutationFn: async (p: MySocialProfile) => {
+      const s = await signedInClient();
+      if (!s) throw new Error('not_authenticated');
+      const { error } = await s.client.from('thrivefold_social_profiles').upsert(
+        {
+          user_id: s.userId,
+          pseudonym: p.pseudonym.slice(0, 24),
+          avatar_seed: s.userId.slice(0, 8),
+          coarse_region: 'Not shared',
+          languages: p.languages.length ? p.languages : ['English'],
+          interests: p.interests,
+        },
+        { onConflict: 'user_id' },
+      );
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['server', 'social-profile'] });
+      queryClient.invalidateQueries({ queryKey: ['server', 'letters'] });
+    },
+  });
+}

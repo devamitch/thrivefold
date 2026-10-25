@@ -1,112 +1,45 @@
-import { SquircleSurface } from '../../../components/ui/SquircleSurface';
-import React, { useState } from 'react';
-import { Text, StyleSheet, ScrollView, View } from 'react-native';
-import { Toggle } from '../../../components/ui/Toggle';
-import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
+import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+
 import { Card } from '../../../components/ui/Card';
 import { Header } from '../../../components/ui/Header';
-import { Button } from '../../../components/ui/Button';
-import { Chip } from '../../../components/ui/Chip';
+import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
+import { Toggle } from '../../../components/ui/Toggle';
 import { useRootStore } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
 
+/** Whether new people can write to you. Synced to your server card; existing pen pals unaffected. */
 export default function LetterPreferencesScreen() {
   const { colors, typography, spacing } = useTheme();
-
-  const saved = useRootStore((s) => s.letterPreferences);
-  const setLetterPreferences = useRootStore((s) => s.setLetterPreferences);
-  const showToast = useRootStore((s) => s.showToast);
-  const [acceptingLetters, setAcceptingLetters] = useState(saved.acceptingLetters);
-  const [distanceBand, setDistanceBand] = useState(saved.distanceBand);
-  const [deliveryPacing, setDeliveryPacing] = useState(saved.pacing);
-
-  const distanceBands = ['Same Country Only', 'Same Continent', 'Worldwide (Any Distance)'];
-  const pacingOptions = ['Realistic Postal (~1h per 200km)', 'Extra Slow (Reflection Mode)'];
+  const prefs = useRootStore((s) => s.letterPreferences);
+  const setPrefs = useRootStore((s) => s.setLetterPreferences);
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Delivery preferences" subtitle="Pace, distance and boundaries" showBack />
-      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
-        <Card style={{ marginBottom: spacing.md }}>
-          <View style={styles.switchRow}>
-            <View style={{ flex: 1, paddingRight: 12 }}>
-              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                Accept New Letters & Introductions
-              </Text>
-              <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                When turned off, no new correspondents can find your card in discovery.
-              </Text>
-            </View>
-            <Toggle
-              value={acceptingLetters}
-              onValueChange={setAcceptingLetters}
-              trackColor={{ false: colors.surface1, true: colors.primary }}
-            />
+      <Header title="Letter settings" showBack />
+      <Card style={{ padding: spacing.base }}>
+        <View style={styles.row}>
+          <View style={styles.flex}>
+            <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Accept letters from new people</Text>
+            <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+              When off, you don’t appear in Find a pen pal. People you already write with can still reply.
+            </Text>
           </View>
-        </Card>
-
-        {/* Distance Band */}
-        <Card style={{ marginBottom: spacing.md }}>
-          <Text style={[typography.subbodyBold, { color: colors.text.primary, marginBottom: 8 }]}>
-            Geographic Distance Scope
-          </Text>
-          <View style={styles.chipRow}>
-            {distanceBands.map((band) => (
-              <Chip
-                key={band}
-                label={band}
-                selected={distanceBand === band}
-                onPress={() => setDistanceBand(band)}
-                style={{ marginRight: 6, marginBottom: 6 }}
-              />
-            ))}
-          </View>
-        </Card>
-
-        {/* Pacing Speed */}
-        <Card style={{ marginBottom: spacing.lg }}>
-          <Text style={[typography.subbodyBold, { color: colors.text.primary, marginBottom: 8 }]}>
-            Postal Transit Simulation Pacing
-          </Text>
-          <View style={styles.chipRow}>
-            {pacingOptions.map((opt) => (
-              <Chip
-                key={opt}
-                label={opt}
-                selected={deliveryPacing === opt}
-                onPress={() => setDeliveryPacing(opt)}
-                style={{ marginRight: 6, marginBottom: 6 }}
-              />
-            ))}
-          </View>
-        </Card>
-
-        <Button
-          label="Save preferences"
-          onPress={() => {
-            setLetterPreferences({ acceptingLetters, distanceBand, pacing: deliveryPacing });
-            showToast({ type: 'success', message: 'Letter preferences saved on this device.' });
-          }}
-        />
-      </ScrollView>
+          <Toggle
+            value={prefs.acceptingLetters}
+            onValueChange={(v) => setPrefs({ ...prefs, acceptingLetters: v })}
+            accessibilityLabel="Accept letters from new people"
+          />
+        </View>
+      </Card>
+      <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.md }]}>
+        Every letter arrives about 12 hours after it is sent. No location is used.
+      </Text>
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-  },
-  switchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
+  flex: { flex: 1 },
+  row: { alignItems: 'center', flexDirection: 'row', gap: 12 },
 });
