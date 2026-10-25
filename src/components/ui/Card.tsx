@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleProp, StyleSheet, ViewStyle } from 'react-native';
+import { StyleProp, ViewStyle } from 'react-native';
 import { useTheme } from '../../theme/useTheme';
 import { PressableScale } from './PressableScale';
 import { SquircleSurface } from './SquircleSurface';
@@ -12,7 +12,7 @@ export interface CardProps {
   radius?: number;
   padding?: number;
   stroke?: string;
-  /** When true, avoids drawing SVG path on high-frequency virtualized lists */
+  /** @deprecated No effect; SquircleSurface picks the cheapest renderer itself. */
   nativeSurface?: boolean;
 }
 
@@ -24,67 +24,29 @@ export const Card: React.FC<CardProps> = ({
   radius = 20,
   padding,
   stroke,
-  nativeSurface = false,
 }) => {
   const { colors, spacing } = useTheme();
 
-  let bg = colors.surface;
   // Surfaces are separated by fill, never by a border line.
-  const resolvedStroke = stroke;
-
-  if (variant === 'surface1') {
-    bg = colors.surface1;
-  } else if (variant === 'surface2') {
-    bg = colors.surface2;
-  } else if (variant === 'surface3') {
-    bg = colors.surface3;
-  } else if (variant === 'glass') {
-    bg = colors.surfaceGlass;
-  } else if (variant === 'tinted') {
-    bg = colors.primaryAlpha;
-  } else if (variant === 'outline') {
-    bg = colors.surface1;
-  }
-
-  const defaultPadding = padding !== undefined ? padding : spacing.base;
-
-  if (nativeSurface) {
-    const content = (
-      <SquircleSurface
-        style={[
-          styles.base,
-          {
-            backgroundColor: bg,
-            borderColor: resolvedStroke,
-            borderWidth: resolvedStroke ? 1 : 0,
-            borderRadius: radius,
-            padding: defaultPadding,
-          },
-          style,
-        ]}
-      >
-        {children}
-      </SquircleSurface>
-    );
-
-    if (onPress) {
-      return (
-        <PressableScale onPress={onPress} scaleTo={0.98}>
-          {content}
-        </PressableScale>
-      );
-    }
-    return content;
-  }
+  const bg =
+    variant === 'surface1' || variant === 'outline'
+      ? colors.surface1
+      : variant === 'surface2'
+        ? colors.surface2
+        : variant === 'surface3'
+          ? colors.surface3
+          : variant === 'glass'
+            ? colors.surfaceGlass
+            : variant === 'tinted'
+              ? colors.primaryAlpha
+              : colors.surface;
 
   const surface = (
     <SquircleSurface
       radius={radius}
-      smoothing={1}
       fill={bg}
-      stroke={resolvedStroke}
-      strokeWidth={resolvedStroke ? 1 : 0}
-      style={[styles.base, { padding: defaultPadding }, style]}
+      stroke={stroke}
+      style={[{ padding: padding ?? spacing.base }, style]}
     >
       {children}
     </SquircleSurface>
@@ -97,14 +59,7 @@ export const Card: React.FC<CardProps> = ({
       </PressableScale>
     );
   }
-
   return surface;
 };
-
-const styles = StyleSheet.create({
-  base: {
-    overflow: 'hidden',
-  },
-});
 
 export default Card;

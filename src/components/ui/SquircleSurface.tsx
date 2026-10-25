@@ -1,50 +1,41 @@
 /**
- * Squircle-shaped surface matching Neev's exact architecture.
+ * Rounded surface. Every style key you pass (padding, gap, flex, alignment, size) lands on the
+ * one view it renders, so it lays out exactly like a `View`.
  *
- * It is ONE plain View. The squircle is painted behind the children (Skia-free SVG path, or the
- * native Android view from modules/setu-squircle), and every style key you pass - padding, gap,
- * alignItems, justifyContent, flexDirection, minHeight, width, height, flex - lands on that same View,
- * so layout behaves exactly like a normal `View`.
+ * How it draws, chosen by shape and radius only (never by fill, so a chip whose fill toggles on
+ * selection keeps the same view and nothing remounts):
+ *
+ * - iOS: a plain View with `borderCurve: 'continuous'`, the system squircle. No extra views.
+ * - Android, painted squircle with radius >= 18: the native squircle view
+ *   (modules/setu-squircle). Large cards are where the smoothed corner is visible.
+ * - Everything else (pills, circles, small radii, unpainted boxes): a plain rounded View.
+ *   Native views cannot be flattened by Fabric; using them for every chip made the view tree so
+ *   deep that the Android RenderThread overflowed its stack and the app crashed.
  */
 import { requireNativeView } from 'expo';
-import React, {
-  memo,
-  useCallback,
-  useMemo,
-  useState,
-  type ComponentType,
-  type ReactNode,
-} from 'react';
+import React, { memo, type ComponentType, type ReactNode } from 'react';
 import {
   Platform,
   processColor,
   StyleSheet,
   UIManager,
   View,
-  type LayoutChangeEvent,
   type StyleProp,
   type ViewProps,
   type ViewStyle,
 } from 'react-native';
-import Svg, { G, Path } from 'react-native-svg';
-import { squirclePath, squircleRadius } from '../../theme/squirclePath';
-import { useTheme } from '../../theme/useTheme';
 
 export type SquircleShape = 'squircle' | 'rounded' | 'pill' | 'circle';
+
+/** Below this radius a squircle and a rounded rect are indistinguishable on screen. */
+const NATIVE_MIN_RADIUS = 18;
 
 type NativeSquircleProps = ViewProps & {
   squircleBackgroundColor?: number | null;
   squircleBorderColor?: number | null;
-  squircleHighlightColor?: number | null;
-  squircleAccentColor?: number | null;
   squircleBorderWidth?: number | null;
   squircleRadius?: number | null;
-  topLeftRadius?: number | null;
-  topRightRadius?: number | null;
-  bottomRightRadius?: number | null;
-  bottomLeftRadius?: number | null;
   cornerSmoothing?: number | null;
-  preserveSmoothing?: boolean | null;
   shape?: SquircleShape | null;
   clipContent?: boolean | null;
   ref?: any;
@@ -57,7 +48,6 @@ if (Platform.OS === 'android') {
       typeof UIManager.getViewManagerConfig === 'function'
         ? Boolean(UIManager.getViewManagerConfig('ExpoSquircleView'))
         : Boolean((UIManager as any)?.ExpoSquircleView);
-
     if (hasViewManager) {
       NativeSquircleView = requireNativeView<NativeSquircleProps>('ExpoSquircleView');
     }
@@ -71,12 +61,12 @@ export interface SquircleSurfaceProps extends ViewProps {
   style?: StyleProp<ViewStyle>;
   radius?: number;
   smoothing?: number;
-  /** Overrides `style.backgroundColor`. Falls back to the theme surface colour. */
+  /** Overrides `style.backgroundColor`. */
   fill?: string;
   stroke?: string;
   strokeWidth?: number;
   shape?: SquircleShape;
-  /** Clips children to the corner radius. Ignored when `style.overflow` is 'visible'. */
+  /** Clips children to the corners when something is painted. Ignored for `overflow: 'visible'`. */
   clipContent?: boolean;
   ref?: React.Ref<View>;
 }
@@ -91,136 +81,80 @@ export const SquircleSurface = memo(function SquircleSurface({
   strokeWidth = 1,
   shape = 'squircle',
   clipContent = true,
-  onLayout,
   ref,
   ...rest
 }: SquircleSurfaceProps) {
-  const { colors } = useTheme();
-  const [size, setSize] = useState({ width: 0, height: 0 });
-
-  const handleLayout = useCallback(
-    (e: LayoutChangeEvent) => {
-      const { width, height } = e.nativeEvent.layout;
-      setSize((prev) =>
-        prev.width === width && prev.height === height ? prev : { width, height },
-      );
-      onLayout?.(e);
-    },
-    [onLayout],
-  );
-
-  const flat = useMemo(() => (StyleSheet.flatten(style) ?? {}) as ViewStyle, [style]);
+  const flat = (StyleSheet.flatten(style) ?? {}) as ViewStyle;
 
   const paint =
-    fill ??
-    (typeof flat.backgroundColor === 'string' ? flat.backgroundColor : undefined) ??
-    'transparent';
+    fill ?? (typeof flat.backgroundColor === 'string' ? flat.backgroundColor : undefined);
+  const painted = (paint !== undefined && paint !== 'transparent') || Boolean(stroke);
   const edge = stroke ? strokeWidth : 0;
-  const painted = paint !== 'transparent' || edge > 0;
-  // Only clip when something is painted; a transparent rounded box (an unselected chip) must
-  // not start cutting off its children.
-  const clip = clipContent && painted && flat.overflow !== 'visible';
+  const round = shape === 'pill' || shape === 'circle';
+  // An explicit radius wins, then the style's borderRadius, else square corners.
+  const radius = round
+    ? 9999
+    : (radiusProp ?? (typeof flat.borderRadius === 'number' ? flat.borderRadius : 0));
+  const clip = clipContent && painted && radius > 0 && flat.overflow !== 'visible';
 
-  // An explicit radius wins; otherwise the style's own borderRadius; otherwise square. A View
-  // swapped for a SquircleSurface therefore keeps exactly the corners it had.
-  const radius = radiusProp ?? (typeof flat.borderRadius === 'number' ? flat.borderRadius : 0);
-  const effectiveRadius = squircleRadius(shape, radius, size.width || 100, size.height || 100);
-
-  // Inset by half the stroke so the line sits fully inside the box instead of being clipped.
-  const path = useMemo(
-    () =>
-      size.width > 0 && size.height > 0
-        ? squirclePath({
-            width: Math.max(0, size.width - edge),
-            height: Math.max(0, size.height - edge),
-            radius: Math.max(0, effectiveRadius - edge / 2),
-            smoothing: shape === 'rounded' ? 0 : smoothing,
-          })
-        : '',
-    [edge, effectiveRadius, shape, size.height, size.width, smoothing],
-  );
-
-  const drawn = Boolean(path);
-  // Decided by shape alone, never by the fill: a chip whose fill toggles on selection must keep
-  // the same component tree, otherwise every toggle remounts its children (flicker, lost
-  // animations, re-measured text).
-  const hasVisual = radius > 0 || shape !== 'squircle';
-  const viewStyle = useMemo(
-    () => [
-      flat,
-      hasVisual
-        ? drawn
-          ? styles.clear
-          : {
-              // Before the first layout: an ordinary rounded box, so nothing flashes square.
-              backgroundColor: paint,
-              borderColor: stroke,
-              borderWidth: edge,
-              borderRadius: shape === 'circle' || shape === 'pill' ? 9999 : radius,
-            }
-        : null,
-      clip ? { borderRadius: effectiveRadius, overflow: 'hidden' as const } : null,
-    ],
-    [clip, drawn, edge, effectiveRadius, flat, hasVisual, paint, radius, shape, stroke],
-  );
-
-  // Square corners: behave exactly like a plain View (a fill still applies). No layout
-  // tracking, no extra render and no clip, so a SquircleSurface used for layout costs nothing.
-  if (!hasVisual) {
-    return (
-      <View {...rest} onLayout={onLayout} style={fill ? [style, { backgroundColor: fill }] : style}>
-        {children}
-      </View>
-    );
-  }
-
-  // Hardware-accelerated clipping when the native Android view is available.
-  if (NativeSquircleView) {
+  if (NativeSquircleView && shape === 'squircle' && radius >= NATIVE_MIN_RADIUS && painted) {
     return (
       <NativeSquircleView
         {...rest}
         ref={ref as any}
-        onLayout={handleLayout}
-        squircleBackgroundColor={
-          paint !== 'transparent' ? (processColor(paint) as number | null) : null
-        }
+        squircleBackgroundColor={paint ? (processColor(paint) as number | null) : null}
         squircleBorderColor={stroke ? (processColor(stroke) as number | null) : null}
         squircleBorderWidth={edge}
-        squircleRadius={effectiveRadius}
+        squircleRadius={radius}
         cornerSmoothing={Math.round(smoothing * 100)}
         shape={shape}
         clipContent={clip}
-        style={[flat, hasVisual ? styles.clear : null]}
+        style={[flat, styles.clear]}
       >
         {children}
       </NativeSquircleView>
     );
   }
 
+  // Square and unpainted: a layout box. Pass the style through untouched so Fabric can flatten it.
+  if (radius === 0 && !fill && !stroke) {
+    return (
+      <View {...rest} ref={ref} style={style}>
+        {children}
+      </View>
+    );
+  }
+
   return (
-    <View {...rest} ref={ref} onLayout={handleLayout} style={viewStyle}>
-      {path && painted ? (
-        <Svg
-          pointerEvents="none"
-          width={size.width}
-          height={size.height}
-          style={StyleSheet.absoluteFill}
-        >
-          <G transform={`translate(${edge / 2}, ${edge / 2})`}>
-            <Path d={path} fill={paint} stroke={stroke} strokeWidth={edge} />
-          </G>
-        </Svg>
-      ) : null}
+    <View
+      {...rest}
+      ref={ref}
+      style={[
+        flat,
+        {
+          backgroundColor: paint,
+          borderRadius: radius,
+          borderCurve: 'continuous',
+          borderWidth: edge || flat.borderWidth,
+          borderColor: stroke ?? flat.borderColor,
+        },
+        clip ? styles.clip : null,
+      ]}
+    >
       {children}
     </View>
   );
 });
 
 const styles = StyleSheet.create({
-  // The squircle paints the fill and edge; the View itself must never draw a rectangle.
+  // The native squircle paints the fill and edge; the view itself must never draw a rectangle.
   clear: {
     backgroundColor: 'transparent',
     borderColor: 'transparent',
+    borderWidth: 0,
+  },
+  clip: {
+    overflow: 'hidden',
   },
 });
 
