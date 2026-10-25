@@ -1,27 +1,49 @@
-import React, { ReactNode, useEffect } from 'react';
+import * as Haptics from 'expo-haptics';
+import { useSegments } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import React, { ReactNode, useEffect, useMemo, useState } from 'react';
 import {
   BackHandler,
   Platform,
   Pressable,
   StyleSheet,
   useWindowDimensions,
+  View,
 } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
-  Easing,
+  cancelAnimation,
   Extrapolation,
   interpolate,
   runOnJS,
+  useAnimatedReaction,
   useAnimatedStyle,
   useReducedMotion,
-  withTiming,
+  withSpring,
 } from 'react-native-reanimated';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-
-import { useSegments } from 'expo-router';
 
 import { useRootStore } from '../../stores/useRootStore';
-import { drawerProgress, drawerWidthFor } from './drawerProgress';
 import { useTheme } from '../../theme/useTheme';
+import {
+  DRAWER_EDGE_WIDTH,
+  DRAWER_SCENE_RADIUS,
+  DRAWER_SCENE_SCALE,
+  DRAWER_SPRING,
+  drawerProgress,
+  drawerTarget,
+  drawerWidthFor,
+} from './drawerProgress';
+
+const CLAMP = Extrapolation.CLAMP;
+const IS_IOS = Platform.OS === 'ios';
+/** px/s. A flick faster than this decides open/close regardless of distance. */
+const FLICK_VELOCITY = 500;
+
+const tick = () => {
+  try {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
+  } catch {}
+};
 
 export function DrawerSceneWrapper({ children }: { children: ReactNode }) {
   const { width } = useWindowDimensions();
@@ -35,18 +57,19 @@ export function DrawerSceneWrapper({ children }: { children: ReactNode }) {
   const progress = drawerProgress;
   const slide = drawerWidthFor(width);
 
-  // Drawer gestures only activate on primary tab roots, preventing conflict with back swipes in nested screens
+  // Drawer gestures only activate on primary tab roots, so they never fight back-swipes in nested screens.
   const isTabRoot = Array.isArray(segments) && segments[1] === '(tabs)' && segments.length <= 3;
 
+  // Store -> animation (hamburger button, back button, backdrop tap, nav item).
+  // If a gesture release already sent the animation to this target, leave it alone.
   useEffect(() => {
-    if (reduceMotion) {
-      progress.value = drawerOpen ? 1 : 0;
-    } else {
-      progress.value = withTiming(drawerOpen ? 1 : 0, { duration: 280, easing: Easing.out(Easing.cubic) });
-    }
+    const target = drawerOpen ? 1 : 0;
+    if (drawerTarget.value === target) return;
+    drawerTarget.value = target;
+    progress.value = reduceMotion ? target : withSpring(target, DRAWER_SPRING);
   }, [drawerOpen, reduceMotion, progress]);
 
-  // Handle Android back button to close drawer when open
+  // Android back closes the drawer first.
   useEffect(() => {
     if (!drawerOpen) return;
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -56,108 +79,104 @@ export function DrawerSceneWrapper({ children }: { children: ReactNode }) {
     return () => sub.remove();
   }, [drawerOpen, setDrawerOpen]);
 
-  // Smart swipe gesture:
-  // When closed: ONLY starts from left edge (width 36) on root tabs
-  // When open: allows swiping left anywhere on screen to close
-  const panGesture = Gesture.Pan()
-    .enabled(drawerOpen || isTabRoot)
-    .hitSlop(drawerOpen ? {} : { left: 0, width: 36 })
-    .activeOffsetX(drawerOpen ? [-12, 12] : [15, 99999])
-    .failOffsetX(drawerOpen ? [-99999, 99999] : [-15, 0])
-    .failOffsetY([-18, 18])
-    .onChange((event) => {
-      'worklet';
-      const delta = event.changeX / slide;
-      const next = progress.value + delta;
-      progress.value = Math.min(Math.max(next, 0), 1);
-    })
-    .onEnd((event) => {
-      'worklet';
-      const shouldOpen = drawerOpen
-        ? !(event.velocityX < -250 || progress.value < 0.65)
-        : (event.velocityX > 300 || progress.value > 0.3);
+  // The drawer is dark, so the status bar flips to light as soon as it is visibly revealed
+  // (mid-drag included), then returns to whatever the screen had set.
+  const [barLight, setBarLight] = useState(false);
+  useAnimatedReaction(
+    () => progress.value > 0.3,
+    (now, prev) => {
+      if (now !== prev) runOnJS(setBarLight)(now);
+    },
+  );
 
-      progress.value = withTiming(
-        shouldOpen ? 1 : 0,
-        { duration: 250, easing: Easing.out(Easing.cubic) },
-        (finished) => {
-          if (finished) {
-            runOnJS(setDrawerOpen)(shouldOpen);
-          }
+  const pan = useMemo(() => {
+    const base = Gesture.Pan()
+      .enabled(drawerOpen || isTabRoot)
+      .failOffsetY([-18, 18])
+      .onStart(() => {
+        'worklet';
+        // Grab the scene wherever it is, even mid-spring.
+        cancelAnimation(progress);
+      })
+      .onChange((event) => {
+        'worklet';
+        const next = progress.value + event.changeX / slide;
+        progress.value = Math.min(Math.max(next, 0), 1);
+      })
+      .onEnd((event) => {
+        'worklet';
+        const vx = event.velocityX;
+        // Flick wins; otherwise distance, with a little hysteresis so it feels sticky either way.
+        const open =
+          vx > FLICK_VELOCITY
+            ? true
+            : vx < -FLICK_VELOCITY
+              ? false
+              : progress.value > (drawerOpen ? 0.6 : 0.4);
+
+        drawerTarget.value = open ? 1 : 0;
+        progress.value = reduceMotion
+          ? open
+            ? 1
+            : 0
+          : withSpring(open ? 1 : 0, { ...DRAWER_SPRING, velocity: vx / slide });
+
+        if (open !== drawerOpen) {
+          runOnJS(tick)();
+          runOnJS(setDrawerOpen)(open);
         }
-      );
-    });
+      });
 
-  const animatedSceneStyle = useAnimatedStyle(() => {
+    // Open: swipe left anywhere to close. Closed: only a rightward swipe from the left edge opens.
+    return drawerOpen
+      ? base.activeOffsetX([-10, 10])
+      : base.hitSlop({ left: 0, width: DRAWER_EDGE_WIDTH }).activeOffsetX(12).failOffsetX(-12);
+  }, [drawerOpen, isTabRoot, progress, reduceMotion, setDrawerOpen, slide]);
+
+  const sceneStyle = useAnimatedStyle(() => {
+    const p = progress.value;
+    const translateX = interpolate(p, [0, 1], [0, slide], CLAMP);
+    // Corners round off over the first 15% of travel: no pop when the screen starts to move,
+    // and no per-frame re-clip for the rest of the drag.
+    const borderRadius = interpolate(p, [0, 0.15], [0, DRAWER_SCENE_RADIUS], CLAMP);
+
     if (reduceMotion) {
-      const translateX = interpolate(
-        progress.value,
-        [0, 1],
-        [0, slide],
-        Extrapolation.CLAMP,
-      );
-      return {
-        transform: [{ translateX }],
-      };
+      return { borderRadius, transform: [{ translateX }] };
     }
 
-    const scale = interpolate(
-      progress.value,
-      [0, 1],
-      [1, 0.86],
-      Extrapolation.CLAMP,
-    );
-    const translateX = interpolate(
-      progress.value,
-      [0, 1],
-      [0, slide],
-      Extrapolation.CLAMP,
-    );
-    // Round the corners once the screen starts to move (animating the radius every frame
-    // re-clips the whole screen and drops frames on Android).
-    const borderRadius = progress.value > 0.01 ? 24 : 0;
-
-    if (Platform.OS === 'ios') {
-      const rotateY = interpolate(
-        progress.value,
-        [0, 1],
-        [0, -10],
-        Extrapolation.CLAMP,
-      );
+    const scale = interpolate(p, [0, 1], [1, DRAWER_SCENE_SCALE], CLAMP);
+    if (IS_IOS) {
+      const rotateY = interpolate(p, [0, 1], [0, -8], CLAMP);
       return {
         borderRadius,
-        transform: [
-          { perspective: 1000 },
-          { translateX },
-          { scale },
-          { rotateY: `${rotateY}deg` },
-        ],
+        transform: [{ perspective: 1000 }, { translateX }, { scale }, { rotateY: `${rotateY}deg` }],
       };
     }
-
-    return {
-      borderRadius,
-      transform: [
-        { translateX },
-        { scale },
-      ],
-    };
+    return { borderRadius, transform: [{ translateX }, { scale }] };
   });
 
-  return (
-    <GestureDetector gesture={panGesture}>
-      <Animated.View
-        style={[
-          styles.container,
-          {
-            backgroundColor: colors.background,
-          },
-          animatedSceneStyle,
-        ]}
-      >
-        {children}
+  // The screen recedes: a soft ink veil over it as it slides away.
+  const veilStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(progress.value, [0, 1], [0, 0.14], CLAMP),
+  }));
 
-        {/* Backdrop touch interceptor when drawer is open */}
+  return (
+    <GestureDetector gesture={pan}>
+      <Animated.View style={[styles.container, { backgroundColor: colors.background }, sceneStyle]}>
+        <View
+          style={styles.fill}
+          importantForAccessibility={drawerOpen ? 'no-hide-descendants' : 'auto'}
+          accessibilityElementsHidden={drawerOpen}
+        >
+          {children}
+        </View>
+
+        <Animated.View
+          pointerEvents="none"
+          style={[StyleSheet.absoluteFill, { backgroundColor: colors.text.primary }, veilStyle]}
+        />
+
+        {/* Tap anywhere on the receded screen to close */}
         {drawerOpen ? (
           <Pressable
             style={StyleSheet.absoluteFill}
@@ -166,6 +185,8 @@ export function DrawerSceneWrapper({ children }: { children: ReactNode }) {
             accessibilityLabel="Close navigation drawer"
           />
         ) : null}
+
+        {barLight ? <StatusBar style="light" animated /> : null}
       </Animated.View>
     </GestureDetector>
   );
@@ -175,5 +196,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     overflow: 'hidden',
+    borderCurve: 'continuous',
+  },
+  fill: {
+    flex: 1,
   },
 });

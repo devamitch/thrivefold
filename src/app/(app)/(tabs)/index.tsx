@@ -1,35 +1,39 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter, type Href } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 
-import { Card } from '../../../components/ui/Card';
-import { Chip } from '../../../components/ui/Chip';
-import { PressableScale } from '../../../components/ui/PressableScale';
-import { AppHeader, HeaderIconButton } from '../../../components/ui/AppHeader';
-import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { ActivityRow } from '../../../components/game/ActivityRow';
 import { QuestSheet } from '../../../components/game/QuestSheet';
 import { HomeGuide } from '../../../components/home/HomeGuide';
+import { TodayHero } from '../../../components/home/TodayHero';
+import { WeekGlance } from '../../../components/home/WeekGlance';
+import { AppHeader, HeaderIconButton } from '../../../components/ui/AppHeader';
+import { Card } from '../../../components/ui/Card';
+import { Chip } from '../../../components/ui/Chip';
+import { PressableScale } from '../../../components/ui/PressableScale';
+import { ScreenContainer } from '../../../components/ui/ScreenContainer';
+import { SettingsRow } from '../../../components/ui/SettingsRow';
 import { evaluateDeterministicRoutine } from '../../../domain/ai/deterministicRules';
 import { computeInsights, recentLoad } from '../../../domain/ai/insights';
-import { getCyclePredictions } from '../../../domain/health/cycleCalculations';
+import {
+  formatLocalDate,
+  generateDayAgenda,
+  type CalendarEvent,
+} from '../../../domain/calendar/universalCalendarEngine';
 import { currentLevelProgress } from '../../../domain/game/gameCatalogService';
 import { questFamily, type QuestFamily } from '../../../domain/game/progression';
 import {
+  EMPTY_BASELINE,
+  isSetupSectionAnswered,
   SETUP_REWARDS,
   setupLedgerKey,
-  isSetupSectionAnswered,
-  EMPTY_BASELINE,
 } from '../../../domain/game/setupProfile';
 import { DAY_PART_LABEL, dayPartAt, splitByTime } from '../../../domain/game/timeOfDay';
-import { formatLocalDate, generateDayAgenda, type CalendarEvent } from '../../../domain/calendar/universalCalendarEngine';
+import { getCyclePredictions } from '../../../domain/health/cycleCalculations';
 import { useAgendaSources } from '../../../hooks/useAgendaSources';
 import { routeForEvent } from '../../../navigation/eventRoutes';
-import { TodayHero } from '../../../components/home/TodayHero';
-import { WeekGlance } from '../../../components/home/WeekGlance';
-import { SettingsRow } from '../../../components/ui/SettingsRow';
 import type { Quest } from '../../../stores/slices/questSlice';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import type { ProductExperience } from '../../../theme/tokens';
@@ -40,23 +44,73 @@ type Tool = { icon: keyof typeof Ionicons.glyphMap; label: string; subtitle: str
 /** The tools that matter most per experience, plus shared ones. */
 const TOOLS: Record<ProductExperience, Tool[]> = {
   women_health: [
-    { icon: 'water-outline', label: 'Cycle', subtitle: 'Phase & dates', route: '/(app)/health/cycle' },
-    { icon: 'pulse-outline', label: 'Symptoms', subtitle: 'Body insights', route: '/(app)/health/symptoms' },
-    { icon: 'barbell-outline', label: 'Workouts', subtitle: 'Guided plans', route: '/(app)/health/exercise' },
+    {
+      icon: 'water-outline',
+      label: 'Cycle',
+      subtitle: 'Phase & dates',
+      route: '/(app)/health/cycle',
+    },
+    {
+      icon: 'pulse-outline',
+      label: 'Symptoms',
+      subtitle: 'Body insights',
+      route: '/(app)/health/symptoms',
+    },
+    {
+      icon: 'barbell-outline',
+      label: 'Workouts',
+      subtitle: 'Guided plans',
+      route: '/(app)/health/exercise',
+    },
   ],
   men_health: [
-    { icon: 'barbell-outline', label: 'Workouts', subtitle: 'Strength & reps', route: '/(app)/health/exercise' },
-    { icon: 'body-outline', label: "Men's health", subtitle: 'Targeted care', route: '/(app)/health/men' },
-    { icon: 'calendar-outline', label: 'Calendar', subtitle: 'Habits & plans', route: '/(app)/calendar' },
+    {
+      icon: 'barbell-outline',
+      label: 'Workouts',
+      subtitle: 'Strength & reps',
+      route: '/(app)/health/exercise',
+    },
+    {
+      icon: 'body-outline',
+      label: "Men's health",
+      subtitle: 'Targeted care',
+      route: '/(app)/health/men',
+    },
+    {
+      icon: 'calendar-outline',
+      label: 'Calendar',
+      subtitle: 'Habits & plans',
+      route: '/(app)/calendar',
+    },
   ],
   pride_wellbeing: [
-    { icon: 'heart-outline', label: 'Self-care', subtitle: 'Affirming care', route: '/(app)/health/pride' },
-    { icon: 'barbell-outline', label: 'Workouts', subtitle: 'Guided plans', route: '/(app)/health/exercise' },
-    { icon: 'calendar-outline', label: 'Calendar', subtitle: 'Habits & plans', route: '/(app)/calendar' },
+    {
+      icon: 'heart-outline',
+      label: 'Self-care',
+      subtitle: 'Affirming care',
+      route: '/(app)/health/pride',
+    },
+    {
+      icon: 'barbell-outline',
+      label: 'Workouts',
+      subtitle: 'Guided plans',
+      route: '/(app)/health/exercise',
+    },
+    {
+      icon: 'calendar-outline',
+      label: 'Calendar',
+      subtitle: 'Habits & plans',
+      route: '/(app)/calendar',
+    },
   ],
 };
 const SHARED_TOOLS: Tool[] = [
-  { icon: 'restaurant-outline', label: 'Nutrition', subtitle: 'Meals & macros', route: '/(app)/health/nutrition' },
+  {
+    icon: 'restaurant-outline',
+    label: 'Nutrition',
+    subtitle: 'Meals & macros',
+    route: '/(app)/health/nutrition',
+  },
   { icon: 'moon-outline', label: 'Rest', subtitle: 'Bedtime log', route: '/(app)/health/sleep' },
   { icon: 'book-outline', label: 'Journal', subtitle: 'Reflections', route: '/(app)/journal' },
 ];
@@ -121,13 +175,18 @@ export default function HomeScreen() {
   const [openQuest, setOpenQuest] = useState<string | null>(null);
 
   const todaysCheckIn = s.checkInHistory.find((c) => c.date === today());
-  const progress = useMemo(() => currentLevelProgress(s.xp, s.completedCheckpoints), [s.xp, s.completedCheckpoints]);
+  const progress = useMemo(
+    () => currentLevelProgress(s.xp, s.completedCheckpoints),
+    [s.xp, s.completedCheckpoints],
+  );
   const load = useMemo(() => recentLoad(s.checkInHistory, today()), [s.checkInHistory]);
   const topInsight = useMemo(
     () =>
-      computeInsights({ checkIns: s.checkInHistory, periods: s.cycleData?.periodHistory ?? [], today: today() }).find(
-        (i) => i.kind !== 'consistency',
-      ),
+      computeInsights({
+        checkIns: s.checkInHistory,
+        periods: s.cycleData?.periodHistory ?? [],
+        today: today(),
+      }).find((i) => i.kind !== 'consistency'),
     [s.checkInHistory, s.cycleData],
   );
   const recovery = useMemo(() => {
@@ -152,36 +211,61 @@ export default function HomeScreen() {
   );
   const active = visible.filter((q) => q.status !== 'skipped').length;
 
-  const name = s.user?.pseudonym && !['Friend', 'Guest'].includes(s.user.pseudonym) ? s.user.pseudonym : null;
+  const name =
+    s.user?.pseudonym && !['Friend', 'Guest'].includes(s.user.pseudonym) ? s.user.pseudonym : null;
   const cycle =
     experience === 'women_health' && s.cycleData?.lastPeriodDate
-      ? getCyclePredictions(s.cycleData.lastPeriodDate, s.cycleData.cycleLengthDays, s.cycleData.periodLengthDays)
+      ? getCyclePredictions(
+          s.cycleData.lastPeriodDate,
+          s.cycleData.cycleLengthDays,
+          s.cycleData.periodLengthDays,
+        )
       : null;
-  const daysToPeriod = cycle ? Math.max(0, Math.ceil((new Date(cycle.nextPeriodDate).getTime() - Date.now()) / 86_400_000)) : null;
+  const daysToPeriod = cycle
+    ? Math.max(0, Math.ceil((new Date(cycle.nextPeriodDate).getTime() - Date.now()) / 86_400_000))
+    : null;
 
   // Gentle restart (spec §4.4): after a gap, no catch-up and no lost-streak message.
-  const lastCheckIn = s.checkInHistory.reduce<string | null>((d, c) => (!d || c.date > d ? c.date : d), null);
-  const daysAway = lastCheckIn ? Math.round((Date.parse(today()) - Date.parse(lastCheckIn)) / 86_400_000) : 0;
+  const lastCheckIn = s.checkInHistory.reduce<string | null>(
+    (d, c) => (!d || c.date > d ? c.date : d),
+    null,
+  );
+  const daysAway = lastCheckIn
+    ? Math.round((Date.parse(today()) - Date.parse(lastCheckIn)) / 86_400_000)
+    : 0;
 
-  const subtitle = !todaysCheckIn && daysAway >= 2
-    ? 'Welcome back. Nothing to catch up on; start with today.'
-    : !todaysCheckIn
-    ? 'Start with a one-minute check-in.'
-    : active === 0
-      ? 'No quests yet today.'
-      : done >= active
-        ? 'All of today’s quests are done.'
-        : `${done} of ${active} quests done today.`;
+  const subtitle =
+    !todaysCheckIn && daysAway >= 2
+      ? 'Welcome back. Nothing to catch up on; start with today.'
+      : !todaysCheckIn
+        ? 'Start with a one-minute check-in.'
+        : active === 0
+          ? 'No quests yet today.'
+          : done >= active
+            ? 'All of today’s quests are done.'
+            : `${done} of ${active} quests done today.`;
 
   // Latest value per kind from connected apps and devices; nothing shows without real readings.
   const latest = (kind: string) =>
-    s.readings.filter((r) => r.kind === kind).reduce<(typeof s.readings)[number] | null>((a, r) => (!a || r.date > a.date ? r : a), null);
+    s.readings
+      .filter((r) => r.kind === kind)
+      .reduce<(typeof s.readings)[number] | null>((a, r) => (!a || r.date > a.date ? r : a), null);
   const steps = latest('steps');
   const sleep = latest('sleep_minutes');
   const heart = latest('heart_rate_avg');
   const deviceTiles = [
-    steps ? { label: steps.date === today() ? 'Steps today' : `Steps ${steps.date.slice(5)}`, value: steps.value.toLocaleString() } : null,
-    sleep ? { label: 'Last sleep', value: `${Math.floor(sleep.value / 60)}h ${Math.round(sleep.value % 60)}m` } : null,
+    steps
+      ? {
+          label: steps.date === today() ? 'Steps today' : `Steps ${steps.date.slice(5)}`,
+          value: steps.value.toLocaleString(),
+        }
+      : null,
+    sleep
+      ? {
+          label: 'Last sleep',
+          value: `${Math.floor(sleep.value / 60)}h ${Math.round(sleep.value % 60)}m`,
+        }
+      : null,
     heart ? { label: 'Avg heart rate', value: `${Math.round(heart.value)} bpm` } : null,
   ].filter((t): t is { label: string; value: string } => t !== null);
   useEffect(() => {
@@ -204,9 +288,11 @@ export default function HomeScreen() {
     }).length;
   }, [s.onboarding, s.rewardLedger]);
 
-  const alsoToday = generateDayAgenda(today(), { experience, cycleData: s.cycleData, ...agendaSources }).filter(
-    (e) => !['task', 'cycle_phase'].includes(e.kind) && !e.id.startsWith('checkin_'),
-  );
+  const alsoToday = generateDayAgenda(today(), {
+    experience,
+    cycleData: s.cycleData,
+    ...agendaSources,
+  }).filter((e) => !['task', 'cycle_phase'].includes(e.kind) && !e.id.startsWith('checkin_'));
 
   const enter = (i: number) => (reduceMotion ? undefined : FadeIn.duration(180));
 
@@ -214,11 +300,19 @@ export default function HomeScreen() {
     <ScreenContainer
       header={
         <AppHeader
-          eyebrow={new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}
+          eyebrow={new Date().toLocaleDateString(undefined, {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+          })}
           title={name ? `${greeting()}, ${name}` : greeting()}
           subtitle={subtitle}
           rightAction={
-            <HeaderIconButton icon="menu-outline" label="Open menu" onPress={() => useRootStore.getState().setDrawerOpen(true)} />
+            <HeaderIconButton
+              icon="menu-outline"
+              label="Open menu"
+              onPress={() => useRootStore.getState().setDrawerOpen(true)}
+            />
           }
         />
       }
@@ -242,7 +336,11 @@ export default function HomeScreen() {
 
       {setupOpen > 0 ? (
         <Animated.View entering={enter(1)}>
-          <Card onPress={() => router.push('/(app)/personalize')} variant="tinted" style={{ padding: spacing.base, marginTop: spacing.md }}>
+          <Card
+            onPress={() => router.push('/(app)/personalize')}
+            variant="tinted"
+            style={{ padding: spacing.base, marginTop: spacing.md }}
+          >
             <View style={styles.rowBetween}>
               <Ionicons name="trophy-outline" size={20} color={colors.primary} />
               <View style={[styles.flex, { marginLeft: 12 }]}>
@@ -262,8 +360,12 @@ export default function HomeScreen() {
       {recovery ? (
         <Animated.View entering={enter(1)}>
           <Card variant="tinted" style={{ padding: spacing.base, marginTop: spacing.md }}>
-            <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{recovery.title}</Text>
-            <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>{recovery.aiExplanation.text}</Text>
+            <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+              {recovery.title}
+            </Text>
+            <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>
+              {recovery.aiExplanation.text}
+            </Text>
           </Card>
         </Animated.View>
       ) : null}
@@ -271,17 +373,35 @@ export default function HomeScreen() {
       {/* Quests */}
       <Animated.View entering={enter(2)}>
         <View style={[styles.sectionHeader, { marginTop: spacing.lg }]}>
-          <Text style={[typography.subheading, { color: colors.text.primary }]}>Today&apos;s plan</Text>
-          <Pressable onPress={() => router.push('/(app)/calendar')} hitSlop={10} accessibilityRole="button">
-            <Text style={[typography.subbodyBold, { color: colors.primary }]}>Calendar</Text>
-          </Pressable>
+          <Text style={[typography.subheading, { color: colors.text.primary }]}>
+            Today&apos;s plan
+          </Text>
+          <Link asChild href={'/(app)/calendar'}>
+            <PressableScale
+              onPress={() => router.push('/(app)/calendar')}
+              hitSlop={10}
+              accessibilityRole="button"
+            >
+              <Text style={[typography.subbodyBold, { color: colors.primary }]}>Calendar</Text>
+            </PressableScale>
+          </Link>
         </View>
 
         {families.length > 1 ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} style={{ marginTop: spacing.md }}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chips}
+            style={{ marginTop: spacing.md }}
+          >
             <Chip label="All" selected={filter === 'all'} onPress={() => setFilter('all')} />
             {families.map((f) => (
-              <Chip key={f} label={FAMILY_META[f].label} selected={filter === f} onPress={() => setFilter(f)} />
+              <Chip
+                key={f}
+                label={FAMILY_META[f].label}
+                selected={filter === f}
+                onPress={() => setFilter(f)}
+              />
             ))}
           </ScrollView>
         ) : null}
@@ -314,7 +434,9 @@ export default function HomeScreen() {
                 </View>
               ))}
               {finished.length > 0 ? (
-                <Text style={[typography.label, styles.groupLabel, { color: colors.text.muted }]}>Done</Text>
+                <Text style={[typography.label, styles.groupLabel, { color: colors.text.muted }]}>
+                  Done
+                </Text>
               ) : null}
               {finished.map((q) => (
                 <QuestRow key={q.id} quest={q} onPress={() => setOpenQuest(q.id)} />
@@ -324,7 +446,9 @@ export default function HomeScreen() {
         </View>
         {alsoToday.length > 0 ? (
           <>
-            <Text style={[typography.label, styles.groupLabel, { color: colors.text.muted }]}>Also today</Text>
+            <Text style={[typography.label, styles.groupLabel, { color: colors.text.muted }]}>
+              Also today
+            </Text>
             {alsoToday.map((e) => (
               <SettingsRow
                 key={e.id}
@@ -347,8 +471,16 @@ export default function HomeScreen() {
           <FocusCard
             icon="water-outline"
             label="Cycle"
-            title={cycle ? `Day ${cycle.currentPhase.day} · ${cycle.currentPhase.label} phase` : 'Set up cycle tracking'}
-            body={cycle ? `Next period in about ${daysToPeriod} days (estimate)` : 'Log your last period to see estimates'}
+            title={
+              cycle
+                ? `Day ${cycle.currentPhase.day} · ${cycle.currentPhase.label} phase`
+                : 'Set up cycle tracking'
+            }
+            body={
+              cycle
+                ? `Next period in about ${daysToPeriod} days (estimate)`
+                : 'Log your last period to see estimates'
+            }
             onPress={() => router.push('/(app)/health/cycle')}
           />
         ) : experience === 'men_health' ? (
@@ -368,7 +500,6 @@ export default function HomeScreen() {
             onPress={() => router.push('/(app)/health/pride')}
           />
         )}
-
       </Animated.View>
 
       <Animated.View entering={enter(3)}>
@@ -387,15 +518,22 @@ export default function HomeScreen() {
       </Animated.View>
 
       {deviceTiles.length > 0 ? (
-        <Card onPress={() => router.push('/(app)/health/integrations')} style={{ padding: spacing.base, marginTop: spacing.md }}>
+        <Card
+          onPress={() => router.push('/(app)/health/integrations')}
+          style={{ padding: spacing.base, marginTop: spacing.md }}
+        >
           <View style={styles.rowBetween}>
-            <Text style={[typography.label, { color: colors.text.muted }]}>From Health Connect</Text>
+            <Text style={[typography.label, { color: colors.text.muted }]}>
+              From Health Connect
+            </Text>
             <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
           </View>
           <View style={[styles.metrics, { marginTop: spacing.sm }]}>
             {deviceTiles.map((t) => (
               <View key={t.label} style={[styles.metric, { backgroundColor: colors.surface1 }]}>
-                <Text style={[typography.subheading, { color: colors.text.primary }]}>{t.value}</Text>
+                <Text style={[typography.subheading, { color: colors.text.primary }]}>
+                  {t.value}
+                </Text>
                 <Text style={[typography.caption, { color: colors.text.muted }]}>{t.label}</Text>
               </View>
             ))}
@@ -413,7 +551,10 @@ export default function HomeScreen() {
       )}
 
       {/* Wellness Tools */}
-      <Animated.View entering={enter(4)} style={{ marginTop: spacing.xl, marginBottom: spacing.xl }}>
+      <Animated.View
+        entering={enter(4)}
+        style={{ marginTop: spacing.xl, marginBottom: spacing.xl }}
+      >
         <View style={styles.sectionHeader}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>Tools</Text>
         </View>
@@ -423,15 +564,30 @@ export default function HomeScreen() {
               <PressableScale
                 accessibilityRole="button"
                 accessibilityLabel={t.label}
-                style={[styles.toolTile, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                style={[
+                  styles.toolTile,
+                  { backgroundColor: colors.surface, borderColor: colors.border },
+                ]}
               >
                 <View style={[styles.toolIconTile, { backgroundColor: colors.primaryAlpha }]}>
                   <Ionicons name={t.icon} size={22} color={colors.primary} />
                 </View>
-                <Text style={[typography.subbodyBold, { color: colors.text.primary, marginTop: 8, textAlign: 'center' }]} numberOfLines={1}>
+                <Text
+                  style={[
+                    typography.subbodyBold,
+                    { color: colors.text.primary, marginTop: 8, textAlign: 'center' },
+                  ]}
+                  numberOfLines={1}
+                >
                   {t.label}
                 </Text>
-                <Text style={[typography.caption, { color: colors.text.muted, marginTop: 2, textAlign: 'center' }]} numberOfLines={1}>
+                <Text
+                  style={[
+                    typography.caption,
+                    { color: colors.text.muted, marginTop: 2, textAlign: 'center' },
+                  ]}
+                  numberOfLines={1}
+                >
                   {t.subtitle}
                 </Text>
               </PressableScale>
@@ -483,8 +639,12 @@ function FocusCard({
         </View>
         <View style={[styles.flex, { marginLeft: 12 }]}>
           <Text style={[typography.label, { color: colors.text.muted }]}>{label}</Text>
-          <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 2 }]}>{title}</Text>
-          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>{body}</Text>
+          <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 2 }]}>
+            {title}
+          </Text>
+          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+            {body}
+          </Text>
         </View>
         <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
       </View>
@@ -495,12 +655,23 @@ function FocusCard({
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   rowBetween: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
   metrics: { flexDirection: 'row', gap: 8 },
   groupLabel: { marginBottom: 6, marginTop: 10 },
   metric: { alignItems: 'center', borderRadius: 14, flex: 1, paddingVertical: 10 },
   chips: { gap: 8 },
-  iconTile: { alignItems: 'center', borderRadius: 12, height: 40, justifyContent: 'center', width: 40 },
+  iconTile: {
+    alignItems: 'center',
+    borderRadius: 12,
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
+  },
   toolsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
