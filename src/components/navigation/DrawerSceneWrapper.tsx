@@ -1,9 +1,9 @@
-import { SquircleSurface } from '../ui/SquircleSurface';
+import { BlurTargetView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { ReactNode, useEffect, useMemo, useState } from 'react';
-import { BackHandler, Platform, StyleSheet, useWindowDimensions } from 'react-native';
+import React, { ReactNode, useEffect, useMemo, useState, type RefObject } from 'react';
+import { BackHandler, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   cancelAnimation,
@@ -27,7 +27,6 @@ import {
   drawerTarget,
   drawerWidthFor,
 } from './drawerProgress';
-import { PressableScale } from '../ui/PressableScale';
 
 const CLAMP = Extrapolation.CLAMP;
 const IS_IOS = Platform.OS === 'ios';
@@ -40,7 +39,17 @@ const tick = () => {
   } catch {}
 };
 
-export function DrawerSceneWrapper({ children }: { children: ReactNode }) {
+/**
+ * The screens. Opening the drawer slides them aside; their content is also the blur target for
+ * the frosted room behind (AppDrawer), so the drawer is lit by a blurred echo of the current page.
+ */
+export function DrawerSceneWrapper({
+  children,
+  blurTarget,
+}: {
+  children: ReactNode;
+  blurTarget: RefObject<View | null>;
+}) {
   const { width } = useWindowDimensions();
   const { colors } = useTheme();
   const reduceMotion = useReducedMotion();
@@ -103,11 +112,7 @@ export function DrawerSceneWrapper({ children }: { children: ReactNode }) {
         const vx = event.velocityX;
         // Flick wins; otherwise distance, with a little hysteresis so it feels sticky either way.
         const open =
-          vx > FLICK_VELOCITY
-            ? true
-            : vx < -FLICK_VELOCITY
-              ? false
-              : progress.value > (drawerOpen ? 0.6 : 0.4);
+          vx > FLICK_VELOCITY ? true : vx < -FLICK_VELOCITY ? false : progress.value > (drawerOpen ? 0.6 : 0.4);
 
         drawerTarget.value = open ? 1 : 0;
         progress.value = reduceMotion
@@ -158,13 +163,14 @@ export function DrawerSceneWrapper({ children }: { children: ReactNode }) {
   return (
     <GestureDetector gesture={pan}>
       <Animated.View style={[styles.container, { backgroundColor: colors.background }, sceneStyle]}>
-        <SquircleSurface
+        <BlurTargetView
+          ref={blurTarget}
           style={styles.fill}
           importantForAccessibility={drawerOpen ? 'no-hide-descendants' : 'auto'}
           accessibilityElementsHidden={drawerOpen}
         >
           {children}
-        </SquircleSurface>
+        </BlurTargetView>
 
         <Animated.View
           pointerEvents="none"
@@ -173,8 +179,7 @@ export function DrawerSceneWrapper({ children }: { children: ReactNode }) {
 
         {/* Tap anywhere on the receded screen to close */}
         {drawerOpen ? (
-          <PressableScale
-            scaleTo={1}
+          <Pressable
             style={StyleSheet.absoluteFill}
             onPress={() => setDrawerOpen(false)}
             accessibilityRole="button"

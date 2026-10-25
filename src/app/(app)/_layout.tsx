@@ -1,6 +1,5 @@
-import { SquircleSurface } from '../../components/ui/SquircleSurface';
-import React, { useEffect } from 'react';
-import { AppState, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { AppState, StyleSheet, View } from 'react-native';
 import { Redirect, Stack, usePathname } from 'expo-router';
 
 import { useRootStore } from '../../stores/useRootStore';
@@ -72,15 +71,17 @@ export default function AppLayout() {
   }, [pendingCount]);
 
   const { colors } = useTheme();
+  // The screens are the blur target for the frosted drawer behind them.
+  const sceneRef = useRef<View>(null);
 
   if (!isAuthenticated) {
     return <Redirect href="/(auth)/sign-in" />;
   }
 
   return (
-    <SquircleSurface style={[styles.root, { backgroundColor: colors.surface1 }]}>
-      <AppDrawer />
-      <DrawerSceneWrapper>
+    <View style={[styles.root, { backgroundColor: colors.dock }]}>
+      <AppDrawer blurTarget={sceneRef} />
+      <DrawerSceneWrapper blurTarget={sceneRef}>
         <Stack
           screenOptions={{
             headerShown: false,
@@ -106,11 +107,11 @@ export default function AppLayout() {
           <Stack.Screen name="personalize" />
           <Stack.Screen name="roadmap" />
           <Stack.Screen name="train" />
-        <Stack.Screen name="you" />
+          <Stack.Screen name="you" />
           <Stack.Screen name="watch" options={{ animation: 'slide_from_bottom' }} />
         </Stack>
       </DrawerSceneWrapper>
-    </SquircleSurface>
+    </View>
   );
 }
 
