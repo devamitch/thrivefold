@@ -43,6 +43,8 @@ const CATEGORIES: {
   { id: 'birthday', label: 'Birthday', icon: 'gift-outline' },
   { id: 'anniversary', label: 'Anniversary', icon: 'ribbon-outline' },
   { id: 'appointment', label: 'Appointment', icon: 'calendar-outline' },
+  { id: 'work', label: 'Work', icon: 'briefcase-outline' },
+  { id: 'travel', label: 'Travel', icon: 'airplane-outline' },
   { id: 'financial', label: 'Financial Due', icon: 'wallet-outline' },
   { id: 'reminder', label: 'Reminder', icon: 'alarm-outline' },
   { id: 'deadline', label: 'Deadline', icon: 'flag-outline' },

@@ -64,6 +64,7 @@ const EVENT_ICON: Partial<Record<CalendarEvent['kind'], keyof typeof Ionicons.gl
   period: 'water-outline',
   medication_reminder: 'medical-outline',
   holiday: 'flag-outline',
+  travel: 'airplane-outline',
 };
 
 const FAMILY_META: Record<QuestFamily, { label: string; icon: keyof typeof Ionicons.glyphMap }> = {

@@ -49,7 +49,7 @@ export interface PersonalCalendarEvent {
   id: string;
   title: string;
   date: string; // YYYY-MM-DD
-  category: 'birthday' | 'anniversary' | 'appointment' | 'reminder' | 'deadline' | 'financial' | 'custom';
+  category: 'birthday' | 'anniversary' | 'appointment' | 'work' | 'travel' | 'reminder' | 'deadline' | 'financial' | 'custom';
   relationship?: 'self' | 'partner' | 'family' | 'friend' | 'work' | 'other';
   emoji?: string;
   notes?: string;
