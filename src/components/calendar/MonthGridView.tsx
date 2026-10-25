@@ -205,9 +205,9 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
                 {rangeInfo.personalEvents && rangeInfo.personalEvents.length > 0 ? (
                   <Ionicons name="gift-outline" size={8} color={colors.primary} />
                 ) : rangeInfo.holiday ? (
-                  <Ionicons name="flag-outline" size={8} color="#D97706" />
+                  <Ionicons name="flag-outline" size={8} color={colors.warning} />
                 ) : isWomen && rangeInfo.isOvulationPeak ? (
-                  <Ionicons name="ellipse" size={7} color="#E2B258" />
+                  <Ionicons name="ellipse" size={7} color={colors.warning} />
                 ) : rangeInfo.taskStats && rangeInfo.taskStats.total > 0 ? (
                   <View
                     style={[
@@ -263,7 +263,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
           <Text style={[typography.caption, { color: colors.text.secondary }]}>Milestone</Text>
         </View>
         <View style={styles.legendItem}>
-          <Ionicons name="flag-outline" size={11} color="#D97706" style={{ marginRight: 4 }} />
+          <Ionicons name="flag-outline" size={11} color={colors.warning} style={{ marginRight: 4 }} />
           <Text style={[typography.caption, { color: colors.text.secondary }]}>Holiday</Text>
         </View>
         <View style={styles.legendItem}>

@@ -98,40 +98,40 @@ export default function CompleteOnboardingScreen() {
           </Text>
         </View>
 
-        {/* Premium Level / XP / Diamonds Banner */}
+        {/* Level, setup XP and diamonds actually earned */}
         <View style={[styles.rewardsContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.rewardTile}>
             <View style={[styles.tileIconContainer, { backgroundColor: colors.primaryAlpha }]}>
-              <Ionicons name="shield-checkmark" size={18} color={colors.primary} />
+              <Ionicons name="trending-up-outline" size={18} color={colors.primary} />
             </View>
             <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 4 }]}>{level}</Text>
-            <Text style={[typography.captionBold, { color: colors.text.muted, marginTop: 1 }]}>LEVEL</Text>
+            <Text style={[typography.captionBold, { color: colors.text.muted, marginTop: 1 }]}>Level</Text>
           </View>
 
           <View style={[styles.tileDivider, { backgroundColor: colors.border }]} />
 
           <View style={styles.rewardTile}>
-            <View style={[styles.tileIconContainer, { backgroundColor: 'rgba(218, 119, 86, 0.12)' }]}>
-              <Ionicons name="flash" size={18} color="#DA7756" />
+            <View style={[styles.tileIconContainer, { backgroundColor: colors.primaryAlpha }]}>
+              <Ionicons name="flash-outline" size={18} color={colors.primary} />
             </View>
-            <Text style={[typography.subheading, { color: '#DA7756', marginTop: 4 }]}>+{Math.max(setupXp, 165)}</Text>
-            <Text style={[typography.captionBold, { color: colors.text.muted, marginTop: 1 }]}>SETUP XP</Text>
+            <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 4 }]}>+{setupXp}</Text>
+            <Text style={[typography.captionBold, { color: colors.text.muted, marginTop: 1 }]}>Setup XP</Text>
           </View>
 
           <View style={[styles.tileDivider, { backgroundColor: colors.border }]} />
 
           <View style={styles.rewardTile}>
-            <View style={[styles.tileIconContainer, { backgroundColor: 'rgba(56, 142, 240, 0.12)' }]}>
-              <Ionicons name="diamond" size={18} color="#2A82E4" />
+            <View style={[styles.tileIconContainer, { backgroundColor: colors.primaryAlpha }]}>
+              <Ionicons name="diamond-outline" size={18} color={colors.primary} />
             </View>
-            <Text style={[typography.subheading, { color: '#2A82E4', marginTop: 4 }]}>{Math.max(diamonds, 5)}</Text>
-            <Text style={[typography.captionBold, { color: colors.text.muted, marginTop: 1 }]}>DIAMONDS</Text>
+            <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 4 }]}>{diamonds}</Text>
+            <Text style={[typography.captionBold, { color: colors.text.muted, marginTop: 1 }]}>Diamonds</Text>
           </View>
         </View>
 
         <Card style={{ marginTop: spacing.lg, padding: spacing.base }}>
-          <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 12 }]}>
-            YOUR PERSONALIZED PLAN
+          <Text style={[typography.label, { color: colors.text.muted, marginBottom: 12 }]}>
+            Your plan
           </Text>
           {rows.map((r) => (
             <View

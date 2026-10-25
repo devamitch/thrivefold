@@ -164,11 +164,11 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
                   smoothing={1}
                   fill={
                     selectedDateRangeInfo.isRecordedPeriod
-                      ? '#DA7756'
+                      ? colors.primary
                       : selectedDateRangeInfo.isOvulationPeak
-                      ? '#E2B258'
+                      ? colors.warning
                       : selectedDateRangeInfo.isFollicular
-                      ? '#84AF8E'
+                      ? colors.success
                       : colors.primary
                   }
                   style={styles.phaseIndicatorRing}
@@ -197,12 +197,12 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
           <SquircleSurface
             radius={12}
             smoothing={1}
-            fill="#FEF3C7"
+            fill={colors.warningSurface}
             strokeWidth={1}
             style={[styles.milestoneNotice, { marginTop: spacing.sm }]}
           >
-            <Ionicons name="flag" size={16} color="#D97706" style={{ marginRight: 8 }} />
-            <Text style={[typography.captionBold, { color: '#92400E', flex: 1 }]}>
+            <Ionicons name="flag" size={16} color={colors.warning} style={{ marginRight: 8 }} />
+            <Text style={[typography.captionBold, { color: colors.warning, flex: 1 }]}>
               {selectedDateHoliday.name}
             </Text>
           </SquircleSurface>
@@ -246,7 +246,7 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
             style={[styles.recordedBleedBanner, { marginTop: spacing.sm }]}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="water" size={16} color="#DA7756" style={{ marginRight: 8 }} />
+              <Ionicons name="water" size={16} color={colors.primary} style={{ marginRight: 8 }} />
               <View style={{ flex: 1 }}>
                 <Text style={[typography.captionBold, { color: colors.text.primary }]}>
                   Recorded Menstrual Bleeding
