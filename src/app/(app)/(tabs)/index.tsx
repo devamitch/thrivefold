@@ -189,7 +189,6 @@ export default function HomeScreen() {
   }, []);
 
   const setupOpen = useMemo(() => {
-    if (s.isOnboarded) return 0;
     const answers = {
       goals: s.onboarding?.goals ?? [],
       constraints: s.onboarding?.constraints ?? [],
@@ -203,7 +202,7 @@ export default function HomeScreen() {
       if (isClaimed) return false;
       return !isSetupSectionAnswered(r.section, answers);
     }).length;
-  }, [s.isOnboarded, s.onboarding, s.rewardLedger]);
+  }, [s.onboarding, s.rewardLedger]);
 
   const alsoToday = generateDayAgenda(today(), { experience, cycleData: s.cycleData, ...agendaSources }).filter(
     (e) => !['task', 'cycle_phase'].includes(e.kind) && !e.id.startsWith('checkin_'),
@@ -237,48 +236,9 @@ export default function HomeScreen() {
           onCheckIn={() => router.push('/(app)/check-in')}
           onRoadmap={() => router.push('/(app)/roadmap' as Href)}
         />
-        {topInsight ? (
-          <SettingsRow
-            icon="analytics-outline"
-            title={topInsight.title}
-            subtitle="A pattern from your check-ins"
-            onPress={() => router.push('/(app)/ai')}
-          />
-        ) : null}
-        <WeekGlance onOpen={() => router.push('/(app)/calendar')} />
       </Animated.View>
 
       <HomeGuide />
-
-      <Animated.View entering={enter(1)}>
-        <Link href="/(app)/health/integrations" asChild>
-          <Card style={{ padding: spacing.base, marginTop: spacing.md }}>
-            <View style={styles.rowBetween}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Ionicons name="pulse-outline" size={18} color={colors.primary} style={{ marginRight: 8 }} />
-                <Text style={[typography.captionBold, { color: colors.text.muted }]}>HEALTH CONNECT & SENSORS</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
-            </View>
-            {deviceTiles.length > 0 ? (
-              <View style={[styles.metrics, { marginTop: spacing.sm }]}>
-                {deviceTiles.map((t) => (
-                  <View key={t.label} style={[styles.metric, { backgroundColor: colors.surface1 }]}>
-                    <Text style={[typography.subheading, { color: colors.text.primary }]}>{t.value}</Text>
-                    <Text style={[typography.caption, { color: colors.text.muted }]}>{t.label}</Text>
-                  </View>
-                ))}
-              </View>
-            ) : (
-              <View style={{ marginTop: spacing.xs }}>
-                <Text style={[typography.subbody, { color: colors.text.secondary }]}>
-                  Connect steps, sleep, and heart rate for mindful daily sync.
-                </Text>
-              </View>
-            )}
-          </Card>
-        </Link>
-      </Animated.View>
 
       {setupOpen > 0 ? (
         <Animated.View entering={enter(1)}>
@@ -336,8 +296,8 @@ export default function HomeScreen() {
           ) : (
             <>
               {timed.now.length > 0 ? (
-                <Text style={[typography.captionBold, styles.groupLabel, { color: colors.text.muted }]}>
-                  NOW · {DAY_PART_LABEL[dayPartAt(new Date())].toUpperCase()}
+                <Text style={[typography.label, styles.groupLabel, { color: colors.text.muted }]}>
+                  Now · {DAY_PART_LABEL[dayPartAt(new Date())]}
                 </Text>
               ) : null}
               {timed.now.map((q) => (
@@ -345,8 +305,8 @@ export default function HomeScreen() {
               ))}
               {timed.later.map((g) => (
                 <View key={g.part}>
-                  <Text style={[typography.captionBold, styles.groupLabel, { color: colors.text.muted }]}>
-                    LATER · {DAY_PART_LABEL[g.part].toUpperCase()}
+                  <Text style={[typography.label, styles.groupLabel, { color: colors.text.muted }]}>
+                    Later · {DAY_PART_LABEL[g.part]}
                   </Text>
                   {g.quests.map((q) => (
                     <QuestRow key={q.id} quest={q} onPress={() => setOpenQuest(q.id)} />
@@ -354,7 +314,7 @@ export default function HomeScreen() {
                 </View>
               ))}
               {finished.length > 0 ? (
-                <Text style={[typography.captionBold, styles.groupLabel, { color: colors.text.muted }]}>DONE</Text>
+                <Text style={[typography.label, styles.groupLabel, { color: colors.text.muted }]}>Done</Text>
               ) : null}
               {finished.map((q) => (
                 <QuestRow key={q.id} quest={q} onPress={() => setOpenQuest(q.id)} />
@@ -411,11 +371,51 @@ export default function HomeScreen() {
 
       </Animated.View>
 
+      <Animated.View entering={enter(3)}>
+        <View style={[styles.sectionHeader, { marginTop: spacing.lg }]}>
+          <Text style={[typography.subheading, { color: colors.text.primary }]}>This week</Text>
+        </View>
+        <WeekGlance onOpen={() => router.push('/(app)/calendar')} />
+        {topInsight ? (
+          <SettingsRow
+            icon="analytics-outline"
+            title={topInsight.title}
+            subtitle="A pattern from your check-ins"
+            onPress={() => router.push('/(app)/ai')}
+          />
+        ) : null}
+      </Animated.View>
+
+      {deviceTiles.length > 0 ? (
+        <Card onPress={() => router.push('/(app)/health/integrations')} style={{ padding: spacing.base, marginTop: spacing.md }}>
+          <View style={styles.rowBetween}>
+            <Text style={[typography.label, { color: colors.text.muted }]}>From Health Connect</Text>
+            <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
+          </View>
+          <View style={[styles.metrics, { marginTop: spacing.sm }]}>
+            {deviceTiles.map((t) => (
+              <View key={t.label} style={[styles.metric, { backgroundColor: colors.surface1 }]}>
+                <Text style={[typography.subheading, { color: colors.text.primary }]}>{t.value}</Text>
+                <Text style={[typography.caption, { color: colors.text.muted }]}>{t.label}</Text>
+              </View>
+            ))}
+          </View>
+        </Card>
+      ) : (
+        <View style={{ marginTop: spacing.md }}>
+          <SettingsRow
+            icon="sync-outline"
+            title="Connect Health Connect"
+            subtitle="Bring in steps, sleep and heart rate"
+            onPress={() => router.push('/(app)/health/integrations')}
+          />
+        </View>
+      )}
+
       {/* Wellness Tools */}
       <Animated.View entering={enter(4)} style={{ marginTop: spacing.xl, marginBottom: spacing.xl }}>
         <View style={styles.sectionHeader}>
-          <Text style={[typography.subheading, { color: colors.text.primary }]}>Wellness Tools</Text>
-          <Text style={[typography.caption, { color: colors.text.muted }]}>Quick access</Text>
+          <Text style={[typography.subheading, { color: colors.text.primary }]}>Tools</Text>
         </View>
         <View style={styles.toolsGrid}>
           {[...TOOLS[experience], ...SHARED_TOOLS].slice(0, 6).map((t) => (
