@@ -1,5 +1,25 @@
 # Requirements Traceability Matrix
 
+## Update — 2026-10-25 (9): visual pass on an emulator
+
+Checks: compile 0, lint 0, `pnpm test` 188/188, release build PASS. **Seen on screen** (Pixel 7 Pro
+emulator, arm64 release build): intro, sign-in, onboarding (all steps), completion, Home (men's
+and women's themes), drawer (both themes), Plan/Cycle tab, Metrics/Progress, You, Sleep,
+Personalize, check-in (swipe sets Energy to 9 and the check-in shows on the calendar), Calendar
+month and year, Coach intro, camera permission, live workspace, end and summary.
+
+| Bug found on screen | Root cause | Fix | Commit |
+| --- | --- | --- | --- |
+| Rounded screen corners and black band over status bar | swapped Views took SquircleSurface's 20px default clip | no radius prop: use style radius, else square | 1a3cb60 |
+| Link-wrapped rows lost their layout in release | Slot spreads array styles into an object | flattened styles on those children | 1a3cb60 |
+| Unticked age checkbox invisible | border removed, no fill | quiet fill; label reworded | 1a3cb60 |
+| Year view: gap, ragged dots | horizontal ScrollView grew vertically; dots spread across card | `flexGrow: 0`; compact 7-column block | 3e69619 |
+| Coach intro text under status bar | scroll padding only | inset container | 0bddb6d |
+| Title Case drawer labels, truncated profile line, ring dot at zero | copy / layout | sentence case, shorter line, no arc at 0 | 54289b7, e1a54e5 |
+
+Not checked on screen: real camera pose (emulator has a test pattern), Google sign-in, Health
+Connect, physical-device performance (the emulator renders far slower than a phone).
+
 ## Update — 2026-10-25 (8): analytics consent, drawer completed
 
 Checks: compile 0, lint 0, `pnpm test` 188/188. Not seen on device (install blocked by signature).
