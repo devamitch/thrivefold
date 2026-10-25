@@ -1040,6 +1040,9 @@ export default function CoachScreen() {
           width={stage.width}
           height={stage.height}
           highlight={fault?.joints ?? NO_JOINTS}
+          angleJoints={
+            movement && !movement.metric && movement.kind === 'reps' ? movement.joints : null
+          }
         />
       ) : null}
       {/* Soft top and bottom shade so glass controls read over any background */}

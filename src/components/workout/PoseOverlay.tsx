@@ -1,4 +1,13 @@
-import { Canvas, DashPathEffect, FillType, Group, Path, Skia } from '@shopify/react-native-skia';
+import {
+  Canvas,
+  DashPathEffect,
+  FillType,
+  Group,
+  LinearGradient,
+  Path,
+  Skia,
+  vec,
+} from '@shopify/react-native-skia';
 import React, { memo, useCallback, useEffect } from 'react';
 import { StyleSheet } from 'react-native';
 import {
@@ -18,31 +27,23 @@ import { useTheme } from '../../theme/useTheme';
 
 const N = 33;
 const JOINTS = [...new Set(SKELETON.flat())];
-const LEFT_SIDE = new Set<number>([
-  LM.leftShoulder,
-  LM.leftElbow,
-  LM.leftWrist,
-  LM.leftHip,
-  LM.leftKnee,
-  LM.leftAnkle,
-]);
-const RIGHT_SIDE = new Set<number>([
-  LM.rightShoulder,
-  LM.rightElbow,
-  LM.rightWrist,
-  LM.rightHip,
-  LM.rightKnee,
-  LM.rightAnkle,
-]);
-/** Limbs coloured by side (as in most sport-tracking apps), the torso neutral. */
-const LEFT_BONES = SKELETON.filter(([a, b]) => LEFT_SIDE.has(a) && LEFT_SIDE.has(b));
-const RIGHT_BONES = SKELETON.filter(([a, b]) => RIGHT_SIDE.has(a) && RIGHT_SIDE.has(b));
-const TORSO_BONES = SKELETON.filter(
-  (bone) => !LEFT_BONES.includes(bone) && !RIGHT_BONES.includes(bone),
-);
-/** Share of the remaining distance covered each display frame: glides between detections. */
-const FOLLOW = 0.6;
 const MIN_VIS = 0.5;
+/** Face and hands ease towards each detection (they are thin details, not predicted). */
+const FOLLOW = 0.6;
+
+/**
+ * Tracking: a One Euro filter per coordinate (calm when still, quick when moving) on each
+ * detection, then extrapolation along the filtered velocity to the frame actually on screen.
+ * A detection describes a camera frame from ~100-250 ms ago; the preview on screen is itself
+ * ~60 ms behind the sensor. So the skeleton is drawn where the body is in the visible frame.
+ */
+const MIN_CUTOFF_HZ = 1.4;
+const BETA = 0.006;
+const D_CUTOFF_HZ = 1.2;
+const PREVIEW_LAG_MS = 60;
+const MAX_LEAD_MS = 140;
+/** Display frames ease this far towards the predicted point: hides the 10 Hz steps. */
+const DISPLAY_FOLLOW = 0.55;
 
 /** Latest detection, written straight from the camera event (no React state). */
 export interface PoseFeed {
@@ -60,22 +61,19 @@ export interface PoseFeed {
   capturedAt?: SharedValue<number>;
 }
 
-/**
- * A detection describes a frame captured ~60-140 ms ago, while the preview on screen is itself
- * ~60 ms behind the sensor. Joints are drawn where their velocity says they are in the frame
- * being shown: lead = (now - preview lag) - capture time, capped and damped so a noisy
- * detection can't fling a joint off the body.
- */
-const PREVIEW_LAG_MS = 60;
-const MAX_LEAD_MS = 90;
-const PREDICT = 0.85;
-
 /** Eases `out` towards `target` (both in stage pixels) in place; snaps when sizes differ. */
 function easeInto(out: number[], target: number[], follow: number): number[] {
   'worklet';
   if (out.length !== target.length) return target.slice();
   for (let i = 0; i < target.length; i++) out[i] = out[i] + (target[i] - out[i]) * follow;
   return out;
+}
+
+/** One Euro smoothing factor for a cutoff (Hz) at a sample interval (s). */
+function alpha(cutoffHz: number, dtS: number): number {
+  'worklet';
+  const tau = 1 / (2 * Math.PI * cutoffHz);
+  return 1 / (1 + tau / dtS);
 }
 
 interface Props {
@@ -86,6 +84,11 @@ interface Props {
   /** Joints to draw in the warning colour (changes only when a fault starts or ends). */
   highlight: number[];
   /**
+   * The joint the exercise is measured at, as [a, vertex, c] for the left and right side: the
+   * clearer side gets a live angle arc at the vertex.
+   */
+  angleJoints?: { left: [number, number, number]; right: [number, number, number] } | null;
+  /**
    * The camera preview is a SurfaceView, which ignores rounded clipping; the overlay paints
    * the stage's corners in the page colour instead.
    */
@@ -94,40 +97,45 @@ interface Props {
 }
 
 /**
- * The live skeleton: one Skia canvas, everything computed on the UI thread. Detections arrive
- * ~15 times a second; drawn points ease towards each one every frame, so the body glides
- * instead of jumping, and React never re-renders for a frame. When nobody is in view a dashed
- * body outline shows where to stand.
+ * The live skeleton: one Skia canvas, everything computed on the UI thread, React never
+ * re-renders for a frame. Luminous limbs in the brand colour with a white core, small joints,
+ * and an arc at the joint being measured. When nobody is in view a dashed outline shows where
+ * to stand.
  */
 export const PoseOverlay = memo(function PoseOverlay({
   feed,
   width,
   height,
   highlight,
+  angleJoints,
   cornerRadius = 0,
   maskColor,
 }: Props) {
   const { colors } = useTheme();
   const reduceMotion = useReducedMotion();
+  const glow = colors.dockActive;
   const shown = useSharedValue<number[]>(new Array(N * 3).fill(0));
   const present = useSharedValue(0);
   const faceShown = useSharedValue<number[]>([]);
-  // Motion prediction state: last detection (stage px), per-point velocity (px/ms), arrival time.
-  const lastDet = useSharedValue<number[]>([]);
-  const vel = useSharedValue<number[]>([]);
-  const arrivedAt = useSharedValue(0);
-  const lastSeq = useSharedValue(-1);
   const handsShown = useSharedValue<number[]>([]);
+  // One Euro state, in stage pixels: filtered position, filtered velocity (px/ms), visibility.
+  const fx = useSharedValue<number[]>([]);
+  const fdx = useSharedValue<number[]>([]);
+  const vis = useSharedValue<number[]>([]);
+  const detAt = useSharedValue(0);
+  const lastSeq = useSharedValue(-1);
   const hot = useSharedValue<number[]>(highlight);
+  const arcJoints = useSharedValue<number[]>([]);
   useEffect(() => {
     hot.value = highlight;
   }, [highlight, hot]);
+  useEffect(() => {
+    arcJoints.value = angleJoints ? [...angleJoints.left, ...angleJoints.right] : [];
+  }, [angleJoints, arcJoints]);
 
-  // Map the newest detection into stage pixels (same maths as the preview's FILL_CENTER)
-  // and ease the drawn points towards it. Mutates in place: no per-frame allocation.
+  // The frame callback runs on the UI thread only while there is motion to show: a new
+  // detection wakes it, and it sleeps once the drawing has settled.
   const awake = useSharedValue(false);
-  // The frame callback runs on the main thread on Android: only while there is motion to show.
-  // A new detection wakes it; it puts itself to sleep once the drawing has settled.
   // eslint-disable-next-line prefer-const
   let frame: ReturnType<typeof useFrameCallback>;
   const wake = useCallback(() => frame.setActive(true), []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -141,15 +149,16 @@ export const PoseOverlay = memo(function PoseOverlay({
       }
     },
   );
+
   frame = useFrameCallback(() => {
     const p = feed.points.value;
     const fw = feed.frameW.value;
     const fh = feed.frameH.value;
     if (!fw || !fh) return;
+    // Same maths as the preview's FILL_CENTER.
     const scale = Math.max(width / fw, height / fh);
     const dx = (width - fw * scale) / 2;
     const dy = (height - fh * scale) / 2;
-    // Face and hands: map to stage pixels and ease, same as the body.
     const toStage = (src: number[]) => {
       'worklet';
       const out = new Array(src.length);
@@ -169,59 +178,70 @@ export const PoseOverlay = memo(function PoseOverlay({
       handsShown.value = h.length
         ? easeInto(handsShown.value, toStage(h), reduceMotion ? 1 : FOLLOW)
         : [];
+
     if (p.length < N * 3) {
       if (present.value !== 0) present.value = 0;
+      fx.value = [];
       if (awake.value) {
         awake.value = false;
         runOnJS(sleep)();
       }
       return;
     }
-    const snap = reduceMotion || present.value === 0;
+
     const now = Date.now();
     const seq = feed.seq?.value ?? 0;
-    // A new detection: map it, and measure velocity against the previous one.
     const captured = feed.capturedAt?.value ?? 0;
-    const detAt = captured > 0 && now - captured < 1000 ? captured : now - 100;
+    const t = captured > 0 && now - captured < 1000 ? captured : now - 120;
+
+    // New detection: run the One Euro filter.
     if (seq !== lastSeq.value) {
-      const det = new Array(N * 3);
+      lastSeq.value = seq;
+      const fresh = fx.value.length !== N * 2 || reduceMotion;
+      const dtMs = fresh ? 100 : Math.max(16, Math.min(400, t - detAt.value));
+      const dtS = dtMs / 1000;
+      const X = fresh ? new Array(N * 2).fill(0) : fx.value;
+      const DX = fresh ? new Array(N * 2).fill(0) : fdx.value;
+      const V = new Array(N);
+      const aD = alpha(D_CUTOFF_HZ, dtS);
       for (let i = 0; i < N; i++) {
-        det[i * 3] = p[i * 3] * fw * scale + dx;
-        det[i * 3 + 1] = p[i * 3 + 1] * fh * scale + dy;
-        det[i * 3 + 2] = p[i * 3 + 2];
-      }
-      const prev = lastDet.value;
-      const dt = Math.max(1, detAt - arrivedAt.value);
-      const v = new Array(N * 2).fill(0);
-      if (prev.length === N * 3 && !snap && dt < 400) {
-        for (let i = 0; i < N; i++) {
-          // Light smoothing of velocity so one noisy detection doesn't fling a joint.
-          const old = vel.value.length === N * 2 ? vel.value : v;
-          v[i * 2] = 0.5 * old[i * 2] + 0.5 * ((det[i * 3] - prev[i * 3]) / dt);
-          v[i * 2 + 1] = 0.5 * old[i * 2 + 1] + 0.5 * ((det[i * 3 + 1] - prev[i * 3 + 1]) / dt);
+        V[i] = p[i * 3 + 2];
+        for (let k = 0; k < 2; k++) {
+          const raw = k === 0 ? p[i * 3] * fw * scale + dx : p[i * 3 + 1] * fh * scale + dy;
+          const j = i * 2 + k;
+          if (fresh) {
+            X[j] = raw;
+            DX[j] = 0;
+            continue;
+          }
+          const d = (raw - X[j]) / dtMs;
+          DX[j] = DX[j] + aD * (d - DX[j]);
+          const cutoff = MIN_CUTOFF_HZ + BETA * Math.abs(DX[j] * 1000);
+          X[j] = X[j] + alpha(cutoff, dtS) * (raw - X[j]);
         }
       }
-      lastDet.value = det;
-      vel.value = v;
-      arrivedAt.value = detAt;
-      lastSeq.value = seq;
+      fx.value = X;
+      fdx.value = DX;
+      vis.value = V;
+      detAt.value = t;
     }
-    const det = lastDet.value;
-    const v = vel.value;
-    if (det.length !== N * 3) return;
+
+    const X = fx.value;
+    const DX = fdx.value;
+    const V = vis.value;
+    if (X.length !== N * 2) return;
     const lead = reduceMotion
       ? 0
-      : Math.max(0, Math.min(MAX_LEAD_MS, now - PREVIEW_LAG_MS - arrivedAt.value)) * PREDICT;
-    // Nothing left to move: skip the update so the canvas isn't redrawn every frame.
+      : Math.max(0, Math.min(MAX_LEAD_MS, now - PREVIEW_LAG_MS - detAt.value));
+    const snap = reduceMotion || present.value === 0;
     const cur = shown.value;
     let maxDelta = 0;
     for (let i = 0; i < N && maxDelta < 0.5; i++) {
-      const tx = det[i * 3] + (v.length ? v[i * 2] * lead : 0);
-      const ty = det[i * 3 + 1] + (v.length ? v[i * 2 + 1] * lead : 0);
+      const tx = X[i * 2] + DX[i * 2] * lead;
+      const ty = X[i * 2 + 1] + DX[i * 2 + 1] * lead;
       maxDelta = Math.max(maxDelta, Math.abs(tx - cur[i * 3]), Math.abs(ty - cur[i * 3 + 1]));
     }
     if (!snap && maxDelta < 0.5 && present.value === 1) {
-      // Settled, and no face or hands to animate: stop running every frame until new data.
       if (!faceShown.value.length && !handsShown.value.length && awake.value) {
         awake.value = false;
         runOnJS(sleep)();
@@ -231,11 +251,11 @@ export const PoseOverlay = memo(function PoseOverlay({
     shown.modify((s) => {
       'worklet';
       for (let i = 0; i < N; i++) {
-        const tx = det[i * 3] + (v.length ? v[i * 2] * lead : 0);
-        const ty = det[i * 3 + 1] + (v.length ? v[i * 2 + 1] * lead : 0);
-        s[i * 3] = snap ? tx : s[i * 3] + (tx - s[i * 3]) * FOLLOW;
-        s[i * 3 + 1] = snap ? ty : s[i * 3 + 1] + (ty - s[i * 3 + 1]) * FOLLOW;
-        s[i * 3 + 2] = det[i * 3 + 2];
+        const tx = X[i * 2] + DX[i * 2] * lead;
+        const ty = X[i * 2 + 1] + DX[i * 2 + 1] * lead;
+        s[i * 3] = snap ? tx : s[i * 3] + (tx - s[i * 3]) * DISPLAY_FOLLOW;
+        s[i * 3 + 1] = snap ? ty : s[i * 3 + 1] + (ty - s[i * 3 + 1]) * DISPLAY_FOLLOW;
+        s[i * 3 + 2] = V[i];
       }
       return s;
     });
@@ -255,10 +275,8 @@ export const PoseOverlay = memo(function PoseOverlay({
     }
     return path;
   };
-  const leftBones = useDerivedValue(() => bonePath(LEFT_BONES, shown.value, present.value));
-  const rightBones = useDerivedValue(() => bonePath(RIGHT_BONES, shown.value, present.value));
-  const torsoBones = useDerivedValue(() => {
-    const path = bonePath(TORSO_BONES, shown.value, present.value);
+  const bones = useDerivedValue(() => {
+    const path = bonePath(SKELETON, shown.value, present.value);
     // Neck: shoulder midpoint to the nose.
     const s = shown.value;
     const n = LM.nose * 3;
@@ -274,10 +292,10 @@ export const PoseOverlay = memo(function PoseOverlay({
   const faultBones = useDerivedValue(() => {
     const path = Skia.Path.Make();
     const s = shown.value;
-    const h = hot.value;
-    if (!present.value || h.length === 0) return path;
+    const hj = hot.value;
+    if (!present.value || hj.length === 0) return path;
     for (const [a, b] of SKELETON) {
-      if (!(h.includes(a) || h.includes(b))) continue;
+      if (!(hj.includes(a) || hj.includes(b))) continue;
       if (s[a * 3 + 2] < MIN_VIS || s[b * 3 + 2] < MIN_VIS) continue;
       path.moveTo(s[a * 3], s[a * 3 + 1]);
       path.lineTo(s[b * 3], s[b * 3 + 1]);
@@ -290,7 +308,19 @@ export const PoseOverlay = memo(function PoseOverlay({
     const s = shown.value;
     if (!present.value) return path;
     for (const i of JOINTS) {
-      if (s[i * 3 + 2] >= MIN_VIS) path.addCircle(s[i * 3], s[i * 3 + 1], 4);
+      if (s[i * 3 + 2] >= MIN_VIS) path.addCircle(s[i * 3], s[i * 3 + 1], 3.2);
+    }
+    const n = LM.nose * 3;
+    if (s[n + 2] >= MIN_VIS) path.addCircle(s[n], s[n + 1], 4);
+    return path;
+  });
+
+  const jointRings = useDerivedValue(() => {
+    const path = Skia.Path.Make();
+    const s = shown.value;
+    if (!present.value) return path;
+    for (const i of JOINTS) {
+      if (s[i * 3 + 2] >= MIN_VIS) path.addCircle(s[i * 3], s[i * 3 + 1], 7.5);
     }
     return path;
   });
@@ -298,21 +328,34 @@ export const PoseOverlay = memo(function PoseOverlay({
   const faultJoints = useDerivedValue(() => {
     const path = Skia.Path.Make();
     const s = shown.value;
-    const h = hot.value;
+    const hj = hot.value;
     if (!present.value) return path;
-    for (const i of h) {
-      if (s[i * 3 + 2] >= MIN_VIS) path.addCircle(s[i * 3], s[i * 3 + 1], 7);
+    for (const i of hj) {
+      if (s[i * 3 + 2] >= MIN_VIS) path.addCircle(s[i * 3], s[i * 3 + 1], 9);
     }
     return path;
   });
 
-  // Head: a small dot on the nose, so the face itself stays visible.
-  const head = useDerivedValue(() => {
+  // The measured joint: an arc between its two limbs at the clearer side's vertex.
+  const angleArc = useDerivedValue(() => {
     const path = Skia.Path.Make();
     const s = shown.value;
-    const n = LM.nose * 3;
-    if (!present.value || s[n + 2] < MIN_VIS) return path;
-    path.addCircle(s[n], s[n + 1], 5);
+    const aj = arcJoints.value;
+    if (!present.value || aj.length !== 6) return path;
+    const conf = (k: number) =>
+      Math.min(s[aj[k] * 3 + 2], s[aj[k + 1] * 3 + 2], s[aj[k + 2] * 3 + 2]);
+    const k = conf(0) >= conf(3) ? 0 : 3;
+    if (conf(k) < MIN_VIS) return path;
+    const [a, b, c] = [aj[k], aj[k + 1], aj[k + 2]];
+    const bx = s[b * 3];
+    const by = s[b * 3 + 1];
+    const start = (Math.atan2(s[a * 3 + 1] - by, s[a * 3] - bx) * 180) / Math.PI;
+    const end = (Math.atan2(s[c * 3 + 1] - by, s[c * 3] - bx) * 180) / Math.PI;
+    let sweep = end - start;
+    while (sweep > 180) sweep -= 360;
+    while (sweep < -180) sweep += 360;
+    const r = 30;
+    path.addArc({ x: bx - r, y: by - r, width: r * 2, height: r * 2 }, start, sweep);
     return path;
   });
 
@@ -320,22 +363,24 @@ export const PoseOverlay = memo(function PoseOverlay({
   const guide = useDerivedValue(() => {
     const path = Skia.Path.Make();
     if (present.value) return path;
-    const h = height * 0.78;
+    const gh = height * 0.62;
     const cx = width / 2;
-    const top = height * 0.11;
-    const headR = h * 0.075;
+    const top = height * 0.2;
+    const headR = gh * 0.075;
     path.addCircle(cx, top + headR, headR);
-    const sh = top + headR * 2 + h * 0.03;
-    const shoulderW = h * 0.22;
-    path.addRRect(Skia.RRectXY(Skia.XYWHRect(cx - shoulderW / 2, sh, shoulderW, h * 0.38), 22, 22));
-    path.moveTo(cx - shoulderW * 0.25, sh + h * 0.38);
-    path.lineTo(cx - shoulderW * 0.3, top + h);
-    path.moveTo(cx + shoulderW * 0.25, sh + h * 0.38);
-    path.lineTo(cx + shoulderW * 0.3, top + h);
+    const sh = top + headR * 2 + gh * 0.03;
+    const shoulderW = gh * 0.22;
+    path.addRRect(
+      Skia.RRectXY(Skia.XYWHRect(cx - shoulderW / 2, sh, shoulderW, gh * 0.38), 22, 22),
+    );
+    path.moveTo(cx - shoulderW * 0.25, sh + gh * 0.38);
+    path.lineTo(cx - shoulderW * 0.3, top + gh);
+    path.moveTo(cx + shoulderW * 0.25, sh + gh * 0.38);
+    path.lineTo(cx + shoulderW * 0.3, top + gh);
     return path;
   });
 
-  const guideOpacity = useDerivedValue(() => (present.value ? 0 : 0.55));
+  const guideOpacity = useDerivedValue(() => (present.value ? 0 : 0.5));
 
   // Rounded stage corners over the SurfaceView preview: the rectangle minus a rounded rect.
   const cornerMask = React.useMemo(() => {
@@ -350,11 +395,11 @@ export const PoseOverlay = memo(function PoseOverlay({
   // Face: closed eye, lip and outline contours, open brows.
   const faceLines = useDerivedValue(() => {
     const path = Skia.Path.Make();
-    const f = faceShown.value;
-    if (f.length < 236) return path;
+    const fp = faceShown.value;
+    if (fp.length < 236) return path;
     const poly = (from: number, to: number, close: boolean) => {
-      path.moveTo(f[from * 2], f[from * 2 + 1]);
-      for (let i = from + 1; i < to; i++) path.lineTo(f[i * 2], f[i * 2 + 1]);
+      path.moveTo(fp[from * 2], fp[from * 2 + 1]);
+      for (let i = from + 1; i < to; i++) path.lineTo(fp[i * 2], fp[i * 2 + 1]);
       if (close) path.close();
     };
     poly(FACE_GROUPS.leftEye[0], FACE_GROUPS.leftEye[1], true);
@@ -369,25 +414,26 @@ export const PoseOverlay = memo(function PoseOverlay({
   // Irises: a ring around each pupil, sized from its four edge points.
   const irises = useDerivedValue(() => {
     const path = Skia.Path.Make();
-    const f = faceShown.value;
-    if (f.length < 236) return path;
+    const fp = faceShown.value;
+    if (fp.length < 236) return path;
     for (const c of [FACE_GROUPS.irises[0], FACE_GROUPS.irises[0] + 5]) {
       const r = Math.max(
         2,
-        Math.hypot(f[(c + 1) * 2] - f[(c + 3) * 2], f[(c + 1) * 2 + 1] - f[(c + 3) * 2 + 1]) / 2,
+        Math.hypot(fp[(c + 1) * 2] - fp[(c + 3) * 2], fp[(c + 1) * 2 + 1] - fp[(c + 3) * 2 + 1]) /
+          2,
       );
-      path.addCircle(f[c * 2], f[c * 2 + 1], r);
+      path.addCircle(fp[c * 2], fp[c * 2 + 1], r);
     }
     return path;
   });
 
   const handLines = useDerivedValue(() => {
     const path = Skia.Path.Make();
-    const h = handsShown.value;
-    for (let base = 0; base + 42 <= h.length; base += 42) {
+    const hp = handsShown.value;
+    for (let base = 0; base + 42 <= hp.length; base += 42) {
       for (const [a, b] of HAND_BONES) {
-        path.moveTo(h[base + a * 2], h[base + a * 2 + 1]);
-        path.lineTo(h[base + b * 2], h[base + b * 2 + 1]);
+        path.moveTo(hp[base + a * 2], hp[base + a * 2 + 1]);
+        path.lineTo(hp[base + b * 2], hp[base + b * 2 + 1]);
       }
     }
     return path;
@@ -395,8 +441,8 @@ export const PoseOverlay = memo(function PoseOverlay({
 
   const handJoints = useDerivedValue(() => {
     const path = Skia.Path.Make();
-    const h = handsShown.value;
-    for (let i = 0; i + 1 < h.length; i += 2) path.addCircle(h[i], h[i + 1], 2.6);
+    const hp = handsShown.value;
+    for (let i = 0; i + 1 < hp.length; i += 2) path.addCircle(hp[i], hp[i + 1], 2.4);
     return path;
   });
 
@@ -416,82 +462,75 @@ export const PoseOverlay = memo(function PoseOverlay({
           <DashPathEffect intervals={[10, 8]} />
         </Path>
       </Group>
-      {/* Side-coloured glow (left / right), crisp white limbs, then small joints with a halo */}
+      {/* Two soft halos, then a crisp white core with a brand-to-white gradient */}
       <Path
-        path={leftBones}
+        path={bones}
         style="stroke"
-        strokeWidth={12}
+        strokeWidth={18}
         strokeCap="round"
-        color={colors.primary}
+        strokeJoin="round"
+        color={glow}
+        opacity={0.18}
+      />
+      <Path
+        path={bones}
+        style="stroke"
+        strokeWidth={8}
+        strokeCap="round"
+        strokeJoin="round"
+        color={glow}
         opacity={0.55}
       />
-      <Path
-        path={rightBones}
-        style="stroke"
-        strokeWidth={12}
-        strokeCap="round"
-        color={colors.accent}
-        opacity={0.55}
-      />
-      <Path
-        path={torsoBones}
-        style="stroke"
-        strokeWidth={2.5}
-        strokeCap="round"
-        color={colors.callText}
-        opacity={0.75}
-      />
-      <Path
-        path={leftBones}
-        style="stroke"
-        strokeWidth={3.5}
-        strokeCap="round"
-        color={colors.callText}
-      />
-      <Path
-        path={rightBones}
-        style="stroke"
-        strokeWidth={3.5}
-        strokeCap="round"
-        color={colors.callText}
-      />
+      <Path path={bones} style="stroke" strokeWidth={3} strokeCap="round" strokeJoin="round">
+        <LinearGradient
+          start={vec(0, 0)}
+          end={vec(0, height)}
+          colors={[colors.callText, glow, colors.callText]}
+        />
+      </Path>
       <Path
         path={faultBones}
         style="stroke"
-        strokeWidth={5}
+        strokeWidth={6}
         strokeCap="round"
         color={colors.error}
       />
-      <Path path={joints} style="stroke" strokeWidth={5} color={colors.callText} opacity={0.25} />
+      <Path
+        path={angleArc}
+        style="stroke"
+        strokeWidth={4}
+        strokeCap="round"
+        color={colors.callText}
+      />
+      <Path path={jointRings} style="stroke" strokeWidth={2} color={glow} opacity={0.8} />
       <Path path={joints} color={colors.callText} />
-      <Path path={head} color={colors.callText} />
       <Path path={faultJoints} color={colors.error} />
       {/* Face and hands, thinner, so the body stays the main read */}
       <Path
         path={faceLines}
         style="stroke"
-        strokeWidth={1.6}
+        strokeWidth={1.4}
         strokeJoin="round"
         color={colors.callText}
-        opacity={0.85}
+        opacity={0.75}
       />
-      <Path path={irises} style="stroke" strokeWidth={1.6} color={colors.primary} />
+      <Path path={irises} style="stroke" strokeWidth={1.6} color={glow} />
       <Path
         path={handLines}
         style="stroke"
         strokeWidth={6}
         strokeCap="round"
-        color={colors.accent}
+        color={glow}
         opacity={0.3}
       />
       <Path
         path={handLines}
         style="stroke"
-        strokeWidth={2.2}
+        strokeWidth={2}
         strokeCap="round"
         color={colors.callText}
       />
-      <Path path={handJoints} color={colors.accent} />
+      <Path path={handJoints} color={glow} />
       {cornerMask && maskColor ? <Path path={cornerMask} color={maskColor} /> : null}
     </Canvas>
   );

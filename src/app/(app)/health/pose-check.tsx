@@ -164,7 +164,7 @@ export default function PoseCheckScreen() {
             onPose={onPose}
             onPoseError={(e) => setError(e.nativeEvent.message || 'The camera stopped.')}
           />
-          <PoseOverlay feed={feed} width={tile.width} height={tile.height} highlight={view.reps.fault?.joints ?? NO_JOINTS} />
+          <PoseOverlay feed={feed} width={tile.width} height={tile.height} highlight={view.reps.fault?.joints ?? NO_JOINTS} angleJoints={!movement.metric && movement.kind === 'reps' ? movement.joints : null} />
           <View style={[styles.overlay, { backgroundColor: colors.scrim }]}>
             <Text style={[typography.display, styles.repCount, { color: colors.onPrimary }]} accessibilityLiveRegion="polite">
               {movement.kind === 'hold' ? Math.floor(view.reps.holdMs / 1000) : view.reps.reps}
