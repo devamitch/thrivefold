@@ -8,6 +8,8 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
+import androidx.camera.core.resolutionselector.AspectRatioStrategy
+import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
@@ -104,8 +106,14 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
     future.addListener({
       try {
         val provider = future.get().also { cameraProvider = it }
-        val preview = Preview.Builder().build().also { it.setSurfaceProvider(previewView.surfaceProvider) }
+        // Preview and analysis must see the same field of view, or landmarks drawn over the
+        // preview drift and scale wrongly. Both use the sensor's full 4:3 frame.
+        val sameFov = ResolutionSelector.Builder()
+          .setAspectRatioStrategy(AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY)
+          .build()
+        val preview = Preview.Builder().setResolutionSelector(sameFov).build().also { it.setSurfaceProvider(previewView.surfaceProvider) }
         val analysis = ImageAnalysis.Builder()
+          .setResolutionSelector(sameFov)
           .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
           .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
           .build()

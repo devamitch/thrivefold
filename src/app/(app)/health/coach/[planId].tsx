@@ -20,7 +20,6 @@ import { PoseCameraView, poseLandmarkerAvailable, poseModelVersion, type PoseFra
 
 import { Button } from '../../../../components/ui/Button';
 import { Card } from '../../../../components/ui/Card';
-import { CallStage } from '../../../../components/workout/CallStage';
 import { PoseOverlay } from '../../../../components/workout/PoseOverlay';
 import { YouTubePlayer, type YouTubePlayerHandle } from '../../../../components/workout/YouTubePlayer';
 import { videoFor } from '../../../../content/exerciseVideos';
@@ -85,7 +84,7 @@ export default function CoachScreen() {
   const [setIdx, setSetIdx] = useState(0);
   const [rest, setRest] = useState(0);
   const [elapsed, setElapsed] = useState(0);
-  const [controls, setControls] = useState(true);
+  const [, setControls] = useState(true);
   const [videoPlaying, setVideoPlaying] = useState(false);
   const [rep, setRep] = useState<RepState>(initialRepState());
   const [frame, setFrame] = useState<{ landmarks: Landmark[]; w: number; h: number } | null>(null);
@@ -94,6 +93,7 @@ export default function CoachScreen() {
   /** 3-2-1 before each set; reps are not counted until it reaches 0. */
   const [countdown, setCountdown] = useState(0);
   const [voiceOn, setVoiceOn] = useState(true);
+  const [stage, setStage] = useState({ width: 0, height: 0 });
   const [gestureProgress, setGestureProgress] = useState<{ g: Gesture | null; p: number }>({ g: null, p: 0 });
   const gestureRef = useRef(initialGestureState());
   const counterPulse = useSharedValue(1);
@@ -448,7 +448,7 @@ export default function CoachScreen() {
           </Text>
         )}
         <Text style={[typography.body, { color: colors.text.secondary, marginTop: spacing.xs }]}>
-          Like a video call: you and the coach on one screen. Tap the small window to swap, drag it to move it.
+          Your camera fills the stage with a live skeleton and rep count; the tutorial plays below it.
         </Text>
         <Card style={{ padding: spacing.base, marginTop: spacing.lg }}>
           {[
@@ -550,103 +550,173 @@ export default function CoachScreen() {
 
   const remaining = Math.max(0, item.target - counted);
   const share = Math.min(1, counted / Math.max(1, item.target));
+  const upNext = setIdx + 1 < item.sets ? { ex: exercise, set: setIdx + 2, of: item.sets } : plan.items[itemIdx + 1]
+    ? { ex: exerciseById(plan.items[itemIdx + 1].exerciseId), set: 1, of: plan.items[itemIdx + 1].sets }
+    : null;
+  const cameraMain = cameraOn && Boolean(PoseCameraView);
 
   return (
-    <View style={[styles.flex, { backgroundColor: colors.callBackground }]}>
-      <StatusBar barStyle="light-content" />
-      <CallStage
-        primary={videoTile}
-        secondary={cameraTile}
-        startWithSecondary={cameraOn && Boolean(movement)}
-        insetTop={insets.top + 72}
-        insetBottom={insets.bottom + 104}
-        onStageTap={showControls}
-        primaryLabel="Coach"
-        secondaryLabel="You"
-        renderSecondaryOverlay={(size) => (
-          <>
-            {frame && cameraOn ? (
-              <PoseOverlay landmarks={frame.landmarks} frameWidth={frame.w} frameHeight={frame.h} width={size.width} height={size.height} highlight={fault?.joints ?? []} />
-            ) : null}
-            {fault ? <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.faultEdge, { borderColor: colors.error }]} /> : null}
-          </>
-        )}
-      />
+    <View style={[styles.flex, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+      <StatusBar barStyle={colors.scheme === 'dark' ? 'light-content' : 'dark-content'} />
 
-      {/* Call header: what you're doing, and the count */}
-      <View style={[styles.topBar, { paddingTop: insets.top + 8 }]} pointerEvents="box-none">
-        <View style={[styles.capsule, styles.flex, { backgroundColor: colors.callSurface }]}>
-          <Text style={[typography.bodyBold, { color: colors.callText }]} numberOfLines={1}>
+      {/* Header: what you're doing and where you are in the plan */}
+      <View style={[styles.header, { paddingHorizontal: spacing.base }]}>
+        <RoundButton icon="close" label="End workout" onPress={confirmEnd} />
+        <View style={[styles.flex, { marginHorizontal: 12 }]}>
+          <Text style={[typography.subheading, { color: colors.text.primary }]} numberOfLines={1}>
             {exercise.name}
           </Text>
-          <Text style={[typography.caption, { color: colors.callMuted }]} numberOfLines={1}>
-            Set {setIdx + 1} of {item.sets} · {clock(elapsed)}
-            {movement && cameraOn ? ' · checking form' : movement ? '' : ' · tap Set done when finished'}
+          <Text style={[typography.caption, { color: colors.text.secondary }]} numberOfLines={1}>
+            Exercise {itemIdx + 1} of {plan.items.length} · {clock(elapsed)}
           </Text>
         </View>
+        <RoundButton
+          icon={voiceOn ? 'volume-high-outline' : 'volume-mute-outline'}
+          label={voiceOn ? 'Mute voice coach' : 'Turn on voice coach'}
+          onPress={() => {
+            if (voiceOn) Speech.stop();
+            setVoiceOn((v) => !v);
+          }}
+        />
+      </View>
+      <View style={[styles.sets, { paddingHorizontal: spacing.base }]} accessibilityLabel={`Set ${setIdx + 1} of ${item.sets}`}>
+        {Array.from({ length: item.sets }, (_, i) => (
+          <View
+            key={i}
+            style={[styles.setSeg, { backgroundColor: i < setIdx ? colors.primary : i === setIdx ? colors.primaryAlpha : colors.surface1 }]}
+          />
+        ))}
+      </View>
+
+      {/* Stage: your camera with the skeleton, or the tutorial when the camera is off */}
+      <View
+        style={[styles.stage, { marginHorizontal: spacing.base, backgroundColor: colors.callBackground }]}
+        onLayout={(e) => setStage({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}
+        collapsable={false}
+      >
+        {cameraMain ? cameraTile : videoTile}
+        {cameraMain && frame && stage.width > 0 ? (
+          <PoseOverlay landmarks={frame.landmarks} frameWidth={frame.w} frameHeight={frame.h} width={stage.width} height={stage.height} highlight={fault?.joints ?? []} />
+        ) : null}
+        {fault ? <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.faultEdge, { borderColor: colors.error }]} /> : null}
+
+        {cameraMain ? (
+          <View style={styles.stageTop} pointerEvents="box-none">
+            <View style={[styles.chip, { backgroundColor: colors.callSurface }]}>
+              <View style={[styles.dot, { backgroundColor: movement ? colors.success : colors.callMuted }]} />
+              <Text style={[typography.captionBold, { color: colors.callText }]}>{movement ? 'Checking form' : 'Camera on'}</Text>
+            </View>
+            <Pressable
+              onPress={() => setFacing((f) => (f === 'front' ? 'back' : 'front'))}
+              accessibilityRole="button"
+              accessibilityLabel="Flip camera"
+              hitSlop={8}
+              style={[styles.stageBtn, { backgroundColor: colors.callSurface }]}
+            >
+              <Ionicons name="camera-reverse-outline" size={18} color={colors.callText} />
+            </Pressable>
+          </View>
+        ) : null}
+
+        {/* What to fix, a gesture in progress, or the live cue */}
+        {gestureProgress.g && gestureProgress.p > 0 ? (
+          <View pointerEvents="none" style={[styles.stageBanner, { backgroundColor: colors.primary }]}>
+            <Ionicons name="hand-left-outline" size={18} color={colors.onPrimary} />
+            <Text style={[typography.bodyBold, styles.flex, { color: colors.onPrimary, marginLeft: 8 }]}>
+              {gestureProgress.g === 'one_hand' ? (videoPlaying ? 'Pausing video' : 'Playing video') : rest > 0 ? 'Skipping rest' : 'Finishing set'}
+            </Text>
+            <View style={[styles.gestureTrack, { backgroundColor: colors.callSurfaceStrong }]}>
+              <View style={[styles.gestureFill, { width: `${Math.round(gestureProgress.p * 100)}%`, backgroundColor: colors.onPrimary }]} />
+            </View>
+          </View>
+        ) : fault ? (
+          <Animated.View
+            entering={reduceMotion ? undefined : FadeIn.duration(180)}
+            exiting={reduceMotion ? undefined : FadeOut.duration(180)}
+            style={[styles.stageBanner, { backgroundColor: colors.callSurface }]}
+            accessibilityLiveRegion="assertive"
+          >
+            <View style={[styles.faultDot, { backgroundColor: colors.error }]}>
+              <Ionicons name="alert" size={16} color={colors.callText} />
+            </View>
+            <View style={[styles.flex, { marginLeft: 10 }]}>
+              <Text style={[typography.bodyBold, { color: colors.callText }]}>{fault.title}</Text>
+              <Text style={[typography.subbody, { color: colors.callMuted, marginTop: 1 }]}>{fault.fix}</Text>
+            </View>
+          </Animated.View>
+        ) : checking ? (
+          <View pointerEvents="none" style={[styles.stageBanner, styles.cue, { backgroundColor: colors.callSurface }]}>
+            <Text style={[typography.subbody, { color: colors.callText, textAlign: 'center' }]} numberOfLines={2}>
+              {liveCue(movement!, rep, (frame?.landmarks.length ?? 0) > 0)}
+            </Text>
+          </View>
+        ) : null}
+
+        {/* The count */}
         <View
-          style={[styles.capsule, styles.counter, { backgroundColor: fault ? colors.error : colors.callSurface }]}
+          style={[styles.counter, { backgroundColor: fault ? colors.error : colors.callSurface }]}
           accessibilityLabel={`${counted} of ${item.target} ${unit}. ${remaining} to go`}
           accessibilityLiveRegion="polite"
         >
           <View style={styles.counterRow}>
             <Animated.Text style={[typography.display, styles.counterBig, { color: colors.callText }, counterStyle]}>{counted}</Animated.Text>
-            <Text style={[typography.subbodyBold, { color: colors.callMuted, marginLeft: 4 }]}>/ {item.target}</Text>
+            <Text style={[typography.bodyBold, { color: colors.callMuted, marginLeft: 6 }]}>/ {item.target} {unit}</Text>
           </View>
           <View style={[styles.counterTrack, { backgroundColor: colors.callSurfaceStrong }]}>
             <View style={[styles.counterFill, { width: `${Math.round(share * 100)}%`, backgroundColor: colors.callText }]} />
           </View>
-          <Text style={[typography.caption, { color: colors.callMuted, marginTop: 2 }]}>
-            {remaining > 0 ? `${remaining} ${unit} to go` : 'Target reached'}
+          <Text style={[typography.caption, { color: colors.callMuted, marginTop: 4 }]}>
+            {remaining > 0 ? `${remaining} to go` : 'Target reached'}
           </Text>
         </View>
       </View>
 
-      {/* Hands-free gesture in progress */}
-      {gestureProgress.g && gestureProgress.p > 0 ? (
-        <View pointerEvents="none" style={[styles.banner, { top: insets.top + 96, backgroundColor: colors.primary }]}>
-          <Ionicons name="hand-left-outline" size={18} color={colors.onPrimary} />
-          <Text style={[typography.bodyBold, styles.flex, { color: colors.onPrimary, marginLeft: 8 }]}>
-            {gestureProgress.g === 'one_hand' ? (videoPlaying ? 'Pausing video' : 'Playing video') : rest > 0 ? 'Skipping rest' : 'Finishing set'}
-          </Text>
-          <View style={[styles.gestureTrack, { backgroundColor: colors.callSurfaceStrong }]}>
-            <View style={[styles.gestureFill, { width: `${Math.round(gestureProgress.p * 100)}%`, backgroundColor: colors.onPrimary }]} />
-          </View>
+      {/* Tutorial and what's next */}
+      <View style={[styles.lower, { marginHorizontal: spacing.base }]}>
+        <View style={[styles.tutorial, { backgroundColor: colors.callBackground }]}>
+          {cameraMain ? videoTile : (
+            <View style={[StyleSheet.absoluteFill, styles.center, { backgroundColor: colors.surface1 }]}>
+              <Ionicons name="videocam-off-outline" size={20} color={colors.text.muted} />
+              <Text style={[typography.caption, { color: colors.text.muted, marginTop: 4, textAlign: 'center' }]}>
+                {cameraBuilt ? 'Camera off' : 'No camera check in this build'}
+              </Text>
+            </View>
+          )}
         </View>
-      ) : fault ? (
-        <Animated.View
-          entering={reduceMotion ? undefined : FadeIn.duration(180)}
-          exiting={reduceMotion ? undefined : FadeOut.duration(180)}
-          style={[styles.banner, { top: insets.top + 96, backgroundColor: colors.callSurface }]}
-          accessibilityLiveRegion="assertive"
-        >
-          <View style={[styles.faultDot, { backgroundColor: colors.error }]}>
-            <Ionicons name="alert" size={16} color={colors.callText} />
-          </View>
-          <View style={[styles.flex, { marginLeft: 10 }]}>
-            <Text style={[typography.bodyBold, { color: colors.callText }]}>{fault.title}</Text>
-            <Text style={[typography.subbody, { color: colors.callMuted, marginTop: 1 }]}>{fault.fix}</Text>
-            {autoPaused.current ? (
-              <Text style={[typography.caption, { color: colors.callMuted, marginTop: 4 }]}>Video paused until your form is back.</Text>
-            ) : null}
-          </View>
-        </Animated.View>
-      ) : checking && controls ? (
-        <View pointerEvents="none" style={[styles.banner, styles.cue, { top: insets.top + 96, backgroundColor: colors.callSurface }]}>
-          <Text style={[typography.subbody, { color: colors.callText, textAlign: 'center' }]} numberOfLines={2}>
-            {liveCue(movement!, rep, (frame?.landmarks.length ?? 0) > 0)}
+        <View style={[styles.flex, styles.nextCol]}>
+          <Text style={[typography.label, { color: colors.text.muted }]}>Up next</Text>
+          <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 2 }]} numberOfLines={2}>
+            {upNext ? `${upNext.ex?.name ?? 'Exercise'}` : 'Last set'}
           </Text>
+          {upNext ? (
+            <Text style={[typography.caption, { color: colors.text.secondary }]}>Set {upNext.set} of {upNext.of}</Text>
+          ) : null}
+          <Pressable
+            onPress={() => {
+              autoPaused.current = false;
+              if (videoPlaying) player.current?.pause();
+              else player.current?.play();
+            }}
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.playBtn, { backgroundColor: colors.surface1, opacity: pressed ? 0.8 : 1 }]}
+          >
+            <Ionicons name={videoPlaying ? 'pause' : 'play'} size={16} color={colors.text.primary} />
+            <Text style={[typography.captionBold, { color: colors.text.primary, marginLeft: 6 }]}>{videoPlaying ? 'Pause tutorial' : 'Play tutorial'}</Text>
+          </Pressable>
         </View>
+      </View>
+
+      {cameraError ? (
+        <Text style={[typography.caption, { color: colors.error, marginHorizontal: spacing.base, marginTop: 6 }]}>{cameraError}</Text>
       ) : null}
+
+      <View style={{ paddingHorizontal: spacing.base, paddingTop: spacing.md, paddingBottom: insets.bottom + spacing.sm }}>
+        <Button label={remaining > 0 ? 'Set done' : 'Next'} size="lg" onPress={manualSetDone} />
+      </View>
 
       {/* 3-2-1 before each set */}
       {countdown > 0 ? (
-        <Animated.View
-          key={countdown}
-          entering={reduceMotion ? undefined : FadeIn.duration(150)}
-          pointerEvents="none"
-          style={[styles.overlay, { backgroundColor: colors.scrim }]}
-        >
+        <Animated.View key={countdown} entering={reduceMotion ? undefined : FadeIn.duration(150)} pointerEvents="none" style={[styles.overlay, { backgroundColor: colors.scrim }]}>
           <Text style={[typography.display, styles.overlayNumber, { color: colors.callText }]}>{countdown}</Text>
           <Text style={[typography.body, { color: colors.callText }]}>Get into position</Text>
         </Animated.View>
@@ -675,110 +745,56 @@ export default function CoachScreen() {
           </Pressable>
         </Animated.View>
       ) : null}
-
-      {cameraError ? (
-        <View style={[styles.banner, { bottom: insets.bottom + 112, backgroundColor: colors.error }]}>
-          <Text style={[typography.caption, { color: colors.callText }]}>{cameraError}</Text>
-        </View>
-      ) : null}
-
-      {/* Call controls */}
-      {controls || rest > 0 ? (
-        <Animated.View
-          entering={reduceMotion ? undefined : FadeIn.duration(180)}
-          exiting={reduceMotion ? undefined : FadeOut.duration(180)}
-          style={[styles.controlsWrap, { paddingBottom: insets.bottom + 14 }]}
-          pointerEvents="box-none"
-        >
-          <View style={[styles.controls, { backgroundColor: colors.callSurface }]}>
-            <CallButton icon="camera-reverse-outline" label="Flip camera" disabled={!cameraOn} onPress={() => setFacing((f) => (f === 'front' ? 'back' : 'front'))} />
-            <CallButton
-              icon={videoPlaying ? 'pause' : 'play'}
-              label={videoPlaying ? 'Pause video' : 'Play video'}
-              onPress={() => {
-                autoPaused.current = false;
-                if (videoPlaying) player.current?.pause();
-                else player.current?.play();
-              }}
-            />
-            <CallButton icon="checkmark" label="Set done" tone="success" size={60} onPress={manualSetDone} />
-            <CallButton
-              icon={voiceOn ? 'volume-high-outline' : 'volume-mute-outline'}
-              label={voiceOn ? 'Mute voice coach' : 'Turn on voice coach'}
-              onPress={() => {
-                if (voiceOn) Speech.stop();
-                setVoiceOn((v) => !v);
-              }}
-            />
-            <CallButton icon="call" label="End workout" tone="danger" onPress={confirmEnd} rotate />
-          </View>
-        </Animated.View>
-      ) : null}
     </View>
   );
 }
 
-function CallButton({
-  icon,
-  label,
-  onPress,
-  tone,
-  size = 50,
-  disabled,
-  rotate,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  onPress: () => void;
-  tone?: 'success' | 'danger';
-  size?: number;
-  disabled?: boolean;
-  rotate?: boolean;
-}) {
+function RoundButton({ icon, label, onPress }: { icon: keyof typeof Ionicons.glyphMap; label: string; onPress: () => void }) {
   const { colors } = useTheme();
-  const bg = tone === 'success' ? colors.success : tone === 'danger' ? colors.error : colors.callSurfaceStrong;
   return (
     <Pressable
       onPress={onPress}
-      disabled={disabled}
       accessibilityRole="button"
       accessibilityLabel={label}
       hitSlop={6}
-      style={({ pressed }) => [
-        styles.callButton,
-        { width: size, height: size, borderRadius: size / 2, backgroundColor: bg, opacity: disabled ? 0.4 : pressed ? 0.8 : 1 },
-      ]}
+      style={({ pressed }) => [styles.round, { backgroundColor: colors.surface1, opacity: pressed ? 0.8 : 1 }]}
     >
-      <Ionicons name={icon} size={size * 0.42} color={colors.callText} style={rotate ? styles.hangUp : undefined} />
+      <Ionicons name={icon} size={20} color={colors.text.primary} />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  banner: { alignItems: 'center', borderRadius: 18, elevation: 21, flexDirection: 'row', left: 12, paddingHorizontal: 14, paddingVertical: 12, position: 'absolute', right: 12, zIndex: 21 },
-  callButton: { alignItems: 'center', justifyContent: 'center' },
-  capsule: { borderRadius: 18, paddingHorizontal: 14, paddingVertical: 10 },
   center: { alignItems: 'center', flex: 1, justifyContent: 'center', padding: 8 },
-  controls: { alignItems: 'center', borderRadius: 36, flexDirection: 'row', gap: 10, paddingHorizontal: 12, paddingVertical: 10 },
-  controlsWrap: { alignItems: 'center', bottom: 0, elevation: 20, left: 0, position: 'absolute', right: 0, zIndex: 20 },
-  counter: { alignItems: 'flex-end', marginLeft: 8, minWidth: 96 },
-  counterBig: { fontSize: 40, lineHeight: 44 },
+  chip: { alignItems: 'center', borderRadius: 14, flexDirection: 'row', gap: 6, paddingHorizontal: 10, paddingVertical: 6 },
+  counter: { borderRadius: 20, bottom: 12, left: 12, minWidth: 150, paddingHorizontal: 14, paddingVertical: 10, position: 'absolute' },
+  counterBig: { fontSize: 48, lineHeight: 52 },
   counterFill: { borderRadius: 2, height: 4 },
   counterRow: { alignItems: 'baseline', flexDirection: 'row' },
-  counterTrack: { alignSelf: 'stretch', borderRadius: 2, height: 4, marginTop: 4, overflow: 'hidden' },
+  counterTrack: { borderRadius: 2, height: 4, marginTop: 4, overflow: 'hidden' },
   cue: { justifyContent: 'center' },
+  dot: { borderRadius: 4, height: 8, width: 8 },
   faultDot: { alignItems: 'center', borderRadius: 14, height: 28, justifyContent: 'center', width: 28 },
-  faultEdge: { borderWidth: 4 },
+  faultEdge: { borderRadius: 28, borderWidth: 4 },
   flex: { flex: 1 },
   gestureFill: { height: 6 },
   gestureTrack: { borderRadius: 3, height: 6, marginLeft: 10, overflow: 'hidden', width: 60 },
-  hangUp: { transform: [{ rotate: '135deg' }] },
+  header: { alignItems: 'center', flexDirection: 'row', paddingVertical: 8 },
+  lower: { flexDirection: 'row', gap: 12, height: 128, marginTop: 12 },
+  nextCol: { justifyContent: 'center' },
   overlay: { alignItems: 'center', bottom: 0, elevation: 19, justifyContent: 'center', left: 0, position: 'absolute', right: 0, top: 0, zIndex: 19 },
   overlayNumber: { fontSize: 80, lineHeight: 88 },
+  playBtn: { alignItems: 'center', alignSelf: 'flex-start', borderRadius: 14, flexDirection: 'row', marginTop: 10, paddingHorizontal: 12, paddingVertical: 8 },
   round: { alignItems: 'center', borderRadius: 22, height: 44, justifyContent: 'center', width: 44 },
   row: { alignItems: 'center', flexDirection: 'row' },
+  setSeg: { borderRadius: 3, flex: 1, height: 6 },
+  sets: { flexDirection: 'row', gap: 6, marginBottom: 12 },
   skip: { borderRadius: 22, marginTop: 16, paddingHorizontal: 22, paddingVertical: 12 },
+  stage: { borderRadius: 28, flex: 1, overflow: 'hidden' },
+  stageBanner: { alignItems: 'center', borderRadius: 18, flexDirection: 'row', left: 12, paddingHorizontal: 14, paddingVertical: 12, position: 'absolute', right: 12, top: 56 },
+  stageBtn: { alignItems: 'center', borderRadius: 18, height: 36, justifyContent: 'center', width: 36 },
+  stageTop: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', left: 12, position: 'absolute', right: 12, top: 12 },
   summaryRow: { alignItems: 'center', flexDirection: 'row', paddingVertical: 12 },
-  topBar: { alignItems: 'flex-start', elevation: 20, flexDirection: 'row', left: 0, paddingHorizontal: 12, position: 'absolute', right: 0, top: 0, zIndex: 20 },
+  tutorial: { aspectRatio: 16 / 9, borderRadius: 20, height: '100%', overflow: 'hidden' },
   xpBox: { alignItems: 'center', borderRadius: 20, marginBottom: 16, padding: 20 },
 });
