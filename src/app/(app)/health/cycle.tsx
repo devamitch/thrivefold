@@ -278,7 +278,7 @@ export default function CycleScreen() {
             Stored privately on this device. Adapts predictions without guessing sensitive facts.
           </Text>
 
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 4 }}>
+          <ScrollView style={{ flexGrow: 0 }} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 4 }}>
             {CONTEXT_OPTIONS.map((opt) => {
               const isSelected = currentContext === opt.id;
               return (
@@ -452,7 +452,7 @@ export default function CycleScreen() {
               Menstruation overlaps the early follicular phase. Tap any day to inspect hormonal phase guidance.
             </Text>
 
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.calendarStrip}>
+            <ScrollView style={{ flexGrow: 0 }} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.calendarStrip}>
               {calendarDays.map((d) => {
                 const isSelected = d.offset === selectedDayOffset;
                 return (

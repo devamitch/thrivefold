@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter, type Href } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { AppHeader, HeaderIconButton } from '../../../components/ui/AppHeader';
 import { Chip } from '../../../components/ui/Chip';
@@ -155,7 +155,7 @@ export default function CalendarScreen() {
       }
       scrollMode="shell-scroll-view"
     >
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll} contentContainerStyle={styles.chips}>
         {MODES.map((v) => (
           <Chip key={v.id} label={v.label} selected={mode === v.id} onPress={() => setMode(v.id)} />
         ))}
@@ -383,14 +383,14 @@ function YearGrid({ year, agendaFor, onMonth }: { year: number; agendaFor: (d: s
         <PressableScale key={name} onPress={() => onMonth(mi)} style={styles.yearCell} accessibilityRole="button" accessibilityLabel={`${name} ${year}`}>
           <SquircleSurface radius={18} fill={colors.surface} style={styles.yearCard}>
             <Text style={[typography.captionBold, { color: colors.text.primary, marginBottom: 4 }]}>{name.slice(0, 3)}</Text>
-            <SquircleSurface style={styles.row7}>
+            <View style={styles.miniGrid}>
               {generateMonthGrid(year, mi).map((c) => {
                 const ev = c.isCurrentMonth ? agendaFor(c.date).filter((e) => !isBackground(e) && e.kind !== 'holiday') : [];
                 const period = ev.some((e) => e.kind === 'period' && e.status === 'recorded');
                 const real = ev.some((e) => e.status !== 'predicted');
                 return (
-                  <SquircleSurface key={c.date} style={styles.miniCell}>
-                    <SquircleSurface
+                  <View key={c.date} style={styles.miniCell}>
+                    <View
                       style={[
                         styles.miniDot,
                         {
@@ -406,10 +406,10 @@ function YearGrid({ year, agendaFor, onMonth }: { year: number; agendaFor: (d: s
                         },
                       ]}
                     />
-                  </SquircleSurface>
+                  </View>
                 );
               })}
-            </SquircleSurface>
+            </View>
           </SquircleSurface>
         </PressableScale>
       ))}
@@ -529,6 +529,7 @@ const styles = StyleSheet.create({
   bar: { alignSelf: 'stretch', borderRadius: 2, width: 4 },
   cell7: { alignItems: 'center', width: `${100 / 7}%` },
   center: { textAlign: 'center' },
+  chipScroll: { flexGrow: 0 },
   chips: { flexDirection: 'row', gap: 8 },
   dayPill: { alignItems: 'center', height: 38, justifyContent: 'center', width: 38 },
   dot: { borderRadius: 3, height: 6, width: 6 },
@@ -539,8 +540,9 @@ const styles = StyleSheet.create({
   gridCard: { padding: 10 },
   legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 14 },
   legendItem: { alignItems: 'center', flexDirection: 'row', gap: 6 },
-  miniCell: { alignItems: 'center', paddingVertical: 1.5, width: `${100 / 7}%` },
-  miniDot: { borderRadius: 2, height: 5, width: 5 },
+  miniCell: { alignItems: 'center', height: 9, justifyContent: 'center', width: 9 },
+  miniGrid: { alignSelf: 'center', flexDirection: 'row', flexWrap: 'wrap', width: 63 },
+  miniDot: { borderRadius: 2, height: 7, width: 7 },
   nav: { alignItems: 'center', flexDirection: 'row', gap: 8 },
   row7: { flexDirection: 'row', flexWrap: 'wrap' },
   todayBtn: { height: 38, justifyContent: 'center', paddingHorizontal: 12 },

@@ -132,7 +132,7 @@ export default function LetterComposeScreen() {
         <Text style={[typography.subbodyBold, { color: colors.text.primary, marginBottom: spacing.sm }]}>
           1. Select Conversation Theme
         </Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalCats}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[{ flexGrow: 0 }, styles.horizontalCats]}>
           {categories.map((cat) => (
             <Chip
               key={cat.id}
@@ -186,7 +186,7 @@ export default function LetterComposeScreen() {
         <Text style={[typography.subbodyBold, { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm }]}>
           3. Affix Digital Stamp
         </Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalStamps}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[{ flexGrow: 0 }, styles.horizontalStamps]}>
           {STAMP_CATALOG.map((stamp) => {
             const isSelected = selectedStamp === stamp.id;
             return (

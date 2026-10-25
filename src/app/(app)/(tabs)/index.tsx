@@ -320,7 +320,7 @@ export default function HomeScreen() {
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.chips}
-            style={{ marginTop: spacing.md }}
+            style={[{ flexGrow: 0 }, { marginTop: spacing.md }]}
           >
             <Chip label="All" selected={filter === 'all'} onPress={() => setFilter('all')} />
             {families.map((f) => (

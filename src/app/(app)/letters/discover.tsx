@@ -90,7 +90,7 @@ export default function DiscoverPenPalsScreen() {
         </Card>
 
         {/* Filter Bar */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[{ flexGrow: 0 }, { marginBottom: 12 }]}>
           {topics.map((t) => (
             <Chip
               key={t}
