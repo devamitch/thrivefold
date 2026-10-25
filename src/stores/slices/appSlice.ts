@@ -75,6 +75,9 @@ export interface AppSlice {
   setHomeGuideDone: () => void;
   /** Signed-in only, opt-in: weekly averages and counts backed up to the account. */
   shareWeeklySummaries: boolean;
+  /** Opt-in: anonymous usage analytics (screens and feature use, never health data). Off by default. */
+  usageAnalytics: boolean;
+  setUsageAnalytics: (on: boolean) => void;
   setShareWeeklySummaries: (enabled: boolean) => void;
   setQuestRemindersEnabled: (enabled: boolean) => void;
   quietHoursStart: string; // e.g. "22:00"
@@ -130,6 +133,8 @@ export const createAppSlice: StateCreator<
   setDrawerOpen: (drawerOpen) => set({ drawerOpen }),
   setHomeGuideDone: () => set({ homeGuideDone: true }),
   shareWeeklySummaries: false,
+  usageAnalytics: false,
+  setUsageAnalytics: (usageAnalytics) => set({ usageAnalytics }),
   setShareWeeklySummaries: (shareWeeklySummaries) => set({ shareWeeklySummaries }),
   setQuestRemindersEnabled: (questRemindersEnabled) => set({ questRemindersEnabled }),
   quietHoursStart: '22:00',

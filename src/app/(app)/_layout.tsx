@@ -9,6 +9,7 @@ import { AppDrawer } from '../../components/navigation/AppDrawer';
 import { DrawerSceneWrapper } from '../../components/navigation/DrawerSceneWrapper';
 import { enqueueFinishedWeeks, flushSummaryOutbox } from '../../services/sync/summaryOutbox';
 import { analytics } from '../../services/telemetry/analyticsService';
+import { firebaseAnalytics } from '../../services/telemetry/firebaseAnalytics';
 import { useTheme } from '../../theme/useTheme';
 
 /** Queues finished weeks and sends them if this person opted in; never throws. */
@@ -29,6 +30,12 @@ export default function AppLayout() {
   const pendingCount = useRootStore((s) => s.pendingSync.length);
   const openCount = useRootStore((s) => s.todayQuests.filter((q) => !q.isCompleted && q.status !== 'skipped').length);
   const remindersOn = useRootStore((s) => s.questRemindersEnabled);
+
+  // Firebase collects only after an explicit opt-in (firebase.json keeps it off at install).
+  const usageAnalytics = useRootStore((s) => s.usageAnalytics);
+  useEffect(() => {
+    firebaseAnalytics.setCollectionEnabled(usageAnalytics);
+  }, [usageAnalytics]);
 
   // Track active pathname so forceful app restarts restore exact location
   useEffect(() => {

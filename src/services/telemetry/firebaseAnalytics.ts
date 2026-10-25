@@ -14,7 +14,17 @@
  */
 
 import { Platform } from 'react-native';
+import { useRootStore } from '../../stores/useRootStore';
 import { enqueueTelemetryEvent } from './sqliteAnalyticsStore';
+
+/** Nothing reaches Firebase unless the person turned usage analytics on. */
+const allowed = () => {
+  try {
+    return useRootStore.getState().usageAnalytics === true;
+  } catch {
+    return false;
+  }
+};
 
 export interface FirebaseEventParams {
   [key: string]: string | number | boolean | undefined;
@@ -46,7 +56,8 @@ class FirebaseAnalyticsManager {
       metadata: { screen_class: screenClass },
     });
 
-    // 2. Dispatch to Native Modular SDK
+    // 2. Dispatch to Native Modular SDK (only with consent)
+    if (!allowed()) return;
     try {
       const analyticsModule = require('@react-native-firebase/analytics');
       if (analyticsModule.logScreenView && analyticsModule.getAnalytics) {
@@ -148,6 +159,7 @@ class FirebaseAnalyticsManager {
     const cleanName = name.slice(0, 24);
     const cleanValue = value.slice(0, 36);
     this.userProperties[cleanName] = cleanValue;
+    if (!allowed()) return;
 
     try {
       const analyticsModule = require('@react-native-firebase/analytics');
@@ -187,6 +199,7 @@ class FirebaseAnalyticsManager {
   }
 
   private async sendFirebaseEvent(name: string, params: Record<string, unknown>): Promise<void> {
+    if (!allowed()) return;
     // 1. Try modular @react-native-firebase/analytics API first
     try {
       const analyticsModule = require('@react-native-firebase/analytics');

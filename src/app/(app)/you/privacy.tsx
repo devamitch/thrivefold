@@ -6,6 +6,7 @@ import { AppHeader } from '../../../components/ui/AppHeader';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { SettingsRow } from '../../../components/ui/SettingsRow';
 import { buildLocalExport } from '../../../services/privacy/localData';
+import { firebaseAnalytics } from '../../../services/telemetry/firebaseAnalytics';
 import { clearSummaryOutbox, enqueueFinishedWeeks, flushSummaryOutbox, outboxStatus } from '../../../services/sync/summaryOutbox';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
@@ -20,6 +21,8 @@ export default function PrivacyScreen() {
       share: st.shareWeeklySummaries,
       setShare: st.setShareWeeklySummaries,
       showAlert: st.showAlert,
+      usage: st.usageAnalytics,
+      setUsage: st.setUsageAnalytics,
     })),
   );
   const signedIn = Boolean(s.user && !s.user.isGuest && s.user.email);
@@ -34,6 +37,12 @@ export default function PrivacyScreen() {
         .catch(() => undefined);
     } else clearSummaryOutbox();
     setOutbox(outboxStatus());
+  };
+
+  const toggleUsage = (on: boolean) => {
+    s.setUsage(on);
+    firebaseAnalytics.setConsent({ analytics_storage: on, ad_storage: false, ad_user_data: false, ad_personalization: false });
+    firebaseAnalytics.setCollectionEnabled(on);
   };
 
   const exportAll = async () => {
@@ -65,6 +74,12 @@ export default function PrivacyScreen() {
           right={<Switch value={s.share} onValueChange={toggleBackup} accessibilityLabel="Back up weekly summaries" />}
         />
       ) : null}
+      <SettingsRow
+        icon="bar-chart-outline"
+        title="Share anonymous usage"
+        subtitle="Which screens and features are used, to improve the app. Never health records, notes or identity. Off unless you turn it on."
+        right={<Switch value={s.usage} onValueChange={toggleUsage} accessibilityLabel="Share anonymous usage" />}
+      />
       <SettingsRow icon="shield-checkmark-outline" title="Safety and support" subtitle="Blocking, reports and urgent help." onPress={() => router.push('/(app)/safety')} />
       <SettingsRow icon="document-text-outline" title="Privacy policy" onPress={() => router.push('/(public)/legal/privacy')} />
       <SettingsRow icon="reader-outline" title="Terms" onPress={() => router.push('/(public)/legal/terms')} />
