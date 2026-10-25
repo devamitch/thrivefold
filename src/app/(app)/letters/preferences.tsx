@@ -1,6 +1,7 @@
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import React, { useState } from 'react';
-import { Text, StyleSheet, ScrollView, Switch, View } from 'react-native';
+import { Text, StyleSheet, ScrollView, View } from 'react-native';
+import { Toggle } from '../../../components/ui/Toggle';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
 import { Header } from '../../../components/ui/Header';
@@ -36,7 +37,7 @@ export default function LetterPreferencesScreen() {
                 When turned off, no new correspondents can find your card in discovery.
               </Text>
             </View>
-            <Switch
+            <Toggle
               value={acceptingLetters}
               onValueChange={setAcceptingLetters}
               trackColor={{ false: colors.surface1, true: colors.primary }}

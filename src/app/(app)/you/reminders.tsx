@@ -1,5 +1,6 @@
 import React from 'react';
-import { Switch, Text } from 'react-native';
+import { Text } from 'react-native';
+import { Toggle } from '../../../components/ui/Toggle';
 
 import { AppHeader } from '../../../components/ui/AppHeader';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
@@ -34,13 +35,13 @@ export default function RemindersScreen() {
         icon="notifications-outline"
         title="Quest reminders"
         subtitle="Morning, afternoon or evening, only when a quest fits that time."
-        right={<Switch value={s.on} onValueChange={toggle} accessibilityLabel="Quest reminders" />}
+        right={<Toggle value={s.on} onValueChange={toggle} accessibilityLabel="Quest reminders" />}
       />
       <SettingsRow
         icon="moon-outline"
         title="Quiet hours"
         subtitle={`No reminders from ${s.start} to ${s.end}.`}
-        right={<Switch value={s.quietOn} onValueChange={(v) => s.setQuiet(v)} accessibilityLabel="Quiet hours" />}
+        right={<Toggle value={s.quietOn} onValueChange={(v) => s.setQuiet(v)} accessibilityLabel="Quiet hours" />}
       />
       <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.sm }]}>
         Reminder text never mentions a health topic, so nothing personal shows on your lock screen.

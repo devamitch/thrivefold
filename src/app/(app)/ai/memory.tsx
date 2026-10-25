@@ -1,6 +1,7 @@
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import React, { useMemo, useState } from 'react';
-import { Text, StyleSheet, Switch, View } from 'react-native';
+import { Text, StyleSheet, View } from 'react-native';
+import { Toggle } from '../../../components/ui/Toggle';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
@@ -97,7 +98,7 @@ export default function AiMemoryScreen() {
                 remove them.
               </Text>
             </View>
-            <Switch
+            <Toggle
               value={aiMemoryEnabled}
               onValueChange={setAiMemoryEnabled}
               trackColor={{ false: colors.surface1, true: colors.primary }}

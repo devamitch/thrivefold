@@ -1,6 +1,7 @@
 import { Link, type Href } from 'expo-router';
 import React, { useState } from 'react';
-import { Share, Switch, Text } from 'react-native';
+import { Share, Text } from 'react-native';
+import { Toggle } from '../../../components/ui/Toggle';
 
 import { AppHeader } from '../../../components/ui/AppHeader';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
@@ -74,14 +75,14 @@ export default function PrivacyScreen() {
               ? `${outbox.queued ? `${outbox.queued} waiting. ` : ''}${outbox.lastSentWeek ? `Last: week of ${outbox.lastSentWeek}.` : 'Nothing sent yet.'}`
               : 'Averages and counts only, once a week. Never notes, symptoms or cycle dates.'
           }
-          right={<Switch value={s.share} onValueChange={toggleBackup} accessibilityLabel="Back up weekly summaries" />}
+          right={<Toggle value={s.share} onValueChange={toggleBackup} accessibilityLabel="Back up weekly summaries" />}
         />
       ) : null}
       <SettingsRow
         icon="bar-chart-outline"
         title="Share anonymous usage"
         subtitle="Which screens and features are used, to improve the app. Never health records, notes or identity. Off unless you turn it on."
-        right={<Switch value={s.usage} onValueChange={toggleUsage} accessibilityLabel="Share anonymous usage" />}
+        right={<Toggle value={s.usage} onValueChange={toggleUsage} accessibilityLabel="Share anonymous usage" />}
       />
       <Link href={'/(app)/safety' as Href} asChild>
         <SettingsRow icon="shield-checkmark-outline" title="Safety and support" subtitle="Blocking, reports and urgent help." />

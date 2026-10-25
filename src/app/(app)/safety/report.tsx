@@ -1,6 +1,7 @@
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import React, { useState } from 'react';
-import { Text, StyleSheet, TextInput, ScrollView, Switch, View } from 'react-native';
+import { Text, StyleSheet, TextInput, ScrollView, View } from 'react-native';
+import { Toggle } from '../../../components/ui/Toggle';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
@@ -128,7 +129,7 @@ export default function SafetyReportScreen() {
                 Permanently cancels any in-transit letters and prevents future introductions.
               </Text>
             </View>
-            <Switch
+            <Toggle
               value={alsoBlock}
               onValueChange={setAlsoBlock}
               trackColor={{ false: colors.surface1, true: colors.primary }}

@@ -1,7 +1,8 @@
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Linking, Platform, Share, StyleSheet, Switch, Text, View } from 'react-native';
+import { Linking, Platform, Share, StyleSheet, Text, View } from 'react-native';
+import { Toggle } from '../../../components/ui/Toggle';
 
 import { AppHeader } from '../../../components/ui/AppHeader';
 import { Badge } from '../../../components/ui/Badge';
@@ -378,7 +379,7 @@ export default function IntegrationsScreen() {
                       {t.why}
                     </Text>
                   </View>
-                  <Switch
+                  <Toggle
                     value={on}
                     onValueChange={() =>
                       setChosen((c) => (on ? c.filter((x) => x !== t.type) : [...c, t.type]))
@@ -398,7 +399,7 @@ export default function IntegrationsScreen() {
                   Finished Thrivefold workouts appear in your other apps.
                 </Text>
               </View>
-              <Switch
+              <Toggle
                 value={writeWorkouts}
                 onValueChange={setWriteWorkouts}
                 trackColor={{ false: colors.surface2, true: colors.primary }}
