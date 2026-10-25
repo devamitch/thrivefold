@@ -1,7 +1,7 @@
 import { SquircleSurface } from '@/components/ui';
 import React from 'react';
 import { Text, StyleSheet, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Link, type Href } from 'expo-router';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
 import { Header } from '../../../components/ui/Header';
@@ -11,7 +11,6 @@ import { useTheme } from '../../../theme/useTheme';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 
 export default function LetterDraftsScreen() {
-  const router = useRouter();
   const { colors, typography, spacing } = useTheme();
   const { drafts } = useRootStore(
     useShallow((s) => ({ drafts: s.drafts })),
@@ -35,12 +34,13 @@ export default function LetterDraftsScreen() {
                 {draft.chipIds.length} Curated Cards Selected
               </Text>
 
-              <Button
-                label="Resume Composition"
-                size="sm"
-                style={{ marginTop: 12, alignSelf: 'flex-start' }}
-                onPress={() => router.push('/(app)/letters/compose')}
-              />
+              <Link href={'/(app)/letters/compose' as Href} asChild>
+                <Button
+                  label="Resume Composition"
+                  size="sm"
+                  style={{ marginTop: 12, alignSelf: 'flex-start' }}
+                />
+              </Link>
             </Card>
           ))
         ) : (
@@ -48,12 +48,13 @@ export default function LetterDraftsScreen() {
             <Text style={[typography.subbody, { color: colors.text.secondary }]}>
               No active drafts. Start composing a slow letter to save your thoughts.
             </Text>
-            <Button
-              label="Compose New Letter"
-              size="sm"
-              style={{ marginTop: 16 }}
-              onPress={() => router.push('/(app)/letters/compose')}
-            />
+            <Link href={'/(app)/letters/compose' as Href} asChild>
+              <Button
+                label="Compose New Letter"
+                size="sm"
+                style={{ marginTop: 16 }}
+              />
+            </Link>
           </Card>
         )}
       </ScrollView>

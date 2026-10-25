@@ -1,6 +1,6 @@
 import { SquircleSurface } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { Link, useRouter, type Href } from 'expo-router';
 import React from 'react';
 import { StyleSheet, Text } from 'react-native';
 
@@ -95,12 +95,16 @@ export default function PrivacyChoicesScreen() {
       </PressableScale>
 
       <SquircleSurface style={[styles.links, { marginTop: spacing.lg }]}>
-        <PressableScale onPress={() => router.push('/(public)/legal/privacy')} hitSlop={10} accessibilityRole="link">
-          <Text style={[typography.subbody, { color: colors.primary }]}>Privacy policy</Text>
-        </PressableScale>
-        <PressableScale onPress={() => router.push('/(public)/legal/terms')} hitSlop={10} accessibilityRole="link">
-          <Text style={[typography.subbody, { color: colors.primary }]}>Terms</Text>
-        </PressableScale>
+        <Link href={'/(public)/legal/privacy' as Href} asChild>
+          <PressableScale hitSlop={10} accessibilityRole="link">
+            <Text style={[typography.subbody, { color: colors.primary }]}>Privacy policy</Text>
+          </PressableScale>
+        </Link>
+        <Link href={'/(public)/legal/terms' as Href} asChild>
+          <PressableScale hitSlop={10} accessibilityRole="link">
+            <Text style={[typography.subbody, { color: colors.primary }]}>Terms</Text>
+          </PressableScale>
+        </Link>
       </SquircleSurface>
     </OnboardingScaffold>
   );

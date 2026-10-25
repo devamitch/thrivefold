@@ -1,7 +1,7 @@
 import { SquircleSurface } from '@/components/ui';
 import React, { useMemo } from 'react';
 import { Text, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Link, type Href } from 'expo-router';
 
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { AppHeader } from '../../../components/ui/AppHeader';
@@ -16,7 +16,6 @@ const COMMON = ['Headache', 'Fatigue', 'Cramps', 'Bloating', 'Back pain', 'Nause
 
 /** Today's symptoms (part of today's check-in) and how often each came up in 30 days. */
 export default function SymptomsScreen() {
-  const router = useRouter();
   const { colors, typography, spacing } = useTheme();
   const { history, patchCheckIn } = useRootStore(useShallow((s) => ({ history: s.checkInHistory, patchCheckIn: s.patchCheckIn })));
   const date = formatLocalDate(new Date());
@@ -55,7 +54,9 @@ export default function SymptomsScreen() {
             <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>
               Symptoms are saved with your daily check-in.
             </Text>
-            <Button label="Check in" size="sm" onPress={() => router.push('/(app)/check-in')} style={{ marginTop: spacing.sm, alignSelf: 'flex-start' }} />
+            <Link href={'/(app)/check-in' as Href} asChild>
+              <Button label="Check in" size="sm" style={{ marginTop: spacing.sm, alignSelf: 'flex-start' }} />
+            </Link>
           </>
         )}
       </Card>

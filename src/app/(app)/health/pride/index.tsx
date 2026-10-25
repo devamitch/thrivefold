@@ -1,7 +1,7 @@
 import { SquircleSurface } from '@/components/ui';
 import React, { useState } from 'react';
 import { Text } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Link, useRouter, type Href } from 'expo-router';
 
 import { ScreenWrapper } from '../../../../components/ui/ScreenWrapper';
 import { Header } from '../../../../components/ui/Header';
@@ -63,7 +63,9 @@ export default function PrideWellbeingScreen() {
         {section(
           'Hormones and medications',
           'Track doses and times privately, and tick them off each day. Thrivefold never doses or changes a prescription.',
-          <Button label="Open tracker" size="sm" variant="outline" onPress={() => router.push('/(app)/health/medications')} style={{ alignSelf: 'flex-start' }} />,
+          <Link href={'/(app)/health/medications' as Href} asChild>
+            <Button label="Open tracker" size="sm" variant="outline" style={{ alignSelf: 'flex-start' }} />
+          </Link>,
         )}
 
         {section(
@@ -76,8 +78,12 @@ export default function PrideWellbeingScreen() {
               cues={['Name 5 things you can see.', 'Name 4 things you can feel.', 'Name 3 things you can hear.', 'Take slow breaths, longer out than in.']}
             />
             <SquircleSurface style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: spacing.sm }}>
-              <Button label="Write a private note" size="sm" variant="outline" onPress={() => router.push('/(app)/journal/new')} />
-              <Button label="Urgent support" size="sm" variant="ghost" onPress={() => router.push('/(app)/safety/urgent-support')} />
+              <Link href={'/(app)/journal/new' as Href} asChild>
+                <Button label="Write a private note" size="sm" variant="outline" />
+              </Link>
+              <Link href={'/(app)/safety/urgent-support' as Href} asChild>
+                <Button label="Urgent support" size="sm" variant="ghost" />
+              </Link>
             </SquircleSurface>
           </>,
         )}
@@ -91,13 +97,17 @@ export default function PrideWellbeingScreen() {
         {section(
           'Everyday health',
           'Check-ins, sleep, movement, nutrition and your patterns.',
-          <Button label="Open health" size="sm" variant="outline" onPress={() => router.push('/(app)/health')} style={{ alignSelf: 'flex-start' }} />,
+          <Link href={'/(app)/health' as Href} asChild>
+            <Button label="Open health" size="sm" variant="outline" style={{ alignSelf: 'flex-start' }} />
+          </Link>,
         )}
 
         {section(
           'Private community',
           'Peer support spaces open once communities are available to you; membership is never shown outside the group.',
-          <Button label="Circles" size="sm" variant="outline" onPress={() => router.push('/(app)/circles')} style={{ alignSelf: 'flex-start' }} />,
+          <Link href={'/(app)/circles' as Href} asChild>
+            <Button label="Circles" size="sm" variant="outline" style={{ alignSelf: 'flex-start' }} />
+          </Link>,
         )}
       </SquircleSurface>
     </ScreenWrapper>

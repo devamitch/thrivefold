@@ -1,6 +1,6 @@
 import { SquircleSurface } from '@/components/ui';
 import React, { useMemo } from 'react';
-import { useRouter } from 'expo-router';
+import { Link, type Href } from 'expo-router';
 import { Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
@@ -15,7 +15,6 @@ import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngin
 
 export default function SleepScreen() {
   const { colors, typography, spacing } = useTheme();
-  const router = useRouter();
   const history = useRootStore((st) => st.checkInHistory);
   const byDate = useMemo(() => new Map(history.map((c) => [c.date, c])), [history]);
   const today = byDate.get(formatLocalDate(new Date()));
@@ -29,13 +28,14 @@ export default function SleepScreen() {
           <Text style={[typography.hero, { color: colors.primary, marginVertical: 4 }]}>
             {today ? `${today.sleepHours}h` : 'Not logged'}
           </Text>
-          <Button
-            label={today ? 'Update in check-in' : 'Log in check-in'}
-            size="sm"
-            variant="outline"
-            onPress={() => router.push('/(app)/check-in')}
-            style={{ alignSelf: 'flex-start', marginTop: spacing.xs }}
-          />
+          <Link href={'/(app)/check-in' as Href} asChild>
+            <Button
+              label={today ? 'Update in check-in' : 'Log in check-in'}
+              size="sm"
+              variant="outline"
+              style={{ alignSelf: 'flex-start', marginTop: spacing.xs }}
+            />
+          </Link>
           <SquircleSurface style={{ marginTop: spacing.md }}>
             <TrendBars label="Last 14 nights" unit="h" max={10} points={lastDays(14, (d) => byDate.get(d)?.sleepHours ?? null)} />
           </SquircleSurface>

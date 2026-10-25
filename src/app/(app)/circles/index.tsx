@@ -1,4 +1,4 @@
-import { useRouter, type Href } from 'expo-router';
+import { Link, type Href } from 'expo-router';
 import React, { useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text } from 'react-native';
 
@@ -33,7 +33,6 @@ const CREATE_AT = policyConfig.progressionGates.create_community;
  * group works for its organiser straight away and is listed after a verification call.
  */
 export default function CirclesScreen() {
-  const router = useRouter();
   const { colors, typography, spacing } = useTheme();
   const { user, localLevel, showToast } = useRootStore(
     useShallow((s) => ({ user: s.user, localLevel: s.level, showToast: s.showToast })),
@@ -96,7 +95,9 @@ export default function CirclesScreen() {
             Join from level {JOIN_AT}. Start your own group from level {CREATE_AT}.
           </Text>
           {signedIn && level < JOIN_AT ? (
-            <Button label="See today's quests" size="sm" variant="outline" onPress={() => router.push('/(app)/quests' as Href)} style={{ marginTop: spacing.md, alignSelf: 'flex-start' }} />
+            <Link href={'/(app)/quests' as Href} asChild>
+              <Button label="See today's quests" size="sm" variant="outline" style={{ marginTop: spacing.md, alignSelf: 'flex-start' }} />
+            </Link>
           ) : null}
         </SquircleSurface>
       ) : (
@@ -175,7 +176,9 @@ export default function CirclesScreen() {
         </>
       )}
 
-      <SettingsRow icon="mail-open-outline" title="Invitations" subtitle="Groups that invited you" onPress={() => router.push('/(app)/circles/invitations')} />
+      <Link href={'/(app)/circles/invitations' as Href} asChild>
+        <SettingsRow icon="mail-open-outline" title="Invitations" subtitle="Groups that invited you" />
+      </Link>
     </ScreenContainer>
   );
 }

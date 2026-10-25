@@ -15,7 +15,8 @@ interface Props {
   dimmed?: boolean;
   /** Label of the trailing action button; omitted shows a chevron. */
   action?: string;
-  onPress: () => void;
+  /** Optional when wrapped in <Link asChild>, which supplies it. */
+  onPress?: () => void;
   trailing?: React.ReactNode;
   highlight?: boolean;
 }

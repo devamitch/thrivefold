@@ -1,7 +1,7 @@
 import { SquircleSurface } from '@/components/ui';
 import React from 'react';
 import { Text, StyleSheet, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Link, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
@@ -10,7 +10,6 @@ import { Button } from '../../../components/ui/Button';
 import { useTheme } from '../../../theme/useTheme';
 
 export default function OpenLettersScreen() {
-  const router = useRouter();
   const { colors, typography, spacing } = useTheme();
 
   // Approved prompt cards. Letters from other people appear only once the server delivers them.
@@ -42,12 +41,13 @@ export default function OpenLettersScreen() {
             <Text style={[typography.caption, { color: colors.text.muted, marginTop: 4 }]}>
               No replies yet. Shared letters appear here once the letters server is connected.
             </Text>
-            <Button
-              label="Write with letter cards"
-              size="sm"
-              style={{ marginTop: 14, alignSelf: 'flex-start' }}
-              onPress={() => router.push('/(app)/letters/compose')}
-            />
+            <Link href={'/(app)/letters/compose' as Href} asChild>
+              <Button
+                label="Write with letter cards"
+                size="sm"
+                style={{ marginTop: 14, alignSelf: 'flex-start' }}
+              />
+            </Link>
           </Card>
         ))}
       </ScrollView>

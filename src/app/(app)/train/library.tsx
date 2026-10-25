@@ -1,6 +1,6 @@
 import { SquircleSurface } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, type Href } from 'expo-router';
+import { Link, type Href } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text, TextInput } from 'react-native';
 
@@ -25,7 +25,6 @@ const EQUIP: { id: 'all' | Equipment; label: string }[] = [
 
 /** Every exercise, searchable, with what equipment it needs, a video and camera support. */
 export default function ExerciseLibraryScreen() {
-  const router = useRouter();
   const { colors, typography, spacing } = useTheme();
   const [query, setQuery] = useState('');
   const [equip, setEquip] = useState<(typeof EQUIP)[number]['id']>('all');
@@ -57,21 +56,22 @@ export default function ExerciseLibraryScreen() {
         initialNumToRender={12}
         ListEmptyComponent={<Text style={[typography.subbody, { color: colors.text.secondary }]}>No exercise matches. Try another word.</Text>}
         renderItem={({ item }) => (
-          <PressableScale
-            onPress={() => router.push(`/(app)/train/exercise/${item.id}` as Href)}
-            accessibilityRole="button"
-            style={[styles.row, { borderBottomColor: colors.border }]}
-          >
-            <SquircleSurface style={styles.flex}>
-              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{item.name}</Text>
-              <Text style={[typography.caption, { color: colors.text.secondary }]}>
-                {item.pattern} · {item.equipment === 'none' ? 'no equipment' : item.equipment}
-              </Text>
-            </SquircleSurface>
-            {videoFor(item.id) ? <Ionicons name="play-circle-outline" size={18} color={colors.primary} style={styles.icon} /> : null}
-            {movementForExercise(item.id) ? <Ionicons name="scan-outline" size={18} color={colors.primary} style={styles.icon} /> : null}
-            <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
-          </PressableScale>
+          <Link href={`/(app)/train/exercise/${item.id}` as Href} asChild>
+            <PressableScale
+              accessibilityRole="button"
+              style={[styles.row, { borderBottomColor: colors.border }]}
+            >
+              <SquircleSurface style={styles.flex}>
+                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{item.name}</Text>
+                <Text style={[typography.caption, { color: colors.text.secondary }]}>
+                  {item.pattern} · {item.equipment === 'none' ? 'no equipment' : item.equipment}
+                </Text>
+              </SquircleSurface>
+              {videoFor(item.id) ? <Ionicons name="play-circle-outline" size={18} color={colors.primary} style={styles.icon} /> : null}
+              {movementForExercise(item.id) ? <Ionicons name="scan-outline" size={18} color={colors.primary} style={styles.icon} /> : null}
+              <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
+            </PressableScale>
+          </Link>
         )}
       />
     </ScreenContainer>

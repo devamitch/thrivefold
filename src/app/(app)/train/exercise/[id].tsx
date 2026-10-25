@@ -1,6 +1,6 @@
 import { SquircleSurface } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
+import { Link, useLocalSearchParams, type Href } from 'expo-router';
 import React from 'react';
 import { StyleSheet, Text } from 'react-native';
 
@@ -16,7 +16,6 @@ import { useTheme } from '../../../../theme/useTheme';
 
 /** One exercise: how to do it, the tutorial, safety, and ways to do or log it. */
 export default function ExerciseDetailScreen() {
-  const router = useRouter();
   const { colors, typography, spacing } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const ex = exerciseById(id ?? '');
@@ -55,17 +54,20 @@ export default function ExerciseDetailScreen() {
       </Card>
 
       {movement ? (
-        <Button
-          label="Check my form with the camera"
-          onPress={() => router.push(`/(app)/health/pose-check?movement=${movement.id}` as Href)}
-          style={{ marginTop: spacing.md }}
-        />
+        <Link href={`/(app)/health/pose-check?movement=${movement.id}` as Href} asChild>
+          <Button
+            label="Check my form with the camera"
+            style={{ marginTop: spacing.md }}
+          />
+        </Link>
       ) : (
         <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.md }]}>
           The camera cannot check this movement yet. Log it by hand instead.
         </Text>
       )}
-      <Button label="Log reps I already did" variant="outline" onPress={() => router.push(`/(app)/train/log?exercise=${ex.id}` as Href)} style={{ marginTop: spacing.sm }} />
+      <Link href={`/(app)/train/log?exercise=${ex.id}` as Href} asChild>
+        <Button label="Log reps I already did" variant="outline" style={{ marginTop: spacing.sm }} />
+      </Link>
       <SquircleSurface style={{ height: spacing.xl }} />
     </ScreenContainer>
   );

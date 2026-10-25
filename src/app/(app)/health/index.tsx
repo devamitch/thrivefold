@@ -1,7 +1,7 @@
 import { SquircleSurface } from '@/components/ui';
 import React from 'react';
 import { Text, StyleSheet, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Link, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
@@ -12,7 +12,6 @@ import MenHealthScreen from './men/index';
 import PrideHealthScreen from './pride/index';
 
 export default function HealthIndexScreen() {
-  const router = useRouter();
   const { colors, typography, spacing, experience } = useTheme();
 
   if (experience === 'men_health') {
@@ -50,105 +49,110 @@ export default function HealthIndexScreen() {
           </Text>
         </Card>
 
-        <Card
-          onPress={() => router.push('/(app)/health/cycle')}
-          style={{ marginTop: spacing.sm, padding: spacing.base }}
-        >
-          <SquircleSurface style={styles.rowBetween}>
-            <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-              <SquircleSurface style={[styles.iconWrap, { backgroundColor: colors.primaryAlpha }]}>
-                <Ionicons name="water-outline" size={20} color={colors.primary} />
+        <Link href={'/(app)/health/cycle' as Href} asChild>
+          <Card
+            style={{ marginTop: spacing.sm, padding: spacing.base }}
+          >
+            <SquircleSurface style={styles.rowBetween}>
+              <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <SquircleSurface style={[styles.iconWrap, { backgroundColor: colors.primaryAlpha }]}>
+                  <Ionicons name="water-outline" size={20} color={colors.primary} />
+                </SquircleSurface>
+                <SquircleSurface style={{ marginLeft: 14, flex: 1 }}>
+                  <Text style={[typography.subheading, { color: colors.text.primary }]}>Cycle calendar</Text>
+                  <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                    Log periods and see estimated phases and next dates
+                  </Text>
+                </SquircleSurface>
               </SquircleSurface>
-              <SquircleSurface style={{ marginLeft: 14, flex: 1 }}>
-                <Text style={[typography.subheading, { color: colors.text.primary }]}>Cycle calendar</Text>
-                <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                  Log periods and see estimated phases and next dates
-                </Text>
-              </SquircleSurface>
+              <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
             </SquircleSurface>
-            <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
-          </SquircleSurface>
-        </Card>
+          </Card>
+        </Link>
 
-        <Card
-          onPress={() => router.push('/(app)/health/symptoms')}
-          style={{ marginTop: spacing.sm, padding: spacing.base }}
-        >
-          <SquircleSurface style={styles.rowBetween}>
-            <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-              <SquircleSurface style={[styles.iconWrap, { backgroundColor: colors.primaryAlpha }]}>
-                <Ionicons name="pulse-outline" size={20} color={colors.accent} />
+        <Link href={'/(app)/health/symptoms' as Href} asChild>
+          <Card
+            style={{ marginTop: spacing.sm, padding: spacing.base }}
+          >
+            <SquircleSurface style={styles.rowBetween}>
+              <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <SquircleSurface style={[styles.iconWrap, { backgroundColor: colors.primaryAlpha }]}>
+                  <Ionicons name="pulse-outline" size={20} color={colors.accent} />
+                </SquircleSurface>
+                <SquircleSurface style={{ marginLeft: 14, flex: 1 }}>
+                  <Text style={[typography.subheading, { color: colors.text.primary }]}>Symptoms</Text>
+                  <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                    Cramps, headaches, mood and anything else you notice
+                  </Text>
+                </SquircleSurface>
               </SquircleSurface>
-              <SquircleSurface style={{ marginLeft: 14, flex: 1 }}>
-                <Text style={[typography.subheading, { color: colors.text.primary }]}>Symptoms</Text>
-                <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                  Cramps, headaches, mood and anything else you notice
-                </Text>
-              </SquircleSurface>
+              <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
             </SquircleSurface>
-            <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
-          </SquircleSurface>
-        </Card>
+          </Card>
+        </Link>
 
-        <Card
-          onPress={() => router.push('/(app)/health/sleep')}
-          style={{ marginTop: spacing.sm, padding: spacing.base }}
-        >
-          <SquircleSurface style={styles.rowBetween}>
-            <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-              <SquircleSurface style={[styles.iconWrap, { backgroundColor: colors.surface1 }]}>
-                <Ionicons name="moon-outline" size={20} color={colors.text.primary} />
+        <Link href={'/(app)/health/sleep' as Href} asChild>
+          <Card
+            style={{ marginTop: spacing.sm, padding: spacing.base }}
+          >
+            <SquircleSurface style={styles.rowBetween}>
+              <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <SquircleSurface style={[styles.iconWrap, { backgroundColor: colors.surface1 }]}>
+                  <Ionicons name="moon-outline" size={20} color={colors.text.primary} />
+                </SquircleSurface>
+                <SquircleSurface style={{ marginLeft: 14, flex: 1 }}>
+                  <Text style={[typography.subheading, { color: colors.text.primary }]}>Sleep</Text>
+                  <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                    Hours, regularity and a wind-down routine
+                  </Text>
+                </SquircleSurface>
               </SquircleSurface>
-              <SquircleSurface style={{ marginLeft: 14, flex: 1 }}>
-                <Text style={[typography.subheading, { color: colors.text.primary }]}>Sleep</Text>
-                <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                  Hours, regularity and a wind-down routine
-                </Text>
-              </SquircleSurface>
+              <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
             </SquircleSurface>
-            <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
-          </SquircleSurface>
-        </Card>
+          </Card>
+        </Link>
 
-        <Card
-          onPress={() => router.push('/(app)/health/pelvic-floor')}
-          style={{ marginTop: spacing.sm, padding: spacing.base }}
-        >
-          <SquircleSurface style={styles.rowBetween}>
-            <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-              <SquircleSurface style={[styles.iconWrap, { backgroundColor: colors.primaryAlpha }]}>
-                <Ionicons name="fitness-outline" size={20} color={colors.primary} />
+        <Link href={'/(app)/health/pelvic-floor' as Href} asChild>
+          <Card
+            style={{ marginTop: spacing.sm, padding: spacing.base }}
+          >
+            <SquircleSurface style={styles.rowBetween}>
+              <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <SquircleSurface style={[styles.iconWrap, { backgroundColor: colors.primaryAlpha }]}>
+                  <Ionicons name="fitness-outline" size={20} color={colors.primary} />
+                </SquircleSurface>
+                <SquircleSurface style={{ marginLeft: 14, flex: 1 }}>
+                  <Text style={[typography.subheading, { color: colors.text.primary }]}>Pelvic floor and core</Text>
+                  <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                    Guided squeeze-and-relax sets with a timer
+                  </Text>
+                </SquircleSurface>
               </SquircleSurface>
-              <SquircleSurface style={{ marginLeft: 14, flex: 1 }}>
-                <Text style={[typography.subheading, { color: colors.text.primary }]}>Pelvic floor and core</Text>
-                <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                  Guided squeeze-and-relax sets with a timer
-                </Text>
-              </SquircleSurface>
+              <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
             </SquircleSurface>
-            <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
-          </SquircleSurface>
-        </Card>
+          </Card>
+        </Link>
 
-        <Card
-          onPress={() => router.push('/(app)/health/integrations')}
-          style={{ marginTop: spacing.sm, padding: spacing.base }}
-        >
-          <SquircleSurface style={styles.rowBetween}>
-            <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-              <SquircleSurface style={[styles.iconWrap, { backgroundColor: colors.surface1 }]}>
-                <Ionicons name="link-outline" size={20} color={colors.text.primary} />
+        <Link href={'/(app)/health/integrations' as Href} asChild>
+          <Card
+            style={{ marginTop: spacing.sm, padding: spacing.base }}
+          >
+            <SquircleSurface style={styles.rowBetween}>
+              <SquircleSurface style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <SquircleSurface style={[styles.iconWrap, { backgroundColor: colors.surface1 }]}>
+                  <Ionicons name="link-outline" size={20} color={colors.text.primary} />
+                </SquircleSurface>
+                <SquircleSurface style={{ marginLeft: 14, flex: 1 }}>
+                  <Text style={[typography.subheading, { color: colors.text.primary }]}>Connected apps</Text>
+                  <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                    Health Connect, heart-rate straps, FHIR export
+                  </Text>
+                </SquircleSurface>
               </SquircleSurface>
-              <SquircleSurface style={{ marginLeft: 14, flex: 1 }}>
-                <Text style={[typography.subheading, { color: colors.text.primary }]}>Connected apps</Text>
-                <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                  Health Connect, heart-rate straps, FHIR export
-                </Text>
-              </SquircleSurface>
+              <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
             </SquircleSurface>
-            <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
-          </SquircleSurface>
-        </Card>
+          </Card>
+        </Link>
       </ScrollView>
     </ScreenWrapper>
   );

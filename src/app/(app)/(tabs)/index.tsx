@@ -262,24 +262,25 @@ export default function HomeScreen() {
 
       {setupOpen > 0 ? (
         <Animated.View entering={enter(1)}>
-          <Card
-            onPress={() => router.push('/(app)/personalize')}
-            variant="tinted"
-            style={{ padding: spacing.base, marginTop: spacing.md }}
-          >
-            <SquircleSurface style={styles.rowBetween}>
-              <Ionicons name="trophy-outline" size={20} color={colors.primary} />
-              <SquircleSurface style={[styles.flex, { marginLeft: 12 }]}>
-                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                  {setupOpen} setup step{setupOpen === 1 ? '' : 's'} left
-                </Text>
-                <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                  Answer them to fit your quests and earn the setup XP.
-                </Text>
+          <Link href={'/(app)/personalize' as Href} asChild>
+            <Card
+              variant="tinted"
+              style={{ padding: spacing.base, marginTop: spacing.md }}
+            >
+              <SquircleSurface style={styles.rowBetween}>
+                <Ionicons name="trophy-outline" size={20} color={colors.primary} />
+                <SquircleSurface style={[styles.flex, { marginLeft: 12 }]}>
+                  <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                    {setupOpen} setup step{setupOpen === 1 ? '' : 's'} left
+                  </Text>
+                  <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                    Answer them to fit your quests and earn the setup XP.
+                  </Text>
+                </SquircleSurface>
+                <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
               </SquircleSurface>
-              <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
-            </SquircleSurface>
-          </Card>
+            </Card>
+          </Link>
         </Animated.View>
       ) : null}
 
@@ -303,13 +304,14 @@ export default function HomeScreen() {
             Today&apos;s plan
           </Text>
           <Link asChild href={'/(app)/calendar'}>
-            <PressableScale
-              onPress={() => router.push('/(app)/calendar')}
-              hitSlop={10}
-              accessibilityRole="button"
-            >
-              <Text style={[typography.subbodyBold, { color: colors.primary }]}>Calendar</Text>
-            </PressableScale>
+            <Link href={'/(app)/calendar' as Href} asChild>
+              <PressableScale
+                hitSlop={10}
+                accessibilityRole="button"
+              >
+                <Text style={[typography.subbodyBold, { color: colors.primary }]}>Calendar</Text>
+              </PressableScale>
+            </Link>
           </Link>
         </SquircleSurface>
 
@@ -394,37 +396,40 @@ export default function HomeScreen() {
       {/* Experience focus */}
       <Animated.View entering={enter(3)}>
         {experience === 'women_health' ? (
-          <FocusCard
-            icon="water-outline"
-            label="Cycle"
-            title={
-              cycle
-                ? `Day ${cycle.currentPhase.day} · ${cycle.currentPhase.label} phase`
-                : 'Set up cycle tracking'
-            }
-            body={
-              cycle
-                ? `Next period in about ${daysToPeriod} days (estimate)`
-                : 'Log your last period to see estimates'
-            }
-            onPress={() => router.push('/(app)/health/cycle')}
-          />
+          <Link href={'/(app)/health/cycle' as Href} asChild>
+            <FocusCard
+              icon="water-outline"
+              label="Cycle"
+              title={
+                cycle
+                  ? `Day ${cycle.currentPhase.day} · ${cycle.currentPhase.label} phase`
+                  : 'Set up cycle tracking'
+              }
+              body={
+                cycle
+                  ? `Next period in about ${daysToPeriod} days (estimate)`
+                  : 'Log your last period to see estimates'
+              }
+            />
+          </Link>
         ) : experience === 'men_health' ? (
-          <FocusCard
-            icon="barbell-outline"
-            label="Training"
-            title="Workouts and recovery"
-            body="Home, gym and desk plans with your logged progress"
-            onPress={() => router.push('/(app)/health/men')}
-          />
+          <Link href={'/(app)/health/men' as Href} asChild>
+            <FocusCard
+              icon="barbell-outline"
+              label="Training"
+              title="Workouts and recovery"
+              body="Home, gym and desk plans with your logged progress"
+            />
+          </Link>
         ) : (
-          <FocusCard
-            icon="heart-outline"
-            label="Self-care"
-            title="Affirming care"
-            body="Private identity settings, tracking and support"
-            onPress={() => router.push('/(app)/health/pride')}
-          />
+          <Link href={'/(app)/health/pride' as Href} asChild>
+            <FocusCard
+              icon="heart-outline"
+              label="Self-care"
+              title="Affirming care"
+              body="Private identity settings, tracking and support"
+            />
+          </Link>
         )}
       </Animated.View>
 
@@ -434,45 +439,48 @@ export default function HomeScreen() {
         </SquircleSurface>
         <WeekGlance onOpen={() => router.push('/(app)/calendar')} />
         {topInsight ? (
-          <SettingsRow
-            icon="analytics-outline"
-            title={topInsight.title}
-            subtitle="A pattern from your check-ins"
-            onPress={() => router.push('/(app)/ai')}
-          />
+          <Link href={'/(app)/ai' as Href} asChild>
+            <SettingsRow
+              icon="analytics-outline"
+              title={topInsight.title}
+              subtitle="A pattern from your check-ins"
+            />
+          </Link>
         ) : null}
       </Animated.View>
 
       {deviceTiles.length > 0 ? (
-        <Card
-          onPress={() => router.push('/(app)/health/integrations')}
-          style={{ padding: spacing.base, marginTop: spacing.md }}
-        >
-          <SquircleSurface style={styles.rowBetween}>
-            <Text style={[typography.label, { color: colors.text.muted }]}>
-              From Health Connect
-            </Text>
-            <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
-          </SquircleSurface>
-          <SquircleSurface style={[styles.metrics, { marginTop: spacing.sm }]}>
-            {deviceTiles.map((t) => (
-              <SquircleSurface key={t.label} style={[styles.metric, { backgroundColor: colors.surface1 }]}>
-                <Text style={[typography.subheading, { color: colors.text.primary }]}>
-                  {t.value}
-                </Text>
-                <Text style={[typography.caption, { color: colors.text.muted }]}>{t.label}</Text>
-              </SquircleSurface>
-            ))}
-          </SquircleSurface>
-        </Card>
+        <Link href={'/(app)/health/integrations' as Href} asChild>
+          <Card
+            style={{ padding: spacing.base, marginTop: spacing.md }}
+          >
+            <SquircleSurface style={styles.rowBetween}>
+              <Text style={[typography.label, { color: colors.text.muted }]}>
+                From Health Connect
+              </Text>
+              <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
+            </SquircleSurface>
+            <SquircleSurface style={[styles.metrics, { marginTop: spacing.sm }]}>
+              {deviceTiles.map((t) => (
+                <SquircleSurface key={t.label} style={[styles.metric, { backgroundColor: colors.surface1 }]}>
+                  <Text style={[typography.subheading, { color: colors.text.primary }]}>
+                    {t.value}
+                  </Text>
+                  <Text style={[typography.caption, { color: colors.text.muted }]}>{t.label}</Text>
+                </SquircleSurface>
+              ))}
+            </SquircleSurface>
+          </Card>
+        </Link>
       ) : (
         <SquircleSurface style={{ marginTop: spacing.md }}>
-          <SettingsRow
-            icon="sync-outline"
-            title="Connect Health Connect"
-            subtitle="Bring in steps, sleep and heart rate"
-            onPress={() => router.push('/(app)/health/integrations')}
-          />
+          <Link href={'/(app)/health/integrations' as Href} asChild>
+            <SettingsRow
+              icon="sync-outline"
+              title="Connect Health Connect"
+              subtitle="Bring in steps, sleep and heart rate"
+            />
+          </Link>
         </SquircleSurface>
       )}
 
@@ -519,7 +527,7 @@ function FocusCard({
   label: string;
   title: string;
   body: string;
-  onPress: () => void;
+  onPress?: () => void;
 }) {
   const { colors, typography, spacing } = useTheme();
   return (

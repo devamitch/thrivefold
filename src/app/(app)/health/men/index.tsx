@@ -2,7 +2,7 @@ import { SquircleSurface } from '@/components/ui';
 import React from 'react';
 import { Text, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
-import { useRouter, type Href } from 'expo-router';
+import { Link, useRouter, type Href } from 'expo-router';
 
 import { ScreenContainer } from '../../../../components/ui/ScreenContainer';
 import { AppHeader } from '../../../../components/ui/AppHeader';
@@ -42,7 +42,9 @@ export default function MenHealthScreen() {
               <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>
                 Check in to tailor today&apos;s training to how you actually feel.
               </Text>
-              <Button label="Check in" size="sm" onPress={() => router.push('/(app)/check-in')} style={{ marginTop: spacing.sm, alignSelf: 'flex-start' }} />
+              <Link href={'/(app)/check-in' as Href} asChild>
+                <Button label="Check in" size="sm" style={{ marginTop: spacing.sm, alignSelf: 'flex-start' }} />
+              </Link>
             </>
           )}
           {todays && (todays.energy <= 3 || todays.stress >= 8) ? (
@@ -64,15 +66,18 @@ export default function MenHealthScreen() {
           <SquircleSurface style={[styles.actions, { marginTop: spacing.md }]}>
             <Button label="Home basics" size="sm" onPress={() => openPlan('home_beginner')} />
             <Button label="Gym A" size="sm" variant="outline" onPress={() => openPlan('gym_full_a')} />
-            <Button label="All plans" size="sm" variant="ghost" onPress={() => router.push('/(app)/health/exercise')} />
+            <Link href={'/(app)/health/exercise' as Href} asChild>
+              <Button label="All plans" size="sm" variant="ghost" />
+            </Link>
           </SquircleSurface>
-          <Button
-            label="Count squats with the camera"
-            size="sm"
-            variant="ghost"
-            onPress={() => router.push('/(app)/health/pose-check' as Href)}
-            style={{ marginTop: spacing.xs, alignSelf: 'flex-start' }}
-          />
+          <Link href={'/(app)/health/pose-check' as Href} asChild>
+            <Button
+              label="Count squats with the camera"
+              size="sm"
+              variant="ghost"
+              style={{ marginTop: spacing.xs, alignSelf: 'flex-start' }}
+            />
+          </Link>
         </Card>
 
         <Card style={{ marginBottom: spacing.md, padding: spacing.base }}>
@@ -96,8 +101,12 @@ export default function MenHealthScreen() {
             privately on this device.
           </Text>
           <SquircleSurface style={[styles.actions, { marginTop: spacing.md }]}>
-            <Button label="Read" size="sm" variant="outline" onPress={() => router.push('/(app)/learn')} />
-            <Button label="Write a private note" size="sm" variant="ghost" onPress={() => router.push('/(app)/journal/new')} />
+            <Link href={'/(app)/learn' as Href} asChild>
+              <Button label="Read" size="sm" variant="outline" />
+            </Link>
+            <Link href={'/(app)/journal/new' as Href} asChild>
+              <Button label="Write a private note" size="sm" variant="ghost" />
+            </Link>
           </SquircleSurface>
         </Card>
 
@@ -107,8 +116,12 @@ export default function MenHealthScreen() {
             Reproductive, urinary and pelvic-floor information, and when to see a clinician.
           </Text>
           <SquircleSurface style={[styles.actions, { marginTop: spacing.md }]}>
-            <Button label="Reproductive health" size="sm" variant="outline" onPress={() => router.push('/(app)/health/reproductive')} />
-            <Button label="Pelvic floor" size="sm" variant="ghost" onPress={() => router.push('/(app)/health/pelvic-floor')} />
+            <Link href={'/(app)/health/reproductive' as Href} asChild>
+              <Button label="Reproductive health" size="sm" variant="outline" />
+            </Link>
+            <Link href={'/(app)/health/pelvic-floor' as Href} asChild>
+              <Button label="Pelvic floor" size="sm" variant="ghost" />
+            </Link>
           </SquircleSurface>
         </Card>
       </SquircleSurface>

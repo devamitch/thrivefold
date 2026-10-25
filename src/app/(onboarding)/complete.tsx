@@ -1,6 +1,6 @@
 import { SquircleSurface } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { Link, useRouter, type Href } from 'expo-router';
 import React from 'react';
 import { ScrollView, StyleSheet, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -151,17 +151,18 @@ export default function CompleteOnboardingScreen() {
           ))}
         </Card>
 
-        <PressableScale
-          onPress={() => router.push('/(onboarding)/lifestyle-preferences')}
-          accessibilityRole="button"
-          accessibilityLabel="Edit food and reminder preferences"
-          style={[styles.optional, { marginTop: spacing.md, marginBottom: spacing.lg }]}
-        >
-          <Ionicons name="options-outline" size={18} color={colors.primary} />
-          <Text style={[typography.subbodyBold, { color: colors.primary, marginLeft: 6 }]}>
-            Edit food & reminder preferences
-          </Text>
-        </PressableScale>
+        <Link href={'/(onboarding)/lifestyle-preferences' as Href} asChild>
+          <PressableScale
+            accessibilityRole="button"
+            accessibilityLabel="Edit food and reminder preferences"
+            style={[styles.optional, { marginTop: spacing.md, marginBottom: spacing.lg }]}
+          >
+            <Ionicons name="options-outline" size={18} color={colors.primary} />
+            <Text style={[typography.subbodyBold, { color: colors.primary, marginLeft: 6 }]}>
+              Edit food & reminder preferences
+            </Text>
+          </PressableScale>
+        </Link>
       </ScrollView>
 
       <SquircleSurface style={{ gap: 8 }}>

@@ -1,6 +1,6 @@
 import { SquircleSurface } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, type Href } from 'expo-router';
+import { Link, useRouter, type Href } from 'expo-router';
 import React, { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
@@ -204,18 +204,20 @@ export default function ProgressScreen() {
       scrollMode="shell-scroll-view"
     >
       <SquircleSurface style={{ paddingBottom: spacing.xxl }}>
-        <Card onPress={() => router.push('/(app)/roadmap' as Href)} variant="tinted" style={{ padding: spacing.base, marginTop: spacing.sm }}>
-          <SquircleSurface style={styles.rowBetween}>
-            <Ionicons name="map-outline" size={22} color={colors.primary} />
-            <SquircleSurface style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Your roadmap</Text>
-              <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                20 chapters, their stages, and where you are now
-              </Text>
+        <Link href={'/(app)/roadmap' as Href} asChild>
+          <Card variant="tinted" style={{ padding: spacing.base, marginTop: spacing.sm }}>
+            <SquircleSurface style={styles.rowBetween}>
+              <Ionicons name="map-outline" size={22} color={colors.primary} />
+              <SquircleSurface style={{ flex: 1, marginLeft: 12 }}>
+                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Your roadmap</Text>
+                <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                  20 chapters, their stages, and where you are now
+                </Text>
+              </SquircleSurface>
+              <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
             </SquircleSurface>
-            <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
-          </SquircleSurface>
-        </Card>
+          </Card>
+        </Link>
         <ProgressionPanel />
 
         {/* View Switcher Tabs (Roadmap vs Badges) */}

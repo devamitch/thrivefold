@@ -1,7 +1,7 @@
 import { SquircleSurface } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { useRouter, type Href } from 'expo-router';
+import { Link, type Href } from 'expo-router';
 import React from 'react';
 import { StyleSheet, Text } from 'react-native';
 
@@ -14,7 +14,6 @@ import { Card } from '../ui/Card';
 
 /** Today's meals with photos and running calorie and macro totals. */
 export function TodayMeals() {
-  const router = useRouter();
   const { colors, typography, spacing } = useTheme();
   const meals = useRootStore((s) => s.mealLogs);
   const today = formatLocalDate(new Date());
@@ -59,7 +58,9 @@ export function TodayMeals() {
           </SquircleSurface>
         );
       })}
-      <Button label="Log a meal" onPress={() => router.push('/(app)/health/meal-log' as Href)} style={{ marginTop: spacing.md }} />
+      <Link href={'/(app)/health/meal-log' as Href} asChild>
+        <Button label="Log a meal" style={{ marginTop: spacing.md }} />
+      </Link>
     </Card>
   );
 }

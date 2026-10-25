@@ -1,7 +1,7 @@
 import { SquircleSurface } from '@/components/ui';
 import React from 'react';
 import { Text, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Link, type Href } from 'expo-router';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
@@ -12,7 +12,6 @@ import { useRootStore } from '../../../stores/useRootStore';
 import { evaluateFeatureEligibility } from '../../../domain/policy/engine';
 
 export default function SocialIntroScreen() {
-  const router = useRouter();
   const { colors, typography, spacing, experience } = useTheme();
   const user = useRootStore((s) => s.user);
   const introsSentToday = useRootStore((s) => s.introsSentToday);
@@ -70,11 +69,12 @@ export default function SocialIntroScreen() {
         </Card>
 
         {decision.allowed ? (
-          <Button
-            label="Open Curated Introduction Composer"
-            onPress={() => router.push('/(app)/letters/compose')}
-            style={{ marginTop: spacing.md }}
-          />
+          <Link href={'/(app)/letters/compose' as Href} asChild>
+            <Button
+              label="Open Curated Introduction Composer"
+              style={{ marginTop: spacing.md }}
+            />
+          </Link>
         ) : (
           <Card variant="surface1" style={{ marginTop: spacing.md, padding: spacing.base }}>
             <Text style={[typography.subbodyBold, { color: colors.warning }]}>

@@ -1,7 +1,7 @@
 import { SquircleSurface } from '@/components/ui';
 import React, { useMemo, useState } from 'react';
 import { Text, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Link, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
@@ -138,12 +138,13 @@ export default function InsightsScreen() {
                 ? `Patterns start appearing after ${daysToGo} more check-in ${daysToGo === 1 ? 'day' : 'days'}. Nothing is guessed before there is enough data.`
                 : 'Your check-ins look steady so far. Patterns appear here when something clear shows up.'}
             </Text>
-            <Button
-              label="Check in now"
-              size="sm"
-              onPress={() => router.push('/(app)/check-in')}
-              style={{ marginTop: spacing.md, alignSelf: 'flex-start' }}
-            />
+            <Link href={'/(app)/check-in' as Href} asChild>
+              <Button
+                label="Check in now"
+                size="sm"
+                style={{ marginTop: spacing.md, alignSelf: 'flex-start' }}
+              />
+            </Link>
           </Card>
         ) : (
           insights.map((insight) => {
@@ -244,9 +245,15 @@ export default function InsightsScreen() {
             there is enough data. They describe your records; they are not medical advice or a diagnosis.
           </Text>
           <SquircleSurface style={styles.links}>
-            <LinkRow label={`Memory (${memories.length})`} icon="bookmark-outline" onPress={() => router.push('/(app)/ai/memory')} />
-            <LinkRow label="Privacy" icon="shield-checkmark-outline" onPress={() => router.push('/(app)/ai/privacy')} />
-            <LinkRow label="What runs on this device" icon="hardware-chip-outline" onPress={() => router.push('/(app)/ai/model-status')} />
+            <Link href={'/(app)/ai/memory' as Href} asChild>
+              <LinkRow label={`Memory (${memories.length})`} icon="bookmark-outline" />
+            </Link>
+            <Link href={'/(app)/ai/privacy' as Href} asChild>
+              <LinkRow label="Privacy" icon="shield-checkmark-outline" />
+            </Link>
+            <Link href={'/(app)/ai/model-status' as Href} asChild>
+              <LinkRow label="What runs on this device" icon="hardware-chip-outline" />
+            </Link>
           </SquircleSurface>
         </Card>
       </SquircleSurface>
@@ -254,7 +261,7 @@ export default function InsightsScreen() {
   );
 }
 
-function LinkRow({ label, icon, onPress }: { label: string; icon: keyof typeof Ionicons.glyphMap; onPress: () => void }) {
+function LinkRow({ label, icon, onPress }: { label: string; icon: keyof typeof Ionicons.glyphMap; onPress?: () => void }) {
   const { colors, typography } = useTheme();
   return (
     <PressableScale onPress={onPress} accessibilityRole="button" style={styles.linkRow} hitSlop={4}>

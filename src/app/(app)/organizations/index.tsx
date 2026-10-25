@@ -1,7 +1,7 @@
 import { SquircleSurface } from '@/components/ui';
 import React from 'react';
 import { ScrollView, StyleSheet, Text } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Link, type Href } from 'expo-router';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { Header } from '../../../components/ui/Header';
@@ -9,7 +9,6 @@ import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { useTheme } from '../../../theme/useTheme';
 
 export default function OrganizationsScreen() {
-  const router = useRouter();
   const { colors, typography } = useTheme();
 
   return (
@@ -24,7 +23,9 @@ export default function OrganizationsScreen() {
           <Text style={[typography.subbody, { color: colors.text.secondary, marginBottom: 16 }]}>
             Apply for verified organization status to manage communities and programs
           </Text>
-          <Button label="Start Application" size="sm" onPress={() => router.push('/(app)/organizations/apply')} />
+          <Link href={'/(app)/organizations/apply' as Href} asChild>
+            <Button label="Start Application" size="sm" />
+          </Link>
         </Card>
 
         {/* Organization Benefits */}
@@ -66,7 +67,9 @@ export default function OrganizationsScreen() {
           <Text style={[typography.subbody, { color: colors.text.secondary, marginBottom: 16 }]}>
             Organizations must provide proof of registration, representative identity, and purpose documentation
           </Text>
-          <Button label="Start an application" size="sm" variant="outline" onPress={() => router.push('/(app)/organizations/apply')} />
+          <Link href={'/(app)/organizations/apply' as Href} asChild>
+            <Button label="Start an application" size="sm" variant="outline" />
+          </Link>
         </Card>
       </ScrollView>
     </ScreenWrapper>

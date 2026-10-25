@@ -1,14 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, type Href } from 'expo-router';
+import { Link, type Href } from 'expo-router';
 import React, { useState } from 'react';
-import {
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Modal, StyleSheet, Text, TextInput } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { Badge } from '../../../components/ui/Badge';
@@ -35,7 +28,6 @@ const AVATAR_OPTIONS = [
 ];
 
 export default function SettingsScreen() {
-  const router = useRouter();
   const { colors, typography, spacing, experience } = useTheme();
   const HEALTH_SPACE =
     experience === 'women_health'
@@ -77,11 +69,11 @@ export default function SettingsScreen() {
 
   return (
     <ScreenContainer header={<AppHeader title="You" subtitle="Profile, spaces and settings" />} scrollMode="shell-scroll-view">
-      <View style={[styles.content, { paddingBottom: spacing.xxl }]}>
+      <SquircleSurface style={[styles.content, { paddingBottom: spacing.xxl }]}>
         {/* Profile Card Header */}
         <Animated.View entering={FadeIn.duration(180)}>
           <Card style={[styles.profileCard, { backgroundColor: colors.surface }]}>
-            <View style={styles.profileHeader}>
+            <SquircleSurface style={styles.profileHeader}>
               <PressableScale
                 onPress={() => setIsEditingProfile(true)}
                 scaleTo={0.94}
@@ -100,8 +92,8 @@ export default function SettingsScreen() {
                 </SquircleSurface>
               </PressableScale>
 
-              <View style={{ flex: 1, marginLeft: 16 }}>
-                <View style={styles.rowBetween}>
+              <SquircleSurface style={{ flex: 1, marginLeft: 16 }}>
+                <SquircleSurface style={styles.rowBetween}>
                   <Text style={[typography.heading, { color: colors.text.primary, fontSize: 20 }]}>
                     {user?.pseudonym ?? 'Friend'}
                   </Text>
@@ -121,7 +113,7 @@ export default function SettingsScreen() {
                       <Text style={[typography.captionBold, { color: colors.primary }]}>Edit</Text>
                     </SquircleSurface>
                   </PressableScale>
-                </View>
+                </SquircleSurface>
 
                 {user?.profileSource === 'google' ? (
                   <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
@@ -130,7 +122,7 @@ export default function SettingsScreen() {
                       .join(' · ')}
                   </Text>
                 ) : null}
-                <View style={styles.badgeRow}>
+                <SquircleSurface style={styles.badgeRow}>
                   <Badge
                     label={user?.isGuest ? 'Guest' : user?.email ? 'Signed in' : 'On this device'}
                     variant="neutral"
@@ -145,59 +137,81 @@ export default function SettingsScreen() {
                     variant="primary"
                     style={{ marginLeft: 6 }}
                   />
-                </View>
-              </View>
-            </View>
+                </SquircleSurface>
+              </SquircleSurface>
+            </SquircleSurface>
 
             {/* Quick Metrics Bar */}
-            <View style={[styles.metricsBar, { borderTopColor: colors.surface1 }]}>
-              <View style={styles.metricItem}>
+            <SquircleSurface style={[styles.metricsBar, { borderTopColor: colors.surface1 }]}>
+              <SquircleSurface style={styles.metricItem}>
                 <Text style={[typography.captionBold, { color: colors.primary, fontSize: 16 }]}>
                   {questsCompleted}
                 </Text>
                 <Text style={[typography.caption, { color: colors.text.secondary }]}>Quests</Text>
-              </View>
-              <View style={[styles.metricDivider, { backgroundColor: colors.surface1 }]} />
-              <View style={styles.metricItem}>
+              </SquircleSurface>
+              <SquircleSurface style={[styles.metricDivider, { backgroundColor: colors.surface1 }]} />
+              <SquircleSurface style={styles.metricItem}>
                 <Text style={[typography.captionBold, { color: colors.accent, fontSize: 16 }]}>
                   {checkInDays}
                 </Text>
                 <Text style={[typography.caption, { color: colors.text.secondary }]}>Check-ins</Text>
-              </View>
-              <View style={[styles.metricDivider, { backgroundColor: colors.surface1 }]} />
-              <View style={styles.metricItem}>
+              </SquircleSurface>
+              <SquircleSurface style={[styles.metricDivider, { backgroundColor: colors.surface1 }]} />
+              <SquircleSurface style={styles.metricItem}>
                 <Text style={[typography.captionBold, { color: colors.text.primary, fontSize: 16 }]}>
                   {xp}
                 </Text>
                 <Text style={[typography.caption, { color: colors.text.secondary }]}>XP Earned</Text>
-              </View>
-            </View>
+              </SquircleSurface>
+            </SquircleSurface>
           </Card>
         </Animated.View>
 
         <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm }]}>
           Your spaces
         </Text>
-        <SettingsRow icon={HEALTH_SPACE.icon} title={HEALTH_SPACE.title} subtitle={HEALTH_SPACE.subtitle} onPress={() => router.push(HEALTH_SPACE.route as Href)} />
-        <SettingsRow icon="calendar-outline" title="Calendar and routine" subtitle="Your days, workouts, check-ins and plans by date" onPress={() => router.push('/(app)/calendar' as Href)} />
+        <Link href={HEALTH_SPACE.route as Href} asChild>
+          <SettingsRow icon={HEALTH_SPACE.icon} title={HEALTH_SPACE.title} subtitle={HEALTH_SPACE.subtitle} />
+        </Link>
+        <Link href={'/(app)/calendar' as Href} asChild>
+          <SettingsRow icon="calendar-outline" title="Calendar and routine" subtitle="Your days, workouts, check-ins and plans by date" />
+        </Link>
         {correspondenceOpen ? (
-          <SettingsRow icon="mail-outline" title="Letters" subtitle="Slow, private correspondence" onPress={() => router.push('/(app)/letters')} />
+          <Link href={'/(app)/letters' as Href} asChild>
+            <SettingsRow icon="mail-outline" title="Letters" subtitle="Slow, private correspondence" />
+          </Link>
         ) : null}
-        <SettingsRow icon="game-controller-outline" title="Games" subtitle="Breathing, memory and focus" onPress={() => router.push('/(app)/games')} />
-        <SettingsRow icon="trail-sign-outline" title="Roadmap" subtitle="Chapters, levels and what unlocks next" onPress={() => router.push('/(app)/(tabs)/progress')} />
+        <Link href={'/(app)/games' as Href} asChild>
+          <SettingsRow icon="game-controller-outline" title="Games" subtitle="Breathing, memory and focus" />
+        </Link>
+        <Link href={'/(app)/(tabs)/progress' as Href} asChild>
+          <SettingsRow icon="trail-sign-outline" title="Roadmap" subtitle="Chapters, levels and what unlocks next" />
+        </Link>
 
         <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.md, marginBottom: spacing.sm }]}>
           Settings
         </Text>
-        <SettingsRow icon="options-outline" title="Personalize" subtitle="Space, goals, pace and limits" onPress={() => router.push('/(app)/personalize')} />
-        <SettingsRow icon="restaurant-outline" title="Food preferences" subtitle="Nutrition focus and meal timing" onPress={() => router.push('/(onboarding)/lifestyle-preferences')} />
-        <SettingsRow icon="notifications-outline" title="Reminders" subtitle="Quest reminders and quiet hours" onPress={() => router.push('/(app)/you/reminders' as Href)} />
-        <SettingsRow icon="lock-closed-outline" title="Privacy and data" subtitle="Export, connected apps, backup and safety" onPress={() => router.push('/(app)/you/privacy' as Href)} />
-        <SettingsRow icon="person-circle-outline" title="Account" subtitle="Sign out, redo setup or erase" onPress={() => router.push('/(app)/you/account' as Href)} />
+        <Link href={'/(app)/personalize' as Href} asChild>
+          <SettingsRow icon="options-outline" title="Personalize" subtitle="Space, goals, pace and limits" />
+        </Link>
+        <Link href={'/(onboarding)/lifestyle-preferences' as Href} asChild>
+          <SettingsRow icon="restaurant-outline" title="Food preferences" subtitle="Nutrition focus and meal timing" />
+        </Link>
+        <Link href={'/(app)/you/reminders' as Href} asChild>
+          <SettingsRow icon="notifications-outline" title="Reminders" subtitle="Quest reminders and quiet hours" />
+        </Link>
+        <Link href={'/(app)/you/privacy' as Href} asChild>
+          <SettingsRow icon="lock-closed-outline" title="Privacy and data" subtitle="Export, connected apps, backup and safety" />
+        </Link>
+        <Link href={'/(app)/you/account' as Href} asChild>
+          <SettingsRow icon="person-circle-outline" title="Account" subtitle="Sign out, redo setup or erase" />
+        </Link>
         {__DEV__ ? (
-          <SettingsRow icon="construct-outline" title="Developer tools" subtitle="Development builds only" onPress={() => router.push('/(app)/dev')} />
+          <Link href={'/(app)/dev' as Href} asChild>
+            <SettingsRow icon="construct-outline" title="Developer tools" subtitle="Development builds only" />
+          </Link>
         ) : null}
-      </View>
+      </SquircleSurface>
 
       {/* Profile Edit Bottom Sheet Modal */}
       <AppBottomSheetModal
@@ -213,7 +227,7 @@ export default function SettingsScreen() {
         <Text style={[typography.captionBold, { color: colors.text.primary, marginBottom: 8 }]}>
           Emblem
         </Text>
-        <View style={styles.avatarGrid}>
+        <SquircleSurface style={styles.avatarGrid}>
           {AVATAR_OPTIONS.map((a) => {
             const isSelected = selectedAvatar === a.id;
             return (
@@ -251,10 +265,10 @@ export default function SettingsScreen() {
               </PressableScale>
             );
           })}
-        </View>
+        </SquircleSurface>
 
         {/* Name Input */}
-        <View style={{ marginTop: 14 }}>
+        <SquircleSurface style={{ marginTop: 14 }}>
           <TextField
             label="Pseudonym"
             value={editedName}
@@ -262,10 +276,10 @@ export default function SettingsScreen() {
             placeholder="Enter name"
             maxLength={24}
           />
-        </View>
+        </SquircleSurface>
 
         {/* Actions */}
-        <View style={styles.modalActionRow}>
+        <SquircleSurface style={styles.modalActionRow}>
           <Button
             label="Cancel"
             variant="ghost"
@@ -277,7 +291,7 @@ export default function SettingsScreen() {
             onPress={handleSaveProfile}
             style={{ flex: 1 }}
           />
-        </View>
+        </SquircleSurface>
       </AppBottomSheetModal>
     </ScreenContainer>
   );

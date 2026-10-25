@@ -1,7 +1,7 @@
 import { SquircleSurface } from '@/components/ui';
 import React, { useState } from 'react';
 import { Linking, ScrollView, StyleSheet, Text, TextInput } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Link, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
@@ -71,34 +71,38 @@ export default function SafetyScreen() {
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: spacing.xxl }]}>
         {/* Quick Safety Hub Links */}
         <SquircleSurface style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-          <Button
-            label="24/7 Helplines"
-            size="sm"
-            variant="outline"
-            icon={<Ionicons name="call-outline" size={14} color={colors.primary} />}
-            onPress={() => router.push('/(app)/safety/urgent-support')}
-          />
-          <Button
-            label="Submit Report"
-            size="sm"
-            variant="outline"
-            icon={<Ionicons name="shield-outline" size={14} color={colors.primary} />}
-            onPress={() => router.push('/(app)/safety/report')}
-          />
-          <Button
-            label="Blocked Users"
-            size="sm"
-            variant="outline"
-            icon={<Ionicons name="ban-outline" size={14} color={colors.primary} />}
-            onPress={() => router.push('/(app)/safety/blocked-users')}
-          />
-          <Button
-            label="Appeal Action"
-            size="sm"
-            variant="ghost"
-            icon={<Ionicons name="refresh-outline" size={14} color={colors.text.secondary} />}
-            onPress={() => router.push('/(app)/safety/appeal')}
-          />
+          <Link href={'/(app)/safety/urgent-support' as Href} asChild>
+            <Button
+              label="24/7 Helplines"
+              size="sm"
+              variant="outline"
+              icon={<Ionicons name="call-outline" size={14} color={colors.primary} />}
+            />
+          </Link>
+          <Link href={'/(app)/safety/report' as Href} asChild>
+            <Button
+              label="Submit Report"
+              size="sm"
+              variant="outline"
+              icon={<Ionicons name="shield-outline" size={14} color={colors.primary} />}
+            />
+          </Link>
+          <Link href={'/(app)/safety/blocked-users' as Href} asChild>
+            <Button
+              label="Blocked Users"
+              size="sm"
+              variant="outline"
+              icon={<Ionicons name="ban-outline" size={14} color={colors.primary} />}
+            />
+          </Link>
+          <Link href={'/(app)/safety/appeal' as Href} asChild>
+            <Button
+              label="Appeal Action"
+              size="sm"
+              variant="ghost"
+              icon={<Ionicons name="refresh-outline" size={14} color={colors.text.secondary} />}
+            />
+          </Link>
         </SquircleSurface>
         {/* Safety Sanctuary Hero */}
         <Card style={{ marginBottom: spacing.md, padding: 14, backgroundColor: colors.surface }}>

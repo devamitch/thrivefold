@@ -1,7 +1,7 @@
 import { SquircleSurface } from '@/components/ui';
 import React from 'react';
 import { Text, StyleSheet, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Link, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
@@ -68,7 +68,6 @@ const DEFAULT_MEALS: MealRecommendation[] = [
 ];
 
 export default function NutritionScreen() {
-  const router = useRouter();
   const { colors, typography, spacing } = useTheme();
   const onboarding = useRootStore((s) => s.onboarding);
   const date = formatLocalDate(new Date());
@@ -102,13 +101,14 @@ export default function NutritionScreen() {
               ? `Meal ideas below follow your ${activeDiet} preference.`
               : 'Balanced meal ideas. Set a food preference to tailor them.'}
           </Text>
-          <Button
-            label="Edit Food Preferences"
-            size="sm"
-            variant="outline"
-            onPress={() => router.push('/(onboarding)/lifestyle-preferences')}
-            style={{ marginTop: 12, alignSelf: 'flex-start' }}
-          />
+          <Link href={'/(onboarding)/lifestyle-preferences' as Href} asChild>
+            <Button
+              label="Edit Food Preferences"
+              size="sm"
+              variant="outline"
+              style={{ marginTop: 12, alignSelf: 'flex-start' }}
+            />
+          </Link>
         </Card>
 
         <TodayMeals />

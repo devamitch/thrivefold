@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, type Href } from 'expo-router';
+import { Link, type Href } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 
 import { useRootStore, useShallow } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
@@ -15,7 +15,6 @@ import { SquircleSurface } from '../ui/SquircleSurface';
  * Enhanced with SquircleSurface and PressableScale.
  */
 export function HomeGuide() {
-  const router = useRouter();
   const { colors, typography, spacing } = useTheme();
   const { done, checkedIn, questDone, workoutDone, dismiss } = useRootStore(
     useShallow((s) => ({
@@ -54,36 +53,36 @@ export function HomeGuide() {
 
   return (
     <Card style={{ padding: spacing.base, marginTop: spacing.md }}>
-      <View style={styles.rowBetween}>
+      <SquircleSurface style={styles.rowBetween}>
         <Text style={[typography.subheading, { color: colors.text.primary }]}>How Thrivefold works</Text>
         <PressableScale onPress={dismiss} hitSlop={10} scaleTo={0.9} accessibilityRole="button" accessibilityLabel="Hide this guide">
           <Ionicons name="close" size={18} color={colors.text.muted} />
         </PressableScale>
-      </View>
+      </SquircleSurface>
       {steps.map((s, i) => (
-        <PressableScale
-          key={s.title}
-          onPress={() => router.push(s.route)}
-          scaleTo={0.98}
-          accessibilityRole="button"
-          style={styles.step}
-        >
-          <SquircleSurface
-            radius={12}
-            smoothing={1}
-            fill={s.done ? colors.successSurface : colors.primaryAlpha}
-            style={styles.badge}
+        <Link key={s.title} href={s.route as Href} asChild>
+          <PressableScale
+            scaleTo={0.98}
+            accessibilityRole="button"
+            style={styles.step}
           >
-            <Ionicons name={s.done ? 'checkmark' : s.icon} size={18} color={s.done ? colors.success : colors.primary} />
-          </SquircleSurface>
-          <View style={styles.flex}>
-            <Text style={[typography.bodyBold, { color: colors.text.primary, textDecorationLine: s.done ? 'line-through' : 'none' }]}>
-              {i + 1}. {s.title}
-            </Text>
-            <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>{s.body}</Text>
-          </View>
-          {!s.done ? <Ionicons name="chevron-forward" size={16} color={colors.text.muted} /> : null}
-        </PressableScale>
+            <SquircleSurface
+              radius={12}
+              smoothing={1}
+              fill={s.done ? colors.successSurface : colors.primaryAlpha}
+              style={styles.badge}
+            >
+              <Ionicons name={s.done ? 'checkmark' : s.icon} size={18} color={s.done ? colors.success : colors.primary} />
+            </SquircleSurface>
+            <SquircleSurface style={styles.flex}>
+              <Text style={[typography.bodyBold, { color: colors.text.primary, textDecorationLine: s.done ? 'line-through' : 'none' }]}>
+                {i + 1}. {s.title}
+              </Text>
+              <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>{s.body}</Text>
+            </SquircleSurface>
+            {!s.done ? <Ionicons name="chevron-forward" size={16} color={colors.text.muted} /> : null}
+          </PressableScale>
+        </Link>
       ))}
       <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.sm }]}>
         Every quest and workout earns XP. XP raises your level and moves you along your roadmap.

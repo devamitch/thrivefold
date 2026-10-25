@@ -1,7 +1,7 @@
 import { SquircleSurface } from '@/components/ui';
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Link, type Href } from 'expo-router';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
 import { Header } from '../../../components/ui/Header';
@@ -11,7 +11,6 @@ import { useTheme } from '../../../theme/useTheme';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 
 export default function LetterOutboxScreen() {
-  const router = useRouter();
   const { colors, typography, spacing } = useTheme();
   const { outbox } = useRootStore(
     useShallow((s) => ({ outbox: s.outbox })),
@@ -41,13 +40,14 @@ export default function LetterOutboxScreen() {
                 Dispatched on {new Date(letter.createdAt).toLocaleDateString()} · Delivered on {new Date(letter.scheduledDeliveryAt).toLocaleDateString()}
               </Text>
 
-              <Button
-                label="View Delivery Track"
-                variant="outline"
-                size="sm"
-                style={{ marginTop: 12, alignSelf: 'flex-start' }}
-                onPress={() => router.push(`/(app)/letters/delivery/${letter.id}` as any)}
-              />
+              <Link href={`/(app)/letters/delivery/${letter.id}` as any as Href} asChild>
+                <Button
+                  label="View Delivery Track"
+                  variant="outline"
+                  size="sm"
+                  style={{ marginTop: 12, alignSelf: 'flex-start' }}
+                />
+              </Link>
             </Card>
           ))
         ) : (

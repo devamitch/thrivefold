@@ -1,7 +1,7 @@
 import { SquircleSurface } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { useRouter, type Href } from 'expo-router';
+import { Link, type Href } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 
@@ -15,7 +15,6 @@ import { PressableScale } from '../../components/ui/PressableScale';
 
 /** Plain-language health basics for the selected experience; tap an article to read it. */
 export default function LearnScreen() {
-  const router = useRouter();
   const { colors, typography, spacing, experience } = useTheme();
   const reduceMotion = useReducedMotion();
   const [open, setOpen] = useState<string | null>(null);
@@ -52,14 +51,15 @@ export default function LearnScreen() {
                     {p}
                   </Text>
                 ))}
-                <PressableScale
-                  onPress={() => router.push(`/(app)/watch?${new URLSearchParams({ title: art.title, q: art.videoQuery }).toString()}` as Href)}
-                  accessibilityRole="link"
-                  style={[styles.cardHeader, { justifyContent: 'flex-start', marginTop: spacing.md }]}
-                >
-                  <Ionicons name="logo-youtube" size={16} color={colors.text.secondary} />
-                  <Text style={[typography.captionBold, { color: colors.text.secondary, marginLeft: 6 }]}>Watch videos on this topic</Text>
-                </PressableScale>
+                <Link href={`/(app)/watch?${new URLSearchParams({ title: art.title, q: art.videoQuery }).toString()}` as Href} asChild>
+                  <PressableScale
+                    accessibilityRole="link"
+                    style={[styles.cardHeader, { justifyContent: 'flex-start', marginTop: spacing.md }]}
+                  >
+                    <Ionicons name="logo-youtube" size={16} color={colors.text.secondary} />
+                    <Text style={[typography.captionBold, { color: colors.text.secondary, marginLeft: 6 }]}>Watch videos on this topic</Text>
+                  </PressableScale>
+                </Link>
                 {art.seekHelp ? (
                   <SquircleSurface style={[styles.help, { backgroundColor: colors.warningSurface, marginTop: spacing.md }]}>
                     <Ionicons name="medkit-outline" size={18} color={colors.warning} />

@@ -1,6 +1,6 @@
 import { SquircleSurface } from '@/components/ui';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { Link, type Href } from 'expo-router';
 import React, { useEffect } from 'react';
 import { StyleSheet, Text } from 'react-native';
 
@@ -22,7 +22,6 @@ import { PressableScale } from '../../components/ui/PressableScale';
  * Setup steps that were skipped earlier still earn their XP here once answered.
  */
 export default function PersonalizeScreen() {
-  const router = useRouter();
   const { colors, typography, spacing } = useTheme();
   const { experience, setExperience, onboarding, setOnboardingAnswers, todayQuests, ledger, claimSetupReward, todayCheckIn } = useRootStore(
     useShallow((s) => ({
@@ -173,16 +172,18 @@ export default function PersonalizeScreen() {
         ))}
       </SquircleSurface>
 
-      <Card onPress={() => router.push('/(onboarding)/lifestyle-preferences')} style={{ marginTop: spacing.xl }}>
-        <SquircleSurface style={styles.row}>
-          <Ionicons name="restaurant-outline" size={20} color={colors.primary} />
-          <SquircleSurface style={[styles.flex, { marginLeft: 12 }]}>
-            <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Food and reminders</Text>
-            <Text style={[typography.caption, { color: colors.text.secondary }]}>Eating preference and the reminders you want</Text>
+      <Link href={'/(onboarding)/lifestyle-preferences' as Href} asChild>
+        <Card style={{ marginTop: spacing.xl }}>
+          <SquircleSurface style={styles.row}>
+            <Ionicons name="restaurant-outline" size={20} color={colors.primary} />
+            <SquircleSurface style={[styles.flex, { marginLeft: 12 }]}>
+              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Food and reminders</Text>
+              <Text style={[typography.caption, { color: colors.text.secondary }]}>Eating preference and the reminders you want</Text>
+            </SquircleSurface>
+            <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
           </SquircleSurface>
-          <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
-        </SquircleSurface>
-      </Card>
+        </Card>
+      </Link>
       <SquircleSurface style={{ height: spacing.xl }} />
     </ScreenContainer>
   );

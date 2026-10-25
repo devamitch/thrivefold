@@ -1,7 +1,7 @@
 import { SquircleSurface } from '@/components/ui';
 import React from 'react';
 import { ScrollView, StyleSheet, Text } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Link, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
@@ -65,59 +65,66 @@ export default function LettersInboxScreen() {
                 Share gentle reflections sealed with collectible artisanal wax stamps.
               </Text>
             </SquircleSurface>
-            <Button
-              label="Write"
-              size="md"
-              onPress={() => router.push('/(app)/letters/compose')}
-              icon={<Ionicons name="create-outline" size={18} color="#FFFFFF" />}
-            />
+            <Link href={'/(app)/letters/compose' as Href} asChild>
+              <Button
+                label="Write"
+                size="md"
+                icon={<Ionicons name="create-outline" size={18} color="#FFFFFF" />}
+              />
+            </Link>
           </SquircleSurface>
         </Card>
 
         {/* Quick Postal Navigation */}
         <SquircleSurface style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: spacing.lg }}>
-          <Button
-            label="Discover"
-            size="sm"
-            variant="outline"
-            icon={<Ionicons name="compass-outline" size={14} color={colors.primary} />}
-            onPress={() => router.push('/(app)/letters/discover')}
-          />
-          <Button
-            label="Open Letters"
-            size="sm"
-            variant="outline"
-            icon={<Ionicons name="mail-open-outline" size={14} color={colors.primary} />}
-            onPress={() => router.push('/(app)/letters/open-letters')}
-          />
-          <Button
-            label="Outbox"
-            size="sm"
-            variant="outline"
-            icon={<Ionicons name="paper-plane-outline" size={14} color={colors.primary} />}
-            onPress={() => router.push('/(app)/letters/outbox')}
-          />
-          <Button
-            label="Drafts"
-            size="sm"
-            variant="ghost"
-            icon={<Ionicons name="document-text-outline" size={14} color={colors.text.secondary} />}
-            onPress={() => router.push('/(app)/letters/drafts')}
-          />
-          <Button
-            label="Profile"
-            size="sm"
-            variant="ghost"
-            icon={<Ionicons name="person-outline" size={14} color={colors.text.secondary} />}
-            onPress={() => router.push('/(app)/letters/profile')}
-          />
-          <Button
-            label="Pacing"
-            size="sm"
-            variant="ghost"
-            icon={<Ionicons name="options-outline" size={14} color={colors.text.secondary} />}
-            onPress={() => router.push('/(app)/letters/preferences')}
-          />
+          <Link href={'/(app)/letters/discover' as Href} asChild>
+            <Button
+              label="Discover"
+              size="sm"
+              variant="outline"
+              icon={<Ionicons name="compass-outline" size={14} color={colors.primary} />}
+            />
+          </Link>
+          <Link href={'/(app)/letters/open-letters' as Href} asChild>
+            <Button
+              label="Open Letters"
+              size="sm"
+              variant="outline"
+              icon={<Ionicons name="mail-open-outline" size={14} color={colors.primary} />}
+            />
+          </Link>
+          <Link href={'/(app)/letters/outbox' as Href} asChild>
+            <Button
+              label="Outbox"
+              size="sm"
+              variant="outline"
+              icon={<Ionicons name="paper-plane-outline" size={14} color={colors.primary} />}
+            />
+          </Link>
+          <Link href={'/(app)/letters/drafts' as Href} asChild>
+            <Button
+              label="Drafts"
+              size="sm"
+              variant="ghost"
+              icon={<Ionicons name="document-text-outline" size={14} color={colors.text.secondary} />}
+            />
+          </Link>
+          <Link href={'/(app)/letters/profile' as Href} asChild>
+            <Button
+              label="Profile"
+              size="sm"
+              variant="ghost"
+              icon={<Ionicons name="person-outline" size={14} color={colors.text.secondary} />}
+            />
+          </Link>
+          <Link href={'/(app)/letters/preferences' as Href} asChild>
+            <Button
+              label="Pacing"
+              size="sm"
+              variant="ghost"
+              icon={<Ionicons name="options-outline" size={14} color={colors.text.secondary} />}
+            />
+          </Link>
         </SquircleSurface>
 
         {/* Active Pen-Pal Connections */}
@@ -153,13 +160,14 @@ export default function LettersInboxScreen() {
             <Text style={[typography.subbody, { color: colors.text.secondary, textAlign: 'center' }]}>
               Explore introductions to begin exchanging letters with consented peers.
             </Text>
-            <Button
-              label="Discover Pen-Pals"
-              variant="outline"
-              size="sm"
-              style={{ marginTop: 12, alignSelf: 'center' }}
-              onPress={() => router.push('/(app)/social')}
-            />
+            <Link href={'/(app)/social' as Href} asChild>
+              <Button
+                label="Discover Pen-Pals"
+                variant="outline"
+                size="sm"
+                style={{ marginTop: 12, alignSelf: 'center' }}
+              />
+            </Link>
           </Card>
         )}
 

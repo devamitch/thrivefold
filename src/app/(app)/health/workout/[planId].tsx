@@ -2,7 +2,7 @@ import { SquircleSurface } from '@/components/ui';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Text, StyleSheet, TextInput } from 'react-native';
 import { watchHref } from '../../../../content/exerciseVideos';
-import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
+import { Link, useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
@@ -149,22 +149,23 @@ export default function WorkoutSessionScreen() {
           </Card>
         ) : null}
 
-        <Card
-          variant="tinted"
-          onPress={() => router.push(`/(app)/health/coach/${plan.id}${assignmentId ? `?assignmentId=${assignmentId}` : ''}` as Href)}
-          style={{ padding: spacing.base, marginBottom: spacing.sm }}
-        >
-          <SquircleSurface style={styles.row}>
-            <Ionicons name="videocam-outline" size={22} color={colors.primary} />
-            <SquircleSurface style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Train with the camera coach</Text>
-              <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                Tutorial video and live form check side by side. Good form earns 10x XP.
-              </Text>
+        <Link href={`/(app)/health/coach/${plan.id}${assignmentId ? `?assignmentId=${assignmentId}` : ''}` as Href} asChild>
+          <Card
+            variant="tinted"
+            style={{ padding: spacing.base, marginBottom: spacing.sm }}
+          >
+            <SquircleSurface style={styles.row}>
+              <Ionicons name="videocam-outline" size={22} color={colors.primary} />
+              <SquircleSurface style={{ flex: 1, marginLeft: 12 }}>
+                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Train with the camera coach</Text>
+                <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                  Tutorial video and live form check side by side. Good form earns 10x XP.
+                </Text>
+              </SquircleSurface>
+              <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
             </SquircleSurface>
-            <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
-          </SquircleSurface>
-        </Card>
+          </Card>
+        </Link>
 
         {plan.items.map((item) => {
           const ex = exerciseById(item.exerciseId);
@@ -189,16 +190,17 @@ export default function WorkoutSessionScreen() {
                 Easier: {ex.easier} Harder: {ex.harder}
               </Text>
               <Text style={[typography.caption, { color: colors.warning, marginTop: 4 }]}>{ex.safety}</Text>
-              <PressableScale
-                onPress={() => router.push(watchHref(ex.name, ex.id) as Href)}
-                accessibilityRole="link"
-                style={styles.link}
-              >
-                <Ionicons name="logo-youtube" size={16} color={colors.text.secondary} />
-                <Text style={[typography.captionBold, { color: colors.text.secondary, marginLeft: 6 }]}>
-                  Watch how (video)
-                </Text>
-              </PressableScale>
+              <Link href={watchHref(ex.name, ex.id) as Href} asChild>
+                <PressableScale
+                  accessibilityRole="link"
+                  style={styles.link}
+                >
+                  <Ionicons name="logo-youtube" size={16} color={colors.text.secondary} />
+                  <Text style={[typography.captionBold, { color: colors.text.secondary, marginLeft: 6 }]}>
+                    Watch how (video)
+                  </Text>
+                </PressableScale>
+              </Link>
 
               {draft[item.exerciseId].map((set, idx) => (
                 <SquircleSurface key={idx} style={[styles.setRow, { borderTopColor: colors.border }]}>

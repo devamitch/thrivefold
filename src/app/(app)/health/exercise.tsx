@@ -41,7 +41,6 @@ const TRAIN_TOOLS: { icon: keyof typeof Ionicons.glyphMap; label: string; route:
 ];
 
 export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
-  const router = useRouter();
   const { colors, typography, spacing } = useTheme();
   const { sessions, activities, deleteWorkoutSession, showAlert, onboarding, checkIns, todayQuests } = useRootStore(
     useShallow((s) => ({
@@ -107,15 +106,16 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
         {movementQuest ? (
           <>
             <Text style={[typography.label, { color: colors.text.muted, marginTop: spacing.lg, marginBottom: spacing.sm }]}>Today&apos;s movement quest</Text>
-            <ActivityRow
-              icon="flag-outline"
-              title={movementQuest.title}
-              meta={`With the camera coach · finishing it completes the quest · +${movementQuest.xpReward} XP`}
-              done={movementQuest.isCompleted}
-              action="Start"
-              highlight
-              onPress={() => router.push(`/(app)/health/coach/${suggestions[0]?.plan.id ?? 'desk_reset'}?assignmentId=${movementQuest.id}` as Href)}
-            />
+            <Link href={`/(app)/health/coach/${suggestions[0]?.plan.id ?? 'desk_reset'}?assignmentId=${movementQuest.id}` as Href} asChild>
+              <ActivityRow
+                icon="flag-outline"
+                title={movementQuest.title}
+                meta={`With the camera coach · finishing it completes the quest · +${movementQuest.xpReward} XP`}
+                done={movementQuest.isCompleted}
+                action="Start"
+                highlight
+              />
+            </Link>
           </>
         ) : null}
 
@@ -127,14 +127,14 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
             </Text>
             <SquircleSurface style={{ marginTop: spacing.sm }}>
               {suggestions.map(({ plan, reason }) => (
-                <ActivityRow
-                  key={plan.id}
-                  icon="videocam-outline"
-                  title={plan.title}
-                  meta={`${plan.minutes} min · ${reason}`}
-                  action="Start"
-                  onPress={() => router.push(`/(app)/health/coach/${plan.id}` as Href)}
-                />
+                <Link key={plan.id} href={`/(app)/health/coach/${plan.id}` as Href} asChild>
+                  <ActivityRow
+                    icon="videocam-outline"
+                    title={plan.title}
+                    meta={`${plan.minutes} min · ${reason}`}
+                    action="Start"
+                  />
+                </Link>
               ))}
             </SquircleSurface>
             <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg }]}>All plans</Text>
@@ -149,13 +149,13 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
 
         <SquircleSurface style={{ marginTop: spacing.sm }}>
           {plans.map((plan) => (
-            <ActivityRow
-              key={plan.id}
-              icon="barbell-outline"
-              title={plan.title}
-              meta={`${plan.level === 'beginner' ? 'Beginner' : 'Intermediate'} · ${plan.minutes} min · ${plan.items.map((i) => exerciseById(i.exerciseId)?.name).join(', ')}`}
-              onPress={() => router.push(`/(app)/health/workout/${plan.id}` as Href)}
-            />
+            <Link key={plan.id} href={`/(app)/health/workout/${plan.id}` as Href} asChild>
+              <ActivityRow
+                icon="barbell-outline"
+                title={plan.title}
+                meta={`${plan.level === 'beginner' ? 'Beginner' : 'Intermediate'} · ${plan.minutes} min · ${plan.items.map((i) => exerciseById(i.exerciseId)?.name).join(', ')}`}
+              />
+            </Link>
           ))}
         </SquircleSurface>
 
@@ -180,32 +180,32 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
                 .filter(Boolean)
                 .join(' · ');
               return (
-                <ActivityRow
-                  key={s.id}
-                  icon="checkmark"
-                  title={title}
-                  meta={meta}
-                  onPress={() => router.push(`/(app)/train/session/${s.id}` as Href)}
-                  trailing={
-                    <PressableScale
-                      onPress={() =>
-                        showAlert({
-                          title: 'Delete this workout?',
-                          message: 'It will be removed from this device.',
-                          confirmText: 'Delete',
-                          destructive: true,
-                          onConfirm: () => deleteWorkoutSession(s.id),
-                        })
-                      }
-                      accessibilityRole="button"
-                      accessibilityLabel="Delete workout"
-                      hitSlop={8}
-                      style={styles.iconBtn}
-                    >
-                      <Ionicons name="trash-outline" size={18} color={colors.text.muted} />
-                    </PressableScale>
-                  }
-                />
+                <Link key={s.id} href={`/(app)/train/session/${s.id}` as Href} asChild>
+                  <ActivityRow
+                    icon="checkmark"
+                    title={title}
+                    meta={meta}
+                    trailing={
+                      <PressableScale
+                        onPress={() =>
+                          showAlert({
+                            title: 'Delete this workout?',
+                            message: 'It will be removed from this device.',
+                            confirmText: 'Delete',
+                            destructive: true,
+                            onConfirm: () => deleteWorkoutSession(s.id),
+                          })
+                        }
+                        accessibilityRole="button"
+                        accessibilityLabel="Delete workout"
+                        hitSlop={8}
+                        style={styles.iconBtn}
+                      >
+                        <Ionicons name="trash-outline" size={18} color={colors.text.muted} />
+                      </PressableScale>
+                    }
+                  />
+                </Link>
               );
             })}
           </SquircleSurface>
@@ -233,7 +233,6 @@ export default function WorkoutsScreen() {
 
 /** This week, Monday to Sunday: a filled day had a workout or logged activity. Opens the calendar. */
 function WeekStrip() {
-  const router = useRouter();
   const { colors, typography, spacing } = useTheme();
   const { sessions, activities } = useRootStore(useShallow((s) => ({ sessions: s.workoutSessions, activities: s.activityLogs })));
   const now = new Date();
@@ -246,24 +245,26 @@ function WeekStrip() {
     return { key: formatLocalDate(d), label: 'MTWTFSS'[i], today: formatLocalDate(d) === formatLocalDate(now) };
   });
   return (
-    <PressableScale onPress={() => router.push('/(app)/calendar' as Href)} accessibilityRole="button" accessibilityLabel="Open calendar" style={[styles.week, { marginTop: spacing.md }]}>
-      {days.map((d) => (
-        <SquircleSurface key={d.key} style={styles.weekDay}>
-          <Text style={[typography.caption, { color: d.today ? colors.primary : colors.text.muted }]}>{d.label}</Text>
-          <SquircleSurface
-            style={[
-              styles.weekDot,
-              {
-                backgroundColor: active.has(d.key) ? colors.primary : colors.surface2,
-                borderColor: d.today ? colors.primary : 'transparent',
-              },
-            ]}
-          >
-            {active.has(d.key) ? <Ionicons name="checkmark" size={12} color={colors.onPrimary} /> : null}
+    <Link href={'/(app)/calendar' as Href} asChild>
+      <PressableScale accessibilityRole="button" accessibilityLabel="Open calendar" style={[styles.week, { marginTop: spacing.md }]}>
+        {days.map((d) => (
+          <SquircleSurface key={d.key} style={styles.weekDay}>
+            <Text style={[typography.caption, { color: d.today ? colors.primary : colors.text.muted }]}>{d.label}</Text>
+            <SquircleSurface
+              style={[
+                styles.weekDot,
+                {
+                  backgroundColor: active.has(d.key) ? colors.primary : colors.surface2,
+                  borderColor: d.today ? colors.primary : 'transparent',
+                },
+              ]}
+            >
+              {active.has(d.key) ? <Ionicons name="checkmark" size={12} color={colors.onPrimary} /> : null}
+            </SquircleSurface>
           </SquircleSurface>
-        </SquircleSurface>
-      ))}
-      <Ionicons name="calendar-outline" size={18} color={colors.text.muted} style={{ marginLeft: 6 }} />
-    </PressableScale>
+        ))}
+        <Ionicons name="calendar-outline" size={18} color={colors.text.muted} style={{ marginLeft: 6 }} />
+      </PressableScale>
+    </Link>
   );
 }

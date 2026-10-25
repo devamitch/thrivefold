@@ -2,7 +2,7 @@ import { SquircleSurface } from '@/components/ui';
 import React, { useMemo, useRef, useState } from 'react';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { StyleSheet, Text, TextInput, type AccessibilityActionEvent } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Link, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
@@ -154,7 +154,9 @@ export default function CheckInScreen() {
           <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>
             If you might be in danger, contact local emergency services now. Support lines are one tap away.
           </Text>
-          <Button label="Get support now" size="sm" onPress={() => router.push('/(app)/safety/urgent-support')} style={{ marginTop: spacing.sm, alignSelf: 'flex-start' }} />
+          <Link href={'/(app)/safety/urgent-support' as Href} asChild>
+            <Button label="Get support now" size="sm" style={{ marginTop: spacing.sm, alignSelf: 'flex-start' }} />
+          </Link>
         </Card>
       ) : signal && signal.intensitySuggestion === 'rest' ? (
         <Text style={[typography.caption, { color: colors.text.secondary, marginTop: spacing.sm }]}>
