@@ -7,11 +7,12 @@ import { useRootStore, useShallow } from '../stores/useRootStore';
 
 /**
  * The saved records every calendar view shows: quests (from their real assignments),
- * workouts, meals and check-ins. One source so Today and the Calendar screen agree.
+ * workouts, meals, check-ins and personal events. One source so Today and the Calendar screen agree.
  */
 export function useAgendaSources() {
-  const { assignments, sessions, meals, checkIns } = useRootStore(
+  const { assignments, sessions, meals, checkIns, personalEvents } = useRootStore(
     useShallow((s) => ({
+      personalEvents: s.personalEvents,
       assignments: s.dailyAssignments,
       sessions: s.workoutSessions,
       meals: s.mealLogs,
@@ -41,7 +42,8 @@ export function useAgendaSources() {
         return { id: m.id, date: m.date, type: m.type, at: m.at, kcal: t.kcal, protein: t.protein };
       }),
       checkIns,
+      personalEvents,
     }),
-    [assignments, sessions, meals, checkIns],
+    [assignments, sessions, meals, checkIns, personalEvents],
   );
 }

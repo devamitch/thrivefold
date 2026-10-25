@@ -52,6 +52,18 @@ export type EventCategory =
 
 export type PrivacyLevel = 'public' | 'private' | 'sensitive_encrypted';
 
+const PHASE_LABEL = { menstrual: 'Menstrual', follicular: 'Follicular', ovulation: 'Ovulation', luteal: 'Luteal' } as const;
+
+const PERSONAL_EVENT_LABEL: Record<PersonalCalendarEvent['category'], string> = {
+  birthday: 'Birthday',
+  anniversary: 'Anniversary',
+  appointment: 'Appointment',
+  reminder: 'Reminder',
+  deadline: 'Deadline',
+  financial: 'Payment due',
+  custom: 'Event',
+};
+
 export interface CalendarEvent {
   id: string;
   title: string;
@@ -189,7 +201,7 @@ export function generateDayAgenda(
   if (holiday) {
     events.push({
       id: `holiday_${dateStr}`,
-      title: `${holiday.emoji} ${holiday.name}`,
+      title: holiday.name,
       date: dateStr,
       kind: 'holiday',
       status: 'recorded',
@@ -200,28 +212,31 @@ export function generateDayAgenda(
     });
   }
 
-  // Personal milestones (birthdays, wedding anniversaries, reminders)
+  // Personal events (birthdays, anniversaries, appointments, reminders) with their repeat rule.
   if (options.personalEvents) {
-    const parts = dateStr.split('-').map(Number);
-    const targetMonth = parts[1];
-    const targetDay = parts[2];
+    const [, tm, td] = dateStr.split('-').map(Number);
+    const weekday = targetDate.getDay();
     for (const pe of options.personalEvents) {
-      const pParts = pe.date.split('-').map(Number);
+      const [, pm, pd] = pe.date.split('-').map(Number);
+      const started = pe.date <= dateStr;
       const isMatch =
         pe.date === dateStr ||
-        (pe.recurrence === 'yearly' && pParts[1] === targetMonth && pParts[2] === targetDay);
+        (started && pe.recurrence === 'yearly' && pm === tm && pd === td) ||
+        (started && pe.recurrence === 'monthly' && pd === td) ||
+        (started && pe.recurrence === 'weekly' && parseLocalDate(pe.date).getDay() === weekday);
       if (isMatch) {
         events.push({
           id: pe.id,
-          title: `${pe.emoji ? `${pe.emoji} ` : '⭐ '}${pe.title}`,
+          title: pe.title,
           date: dateStr,
-          startTime: pe.time || '09:00',
-          kind: 'personal_event',
+          startTime: pe.time || undefined,
+          kind: pe.category === 'appointment' ? 'health_appointment' : 'personal_event',
           status: 'recorded',
           category: 'life',
           privacy: 'sensitive_encrypted',
           isAllDay: !pe.time,
-          description: pe.notes || `${pe.category.toUpperCase()} milestone celebration.`,
+          description: pe.notes || PERSONAL_EVENT_LABEL[pe.category],
+          metadata: { personalEventId: pe.id },
         });
       }
     }
@@ -236,14 +251,14 @@ export function generateDayAgenda(
         if (dateStr <= effectiveEnd) {
           events.push({
             id: `rec_period_${p.id}_${dateStr}`,
-            title: `Recorded Menstrual Bleeding (${p.flowIntensity || 'medium'} flow)`,
+            title: `Period (${p.flowIntensity || 'medium'} flow)`,
             date: dateStr,
             kind: 'period',
             status: 'recorded',
             category: 'reproductive',
             privacy: 'sensitive_encrypted',
             isAllDay: true,
-            description: p.notes || `Self-recorded period. Pain level: ${p.painLevel ?? 'none'}/10.`,
+            description: p.notes || (p.painLevel ? `Pain ${p.painLevel}/10.` : 'Logged by you.'),
           });
           break;
         }
@@ -267,34 +282,34 @@ export function generateDayAgenda(
         if (daysDiff >= 0 && daysDiff < options.cycleData.periodLengthDays) {
           events.push({
             id: `cycle_period_${dateStr}`,
-            title: 'Predicted Menstrual Bleeding (Estimate)',
+            title: 'Period expected (estimate)',
             date: dateStr,
             kind: 'period',
             status: 'predicted',
             category: 'reproductive',
             privacy: 'sensitive_encrypted',
-            description: 'Tentative forecast based on recorded cycle interval. Keep warm and hydrate.',
+            description: 'Estimated from the cycle length you entered. It can be off by a few days.',
             isAllDay: true,
           });
         }
 
-        // Add phase awareness
-        events.push({
-          id: `cycle_phase_${dateStr}`,
-          title: `${cycle.currentPhase.label} Phase Harmony`,
-          date: dateStr,
-          startTime: '08:00',
-          endTime: '08:20',
-          kind: 'cycle_phase',
-          status: 'predicted',
-          category: 'reproductive',
-          privacy: 'private',
-          description: `Day ${cycle.currentPhase.day} hormonal rhythm. Nutrition and restorative routines aligned.`,
-          recurrence: 'daily',
-        });
+        // Estimated phase for this date (not today's phase repeated).
+        const phase = cycle.cycleDayMap.get(dateStr);
+        if (phase) {
+          events.push({
+            id: `cycle_phase_${dateStr}`,
+            title: `${PHASE_LABEL[phase]} phase (estimate)`,
+            date: dateStr,
+            kind: 'cycle_phase',
+            status: 'predicted',
+            category: 'reproductive',
+            privacy: 'private',
+            isAllDay: true,
+            description: 'Worked out from your last period and cycle length.',
+          });
+        }
       }
     }
-
   }
 
   // The person's own quests for this date. Nothing else is scheduled on their behalf.

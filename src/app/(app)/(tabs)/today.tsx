@@ -194,7 +194,7 @@ export default function TodayScreen() {
   const agendaEvents = useMemo(() => {
     const todayKey = formatLocalDate(new Date());
     const quests = todayQuests.map((q) => ({ id: q.id, title: q.title, status: q.status, date: todayKey }));
-    return generateDayAgenda(selectedDateStr, { experience, cycleData, personalEvents, ...agendaSources, quests: [...agendaSources.quests.filter((q) => q.date !== todayKey), ...quests] });
+    return generateDayAgenda(selectedDateStr, { experience, cycleData, ...agendaSources, quests: [...agendaSources.quests.filter((q) => q.date !== todayKey), ...quests] });
   }, [selectedDateStr, experience, cycleData, personalEvents, todayQuests, agendaSources]);
 
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null);
