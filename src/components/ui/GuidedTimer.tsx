@@ -1,4 +1,4 @@
-import { SquircleSurface } from '@/components/ui';
+import { SquircleSurface } from './SquircleSurface';
 import React, { useEffect, useRef, useState } from 'react';
 import { Text, StyleSheet } from 'react-native';
 import * as Haptics from 'expo-haptics';

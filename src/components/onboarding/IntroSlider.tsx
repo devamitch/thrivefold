@@ -1,4 +1,4 @@
-import { SquircleSurface } from '@/components/ui';
+import { SquircleSurface } from '../ui/SquircleSurface';
 /**
  * First-run intro slider (same interaction model as Neev and BlinkQuest).
  *
@@ -11,7 +11,7 @@ import { SquircleSurface } from '@/components/ui';
  */
 import { Image } from 'expo-image';
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { BackHandler, ScrollView, StatusBar, StyleSheet, Text, useWindowDimensions, View, type ImageSourcePropType, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { BackHandler, ScrollView, StatusBar, StyleSheet, Text, useWindowDimensions, type ImageSourcePropType, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,

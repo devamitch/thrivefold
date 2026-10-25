@@ -1,7 +1,7 @@
-import { SquircleSurface } from '@/components/ui';
+import { SquircleSurface } from '../../components/ui/SquircleSurface';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import Animated, {
   Easing,
   FadeIn,

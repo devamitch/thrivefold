@@ -1,4 +1,4 @@
-import { SquircleSurface } from '@/components/ui';
+import { SquircleSurface } from './SquircleSurface';
 import React, { Children, isValidElement, type ReactElement, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 

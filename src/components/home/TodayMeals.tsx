@@ -1,4 +1,4 @@
-import { SquircleSurface } from '@/components/ui';
+import { SquircleSurface } from '../ui/SquircleSurface';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Link, type Href } from 'expo-router';

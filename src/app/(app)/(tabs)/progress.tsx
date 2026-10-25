@@ -1,8 +1,8 @@
-import { SquircleSurface } from '@/components/ui';
+import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter, type Href } from 'expo-router';
 import React, { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { AppHeader } from '../../../components/ui/AppHeader';

@@ -1,10 +1,10 @@
-import { SquircleSurface } from '@/components/ui';
+import { SquircleSurface } from '../../../../components/ui/SquircleSurface';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { BackHandler, PermissionsAndroid, Platform, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { BackHandler, PermissionsAndroid, Platform, ScrollView, StatusBar, StyleSheet, Text } from 'react-native';
 import Animated, {
   FadeIn,
   FadeInDown,

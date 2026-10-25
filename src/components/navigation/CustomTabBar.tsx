@@ -1,4 +1,4 @@
-import { SquircleSurface } from '@/components/ui';
+import { SquircleSurface } from '../ui/SquircleSurface';
 /**
  * Thrivefold Sanctuary Bottom Dock (Traced from Neev/BlinkQuest canonical dock architecture):
  * - Edge-to-edge, anchored to bottom: no side or bottom gaps; runs under system navigation area
@@ -14,7 +14,7 @@ import * as Haptics from 'expo-haptics';
 import type { Tabs } from 'expo-router';
 import { router } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, type ComponentProps } from 'react';
-import { StyleSheet, useWindowDimensions, View } from 'react-native';
+import { StyleSheet, useWindowDimensions } from 'react-native';
 import Animated, {
   Easing,
   interpolateColor,

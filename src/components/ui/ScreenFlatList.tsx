@@ -1,4 +1,4 @@
-import { SquircleSurface } from '@/components/ui';
+import { SquircleSurface } from './SquircleSurface';
 import React, { forwardRef, isValidElement, useMemo } from 'react';
 import { FlatList, FlatListProps, StyleSheet, ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';

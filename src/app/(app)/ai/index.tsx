@@ -1,4 +1,4 @@
-import { SquircleSurface } from '@/components/ui';
+import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import React, { useMemo, useState } from 'react';
 import { Text, StyleSheet } from 'react-native';
 import { Link, useRouter, type Href } from 'expo-router';

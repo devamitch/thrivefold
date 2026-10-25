@@ -1,4 +1,4 @@
-import { SquircleSurface } from '@/components/ui';
+import { SquircleSurface } from '../ui/SquircleSurface';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Text, StyleSheet, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';

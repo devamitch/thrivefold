@@ -1,4 +1,4 @@
-import { SquircleSurface } from '@/components/ui';
+import { SquircleSurface } from './SquircleSurface';
 import React from 'react';
 import { Text, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import Animated, {

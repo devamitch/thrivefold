@@ -1,6 +1,6 @@
-import { SquircleSurface } from '@/components/ui';
+import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { Text, StyleSheet, ScrollView } from 'react-native';
 import { Link, type Href } from 'expo-router';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';

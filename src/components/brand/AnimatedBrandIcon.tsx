@@ -1,10 +1,10 @@
-import { SquircleSurface } from '@/components/ui';
+import { SquircleSurface } from '../ui/SquircleSurface';
 /**
  * Animated Thrivefold Minimalist Terracotta T and Leaf Emblem.
  * Zero gradients, clean organic lines, soft pulse on mount.
  */
 import React, { memo, useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import Animated, {
   Easing,

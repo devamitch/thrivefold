@@ -1,4 +1,4 @@
-import { SquircleSurface } from '@/components/ui';
+import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import * as FileSystem from 'expo-file-system/legacy';

@@ -1,4 +1,4 @@
-import { SquircleSurface } from '@/components/ui';
+import { SquircleSurface } from '../../../../components/ui/SquircleSurface';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Text, StyleSheet, TextInput } from 'react-native';
 import { watchHref } from '../../../../content/exerciseVideos';

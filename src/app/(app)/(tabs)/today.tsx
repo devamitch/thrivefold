@@ -1,11 +1,11 @@
-import { SquircleSurface } from '@/components/ui';
+import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 /**
  * Today: the day's quests and points toward the daily goal, the calendar, and quick
  * routines for the selected experience.
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, Modal, KeyboardAvoidingView, Platform } from 'react-native';
+import { Text, StyleSheet, Modal, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, type Href } from 'expo-router';
 import * as Haptics from 'expo-haptics';

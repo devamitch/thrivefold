@@ -1,6 +1,6 @@
-import { SquircleSurface } from '@/components/ui';
+import { SquircleSurface } from '../ui/SquircleSurface';
 import React, { memo } from 'react';
-import { View, Text, StyleSheet, StyleProp, ViewStyle, ImageSourcePropType } from 'react-native';
+import { Text, StyleSheet, StyleProp, ViewStyle, ImageSourcePropType } from 'react-native';
 import { Image } from 'expo-image';
 import Animated, {
   useAnimatedStyle,

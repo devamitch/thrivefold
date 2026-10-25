@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { usePathname, useRouter, type Href } from 'expo-router';
 import React, { memo, useCallback, useMemo, type ReactNode } from 'react';
-import { ScrollView, StyleSheet, Text, useWindowDimensions, View, type StyleProp, type ViewStyle } from 'react-native';
+import { ScrollView, StyleSheet, Text, useWindowDimensions, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, {
   Extrapolation,
   interpolate,
@@ -15,7 +15,6 @@ import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { DRAWER_SECTIONS } from '../../navigation/drawerItems';
 import { useRootStore, useShallow } from '../../stores/useRootStore';
 import type { ThemeColors } from '../../theme/colors';
-import { getExperienceIcons } from '../../theme/icons';
 import type { ProductExperience } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
 import { PressableScale, SquircleSurface } from '../ui';
@@ -120,27 +119,6 @@ const BottomFade = memo(function BottomFade({ color }: { color: string }) {
   );
 });
 
-const StatChip = memo(function StatChip({
-  icon,
-  label,
-  iconColor,
-  palette,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  iconColor: string;
-  palette: Palette;
-}) {
-  const { typography } = useTheme();
-  return (
-    <SquircleSurface radius={12} fill={palette.wash} style={styles.chip}>
-      <Ionicons name={icon} size={14} color={iconColor} />
-      <Text style={[typography.captionBold, { color: palette.inkSoft }]} numberOfLines={1}>
-        {label}
-      </Text>
-    </SquircleSurface>
-  );
-});
 
 const DrawerRow = memo(function DrawerRow({
   item,
@@ -262,7 +240,7 @@ export function AppDrawer() {
 
   const rows = useMemo(() => {
     const out: Row[] = [];
-    let i = 2; // brand + profile reveal first
+    let i = 1; // profile row reveals first
     for (const sec of sections) {
       out.push({ kind: 'title', key: `t:${sec.title}`, title: sec.title, index: i++ });
       for (const it of sec.items) out.push({ kind: 'item', key: it.route, item: it, index: i++ });
@@ -284,7 +262,6 @@ export function AppDrawer() {
     [pathname, router, setOpen],
   );
 
-  const orbIcon = getExperienceIcons(experience).orb.icon;
   const hasStreak = currentStreak > 0;
 
   return (
@@ -308,87 +285,33 @@ export function AppDrawer() {
           panelStyle,
         ]}
       >
-        {/* Brand + close */}
-        <Reveal index={0} progress={progress} style={styles.brandRow}>
-          <SquircleSurface style={styles.brandLeft}>
-            <SquircleSurface radius={11} fill={palette.accent} style={styles.brandMark}>
-              <Ionicons name={orbIcon} size={16} color={palette.onAccent} />
-            </SquircleSurface>
-            <Text
-              style={[typography.heading, { color: palette.ink, fontSize: 21, lineHeight: 27 }]}
-            >
-              Thrivefold
-            </Text>
-          </SquircleSurface>
-          <PressableScale
-            onPress={close}
-            hitSlop={8}
-            scaleTo={0.9}
-            accessibilityRole="button"
-            accessibilityLabel="Close menu"
-          >
-            <SquircleSurface radius={14} fill={palette.wash} style={styles.iconButton}>
-              <Ionicons name="close" size={18} color={palette.ink} />
-            </SquircleSurface>
-          </PressableScale>
-        </Reveal>
-
-        {/* Profile */}
-        <Reveal index={1} progress={progress}>
+        {/* You: one compact row, and the close control */}
+        <Reveal index={0} progress={progress} style={styles.headRow}>
           <PressableScale
             onPress={() => go(SETTINGS_ROUTE)}
             scaleTo={0.98}
+            style={styles.flex}
             accessibilityRole="button"
-            accessibilityLabel="Open settings and profile"
+            accessibilityLabel={`${user?.pseudonym || 'You'}, level ${level}. Open profile`}
           >
-            <SquircleSurface
-              radius={26}
-              smoothing={1}
-              fill={palette.wash}
-              style={styles.profileCard}
-            >
-              <SquircleSurface style={styles.profileTop}>
-                <SquircleSurface
-                  radius={20}
-                  smoothing={1}
-                  fill={palette.accentWash}
-                  style={styles.avatar}
-                >
-                  <Ionicons name={AVATAR_ICON[experience]} size={26} color={palette.accent} />
-                </SquircleSurface>
-                <SquircleSurface style={styles.profileText}>
-                  <Text
-                    numberOfLines={1}
-                    style={[
-                      typography.heading,
-                      { color: palette.ink, fontSize: 21, lineHeight: 27 },
-                    ]}
-                  >
-                    {user?.pseudonym || 'Thrivefold Friend'}
-                  </Text>
-                  <Text
-                    style={[typography.caption, { color: palette.inkMuted, marginTop: 2 }]}
-                    numberOfLines={1}
-                  >
-                    {EXPERIENCE_LABEL[experience]}
-                  </Text>
-                </SquircleSurface>
-                <Ionicons name="chevron-forward" size={18} color={palette.inkMuted} />
+            <SquircleSurface radius={22} fill={palette.wash} style={styles.profileCard}>
+              <SquircleSurface radius={16} fill={palette.accentWash} style={styles.avatar}>
+                <Ionicons name={AVATAR_ICON[experience]} size={22} color={palette.accent} />
               </SquircleSurface>
-              <SquircleSurface style={styles.chipRow}>
-                <StatChip
-                  icon="ribbon-outline"
-                  label={`Level ${level}`}
-                  iconColor={palette.accent}
-                  palette={palette}
-                />
-                <StatChip
-                  icon={hasStreak ? 'flame' : 'flame-outline'}
-                  label={hasStreak ? `${currentStreak} day streak` : 'Start a streak'}
-                  iconColor={hasStreak ? palette.accent : palette.inkMuted}
-                  palette={palette}
-                />
+              <SquircleSurface style={styles.profileText}>
+                <Text numberOfLines={1} style={[typography.subheading, { color: palette.ink }]}>
+                  {user?.pseudonym || 'You'}
+                </Text>
+                <Text style={[typography.caption, { color: palette.inkMuted, marginTop: 1 }]} numberOfLines={1}>
+                  Level {level}
+                  {hasStreak ? ` · ${currentStreak} day streak` : ''} · {EXPERIENCE_LABEL[experience]}
+                </Text>
               </SquircleSurface>
+            </SquircleSurface>
+          </PressableScale>
+          <PressableScale onPress={close} hitSlop={8} scaleTo={0.9} accessibilityRole="button" accessibilityLabel="Close menu">
+            <SquircleSurface radius={14} fill={palette.wash} style={styles.iconButton}>
+              <Ionicons name="close" size={18} color={palette.ink} />
             </SquircleSurface>
           </PressableScale>
         </Reveal>
@@ -464,59 +387,35 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 12,
   },
-  brandRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-    paddingHorizontal: 6,
-  },
-  brandLeft: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 10,
-  },
-  brandMark: {
-    alignItems: 'center',
-    height: 30,
-    justifyContent: 'center',
-    width: 30,
-  },
   iconButton: {
     alignItems: 'center',
     height: 36,
     justifyContent: 'center',
     width: 36,
   },
-  profileCard: {
-    padding: 16,
+  flex: {
+    flex: 1,
   },
-  profileTop: {
+  headRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: 14,
+    gap: 8,
+    marginBottom: 8,
+  },
+  profileCard: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    padding: 10,
   },
   avatar: {
     alignItems: 'center',
-    height: 56,
+    height: 44,
     justifyContent: 'center',
-    width: 56,
+    width: 44,
   },
   profileText: {
     flex: 1,
-  },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 14,
-  },
-  chip: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
   },
   listWrap: {
     flex: 1,
@@ -527,8 +426,8 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     marginBottom: 6,
-    marginTop: 18,
-    paddingHorizontal: 10,
+    marginTop: 14,
+    paddingHorizontal: 8,
   },
   rowWrap: {
     marginBottom: 2,
@@ -537,15 +436,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     gap: 12,
-    minHeight: 52,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    minHeight: 46,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
   rowIcon: {
     alignItems: 'center',
-    height: 36,
+    height: 32,
     justifyContent: 'center',
-    width: 36,
+    width: 32,
   },
   rowLabel: {
     flex: 1,

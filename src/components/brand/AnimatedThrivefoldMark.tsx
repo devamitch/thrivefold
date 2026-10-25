@@ -1,4 +1,4 @@
-import { SquircleSurface } from '@/components/ui';
+import { SquircleSurface } from '../ui/SquircleSurface';
 /**
  * The living Thrivefold mark: terracotta T, sage leaf, golden sun (same geometry as the
  * app icon, on a 1024 grid). Three stacked layers so each part moves on its own:
@@ -7,7 +7,7 @@ import { SquircleSurface } from '@/components/ui';
  * Everything runs on the UI thread. With Reduce Motion the mark appears at rest and still.
  */
 import React, { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,

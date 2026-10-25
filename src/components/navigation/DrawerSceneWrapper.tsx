@@ -1,9 +1,9 @@
-import { SquircleSurface } from '@/components/ui';
+import { SquircleSurface } from '../ui/SquircleSurface';
 import * as Haptics from 'expo-haptics';
 import { useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { ReactNode, useEffect, useMemo, useState } from 'react';
-import { BackHandler, Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { BackHandler, Platform, StyleSheet, useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   cancelAnimation,

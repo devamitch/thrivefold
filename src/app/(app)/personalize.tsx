@@ -1,4 +1,4 @@
-import { SquircleSurface } from '@/components/ui';
+import { SquircleSurface } from '../../components/ui/SquircleSurface';
 import { Ionicons } from '@expo/vector-icons';
 import { Link, type Href } from 'expo-router';
 import React, { useEffect } from 'react';

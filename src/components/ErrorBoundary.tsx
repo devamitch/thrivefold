@@ -1,4 +1,4 @@
-import { SquircleSurface } from '@/components/ui';
+import { SquircleSurface } from './ui/SquircleSurface';
 /**
  * Error Boundary Component for Thrivefold matching Neev's architecture.
  * Catches JavaScript errors in child components and displays a clean recovery UI.

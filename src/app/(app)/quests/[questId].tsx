@@ -1,4 +1,4 @@
-import { SquircleSurface } from '@/components/ui';
+import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import React from 'react';
 
 import { useLocalSearchParams, useRouter } from 'expo-router';

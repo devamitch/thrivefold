@@ -1,4 +1,4 @@
-import { SquircleSurface } from '@/components/ui';
+import { SquircleSurface } from '../ui/SquircleSurface';
 import { Image } from 'expo-image';
 import React, { forwardRef, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, type ViewStyle } from 'react-native';
