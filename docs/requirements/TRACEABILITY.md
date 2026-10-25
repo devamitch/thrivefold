@@ -1,5 +1,16 @@
 # Requirements Traceability Matrix
 
+## Update — 2026-10-25 (8): analytics consent, drawer completed
+
+Checks: compile 0, lint 0, `pnpm test` 188/188. Not seen on device (install blocked by signature).
+
+| Item | Status | Where | Commit |
+| --- | --- | --- | --- |
+| Firebase Analytics only after opt-in (v4 §4) | implemented | `firebase.json` (auto-collection, ad IDs, ad consent off), `usageAnalytics` gate, switch in Privacy and data | f4c591c |
+| Drawer: per-space dark room, drag-driven reveal, clamped spring, a11y | implemented (continued from uncommitted work in tree) | `AppDrawer`, `DrawerSceneWrapper`, `drawerProgress` | 3a13ab3 |
+| Decorative glow gradients in drawer | removed | `AppDrawer` | 3a13ab3 |
+| Open: `SquircleSurface` default fill changed to transparent by another agent (uncommitted) | not reviewed for app-wide impact | `ui/SquircleSurface.tsx` | — |
+
 ## Update — 2026-10-25 (7): Coach workspace, landmark alignment, store performance
 
 Checks: compile 0, lint 0, `pnpm test` 188/188, Android release build PASS (includes another
