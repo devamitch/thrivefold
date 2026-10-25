@@ -83,6 +83,9 @@ export interface AppSlice {
   shareWeeklySummaries: boolean;
   /** Opt-in: anonymous usage analytics (screens and feature use, never health data). Off by default. */
   usageAnalytics: boolean;
+  /** Crash reports (stack traces, device model, app version; no personal content). Opt-out. */
+  crashReports: boolean;
+  setCrashReports: (on: boolean) => void;
   setUsageAnalytics: (on: boolean) => void;
   setShareWeeklySummaries: (enabled: boolean) => void;
   setQuestRemindersEnabled: (enabled: boolean) => void;
@@ -147,6 +150,8 @@ export const createAppSlice: StateCreator<
   setHomeGuideDone: () => set({ homeGuideDone: true }),
   shareWeeklySummaries: false,
   usageAnalytics: false,
+  crashReports: true,
+  setCrashReports: (crashReports) => set({ crashReports }),
   setUsageAnalytics: (usageAnalytics) => set({ usageAnalytics }),
   setShareWeeklySummaries: (shareWeeklySummaries) => set({ shareWeeklySummaries }),
   setQuestRemindersEnabled: (questRemindersEnabled) => set({ questRemindersEnabled }),

@@ -7,6 +7,7 @@ import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { AppButton } from './ui/Button';
 import { Card } from './ui/Card';
+import { crashReporting } from '../services/telemetry/crashReporting';
 
 interface Props {
   children: ReactNode;
@@ -29,6 +30,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
+    crashReporting.recordError(error, 'ErrorBoundary');
   }
 
   handleReset = () => {

@@ -23,6 +23,8 @@ export default function PrivacyScreen() {
       showAlert: st.showAlert,
       usage: st.usageAnalytics,
       setUsage: st.setUsageAnalytics,
+      crash: st.crashReports,
+      setCrash: st.setCrashReports,
     })),
   );
   const signedIn = Boolean(s.user && !s.user.isGuest && s.user.email);
@@ -83,6 +85,12 @@ export default function PrivacyScreen() {
         title="Share anonymous usage"
         subtitle="Which screens and features are used, to improve the app. Never health records, notes or identity. Off unless you turn it on."
         right={<Toggle value={s.usage} onValueChange={toggleUsage} accessibilityLabel="Share anonymous usage" />}
+      />
+      <SettingsRow
+        icon="bug-outline"
+        title="Send crash reports"
+        subtitle="When the app crashes: the error, device model and app version, and recent screen names. Never your records, notes or messages."
+        right={<Toggle value={s.crash} onValueChange={s.setCrash} accessibilityLabel="Send crash reports" />}
       />
       <Link href={'/(app)/safety' as Href} asChild>
         <SettingsRow icon="shield-checkmark-outline" title="Safety and support" subtitle="Blocking, reports and urgent help." />

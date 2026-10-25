@@ -6,6 +6,10 @@
     "analytics_default_allow_ad_user_data": false,
     "analytics_default_allow_ad_personalization_signals": false,
     "google_analytics_adid_collection_enabled": false,
-    "google_analytics_ssaid_collection_enabled": false
+    "google_analytics_ssaid_collection_enabled": false,
+    "crashlytics_auto_collection_enabled": false,
+    "crashlytics_debug_enabled": false,
+    "crashlytics_disable_auto_disabler": true,
+    "crashlytics_javascript_exception_handler_chaining_enabled": true
   }
 }

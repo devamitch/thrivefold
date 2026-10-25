@@ -20,6 +20,9 @@ importers:
       '@react-native-firebase/app':
         specifier: ^27.1.0
         version: 27.1.0(patch_hash=5d14a1ea658a82150d43099d67fedf7cbd6ca2456923ec203c70def3df97154b)(expo@55.0.31)(react-native@0.83.10(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.87.1(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.0)(supports-color@8.1.1))(react@19.2.0)
+      '@react-native-firebase/crashlytics':
+        specifier: 27.1.0
+        version: 27.1.0(@react-native-firebase/app@27.1.0(patch_hash=5d14a1ea658a82150d43099d67fedf7cbd6ca2456923ec203c70def3df97154b)(expo@55.0.31)(react-native@0.83.10(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.87.1(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.0)(supports-color@8.1.1))(react@19.2.0))(expo@55.0.31)
       '@react-native-google-signin/google-signin':
         specifier: ^16.1.5
         version: 16.1.5(expo@55.0.31)(react-native@0.83.10(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.87.1(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.0)(supports-color@8.1.1))(react@19.2.0)
@@ -1853,6 +1856,15 @@ packages:
       expo: '>=47.0.0'
       react: '*'
       react-native: '>=0.60.0-0'
+    peerDependenciesMeta:
+      expo:
+        optional: true
+
+  '@react-native-firebase/crashlytics@27.1.0':
+    resolution: {integrity: sha512-JLmUUYaMki5mPrvhMG7fvqy+2KVIW5lxkLLICfXclgZJ+bp7EjN8ZwOc4EVD0pRbj05jIwM4B21gijEDqba+5A==}
+    peerDependencies:
+      '@react-native-firebase/app': 27.1.0
+      expo: '>=47.0.0'
     peerDependenciesMeta:
       expo:
         optional: true
@@ -8077,6 +8089,13 @@ snapshots:
       expo: 55.0.31(8b6155f4e1a8580e4767c524e77c7a10)
     transitivePeerDependencies:
       - '@react-native-async-storage/async-storage'
+
+  '@react-native-firebase/crashlytics@27.1.0(@react-native-firebase/app@27.1.0(patch_hash=5d14a1ea658a82150d43099d67fedf7cbd6ca2456923ec203c70def3df97154b)(expo@55.0.31)(react-native@0.83.10(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.87.1(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.0)(supports-color@8.1.1))(react@19.2.0))(expo@55.0.31)':
+    dependencies:
+      '@react-native-firebase/app': 27.1.0(patch_hash=5d14a1ea658a82150d43099d67fedf7cbd6ca2456923ec203c70def3df97154b)(expo@55.0.31)(react-native@0.83.10(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.87.1(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.0)(supports-color@8.1.1))(react@19.2.0)
+      stacktrace-js: 2.0.2
+    optionalDependencies:
+      expo: 55.0.31(8b6155f4e1a8580e4767c524e77c7a10)
 
   '@react-native-google-signin/google-signin@16.1.5(expo@55.0.31)(react-native@0.83.10(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.87.1(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.0)(supports-color@8.1.1))(react@19.2.0)':
     dependencies:

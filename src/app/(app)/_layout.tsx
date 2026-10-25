@@ -11,6 +11,7 @@ import { DrawerSceneWrapper } from '../../components/navigation/DrawerSceneWrapp
 import { enqueueFinishedWeeks, flushSummaryOutbox } from '../../services/sync/summaryOutbox';
 import { analytics } from '../../services/telemetry/analyticsService';
 import { firebaseAnalytics } from '../../services/telemetry/firebaseAnalytics';
+import { crashReporting } from '../../services/telemetry/crashReporting';
 import { useTheme } from '../../theme/useTheme';
 import { syncServerProfile, useAgeCheckStatus, useSyncAgeVerified } from '../../services/supabase/ageCheck';
 
@@ -55,11 +56,16 @@ export default function AppLayout() {
   useEffect(() => {
     firebaseAnalytics.setCollectionEnabled(usageAnalytics);
   }, [usageAnalytics]);
+  const crashReports = useRootStore((s) => s.crashReports);
+  useEffect(() => {
+    crashReporting.setEnabled(crashReports);
+  }, [crashReports]);
 
   // Track active pathname so forceful app restarts restore exact location
   useEffect(() => {
     if (pathname && pathname !== '/') {
       analytics.logNavigation(pathname);
+      crashReporting.breadcrumb(pathname);
     }
   }, [pathname]);
 
