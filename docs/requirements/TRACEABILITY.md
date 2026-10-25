@@ -1,5 +1,17 @@
 # Requirements Traceability Matrix
 
+## Update — 2026-10-25 (12): every screen visited, themed toggles
+
+Seen on the emulator (debug + Metro, `thrivefold:///route` deep links): Quests, Games, Medications,
+Journal, Connected apps, Health, Progress, Roadmap, Patterns, Learn, Personalize, Safety, Exercise
+library, Log a workout, Symptoms, Mood, Coach intro and live workspace. No key/LogBox errors on these.
+
+| Item | Status | Commit |
+| --- | --- | --- |
+| Native Switch rendered Material teal (ignored theme) | one `Toggle` component, used on all 6 screens | efa4ad2 |
+| Coach workspace | renders coaching layout, camera stage, big count, fix banner, tutorial; no landmarks without a person (correct). Pose accuracy needs a real phone | — |
+| Drawer once seen opening after deep links | not reproduced on retry | — |
+
 ## Update — 2026-10-25 (11): pen-pal letters live, overflow pass
 
 Checks: compile 0, lint 0, `pnpm test` 188/188, `pnpm test:db` 94/94. Seen on the emulator: Train,
