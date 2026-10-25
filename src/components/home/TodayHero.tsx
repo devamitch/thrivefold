@@ -44,6 +44,7 @@ export function TodayHero({ done, total, points, target, level, xpToNext, checkI
         <SquircleSurface accessible accessibilityLabel={`${points} of ${target} points today`}>
           <Svg width={RING} height={RING}>
             <Circle cx={RING / 2} cy={RING / 2} r={r} stroke={colors.onPrimarySurface} strokeWidth={STROKE} fill="none" />
+            {share > 0 ? (
             <Circle
               cx={RING / 2}
               cy={RING / 2}
@@ -56,6 +57,7 @@ export function TodayHero({ done, total, points, target, level, xpToNext, checkI
               strokeDashoffset={c * (1 - share)}
               transform={`rotate(-90 ${RING / 2} ${RING / 2})`}
             />
+            ) : null}
           </Svg>
           <SquircleSurface style={[StyleSheet.absoluteFill, styles.center]}>
             <Text style={[typography.subheading, { color: colors.onPrimary }]}>{points}</Text>

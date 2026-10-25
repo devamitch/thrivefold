@@ -274,7 +274,7 @@ export default function HomeScreen() {
                     {setupOpen} setup step{setupOpen === 1 ? '' : 's'} left
                   </Text>
                   <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                    Answer them to fit your quests and earn the setup XP.
+                    {setupOpen === 1 ? 'Answer it' : 'Answer them'} to fit your quests and earn the setup XP.
                   </Text>
                 </SquircleSurface>
                 <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />

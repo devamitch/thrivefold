@@ -23,8 +23,8 @@ export const DRAWER_SECTIONS: { title: string; items: Item[] }[] = [
   {
     title: 'Today',
     items: [
-      { label: 'Universal Calendar', icon: 'calendar-outline', route: '/(app)/calendar' },
-      { label: 'Daily Check-in', icon: 'sunny-outline', route: '/(app)/check-in' },
+      { label: 'Calendar', icon: 'calendar-outline', route: '/(app)/calendar' },
+      { label: 'Check in', icon: 'sunny-outline', route: '/(app)/check-in' },
       { label: 'Quests', icon: 'ribbon-outline', route: '/(app)/quests' },
       { label: 'Train', icon: 'fitness-outline', route: '/(app)/train' },
       { label: 'Games', icon: 'game-controller-outline', route: '/(app)/games' },
@@ -34,22 +34,22 @@ export const DRAWER_SECTIONS: { title: string; items: Item[] }[] = [
     title: 'Health',
     items: [
       { label: 'Cycle', icon: 'water-outline', route: '/(app)/health/cycle', only: ['women_health'] },
-      { label: "Men's Health", icon: 'barbell-outline', route: '/(app)/health/men', only: ['men_health'] },
-      { label: 'Affirming Care', icon: 'heart-outline', route: '/(app)/health/pride', only: ['pride_wellbeing'] },
-      { label: 'Nutrition & Food', icon: 'nutrition-outline', route: '/(app)/health/nutrition' },
-      { label: 'Sleep & Rest', icon: 'moon-outline', route: '/(app)/health/sleep' },
+      { label: "Men's health", icon: 'barbell-outline', route: '/(app)/health/men', only: ['men_health'] },
+      { label: 'Self-care', icon: 'heart-outline', route: '/(app)/health/pride', only: ['pride_wellbeing'] },
+      { label: 'Food', icon: 'nutrition-outline', route: '/(app)/health/nutrition' },
+      { label: 'Sleep', icon: 'moon-outline', route: '/(app)/health/sleep' },
       { label: 'Medications', icon: 'medkit-outline', route: '/(app)/health/medications' },
       { label: 'Journal', icon: 'book-outline', route: '/(app)/journal' },
       { label: 'Health Connect', icon: 'pulse-outline', route: '/(app)/health/integrations' },
-      { label: 'All Health Tools', icon: 'apps-outline', route: '/(app)/health' },
+      { label: 'All health tools', icon: 'apps-outline', route: '/(app)/health' },
     ],
   },
   {
     title: 'Growth',
     items: [
-      { label: 'Roadmap & Progress', icon: 'trail-sign-outline', route: '/(app)/roadmap' },
-      { label: 'Patterns & Insights', icon: 'bulb-outline', route: '/(app)/ai' },
-      { label: 'Learn & Science', icon: 'school-outline', route: '/(app)/learn' },
+      { label: 'Roadmap', icon: 'trail-sign-outline', route: '/(app)/roadmap' },
+      { label: 'Patterns', icon: 'bulb-outline', route: '/(app)/ai' },
+      { label: 'Learn', icon: 'school-outline', route: '/(app)/learn' },
     ],
   },
   {
