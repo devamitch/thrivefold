@@ -122,7 +122,7 @@ export function useServerGates(enabled: boolean) {
 export function communityErrorText(e: unknown): string {
   const m = e instanceof Error ? e.message : String(e);
   if (m.includes('level_required')) return 'You need a higher level for this.';
-  if (m.includes('age_verification_required')) return 'This needs an age check, which isn’t available yet.';
+  if (m.includes('age_verification_required')) return 'This needs an age check. Start it from You > Account > Age check.';
   if (m.includes('account_restricted')) return 'Your account can’t use groups right now.';
   if (m.includes('invitation_required')) return 'This group is invite-only.';
   if (m.includes('invalid_details')) return 'Give the group a name (3–60 letters) and a purpose (10–280).';

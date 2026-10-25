@@ -2,8 +2,8 @@ import type { RootState } from '../stores/rootTypes';
 
 /**
  * Private correspondence (spec §6): only for people whose social path is open AND whose age
- * was checked by a real age-assurance provider. Self-entered birthdays never qualify. Until
- * a provider exists, nobody qualifies, so the feature stays out of sight and out of reach.
+ * was confirmed by the age-check provider (server-set, mirrored from tf_my_age_check).
+ * Self-entered birthdays never qualify. The server re-checks every letter regardless.
  */
 export const canUseCorrespondence = (s: Pick<RootState, 'isSocialPathRevealed' | 'user'>): boolean =>
   Boolean(s.isSocialPathRevealed && s.user?.isAgeVerified);

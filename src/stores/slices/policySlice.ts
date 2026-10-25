@@ -17,6 +17,9 @@ export interface PolicySlice {
   blockedUserIds: string[];
   safetyReports: SafetyReport[];
   isSocialPathRevealed: boolean;
+  /** The person said "not now" to the letters-and-groups invitation. */
+  socialInviteDismissedAt: string | null;
+  dismissSocialInvite: () => void;
   grantConsent: (featureId: string) => void;
   revokeConsent: (featureId: string) => void;
   blockUser: (userId: string) => void;
@@ -37,6 +40,8 @@ export const createPolicySlice: StateCreator<
   safetyReports: [],
   // Social features stay out of sight until the gradual-reveal rules offer them.
   isSocialPathRevealed: false,
+  socialInviteDismissedAt: null,
+  dismissSocialInvite: () => set({ socialInviteDismissedAt: new Date().toISOString() }),
 
   grantConsent: (featureId) =>
     set((state) => ({

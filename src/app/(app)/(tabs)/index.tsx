@@ -6,6 +6,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 
 import { ActivityRow } from '../../../components/game/ActivityRow';
+import { SocialInvite } from '../../../components/home/SocialInvite';
 import { QuestSheet } from '../../../components/game/QuestSheet';
 import { HomeGuide } from '../../../components/home/HomeGuide';
 import { TodayHero } from '../../../components/home/TodayHero';
@@ -259,6 +260,7 @@ export default function HomeScreen() {
       </Animated.View>
 
       <HomeGuide />
+      <SocialInvite />
 
       {setupOpen > 0 ? (
         <Animated.View entering={enter(1)}>

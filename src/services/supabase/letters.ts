@@ -171,7 +171,7 @@ export function useDeclineLetter() {
 export function letterErrorText(e: unknown): string {
   const m = e instanceof Error ? e.message : String(e);
   if (m.includes('not_authenticated')) return 'Sign in to send letters.';
-  if (m.includes('age_verification_required')) return 'Letters need an age check, which isn’t available yet.';
+  if (m.includes('age_verification_required')) return 'Letters need an age check. Start it from You > Account > Age check.';
   if (m.includes('recipient_unavailable')) return 'This person isn’t taking new letters right now.';
   if (m.includes('daily_introduction_limit')) return 'You can start one new conversation a day. Try again tomorrow.';
   if (m.includes('invalid_chips')) return 'Choose between 1 and 12 cards for your letter.';

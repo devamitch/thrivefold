@@ -77,7 +77,7 @@ export default function CirclesScreen() {
     : level < JOIN_AT
       ? { title: `Groups open at level ${JOIN_AT}`, body: `You're level ${level}. Quests, workouts and check-ins move you up.` }
       : !ageOk
-        ? { title: 'Waiting for an age check', body: 'Groups are for verified adults. The age check isn’t available yet, so groups stay closed for everyone.' }
+        ? { title: 'Confirm your age to join', body: 'Groups are for verified adults. A two-minute check with an independent provider; Thrivefold keeps only the result.' }
         : null;
 
   return (
@@ -94,6 +94,11 @@ export default function CirclesScreen() {
           <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.md }]}>
             Join from level {JOIN_AT}. Start your own group from level {CREATE_AT}.
           </Text>
+          {signedIn && level >= JOIN_AT && !ageOk ? (
+            <Link href={'/(app)/you/age-check' as Href} asChild>
+              <Button label="Start age check" size="sm" style={{ marginTop: spacing.md, alignSelf: 'flex-start' }} />
+            </Link>
+          ) : null}
           {signedIn && level < JOIN_AT ? (
             <Link href={'/(app)/quests' as Href} asChild>
               <Button label="See today's quests" size="sm" variant="outline" style={{ marginTop: spacing.md, alignSelf: 'flex-start' }} />
