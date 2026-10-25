@@ -25,6 +25,8 @@ export default function PrivacyScreen() {
       setUsage: st.setUsageAnalytics,
       crash: st.crashReports,
       setCrash: st.setCrashReports,
+      cloudAi: st.cloudAiConsent,
+      setCloudAi: st.setCloudAiConsent,
     })),
   );
   const signedIn = Boolean(s.user && !s.user.isGuest && s.user.email);
@@ -91,6 +93,12 @@ export default function PrivacyScreen() {
         title="Send crash reports"
         subtitle="When the app crashes: the error, device model and app version, and recent screen names. Never your records, notes or messages."
         right={<Toggle value={s.crash} onValueChange={s.setCrash} accessibilityLabel="Send crash reports" />}
+      />
+      <SettingsRow
+        icon="sparkles-outline"
+        title="AI companion (Ask Thrive)"
+        subtitle="Sends only what you type in Ask Thrive to an AI provider through Thrivefold's server. Off by default."
+        right={<Toggle value={s.cloudAi} onValueChange={s.setCloudAi} accessibilityLabel="AI companion" />}
       />
       <Link href={'/(app)/safety' as Href} asChild>
         <SettingsRow icon="shield-checkmark-outline" title="Safety and support" subtitle="Blocking, reports and urgent help." />

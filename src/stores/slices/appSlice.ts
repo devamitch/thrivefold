@@ -86,6 +86,9 @@ export interface AppSlice {
   /** Crash reports (stack traces, device model, app version; no personal content). Opt-out. */
   crashReports: boolean;
   setCrashReports: (on: boolean) => void;
+  /** Explicit consent to send typed questions to the cloud AI companion. Off by default. */
+  cloudAiConsent: boolean;
+  setCloudAiConsent: (on: boolean) => void;
   setUsageAnalytics: (on: boolean) => void;
   setShareWeeklySummaries: (enabled: boolean) => void;
   setQuestRemindersEnabled: (enabled: boolean) => void;
@@ -152,6 +155,8 @@ export const createAppSlice: StateCreator<
   usageAnalytics: false,
   crashReports: true,
   setCrashReports: (crashReports) => set({ crashReports }),
+  cloudAiConsent: false,
+  setCloudAiConsent: (cloudAiConsent) => set({ cloudAiConsent }),
   setUsageAnalytics: (usageAnalytics) => set({ usageAnalytics }),
   setShareWeeklySummaries: (shareWeeklySummaries) => set({ shareWeeklySummaries }),
   setQuestRemindersEnabled: (questRemindersEnabled) => set({ questRemindersEnabled }),

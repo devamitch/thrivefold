@@ -9,3 +9,7 @@ verify_jwt = false
 [functions.delete-account]
 # Validates the caller's JWT itself (and requires an explicit confirmation in the body).
 verify_jwt = false
+
+[functions.ai-chat]
+# Validates the caller's JWT itself and handles CORS preflight.
+verify_jwt = false

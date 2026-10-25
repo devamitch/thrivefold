@@ -110,6 +110,22 @@ export default function InsightsScreen() {
     <ScreenWrapper scrollable>
       <Header title="Your patterns" subtitle="Worked out on this phone from your own records" showBack />
       <View style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
+        <Link href={'/(app)/ai/chat' as Href} asChild>
+          <PressableScale accessibilityRole="button" accessibilityLabel="Ask Thrive, the AI companion">
+            <Card style={{ marginBottom: spacing.md, padding: 16, backgroundColor: colors.primaryAlpha }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <Ionicons name="chatbubbles-outline" size={24} color={colors.primary} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Ask Thrive</Text>
+                  <Text style={[typography.caption, { color: colors.text.secondary }]}>
+                    Optional AI companion for habits, sleep, movement and stress
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
+              </View>
+            </Card>
+          </PressableScale>
+        </Link>
         {/* Hero */}
         <Card style={{ marginBottom: spacing.md, padding: 14, backgroundColor: colors.surface }}>
           <View style={styles.heroWrap}>
