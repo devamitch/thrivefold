@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Pressable, StyleSheet, Text, TextInput, View, type AccessibilityActionEvent } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -79,13 +80,13 @@ export default function CheckInScreen() {
       footer={<Button label={existing ? 'Update check-in' : 'Save check-in'} size="lg" onPress={save} />}
     >
       <Card style={styles.card}>
-        <Scale {...SCALES.energy} value={energy} onChange={setEnergy} />
+        <Scale kind="energy" {...SCALES.energy} value={energy} onChange={setEnergy} />
       </Card>
       <Card style={styles.card}>
-        <Scale {...SCALES.mood} value={mood} onChange={setMood} />
+        <Scale kind="mood" {...SCALES.mood} value={mood} onChange={setMood} />
       </Card>
       <Card style={styles.card}>
-        <Scale {...SCALES.stress} value={stress} onChange={setStress} />
+        <Scale kind="stress" {...SCALES.stress} value={stress} onChange={setStress} />
       </Card>
 
       <Card style={styles.card}>
@@ -166,40 +167,84 @@ export default function CheckInScreen() {
   );
 }
 
-/** Tap-to-set 1–10 scale; screen readers can increase or decrease it. */
-function Scale({ label, low, high, value, onChange }: { label: string; low: string; high: string; value: number; onChange: (v: number) => void }) {
+const WORDS: Record<keyof typeof SCALES, string[]> = {
+  energy: ['Empty', 'Drained', 'Tired', 'Low', 'Okay', 'Fine', 'Good', 'Lively', 'Strong', 'Full of energy'],
+  mood: ['Very low', 'Low', 'Down', 'Flat', 'Okay', 'Fine', 'Good', 'Bright', 'Happy', 'Great'],
+  stress: ['Calm', 'Relaxed', 'Easy', 'A little tense', 'Some pressure', 'Tense', 'Stressed', 'Strained', 'Overloaded', 'Very stressed'],
+};
+
+/**
+ * 1–10 scale. Swipe along it (or tap a segment) to set it; each step clicks with a light
+ * haptic. Screen readers can increase or decrease it.
+ */
+function Scale({
+  kind,
+  label,
+  low,
+  high,
+  value,
+  onChange,
+}: {
+  kind: keyof typeof SCALES;
+  label: string;
+  low: string;
+  high: string;
+  value: number;
+  onChange: (v: number) => void;
+}) {
   const { colors, typography, spacing } = useTheme();
+  const width = useRef(0);
+  const last = useRef(value);
+  last.current = value;
   const set = (v: number) => {
-    try {
-      Haptics.selectionAsync();
-    } catch {}
-    onChange(Math.max(1, Math.min(10, v)));
+    const next = Math.max(1, Math.min(10, v));
+    if (next === last.current) return;
+    last.current = next;
+    Haptics.selectionAsync().catch(() => undefined);
+    onChange(next);
   };
+  const fromX = (x: number) => set(Math.ceil((Math.max(0, Math.min(width.current - 1, x)) / Math.max(1, width.current)) * 10));
+  const gesture = Gesture.Race(
+    Gesture.Pan()
+      .activeOffsetX([-6, 6])
+      .failOffsetY([-14, 14])
+      .runOnJS(true)
+      .onBegin((e) => fromX(e.x))
+      .onUpdate((e) => fromX(e.x)),
+    Gesture.Tap()
+      .runOnJS(true)
+      .onEnd((e) => fromX(e.x)),
+  );
   return (
     <View
       accessible
       accessibilityRole="adjustable"
       accessibilityLabel={label}
-      accessibilityValue={{ min: 1, max: 10, now: value }}
+      accessibilityValue={{ min: 1, max: 10, now: value, text: `${value} of 10, ${WORDS[kind][value - 1]}` }}
       accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
       onAccessibilityAction={(e: AccessibilityActionEvent) => set(value + (e.nativeEvent.actionName === 'increment' ? 1 : -1))}
     >
       <View style={styles.rowBetween}>
         <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{label}</Text>
-        <Text style={[typography.subheading, { color: colors.primary }]}>{value}/10</Text>
+        <Text style={[typography.subheading, { color: colors.primary }]}>
+          {WORDS[kind][value - 1]} · {value}
+        </Text>
       </View>
-      <View style={[styles.scale, { marginTop: spacing.sm }]}>
-        {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-          <Pressable
-            key={n}
-            onPress={() => set(n)}
-            hitSlop={{ top: 8, bottom: 8 }}
-            style={[styles.segment, { backgroundColor: n <= value ? colors.primary : colors.surface1 }]}
-          />
-        ))}
-      </View>
+      <GestureDetector gesture={gesture}>
+        <View
+          style={[styles.scale, { marginTop: spacing.sm }]}
+          onLayout={(e) => {
+            width.current = e.nativeEvent.layout.width;
+          }}
+        >
+          {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+            <View key={n} style={[styles.segment, { backgroundColor: n <= value ? colors.primary : colors.surface1, opacity: n <= value ? 0.55 + n * 0.045 : 1 }]} />
+          ))}
+        </View>
+      </GestureDetector>
       <View style={[styles.rowBetween, { marginTop: 6 }]}>
         <Text style={[typography.caption, { color: colors.text.muted }]}>{low}</Text>
+        <Text style={[typography.caption, { color: colors.text.muted }]}>Swipe to set</Text>
         <Text style={[typography.caption, { color: colors.text.muted }]}>{high}</Text>
       </View>
     </View>
@@ -218,7 +263,7 @@ function StepButton({ icon, label, onPress }: { icon: 'add' | 'remove'; label: s
 const styles = StyleSheet.create({
   card: { padding: 16, marginBottom: 12 },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  scale: { flexDirection: 'row', gap: 4, height: 32 },
+  scale: { flexDirection: 'row', gap: 4, height: 40, paddingVertical: 4 },
   segment: { flex: 1, borderRadius: 6 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   stepper: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
