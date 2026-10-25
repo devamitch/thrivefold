@@ -7,3 +7,6 @@ import type { RootState } from '../stores/rootTypes';
  */
 export const canUseCorrespondence = (s: Pick<RootState, 'isSocialPathRevealed' | 'user'>): boolean =>
   Boolean(s.isSocialPathRevealed && s.user?.isAgeVerified);
+
+/** Dating (spec §18): same adult gate as correspondence; the server adds level 20 and its rules. */
+export const canUseDating = canUseCorrespondence;

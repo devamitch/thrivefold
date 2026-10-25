@@ -388,6 +388,73 @@ check("other people's age checks are hidden", r.rows?.[0]?.n === 0, JSON.stringi
 await as('service');
 await db.exec(`update public.thrivefold_profiles set is_age_verified = false where user_id = '${ids.C}'`);
 
+// Dating (migration 12): verified adults at level 20, women start, chip-only, closable
+const L20 = `(select min_xp from public.thrivefold_levels where level = 20)`;
+const prof = (g, into) => `select public.tf_dating_save_profile('${g}', array[${into.map((x) => `'${x}'`).join(',')}], array['walks'], array['dating_reflect_01'], true)`;
+await as('B');
+r = await q(prof('man', ['woman']));
+check('dating needs level 20', /level_required/.test(r.error ?? ''), r.error);
+await as('C');
+r = await q(prof('woman', ['man']));
+check('dating needs a verified adult', /age_verification_required/.test(r.error ?? ''), r.error);
+await as('service');
+await db.exec(`delete from public.thrivefold_blocks where user_id = '${ids.B}' and blocked_user_id = '${ids.A}'`);
+for (const k of ['A', 'B', 'D']) {
+  await db.exec(`insert into public.thrivefold_reward_ledger (user_id, key, kind, xp, game_date, source_id, policy_version)
+                 values ('${ids[k]}', 'fixture_xp_l20_${k}', 'legacy_import', ${L20}, current_date, 'fixture', 'test')`);
+}
+await as('A'); r = await q(prof('woman', ['man']));
+check('verified level-20 adult saves a dating profile', !r.error, r.error);
+await as('B'); await q(prof('man', ['woman']));
+await as('D'); await q(prof('man', ['man']));
+await as('B');
+r = await q(`select public.tf_dating_start('${ids.A}', array['dating_hello_01'])`);
+check('a man cannot start a dating conversation (women start)', /women_start_conversations/.test(r.error ?? ''), r.error);
+r = await q(`insert into public.thrivefold_dating_conversations (user_a, user_b, initiator) values ('${ids.A}', '${ids.B}', '${ids.B}')`);
+check('conversations cannot be inserted directly', !!r.error, r.error);
+await as('A');
+r = await q(`select user_id from public.tf_dating_candidates(50)`);
+const dc = (r.rows ?? []).map((x) => x.user_id);
+check('candidates are mutually compatible', dc.includes(ids.B) && !dc.includes(ids.D), r.error ?? JSON.stringify(dc));
+r = await q(`select public.tf_dating_start('${ids.D}', array['dating_hello_01'])`);
+check('incompatible people cannot be contacted', /recipient_unavailable/.test(r.error ?? ''), r.error);
+r = await q(`select public.tf_dating_start('${ids.B}', array['call me on 555'])`);
+check('dating messages are chip-only', /invalid_chips/.test(r.error ?? ''), r.error);
+r = await q(`select public.tf_dating_start('${ids.B}', array['dating_hello_01','dating_reflect_05']) as id`);
+const conv = r.rows?.[0]?.id;
+check('a woman starts a conversation', !r.error && conv, r.error);
+r = await q(`select public.tf_dating_start('${ids.B}', array['dating_hello_02'])`);
+check('a second first contact to the same person is refused', /conversation_exists/.test(r.error ?? ''), r.error);
+await as('B');
+r = await q(`select public.tf_dating_send('${conv}', array['dating_reply_01']) as id`);
+check('the other person can reply', !r.error && r.rows?.[0]?.id, r.error);
+r = await q(`select count(*)::int as n from public.thrivefold_dating_messages where conversation_id = '${conv}'`);
+check('participants read the conversation', r.rows?.[0]?.n === 2, JSON.stringify(r.rows ?? r.error));
+r = await q(`insert into public.thrivefold_dating_messages (conversation_id, sender_id, chip_ids, body) values ('${conv}', '${ids.B}', array['x'], 'free text')`);
+check('messages cannot be inserted directly', !!r.error, r.error);
+await as('D');
+r = await q(`select count(*)::int as n from public.thrivefold_dating_messages`);
+check('outsiders cannot read dating messages', r.rows?.[0]?.n === 0, JSON.stringify(r.rows ?? r.error));
+r = await q(`select public.tf_dating_send('${conv}', array['dating_reply_01'])`);
+check('outsiders cannot post into a conversation', /conversation_unavailable/.test(r.error ?? ''), r.error);
+await as('service');
+await db.exec(`insert into public.thrivefold_blocks (user_id, blocked_user_id) values ('${ids.B}','${ids.A}')`);
+await as('A');
+r = await q(`select public.tf_dating_send('${conv}', array['dating_reply_02'])`);
+check('a block stops the conversation', /conversation_unavailable/.test(r.error ?? ''), r.error);
+r = await q(`select count(*)::int as n from public.thrivefold_dating_messages where conversation_id = '${conv}'`);
+check('blocked people cannot read the conversation', r.rows?.[0]?.n === 0, JSON.stringify(r.rows ?? r.error));
+await as('service');
+await db.exec(`delete from public.thrivefold_blocks where user_id = '${ids.B}' and blocked_user_id = '${ids.A}'`);
+await as('A');
+await q(`select public.tf_dating_mark_read('${conv}')`);
+r = await q(`select unread from public.tf_dating_conversations() where id = '${conv}'`);
+check('marking read clears unread', r.rows?.[0]?.unread === 0, JSON.stringify(r.rows ?? r.error));
+await q(`select public.tf_dating_close('${conv}')`);
+await as('B');
+r = await q(`select public.tf_dating_send('${conv}', array['dating_reply_02'])`);
+check('a closed conversation takes no more messages', /conversation_closed/.test(r.error ?? ''), r.error);
+
 // Weekly summaries (migration 8): opt-in, own rows only, validated
 await as('B');
 r = await q(`select public.tf_upsert_weekly_summary(date_trunc('week', current_date - 7)::date, 3, 6.5, 7, 4, 7.2, 5, 2, 90, 1, 120) as r`);

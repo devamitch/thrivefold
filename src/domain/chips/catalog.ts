@@ -8,14 +8,18 @@ export type ChipCategory =
   | 'communication_style'
   | 'gratitude'
   | 'boundaries'
-  | 'close_conversation';
+  | 'close_conversation'
+  | 'dating_hello'
+  | 'dating_reflection'
+  | 'dating_playful'
+  | 'dating_reply';
 
 export interface MessageChip {
   id: string;
   category: ChipCategory;
   text: string;
   subtext?: string;
-  allowedModes: ('letters' | 'structured-introduction')[];
+  allowedModes: ('letters' | 'structured-introduction' | 'dating')[];
   riskClass: 'safe' | 'boundary' | 'contact_sensitive';
   version: string;
 }
@@ -247,6 +251,152 @@ export const APPROVED_CHIPS: MessageChip[] = [
     subtext: 'Warm closing',
     allowedModes: ['letters', 'structured-introduction'],
     riskClass: 'safe',
+    version: CHIP_CATALOG_VERSION,
+  },
+
+  // 11. Dating (chip-only, non-explicit; spec section 18.2)
+  {
+    id: 'dating_hello_01',
+    category: 'dating_hello',
+    text: 'Hi! Your profile made me smile. I would like to get to know you.',
+    subtext: 'Warm hello',
+    allowedModes: ['dating'],
+    riskClass: 'safe',
+    version: CHIP_CATALOG_VERSION,
+  },
+  {
+    id: 'dating_hello_02',
+    category: 'dating_hello',
+    text: 'Hello, I think we share a few interests. Would you like to talk?',
+    subtext: 'Shared interests',
+    allowedModes: ['dating'],
+    riskClass: 'safe',
+    version: CHIP_CATALOG_VERSION,
+  },
+  {
+    id: 'dating_hello_03',
+    category: 'dating_hello',
+    text: 'Hi there, I like how you describe your days.',
+    subtext: 'Noticed you',
+    allowedModes: ['dating'],
+    riskClass: 'safe',
+    version: CHIP_CATALOG_VERSION,
+  },
+  {
+    id: 'dating_reflect_01',
+    category: 'dating_reflection',
+    text: 'I value honesty and kindness in a partner.',
+    subtext: 'What matters',
+    allowedModes: ['dating'],
+    riskClass: 'safe',
+    version: CHIP_CATALOG_VERSION,
+  },
+  {
+    id: 'dating_reflect_02',
+    category: 'dating_reflection',
+    text: 'I am looking for something steady and unhurried.',
+    subtext: 'What I want',
+    allowedModes: ['dating'],
+    riskClass: 'safe',
+    version: CHIP_CATALOG_VERSION,
+  },
+  {
+    id: 'dating_reflect_03',
+    category: 'dating_reflection',
+    text: 'Making each other laugh matters a lot to me.',
+    subtext: 'Humour',
+    allowedModes: ['dating'],
+    riskClass: 'safe',
+    version: CHIP_CATALOG_VERSION,
+  },
+  {
+    id: 'dating_reflect_04',
+    category: 'dating_reflection',
+    text: 'I like taking things slowly and getting to know someone well.',
+    subtext: 'Pace',
+    allowedModes: ['dating'],
+    riskClass: 'safe',
+    version: CHIP_CATALOG_VERSION,
+  },
+  {
+    id: 'dating_reflect_05',
+    category: 'dating_reflection',
+    text: 'What does a good week look like for you?',
+    subtext: 'Question',
+    allowedModes: ['dating'],
+    riskClass: 'safe',
+    version: CHIP_CATALOG_VERSION,
+  },
+  {
+    id: 'dating_reflect_06',
+    category: 'dating_reflection',
+    text: 'What is something you are looking forward to?',
+    subtext: 'Question',
+    allowedModes: ['dating'],
+    riskClass: 'safe',
+    version: CHIP_CATALOG_VERSION,
+  },
+  {
+    id: 'dating_playful_01',
+    category: 'dating_playful',
+    text: 'Tea or coffee? This is important.',
+    subtext: 'Playful',
+    allowedModes: ['dating'],
+    riskClass: 'safe',
+    version: CHIP_CATALOG_VERSION,
+  },
+  {
+    id: 'dating_playful_02',
+    category: 'dating_playful',
+    text: 'Your taste in hobbies is suspiciously good.',
+    subtext: 'Playful',
+    allowedModes: ['dating'],
+    riskClass: 'safe',
+    version: CHIP_CATALOG_VERSION,
+  },
+  {
+    id: 'dating_playful_03',
+    category: 'dating_playful',
+    text: 'Now I am curious what your perfect Sunday looks like.',
+    subtext: 'Playful',
+    allowedModes: ['dating'],
+    riskClass: 'safe',
+    version: CHIP_CATALOG_VERSION,
+  },
+  {
+    id: 'dating_reply_01',
+    category: 'dating_reply',
+    text: 'I would like that. Tell me more.',
+    subtext: 'Reply',
+    allowedModes: ['dating'],
+    riskClass: 'safe',
+    version: CHIP_CATALOG_VERSION,
+  },
+  {
+    id: 'dating_reply_02',
+    category: 'dating_reply',
+    text: 'Thank you, that is kind of you to say.',
+    subtext: 'Reply',
+    allowedModes: ['dating'],
+    riskClass: 'safe',
+    version: CHIP_CATALOG_VERSION,
+  },
+  {
+    id: 'dating_reply_03',
+    category: 'dating_reply',
+    text: 'I am enjoying this, and I would like to keep the pace slow.',
+    subtext: 'Pace',
+    allowedModes: ['dating'],
+    riskClass: 'boundary',
+    version: CHIP_CATALOG_VERSION,
+  },
+  {
+    id: 'dating_close_01',
+    category: 'close_conversation',
+    text: 'Thank you for the conversation. I do not think we are a match, and I wish you well.',
+    subtext: 'Kind goodbye',
+    allowedModes: ['dating'],
+    riskClass: 'boundary',
     version: CHIP_CATALOG_VERSION,
   },
 ];

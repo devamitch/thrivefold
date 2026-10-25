@@ -21,7 +21,10 @@ test('cycle is only offered to the women\'s health experience; groups open at le
   const items = DRAWER_SECTIONS.flatMap((s) => s.items);
   expect(items.find((i) => i.label === 'Cycle')?.only).toEqual(['women_health']);
   items.filter((i) => ['Circles', 'Organizations'].includes(i.label)).forEach((i) => expect(i.minLevel).toBe(6));
-  expect(items.some((i) => i.label === 'Letters')).toBe(false);
+  // Social entries exist but stay hidden until the person opts into the social path.
+  expect(items.find((i) => i.label === 'Letters')?.social).toBe(true);
+  expect(items.find((i) => i.label === 'Dating')?.social).toBe(true);
+  expect(items.find((i) => i.label === 'Dating')?.minLevel).toBe(20);
   expect(items.some((i) => i.label === 'Train')).toBe(true);
 });
 
