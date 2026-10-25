@@ -29,6 +29,11 @@ export type SquircleShape = 'squircle' | 'rounded' | 'pill' | 'circle';
 
 /** Below this radius a squircle and a rounded rect are indistinguishable on screen. */
 const NATIVE_MIN_RADIUS = 18;
+/**
+ * The native squircle redraws its path on every frame of a scroll; measured on a Moto G71
+ * (release) plain rounded views scroll noticeably smoother. Off until it is optimised.
+ */
+const USE_NATIVE_SQUIRCLE = false;
 
 type NativeSquircleProps = ViewProps & {
   squircleBackgroundColor?: number | null;
@@ -38,11 +43,12 @@ type NativeSquircleProps = ViewProps & {
   cornerSmoothing?: number | null;
   shape?: SquircleShape | null;
   clipContent?: boolean | null;
+  glassEnabled?: boolean | null;
   ref?: any;
 };
 
 let NativeSquircleView: ComponentType<NativeSquircleProps> | null = null;
-if (Platform.OS === 'android') {
+if (Platform.OS === 'android' && USE_NATIVE_SQUIRCLE) {
   try {
     const hasViewManager =
       typeof UIManager.getViewManagerConfig === 'function'
@@ -66,7 +72,11 @@ export interface SquircleSurfaceProps extends ViewProps {
   stroke?: string;
   strokeWidth?: number;
   shape?: SquircleShape;
-  /** Clips children to the corners when something is painted. Ignored for `overflow: 'visible'`. */
+  /**
+   * Clip children to the corners. Plain views clip when painted (cheap outline clipping); the
+   * native squircle clips only when this is set explicitly, since a path clip on every card
+   * is expensive to redraw while scrolling.
+   */
   clipContent?: boolean;
   ref?: React.Ref<View>;
 }
@@ -80,7 +90,7 @@ export const SquircleSurface = memo(function SquircleSurface({
   stroke,
   strokeWidth = 1,
   shape = 'squircle',
-  clipContent = true,
+  clipContent,
   ref,
   ...rest
 }: SquircleSurfaceProps) {
@@ -95,7 +105,7 @@ export const SquircleSurface = memo(function SquircleSurface({
   const radius = round
     ? 9999
     : (radiusProp ?? (typeof flat.borderRadius === 'number' ? flat.borderRadius : 0));
-  const clip = clipContent && painted && radius > 0 && flat.overflow !== 'visible';
+  const clip = (clipContent ?? true) && painted && radius > 0 && flat.overflow !== 'visible';
 
   if (NativeSquircleView && shape === 'squircle' && radius >= NATIVE_MIN_RADIUS && painted) {
     return (
@@ -108,7 +118,10 @@ export const SquircleSurface = memo(function SquircleSurface({
         squircleRadius={radius}
         cornerSmoothing={Math.round(smoothing * 100)}
         shape={shape}
-        clipContent={clip}
+        // The module's "glass" (gradient light, sweep-gradient rims) redraws every frame and
+        // drew border lines on every card: off. Path clipping only when asked for.
+        glassEnabled={false}
+        clipContent={clipContent === true && clip}
         style={[flat, styles.clear]}
       >
         {children}

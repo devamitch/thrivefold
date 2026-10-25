@@ -1,184 +1,262 @@
-import { SquircleSurface } from '../ui/SquircleSurface';
-import React, { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
-import Animated, {
-  Easing,
-  useAnimatedStyle,
-  useFrameCallback,
-  useReducedMotion,
-  useSharedValue,
-  withRepeat,
-  withTiming,
-  type SharedValue,
-} from 'react-native-reanimated';
+import { Canvas, DashPathEffect, Group, Path, Skia } from '@shopify/react-native-skia';
+import React, { memo, useEffect } from 'react';
+import { StyleSheet } from 'react-native';
+import { useDerivedValue, useFrameCallback, useReducedMotion, useSharedValue, type SharedValue } from 'react-native-reanimated';
 
-import { LM, SKELETON, type Landmark } from '../../domain/pose/movement';
+import { FACE_GROUPS, HAND_BONES } from 'pose-landmarker';
+
+import { LM, SKELETON } from '../../domain/pose/movement';
 import { useTheme } from '../../theme/useTheme';
 
+const N = 33;
+const JOINTS = [...new Set(SKELETON.flat())];
+/** Share of the remaining distance covered each display frame: glides between detections. */
+const FOLLOW = 0.35;
+const MIN_VIS = 0.5;
+
+/** Latest detection, written straight from the camera event (no React state). */
+export interface PoseFeed {
+  /** Flat [x, y, visibility] * 33, normalised to the analysed frame; empty array = nobody. */
+  points: SharedValue<number[]>;
+  frameW: SharedValue<number>;
+  frameH: SharedValue<number>;
+  /** Flat [x, y] face points (FACE_GROUPS order); empty when off or not seen. */
+  face?: SharedValue<number[]>;
+  /** Hands, concatenated: 42 numbers per hand. */
+  hands?: SharedValue<number[]>;
+}
+
+/** Eases `out` towards `target` (both in stage pixels) in place; snaps when sizes differ. */
+function easeInto(out: number[], target: number[], follow: number): number[] {
+  'worklet';
+  if (out.length !== target.length) return target.slice();
+  for (let i = 0; i < target.length; i++) out[i] = out[i] + (target[i] - out[i]) * follow;
+  return out;
+}
+
 interface Props {
-  landmarks: Landmark[];
-  frameWidth: number;
-  frameHeight: number;
-  /** Size of the tile the camera preview fills (centre-cropped). */
+  feed: PoseFeed;
+  /** Size of the stage the camera preview fills (centre-cropped). */
   width: number;
   height: number;
-  /** Joints to draw in the warning colour. */
+  /** Joints to draw in the warning colour (changes only when a fault starts or ends). */
   highlight: number[];
 }
 
-const JOINTS = [...new Set(SKELETON.flat())];
-const N = 33;
-/** Share of the remaining distance covered each display frame (~60 fps easing). */
-const FOLLOW = 0.3;
-const BREATH_MS = 2400;
-const DOT = 9;
-const BONE = 3;
-
 /**
- * A clean body skeleton over a centre-cropped camera preview: thin bones, small joints and
- * one head marker, drawn with plain native views moved on the UI thread. Detections arrive
- * ~15 times a second and drawn points ease towards each one every frame, so the skeleton
- * glides. Joints breathe gently; only joints that need fixing turn red and glow.
+ * The live skeleton: one Skia canvas, everything computed on the UI thread. Detections arrive
+ * ~15 times a second; drawn points ease towards each one every frame, so the body glides
+ * instead of jumping, and React never re-renders for a frame. When nobody is in view a dashed
+ * body outline shows where to stand.
  */
-export function PoseOverlay({ landmarks, frameWidth, frameHeight, width, height, highlight }: Props) {
+export const PoseOverlay = memo(function PoseOverlay({ feed, width, height, highlight }: Props) {
   const { colors } = useTheme();
   const reduceMotion = useReducedMotion();
-  const target = useSharedValue<number[]>(new Array(N * 3).fill(0));
   const shown = useSharedValue<number[]>(new Array(N * 3).fill(0));
-  const breath = useSharedValue(0);
-
+  const present = useSharedValue(0);
+  const faceShown = useSharedValue<number[]>([]);
+  const handsShown = useSharedValue<number[]>([]);
+  const hot = useSharedValue<number[]>(highlight);
   useEffect(() => {
-    breath.value = reduceMotion ? 0.5 : withRepeat(withTiming(1, { duration: BREATH_MS, easing: Easing.inOut(Easing.sin) }), -1, true);
-  }, [breath, reduceMotion]);
+    hot.value = highlight;
+  }, [highlight, hot]);
 
-  useEffect(() => {
-    if (landmarks.length < N || !frameWidth || !frameHeight || !width || !height) return;
-    // Same maths as the preview's FILL_CENTER: scale to cover, then centre.
-    const scale = Math.max(width / frameWidth, height / frameHeight);
-    const dx = (width - frameWidth * scale) / 2;
-    const dy = (height - frameHeight * scale) / 2;
-    const next = new Array(N * 3);
-    for (let i = 0; i < N; i++) {
-      next[i * 3] = landmarks[i].x * frameWidth * scale + dx;
-      next[i * 3 + 1] = landmarks[i].y * frameHeight * scale + dy;
-      next[i * 3 + 2] = landmarks[i].visibility;
-    }
-    const first = shown.value.every((v) => v === 0);
-    target.value = next;
-    if (first) shown.value = next;
-  }, [landmarks, frameWidth, frameHeight, width, height, target, shown]);
-
+  // Map the newest detection into stage pixels (same maths as the preview's FILL_CENTER)
+  // and ease the drawn points towards it. Mutates in place: no per-frame allocation.
   useFrameCallback(() => {
-    const t = target.value;
-    const s = shown.value;
-    let moved = false;
-    const out = s.slice();
-    for (let i = 0; i < N * 3; i++) {
-      const d = t[i] - s[i];
-      if (Math.abs(d) > 0.5) {
-        out[i] = s[i] + d * (reduceMotion ? 1 : FOLLOW);
-        moved = true;
-      } else out[i] = t[i];
+    const p = feed.points.value;
+    const fw = feed.frameW.value;
+    const fh = feed.frameH.value;
+    if (!fw || !fh) return;
+    const scale = Math.max(width / fw, height / fh);
+    const dx = (width - fw * scale) / 2;
+    const dy = (height - fh * scale) / 2;
+    // Face and hands: map to stage pixels and ease, same as the body.
+    const toStage = (src: number[]) => {
+      'worklet';
+      const out = new Array(src.length);
+      for (let i = 0; i < src.length; i += 2) {
+        out[i] = src[i] * fw * scale + dx;
+        out[i + 1] = src[i + 1] * fh * scale + dy;
+      }
+      return out;
+    };
+    const f = feed.face?.value ?? [];
+    if (f.length || faceShown.value.length) faceShown.value = f.length ? easeInto(faceShown.value, toStage(f), reduceMotion ? 1 : FOLLOW) : [];
+    const h = feed.hands?.value ?? [];
+    if (h.length || handsShown.value.length) handsShown.value = h.length ? easeInto(handsShown.value, toStage(h), reduceMotion ? 1 : FOLLOW) : [];
+    if (p.length < N * 3) {
+      if (present.value !== 0) present.value = 0;
+      return;
     }
-    if (moved) shown.value = out;
+    const snap = reduceMotion || present.value === 0;
+    shown.modify((s) => {
+      'worklet';
+      for (let i = 0; i < N; i++) {
+        const tx = p[i * 3] * fw * scale + dx;
+        const ty = p[i * 3 + 1] * fh * scale + dy;
+        s[i * 3] = snap ? tx : s[i * 3] + (tx - s[i * 3]) * FOLLOW;
+        s[i * 3 + 1] = snap ? ty : s[i * 3 + 1] + (ty - s[i * 3 + 1]) * FOLLOW;
+        s[i * 3 + 2] = p[i * 3 + 2];
+      }
+      return s;
+    });
+    if (present.value !== 1) present.value = 1;
   });
 
-  if (landmarks.length < N || !width || !height) return null;
-  const hot = new Set(highlight);
+  const bones = useDerivedValue(() => {
+    const path = Skia.Path.Make();
+    const s = shown.value;
+    if (!present.value) return path;
+    for (const [a, b] of SKELETON) {
+      if (s[a * 3 + 2] < MIN_VIS || s[b * 3 + 2] < MIN_VIS) continue;
+      path.moveTo(s[a * 3], s[a * 3 + 1]);
+      path.lineTo(s[b * 3], s[b * 3 + 1]);
+    }
+    return path;
+  });
+
+  const faultBones = useDerivedValue(() => {
+    const path = Skia.Path.Make();
+    const s = shown.value;
+    const h = hot.value;
+    if (!present.value || h.length === 0) return path;
+    for (const [a, b] of SKELETON) {
+      if (!(h.includes(a) || h.includes(b))) continue;
+      if (s[a * 3 + 2] < MIN_VIS || s[b * 3 + 2] < MIN_VIS) continue;
+      path.moveTo(s[a * 3], s[a * 3 + 1]);
+      path.lineTo(s[b * 3], s[b * 3 + 1]);
+    }
+    return path;
+  });
+
+  const joints = useDerivedValue(() => {
+    const path = Skia.Path.Make();
+    const s = shown.value;
+    if (!present.value) return path;
+    for (const i of JOINTS) {
+      if (s[i * 3 + 2] >= MIN_VIS) path.addCircle(s[i * 3], s[i * 3 + 1], 4.5);
+    }
+    return path;
+  });
+
+  const faultJoints = useDerivedValue(() => {
+    const path = Skia.Path.Make();
+    const s = shown.value;
+    const h = hot.value;
+    if (!present.value) return path;
+    for (const i of h) {
+      if (s[i * 3 + 2] >= MIN_VIS) path.addCircle(s[i * 3], s[i * 3 + 1], 7);
+    }
+    return path;
+  });
+
+  const head = useDerivedValue(() => {
+    const path = Skia.Path.Make();
+    const s = shown.value;
+    const n = LM.nose * 3;
+    const l = LM.leftShoulder * 3;
+    const r = LM.rightShoulder * 3;
+    if (!present.value || s[n + 2] < MIN_VIS) return path;
+    const d = Math.max(26, Math.min(130, Math.hypot(s[l] - s[r], s[l + 1] - s[r + 1]) * 0.55));
+    path.addCircle(s[n], s[n + 1], d / 2);
+    return path;
+  });
+
+  // Where to stand: a soft body outline, shown only while nobody is detected.
+  const guide = useDerivedValue(() => {
+    const path = Skia.Path.Make();
+    if (present.value) return path;
+    const h = height * 0.78;
+    const cx = width / 2;
+    const top = height * 0.11;
+    const headR = h * 0.075;
+    path.addCircle(cx, top + headR, headR);
+    const sh = top + headR * 2 + h * 0.03;
+    const shoulderW = h * 0.22;
+    path.addRRect(Skia.RRectXY(Skia.XYWHRect(cx - shoulderW / 2, sh, shoulderW, h * 0.38), 22, 22));
+    path.moveTo(cx - shoulderW * 0.25, sh + h * 0.38);
+    path.lineTo(cx - shoulderW * 0.3, top + h);
+    path.moveTo(cx + shoulderW * 0.25, sh + h * 0.38);
+    path.lineTo(cx + shoulderW * 0.3, top + h);
+    return path;
+  });
+
+  const guideOpacity = useDerivedValue(() => (present.value ? 0 : 0.55));
+
+  // Face: closed eye, lip and outline contours, open brows.
+  const faceLines = useDerivedValue(() => {
+    const path = Skia.Path.Make();
+    const f = faceShown.value;
+    if (f.length < 236) return path;
+    const poly = (from: number, to: number, close: boolean) => {
+      path.moveTo(f[from * 2], f[from * 2 + 1]);
+      for (let i = from + 1; i < to; i++) path.lineTo(f[i * 2], f[i * 2 + 1]);
+      if (close) path.close();
+    };
+    poly(FACE_GROUPS.leftEye[0], FACE_GROUPS.leftEye[1], true);
+    poly(FACE_GROUPS.rightEye[0], FACE_GROUPS.rightEye[1], true);
+    poly(FACE_GROUPS.leftBrow[0], FACE_GROUPS.leftBrow[0] + 5, false);
+    poly(FACE_GROUPS.rightBrow[0], FACE_GROUPS.rightBrow[0] + 5, false);
+    poly(FACE_GROUPS.lips[0], FACE_GROUPS.lips[1], true);
+    poly(FACE_GROUPS.outline[0], FACE_GROUPS.outline[1], true);
+    return path;
+  });
+
+  // Irises: a ring around each pupil, sized from its four edge points.
+  const irises = useDerivedValue(() => {
+    const path = Skia.Path.Make();
+    const f = faceShown.value;
+    if (f.length < 236) return path;
+    for (const c of [FACE_GROUPS.irises[0], FACE_GROUPS.irises[0] + 5]) {
+      const r = Math.max(2, Math.hypot(f[(c + 1) * 2] - f[(c + 3) * 2], f[(c + 1) * 2 + 1] - f[(c + 3) * 2 + 1]) / 2);
+      path.addCircle(f[c * 2], f[c * 2 + 1], r);
+    }
+    return path;
+  });
+
+  const handLines = useDerivedValue(() => {
+    const path = Skia.Path.Make();
+    const h = handsShown.value;
+    for (let base = 0; base + 42 <= h.length; base += 42) {
+      for (const [a, b] of HAND_BONES) {
+        path.moveTo(h[base + a * 2], h[base + a * 2 + 1]);
+        path.lineTo(h[base + b * 2], h[base + b * 2 + 1]);
+      }
+    }
+    return path;
+  });
+
+  const handJoints = useDerivedValue(() => {
+    const path = Skia.Path.Make();
+    const h = handsShown.value;
+    for (let i = 0; i + 1 < h.length; i += 2) path.addCircle(h[i], h[i + 1], 2.6);
+    return path;
+  });
+
+  if (!width || !height) return null;
 
   return (
-    <View style={[StyleSheet.absoluteFill, { width, height }]} pointerEvents="none">
-      {SKELETON.map(([a, b]) => (
-        <Bone key={`${a}-${b}`} a={a} b={b} shown={shown} color={hot.has(a) || hot.has(b) ? colors.error : colors.onPrimary} />
-      ))}
-      {JOINTS.map((i) => (
-        <Joint key={i} i={i} shown={shown} breath={breath} color={hot.has(i) ? colors.error : colors.primary} ring={colors.onPrimary} hot={hot.has(i)} />
-      ))}
-      <Head shown={shown} color={colors.onPrimary} />
-    </View>
+    <Canvas style={[StyleSheet.absoluteFill, { width, height }]} pointerEvents="none">
+      <Group opacity={guideOpacity}>
+        <Path path={guide} style="stroke" strokeWidth={2.5} color={colors.callText} strokeCap="round" strokeJoin="round">
+          <DashPathEffect intervals={[10, 8]} />
+        </Path>
+      </Group>
+      {/* Glow under the bones, then crisp bones, then joints with a ring */}
+      <Path path={bones} style="stroke" strokeWidth={11} strokeCap="round" color={colors.primary} opacity={0.35} />
+      <Path path={bones} style="stroke" strokeWidth={3.5} strokeCap="round" color={colors.callText} />
+      <Path path={faultBones} style="stroke" strokeWidth={4.5} strokeCap="round" color={colors.error} />
+      <Path path={head} style="stroke" strokeWidth={2.5} color={colors.callText} opacity={0.9} />
+      <Path path={joints} color={colors.callText} />
+      <Path path={joints} style="stroke" strokeWidth={2} color={colors.primary} />
+      <Path path={faultJoints} color={colors.error} />
+      {/* Face and hands, thinner, so the body stays the main read */}
+      <Path path={faceLines} style="stroke" strokeWidth={1.6} strokeJoin="round" color={colors.callText} opacity={0.85} />
+      <Path path={irises} style="stroke" strokeWidth={1.6} color={colors.primary} />
+      <Path path={handLines} style="stroke" strokeWidth={6} strokeCap="round" color={colors.accent} opacity={0.3} />
+      <Path path={handLines} style="stroke" strokeWidth={2.2} strokeCap="round" color={colors.callText} />
+      <Path path={handJoints} color={colors.accent} />
+    </Canvas>
   );
-}
-
-function Bone({ a, b, shown, color }: { a: number; b: number; shown: SharedValue<number[]>; color: string }) {
-  const style = useAnimatedStyle(() => {
-    const s = shown.value;
-    const x1 = s[a * 3];
-    const y1 = s[a * 3 + 1];
-    const x2 = s[b * 3];
-    const y2 = s[b * 3 + 1];
-    const visible = s[a * 3 + 2] >= 0.5 && s[b * 3 + 2] >= 0.5;
-    return {
-      opacity: visible ? 0.9 : 0,
-      width: Math.hypot(x2 - x1, y2 - y1),
-      transform: [{ translateX: x1 }, { translateY: y1 - BONE / 2 }, { rotate: `${Math.atan2(y2 - y1, x2 - x1)}rad` }],
-    };
-  });
-  return <Animated.View style={[styles.bone, { backgroundColor: color }, style]} />;
-}
-
-function Joint({
-  i,
-  shown,
-  breath,
-  color,
-  ring,
-  hot,
-}: {
-  i: number;
-  shown: SharedValue<number[]>;
-  breath: SharedValue<number>;
-  color: string;
-  ring: string;
-  hot: boolean;
-}) {
-  const size = hot ? DOT * 1.5 : DOT;
-  const halo = size * 2.6;
-  const dot = useAnimatedStyle(() => {
-    const s = shown.value;
-    return {
-      opacity: s[i * 3 + 2] >= 0.5 ? 1 : 0,
-      transform: [{ translateX: s[i * 3] - size / 2 }, { translateY: s[i * 3 + 1] - size / 2 }, { scale: 1 + 0.15 * breath.value }],
-    };
-  });
-  const glow = useAnimatedStyle(() => {
-    const s = shown.value;
-    return {
-      opacity: hot && s[i * 3 + 2] >= 0.5 ? 0.2 + 0.25 * breath.value : 0,
-      transform: [{ translateX: s[i * 3] - halo / 2 }, { translateY: s[i * 3 + 1] - halo / 2 }, { scale: 0.85 + 0.3 * breath.value }],
-    };
-  });
-  return (
-    <>
-      {hot ? <Animated.View style={[styles.abs, { width: halo, height: halo, borderRadius: halo / 2, backgroundColor: color }, glow]} /> : null}
-      <Animated.View style={[styles.abs, { width: size + 4, height: size + 4, borderRadius: (size + 4) / 2, backgroundColor: ring, padding: 2 }, dot]}>
-        <View style={{ flex: 1, borderRadius: size / 2, backgroundColor: color }} />
-      </Animated.View>
-    </>
-  );
-}
-
-/** One soft ring around the head, sized from the shoulder width, instead of a face mesh. */
-function Head({ shown, color }: { shown: SharedValue<number[]>; color: string }) {
-  const style = useAnimatedStyle(() => {
-    const s = shown.value;
-    const nose = LM.nose * 3;
-    const ls = LM.leftShoulder * 3;
-    const rs = LM.rightShoulder * 3;
-    const seen = s[nose + 2] >= 0.5;
-    const d = Math.max(28, Math.min(140, Math.hypot(s[ls] - s[rs], s[ls + 1] - s[rs + 1]) * 0.55));
-    return {
-      opacity: seen ? 0.85 : 0,
-      width: d,
-      height: d,
-      borderRadius: d / 2,
-      transform: [{ translateX: s[nose] - d / 2 }, { translateY: s[nose + 1] - d / 2 }],
-    };
-  });
-  return <Animated.View style={[styles.abs, styles.head, { borderColor: color }, style]} />;
-}
-
-const styles = StyleSheet.create({
-  abs: { left: 0, position: 'absolute', top: 0 },
-  bone: { borderRadius: BONE / 2, height: BONE, left: 0, position: 'absolute', top: 0, transformOrigin: '0% 50%' },
-  head: { borderWidth: 2.5 },
 });

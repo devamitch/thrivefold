@@ -1,7 +1,7 @@
 import * as SplashScreen from 'expo-splash-screen';
 import { Image } from 'expo-image';
 import React, { useEffect, useRef } from 'react';
-import { StyleSheet, useWindowDimensions } from 'react-native';
+import { InteractionManager, StyleSheet, useWindowDimensions } from 'react-native';
 import Animated, {
   Easing,
   runOnJS,
@@ -17,7 +17,9 @@ import { AnimatedThrivefoldMark } from './AnimatedThrivefoldMark';
 
 /** Same width as expo-splash-screen's `imageWidth`, so the hand-over is seamless. */
 const MARK_SIZE = 260;
-const HOLD_MS = 1300;
+const HOLD_MS = 900;
+/** Never keep the splash longer than this, even if the app is still settling. */
+const MAX_MS = 3000;
 const EXIT_MS = 420;
 
 /**
@@ -39,13 +41,33 @@ export function AnimatedSplash({ onDone }: { onDone: () => void }) {
 
   useEffect(() => {
     const hold = reduceMotion ? 300 : HOLD_MS;
-    word.value = withDelay(reduceMotion ? 0 : 250, withTiming(1, { duration: reduceMotion ? 1 : 600, easing: Easing.out(Easing.cubic) }));
-    exit.value = withDelay(
-      hold,
-      withTiming(1, { duration: EXIT_MS, easing: Easing.in(Easing.cubic) }, (finished) => {
+    word.value = withDelay(reduceMotion ? 0 : 200, withTiming(1, { duration: reduceMotion ? 1 : 500, easing: Easing.out(Easing.cubic) }));
+    // Fade out only once the first screen has mounted (and the hold has passed), so the exit
+    // animation never competes with the app's start-up work and stutters.
+    let started = false;
+    const begin = () => {
+      if (started) return;
+      started = true;
+      exit.value = withTiming(1, { duration: EXIT_MS, easing: Easing.in(Easing.cubic) }, (finished) => {
         if (finished) runOnJS(onDone)();
-      }),
-    );
+      });
+    };
+    let held = false;
+    let settled = false;
+    const holdTimer = setTimeout(() => {
+      held = true;
+      if (settled) begin();
+    }, hold);
+    const task = InteractionManager.runAfterInteractions(() => {
+      settled = true;
+      if (held) begin();
+    });
+    const cap = setTimeout(begin, MAX_MS);
+    return () => {
+      clearTimeout(holdTimer);
+      clearTimeout(cap);
+      task.cancel();
+    };
   }, [reduceMotion, word, exit, onDone]);
 
   const rootStyle = useAnimatedStyle(() => ({

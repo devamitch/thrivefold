@@ -4,6 +4,7 @@ import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useRef, useState } from 'react';
 import { PermissionsAndroid, Platform, StyleSheet, Text, View } from 'react-native';
+import { useSharedValue } from 'react-native-reanimated';
 import { PoseCameraView, poseLandmarkerAvailable, poseModelVersion, type PoseFrame } from 'pose-landmarker';
 
 import { AppHeader } from '../../../components/ui/AppHeader';
@@ -26,6 +27,8 @@ import {
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
 import { PressableScale } from '../../../components/ui/PressableScale';
+
+const NO_JOINTS: number[] = [];
 
 type Phase = 'setup' | 'live' | 'done';
 
@@ -53,7 +56,14 @@ export default function PoseCheckScreen() {
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<{ reps: RepState; inView: boolean }>({ reps: initialRepState(), inView: false });
   const [result, setResult] = useState<PoseSessionSummary | null>(null);
-  const [frame, setFrame] = useState<{ landmarks: PoseFrame['landmarks']; w: number; h: number } | null>(null);
+  // Landmarks go to the overlay through shared values: no re-render per camera frame.
+  const feedPoints = useSharedValue<number[]>([]);
+  const feedW = useSharedValue(0);
+  const feedH = useSharedValue(0);
+  const feedFace = useSharedValue<number[]>([]);
+  const feedHands = useSharedValue<number[]>([]);
+  const feed = useRef({ points: feedPoints, frameW: feedW, frameH: feedH, face: feedFace, hands: feedHands }).current;
+  const lastUi = useRef(0);
   const [tile, setTile] = useState({ width: 0, height: 0 });
   const reps = useRef<RepState>(initialRepState());
   const startedAt = useRef('');
@@ -79,11 +89,27 @@ export default function PoseCheckScreen() {
     (e: { nativeEvent: PoseFrame }) => {
       const before = reps.current.reps;
       reps.current = stepReps(movement, reps.current, e.nativeEvent.landmarks, e.nativeEvent.timestamp);
-      setFrame({ landmarks: e.nativeEvent.landmarks, w: e.nativeEvent.frameWidth, h: e.nativeEvent.frameHeight });
-      if (reps.current.reps > before) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
-      setView({ reps: reps.current, inView: e.nativeEvent.landmarks.length > 0 });
+      const lm = e.nativeEvent.landmarks;
+      const flat = new Array(lm.length * 3);
+      for (let i = 0; i < lm.length; i++) {
+        flat[i * 3] = lm[i].x;
+        flat[i * 3 + 1] = lm[i].y;
+        flat[i * 3 + 2] = lm[i].visibility;
+      }
+      feed.frameW.value = e.nativeEvent.frameWidth;
+      feed.frameH.value = e.nativeEvent.frameHeight;
+      feed.points.value = flat;
+      feed.face.value = e.nativeEvent.face ?? [];
+      feed.hands.value = (e.nativeEvent.hands ?? []).flat();
+      const counted = reps.current.reps > before;
+      if (counted) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
+      const now = Date.now();
+      if (counted || now - lastUi.current > 150) {
+        lastUi.current = now;
+        setView({ reps: reps.current, inView: lm.length > 0 });
+      }
     },
-    [movement],
+    [movement, feed],
   );
 
   const finish = () => {
@@ -129,19 +155,12 @@ export default function PoseCheckScreen() {
             style={StyleSheet.absoluteFill}
             active
             facing={facing}
+            face
+            hands
             onPose={onPose}
             onPoseError={(e) => setError(e.nativeEvent.message || 'The camera stopped.')}
           />
-          {frame ? (
-            <PoseOverlay
-              landmarks={frame.landmarks}
-              frameWidth={frame.w}
-              frameHeight={frame.h}
-              width={tile.width}
-              height={tile.height}
-              highlight={view.reps.fault?.joints ?? []}
-            />
-          ) : null}
+          <PoseOverlay feed={feed} width={tile.width} height={tile.height} highlight={view.reps.fault?.joints ?? NO_JOINTS} />
           <View style={[styles.overlay, { backgroundColor: colors.scrim }]}>
             <Text style={[typography.display, styles.repCount, { color: colors.onPrimary }]} accessibilityLiveRegion="polite">
               {movement.kind === 'hold' ? Math.floor(view.reps.holdMs / 1000) : view.reps.reps}

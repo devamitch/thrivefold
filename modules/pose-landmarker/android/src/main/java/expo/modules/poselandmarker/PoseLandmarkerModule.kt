@@ -24,6 +24,8 @@ class PoseLandmarkerModule : Module() {
       Events("onPose", "onPoseError")
       Prop("active") { view: PoseCameraView, active: Boolean -> view.setActive(active) }
       Prop("facing") { view: PoseCameraView, facing: String -> view.setFacing(facing) }
+      Prop("face") { view: PoseCameraView, on: Boolean -> view.setFace(on) }
+      Prop("hands") { view: PoseCameraView, on: Boolean -> view.setHands(on) }
       OnViewDestroys { view: PoseCameraView -> view.release() }
     }
   }
