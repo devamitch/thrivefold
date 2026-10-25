@@ -26,6 +26,7 @@ import {
 import Animated, {
   FadeIn,
   FadeInDown,
+  ZoomIn,
   FadeOut,
   useAnimatedStyle,
   useReducedMotion,
@@ -36,9 +37,12 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FrostedView } from '@/components/ui';
+import { LinearGradient } from 'expo-linear-gradient';
+
 import { Button } from '../../../../components/ui/Button';
 import { Card } from '../../../../components/ui/Card';
 import { PressableScale } from '../../../../components/ui/PressableScale';
+import { CoachGlass, ProgressRing } from '../../../../components/workout/CoachGlass';
 import { PoseOverlay } from '../../../../components/workout/PoseOverlay';
 import {
   YouTubePlayer,
@@ -53,6 +57,15 @@ import {
   WORKOUT_XP_BASE,
   type WorkoutFormEvidence,
 } from '../../../../domain/game/progression';
+import {
+  IDLE_NUDGE_MS,
+  idleLine,
+  repLine,
+  restTipLine,
+  secondsLine,
+  setDoneLine,
+  setIntroLine,
+} from '../../../../domain/pose/coachVoice';
 import { initialGestureState, stepGesture, type Gesture } from '../../../../domain/pose/gestures';
 import {
   framingCue,
@@ -202,6 +215,11 @@ export default function CoachScreen() {
   const startedAt = useRef('');
   const lastUi = useRef(0);
   const hasPersonRef = useRef(false);
+  /** When the last rep or second counted, for the "whenever you're ready" nudge. */
+  const idleSince = useRef(0);
+  const idleNudged = useRef(false);
+  /** How long the set intro takes to say, so "2" doesn't cut it off. */
+  const introMs = useRef(0);
 
   const counterStyle = useAnimatedStyle(() => ({ transform: [{ scale: counterPulse.value }] }));
   const item = plan?.items[itemIdx];
@@ -224,9 +242,16 @@ export default function CoachScreen() {
 
   // Rest countdown; when it ends, a 3-2-1 leads into the next set.
   const resting = useRef(false);
+  const restTotal = useRef(0);
   useEffect(() => {
     if (rest > 0) {
+      if (!resting.current) restTotal.current = rest;
       resting.current = true;
+      // Halfway through a longer rest, say what's next and how to do it.
+      if (restTotal.current >= 20 && rest === Math.floor(restTotal.current / 2) && item) {
+        const nextMove = movementForExercise(item.exerciseId);
+        say(restTipLine(exerciseById(item.exerciseId)?.name ?? 'the next set', nextMove?.cue));
+      }
       const t = setTimeout(() => setRest((r) => r - 1), 1000);
       return () => clearTimeout(t);
     }
@@ -234,20 +259,39 @@ export default function CoachScreen() {
       resting.current = false;
       setCountdown(3);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rest]);
 
   // 3-2-1 before a set, spoken and shown.
   useEffect(() => {
     if (countdown <= 0) return;
-    say(String(countdown));
+    if (countdown === 3 && item && exercise) {
+      // A coach names the move and the one cue that matters before counting in.
+      const intro = setIntroLine(
+        exercise.name,
+        setIdx + 1,
+        item.sets,
+        item.target,
+        unit,
+        movement?.cue,
+      );
+      introMs.current = Math.min(7000, 900 + intro.length * 60);
+      say(`${intro} 3`);
+      idleSince.current = Date.now() + 3000;
+    } else say(String(countdown));
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
-    const t = setTimeout(() => {
-      setCountdown((c) => {
-        if (c === 1) say('Go');
-        return c - 1;
-      });
-    }, 900);
+    // The first beat waits for the intro sentence to be spoken.
+    const t = setTimeout(
+      () => {
+        setCountdown((c) => {
+          if (c === 1) say('Go');
+          return c - 1;
+        });
+      },
+      countdown === 3 && introMs.current ? introMs.current : 900,
+    );
     return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [countdown]);
 
   useEffect(
@@ -397,13 +441,18 @@ export default function CoachScreen() {
       r.sets.push(value);
       if (movement && repRef.current.validFrames > 0)
         r.summaries.push(summarize(movement, repRef.current));
+      const tracked = movement && repRef.current.validFrames > 0;
+      const cleanShare = tracked
+        ? repRef.current.goodFrames / Math.max(1, repRef.current.validFrames)
+        : null;
       resetReps();
+      idleNudged.current = false;
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
       if (autoPaused.current) {
         autoPaused.current = false;
       }
       if (setIdx + 1 < item.sets) {
-        say(`Set done. Rest ${item.restSeconds} seconds.`);
+        say(setDoneLine(value, item.target, unit, item.restSeconds, cleanShare));
         setSetIdx(setIdx + 1);
         setRest(item.restSeconds);
       } else if (itemIdx + 1 < plan.items.length) {
@@ -419,7 +468,8 @@ export default function CoachScreen() {
       }
       showControls();
     },
-    [plan, item, movement, setIdx, itemIdx, finish, showControls],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [plan, item, movement, setIdx, itemIdx, finish, showControls, unit],
   );
 
   const onGesture = useCallback(
@@ -540,15 +590,30 @@ export default function CoachScreen() {
           withTiming(1.25, { duration: 120 }),
           withTiming(1, { duration: 180 }),
         );
-        const left = item.target - next.reps;
-        if (!inSeconds && !next.fault && left > 0)
-          say(left === 1 ? 'Last one' : left <= 3 ? `${left} to go` : String(next.reps));
+        if (!inSeconds && !next.fault) {
+          const line = repLine(next.reps, item.target, !before.repHadFault);
+          if (line) say(line);
+        }
       }
       const value = progressOf(next);
+      if (value !== progressOf(before)) {
+        idleSince.current = now;
+        idleNudged.current = false;
+      }
       if (inSeconds && value > 0 && value !== progressOf(before)) {
-        const left = item.target - value;
-        if (left === 5) say('5 seconds left');
-        else if (left > 5 && value % 10 === 0) say(`${value} seconds`);
+        const line = secondsLine(value, item.target);
+        if (line) say(line);
+      }
+      // In view, nothing counting for a while: a gentle nudge, once.
+      if (
+        !idleNudged.current &&
+        idleSince.current > 0 &&
+        now - idleSince.current > IDLE_NUDGE_MS &&
+        landmarks.length > 0 &&
+        !next.fault
+      ) {
+        idleNudged.current = true;
+        say(idleLine(movement.kind));
       }
 
       const doneNow = value >= item.target;
@@ -612,9 +677,7 @@ export default function CoachScreen() {
     startedAt.current = new Date().toISOString();
     setPhase('live');
     showControls();
-    say(
-      `${exercise?.name ?? 'Get ready'}. ${item?.target ?? ''} ${unit === 's' ? 'seconds' : 'reps'}.`,
-    );
+    say(allowed ? 'Hi. Prop the phone up and step back so I can see you.' : 'Let’s begin.');
     // Without the camera, count in after a moment. With it, the effect below counts in once
     // tracking is live and the person is in frame (or after 8 s regardless).
     countdownArmed.current = true;
@@ -902,7 +965,7 @@ export default function CoachScreen() {
             of: plan.items[itemIdx + 1].sets,
           }
         : null;
-  const pipWidth = Math.round(Math.min(stage.width || 360, 520) * (pipLarge ? 0.9 : 0.42));
+  const pipWidth = Math.round(Math.min(stage.width || 360, 520) * (pipLarge ? 0.72 : 0.42));
 
   // What the banner says, most urgent first: a gesture, a form fault, framing, the live cue.
   const banner: {
@@ -962,6 +1025,8 @@ export default function CoachScreen() {
           facing={facing}
           face={fullTracking}
           hands={fullTracking}
+          // Resting: analyse ~4 frames a second (enough for the skip gesture), not ~10.
+          minIntervalMs={rest > 0 ? 250 : 0}
           onPose={onPose}
           onPoseReady={onPoseReady}
           onPoseError={onPoseError}
@@ -977,17 +1042,16 @@ export default function CoachScreen() {
           highlight={fault?.joints ?? NO_JOINTS}
         />
       ) : null}
-      {/* Top and bottom shade so controls read over any background */}
-      <View
+      {/* Soft top and bottom shade so glass controls read over any background */}
+      <LinearGradient
         pointerEvents="none"
-        style={[styles.shadeTop, { backgroundColor: colors.callSurface, height: insets.top + 132 }]}
+        colors={[colors.callSurface, 'transparent']}
+        style={[styles.shadeTop, { height: insets.top + 150 }]}
       />
-      <View
+      <LinearGradient
         pointerEvents="none"
-        style={[
-          styles.shadeBottom,
-          { backgroundColor: colors.callSurface, height: insets.bottom + 150 },
-        ]}
+        colors={['transparent', colors.callSurface]}
+        style={[styles.shadeBottom, { height: insets.bottom + 220 }]}
       />
       {fault ? (
         <View
@@ -1001,27 +1065,46 @@ export default function CoachScreen() {
           entering={reduceMotion ? undefined : FadeIn.duration(150)}
           exiting={reduceMotion ? undefined : FadeOut.duration(200)}
           pointerEvents="none"
-          style={[styles.startingCam, { backgroundColor: colors.callSurface }]}
+          style={styles.startingWrap}
         >
-          <ActivityIndicator color={colors.callText} />
-          <Text style={[typography.bodyBold, { color: colors.callText, marginLeft: 10 }]}>
-            Starting camera
-          </Text>
+          <CoachGlass radius={999} style={styles.startingCam}>
+            <ActivityIndicator color={colors.callText} />
+            <Text style={[typography.bodyBold, { color: colors.callText, marginLeft: 10 }]}>
+              Starting camera
+            </Text>
+          </CoachGlass>
         </Animated.View>
       ) : null}
 
-      {/* Top bar: end, what you're doing, voice and camera controls */}
+      {/* Top bar: end, what you're doing and where you are, voice and camera controls */}
       <View style={[styles.topBar, { top: insets.top + 8, paddingHorizontal: spacing.base }]}>
         <GlassButton icon="close" label="End workout" onPress={confirmEnd} />
-        <View style={[styles.flex, { marginHorizontal: 10 }]}>
-          <Text style={[typography.subheading, { color: colors.callText }]} numberOfLines={1}>
+        <CoachGlass radius={22} style={[styles.flex, styles.titlePill]}>
+          <Text style={[typography.bodyBold, { color: colors.callText }]} numberOfLines={1}>
             {exercise.name}
           </Text>
-          <Text style={[typography.caption, { color: colors.callMuted }]} numberOfLines={1}>
-            {itemIdx + 1} of {plan.items.length} · Set {setIdx + 1} of {item.sets} ·{' '}
-            {clock(elapsed)}
-          </Text>
-        </View>
+          <View style={styles.setsInline} accessibilityLabel={`Set ${setIdx + 1} of ${item.sets}`}>
+            {Array.from({ length: item.sets }, (_, i) => (
+              <View
+                key={i}
+                style={[
+                  styles.setSeg,
+                  {
+                    backgroundColor:
+                      i < setIdx
+                        ? colors.primary
+                        : i === setIdx
+                          ? colors.callText
+                          : colors.callSurfaceStrong,
+                  },
+                ]}
+              />
+            ))}
+            <Text style={[typography.caption, { color: colors.callMuted, marginLeft: 8 }]}>
+              {itemIdx + 1}/{plan.items.length} · {clock(elapsed)}
+            </Text>
+          </View>
+        </CoachGlass>
         <GlassButton
           icon={voiceOn ? 'volume-high-outline' : 'volume-mute-outline'}
           label={voiceOn ? 'Mute voice coach' : 'Turn on voice coach'}
@@ -1030,59 +1113,38 @@ export default function CoachScreen() {
             setVoiceOn((v) => !v);
           }}
         />
-        {cameraMain ? (
-          <>
-            <GlassButton
-              icon={fullTracking ? 'scan' : 'scan-outline'}
-              label="Track face and hands too"
-              active={fullTracking}
-              onPress={() => setFullTracking((v) => !v)}
-            />
-            <GlassButton
-              icon="camera-reverse-outline"
-              label="Flip camera"
-              onPress={() => {
-                setTrackingReady(false);
-                setFacing((f) => (f === 'front' ? 'back' : 'front'));
-              }}
-            />
-          </>
-        ) : null}
       </View>
-      <View
-        style={[styles.sets, { top: insets.top + 60, paddingHorizontal: spacing.base }]}
-        accessibilityLabel={`Set ${setIdx + 1} of ${item.sets}`}
-      >
-        {Array.from({ length: item.sets }, (_, i) => (
-          <View
-            key={i}
-            style={[
-              styles.setSeg,
-              {
-                backgroundColor:
-                  i < setIdx
-                    ? colors.primary
-                    : i === setIdx
-                      ? colors.callText
-                      : colors.callSurfaceStrong,
-              },
-            ]}
+
+      {/* Right rail: camera tools */}
+      {cameraMain ? (
+        <View style={[styles.rail, { top: insets.top + 72, right: spacing.base }]}>
+          <GlassButton
+            icon="camera-reverse-outline"
+            label="Flip camera"
+            onPress={() => {
+              setTrackingReady(false);
+              setFacing((f) => (f === 'front' ? 'back' : 'front'));
+            }}
           />
-        ))}
-      </View>
+          <GlassButton
+            icon={fullTracking ? 'scan' : 'scan-outline'}
+            label="Track face and hands too"
+            active={fullTracking}
+            onPress={() => setFullTracking((v) => !v)}
+          />
+          <GlassButton
+            icon={pipLarge ? 'contract' : 'film-outline'}
+            label={pipLarge ? 'Make tutorial smaller' : 'Make tutorial bigger'}
+            onPress={() => setPipLarge((v) => !v)}
+          />
+        </View>
+      ) : null}
 
       {/* Tutorial picture-in-picture (camera on) */}
       {cameraMain ? (
-        <View
-          style={[
-            styles.pip,
-            {
-              top: insets.top + 80,
-              width: pipWidth,
-              backgroundColor: colors.callBackground,
-              borderColor: colors.callSurfaceStrong,
-            },
-          ]}
+        <CoachGlass
+          radius={18}
+          style={[styles.pip, { top: insets.top + 72, left: spacing.base, width: pipWidth }]}
         >
           {videoTile}
           <View style={styles.pipControls} pointerEvents="box-none">
@@ -1094,89 +1156,83 @@ export default function CoachScreen() {
               }}
               accessibilityRole="button"
               accessibilityLabel={videoPlaying ? 'Pause tutorial' : 'Play tutorial'}
-              hitSlop={6}
+              hitSlop={8}
               style={[styles.pipBtn, { backgroundColor: colors.callSurface }]}
             >
               <Ionicons name={videoPlaying ? 'pause' : 'play'} size={14} color={colors.callText} />
             </PressableScale>
-            <PressableScale
-              onPress={() => setPipLarge((v) => !v)}
-              accessibilityRole="button"
-              accessibilityLabel={pipLarge ? 'Make tutorial smaller' : 'Make tutorial bigger'}
-              hitSlop={6}
-              style={[styles.pipBtn, { backgroundColor: colors.callSurface }]}
-            >
-              <Ionicons name={pipLarge ? 'contract' : 'expand'} size={14} color={colors.callText} />
-            </PressableScale>
           </View>
-        </View>
+        </CoachGlass>
       ) : null}
 
-      {/* Coaching banner */}
-      {banner ? (
+      {/* Coaching banner: one message at a time, most urgent first */}
+      {banner && rest === 0 && countdown === 0 ? (
         <Animated.View
           key={banner.tone + banner.title}
-          entering={reduceMotion ? undefined : FadeInDown.duration(200)}
+          entering={reduceMotion ? undefined : FadeInDown.duration(220)}
           exiting={reduceMotion ? undefined : FadeOut.duration(150)}
           pointerEvents="none"
           accessibilityLiveRegion={
             banner.tone === 'fault' || banner.tone === 'framing' ? 'assertive' : 'polite'
           }
           style={[
-            styles.banner,
-            {
-              bottom: insets.bottom + 168,
-              marginHorizontal: spacing.base,
-              backgroundColor:
-                banner.tone === 'gesture'
-                  ? colors.primary
-                  : banner.tone === 'fault'
-                    ? colors.error
-                    : colors.callSurface,
-            },
+            styles.bannerWrap,
+            { bottom: insets.bottom + 150, paddingHorizontal: spacing.base },
           ]}
         >
-          <View
+          <CoachGlass
+            radius={22}
             style={[
-              styles.bannerIcon,
-              {
-                backgroundColor:
-                  banner.tone === 'framing'
-                    ? colors.warning
-                    : banner.tone === 'cue'
-                      ? colors.primary
-                      : colors.callSurfaceStrong,
-              },
+              styles.banner,
+              banner.tone === 'fault' ? { backgroundColor: colors.error } : null,
+              banner.tone === 'gesture' ? { backgroundColor: colors.primary } : null,
             ]}
           >
-            <Ionicons name={banner.icon} size={18} color={colors.callText} />
-          </View>
-          <View style={[styles.flex, { marginLeft: 12 }]}>
-            <Text style={[typography.bodyBold, { color: colors.callText }]} numberOfLines={2}>
-              {banner.title}
-            </Text>
-            {banner.text ? (
-              <Text
-                style={[typography.subbody, { color: colors.callText, opacity: 0.9, marginTop: 2 }]}
-                numberOfLines={2}
-              >
-                {banner.text}
-              </Text>
-            ) : null}
-          </View>
-          {banner.tone === 'gesture' ? (
-            <View style={[styles.gestureTrack, { backgroundColor: colors.callSurfaceStrong }]}>
-              <View
-                style={[
-                  styles.gestureFill,
-                  {
-                    width: `${Math.round(gestureProgress.p * 100)}%`,
-                    backgroundColor: colors.callText,
-                  },
-                ]}
-              />
+            <View
+              style={[
+                styles.bannerIcon,
+                {
+                  backgroundColor:
+                    banner.tone === 'framing'
+                      ? colors.warning
+                      : banner.tone === 'cue'
+                        ? colors.primary
+                        : colors.callSurfaceStrong,
+                },
+              ]}
+            >
+              <Ionicons name={banner.icon} size={18} color={colors.callText} />
             </View>
-          ) : null}
+            <View style={[styles.flex, { marginLeft: 12 }]}>
+              <Text style={[typography.bodyBold, { color: colors.callText }]} numberOfLines={2}>
+                {banner.title}
+              </Text>
+              {banner.text ? (
+                <Text
+                  style={[
+                    typography.subbody,
+                    { color: colors.callText, opacity: 0.9, marginTop: 2 },
+                  ]}
+                  numberOfLines={2}
+                >
+                  {banner.text}
+                </Text>
+              ) : null}
+            </View>
+            {banner.tone === 'gesture' ? (
+              <View style={[styles.gestureTrack, { backgroundColor: colors.callSurfaceStrong }]}>
+                <View
+                  style={[
+                    styles.gestureFill,
+                    {
+                      width: `${Math.round(gestureProgress.p * 100)}%`,
+                      backgroundColor: colors.callText,
+                    },
+                  ]}
+                />
+              </View>
+            ) : null}
+          </CoachGlass>
         </Animated.View>
       ) : null}
 
@@ -1185,119 +1241,197 @@ export default function CoachScreen() {
           style={[
             typography.caption,
             styles.cameraError,
-            { color: colors.callText, backgroundColor: colors.error, bottom: insets.bottom + 236 },
+            { color: colors.callText, backgroundColor: colors.error, top: insets.top + 72 },
           ]}
         >
           {cameraError}
         </Text>
       ) : null}
 
-      {/* Bottom: the count, what's next, set done */}
-      <View
-        style={[
-          styles.bottomBar,
-          { paddingHorizontal: spacing.base, paddingBottom: insets.bottom + spacing.base },
-        ]}
-      >
+      {/* Bottom: the count as a ring, what's next, set done */}
+      {rest === 0 ? (
         <View
-          style={styles.flex}
-          accessibilityLabel={`${counted} of ${item.target} ${unit}. ${remaining} to go`}
-          accessibilityLiveRegion="polite"
+          style={[
+            styles.bottomBar,
+            { paddingHorizontal: spacing.base, paddingBottom: insets.bottom + spacing.base },
+          ]}
         >
-          <View style={styles.counterRow}>
-            <Animated.Text
-              style={[
-                typography.display,
-                styles.counterBig,
-                { color: fault ? colors.error : colors.callText },
-                counterStyle,
-              ]}
-            >
-              {counted}
-            </Animated.Text>
-            <Text style={[typography.bodyBold, { color: colors.callMuted, marginLeft: 6 }]}>
-              / {item.target} {unit}
-            </Text>
-          </View>
-          <View style={[styles.counterTrack, { backgroundColor: colors.callSurfaceStrong }]}>
+          <CoachGlass radius={28} style={styles.hud}>
             <View
-              style={[
-                styles.counterFill,
-                { width: `${Math.round(share * 100)}%`, backgroundColor: colors.primary },
-              ]}
-            />
-          </View>
-          <Text
-            style={[typography.caption, { color: colors.callMuted, marginTop: 6 }]}
-            numberOfLines={1}
-          >
-            {!movement && cameraMain
-              ? 'Not camera-checked: tap Set done when finished'
-              : upNext
-                ? `Next: ${upNext.ex?.name ?? 'Exercise'} · set ${upNext.set} of ${upNext.of}`
-                : 'Last set'}
-          </Text>
+              style={styles.ringBox}
+              accessibilityLabel={`${counted} of ${item.target} ${unit}. ${remaining} to go`}
+              accessibilityLiveRegion="polite"
+            >
+              <ProgressRing
+                size={88}
+                stroke={7}
+                progress={share}
+                color={fault ? colors.error : colors.primary}
+                track={colors.callSurfaceStrong}
+              />
+              <View style={[StyleSheet.absoluteFill, styles.center]}>
+                <Animated.Text
+                  style={[
+                    typography.display,
+                    styles.counterBig,
+                    { color: colors.callText },
+                    counterStyle,
+                  ]}
+                >
+                  {counted}
+                </Animated.Text>
+              </View>
+            </View>
+            <View style={[styles.flex, { marginLeft: 14 }]}>
+              <Text style={[typography.bodyBold, { color: colors.callText }]} numberOfLines={1}>
+                {remaining > 0
+                  ? `${remaining} ${unit === 's' ? 's' : remaining === 1 ? 'rep' : 'reps'} to go`
+                  : 'Target reached'}
+              </Text>
+              <Text
+                style={[typography.caption, { color: colors.callMuted, marginTop: 2 }]}
+                numberOfLines={2}
+              >
+                {!movement && cameraMain
+                  ? 'Not camera-checked: tap done when finished'
+                  : upNext
+                    ? `Next: ${upNext.ex?.name ?? 'Exercise'} · set ${upNext.set}/${upNext.of}`
+                    : 'Last set of the workout'}
+              </Text>
+            </View>
+            <PressableScale
+              onPress={manualSetDone}
+              accessibilityRole="button"
+              accessibilityLabel={remaining > 0 ? 'Set done' : 'Next'}
+              style={[styles.doneBtn, { backgroundColor: colors.primary }]}
+            >
+              <Ionicons name="checkmark" size={26} color={colors.onPrimary} />
+            </PressableScale>
+          </CoachGlass>
         </View>
-        <PressableScale
-          onPress={manualSetDone}
-          accessibilityRole="button"
-          accessibilityLabel={remaining > 0 ? 'Set done' : 'Next'}
-          style={[styles.doneBtn, { backgroundColor: colors.primary }]}
-        >
-          <Ionicons name="checkmark" size={22} color={colors.onPrimary} />
-          <Text style={[typography.bodyBold, { color: colors.onPrimary, marginLeft: 6 }]}>
-            {remaining > 0 ? 'Set done' : 'Next'}
-          </Text>
-        </PressableScale>
-      </View>
-
-      {/* 3-2-1 before each set */}
-      {countdown > 0 ? (
-        <Animated.View
-          key={countdown}
-          entering={reduceMotion ? undefined : FadeIn.duration(150)}
-          pointerEvents="none"
-          style={[styles.overlay, { backgroundColor: colors.scrim }]}
-        >
-          <Text style={[typography.display, styles.overlayNumber, { color: colors.callText }]}>
-            {countdown}
-          </Text>
-          <Text style={[typography.body, { color: colors.callText }]}>
-            {framing ? framing.text : 'Get into position'}
-          </Text>
-        </Animated.View>
       ) : null}
 
-      {/* Rest between sets */}
+      {/* 3-2-1 before each set: the camera stays visible so you can get into position */}
+      {countdown > 0 ? (
+        <View pointerEvents="none" style={styles.countWrap}>
+          <CoachGlass radius={110} style={styles.countDisc}>
+            <View style={StyleSheet.absoluteFill}>
+              <ProgressRing
+                size={220}
+                stroke={8}
+                durationMs={countdown === 3 && introMs.current ? introMs.current : 900}
+                cycle={countdown}
+                color={colors.primary}
+                track={colors.callSurfaceStrong}
+              />
+            </View>
+            <Animated.Text
+              key={countdown}
+              entering={reduceMotion ? undefined : ZoomIn.duration(220)}
+              style={[typography.display, styles.countNumber, { color: colors.callText }]}
+            >
+              {countdown}
+            </Animated.Text>
+          </CoachGlass>
+          <CoachGlass radius={22} style={[styles.countInfo, { marginHorizontal: spacing.lg }]}>
+            <Text style={[typography.bodyBold, { color: colors.callText, textAlign: 'center' }]}>
+              {exercise.name} · {item.target} {unit === 's' ? 'seconds' : 'reps'}
+            </Text>
+            <Text
+              style={[
+                typography.subbody,
+                { color: colors.callMuted, textAlign: 'center', marginTop: 4 },
+              ]}
+              numberOfLines={3}
+            >
+              {framing ? framing.text : (movement?.cue ?? 'Get into position')}
+            </Text>
+          </CoachGlass>
+        </View>
+      ) : null}
+
+      {/* Rest between sets: a glass sheet; the camera stays live behind it */}
       {rest > 0 ? (
         <Animated.View
-          entering={reduceMotion ? undefined : FadeIn.duration(200)}
+          entering={reduceMotion ? undefined : FadeInDown.duration(240)}
           exiting={reduceMotion ? undefined : FadeOut.duration(200)}
-          style={[styles.overlay, { backgroundColor: colors.scrim }]}
+          style={[
+            styles.restWrap,
+            { paddingHorizontal: spacing.base, paddingBottom: insets.bottom + spacing.base },
+          ]}
         >
-          <Text style={[typography.label, { color: colors.callMuted }]}>Rest</Text>
-          <Text style={[typography.display, styles.overlayNumber, { color: colors.callText }]}>
-            {rest}
-          </Text>
-          {nextItem ? (
-            <Text style={[typography.body, { color: colors.callText }]}>
-              Next: {exerciseById(nextItem.exerciseId)?.name}, set {setIdx + 1}
-            </Text>
-          ) : null}
-          <PressableScale
-            onPress={() => setRest(0)}
-            accessibilityRole="button"
-            style={[styles.skip, { backgroundColor: colors.callSurfaceStrong, opacity: 1 }]}
-          >
-            <Text style={[typography.bodyBold, { color: colors.callText }]}>Skip rest</Text>
-          </PressableScale>
+          <CoachGlass radius={30} strong style={styles.restCard}>
+            <View style={styles.row}>
+              <View style={styles.ringBox}>
+                <ProgressRing
+                  size={96}
+                  stroke={7}
+                  progress={restTotal.current ? rest / restTotal.current : 0}
+                  color={colors.primary}
+                  track={colors.callSurfaceStrong}
+                />
+                <View style={[StyleSheet.absoluteFill, styles.center]}>
+                  <Text style={[typography.display, styles.counterBig, { color: colors.callText }]}>
+                    {rest}
+                  </Text>
+                </View>
+              </View>
+              <View style={[styles.flex, { marginLeft: 16 }]}>
+                <Text style={[typography.label, { color: colors.callMuted }]}>
+                  Rest and breathe
+                </Text>
+                {nextItem ? (
+                  <>
+                    <Text
+                      style={[typography.subheading, { color: colors.callText, marginTop: 2 }]}
+                      numberOfLines={2}
+                    >
+                      {exerciseById(nextItem.exerciseId)?.name}
+                    </Text>
+                    <Text style={[typography.caption, { color: colors.callMuted }]}>
+                      Set {setIdx + 1} of {nextItem.sets} · {nextItem.target}{' '}
+                      {exerciseById(nextItem.exerciseId)?.timed ? 'seconds' : 'reps'}
+                    </Text>
+                  </>
+                ) : null}
+              </View>
+            </View>
+            {nextItem && movementForExercise(nextItem.exerciseId)?.cue ? (
+              <Text
+                style={[typography.subbody, { color: colors.callText, marginTop: 12 }]}
+                numberOfLines={3}
+              >
+                {movementForExercise(nextItem.exerciseId)?.cue}
+              </Text>
+            ) : null}
+            <View style={[styles.row, { gap: 10, marginTop: 14 }]}>
+              <PressableScale
+                onPress={() => {
+                  restTotal.current += 15;
+                  setRest((r) => r + 15);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Add 15 seconds of rest"
+                style={[styles.restBtn, styles.flex, { backgroundColor: colors.callSurfaceStrong }]}
+              >
+                <Text style={[typography.bodyBold, { color: colors.callText }]}>+15 s</Text>
+              </PressableScale>
+              <PressableScale
+                onPress={() => setRest(0)}
+                accessibilityRole="button"
+                style={[styles.restBtn, styles.flex, { backgroundColor: colors.primary }]}
+              >
+                <Text style={[typography.bodyBold, { color: colors.onPrimary }]}>I’m ready</Text>
+              </PressableScale>
+            </View>
+          </CoachGlass>
         </Animated.View>
       ) : null}
     </View>
   );
 }
 
-/** Round translucent control over the camera. */
+/** Round glass control over the camera. */
 function GlassButton({
   icon,
   label,
@@ -1317,15 +1451,13 @@ function GlassButton({
       accessibilityLabel={label}
       accessibilityState={{ selected: active }}
       hitSlop={6}
-      style={[
-        styles.glassBtn,
-        {
-          backgroundColor: active ? colors.primary : colors.callSurface,
-          borderColor: colors.callSurfaceStrong,
-        },
-      ]}
     >
-      <Ionicons name={icon} size={20} color={colors.callText} />
+      <CoachGlass
+        radius={22}
+        style={[styles.glassBtn, active ? { backgroundColor: colors.primary } : null]}
+      >
+        <Ionicons name={icon} size={20} color={colors.callText} />
+      </CoachGlass>
     </PressableScale>
   );
 }
@@ -1333,13 +1465,9 @@ function GlassButton({
 const styles = StyleSheet.create({
   banner: {
     alignItems: 'center',
-    borderRadius: 22,
     flexDirection: 'row',
-    left: 0,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    position: 'absolute',
-    right: 0,
   },
   bannerIcon: {
     alignItems: 'center',
@@ -1348,15 +1476,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 32,
   },
-  bottomBar: {
-    alignItems: 'flex-end',
-    bottom: 0,
-    flexDirection: 'row',
-    gap: 12,
-    left: 0,
-    position: 'absolute',
-    right: 0,
-  },
+  bannerWrap: { left: 0, position: 'absolute', right: 0 },
+  bottomBar: { bottom: 0, left: 0, position: 'absolute', right: 0 },
   cameraError: {
     alignSelf: 'center',
     borderRadius: 12,
@@ -1366,50 +1487,34 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
   center: { alignItems: 'center', flex: 1, justifyContent: 'center', padding: 8 },
-  counterBig: { fontSize: 64, lineHeight: 68 },
-  counterFill: { borderRadius: 3, height: 6 },
-  counterRow: { alignItems: 'baseline', flexDirection: 'row' },
-  counterTrack: { borderRadius: 3, height: 6, marginTop: 6, overflow: 'hidden' },
-  doneBtn: {
-    alignItems: 'center',
-    borderRadius: 28,
-    flexDirection: 'row',
-    height: 56,
-    paddingHorizontal: 22,
-  },
-  faultEdge: { borderWidth: 4 },
-  flex: { flex: 1 },
-  gestureFill: { height: 6 },
-  gestureTrack: { borderRadius: 3, height: 6, marginLeft: 10, overflow: 'hidden', width: 60 },
-  glassBtn: {
-    alignItems: 'center',
-    borderRadius: 22,
-    borderWidth: StyleSheet.hairlineWidth,
-    height: 44,
-    justifyContent: 'center',
-    marginLeft: 6,
-    width: 44,
-  },
-  overlay: {
+  countDisc: { alignItems: 'center', height: 220, justifyContent: 'center', width: 220 },
+  countInfo: { marginTop: 18, paddingHorizontal: 18, paddingVertical: 14 },
+  countNumber: { fontSize: 96, lineHeight: 104 },
+  countWrap: {
     alignItems: 'center',
     bottom: 0,
-    elevation: 19,
     justifyContent: 'center',
     left: 0,
     position: 'absolute',
     right: 0,
     top: 0,
-    zIndex: 19,
   },
-  overlayNumber: { fontSize: 96, lineHeight: 104 },
-  pip: {
-    aspectRatio: 16 / 9,
-    borderRadius: 18,
-    borderWidth: StyleSheet.hairlineWidth,
-    overflow: 'hidden',
-    position: 'absolute',
-    right: 16,
+  counterBig: { fontSize: 34, lineHeight: 40 },
+  doneBtn: {
+    alignItems: 'center',
+    borderRadius: 28,
+    height: 56,
+    justifyContent: 'center',
+    marginLeft: 10,
+    width: 56,
   },
+  faultEdge: { borderWidth: 4 },
+  flex: { flex: 1 },
+  gestureFill: { height: 6 },
+  gestureTrack: { borderRadius: 3, height: 6, marginLeft: 10, overflow: 'hidden', width: 60 },
+  glassBtn: { alignItems: 'center', height: 44, justifyContent: 'center', width: 44 },
+  hud: { alignItems: 'center', flexDirection: 'row', padding: 12 },
+  pip: { aspectRatio: 16 / 9, position: 'absolute' },
   pipBtn: {
     alignItems: 'center',
     borderRadius: 14,
@@ -1418,6 +1523,11 @@ const styles = StyleSheet.create({
     width: 28,
   },
   pipControls: { bottom: 6, flexDirection: 'row', gap: 6, position: 'absolute', right: 6 },
+  rail: { gap: 10, position: 'absolute' },
+  restBtn: { alignItems: 'center', borderRadius: 22, height: 48, justifyContent: 'center' },
+  restCard: { padding: 18 },
+  restWrap: { bottom: 0, left: 0, position: 'absolute', right: 0 },
+  ringBox: { height: 88, minWidth: 88, justifyContent: 'center' },
   round: {
     alignItems: 'center',
     borderRadius: 22,
@@ -1426,22 +1536,25 @@ const styles = StyleSheet.create({
     width: 44,
   },
   row: { alignItems: 'center', flexDirection: 'row' },
-  setSeg: { borderRadius: 2, flex: 1, height: 4 },
-  sets: { flexDirection: 'row', gap: 4, left: 0, position: 'absolute', right: 0 },
-  shadeBottom: { bottom: 0, left: 0, opacity: 0.55, position: 'absolute', right: 0 },
-  shadeTop: { left: 0, opacity: 0.55, position: 'absolute', right: 0, top: 0 },
-  skip: { borderRadius: 22, marginTop: 16, paddingHorizontal: 22, paddingVertical: 12 },
+  setSeg: { borderRadius: 2, height: 4, width: 18 },
+  setsInline: { alignItems: 'center', flexDirection: 'row', gap: 4, marginTop: 4 },
+  shadeBottom: { bottom: 0, left: 0, position: 'absolute', right: 0 },
+  shadeTop: { left: 0, position: 'absolute', right: 0, top: 0 },
   startingCam: {
     alignItems: 'center',
-    alignSelf: 'center',
-    borderRadius: 999,
     flexDirection: 'row',
     paddingHorizontal: 18,
     paddingVertical: 12,
-    position: 'absolute',
-    top: '45%',
   },
+  startingWrap: { alignItems: 'center', left: 0, position: 'absolute', right: 0, top: '45%' },
   summaryRow: { alignItems: 'center', flexDirection: 'row', paddingVertical: 12 },
+  titlePill: {
+    justifyContent: 'center',
+    marginHorizontal: 10,
+    minHeight: 44,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+  },
   topBar: { alignItems: 'center', flexDirection: 'row', left: 0, position: 'absolute', right: 0 },
   xpBox: { alignItems: 'center', borderRadius: 20, marginBottom: 16, padding: 20 },
 });

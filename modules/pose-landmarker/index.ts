@@ -61,6 +61,8 @@ export interface PoseCameraViewProps extends ViewProps {
   face?: boolean;
   /** Also track up to two hands. */
   hands?: boolean;
+  /** Minimum ms between analysed frames (0 = as fast as the model runs). Raise it when idle. */
+  minIntervalMs?: number;
   onPose?: (event: NativeSyntheticEvent<PoseFrame>) => void;
   onPoseError?: (event: NativeSyntheticEvent<{ code: string; message: string }>) => void;
   /** Models are loaded (in the background) and tracking is live. */

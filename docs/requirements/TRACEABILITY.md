@@ -2,7 +2,7 @@
 
 ## Update — 2026-10-26 (16): Coach full screen, every exercise counted, framing guidance
 
-Checks: compile 0, lint 0, `pnpm test` 229/229 before the last overlay tweak (pose tests 22/22 after).
+Checks: compile 0, lint 0, `pnpm test` 232/232.
 Release build installed on the Moto G71.
 
 | Item | Status |
@@ -14,7 +14,10 @@ Release build installed on the Moto G71.
 | Coach looked bad | full-screen camera with the skeleton, tutorial as picture-in-picture (expand / play), translucent top and bottom controls, big counter, Set done button |
 | Skeleton style | side-coloured glow with white limbs, small joints, neck line instead of a head ring. Fixed: limb paths never updated (derived values read shared values inside a helper) — seen on the phone |
 | Skeleton behind the body | native sends real capture time; overlay predicts to the frame on screen (capped 90 ms). Camera asks for 24-30 fps (log: `fps=[24, 30]`). Pose stays ~10 results/s: CPU inference on the G71 is the limit |
-| NOT TESTED by a person | rep counting of the new detectors on a real body; alignment while moving |
+| Countdown / rest looked bad | 3-2-1 is a glass disc with a filling ring over the live camera (no blackout); rest is a glass sheet with a ring, next move and its cue, +15 s and I'm ready |
+| Coach felt robotic | voice names the move, set and key cue before counting in, praises clean reps, says halfway / last ones, tells you how the set went, gives a tip mid-rest, nudges after 12 s idle (`coachVoice.ts`, tested) |
+| Phone heating | during rests the camera analyses ~4 frames/s instead of ~10 (`minIntervalMs`) |
+| NOT TESTED by a person | rep counting of the new detectors on a real body; alignment while moving; the glass layout on the phone (phone locked before the screenshot) |
 
 ## Update — 2026-10-26 (15): measured on the owner's Moto G71, Gate B, export, deletion
 

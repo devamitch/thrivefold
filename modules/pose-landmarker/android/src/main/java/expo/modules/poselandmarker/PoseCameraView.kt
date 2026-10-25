@@ -112,6 +112,14 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
   @Volatile private var frameW = 0
   @Volatile private var frameH = 0
 
+  /** Minimum ms between analysed frames; raised during rests to save battery and heat. */
+  @Volatile private var minIntervalMs = 0L
+  @Volatile private var lastAnalysedAt = 0L
+
+  fun setMinInterval(value: Int) {
+    minIntervalMs = value.coerceIn(0, 2000).toLong()
+  }
+
   fun setActive(value: Boolean) {
     if (value == active) return
     active = value
@@ -323,10 +331,12 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
     val model = landmarker
     // The model would drop this frame anyway while busy, but only after we had paid for the
     // bitmap conversion and rotation (and the garbage they leave). Skip it up front.
-    if (model == null || (inFlight && SystemClock.uptimeMillis() - inFlightSince < 500L)) {
+    val nowMs = SystemClock.uptimeMillis()
+    if (model == null || (inFlight && nowMs - inFlightSince < 500L) || nowMs - lastAnalysedAt < minIntervalMs) {
       image.close()
       return
     }
+    lastAnalysedAt = nowMs
     try {
       // How long ago the sensor captured this frame. The sensor clock is either boot time or
       // uptime depending on the device; use whichever gives a plausible age.
