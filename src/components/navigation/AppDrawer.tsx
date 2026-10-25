@@ -24,6 +24,7 @@ import { useRootStore, useShallow } from '../../stores/useRootStore';
 import { DRAWER_SECTIONS } from '../../navigation/drawerItems';
 import { useTheme } from '../../theme/useTheme';
 import { Badge } from '../ui/Badge';
+import { SquircleSurface } from '../ui/SquircleSurface';
 
 export function AppDrawer() {
   const router = useRouter();
@@ -160,17 +161,9 @@ export function AppDrawer() {
           {sections.map((sec) => (
             <View key={sec.title} style={{ marginTop: spacing.md }}>
               <Text
-                style={[
-                  typography.captionBold,
-                  {
-                    color: colors.text.muted,
-                    paddingHorizontal: spacing.base,
-                    marginBottom: 6,
-                    letterSpacing: 0.8,
-                  },
-                ]}
+                style={[typography.label, { color: colors.text.muted, paddingHorizontal: spacing.base, marginBottom: 4 }]}
               >
-                {sec.title.toUpperCase()}
+                {sec.title}
               </Text>
               {sec.items.map((it) => {
                 const active =
@@ -184,32 +177,20 @@ export function AppDrawer() {
                     accessibilityState={{ selected: active }}
                     style={({ pressed }) => [
                       styles.item,
-                      {
-                        backgroundColor: active
-                          ? colors.primaryAlpha
-                          : pressed
-                            ? colors.surface2
-                            : 'transparent',
-                        borderTopRightRadius: 24,
-                        borderBottomRightRadius: 24,
-                        marginRight: 16,
-                        paddingLeft: spacing.base,
-                      },
+                      { paddingHorizontal: spacing.base, opacity: pressed ? 0.7 : 1 },
                     ]}
                   >
-                    <Ionicons
-                      name={it.icon}
-                      size={20}
-                      color={active ? colors.primary : colors.text.secondary}
-                    />
+                    <SquircleSurface
+                      radius={11}
+                      fill={active ? colors.primary : colors.surface}
+                      style={styles.itemIcon}
+                    >
+                      <Ionicons name={it.icon} size={17} color={active ? colors.onPrimary : colors.text.secondary} />
+                    </SquircleSurface>
                     <Text
                       style={[
-                        typography.body,
-                        {
-                          color: active ? colors.primary : colors.text.primary,
-                          fontWeight: active ? '700' : '500',
-                          marginLeft: 14,
-                        },
+                        active ? typography.bodyBold : typography.body,
+                        { color: active ? colors.primary : colors.text.primary, marginLeft: 12, flex: 1 },
                       ]}
                       numberOfLines={1}
                     >
@@ -233,14 +214,14 @@ export function AppDrawer() {
           ]}
         >
           <Pressable
-            onPress={() => go('/(app)/personalize')}
+            onPress={() => go('/(app)/(tabs)/settings')}
             style={[styles.footerBtn, { backgroundColor: colors.surface2 }]}
             accessibilityRole="button"
-            accessibilityLabel="Personalize theme and preferences"
+            accessibilityLabel="Settings"
           >
-            <Ionicons name="options-outline" size={18} color={colors.text.primary} />
+            <Ionicons name="settings-outline" size={18} color={colors.text.primary} />
             <Text style={[typography.captionBold, { color: colors.text.primary, marginLeft: 6 }]}>
-              Personalize
+              Settings
             </Text>
           </Pressable>
 
@@ -289,8 +270,14 @@ const styles = StyleSheet.create({
   item: {
     alignItems: 'center',
     flexDirection: 'row',
-    minHeight: 46,
-    paddingVertical: 8,
+    minHeight: 44,
+    paddingVertical: 4,
+  },
+  itemIcon: {
+    alignItems: 'center',
+    height: 32,
+    justifyContent: 'center',
+    width: 32,
   },
   footerRow: {
     flexDirection: 'row',

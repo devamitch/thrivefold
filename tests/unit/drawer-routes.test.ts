@@ -17,10 +17,11 @@ test('every drawer item opens a real screen', () => {
   expect(missing).toEqual([]);
 });
 
-test('cycle is only offered to the women\'s health experience; community is gated', () => {
+test('cycle is only offered to the women\'s health experience; groups open at level 6', () => {
   const items = DRAWER_SECTIONS.flatMap((s) => s.items);
   expect(items.find((i) => i.label === 'Cycle')?.only).toEqual(['women_health']);
-  items.filter((i) => ['Circles', 'Letters', 'Organizations'].includes(i.label)).forEach((i) => expect(i.social).toBe(true));
+  items.filter((i) => ['Circles', 'Organizations'].includes(i.label)).forEach((i) => expect(i.minLevel).toBe(6));
+  expect(items.some((i) => i.label === 'Letters')).toBe(false);
   expect(items.some((i) => i.label === 'Train')).toBe(true);
 });
 
