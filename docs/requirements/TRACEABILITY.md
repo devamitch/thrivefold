@@ -1,5 +1,18 @@
 # Requirements Traceability Matrix
 
+## Update — 2026-10-26 (17): dating finished (preferences, ranking, report)
+
+Checks: compile 0, lint 0, `pnpm test` 232/232, `pnpm test:db` 132/132 (+9 dating checks).
+Migration 13 pushed live (additive).
+
+| Item | Status |
+| --- | --- |
+| Matching preferences (spec 23.4, 26.7) | self-described age band, ages wanted (mutual), languages, looking for, pace; saved through a server function |
+| Ranked matches | candidates filtered by mutual gender and age preferences, ordered by shared interests, languages, intention and pace; the card shows "In common" |
+| Report from a chat | fixed reasons; the chip messages go as evidence; blocks and ends the conversation; 10 reports/day limit |
+| Chat options bug | the old dialog ended the conversation when you dismissed it; now a sheet with End (confirmed), Report, Block (confirmed) |
+| NOT TESTED on screen | needs two signed-in, age-verified, level-20 accounts |
+
 ## Update — 2026-10-26 (16): Coach full screen, every exercise counted, framing guidance
 
 Checks: compile 0, lint 0, `pnpm test` 232/232.

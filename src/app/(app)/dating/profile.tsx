@@ -10,11 +10,17 @@ import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Toggle } from '../../../components/ui/Toggle';
 import { APPROVED_CHIPS } from '../../../domain/chips/catalog';
 import {
+  AGE_BANDS,
+  INTENTION_LABEL,
+  PACE_LABEL,
   datingErrorText,
   useDatingProfile,
   useDeleteDatingProfile,
   useSaveDatingProfile,
+  type AgeBand,
   type DatingGender,
+  type DatingIntention,
+  type DatingPace,
 } from '../../../services/supabase/dating';
 import { useRootStore } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
@@ -28,6 +34,11 @@ const GENDERS: { id: DatingGender; label: string }[] = [
 const INTERESTS = [
   'Walks', 'Reading', 'Cooking', 'Music', 'Art', 'Films', 'Travel', 'Fitness', 'Yoga', 'Gardening',
   'Tea and coffee', 'Languages', 'Games', 'Photography', 'Volunteering', 'Nature',
+];
+
+const LANGUAGES = [
+  'English', 'Hindi', 'Bengali', 'Urdu', 'Tamil', 'Telugu', 'Marathi', 'Punjabi',
+  'Spanish', 'French', 'Arabic', 'German', 'Portuguese',
 ];
 
 const PROMPTS = APPROVED_CHIPS.filter((c) => c.category === 'dating_reflection');
@@ -49,6 +60,11 @@ export default function DatingProfileScreen() {
   const [interests, setInterests] = useState<string[]>([]);
   const [prompts, setPrompts] = useState<string[]>([]);
   const [active, setActive] = useState(true);
+  const [ageBand, setAgeBand] = useState<AgeBand | null>(null);
+  const [wantAges, setWantAges] = useState<AgeBand[]>([]);
+  const [languages, setLanguages] = useState<string[]>([]);
+  const [intention, setIntention] = useState<DatingIntention | null>(null);
+  const [pace, setPace] = useState<DatingPace | null>(null);
 
   useEffect(() => {
     const p = profile.data;
@@ -58,6 +74,11 @@ export default function DatingProfileScreen() {
     setInterests(p.interests);
     setPrompts(p.prompt_chip_ids);
     setActive(p.is_active);
+    setAgeBand(p.age_band ?? null);
+    setWantAges(p.want_age_bands ?? []);
+    setLanguages(p.languages ?? []);
+    setIntention(p.intention ?? null);
+    setPace(p.pace ?? null);
   }, [profile.data]);
 
   const toggleIn = <T,>(list: T[], v: T, max: number) =>
@@ -66,7 +87,14 @@ export default function DatingProfileScreen() {
   const onSave = () => {
     if (!gender || into.length === 0) return;
     save.mutate(
-      { gender, interested_in: into, interests, prompt_chip_ids: prompts, is_active: active },
+      {
+        gender,
+        interested_in: into,
+        interests,
+        prompt_chip_ids: prompts,
+        is_active: active,
+        preferences: { age_band: ageBand, want_age_bands: wantAges, languages, intention, pace },
+      },
       {
         onSuccess: () => router.back(),
         onError: (e) => showAlert({ title: 'Not saved', message: datingErrorText(e), confirmText: 'OK', cancelText: null }),
@@ -119,6 +147,41 @@ export default function DatingProfileScreen() {
         <View style={styles.wrap}>
           {GENDERS.map((g) => (
             <Chip key={g.id} label={g.label} selected={into.includes(g.id)} onPress={() => setInto((l) => toggleIn(l, g.id, 3))} />
+          ))}
+        </View>
+
+        {section('My age', 'Self-described. The age check confirms you are 18+, not your exact age.')}
+        <View style={styles.wrap}>
+          {AGE_BANDS.map((b) => (
+            <Chip key={b} label={b} selected={ageBand === b} onPress={() => setAgeBand(ageBand === b ? null : b)} />
+          ))}
+        </View>
+
+        {section('Ages I’d like to meet', 'None selected means any age. It works both ways: you only see people whose range includes you.')}
+        <View style={styles.wrap}>
+          {AGE_BANDS.map((b) => (
+            <Chip key={b} label={b} selected={wantAges.includes(b)} onPress={() => setWantAges((l) => toggleIn(l, b, 5))} />
+          ))}
+        </View>
+
+        {section('Looking for')}
+        <View style={styles.wrap}>
+          {(Object.keys(INTENTION_LABEL) as DatingIntention[]).map((k) => (
+            <Chip key={k} label={INTENTION_LABEL[k]} selected={intention === k} onPress={() => setIntention(intention === k ? null : k)} />
+          ))}
+        </View>
+
+        {section('Pace')}
+        <View style={styles.wrap}>
+          {(Object.keys(PACE_LABEL) as DatingPace[]).map((k) => (
+            <Chip key={k} label={PACE_LABEL[k]} selected={pace === k} onPress={() => setPace(pace === k ? null : k)} />
+          ))}
+        </View>
+
+        {section('Languages', 'Up to 6.')}
+        <View style={styles.wrap}>
+          {LANGUAGES.map((l) => (
+            <Chip key={l} label={l} selected={languages.includes(l)} onPress={() => setLanguages((x) => toggleIn(x, l, 6))} />
           ))}
         </View>
 

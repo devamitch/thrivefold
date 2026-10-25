@@ -10,6 +10,18 @@ import { supabase } from './supabaseClient';
 
 export type DatingGender = 'woman' | 'man' | 'nonbinary';
 
+export type AgeBand = '18-24' | '25-34' | '35-44' | '45-54' | '55+';
+export type DatingIntention = 'friendship_first' | 'long_term' | 'open';
+export type DatingPace = 'slow' | 'steady';
+
+export const AGE_BANDS: AgeBand[] = ['18-24', '25-34', '35-44', '45-54', '55+'];
+export const INTENTION_LABEL: Record<DatingIntention, string> = {
+  friendship_first: 'Friendship first',
+  long_term: 'Something long-term',
+  open: 'Open to seeing',
+};
+export const PACE_LABEL: Record<DatingPace, string> = { slow: 'Slow and unhurried', steady: 'Steady' };
+
 export interface DatingProfile {
   gender: DatingGender;
   interested_in: DatingGender[];
@@ -18,12 +30,29 @@ export interface DatingProfile {
   is_active: boolean;
 }
 
+/** Matching preferences (migration 13). All self-chosen; the age band is self-described. */
+export interface DatingPreferences {
+  age_band: AgeBand | null;
+  want_age_bands: AgeBand[];
+  languages: string[];
+  intention: DatingIntention | null;
+  pace: DatingPace | null;
+}
+
 export interface DatingCandidate {
   user_id: string;
   pseudonym: string;
   gender: DatingGender;
   interests: string[];
   intro: string | null;
+  age_band: AgeBand | null;
+  intention: DatingIntention | null;
+  pace: DatingPace | null;
+  languages: string[];
+  shared_interests: string[];
+  shared_languages: string[];
+  /** How well preferences line up; used for ordering only, never shown as a number. */
+  score: number;
 }
 
 export interface DatingConversation {
@@ -66,23 +95,23 @@ export function useDatingProfile(enabled: boolean) {
   return useQuery({
     queryKey: datingKeys.profile,
     enabled: enabled && Boolean(supabase),
-    queryFn: async (): Promise<DatingProfile | null> => {
+    queryFn: async (): Promise<(DatingProfile & DatingPreferences) | null> => {
       const s = await signedIn();
       if (!s) return null;
       const { data, error } = await s.client
         .from('thrivefold_dating_profiles')
-        .select('gender, interested_in, interests, prompt_chip_ids, is_active')
+        .select('gender, interested_in, interests, prompt_chip_ids, is_active, age_band, want_age_bands, languages, intention, pace')
         .eq('user_id', s.userId)
         .maybeSingle();
       if (error) throw error;
-      return (data as DatingProfile | null) ?? null;
+      return (data as (DatingProfile & DatingPreferences) | null) ?? null;
     },
   });
 }
 
 export function useSaveDatingProfile() {
   return useMutation({
-    mutationFn: async (p: DatingProfile) => {
+    mutationFn: async (p: DatingProfile & { preferences?: DatingPreferences }) => {
       const s = await signedIn();
       if (!s) throw new Error('not_authenticated');
       const { error } = await s.client.rpc('tf_dating_save_profile', {
@@ -93,6 +122,17 @@ export function useSaveDatingProfile() {
         p_active: p.is_active,
       });
       if (error) throw error;
+      if (p.preferences) {
+        const pr = p.preferences;
+        const { error: e2 } = await s.client.rpc('tf_dating_save_preferences', {
+          p_age_band: pr.age_band,
+          p_want_age_bands: pr.want_age_bands,
+          p_languages: pr.languages,
+          p_intention: pr.intention,
+          p_pace: pr.pace,
+        });
+        if (e2) throw e2;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: datingKeys.profile });
@@ -220,6 +260,33 @@ export function useCloseConversation() {
   });
 }
 
+export type DatingReportCategory = 'harassment' | 'pressure' | 'underage' | 'fake_profile' | 'spam' | 'other';
+export const REPORT_LABEL: Record<DatingReportCategory, string> = {
+  harassment: 'Harassment or insults',
+  pressure: 'Pressure to move off the app or meet',
+  underage: 'Might be under 18',
+  fake_profile: 'Fake or impersonating',
+  spam: 'Spam or selling',
+  other: 'Something else',
+};
+
+/** Reports the other person in a conversation (chip messages go as evidence) and blocks them. */
+export function useReportDatingConversation() {
+  return useMutation({
+    mutationFn: async (input: { conversationId: string; category: DatingReportCategory; block: boolean }) => {
+      const s = await signedIn();
+      if (!s) throw new Error('not_authenticated');
+      const { error } = await s.client.rpc('tf_dating_report', {
+        p_conversation: input.conversationId,
+        p_category: input.category,
+        p_block: input.block,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['server', 'dating'] }),
+  });
+}
+
 /** Blocks someone everywhere (letters, groups, dating). */
 export function useBlockPerson() {
   return useMutation({
@@ -248,5 +315,6 @@ export function datingErrorText(e: unknown): string {
   if (m.includes('conversation_unavailable')) return 'This conversation isn’t available.';
   if (m.includes('slow_down')) return 'That’s a lot of messages today. Pick it up again tomorrow.';
   if (m.includes('invalid_chips')) return 'Choose between one and six cards.';
+  if (m.includes('invalid_category')) return 'Choose a reason for the report.';
   return 'Couldn’t reach the server. Nothing was sent; try again when you’re online.';
 }

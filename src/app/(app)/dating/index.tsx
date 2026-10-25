@@ -14,6 +14,8 @@ import { PressableScale } from '../../../components/ui/PressableScale';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import {
+  INTENTION_LABEL,
+  PACE_LABEL,
   datingErrorText,
   useDatingCandidates,
   useDatingConversations,
@@ -109,12 +111,32 @@ export default function DatingScreen() {
                   (candidates.data ?? []).map((c) => (
                     <SquircleSurface key={c.user_id} radius={22} fill={colors.surface} style={styles.person}>
                       <View style={styles.rowBetween}>
-                        <Text style={[typography.subheading, { color: colors.text.primary }]}>{c.pseudonym}</Text>
+                        <View style={styles.flex}>
+                          <Text style={[typography.subheading, { color: colors.text.primary }]} numberOfLines={1}>
+                            {c.pseudonym}
+                          </Text>
+                          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]} numberOfLines={2}>
+                            {[c.age_band, c.intention ? INTENTION_LABEL[c.intention] : null, c.pace ? PACE_LABEL[c.pace] : null]
+                              .filter(Boolean)
+                              .join(' · ') || 'Verified adult'}
+                          </Text>
+                        </View>
                         {canStart ? <Button label="Say hello" size="sm" onPress={() => setHello(c)} /> : null}
                       </View>
-                      {c.intro ? <Text style={[typography.body, { color: colors.text.secondary, marginTop: 6 }]}>{c.intro}</Text> : null}
+                      {c.intro ? <Text style={[typography.body, { color: colors.text.secondary, marginTop: 8 }]}>{c.intro}</Text> : null}
+                      {(c.shared_interests ?? []).length > 0 || (c.shared_languages ?? []).length > 0 ? (
+                        <View style={[styles.common, { backgroundColor: colors.primaryAlpha }]}>
+                          <Ionicons name="sparkles-outline" size={14} color={colors.primary} />
+                          <Text style={[typography.captionBold, styles.flex, { color: colors.primary }]} numberOfLines={2}>
+                            In common: {[...(c.shared_interests ?? []), ...(c.shared_languages ?? [])].join(', ')}
+                          </Text>
+                        </View>
+                      ) : null}
                       {c.interests.length > 0 ? (
-                        <Text style={[typography.caption, { color: colors.text.muted, marginTop: 6 }]}>{c.interests.join(' · ')}</Text>
+                        <Text style={[typography.caption, { color: colors.text.muted, marginTop: 8 }]} numberOfLines={2}>
+                          {c.interests.join(' · ')}
+                          {(c.languages ?? []).length ? `  ·  Speaks ${c.languages.join(', ')}` : ''}
+                        </Text>
                       ) : null}
                     </SquircleSurface>
                   ))
@@ -188,4 +210,5 @@ const styles = StyleSheet.create({
   person: { marginBottom: 10, padding: 16 },
   chat: { alignItems: 'center', flexDirection: 'row', gap: 12, marginBottom: 8, padding: 14 },
   avatar: { alignItems: 'center', height: 40, justifyContent: 'center', width: 40 },
+  common: { alignItems: 'center', borderRadius: 12, flexDirection: 'row', gap: 6, marginTop: 10, paddingHorizontal: 10, paddingVertical: 6 },
 });

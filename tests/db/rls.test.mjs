@@ -455,6 +455,41 @@ await as('B');
 r = await q(`select public.tf_dating_send('${conv}', array['dating_reply_02'])`);
 check('a closed conversation takes no more messages', /conversation_closed/.test(r.error ?? ''), r.error);
 
+// Dating preferences, ranking and reports (migration 13)
+await as('B');
+r = await q(`select public.tf_dating_save_preferences('25-34', array['25-34'], array['English'], 'long_term', 'slow')`);
+check('saves dating preferences', !r.error, r.error);
+await as('A');
+await q(`select public.tf_dating_save_preferences('45-54', array[]::text[], array['English'], 'long_term', 'slow')`);
+r = await q(`select user_id from public.tf_dating_candidates(50)`);
+check('age-band preferences are mutual (B wants 25-34, A is 45-54)', !(r.rows ?? []).some((x) => x.user_id === ids.B), r.error ?? JSON.stringify(r.rows));
+await q(`select public.tf_dating_save_preferences('25-34', array[]::text[], array['English'], 'long_term', 'slow')`);
+await q(`select public.tf_dating_save_profile('woman', array['man'], array['walks','music'], array['dating_reflect_01'], true)`);
+// D (no conversation with A yet) now looks for women, with overlapping interests and language.
+await as('D');
+await q(`select public.tf_dating_save_profile('man', array['woman'], array['walks','music'], array['dating_reflect_01'], true)`);
+await q(`select public.tf_dating_save_preferences('25-34', array[]::text[], array['English'], 'long_term', 'slow')`);
+await as('A');
+r = await q(`select user_id, shared_interests, shared_languages, score from public.tf_dating_candidates(50)`);
+const rb = (r.rows ?? []).find((x) => x.user_id === ids.D);
+check('candidates come with shared interests and a score', !!rb && rb.shared_interests.length === 2 && rb.score >= 7, r.error ?? JSON.stringify(r.rows));
+r = await q(`update public.thrivefold_dating_profiles set age_band = '18-24' where user_id = '${ids.A}'`);
+check('preferences cannot be written directly', !!r.error || r.rowCount === 0, r.error);
+await as('D');
+r = await q(`select public.tf_dating_report('${conv}', 'harassment', true)`);
+check('outsiders cannot report a conversation they are not in', /conversation_unavailable/.test(r.error ?? ''), r.error);
+await as('B');
+r = await q(`select public.tf_dating_report('${conv}', 'nonsense', true)`);
+check('report categories are fixed', /invalid_category/.test(r.error ?? ''), r.error);
+r = await q(`select public.tf_dating_report('${conv}', 'pressure', true) as id`);
+check('a participant reports and blocks', !r.error && r.rows?.[0]?.id, r.error);
+r = await q(`select count(*)::int as n from public.thrivefold_blocks where user_id = '${ids.B}' and blocked_user_id = '${ids.A}'`);
+check('the report also blocked them', r.rows?.[0]?.n === 1, JSON.stringify(r.rows ?? r.error));
+r = await q(`select evidence_summary from public.thrivefold_safety_reports where reporter_id = '${ids.B}' order by created_at desc limit 1`);
+check('the report carries the chip messages as evidence', /them: /.test(r.rows?.[0]?.evidence_summary ?? ''), JSON.stringify(r.rows ?? r.error));
+await as('service');
+await db.exec(`delete from public.thrivefold_blocks where user_id = '${ids.B}' and blocked_user_id = '${ids.A}'`);
+
 // Weekly summaries (migration 8): opt-in, own rows only, validated
 await as('B');
 r = await q(`select public.tf_upsert_weekly_summary(date_trunc('week', current_date - 7)::date, 3, 6.5, 7, 4, 7.2, 5, 2, 90, 1, 120) as r`);

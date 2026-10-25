@@ -1,16 +1,20 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 import { ChipComposer } from '../../../../components/dating/ChipComposer';
+import { AppBottomSheetModal } from '../../../../components/ui/AppBottomSheetModal';
+import { Button } from '../../../../components/ui/Button';
 import { Card } from '../../../../components/ui/Card';
+import { Chip } from '../../../../components/ui/Chip';
 import { Header } from '../../../../components/ui/Header';
 import { PressableScale } from '../../../../components/ui/PressableScale';
 import { ScreenWrapper } from '../../../../components/ui/ScreenWrapper';
 import { SquircleSurface } from '../../../../components/ui/SquircleSurface';
 import {
+  REPORT_LABEL,
   datingErrorText,
   myUserId,
   useBlockPerson,
@@ -18,7 +22,9 @@ import {
   useDatingConversations,
   useDatingMessages,
   useMarkConversationRead,
+  useReportDatingConversation,
   useSendDatingMessage,
+  type DatingReportCategory,
 } from '../../../../services/supabase/dating';
 import { useRootStore } from '../../../../stores/useRootStore';
 import { useTheme } from '../../../../theme/useTheme';
@@ -50,21 +56,62 @@ export default function DatingChatScreen() {
     }
   }, [incoming, id, markRead]);
 
-  const actions = () =>
+  const report = useReportDatingConversation();
+  const [sheet, setSheet] = useState<'menu' | 'report' | null>(null);
+  const [reason, setReason] = useState<DatingReportCategory | null>(null);
+  const fail = (title: string) => (e: unknown) =>
+    showAlert({ title, message: datingErrorText(e), confirmText: 'OK', cancelText: null });
+
+  const endConversation = () => {
+    setSheet(null);
     showAlert({
-      title: who,
-      message: 'End the conversation, or block them everywhere in Thrivefold. You can also report from Safety.',
+      title: 'End this conversation?',
+      message: `Neither of you can send more messages. ${who} isn’t told why.`,
+      confirmText: 'End conversation',
+      cancelText: 'Keep talking',
+      destructive: true,
+      onConfirm: () => close.mutate(id, { onError: fail('Not ended') }),
+    });
+  };
+
+  const blockPerson = () => {
+    setSheet(null);
+    showAlert({
+      title: `Block ${who}?`,
+      message: 'They can’t see or contact you anywhere in Thrivefold: dating, letters or groups.',
       confirmText: 'Block',
-      cancelText: 'End conversation',
+      cancelText: 'Cancel',
       destructive: true,
       onConfirm: () =>
         conv &&
         block.mutate(conv.other_id, {
           onSuccess: () => router.replace('/(app)/dating' as Href),
-          onError: (e) => showAlert({ title: 'Not blocked', message: datingErrorText(e), confirmText: 'OK', cancelText: null }),
+          onError: fail('Not blocked'),
         }),
-      onCancel: () => close.mutate(id),
     });
+  };
+
+  const sendReport = () =>
+    reason &&
+    report.mutate(
+      { conversationId: id, category: reason, block: true },
+      {
+        onSuccess: () => {
+          setSheet(null);
+          setReason(null);
+          showAlert({
+            title: 'Report sent',
+            message: 'Thank you. A moderator will review the messages. You won’t hear from this person again.',
+            confirmText: 'OK',
+            cancelText: null,
+            onConfirm: () => router.replace('/(app)/dating' as Href),
+          });
+        },
+        onError: fail('Report not sent'),
+      },
+    );
+
+  const actions = () => setSheet('menu');
 
   return (
     <ScreenWrapper
@@ -123,6 +170,35 @@ export default function DatingChatScreen() {
           </Text>
         ) : null}
       </View>
+
+      <AppBottomSheetModal visible={sheet === 'menu'} onClose={() => setSheet(null)} title={who}>
+        <View style={{ gap: 10 }}>
+          {open ? <Button label="End conversation" variant="secondary" onPress={endConversation} /> : null}
+          <Button label="Report" variant="secondary" onPress={() => setSheet('report')} />
+          <Button label={`Block ${who}`} variant="ghost" onPress={blockPerson} />
+        </View>
+      </AppBottomSheetModal>
+
+      <AppBottomSheetModal
+        visible={sheet === 'report'}
+        onClose={() => setSheet(null)}
+        title={`Report ${who}`}
+        subtitle="The card messages in this chat go to a moderator. You also block them."
+        footer={
+          <Button
+            label={reason ? 'Send report and block' : 'Choose a reason'}
+            disabled={!reason || report.isPending}
+            loading={report.isPending}
+            onPress={sendReport}
+          />
+        }
+      >
+        <View style={styles.wrap}>
+          {(Object.keys(REPORT_LABEL) as DatingReportCategory[]).map((k) => (
+            <Chip key={k} label={REPORT_LABEL[k]} selected={reason === k} onPress={() => setReason(k)} />
+          ))}
+        </View>
+      </AppBottomSheetModal>
     </ScreenWrapper>
   );
 }
@@ -131,4 +207,5 @@ const styles = StyleSheet.create({
   iconBtn: { alignItems: 'center', height: 40, justifyContent: 'center', width: 40 },
   bubbleRow: { flexDirection: 'row' },
   bubble: { maxWidth: '82%', paddingHorizontal: 14, paddingVertical: 10 },
+  wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
 });
