@@ -87,7 +87,19 @@ export type MovementId =
   | 'down_dog'
   | 'warrior'
   | 'eye_rest_blink'
-  | 'neck_head_tilt';
+  | 'neck_head_tilt'
+  | 'torso_rotation'
+  | 'hip_hinge'
+  | 'elbow_bend'
+  | 'pull_apart'
+  | 'spine_wave'
+  | 'leg_lift'
+  | 'knee_bend'
+  | 'reach'
+  | 'step'
+  | 'stretch_hold'
+  | 'floor_hold'
+  | 'arms_out';
 
 type Triplet = [number, number, number];
 
@@ -113,6 +125,15 @@ export interface MovementDefinition {
   holdWhen?: (landmarks: Landmark[]) => boolean;
   /** What to say while the posture is not recognised yet. */
   holdHint?: string;
+  /**
+   * A reading other than one joint angle (torso turn, hand spread, head travel). When set it
+   * replaces the joint angle, and reps are counted by `swing` instead of fixed thresholds.
+   */
+  metric?: (landmarks: Landmark[]) => { value: number; confidence: number } | null;
+  /** Reps from `metric`: a rise of at least this much from the last low, then a fall back. */
+  swing?: number;
+  /** What must be in the picture: the whole body (default) or head and shoulders. */
+  framing?: 'full' | 'upper';
 }
 
 export type FormCheckId = 'chest_up' | 'hip_line' | 'straight_arms' | 'depth';
@@ -178,6 +199,82 @@ function warriorShape(l: Landmark[]): boolean {
   return Math.min(...knees) < 140 && arms.every((a) => a > 65);
 }
 
+const mid = (a: Landmark, b: Landmark) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+const conf = (l: Landmark[], idx: number[]) => Math.min(...idx.map((i) => l[i]?.visibility ?? 0));
+
+/**
+ * How far the shoulders are turned away from the camera, in degrees (0 = square on). Uses
+ * MediaPipe's depth estimate: one shoulder comes forward as the chest turns. Both directions
+ * read as positive, so a turn to either side is one rep.
+ */
+function torsoTurn(l: Landmark[]) {
+  const c = conf(l, [LM.leftShoulder, LM.rightShoulder]);
+  if (c < MIN_LANDMARK_CONFIDENCE) return null;
+  const a = l[LM.leftShoulder];
+  const b = l[LM.rightShoulder];
+  const value = (Math.atan2(Math.abs(a.z - b.z), Math.abs(a.x - b.x) || 1e-6) * 180) / Math.PI;
+  return { value, confidence: c };
+}
+
+/** Distance between the wrists as a share of shoulder width (x100): arms spread wide is high. */
+function handSpread(l: Landmark[]) {
+  const c = conf(l, [LM.leftWrist, LM.rightWrist, LM.leftShoulder, LM.rightShoulder]);
+  if (c < MIN_LANDMARK_CONFIDENCE) return null;
+  const sw = Math.hypot(l[LM.leftShoulder].x - l[LM.rightShoulder].x, l[LM.leftShoulder].y - l[LM.rightShoulder].y);
+  if (sw < 0.02) return null;
+  return { value: (Math.abs(l[LM.leftWrist].x - l[LM.rightWrist].x) / sw) * 100, confidence: c };
+}
+
+/** Head height above the shoulders as a share of torso length (x100): cow is high, cat low. */
+function headLift(l: Landmark[]) {
+  const c = conf(l, [LM.nose, LM.leftShoulder, LM.rightShoulder, LM.leftHip, LM.rightHip]);
+  if (c < MIN_LANDMARK_CONFIDENCE) return null;
+  const sh = mid(l[LM.leftShoulder], l[LM.rightShoulder]);
+  const hip = mid(l[LM.leftHip], l[LM.rightHip]);
+  const torso = Math.hypot(sh.x - hip.x, sh.y - hip.y);
+  if (torso < 0.03) return null;
+  return { value: ((sh.y - l[LM.nose].y) / torso) * 100, confidence: c };
+}
+
+/** Gap between the ankles as a share of leg length (x100): a lifted or opened leg is high. */
+function legGap(l: Landmark[]) {
+  const c = conf(l, [LM.leftHip, LM.rightHip, LM.leftAnkle, LM.rightAnkle]);
+  if (c < MIN_LANDMARK_CONFIDENCE) return null;
+  const hip = mid(l[LM.leftHip], l[LM.rightHip]);
+  const an = mid(l[LM.leftAnkle], l[LM.rightAnkle]);
+  const leg = Math.hypot(hip.x - an.x, hip.y - an.y);
+  if (leg < 0.05) return null;
+  return { value: (Math.hypot(l[LM.leftAnkle].x - l[LM.rightAnkle].x, l[LM.leftAnkle].y - l[LM.rightAnkle].y) / leg) * 100, confidence: c };
+}
+
+/** One foot higher than the other as a share of leg length (x100): each step lifts it. */
+function footLift(l: Landmark[]) {
+  const c = conf(l, [LM.leftHip, LM.leftAnkle, LM.rightAnkle]);
+  if (c < MIN_LANDMARK_CONFIDENCE) return null;
+  const leg = Math.abs(l[LM.leftAnkle].y - l[LM.leftHip].y);
+  if (leg < 0.05) return null;
+  return { value: (Math.abs(l[LM.leftAnkle].y - l[LM.rightAnkle].y) / leg) * 100, confidence: c };
+}
+
+/** Both arms lifted out to the sides, at least 65 degrees from the body. */
+function armsLifted(l: Landmark[]): boolean {
+  if (![LM.leftShoulder, LM.rightShoulder, LM.leftElbow, LM.rightElbow].every((i) => seen(l[i]))) return false;
+  return jointAngle(l[LM.leftHip], l[LM.leftShoulder], l[LM.leftElbow]) > 65 && jointAngle(l[LM.rightHip], l[LM.rightShoulder], l[LM.rightElbow]) > 65;
+}
+
+/** Shoulders and hips in view: enough to time a stretch. */
+function torsoInView(l: Landmark[]): boolean {
+  return [LM.leftShoulder, LM.rightShoulder, LM.leftHip, LM.rightHip].filter((i) => seen(l[i])).length >= 3;
+}
+
+/** Hips to ankles within 35 degrees of horizontal: lying face down or on the back. */
+function legsFlat(l: Landmark[]): boolean {
+  const hip = seen(l[LM.leftHip]) ? l[LM.leftHip] : l[LM.rightHip];
+  const an = seen(l[LM.leftAnkle]) ? l[LM.leftAnkle] : l[LM.rightAnkle];
+  if (!seen(hip) || !seen(an)) return false;
+  return (Math.atan2(Math.abs(an.y - hip.y), Math.abs(an.x - hip.x)) * 180) / Math.PI < 35;
+}
+
 
 export const MOVEMENTS: MovementDefinition[] = [
   {
@@ -215,6 +312,7 @@ export const MOVEMENTS: MovementDefinition[] = [
     pattern: 'extend',
     targetReps: 10,
     checks: ['straight_arms'],
+    framing: 'upper',
   },
   {
     id: 'pushup',
@@ -413,6 +511,7 @@ export const MOVEMENTS: MovementDefinition[] = [
     checks: [],
     holdWhen: eyesRelaxedLevel,
     holdHint: 'Hold head level and gaze softly straight ahead.',
+    framing: 'upper',
   },
   {
     id: 'neck_head_tilt',
@@ -425,6 +524,175 @@ export const MOVEMENTS: MovementDefinition[] = [
     pattern: 'flex',
     targetReps: 8,
     checks: [],
+    framing: 'upper',
+  },
+  {
+    id: 'torso_rotation',
+    title: 'Torso rotation',
+    cue: 'Sit facing the phone with your shoulders in view. Turn your chest to one side, then the other.',
+    kind: 'reps',
+    joints: SHOULDER,
+    low: 0,
+    high: 0,
+    pattern: 'extend',
+    targetReps: 6,
+    checks: [],
+    metric: torsoTurn,
+    swing: 22,
+    framing: 'upper',
+  },
+  {
+    id: 'hip_hinge',
+    title: 'Hip hinge',
+    cue: 'Stand side-on to the phone, whole body in view. Push your hips back with a flat back.',
+    kind: 'reps',
+    joints: HIP,
+    low: 125,
+    high: 160,
+    pattern: 'flex',
+    targetReps: 10,
+    checks: [],
+  },
+  {
+    id: 'elbow_bend',
+    title: 'Arm bend',
+    cue: 'Side-on to the phone with your working arm in view.',
+    kind: 'reps',
+    joints: ELBOW,
+    low: 100,
+    high: 145,
+    pattern: 'flex',
+    targetReps: 10,
+    checks: [],
+    sideRule: 'min',
+    framing: 'upper',
+  },
+  {
+    id: 'pull_apart',
+    title: 'Pull-apart',
+    cue: 'Face the phone with arms straight in front. Pull your hands out wide, then back.',
+    kind: 'reps',
+    joints: SHOULDER,
+    low: 0,
+    high: 0,
+    pattern: 'extend',
+    targetReps: 12,
+    checks: [],
+    metric: handSpread,
+    swing: 70,
+    framing: 'upper',
+  },
+  {
+    id: 'spine_wave',
+    title: 'Cat-cow',
+    cue: 'On hands and knees, side-on to the phone. Lift your head and chest, then round your back.',
+    kind: 'reps',
+    joints: HIP,
+    low: 0,
+    high: 0,
+    pattern: 'extend',
+    targetReps: 8,
+    checks: [],
+    metric: headLift,
+    swing: 14,
+  },
+  {
+    id: 'leg_lift',
+    title: 'Leg lift',
+    cue: 'Whole body in view. Lift the top leg away, then lower it with control.',
+    kind: 'reps',
+    joints: HIP,
+    low: 0,
+    high: 0,
+    pattern: 'extend',
+    targetReps: 10,
+    checks: [],
+    metric: legGap,
+    swing: 25,
+  },
+  {
+    id: 'knee_bend',
+    title: 'Knee bend',
+    cue: 'Side-on to the phone with hips, knees and ankles in view.',
+    kind: 'reps',
+    joints: KNEE,
+    low: 105,
+    high: 150,
+    pattern: 'flex',
+    targetReps: 10,
+    checks: [],
+    sideRule: 'min',
+  },
+  {
+    id: 'reach',
+    title: 'Arm reach',
+    cue: 'Face the phone with your upper body in view. Reach out, then return.',
+    kind: 'reps',
+    joints: SHOULDER,
+    low: 40,
+    high: 95,
+    pattern: 'extend',
+    targetReps: 8,
+    checks: [],
+    sideRule: 'max',
+    framing: 'upper',
+  },
+  {
+    id: 'step',
+    title: 'Steps',
+    cue: 'Face the phone with your feet in view. Each foot lift counts.',
+    kind: 'reps',
+    joints: KNEE,
+    low: 0,
+    high: 0,
+    pattern: 'extend',
+    targetReps: 10,
+    checks: [],
+    metric: footLift,
+    swing: 7,
+  },
+  {
+    id: 'stretch_hold',
+    title: 'Stretch',
+    cue: 'Whole body in view. Ease into the stretch and breathe.',
+    kind: 'hold',
+    joints: HIP,
+    low: 0,
+    high: 180,
+    pattern: 'extend',
+    targetReps: 30,
+    checks: [],
+    holdWhen: torsoInView,
+    holdHint: 'Move so your shoulders and hips are in view.',
+  },
+  {
+    id: 'floor_hold',
+    title: 'Floor hold',
+    cue: 'Phone on the floor, side-on, whole body in view.',
+    kind: 'hold',
+    joints: BODY_LINE,
+    low: 0,
+    high: 180,
+    pattern: 'extend',
+    targetReps: 20,
+    checks: [],
+    holdWhen: legsFlat,
+    holdHint: 'Lie down with your legs long, side-on to the phone.',
+  },
+  {
+    id: 'arms_out',
+    title: 'Arms out',
+    cue: 'Face the phone with your upper body in view. Lift both arms out to the sides.',
+    kind: 'hold',
+    joints: SHOULDER,
+    low: 0,
+    high: 180,
+    pattern: 'extend',
+    targetReps: 30,
+    checks: [],
+    holdWhen: armsLifted,
+    holdHint: 'Lift both arms out to shoulder height.',
+    framing: 'upper',
   },
 ];
 
@@ -444,14 +712,14 @@ export const EXERCISE_MOVEMENT: Record<string, MovementId> = {
   plank: 'plank',
   side_plank: 'side_plank',
   db_overhead_press: 'arm_raise',
-  seated_arm_circles: 'arm_raise',
+  seated_arm_circles: 'arms_out',
   squat_jump: 'squat',
   step_up: 'lunge',
   calf_raise: 'calf_raise',
   jumping_jacks: 'jumping_jack',
   high_knees: 'knee_drive',
   march_in_place: 'knee_drive',
-  seated_march: 'knee_drive',
+  seated_march: 'step',
   mountain_climber: 'mountain_climber',
   seated_leg_extension: 'leg_extension',
   bird_dog: 'bird_dog',
@@ -459,6 +727,39 @@ export const EXERCISE_MOVEMENT: Record<string, MovementId> = {
   tree_pose: 'balance',
   downward_dog: 'down_dog',
   warrior_two: 'warrior',
+  // Everything else in the catalogue, matched to the motion the camera can measure.
+  thoracic_rotation: 'torso_rotation',
+  hip_flexor_stretch: 'stretch_hold',
+  cat_cow: 'spine_wave',
+  dead_bug: 'knee_bend',
+  db_row: 'elbow_bend',
+  db_press: 'elbow_bend',
+  rdl: 'hip_hinge',
+  lat_pulldown: 'arm_raise',
+  leg_press: 'knee_bend',
+  farmer_carry: 'step',
+  superman: 'floor_hold',
+  brisk_walk: 'step',
+  jog: 'knee_drive',
+  cycling: 'knee_bend',
+  rowing: 'knee_bend',
+  jump_rope: 'calf_raise',
+  burpee: 'knee_bend',
+  skater: 'lunge',
+  cobra: 'floor_hold',
+  sun_salutation: 'hip_hinge',
+  pilates_hundred: 'stretch_hold',
+  single_leg_stretch: 'knee_bend',
+  roll_up: 'hip_hinge',
+  side_leg_lift: 'leg_lift',
+  pilates_swim: 'floor_hold',
+  heel_toe_walk: 'step',
+  clock_reach: 'reach',
+  hamstring_stretch: 'stretch_hold',
+  chest_stretch: 'stretch_hold',
+  calf_stretch: 'stretch_hold',
+  child_pose: 'stretch_hold',
+  band_pull_apart: 'pull_apart',
 };
 
 export const movementForExercise = (exerciseId: string) => {
@@ -493,6 +794,10 @@ function bestSide(pair: { left: Triplet; right: Triplet }, landmarks: Landmark[]
 /** The movement angle from the better-visible side, or null when neither side is confident. */
 export function readAngle(def: MovementDefinition, landmarks: Landmark[]): { angle: number; confidence: number } | null {
   if (landmarks.length < 33) return null;
+  if (def.metric) {
+    const m = def.metric(landmarks);
+    return m && Number.isFinite(m.value) ? { angle: m.value, confidence: m.confidence } : null;
+  }
   if (def.sideRule === 'min' || def.sideRule === 'max') {
     const reads = [def.joints.left, def.joints.right]
       .map((idx) => {
@@ -582,6 +887,11 @@ export interface RepState {
   lastTimestamp: number | null;
   /** Holds: whether the posture is recognised in the latest frame. */
   inPosture: boolean;
+  /** Swing-counted moves: lowest reading since the last rep. */
+  trough: number | null;
+  /** Milliseconds spent moving (a turn or rep in the last 2.5 s): timed exercises count these. */
+  activeMs: number;
+  lastMotionAt: number | null;
 }
 
 export const initialRepState = (): RepState => ({
@@ -605,6 +915,9 @@ export const initialRepState = (): RepState => ({
   holdMs: 0,
   lastTimestamp: null,
   inPosture: false,
+  trough: null,
+  activeMs: 0,
+  lastMotionAt: null,
 });
 
 const SHALLOW: Record<string, FormFault> = {
@@ -623,7 +936,9 @@ export function stepReps(def: MovementDefinition, state: RepState, landmarks: La
   const reading = readAngle(def, landmarks);
   const next: RepState = { ...state, totalFrames: state.totalFrames + 1, lastTimestamp: timestamp ?? state.lastTimestamp };
   if (!reading) return next;
-  const { angle, confidence } = reading;
+  const { confidence } = reading;
+  // Metric readings are noisier than joint angles: smooth them lightly.
+  const angle = def.metric && state.lastAngle !== null ? state.lastAngle * 0.4 + reading.angle * 0.6 : reading.angle;
   next.validFrames += 1;
   next.confidenceSum += confidence;
   next.lastAngle = angle;
@@ -657,6 +972,36 @@ export function stepReps(def: MovementDefinition, state: RepState, landmarks: La
     return next;
   }
 
+  const dt = timestamp !== undefined && state.lastTimestamp !== null ? Math.min(500, Math.max(0, timestamp - state.lastTimestamp)) : 0;
+  if (state.lastMotionAt !== null && timestamp !== undefined && timestamp - state.lastMotionAt < 2500) next.activeMs += dt;
+  const moved = () => {
+    if (timestamp !== undefined) next.lastMotionAt = timestamp;
+  };
+
+  if (def.swing) {
+    // Rise by `swing` from the lowest point, then fall back by most of it: one rep.
+    if (state.phase === 'start') {
+      next.trough = state.trough === null ? angle : Math.min(state.trough, angle);
+      if (angle >= next.trough + def.swing) {
+        next.phase = 'moving';
+        next.repExtreme = angle;
+        moved();
+      }
+    } else {
+      next.repExtreme = Math.max(state.repExtreme ?? angle, angle);
+      if (angle <= next.repExtreme - def.swing * 0.7) {
+        next.phase = 'start';
+        next.reps += 1;
+        if (!next.repHadFault) next.cleanReps += 1;
+        next.repHadFault = false;
+        next.repExtreme = null;
+        next.trough = angle;
+        moved();
+      }
+    }
+    return next;
+  }
+
   const towardTurn = def.pattern === 'flex' ? angle < def.high - 15 : angle > def.low + 15;
   const reachedTurn = def.pattern === 'flex' ? angle <= def.low : angle >= def.high;
   const backToStart = def.pattern === 'flex' ? angle >= def.high : angle <= def.low;
@@ -664,6 +1009,7 @@ export function stepReps(def: MovementDefinition, state: RepState, landmarks: La
 
   if (state.phase === 'start' && reachedTurn) {
     next.phase = 'moving';
+    moved();
     // A good-depth rep clears a "too shallow" message.
     if (next.fault?.id === 'shallow') next.fault = null;
   } else if (state.phase === 'moving' && backToStart) {
@@ -672,6 +1018,7 @@ export function stepReps(def: MovementDefinition, state: RepState, landmarks: La
     if (!next.repHadFault) next.cleanReps += 1;
     next.repHadFault = false;
     next.repExtreme = null;
+    moved();
   } else if (state.phase === 'start' && backToStart && state.repExtreme !== null) {
     // Turned back without reaching depth.
     next.repExtreme = null;
@@ -727,6 +1074,67 @@ export function liveCue(def: MovementDefinition, s: RepState, personInView: bool
   if (s.fault) return s.fault.fix;
   if (s.lastAngle === null) return def.cue;
   if (def.kind === 'hold') return s.inPosture ? 'Good. Hold it and keep breathing.' : (def.holdHint ?? def.cue);
+  if (def.swing) return s.phase === 'moving' ? 'Good. Now come back to the start.' : 'Keep going, use your full range.';
   if (def.pattern === 'flex') return s.phase === 'moving' ? 'Good depth. Now back up.' : 'Lower with control.';
   return s.phase === 'moving' ? 'Good. Now lower slowly.' : 'Lift with control.';
+}
+
+/**
+ * What the set's counter shows: seconds held for holds, seconds spent moving for timed
+ * exercises (e.g. 30 s of jumping jacks), otherwise reps.
+ */
+export function setProgress(def: MovementDefinition, s: RepState, timed: boolean): number {
+  if (def.kind === 'hold') return Math.floor(s.holdMs / 1000);
+  if (timed) return Math.floor(s.activeMs / 1000);
+  return s.reps;
+}
+
+export interface FramingCue {
+  id: 'step_in' | 'step_back' | 'closer' | 'move_left' | 'move_right' | 'feet' | 'shoulders';
+  text: string;
+}
+
+/**
+ * Where to move so the camera sees what the move needs, or null when framing is fine.
+ * `mirrored` is true for the front camera (the picture is a mirror, so "move right" means
+ * towards the right of the screen as the person sees it).
+ */
+export function framingCue(def: MovementDefinition, landmarks: Landmark[], mirrored = true): FramingCue | null {
+  if (landmarks.length < 33) return { id: 'step_in', text: 'Step into view of the camera.' };
+  const vis = (i: number) => (landmarks[i]?.visibility ?? 0) >= 0.5;
+  const upper = def.framing === 'upper';
+  const key = upper
+    ? [LM.nose, LM.leftShoulder, LM.rightShoulder]
+    : [LM.nose, LM.leftShoulder, LM.rightShoulder, LM.leftHip, LM.rightHip, LM.leftKnee, LM.rightKnee, LM.leftAnkle, LM.rightAnkle];
+  const shown = key.filter(vis);
+  if (shown.length === 0) return { id: 'step_in', text: 'Step into view of the camera.' };
+  let minX = 1;
+  let maxX = 0;
+  let minY = 1;
+  let maxY = 0;
+  for (const i of shown) {
+    const p = landmarks[i];
+    minX = Math.min(minX, p.x);
+    maxX = Math.max(maxX, p.x);
+    minY = Math.min(minY, p.y);
+    maxY = Math.max(maxY, p.y);
+  }
+  const cx = (minX + maxX) / 2;
+  // Off to one side: a body cut by the edge, or centred well away from the middle.
+  const offLeft = minX < 0.02 || cx < 0.28;
+  if (offLeft || maxX > 0.98 || cx > 0.72) {
+    // In the mirrored front camera, a body on the left of the screen moves right to centre.
+    const dir = offLeft === mirrored ? 'right' : 'left';
+    return { id: dir === 'right' ? 'move_right' : 'move_left', text: `Move a step to your ${dir}.` };
+  }
+  if (upper) {
+    if (!vis(LM.leftShoulder) && !vis(LM.rightShoulder)) return { id: 'shoulders', text: 'Move back so your shoulders are in view.' };
+    if (!vis(LM.nose) || minY < 0.02) return { id: 'step_back', text: 'Lower the phone or move back so your head is in view.' };
+    return null;
+  }
+  const feetSeen = vis(LM.leftAnkle) || vis(LM.rightAnkle);
+  if (!feetSeen || maxY > 0.98) return { id: 'feet', text: 'Step back until your feet are in view.' };
+  if (minY < 0.01) return { id: 'step_back', text: 'Step back a little, your head is cut off.' };
+  if (Math.max(maxX - minX, maxY - minY) < 0.4) return { id: 'closer', text: 'Come a little closer to the phone.' };
+  return null;
 }

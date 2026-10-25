@@ -1,5 +1,42 @@
 # Requirements Traceability Matrix
 
+## Update — 2026-10-26 (16): Coach full screen, every exercise counted, framing guidance
+
+Checks: compile 0, lint 0, `pnpm test` 229/229 before the last overlay tweak (pose tests 22/22 after).
+Release build installed on the Moto G71.
+
+| Item | Status |
+| --- | --- |
+| Only ~27 of 56 exercises counted | every catalogue exercise now maps to a camera movement (test asserts none missing). New detectors: torso rotation (shoulder depth turn, either side = 1 rep), hip hinge, arm bend, pull-apart, cat-cow (head lift), leg lift, knee bend, arm reach, steps, stretch / floor / arms-out holds |
+| Seated thoracic rotation never counted | it had no movement; now counted by the torso-turn swing counter (unit test: one turn each side = 2 reps, wobble = 0) |
+| Timed exercises (jumping jacks 30 s) needed 30 reps | timed sets count seconds spent moving |
+| Coach never said where to move | debounced framing cue: step into view, move left/right (mirror-aware), step back for feet/head, come closer; shown as a banner and spoken at most every 6 s |
+| Coach looked bad | full-screen camera with the skeleton, tutorial as picture-in-picture (expand / play), translucent top and bottom controls, big counter, Set done button |
+| Skeleton style | side-coloured glow with white limbs, small joints, neck line instead of a head ring. Fixed: limb paths never updated (derived values read shared values inside a helper) — seen on the phone |
+| Skeleton behind the body | native sends real capture time; overlay predicts to the frame on screen (capped 90 ms). Camera asks for 24-30 fps (log: `fps=[24, 30]`). Pose stays ~10 results/s: CPU inference on the G71 is the limit |
+| NOT TESTED by a person | rep counting of the new detectors on a real body; alignment while moving |
+
+## Update — 2026-10-26 (15): measured on the owner's Moto G71, Gate B, export, deletion
+
+Checks: compile 0, lint 0, `pnpm test` 223/223, `pnpm test:db` 123/123. Release builds installed on
+the Moto G71 (re-signed with the project debug key so they install over the existing app and keep its
+data). The phone had been running a debug build, which on its own makes the whole app feel slow.
+
+| Item | Measured / status | Commit |
+| --- | --- | --- |
+| Home scroll lag | native squircle "glass" redrew every card every frame: median 89 ms, 76% janky -> plain rounded views 7% janky, 1 slow draw command | c7a8c60 |
+| Coach froze on "Allow camera and start" | models loaded on the main thread -> background load, preview binds at once, onPoseReady | 4f08b93 |
+| Skeleton missing / misaligned | GPU delegate returned no body -> CPU; prediction overshoot -> 40-80 ms lead; aligned on device (screenshot) | 4f08b93 |
+| Coach CPU when idle | main thread 54% -> <3%, GC 27% -> ~0 (frame skip before conversion, flat arrays, sleeping frame callback, SurfaceView) | 4f08b93 |
+| Face, eyes, hands landmarks | face (eyes, irises, brows, lips, outline) and 2 hands, opt-in, interleaved | c7a8c60 |
+| Splash late / glitching | fades after first screen mounts, 3 s cap | c7a8c60 |
+| Gate B religion/culture/worldview | taxonomy, aliases, search, ideology separate, self-described, prefer-not-to-say, local only, tests | 7884e6d |
+| Excel export | real .xlsx, About sheet + one sheet per category; Android saves via folder picker | 7884e6d |
+| Server account deletion | delete-account function deployed; app deletes server then phone | 72b7b63 |
+| Last screen restore | never fired before; allowlist, 12 h, on top of Home | 4f08b93 |
+| Crashlytics | integrated, opt-out setting, no personal content; `Initializing Firebase Crashlytics 21.0.0` seen in the phone's log | (this round) |
+| Pose rate in low light | ~10 results/s, 60-140 ms latency: camera frame rate drops in a dim room | — |
+
 ## Update — 2026-10-25 (14): dating (spec §18), letters cleanup
 
 Checks: compile 0, lint 0, `pnpm test` 192/192, `pnpm test:db` 123/123. Migration 12 pushed live.

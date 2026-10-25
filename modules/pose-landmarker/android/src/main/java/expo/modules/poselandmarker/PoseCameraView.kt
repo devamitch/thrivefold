@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.os.SystemClock
 import android.util.Log
+import android.util.Range
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
@@ -260,7 +261,16 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
         val sameFov = ResolutionSelector.Builder()
           .setAspectRatioStrategy(AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY)
           .build()
-        val preview = Preview.Builder().setResolutionSelector(sameFov).build().also { it.setSurfaceProvider(previewView.surfaceProvider) }
+        val selector = if (frontFacing) CameraSelector.DEFAULT_FRONT_CAMERA else CameraSelector.DEFAULT_BACK_CAMERA
+        // Ask for up to 30 fps with a floor of ~24: indoors many front cameras otherwise drop to
+        // 15 fps, which halves how often the skeleton can follow the body.
+        val fps = try {
+          val ranges = provider.getCameraInfo(selector).supportedFrameRateRanges.filter { it.upper >= 30 && it.upper <= 30 }
+          ranges.filter { it.lower in 20..24 }.maxByOrNull { it.lower } ?: ranges.maxByOrNull { it.lower }
+        } catch (_: Exception) { null }
+        val previewBuilder = Preview.Builder().setResolutionSelector(sameFov)
+        if (fps != null) previewBuilder.setTargetFrameRate(fps)
+        val preview = previewBuilder.build().also { it.setSurfaceProvider(previewView.surfaceProvider) }
         // The lite model looks at ~256 px; analysing 640x480 instead of the full sensor frame
         // cuts bitmap conversion and rotation work by ~6x. Same 4:3 ratio, same field of view.
         val analysisSize = ResolutionSelector.Builder()
@@ -273,11 +283,10 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
           .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
           .build()
         analysis.setAnalyzer(exec) { image -> analyse(image) }
-        val selector = if (frontFacing) CameraSelector.DEFAULT_FRONT_CAMERA else CameraSelector.DEFAULT_BACK_CAMERA
         provider.unbindAll()
         provider.bindToLifecycle(owner, selector, preview, analysis)
         // Diagnostics: the overlay is only aligned if both streams show the same field of view.
-        Log.i(TAG, "preview=${preview.resolutionInfo?.resolution} crop=${preview.resolutionInfo?.cropRect} analysis=${analysis.resolutionInfo?.resolution} crop=${analysis.resolutionInfo?.cropRect} rotation=${analysis.resolutionInfo?.rotationDegrees}")
+        Log.i(TAG, "fps=$fps preview=${preview.resolutionInfo?.resolution} crop=${preview.resolutionInfo?.cropRect} analysis=${analysis.resolutionInfo?.resolution} crop=${analysis.resolutionInfo?.cropRect} rotation=${analysis.resolutionInfo?.rotationDegrees}")
       } catch (e: Exception) {
         onPoseError(mapOf("code" to "camera_unavailable", "message" to (e.message ?: "Camera could not start")))
       }
@@ -319,6 +328,16 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
       return
     }
     try {
+      // How long ago the sensor captured this frame. The sensor clock is either boot time or
+      // uptime depending on the device; use whichever gives a plausible age.
+      val cap = image.imageInfo.timestamp
+      val ageBoot = (SystemClock.elapsedRealtimeNanos() - cap) / 1_000_000L
+      val ageUp = (SystemClock.uptimeMillis() * 1_000_000L - cap) / 1_000_000L
+      val age = when {
+        ageBoot in 0L..400L -> ageBoot
+        ageUp in 0L..400L -> ageUp
+        else -> 0L
+      }
       val bitmap = image.toBitmap()
       val matrix = Matrix().apply {
         postRotate(image.imageInfo.rotationDegrees.toFloat())
@@ -328,7 +347,8 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
       val upright = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
       frameW = upright.width
       frameH = upright.height
-      val ts = SystemClock.uptimeMillis()
+      val ts = maxOf(lastTs + 1, SystemClock.uptimeMillis() - age)
+      lastTs = ts
       val mp = BitmapImageBuilder(upright).build()
       inFlight = true
       inFlightSince = ts
@@ -347,6 +367,8 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
   }
 
   private var emitted = 0L
+  /** MediaPipe needs strictly increasing timestamps. */
+  private var lastTs = 0L
 
   private fun emit(result: PoseLandmarkerResult) {
     inFlight = false
@@ -369,12 +391,16 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
         out[i * 4 + 3] = lm.visibility().orElse(0f).toDouble()
       }
     }
+    // Wall-clock time the frame was captured, so the overlay can predict where joints are by
+    // the time they are drawn (JS and the UI thread share this clock).
+    val capturedAt = System.currentTimeMillis() - (now - result.timestampMs())
     val face = if (faceOn && now - latestFaceAt < STALE_MS) latestFace else emptyList()
     val hands = if (handsOn && now - latestHandsAt < STALE_MS) latestHands else emptyList()
     post {
       onPose(
         mapOf(
           "timestamp" to result.timestampMs(),
+          "capturedAt" to capturedAt.toDouble(),
           "points" to points,
           "frameWidth" to frameW,
           "frameHeight" to frameH,

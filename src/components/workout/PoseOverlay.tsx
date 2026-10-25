@@ -18,6 +18,28 @@ import { useTheme } from '../../theme/useTheme';
 
 const N = 33;
 const JOINTS = [...new Set(SKELETON.flat())];
+const LEFT_SIDE = new Set<number>([
+  LM.leftShoulder,
+  LM.leftElbow,
+  LM.leftWrist,
+  LM.leftHip,
+  LM.leftKnee,
+  LM.leftAnkle,
+]);
+const RIGHT_SIDE = new Set<number>([
+  LM.rightShoulder,
+  LM.rightElbow,
+  LM.rightWrist,
+  LM.rightHip,
+  LM.rightKnee,
+  LM.rightAnkle,
+]);
+/** Limbs coloured by side (as in most sport-tracking apps), the torso neutral. */
+const LEFT_BONES = SKELETON.filter(([a, b]) => LEFT_SIDE.has(a) && LEFT_SIDE.has(b));
+const RIGHT_BONES = SKELETON.filter(([a, b]) => RIGHT_SIDE.has(a) && RIGHT_SIDE.has(b));
+const TORSO_BONES = SKELETON.filter(
+  (bone) => !LEFT_BONES.includes(bone) && !RIGHT_BONES.includes(bone),
+);
 /** Share of the remaining distance covered each display frame: glides between detections. */
 const FOLLOW = 0.6;
 const MIN_VIS = 0.5;
@@ -34,15 +56,19 @@ export interface PoseFeed {
   hands?: SharedValue<number[]>;
   /** Increments with every detection, so the overlay can measure motion between them. */
   seq?: SharedValue<number>;
+  /** Date.now() time the detected frame was captured by the camera. */
+  capturedAt?: SharedValue<number>;
 }
 
 /**
- * The camera preview is live but a detection describes a frame ~80-140 ms old. Joints are
- * drawn where their recent velocity says they are now (capped), which keeps the skeleton on
- * the body instead of trailing behind it.
+ * A detection describes a frame captured ~60-140 ms ago, while the preview on screen is itself
+ * ~60 ms behind the sensor. Joints are drawn where their velocity says they are in the frame
+ * being shown: lead = (now - preview lag) - capture time, capped and damped so a noisy
+ * detection can't fling a joint off the body.
  */
-const LEAD_MS = 40;
-const MAX_LEAD_MS = 80;
+const PREVIEW_LAG_MS = 60;
+const MAX_LEAD_MS = 90;
+const PREDICT = 0.85;
 
 /** Eases `out` towards `target` (both in stage pixels) in place; snaps when sizes differ. */
 function easeInto(out: number[], target: number[], follow: number): number[] {
@@ -73,7 +99,14 @@ interface Props {
  * instead of jumping, and React never re-renders for a frame. When nobody is in view a dashed
  * body outline shows where to stand.
  */
-export const PoseOverlay = memo(function PoseOverlay({ feed, width, height, highlight, cornerRadius = 0, maskColor }: Props) {
+export const PoseOverlay = memo(function PoseOverlay({
+  feed,
+  width,
+  height,
+  highlight,
+  cornerRadius = 0,
+  maskColor,
+}: Props) {
   const { colors } = useTheme();
   const reduceMotion = useReducedMotion();
   const shown = useSharedValue<number[]>(new Array(N * 3).fill(0));
@@ -127,9 +160,15 @@ export const PoseOverlay = memo(function PoseOverlay({ feed, width, height, high
       return out;
     };
     const f = feed.face?.value ?? [];
-    if (f.length || faceShown.value.length) faceShown.value = f.length ? easeInto(faceShown.value, toStage(f), reduceMotion ? 1 : FOLLOW) : [];
+    if (f.length || faceShown.value.length)
+      faceShown.value = f.length
+        ? easeInto(faceShown.value, toStage(f), reduceMotion ? 1 : FOLLOW)
+        : [];
     const h = feed.hands?.value ?? [];
-    if (h.length || handsShown.value.length) handsShown.value = h.length ? easeInto(handsShown.value, toStage(h), reduceMotion ? 1 : FOLLOW) : [];
+    if (h.length || handsShown.value.length)
+      handsShown.value = h.length
+        ? easeInto(handsShown.value, toStage(h), reduceMotion ? 1 : FOLLOW)
+        : [];
     if (p.length < N * 3) {
       if (present.value !== 0) present.value = 0;
       if (awake.value) {
@@ -142,6 +181,8 @@ export const PoseOverlay = memo(function PoseOverlay({ feed, width, height, high
     const now = Date.now();
     const seq = feed.seq?.value ?? 0;
     // A new detection: map it, and measure velocity against the previous one.
+    const captured = feed.capturedAt?.value ?? 0;
+    const detAt = captured > 0 && now - captured < 1000 ? captured : now - 100;
     if (seq !== lastSeq.value) {
       const det = new Array(N * 3);
       for (let i = 0; i < N; i++) {
@@ -150,7 +191,7 @@ export const PoseOverlay = memo(function PoseOverlay({ feed, width, height, high
         det[i * 3 + 2] = p[i * 3 + 2];
       }
       const prev = lastDet.value;
-      const dt = Math.max(1, now - arrivedAt.value);
+      const dt = Math.max(1, detAt - arrivedAt.value);
       const v = new Array(N * 2).fill(0);
       if (prev.length === N * 3 && !snap && dt < 400) {
         for (let i = 0; i < N; i++) {
@@ -162,13 +203,15 @@ export const PoseOverlay = memo(function PoseOverlay({ feed, width, height, high
       }
       lastDet.value = det;
       vel.value = v;
-      arrivedAt.value = now;
+      arrivedAt.value = detAt;
       lastSeq.value = seq;
     }
     const det = lastDet.value;
     const v = vel.value;
     if (det.length !== N * 3) return;
-    const lead = reduceMotion ? 0 : Math.min(MAX_LEAD_MS, LEAD_MS + (now - arrivedAt.value));
+    const lead = reduceMotion
+      ? 0
+      : Math.max(0, Math.min(MAX_LEAD_MS, now - PREVIEW_LAG_MS - arrivedAt.value)) * PREDICT;
     // Nothing left to move: skip the update so the canvas isn't redrawn every frame.
     const cur = shown.value;
     let maxDelta = 0;
@@ -199,14 +242,31 @@ export const PoseOverlay = memo(function PoseOverlay({ feed, width, height, high
     if (present.value !== 1) present.value = 1;
   }, false);
 
-  const bones = useDerivedValue(() => {
+  // Each derived value reads `shown` and `present` itself: Reanimated only re-runs a derived
+  // value for shared values it reads directly, not ones read inside a helper it calls.
+  const bonePath = (list: [number, number][], s: number[], on: number) => {
+    'worklet';
     const path = Skia.Path.Make();
-    const s = shown.value;
-    if (!present.value) return path;
-    for (const [a, b] of SKELETON) {
+    if (!on) return path;
+    for (const [a, b] of list) {
       if (s[a * 3 + 2] < MIN_VIS || s[b * 3 + 2] < MIN_VIS) continue;
       path.moveTo(s[a * 3], s[a * 3 + 1]);
       path.lineTo(s[b * 3], s[b * 3 + 1]);
+    }
+    return path;
+  };
+  const leftBones = useDerivedValue(() => bonePath(LEFT_BONES, shown.value, present.value));
+  const rightBones = useDerivedValue(() => bonePath(RIGHT_BONES, shown.value, present.value));
+  const torsoBones = useDerivedValue(() => {
+    const path = bonePath(TORSO_BONES, shown.value, present.value);
+    // Neck: shoulder midpoint to the nose.
+    const s = shown.value;
+    const n = LM.nose * 3;
+    const l = LM.leftShoulder * 3;
+    const r = LM.rightShoulder * 3;
+    if (present.value && s[n + 2] >= MIN_VIS && s[l + 2] >= MIN_VIS && s[r + 2] >= MIN_VIS) {
+      path.moveTo((s[l] + s[r]) / 2, (s[l + 1] + s[r + 1]) / 2);
+      path.lineTo(s[n], s[n + 1]);
     }
     return path;
   });
@@ -230,7 +290,7 @@ export const PoseOverlay = memo(function PoseOverlay({ feed, width, height, high
     const s = shown.value;
     if (!present.value) return path;
     for (const i of JOINTS) {
-      if (s[i * 3 + 2] >= MIN_VIS) path.addCircle(s[i * 3], s[i * 3 + 1], 4.5);
+      if (s[i * 3 + 2] >= MIN_VIS) path.addCircle(s[i * 3], s[i * 3 + 1], 4);
     }
     return path;
   });
@@ -246,15 +306,13 @@ export const PoseOverlay = memo(function PoseOverlay({ feed, width, height, high
     return path;
   });
 
+  // Head: a small dot on the nose, so the face itself stays visible.
   const head = useDerivedValue(() => {
     const path = Skia.Path.Make();
     const s = shown.value;
     const n = LM.nose * 3;
-    const l = LM.leftShoulder * 3;
-    const r = LM.rightShoulder * 3;
     if (!present.value || s[n + 2] < MIN_VIS) return path;
-    const d = Math.max(26, Math.min(130, Math.hypot(s[l] - s[r], s[l + 1] - s[r + 1]) * 0.55));
-    path.addCircle(s[n], s[n + 1], d / 2);
+    path.addCircle(s[n], s[n + 1], 5);
     return path;
   });
 
@@ -314,7 +372,10 @@ export const PoseOverlay = memo(function PoseOverlay({ feed, width, height, high
     const f = faceShown.value;
     if (f.length < 236) return path;
     for (const c of [FACE_GROUPS.irises[0], FACE_GROUPS.irises[0] + 5]) {
-      const r = Math.max(2, Math.hypot(f[(c + 1) * 2] - f[(c + 3) * 2], f[(c + 1) * 2 + 1] - f[(c + 3) * 2 + 1]) / 2);
+      const r = Math.max(
+        2,
+        Math.hypot(f[(c + 1) * 2] - f[(c + 3) * 2], f[(c + 1) * 2 + 1] - f[(c + 3) * 2 + 1]) / 2,
+      );
       path.addCircle(f[c * 2], f[c * 2 + 1], r);
     }
     return path;
@@ -344,23 +405,92 @@ export const PoseOverlay = memo(function PoseOverlay({ feed, width, height, high
   return (
     <Canvas style={[StyleSheet.absoluteFill, { width, height }]} pointerEvents="none">
       <Group opacity={guideOpacity}>
-        <Path path={guide} style="stroke" strokeWidth={2.5} color={colors.callText} strokeCap="round" strokeJoin="round">
+        <Path
+          path={guide}
+          style="stroke"
+          strokeWidth={2.5}
+          color={colors.callText}
+          strokeCap="round"
+          strokeJoin="round"
+        >
           <DashPathEffect intervals={[10, 8]} />
         </Path>
       </Group>
-      {/* Glow under the bones, then crisp bones, then joints with a ring */}
-      <Path path={bones} style="stroke" strokeWidth={11} strokeCap="round" color={colors.primary} opacity={0.35} />
-      <Path path={bones} style="stroke" strokeWidth={3.5} strokeCap="round" color={colors.callText} />
-      <Path path={faultBones} style="stroke" strokeWidth={4.5} strokeCap="round" color={colors.error} />
-      <Path path={head} style="stroke" strokeWidth={2.5} color={colors.callText} opacity={0.9} />
+      {/* Side-coloured glow (left / right), crisp white limbs, then small joints with a halo */}
+      <Path
+        path={leftBones}
+        style="stroke"
+        strokeWidth={12}
+        strokeCap="round"
+        color={colors.primary}
+        opacity={0.55}
+      />
+      <Path
+        path={rightBones}
+        style="stroke"
+        strokeWidth={12}
+        strokeCap="round"
+        color={colors.accent}
+        opacity={0.55}
+      />
+      <Path
+        path={torsoBones}
+        style="stroke"
+        strokeWidth={2.5}
+        strokeCap="round"
+        color={colors.callText}
+        opacity={0.75}
+      />
+      <Path
+        path={leftBones}
+        style="stroke"
+        strokeWidth={3.5}
+        strokeCap="round"
+        color={colors.callText}
+      />
+      <Path
+        path={rightBones}
+        style="stroke"
+        strokeWidth={3.5}
+        strokeCap="round"
+        color={colors.callText}
+      />
+      <Path
+        path={faultBones}
+        style="stroke"
+        strokeWidth={5}
+        strokeCap="round"
+        color={colors.error}
+      />
+      <Path path={joints} style="stroke" strokeWidth={5} color={colors.callText} opacity={0.25} />
       <Path path={joints} color={colors.callText} />
-      <Path path={joints} style="stroke" strokeWidth={2} color={colors.primary} />
+      <Path path={head} color={colors.callText} />
       <Path path={faultJoints} color={colors.error} />
       {/* Face and hands, thinner, so the body stays the main read */}
-      <Path path={faceLines} style="stroke" strokeWidth={1.6} strokeJoin="round" color={colors.callText} opacity={0.85} />
+      <Path
+        path={faceLines}
+        style="stroke"
+        strokeWidth={1.6}
+        strokeJoin="round"
+        color={colors.callText}
+        opacity={0.85}
+      />
       <Path path={irises} style="stroke" strokeWidth={1.6} color={colors.primary} />
-      <Path path={handLines} style="stroke" strokeWidth={6} strokeCap="round" color={colors.accent} opacity={0.3} />
-      <Path path={handLines} style="stroke" strokeWidth={2.2} strokeCap="round" color={colors.callText} />
+      <Path
+        path={handLines}
+        style="stroke"
+        strokeWidth={6}
+        strokeCap="round"
+        color={colors.accent}
+        opacity={0.3}
+      />
+      <Path
+        path={handLines}
+        style="stroke"
+        strokeWidth={2.2}
+        strokeCap="round"
+        color={colors.callText}
+      />
       <Path path={handJoints} color={colors.accent} />
       {cornerMask && maskColor ? <Path path={cornerMask} color={maskColor} /> : null}
     </Canvas>

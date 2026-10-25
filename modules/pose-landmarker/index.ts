@@ -11,6 +11,8 @@ export interface PoseLandmark {
 
 export interface PoseFrame {
   timestamp: number;
+  /** Wall-clock ms (Date.now() clock) when the camera captured the analysed frame. */
+  capturedAt?: number;
   /** Flat [x, y, z, visibility] * 33, normalised to the frame; empty when nobody is in view. */
   points: number[];
   /** Size of the analysed (upright, mirrored for the front camera) frame, for overlay mapping. */

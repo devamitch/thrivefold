@@ -4,10 +4,10 @@ import { useKeepAwake } from 'expo-keep-awake';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import * as Speech from 'expo-speech';
 import {
+  landmarksOf,
   PoseCameraView,
   poseLandmarkerAvailable,
   poseModelVersion,
-  landmarksOf,
   type PoseFrame,
 } from 'pose-landmarker';
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
@@ -35,6 +35,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { FrostedView } from '@/components/ui';
 import { Button } from '../../../../components/ui/Button';
 import { Card } from '../../../../components/ui/Card';
 import { PressableScale } from '../../../../components/ui/PressableScale';
@@ -54,11 +55,14 @@ import {
 } from '../../../../domain/game/progression';
 import { initialGestureState, stepGesture, type Gesture } from '../../../../domain/pose/gestures';
 import {
+  framingCue,
   initialRepState,
   liveCue,
   movementForExercise,
+  setProgress,
   stepReps,
   summarize,
+  type FramingCue,
   type PoseSessionSummary,
   type RepState,
 } from '../../../../domain/pose/movement';
@@ -85,7 +89,19 @@ const TutorialVideo = memo(YouTubePlayer);
 const NO_JOINTS: number[] = [];
 
 /** Moves that raise the arms, during which hand gestures are ignored. */
-const ARM_MOVES = new Set(['arm_raise', 'jumping_jack', 'bird_dog', 'warrior']);
+const ARM_MOVES = new Set([
+  'arm_raise',
+  'jumping_jack',
+  'bird_dog',
+  'warrior',
+  'arms_out',
+  'reach',
+  'pull_apart',
+  'elbow_bend',
+]);
+/** A framing problem must last this long before it is shown, and be gone this long to clear. */
+const FRAMING_ON_MS = 700;
+const FRAMING_OFF_MS = 500;
 
 const clock = (s: number) =>
   `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
@@ -136,6 +152,7 @@ export default function CoachScreen() {
   const feedFace = useSharedValue<number[]>([]);
   const feedHands = useSharedValue<number[]>([]);
   const feedSeq = useSharedValue(0);
+  const feedCapturedAt = useSharedValue(0);
   const feed = useRef({
     points: feedPoints,
     frameW: feedW,
@@ -143,7 +160,24 @@ export default function CoachScreen() {
     face: feedFace,
     hands: feedHands,
     seq: feedSeq,
+    capturedAt: feedCapturedAt,
   }).current;
+  /** Where to move so the camera sees the move ("Move a step to your left"). */
+  const [framing, setFraming] = useState<FramingCue | null>(null);
+  const framingRef = useRef<{
+    shown: FramingCue | null;
+    pending: string | null;
+    since: number;
+    clearSince: number;
+    spokenAt: Record<string, number>;
+  }>({
+    shown: null,
+    pending: null,
+    since: 0,
+    clearSince: 0,
+    spokenAt: {},
+  });
+  const [pipLarge, setPipLarge] = useState(false);
   /** Body only, or body plus face (eyes, irises, brows, lips) and hands. */
   const [fullTracking, setFullTracking] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
@@ -177,6 +211,9 @@ export default function CoachScreen() {
   const checking =
     phase === 'live' && cameraOn && Boolean(movement) && rest === 0 && countdown === 0;
   const unit = exercise?.timed || movement?.kind === 'hold' ? 's' : 'reps';
+  const timed = Boolean(exercise?.timed);
+  /** The number the set counter shows: reps, seconds held, or seconds spent moving. */
+  const progressOf = (s: RepState) => (movement ? setProgress(movement, s, timed) : 0);
 
   // Call timer.
   useEffect(() => {
@@ -403,10 +440,7 @@ export default function CoachScreen() {
         say('Skipping rest');
         setRest(0);
       } else if (countdown === 0 && item) {
-        const counted =
-          movement?.kind === 'hold'
-            ? Math.round(repRef.current.holdMs / 1000)
-            : repRef.current.reps;
+        const counted = progressOf(repRef.current);
         completeSet(cameraOn && movement && repRef.current.validFrames > 0 ? counted : item.target);
       }
     },
@@ -428,6 +462,7 @@ export default function CoachScreen() {
       feed.frameW.value = frameWidth;
       feed.frameH.value = frameHeight;
       feed.points.value = flat;
+      feed.capturedAt.value = e.nativeEvent.capturedAt ?? 0;
       feed.seq.value = feed.seq.value + 1;
       feed.face.value = e.nativeEvent.face ?? [];
       feed.hands.value = (e.nativeEvent.hands ?? []).flat();
@@ -447,6 +482,36 @@ export default function CoachScreen() {
         const nextP = g.state.latched ? 0 : Math.round(g.progress * 10) / 10;
         if (nextP !== gestureProgress.p || nextG !== gestureProgress.g)
           setGestureProgress({ g: nextG, p: nextP });
+      }
+      // Framing: debounced so a single bad frame never flashes a message.
+      if (movement) {
+        const f = framingCue(movement, landmarks, facing === 'front');
+        const fr = framingRef.current;
+        if (f) {
+          if (fr.pending !== f.id) {
+            fr.pending = f.id;
+            fr.since = now;
+          }
+          fr.clearSince = 0;
+          if (fr.shown?.id !== f.id && now - fr.since >= FRAMING_ON_MS) {
+            fr.shown = f;
+            setFraming(f);
+            // Spoken at most every 6 s per message, and never over the 3-2-1.
+            if (countdown === 0 && now - (fr.spokenAt[f.id] ?? 0) > 6000) {
+              fr.spokenAt[f.id] = now;
+              say(f.text);
+            }
+          }
+        } else {
+          fr.pending = null;
+          if (fr.shown) {
+            if (!fr.clearSince) fr.clearSince = now;
+            else if (now - fr.clearSince >= FRAMING_OFF_MS) {
+              fr.shown = null;
+              setFraming(null);
+            }
+          }
+        }
       }
       if (!checking || !movement || !item) return;
       const before = repRef.current;
@@ -468,6 +533,7 @@ export default function CoachScreen() {
           autoPaused.current = false;
         }
       }
+      const inSeconds = movement.kind === 'hold' || timed;
       if (next.reps > before.reps) {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
         counterPulse.value = withSequence(
@@ -475,26 +541,22 @@ export default function CoachScreen() {
           withTiming(1, { duration: 180 }),
         );
         const left = item.target - next.reps;
-        if (!next.fault && left > 0)
+        if (!inSeconds && !next.fault && left > 0)
           say(left === 1 ? 'Last one' : left <= 3 ? `${left} to go` : String(next.reps));
       }
-      if (movement.kind === 'hold') {
-        const sec = Math.floor(next.holdMs / 1000);
-        if (sec > 0 && sec !== Math.floor(before.holdMs / 1000)) {
-          const left = item.target - sec;
-          if (left === 5) say('5 seconds left');
-          else if (left > 5 && sec % 10 === 0) say(`${sec} seconds`);
-        }
+      const value = progressOf(next);
+      if (inSeconds && value > 0 && value !== progressOf(before)) {
+        const left = item.target - value;
+        if (left === 5) say('5 seconds left');
+        else if (left > 5 && value % 10 === 0) say(`${value} seconds`);
       }
 
-      const doneNow =
-        movement.kind === 'hold' ? next.holdMs / 1000 >= item.target : next.reps >= item.target;
+      const doneNow = value >= item.target;
       if (now - lastUi.current > 100 || doneNow || next.fault !== before.fault) {
         lastUi.current = now;
         setRep(next);
       }
-      if (doneNow)
-        completeSet(movement.kind === 'hold' ? Math.round(next.holdMs / 1000) : next.reps);
+      if (doneNow) completeSet(value);
     },
     [
       checking,
@@ -506,6 +568,10 @@ export default function CoachScreen() {
       onGesture,
       counterPulse,
       feed,
+      facing,
+      countdown,
+      timed,
+      progressOf,
     ],
   );
   // The native view gets one callback for its lifetime; it always calls the latest handler.
@@ -521,8 +587,7 @@ export default function CoachScreen() {
 
   const manualSetDone = () => {
     if (!item) return;
-    const counted =
-      movement?.kind === 'hold' ? Math.round(repRef.current.holdMs / 1000) : repRef.current.reps;
+    const counted = progressOf(repRef.current);
     // With the camera tracking, log what it counted; otherwise the planned target.
     completeSet(cameraOn && movement && repRef.current.validFrames > 0 ? counted : item.target);
   };
@@ -548,7 +613,7 @@ export default function CoachScreen() {
     setPhase('live');
     showControls();
     say(
-      `${exercise?.name ?? 'Get ready'}. ${item?.target ?? ''} ${movementForExercise(item?.exerciseId ?? '')?.kind === 'hold' ? 'seconds' : 'reps'}.`,
+      `${exercise?.name ?? 'Get ready'}. ${item?.target ?? ''} ${unit === 's' ? 'seconds' : 'reps'}.`,
     );
     // Without the camera, count in after a moment. With it, the effect below counts in once
     // tracking is live and the person is in frame (or after 8 s regardless).
@@ -800,14 +865,18 @@ export default function CoachScreen() {
     );
   }
 
-  // ---------------------------------------------------------------- live call
+  // ---------------------------------------------------------------- live (full screen)
   const fault = checking ? rep.fault : null;
-  const counted = movement?.kind === 'hold' ? Math.floor(rep.holdMs / 1000) : rep.reps;
+  const counted = progressOf(rep);
   const nextItem = rest > 0 ? (setIdx === 0 ? plan.items[itemIdx] : item) : null;
+  const cameraMain = cameraOn && Boolean(PoseCameraView);
+  const starting = cameraMain && !trackingReady && !cameraError;
 
   // Every exercise has a tutorial in the app: the verified video, or YouTube search for it.
   const videoTile = !videoMounted ? (
-    <View style={[StyleSheet.absoluteFill, styles.center, { backgroundColor: colors.callBackground }]}>
+    <View
+      style={[StyleSheet.absoluteFill, styles.center, { backgroundColor: colors.callBackground }]}
+    >
       <ActivityIndicator color={colors.callMuted} />
     </View>
   ) : (
@@ -821,34 +890,6 @@ export default function CoachScreen() {
     />
   );
 
-  const cameraTile =
-    cameraOn && PoseCameraView ? (
-      <PoseCameraView
-        style={StyleSheet.absoluteFill}
-        active={phase === 'live'}
-        facing={facing}
-        face={fullTracking}
-        hands={fullTracking}
-        onPose={onPose}
-        onPoseReady={onPoseReady}
-        onPoseError={onPoseError}
-      />
-    ) : (
-      <View
-        style={[StyleSheet.absoluteFill, styles.center, { backgroundColor: colors.callBackground }]}
-      >
-        <Ionicons name="videocam-off-outline" size={22} color={colors.callMuted} />
-        <Text
-          style={[
-            typography.caption,
-            { color: colors.callMuted, marginTop: 4, textAlign: 'center' },
-          ]}
-        >
-          Camera off
-        </Text>
-      </View>
-    );
-
   const remaining = Math.max(0, item.target - counted);
   const share = Math.min(1, counted / Math.max(1, item.target));
   const upNext =
@@ -861,24 +902,127 @@ export default function CoachScreen() {
             of: plan.items[itemIdx + 1].sets,
           }
         : null;
-  const cameraMain = cameraOn && Boolean(PoseCameraView);
+  const pipWidth = Math.round(Math.min(stage.width || 360, 520) * (pipLarge ? 0.9 : 0.42));
+
+  // What the banner says, most urgent first: a gesture, a form fault, framing, the live cue.
+  const banner: {
+    icon: keyof typeof Ionicons.glyphMap;
+    title: string;
+    text?: string;
+    tone: 'gesture' | 'fault' | 'framing' | 'cue';
+  } | null =
+    gestureProgress.g && gestureProgress.p > 0
+      ? {
+          icon: 'hand-left-outline',
+          title:
+            gestureProgress.g === 'one_hand'
+              ? videoPlaying
+                ? 'Pausing video'
+                : 'Playing video'
+              : rest > 0
+                ? 'Skipping rest'
+                : 'Finishing set',
+          tone: 'gesture',
+        }
+      : fault
+        ? { icon: 'alert', title: fault.title, text: fault.fix, tone: 'fault' }
+        : cameraMain && framing && trackingReady
+          ? {
+              icon:
+                framing.id === 'move_left'
+                  ? 'arrow-back'
+                  : framing.id === 'move_right'
+                    ? 'arrow-forward'
+                    : framing.id === 'closer'
+                      ? 'enter-outline'
+                      : framing.id === 'step_in'
+                        ? 'body-outline'
+                        : 'resize-outline',
+              title: framing.text,
+              tone: 'framing',
+            }
+          : checking && movement
+            ? { icon: 'sparkles-outline', title: liveCue(movement, rep, hasPerson), tone: 'cue' }
+            : null;
 
   return (
-    <View style={[styles.flex, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-      <StatusBar barStyle={colors.scheme === 'dark' ? 'light-content' : 'dark-content'} />
+    <View
+      style={[styles.flex, { backgroundColor: colors.callBackground }]}
+      onLayout={(e) =>
+        setStage({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })
+      }
+    >
+      <StatusBar barStyle="light-content" />
 
-      {/* Header: what you're doing and where you are in the plan */}
-      <View style={[styles.header, { paddingHorizontal: spacing.base }]}>
-        <RoundButton icon="close" label="End workout" onPress={confirmEnd} />
-        <View style={[styles.flex, { marginHorizontal: 12 }]}>
-          <Text style={[typography.subheading, { color: colors.text.primary }]} numberOfLines={1}>
+      {/* Full-screen stage: your camera with the live skeleton, or the tutorial when the camera is off */}
+      {cameraMain && PoseCameraView ? (
+        <PoseCameraView
+          style={StyleSheet.absoluteFill}
+          active={phase === 'live'}
+          facing={facing}
+          face={fullTracking}
+          hands={fullTracking}
+          onPose={onPose}
+          onPoseReady={onPoseReady}
+          onPoseError={onPoseError}
+        />
+      ) : (
+        videoTile
+      )}
+      {cameraMain && stage.width > 0 ? (
+        <PoseOverlay
+          feed={feed}
+          width={stage.width}
+          height={stage.height}
+          highlight={fault?.joints ?? NO_JOINTS}
+        />
+      ) : null}
+      {/* Top and bottom shade so controls read over any background */}
+      <View
+        pointerEvents="none"
+        style={[styles.shadeTop, { backgroundColor: colors.callSurface, height: insets.top + 132 }]}
+      />
+      <View
+        pointerEvents="none"
+        style={[
+          styles.shadeBottom,
+          { backgroundColor: colors.callSurface, height: insets.bottom + 150 },
+        ]}
+      />
+      {fault ? (
+        <View
+          pointerEvents="none"
+          style={[StyleSheet.absoluteFill, styles.faultEdge, { borderColor: colors.error }]}
+        />
+      ) : null}
+
+      {starting ? (
+        <Animated.View
+          entering={reduceMotion ? undefined : FadeIn.duration(150)}
+          exiting={reduceMotion ? undefined : FadeOut.duration(200)}
+          pointerEvents="none"
+          style={[styles.startingCam, { backgroundColor: colors.callSurface }]}
+        >
+          <ActivityIndicator color={colors.callText} />
+          <Text style={[typography.bodyBold, { color: colors.callText, marginLeft: 10 }]}>
+            Starting camera
+          </Text>
+        </Animated.View>
+      ) : null}
+
+      {/* Top bar: end, what you're doing, voice and camera controls */}
+      <View style={[styles.topBar, { top: insets.top + 8, paddingHorizontal: spacing.base }]}>
+        <GlassButton icon="close" label="End workout" onPress={confirmEnd} />
+        <View style={[styles.flex, { marginHorizontal: 10 }]}>
+          <Text style={[typography.subheading, { color: colors.callText }]} numberOfLines={1}>
             {exercise.name}
           </Text>
-          <Text style={[typography.caption, { color: colors.text.secondary }]} numberOfLines={1}>
-            Exercise {itemIdx + 1} of {plan.items.length} · {clock(elapsed)}
+          <Text style={[typography.caption, { color: colors.callMuted }]} numberOfLines={1}>
+            {itemIdx + 1} of {plan.items.length} · Set {setIdx + 1} of {item.sets} ·{' '}
+            {clock(elapsed)}
           </Text>
         </View>
-        <RoundButton
+        <GlassButton
           icon={voiceOn ? 'volume-high-outline' : 'volume-mute-outline'}
           label={voiceOn ? 'Mute voice coach' : 'Turn on voice coach'}
           onPress={() => {
@@ -886,9 +1030,27 @@ export default function CoachScreen() {
             setVoiceOn((v) => !v);
           }}
         />
+        {cameraMain ? (
+          <>
+            <GlassButton
+              icon={fullTracking ? 'scan' : 'scan-outline'}
+              label="Track face and hands too"
+              active={fullTracking}
+              onPress={() => setFullTracking((v) => !v)}
+            />
+            <GlassButton
+              icon="camera-reverse-outline"
+              label="Flip camera"
+              onPress={() => {
+                setTrackingReady(false);
+                setFacing((f) => (f === 'front' ? 'back' : 'front'));
+              }}
+            />
+          </>
+        ) : null}
       </View>
       <View
-        style={[styles.sets, { paddingHorizontal: spacing.base }]}
+        style={[styles.sets, { top: insets.top + 60, paddingHorizontal: spacing.base }]}
         accessibilityLabel={`Set ${setIdx + 1} of ${item.sets}`}
       >
         {Array.from({ length: item.sets }, (_, i) => (
@@ -901,152 +1063,144 @@ export default function CoachScreen() {
                   i < setIdx
                     ? colors.primary
                     : i === setIdx
-                      ? colors.primaryAlpha
-                      : colors.surface1,
+                      ? colors.callText
+                      : colors.callSurfaceStrong,
               },
             ]}
           />
         ))}
       </View>
 
-      {/* Stage: your camera with the skeleton, or the tutorial when the camera is off */}
-      <View
-        style={[
-          styles.stage,
-          { marginHorizontal: spacing.base, backgroundColor: colors.callBackground },
-        ]}
-        onLayout={(e) =>
-          setStage({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })
-        }
-        collapsable={false}
-      >
-        {cameraMain ? cameraTile : videoTile}
-        {cameraMain && stage.width > 0 ? (
-          <PoseOverlay
-            feed={feed}
-            width={stage.width}
-            height={stage.height}
-            highlight={fault?.joints ?? NO_JOINTS}
-          />
-        ) : null}
-        {fault ? (
-          <View
-            pointerEvents="none"
-            style={[StyleSheet.absoluteFill, styles.faultEdge, { borderColor: colors.error }]}
-          />
-        ) : null}
-
-        {cameraMain ? (
-          <View style={styles.stageTop} pointerEvents="box-none">
-            <View
-              style={[styles.chip, { backgroundColor: colors.callSurface, marginRight: 'auto' }]}
-            >
-              <View
-                style={[
-                  styles.dot,
-                  { backgroundColor: movement ? colors.success : colors.callMuted },
-                ]}
-              />
-              <Text style={[typography.captionBold, { color: colors.callText }]}>
-                {movement ? 'Checking form' : 'Camera on'}
-              </Text>
-            </View>
-            <PressableScale
-              onPress={() => setFullTracking((v) => !v)}
-              accessibilityRole="switch"
-              accessibilityState={{ checked: fullTracking }}
-              accessibilityLabel="Track face and hands too"
-              hitSlop={8}
-              style={[
-                styles.stageBtn,
-                { backgroundColor: fullTracking ? colors.primary : colors.callSurface },
-              ]}
-            >
-              <Ionicons
-                name={fullTracking ? 'scan' : 'scan-outline'}
-                size={18}
-                color={colors.callText}
-              />
-            </PressableScale>
+      {/* Tutorial picture-in-picture (camera on) */}
+      {cameraMain ? (
+        <View
+          style={[
+            styles.pip,
+            {
+              top: insets.top + 80,
+              width: pipWidth,
+              backgroundColor: colors.callBackground,
+              borderColor: colors.callSurfaceStrong,
+            },
+          ]}
+        >
+          {videoTile}
+          <View style={styles.pipControls} pointerEvents="box-none">
             <PressableScale
               onPress={() => {
-                setTrackingReady(false);
-                setFacing((f) => (f === 'front' ? 'back' : 'front'));
+                autoPaused.current = false;
+                if (videoPlaying) player.current?.pause();
+                else player.current?.play();
               }}
               accessibilityRole="button"
-              accessibilityLabel="Flip camera"
-              hitSlop={8}
-              style={[styles.stageBtn, { backgroundColor: colors.callSurface }]}
+              accessibilityLabel={videoPlaying ? 'Pause tutorial' : 'Play tutorial'}
+              hitSlop={6}
+              style={[styles.pipBtn, { backgroundColor: colors.callSurface }]}
             >
-              <Ionicons name="camera-reverse-outline" size={18} color={colors.callText} />
+              <Ionicons name={videoPlaying ? 'pause' : 'play'} size={14} color={colors.callText} />
+            </PressableScale>
+            <PressableScale
+              onPress={() => setPipLarge((v) => !v)}
+              accessibilityRole="button"
+              accessibilityLabel={pipLarge ? 'Make tutorial smaller' : 'Make tutorial bigger'}
+              hitSlop={6}
+              style={[styles.pipBtn, { backgroundColor: colors.callSurface }]}
+            >
+              <Ionicons name={pipLarge ? 'contract' : 'expand'} size={14} color={colors.callText} />
             </PressableScale>
           </View>
-        ) : null}
+        </View>
+      ) : null}
 
-        {/* What to fix, a gesture in progress, or the live cue */}
-        {gestureProgress.g && gestureProgress.p > 0 ? (
+      {/* Coaching banner */}
+      {banner ? (
+        <Animated.View
+          key={banner.tone + banner.title}
+          entering={reduceMotion ? undefined : FadeInDown.duration(200)}
+          exiting={reduceMotion ? undefined : FadeOut.duration(150)}
+          pointerEvents="none"
+          accessibilityLiveRegion={
+            banner.tone === 'fault' || banner.tone === 'framing' ? 'assertive' : 'polite'
+          }
+          style={[
+            styles.banner,
+            {
+              bottom: insets.bottom + 168,
+              marginHorizontal: spacing.base,
+              backgroundColor:
+                banner.tone === 'gesture'
+                  ? colors.primary
+                  : banner.tone === 'fault'
+                    ? colors.error
+                    : colors.callSurface,
+            },
+          ]}
+        >
           <View
-            pointerEvents="none"
-            style={[styles.stageBanner, { backgroundColor: colors.primary }]}
+            style={[
+              styles.bannerIcon,
+              {
+                backgroundColor:
+                  banner.tone === 'framing'
+                    ? colors.warning
+                    : banner.tone === 'cue'
+                      ? colors.primary
+                      : colors.callSurfaceStrong,
+              },
+            ]}
           >
-            <Ionicons name="hand-left-outline" size={18} color={colors.onPrimary} />
-            <Text
-              style={[typography.bodyBold, styles.flex, { color: colors.onPrimary, marginLeft: 8 }]}
-            >
-              {gestureProgress.g === 'one_hand'
-                ? videoPlaying
-                  ? 'Pausing video'
-                  : 'Playing video'
-                : rest > 0
-                  ? 'Skipping rest'
-                  : 'Finishing set'}
+            <Ionicons name={banner.icon} size={18} color={colors.callText} />
+          </View>
+          <View style={[styles.flex, { marginLeft: 12 }]}>
+            <Text style={[typography.bodyBold, { color: colors.callText }]} numberOfLines={2}>
+              {banner.title}
             </Text>
+            {banner.text ? (
+              <Text
+                style={[typography.subbody, { color: colors.callText, opacity: 0.9, marginTop: 2 }]}
+                numberOfLines={2}
+              >
+                {banner.text}
+              </Text>
+            ) : null}
+          </View>
+          {banner.tone === 'gesture' ? (
             <View style={[styles.gestureTrack, { backgroundColor: colors.callSurfaceStrong }]}>
               <View
                 style={[
                   styles.gestureFill,
                   {
                     width: `${Math.round(gestureProgress.p * 100)}%`,
-                    backgroundColor: colors.onPrimary,
+                    backgroundColor: colors.callText,
                   },
                 ]}
               />
             </View>
-          </View>
-        ) : fault ? (
-          <Animated.View
-            entering={reduceMotion ? undefined : FadeIn.duration(180)}
-            exiting={reduceMotion ? undefined : FadeOut.duration(180)}
-            style={[styles.stageBanner, { backgroundColor: colors.callSurface }]}
-            accessibilityLiveRegion="assertive"
-          >
-            <View style={[styles.faultDot, { backgroundColor: colors.error }]}>
-              <Ionicons name="alert" size={16} color={colors.callText} />
-            </View>
-            <View style={[styles.flex, { marginLeft: 10 }]}>
-              <Text style={[typography.bodyBold, { color: colors.callText }]}>{fault.title}</Text>
-              <Text style={[typography.subbody, { color: colors.callMuted, marginTop: 1 }]}>
-                {fault.fix}
-              </Text>
-            </View>
-          </Animated.View>
-        ) : checking ? (
-          <View
-            pointerEvents="none"
-            style={[styles.stageBanner, styles.cue, { backgroundColor: colors.callSurface }]}
-          >
-            <Text
-              style={[typography.subbody, { color: colors.callText, textAlign: 'center' }]}
-              numberOfLines={2}
-            >
-              {liveCue(movement!, rep, hasPerson)}
-            </Text>
-          </View>
-        ) : null}
+          ) : null}
+        </Animated.View>
+      ) : null}
 
-        {/* The count */}
+      {cameraError ? (
+        <Text
+          style={[
+            typography.caption,
+            styles.cameraError,
+            { color: colors.callText, backgroundColor: colors.error, bottom: insets.bottom + 236 },
+          ]}
+        >
+          {cameraError}
+        </Text>
+      ) : null}
+
+      {/* Bottom: the count, what's next, set done */}
+      <View
+        style={[
+          styles.bottomBar,
+          { paddingHorizontal: spacing.base, paddingBottom: insets.bottom + spacing.base },
+        ]}
+      >
         <View
-          style={[styles.counter, { backgroundColor: fault ? colors.error : colors.callSurface }]}
+          style={styles.flex}
           accessibilityLabel={`${counted} of ${item.target} ${unit}. ${remaining} to go`}
           accessibilityLiveRegion="polite"
         >
@@ -1055,7 +1209,7 @@ export default function CoachScreen() {
               style={[
                 typography.display,
                 styles.counterBig,
-                { color: colors.callText },
+                { color: fault ? colors.error : colors.callText },
                 counterStyle,
               ]}
             >
@@ -1069,90 +1223,32 @@ export default function CoachScreen() {
             <View
               style={[
                 styles.counterFill,
-                { width: `${Math.round(share * 100)}%`, backgroundColor: colors.callText },
+                { width: `${Math.round(share * 100)}%`, backgroundColor: colors.primary },
               ]}
             />
           </View>
-          <Text style={[typography.caption, { color: colors.callMuted, marginTop: 4 }]}>
-            {remaining > 0 ? `${remaining} to go` : 'Target reached'}
-          </Text>
-        </View>
-      </View>
-
-      {/* Tutorial and what's next */}
-      <View style={[styles.lower, { marginHorizontal: spacing.base }]}>
-        <View style={[styles.tutorial, { backgroundColor: colors.callBackground }]}>
-          {cameraMain ? (
-            videoTile
-          ) : (
-            <View
-              style={[StyleSheet.absoluteFill, styles.center, { backgroundColor: colors.surface1 }]}
-            >
-              <Ionicons name="videocam-off-outline" size={20} color={colors.text.muted} />
-              <Text
-                style={[
-                  typography.caption,
-                  { color: colors.text.muted, marginTop: 4, textAlign: 'center' },
-                ]}
-              >
-                {cameraBuilt ? 'Camera off' : 'No camera check in this build'}
-              </Text>
-            </View>
-          )}
-        </View>
-        <View style={[styles.flex, styles.nextCol]}>
-          <Text style={[typography.label, { color: colors.text.muted }]}>Up next</Text>
           <Text
-            style={[typography.bodyBold, { color: colors.text.primary, marginTop: 2 }]}
-            numberOfLines={2}
+            style={[typography.caption, { color: colors.callMuted, marginTop: 6 }]}
+            numberOfLines={1}
           >
-            {upNext ? `${upNext.ex?.name ?? 'Exercise'}` : 'Last set'}
+            {!movement && cameraMain
+              ? 'Not camera-checked: tap Set done when finished'
+              : upNext
+                ? `Next: ${upNext.ex?.name ?? 'Exercise'} · set ${upNext.set} of ${upNext.of}`
+                : 'Last set'}
           </Text>
-          {upNext ? (
-            <Text style={[typography.caption, { color: colors.text.secondary }]}>
-              Set {upNext.set} of {upNext.of}
-            </Text>
-          ) : null}
-          <PressableScale
-            onPress={() => {
-              autoPaused.current = false;
-              if (videoPlaying) player.current?.pause();
-              else player.current?.play();
-            }}
-            accessibilityRole="button"
-            style={[styles.playBtn, { backgroundColor: colors.surface1, opacity: 1 }]}
-          >
-            <Ionicons
-              name={videoPlaying ? 'pause' : 'play'}
-              size={16}
-              color={colors.text.primary}
-            />
-            <Text style={[typography.captionBold, { color: colors.text.primary, marginLeft: 6 }]}>
-              {videoPlaying ? 'Pause tutorial' : 'Play tutorial'}
-            </Text>
-          </PressableScale>
         </View>
-      </View>
-
-      {cameraError ? (
-        <Text
-          style={[
-            typography.caption,
-            { color: colors.error, marginHorizontal: spacing.base, marginTop: 6 },
-          ]}
+        <PressableScale
+          onPress={manualSetDone}
+          accessibilityRole="button"
+          accessibilityLabel={remaining > 0 ? 'Set done' : 'Next'}
+          style={[styles.doneBtn, { backgroundColor: colors.primary }]}
         >
-          {cameraError}
-        </Text>
-      ) : null}
-
-      <View
-        style={{
-          paddingHorizontal: spacing.base,
-          paddingTop: spacing.md,
-          paddingBottom: insets.bottom + spacing.sm,
-        }}
-      >
-        <Button label={remaining > 0 ? 'Set done' : 'Next'} size="lg" onPress={manualSetDone} />
+          <Ionicons name="checkmark" size={22} color={colors.onPrimary} />
+          <Text style={[typography.bodyBold, { color: colors.onPrimary, marginLeft: 6 }]}>
+            {remaining > 0 ? 'Set done' : 'Next'}
+          </Text>
+        </PressableScale>
       </View>
 
       {/* 3-2-1 before each set */}
@@ -1166,7 +1262,9 @@ export default function CoachScreen() {
           <Text style={[typography.display, styles.overlayNumber, { color: colors.callText }]}>
             {countdown}
           </Text>
-          <Text style={[typography.body, { color: colors.callText }]}>Get into position</Text>
+          <Text style={[typography.body, { color: colors.callText }]}>
+            {framing ? framing.text : 'Get into position'}
+          </Text>
         </Animated.View>
       ) : null}
 
@@ -1199,14 +1297,17 @@ export default function CoachScreen() {
   );
 }
 
-function RoundButton({
+/** Round translucent control over the camera. */
+function GlassButton({
   icon,
   label,
   onPress,
+  active = false,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   onPress: () => void;
+  active?: boolean;
 }) {
   const { colors } = useTheme();
   return (
@@ -1214,53 +1315,81 @@ function RoundButton({
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={label}
+      accessibilityState={{ selected: active }}
       hitSlop={6}
-      style={[styles.round, { backgroundColor: colors.surface1, opacity: 1 }]}
+      style={[
+        styles.glassBtn,
+        {
+          backgroundColor: active ? colors.primary : colors.callSurface,
+          borderColor: colors.callSurfaceStrong,
+        },
+      ]}
     >
-      <Ionicons name={icon} size={20} color={colors.text.primary} />
+      <Ionicons name={icon} size={20} color={colors.callText} />
     </PressableScale>
   );
 }
 
 const styles = StyleSheet.create({
-  center: { alignItems: 'center', flex: 1, justifyContent: 'center', padding: 8 },
-  chip: {
+  banner: {
     alignItems: 'center',
-    borderRadius: 14,
+    borderRadius: 22,
     flexDirection: 'row',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  counter: {
-    borderRadius: 20,
-    bottom: 12,
-    left: 12,
-    minWidth: 150,
+    left: 0,
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingVertical: 12,
+    position: 'absolute',
+    right: 0,
+  },
+  bannerIcon: {
+    alignItems: 'center',
+    borderRadius: 16,
+    height: 32,
+    justifyContent: 'center',
+    width: 32,
+  },
+  bottomBar: {
+    alignItems: 'flex-end',
+    bottom: 0,
+    flexDirection: 'row',
+    gap: 12,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+  },
+  cameraError: {
+    alignSelf: 'center',
+    borderRadius: 12,
+    overflow: 'hidden',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     position: 'absolute',
   },
-  counterBig: { fontSize: 48, lineHeight: 52 },
-  counterFill: { borderRadius: 2, height: 4 },
+  center: { alignItems: 'center', flex: 1, justifyContent: 'center', padding: 8 },
+  counterBig: { fontSize: 64, lineHeight: 68 },
+  counterFill: { borderRadius: 3, height: 6 },
   counterRow: { alignItems: 'baseline', flexDirection: 'row' },
-  counterTrack: { borderRadius: 2, height: 4, marginTop: 4, overflow: 'hidden' },
-  cue: { justifyContent: 'center' },
-  dot: { borderRadius: 4, height: 8, width: 8 },
-  faultDot: {
+  counterTrack: { borderRadius: 3, height: 6, marginTop: 6, overflow: 'hidden' },
+  doneBtn: {
     alignItems: 'center',
-    borderRadius: 14,
-    height: 28,
-    justifyContent: 'center',
-    width: 28,
+    borderRadius: 28,
+    flexDirection: 'row',
+    height: 56,
+    paddingHorizontal: 22,
   },
-  faultEdge: { borderRadius: 28, borderWidth: 4 },
+  faultEdge: { borderWidth: 4 },
   flex: { flex: 1 },
   gestureFill: { height: 6 },
   gestureTrack: { borderRadius: 3, height: 6, marginLeft: 10, overflow: 'hidden', width: 60 },
-  header: { alignItems: 'center', flexDirection: 'row', paddingVertical: 8 },
-  lower: { flexDirection: 'row', gap: 12, height: 128, marginTop: 12 },
-  nextCol: { justifyContent: 'center' },
+  glassBtn: {
+    alignItems: 'center',
+    borderRadius: 22,
+    borderWidth: StyleSheet.hairlineWidth,
+    height: 44,
+    justifyContent: 'center',
+    marginLeft: 6,
+    width: 44,
+  },
   overlay: {
     alignItems: 'center',
     bottom: 0,
@@ -1272,16 +1401,23 @@ const styles = StyleSheet.create({
     top: 0,
     zIndex: 19,
   },
-  overlayNumber: { fontSize: 80, lineHeight: 88 },
-  playBtn: {
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    borderRadius: 14,
-    flexDirection: 'row',
-    marginTop: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+  overlayNumber: { fontSize: 96, lineHeight: 104 },
+  pip: {
+    aspectRatio: 16 / 9,
+    borderRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
+    position: 'absolute',
+    right: 16,
   },
+  pipBtn: {
+    alignItems: 'center',
+    borderRadius: 14,
+    height: 28,
+    justifyContent: 'center',
+    width: 28,
+  },
+  pipControls: { bottom: 6, flexDirection: 'row', gap: 6, position: 'absolute', right: 6 },
   round: {
     alignItems: 'center',
     borderRadius: 22,
@@ -1290,39 +1426,22 @@ const styles = StyleSheet.create({
     width: 44,
   },
   row: { alignItems: 'center', flexDirection: 'row' },
-  setSeg: { borderRadius: 3, flex: 1, height: 6 },
-  sets: { flexDirection: 'row', gap: 6, marginBottom: 12 },
+  setSeg: { borderRadius: 2, flex: 1, height: 4 },
+  sets: { flexDirection: 'row', gap: 4, left: 0, position: 'absolute', right: 0 },
+  shadeBottom: { bottom: 0, left: 0, opacity: 0.55, position: 'absolute', right: 0 },
+  shadeTop: { left: 0, opacity: 0.55, position: 'absolute', right: 0, top: 0 },
   skip: { borderRadius: 22, marginTop: 16, paddingHorizontal: 22, paddingVertical: 12 },
-  stage: { borderRadius: 28, flex: 1, overflow: 'hidden' },
-  stageBanner: {
+  startingCam: {
     alignItems: 'center',
-    borderRadius: 18,
+    alignSelf: 'center',
+    borderRadius: 999,
     flexDirection: 'row',
-    left: 12,
-    paddingHorizontal: 14,
+    paddingHorizontal: 18,
     paddingVertical: 12,
     position: 'absolute',
-    right: 12,
-    top: 56,
-  },
-  stageBtn: {
-    alignItems: 'center',
-    borderRadius: 18,
-    height: 36,
-    justifyContent: 'center',
-    width: 36,
-  },
-  startingCam: { alignItems: 'center', alignSelf: 'center', borderRadius: 999, flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 10, position: 'absolute', top: '45%' },
-  stageTop: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-    left: 12,
-    position: 'absolute',
-    right: 12,
-    top: 12,
+    top: '45%',
   },
   summaryRow: { alignItems: 'center', flexDirection: 'row', paddingVertical: 12 },
-  tutorial: { aspectRatio: 16 / 9, borderRadius: 20, height: '100%', overflow: 'hidden' },
+  topBar: { alignItems: 'center', flexDirection: 'row', left: 0, position: 'absolute', right: 0 },
   xpBox: { alignItems: 'center', borderRadius: 20, marginBottom: 16, padding: 20 },
 });

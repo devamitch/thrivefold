@@ -118,7 +118,8 @@ describe('form faults', () => {
 
   test('exercises map to camera-checked movements', () => {
     expect(movementForExercise('pushup')?.id).toBe('pushup');
-    expect(movementForExercise('burpee')).toBeUndefined();
+    expect(movementForExercise('burpee')?.id).toBe('knee_bend');
+    expect(movementForExercise('not_an_exercise')).toBeUndefined();
   });
 });
 
@@ -167,5 +168,105 @@ describe('more exercises', () => {
     for (const id of ['jumping_jacks', 'high_knees', 'calf_raise', 'tree_pose', 'downward_dog', 'mountain_climber']) {
       expect(movementForExercise(id)).toBeDefined();
     }
+  });
+});
+
+describe('every exercise and framing', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { EXERCISES } = require('../../src/domain/fitness/workouts') as typeof import('../../src/domain/fitness/workouts');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { framingCue, setProgress } = require('../../src/domain/pose/movement') as typeof import('../../src/domain/pose/movement');
+
+  const blank = () => Array.from({ length: 33 }, () => ({ x: 0.5, y: 0.5, z: 0, visibility: 0.95 }));
+
+  test('every catalogue exercise has a camera movement', () => {
+    const missing = EXERCISES.filter((e) => !movementForExercise(e.id)).map((e) => e.id);
+    expect(missing).toEqual([]);
+  });
+
+  test('seated thoracic rotation counts a turn to each side', () => {
+    const rot = movementForExercise('thoracic_rotation')!;
+    const turned = (deg: number) => {
+      const l = blank();
+      const r = (deg * Math.PI) / 180;
+      l[LM.leftShoulder] = { x: 0.5 - 0.1 * Math.cos(r), y: 0.4, z: -0.1 * Math.sin(r), visibility: 0.95 };
+      l[LM.rightShoulder] = { x: 0.5 + 0.1 * Math.cos(r), y: 0.4, z: 0.1 * Math.sin(r), visibility: 0.95 };
+      return l;
+    };
+    let s = initialRepState();
+    for (const d of [0, 0, 10, 25, 40, 45, 40, 20, 5, 0, -10, -25, -40, -45, -30, -10, 0, 0]) s = stepReps(rot, s, turned(d));
+    expect(s.reps).toBe(2);
+  });
+
+  test('small wobble in a rotation never counts', () => {
+    const rot = movementForExercise('thoracic_rotation')!;
+    let s = initialRepState();
+    for (let i = 0; i < 30; i++) {
+      const l = blank();
+      l[LM.leftShoulder] = { x: 0.4, y: 0.4, z: i % 2 ? 0.01 : -0.01, visibility: 0.95 };
+      l[LM.rightShoulder] = { x: 0.6, y: 0.4, z: 0, visibility: 0.95 };
+      s = stepReps(rot, s, l);
+    }
+    expect(s.reps).toBe(0);
+  });
+
+  test('band pull-apart counts hands going wide and back', () => {
+    const pa = movementForExercise('band_pull_apart')!;
+    const spread = (w: number) => {
+      const l = blank();
+      l[LM.leftShoulder] = { x: 0.45, y: 0.4, z: 0, visibility: 0.95 };
+      l[LM.rightShoulder] = { x: 0.55, y: 0.4, z: 0, visibility: 0.95 };
+      l[LM.leftWrist] = { x: 0.5 - w / 2, y: 0.4, z: 0, visibility: 0.95 };
+      l[LM.rightWrist] = { x: 0.5 + w / 2, y: 0.4, z: 0, visibility: 0.95 };
+      return l;
+    };
+    let s = initialRepState();
+    for (const w of [0.1, 0.1, 0.15, 0.22, 0.28, 0.3, 0.25, 0.15, 0.1, 0.1, 0.2, 0.3, 0.3, 0.15, 0.1]) s = stepReps(pa, s, spread(w));
+    expect(s.reps).toBe(2);
+  });
+
+  test('timed exercises count seconds spent moving, not reps', () => {
+    const jj = movementForExercise('jumping_jacks')!;
+    let s = initialRepState();
+    // One full jack every second for five seconds, ten frames a second.
+    for (let f = 0; f < 50; f++) {
+      const up = f % 10 < 5;
+      const l = blank();
+      l[LM.leftHip] = { x: 0.45, y: 0.6, z: 0, visibility: 0.95 };
+      l[LM.rightHip] = { x: 0.55, y: 0.6, z: 0, visibility: 0.95 };
+      l[LM.leftShoulder] = { x: 0.45, y: 0.3, z: 0, visibility: 0.95 };
+      l[LM.rightShoulder] = { x: 0.55, y: 0.3, z: 0, visibility: 0.95 };
+      l[LM.leftWrist] = { x: up ? 0.4 : 0.44, y: up ? 0.1 : 0.55, z: 0, visibility: 0.95 };
+      l[LM.rightWrist] = { x: up ? 0.6 : 0.56, y: up ? 0.1 : 0.55, z: 0, visibility: 0.95 };
+      s = stepReps(jj, s, l, f * 100);
+    }
+    expect(s.reps).toBeGreaterThanOrEqual(4);
+    expect(setProgress(jj, s, true)).toBeGreaterThanOrEqual(3);
+    expect(setProgress(jj, s, false)).toBe(s.reps);
+  });
+
+  test('framing: nobody, off to one side, feet cut off, too far, fine', () => {
+    expect(framingCue(squat, [])?.id).toBe('step_in');
+    const standing = (cx: number, top: number, bottom: number) => {
+      const l = blank();
+      const y = (t: number) => top + (bottom - top) * t;
+      l[LM.nose] = { x: cx, y: y(0), z: 0, visibility: 0.95 };
+      for (const [i, t] of [[LM.leftShoulder, 0.2], [LM.rightShoulder, 0.2], [LM.leftHip, 0.5], [LM.rightHip, 0.5], [LM.leftKnee, 0.75], [LM.rightKnee, 0.75], [LM.leftAnkle, 1], [LM.rightAnkle, 1]] as const) {
+        l[i] = { x: cx + (i % 2 ? -0.05 : 0.05), y: y(t), z: 0, visibility: 0.95 };
+      }
+      return l;
+    };
+    expect(framingCue(squat, standing(0.5, 0.1, 0.9))).toBeNull();
+    // Front camera (mirrored): on the left of the screen, step to your right.
+    expect(framingCue(squat, standing(0.15, 0.1, 0.9))?.id).toBe('move_right');
+    expect(framingCue(squat, standing(0.15, 0.1, 0.9), false)?.id).toBe('move_left');
+    expect(framingCue(squat, standing(0.85, 0.1, 0.9))?.id).toBe('move_left');
+    expect(framingCue(squat, standing(0.5, 0.1, 0.995))?.id).toBe('feet');
+    expect(framingCue(squat, standing(0.5, 0.4, 0.7))?.id).toBe('closer');
+    // Upper-body moves don't need feet.
+    const upper = standing(0.5, 0.2, 1.4);
+    upper[LM.leftAnkle].visibility = 0.1;
+    upper[LM.rightAnkle].visibility = 0.1;
+    expect(framingCue(movementForExercise('thoracic_rotation')!, upper)).toBeNull();
   });
 });

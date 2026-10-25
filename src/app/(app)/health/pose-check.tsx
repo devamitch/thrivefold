@@ -63,7 +63,8 @@ export default function PoseCheckScreen() {
   const feedFace = useSharedValue<number[]>([]);
   const feedHands = useSharedValue<number[]>([]);
   const feedSeq = useSharedValue(0);
-  const feed = useRef({ points: feedPoints, frameW: feedW, frameH: feedH, face: feedFace, hands: feedHands, seq: feedSeq }).current;
+  const feedCapturedAt = useSharedValue(0);
+  const feed = useRef({ points: feedPoints, frameW: feedW, frameH: feedH, face: feedFace, hands: feedHands, seq: feedSeq, capturedAt: feedCapturedAt }).current;
   const lastUi = useRef(0);
   const [tile, setTile] = useState({ width: 0, height: 0 });
   const reps = useRef<RepState>(initialRepState());
@@ -100,6 +101,7 @@ export default function PoseCheckScreen() {
       feed.frameW.value = e.nativeEvent.frameWidth;
       feed.frameH.value = e.nativeEvent.frameHeight;
       feed.points.value = flat;
+      feed.capturedAt.value = e.nativeEvent.capturedAt ?? 0;
       feed.seq.value = feed.seq.value + 1;
       feed.face.value = e.nativeEvent.face ?? [];
       feed.hands.value = (e.nativeEvent.hands ?? []).flat();
