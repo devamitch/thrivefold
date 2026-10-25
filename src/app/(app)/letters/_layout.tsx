@@ -1,12 +1,13 @@
-import { Redirect, Stack } from 'expo-router';
+import { Stack } from 'expo-router';
 
 import { canUseCorrespondence } from '../../../navigation/eligibility';
+import { SocialGate } from '../../../components/social/SocialGate';
 import { useRootStore } from '../../../stores/useRootStore';
 
 export default function LettersLayout() {
   // Route-level gate: a direct link cannot open correspondence for someone not eligible.
   const allowed = useRootStore(canUseCorrespondence);
-  if (!allowed) return <Redirect href="/(app)/(tabs)" />;
+  if (!allowed) return <SocialGate feature="letters" />;
   return (
     <Stack
       screenOptions={{
