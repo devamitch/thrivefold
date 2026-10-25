@@ -1,5 +1,27 @@
 # Requirements Traceability Matrix
 
+## Update — 2026-10-25 (10): crash, key warnings, sheets, drawer, layout boxes
+
+Checks: compile 0, lint 0, `pnpm test` 188/188. Seen on the Pixel emulator (debug build + Metro):
+launch, Home, Cycle tab, Cycle screen, drawer open/close, period sheet.
+
+| Issue | Root cause | Fix | Commit |
+| --- | --- | --- | --- |
+| App crashed on launch (SIGSEGV in RenderThread) | every rounded SquircleSurface had become a native view (not flattenable); the tree got deep enough to overflow hwui's prepareTree recursion | native squircle only for painted cards radius >= 18; rest are one rounded View | bc1ff4e |
+| "Each child in a list should have a unique key" on every screen, dev lag | ScreenWrapper rebuilt children into an array without keys | stable key per child | 9f412fc |
+| Pixelated sheet/alert backdrops | Android blur inside a Modal has nothing to blur and renders downsampled | scrim (iOS keeps material blur); iOS-curve open, no overshoot | 2d4e7d7 |
+| Sheet actions scroll away | no footer slot | `footer` prop + `SheetFooterRow`, used by date picker, period, event, profile sheets | 2d4e7d7 |
+| Chip/toggle flicker on select | SquircleSurface swapped component type when fill toggled | renderer chosen by shape/radius only | 2d4e7d7, bc1ff4e |
+| Drawer plain | — | push-aside kept; frosted room (BlurTargetView sibling), accent glow, quick tiles, list fade | e9e2dfe |
+| Layout Views turned into SquircleSurface (9a649fb) | sweep | AST codemod back to View (854 tags, 129 files) | 62f3e9e |
+| "Average cycle 28 days" with 0 periods | defaults shown as stats | measured values only | 9f412fc |
+
+Rule learned: a `BlurView` must never be inside the `BlurTargetView` it blurs (RenderThread
+recursion crash). `FrostedView` blurs on Android only when given a sibling target.
+
+Not done this round: deep-link route sweep for warnings was unreliable (links did not navigate);
+remaining backlog (backend, correspondence, Coach, overflow audit of every screen) unchanged.
+
 ## Update — 2026-10-25 (9): visual pass on an emulator
 
 Checks: compile 0, lint 0, `pnpm test` 188/188, release build PASS. **Seen on screen** (Pixel 7 Pro
