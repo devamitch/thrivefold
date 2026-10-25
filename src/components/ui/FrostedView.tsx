@@ -54,7 +54,7 @@ export function FrostedView({
 
   const blurs = Platform.OS === 'ios' || (ANDROID_BLUR && Boolean(blurTarget));
   // With a real blur behind it the tint can be lighter; without one it carries the surface.
-  const alpha = tintOpacity ?? (blurs ? (Platform.OS === 'ios' ? 0.55 : 0.7) : 0.96);
+  const alpha = tintOpacity ?? (blurs ? (Platform.OS === 'ios' ? 0.55 : 0.7) : 1);
 
   return (
     <View style={[styles.clip, style]} pointerEvents={pointerEvents}>

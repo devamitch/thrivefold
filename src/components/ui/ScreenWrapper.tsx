@@ -1,4 +1,3 @@
-import { SquircleSurface } from './SquircleSurface';
 import React, { Children, isValidElement, type ReactElement, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
@@ -63,7 +62,10 @@ export const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
   let headerProps: HeaderProps | null = title ? { title, subtitle, eyebrow, showBack, rightAction } : null;
   const body: ReactNode[] = [];
 
-  Children.forEach(children, (child) => {
+  // The children are re-collected into an array, so each element needs a stable key (its own,
+  // else its position); without one React warns on every render of every screen.
+  Children.forEach(children, (child, index) => {
+    const key = isValidElement(child) ? (child.key ?? `screen-child-${index}`) : undefined;
     if (!headerProps && isHeaderElement(child)) {
       headerProps = child.props;
       return;
@@ -71,7 +73,7 @@ export const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
     if (isValidElement(child) && child.type === ScrollView && !(child.props as { horizontal?: boolean }).horizontal) {
       const props = child.props as { contentContainerStyle?: StyleProp<ViewStyle>; children?: ReactNode };
       body.push(
-        <View key={child.key ?? 'unwrapped-scroll'} style={withoutSidePadding(props.contentContainerStyle)}>
+        <View key={key} style={withoutSidePadding(props.contentContainerStyle)}>
           {props.children}
         </View>,
       );
@@ -79,10 +81,15 @@ export const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
     }
     if (isValidElement(child) && child.type === View) {
       const props = child.props as { style?: StyleProp<ViewStyle>; children?: ReactNode };
-      body.push(React.cloneElement(child as ReactElement<{ style?: StyleProp<ViewStyle> }>, { style: withoutSidePadding(props.style) }));
+      body.push(
+        React.cloneElement(child as ReactElement<{ style?: StyleProp<ViewStyle> }>, {
+          key,
+          style: withoutSidePadding(props.style),
+        }),
+      );
       return;
     }
-    body.push(child);
+    body.push(isValidElement(child) ? React.cloneElement(child, { key }) : child);
   });
 
   const resolved = headerProps as HeaderProps | null;
