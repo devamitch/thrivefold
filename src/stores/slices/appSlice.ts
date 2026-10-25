@@ -82,6 +82,16 @@ export interface AppSlice {
   offlineModeForced: boolean;
   toasts: ToastItem[];
   alert: AlertOptions | null;
+  /** Restores previous active screen on forceful app restart */
+  lastActiveRoute: string | null;
+  lastActiveParams?: Record<string, string>;
+  navigationHistory: string[];
+  lastScrollPositions: Record<string, number>;
+  appStateHistory: Array<{ state: 'active' | 'background' | 'inactive'; timestamp: string }>;
+  setLastActiveRoute: (route: string, params?: Record<string, string>) => void;
+  recordNavigation: (route: string) => void;
+  setLastScrollPosition: (screenKey: string, offsetY: number) => void;
+  recordAppStateChange: (state: 'active' | 'background' | 'inactive') => void;
   setExperience: (exp: ProductExperience) => void;
   setThemeMode: (mode: ThemeMode) => void;
   setIsOnboarded: (val: boolean) => void;
@@ -127,17 +137,47 @@ export const createAppSlice: StateCreator<
   offlineModeForced: false,
   toasts: [],
   alert: null,
+  lastActiveRoute: null,
+  lastActiveParams: {},
+  navigationHistory: [],
+  lastScrollPositions: {},
+  appStateHistory: [],
+  setLastActiveRoute: (lastActiveRoute, lastActiveParams = {}) =>
+    set({ lastActiveRoute, lastActiveParams }),
+  recordNavigation: (route) =>
+    set((state) => ({
+      lastActiveRoute: route,
+      navigationHistory: [...state.navigationHistory.slice(-49), route],
+    })),
+  setLastScrollPosition: (screenKey, offsetY) =>
+    set((state) => ({
+      lastScrollPositions: { ...state.lastScrollPositions, [screenKey]: offsetY },
+    })),
+  recordAppStateChange: (appState) =>
+    set((state) => ({
+      appStateHistory: [
+        ...state.appStateHistory.slice(-49),
+        { state: appState, timestamp: new Date().toISOString() },
+      ],
+    })),
   setExperience: (experience) => {
     set({ experience, experienceConfirmed: true });
+    get().autoClaimAnsweredSetupRewards();
     if (get().isOnboarded) get().refitDailyQuests();
   },
   setPrivateIdentity: (privateIdentity) =>
     set({ privateIdentity: { pronouns: privateIdentity.pronouns.trim().slice(0, 40), genderDescription: privateIdentity.genderDescription.trim().slice(0, 80) } }),
   setThemeMode: (themeMode) => set({ themeMode }),
-  setIsOnboarded: (isOnboarded) =>
-    set(isOnboarded ? { isOnboarded, onboardingStep: null } : { isOnboarded }),
+  setIsOnboarded: (isOnboarded) => {
+    set(isOnboarded ? { isOnboarded, onboardingStep: null } : { isOnboarded });
+    if (isOnboarded) {
+      get().autoClaimAnsweredSetupRewards();
+    }
+  },
   setOnboardingAnswers: (answers) => {
     set((state) => ({ onboarding: { ...EMPTY_ONBOARDING, ...state.onboarding, ...answers } }));
+    // Automatically reward any answered setup sections
+    get().autoClaimAnsweredSetupRewards();
     // Changed goals, limits or baseline re-fit today's open quests straight away.
     if (get().isOnboarded) get().refitDailyQuests();
   },

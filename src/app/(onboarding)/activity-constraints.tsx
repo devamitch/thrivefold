@@ -1,12 +1,13 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
+import { PressableScale } from '../../components/ui/PressableScale';
 import { OnboardingScaffold } from '../../components/onboarding/OnboardingScaffold';
 import { Chip } from '../../components/ui/Chip';
+import { constraintsFor, ROUTINE_LENGTHS } from '../../domain/onboarding/options';
 import { useRootStore, useShallow } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
-import { constraintsFor, ROUTINE_LENGTHS } from '../../domain/onboarding/options';
 
 export default function ActivityConstraintsScreen() {
   const router = useRouter();
@@ -24,9 +25,16 @@ export default function ActivityConstraintsScreen() {
 
   const toggle = (c: string) =>
     setOnboardingAnswers({
-      constraints: constraints.includes(c) ? constraints.filter((x) => x !== c) : [...constraints, c],
+      constraints: constraints.includes(c)
+        ? constraints.filter((x) => x !== c)
+        : [...constraints, c],
     });
-  const next = () => router.push('/(onboarding)/lifestyle-preferences');
+  const next = () => {
+    if (routineMinutes === null) {
+      setOnboardingAnswers({ routineMinutes: 10 });
+    }
+    router.push('/(onboarding)/lifestyle-preferences');
+  };
 
   return (
     <OnboardingScaffold
@@ -51,7 +59,7 @@ export default function ActivityConstraintsScreen() {
         {ROUTINE_LENGTHS.map((l) => {
           const selected = routineMinutes === l.value;
           return (
-            <Pressable
+            <PressableScale
               key={l.value}
               onPress={() => setOnboardingAnswers({ routineMinutes: selected ? null : l.value })}
               accessibilityRole="radio"
@@ -69,7 +77,7 @@ export default function ActivityConstraintsScreen() {
               >
                 {l.label}
               </Text>
-            </Pressable>
+            </PressableScale>
           );
         })}
       </View>

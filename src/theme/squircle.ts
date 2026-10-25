@@ -1,63 +1,53 @@
-import { ViewStyle, Platform } from 'react-native';
+import { ViewStyle } from 'react-native';
 
 /**
- * Squircle-like smooth curvature generator and border radius presets inspired by Setu & BlinkQuest
+ * Squircle-like smooth curvature generator and border radius presets inspired by Neev & BlinkQuest.
+ * Adheres strictly to Zero Shadows: crisp hairlines instead of fuzzy elevation halos.
  */
-export function getSquircleStyle(radius: number = 24, smoothness: number = 0.6): ViewStyle {
+export function getSquircleStyle(radius: number = 24, smoothness: number = 1): ViewStyle {
   return {
     borderRadius: radius,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(14, 30, 27, 0.07)',
+    shadowColor: 'transparent',
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
   };
 }
 
 export const cardStyles = {
   cardBase: {
-    borderRadius: 22,
+    borderRadius: 20,
     borderWidth: 1,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 12,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
+    borderColor: 'rgba(14, 30, 27, 0.07)',
+    shadowColor: 'transparent',
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
   } as ViewStyle,
   tileBase: {
-    borderRadius: 16,
+    borderRadius: 14,
     borderWidth: 1,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.04,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 1,
-      },
-    }),
+    borderColor: 'rgba(14, 30, 27, 0.07)',
+    shadowColor: 'transparent',
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
   } as ViewStyle,
   pillBase: {
     borderRadius: 9999,
   } as ViewStyle,
   floatingBar: {
-    borderRadius: 28,
+    borderRadius: 24,
     borderWidth: 1,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.08,
-        shadowRadius: 16,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
+    borderColor: 'rgba(14, 30, 27, 0.07)',
+    shadowColor: 'transparent',
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
   } as ViewStyle,
 } as const;
 
+export default cardStyles;

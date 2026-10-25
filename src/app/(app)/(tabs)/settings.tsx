@@ -18,6 +18,11 @@ import { useRootStore } from '../../../stores/useRootStore';
 import { canUseCorrespondence } from '../../../navigation/eligibility';
 import { SettingsRow } from '../../../components/ui/SettingsRow';
 import { AppHeader } from '../../../components/ui/AppHeader';
+import { AppBottomSheetModal } from '../../../components/ui/AppBottomSheetModal';
+import { Button } from '../../../components/ui/Button';
+import { PressableScale } from '../../../components/ui/PressableScale';
+import { SquircleSurface } from '../../../components/ui/SquircleSurface';
+import { TextField } from '../../../components/ui/TextField';
 import { useTheme } from '../../../theme/useTheme';
 
 const AVATAR_OPTIONS = [
@@ -77,28 +82,46 @@ export default function SettingsScreen() {
         <Animated.View entering={FadeIn.duration(180)}>
           <Card style={[styles.profileCard, { backgroundColor: colors.surface }]}>
             <View style={styles.profileHeader}>
-              <Pressable
+              <PressableScale
                 onPress={() => setIsEditingProfile(true)}
-                style={[styles.avatarCircle, { backgroundColor: colors.primaryAlpha }]}
+                scaleTo={0.94}
                 accessibilityLabel="Edit Profile Avatar"
               >
-                <Ionicons name={currentAvatar.icon} size={32} color={colors.primary} />
-                <View style={[styles.editBadge, { backgroundColor: colors.primary }]}>
-                  <Ionicons name="pencil" size={10} color={colors.onPrimary} />
-                </View>
-              </Pressable>
+                <SquircleSurface
+                  radius={20}
+                  smoothing={1}
+                  fill={colors.primaryAlpha}
+                  style={styles.avatarCircle}
+                >
+                  <Ionicons name={currentAvatar.icon} size={32} color={colors.primary} />
+                  <SquircleSurface radius={7} smoothing={1} fill={colors.primary} style={styles.editBadge}>
+                    <Ionicons name="pencil" size={10} color={colors.onPrimary} />
+                  </SquircleSurface>
+                </SquircleSurface>
+              </PressableScale>
 
               <View style={{ flex: 1, marginLeft: 16 }}>
                 <View style={styles.rowBetween}>
                   <Text style={[typography.heading, { color: colors.text.primary, fontSize: 20 }]}>
                     {user?.pseudonym ?? 'Friend'}
                   </Text>
-                  <Pressable
+                  <PressableScale
                     onPress={() => setIsEditingProfile(true)}
-                    style={[styles.editBtn, { backgroundColor: colors.surface1 }]}
+                    scaleTo={0.94}
+                    accessibilityRole="button"
+                    accessibilityLabel="Edit profile"
                   >
-                    <Text style={[typography.captionBold, { color: colors.primary }]}>Edit</Text>
-                  </Pressable>
+                    <SquircleSurface
+                      radius={10}
+                      smoothing={1}
+                      fill={colors.surface1}
+                      stroke={colors.border}
+                      strokeWidth={1}
+                      style={styles.editBtn}
+                    >
+                      <Text style={[typography.captionBold, { color: colors.primary }]}>Edit</Text>
+                    </SquircleSurface>
+                  </PressableScale>
                 </View>
 
                 {user?.profileSource === 'google' ? (
@@ -177,55 +200,48 @@ export default function SettingsScreen() {
         ) : null}
       </View>
 
-      {/* Profile Edit Modal */}
-      <Modal
+      {/* Profile Edit Bottom Sheet Modal */}
+      <AppBottomSheetModal
         visible={isEditingProfile}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setIsEditingProfile(false)}
+        onClose={() => setIsEditingProfile(false)}
+        eyebrow="DISPLAY IDENTITY"
+        title="Your name and emblem"
+        subtitle="Choose your display identity and personal emblem."
+        maxHeight="85%"
+        contentContainerStyle={{ paddingHorizontal: spacing.sm, paddingBottom: 24 }}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.editModalContent, { backgroundColor: colors.surface }]}>
-            <Text style={[typography.heading, { color: colors.text.primary, fontSize: 18 }]}>
-              Your name and emblem
-            </Text>
-            <Text
-              style={[
-                typography.caption,
-                { color: colors.text.secondary, marginTop: 4, marginBottom: 16 },
-              ]}
-            >
-              Choose your display identity and personal emblem.
-            </Text>
-
-            {/* Emblem Selector */}
-            <Text style={[typography.captionBold, { color: colors.text.primary, marginBottom: 8 }]}>
-              Emblem
-            </Text>
-            <View style={styles.avatarGrid}>
-              {AVATAR_OPTIONS.map((a) => (
-                <Pressable
-                  key={a.id}
-                  onPress={() => setSelectedAvatar(a.id)}
-                  style={[
-                    styles.avatarOption,
-                    {
-                      backgroundColor:
-                        selectedAvatar === a.id ? colors.primaryAlpha : colors.surface1,
-                      borderColor: selectedAvatar === a.id ? colors.primary : 'transparent',
-                    },
-                  ]}
+        {/* Emblem Selector */}
+        <Text style={[typography.captionBold, { color: colors.text.primary, marginBottom: 8 }]}>
+          Emblem
+        </Text>
+        <View style={styles.avatarGrid}>
+          {AVATAR_OPTIONS.map((a) => {
+            const isSelected = selectedAvatar === a.id;
+            return (
+              <PressableScale
+                key={a.id}
+                onPress={() => setSelectedAvatar(a.id)}
+                scaleTo={0.94}
+                style={styles.avatarScale}
+              >
+                <SquircleSurface
+                  radius={14}
+                  smoothing={1}
+                  fill={isSelected ? colors.primaryAlpha : colors.surface1}
+                  stroke={isSelected ? colors.primary : colors.border}
+                  strokeWidth={1}
+                  style={styles.avatarOption}
                 >
                   <Ionicons
                     name={a.icon}
                     size={24}
-                    color={selectedAvatar === a.id ? colors.primary : colors.text.secondary}
+                    color={isSelected ? colors.primary : colors.text.secondary}
                   />
                   <Text
                     style={[
                       typography.caption,
                       {
-                        color: selectedAvatar === a.id ? colors.primary : colors.text.secondary,
+                        color: isSelected ? colors.primary : colors.text.secondary,
                         fontSize: 10,
                         marginTop: 4,
                       },
@@ -233,52 +249,38 @@ export default function SettingsScreen() {
                   >
                     {a.label}
                   </Text>
-                </Pressable>
-              ))}
-            </View>
-
-            {/* Name Input */}
-            <Text
-              style={[
-                typography.captionBold,
-                { color: colors.text.primary, marginTop: 14, marginBottom: 6 },
-              ]}
-            >
-              Pseudonym
-            </Text>
-            <TextInput
-              value={editedName}
-              onChangeText={setEditedName}
-              placeholder="Enter name"
-              placeholderTextColor={colors.text.muted}
-              style={[
-                styles.nameInput,
-                {
-                  backgroundColor: colors.surface1,
-                  color: colors.text.primary,
-                },
-              ]}
-              maxLength={24}
-            />
-
-            {/* Actions */}
-            <View style={styles.modalActionRow}>
-              <Pressable
-                onPress={() => setIsEditingProfile(false)}
-                style={[styles.modalBtn, { backgroundColor: colors.surface1 }]}
-              >
-                <Text style={[typography.captionBold, { color: colors.text.secondary }]}>Cancel</Text>
-              </Pressable>
-              <Pressable
-                onPress={handleSaveProfile}
-                style={[styles.modalBtn, { backgroundColor: colors.primary }]}
-              >
-                <Text style={[typography.captionBold, { color: colors.onPrimary }]}>Save</Text>
-              </Pressable>
-            </View>
-          </View>
+                </SquircleSurface>
+              </PressableScale>
+            );
+          })}
         </View>
-      </Modal>
+
+        {/* Name Input */}
+        <View style={{ marginTop: 14 }}>
+          <TextField
+            label="Pseudonym"
+            value={editedName}
+            onChangeText={setEditedName}
+            placeholder="Enter name"
+            maxLength={24}
+          />
+        </View>
+
+        {/* Actions */}
+        <View style={styles.modalActionRow}>
+          <Button
+            label="Cancel"
+            variant="ghost"
+            onPress={() => setIsEditingProfile(false)}
+            style={{ flex: 1 }}
+          />
+          <Button
+            label="Save Changes"
+            onPress={handleSaveProfile}
+            style={{ flex: 1 }}
+          />
+        </View>
+      </AppBottomSheetModal>
     </ScreenContainer>
   );
 }
@@ -361,8 +363,11 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
   },
+  avatarScale: {
+    width: '31%',
+  },
   avatarOption: {
-    width: '30%',
+    width: '100%',
     paddingVertical: 10,
     borderRadius: 12,
     alignItems: 'center',

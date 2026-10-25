@@ -2,30 +2,27 @@
  * Thrivefold Personal Milestone & Calendar Event Modal
  * Supports birthdays (self, partner, family, friends), wedding anniversaries,
  * appointments, financial deadlines, and custom routines.
+ * Enhanced with AppBottomSheetModal, SquircleSurface, and PressableScale.
  */
 
-import React, { useState, useEffect } from 'react';
-import {
-  Modal,
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Pressable,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import React, { useEffect, useState } from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
-import { useTheme } from '../../theme/useTheme';
-import { useRootStore, useShallow, type PersonalCalendarEvent } from '../../stores/useRootStore';
-import { Button } from './Button';
-import { TextField } from './TextField';
-import { PressableScale } from './PressableScale';
-import { DatePickerModal } from './DatePickerModal';
 import { formatLocalDate } from '../../domain/calendar/universalCalendarEngine';
+import { useRootStore, useShallow, type PersonalCalendarEvent } from '../../stores/useRootStore';
+import { useTheme } from '../../theme/useTheme';
+import { AppBottomSheetModal } from './AppBottomSheetModal';
+import { Button } from './Button';
+import { DatePickerModal } from './DatePickerModal';
+import { PressableScale } from './PressableScale';
+import { SquircleSurface } from './SquircleSurface';
+import { TextField } from './TextField';
 
 interface PersonalEventModalProps {
   visible: boolean;
@@ -80,7 +77,6 @@ export function PersonalEventModal({
   onSaved,
 }: PersonalEventModalProps) {
   const { colors, typography, spacing } = useTheme();
-  const insets = useSafeAreaInsets();
   const { addPersonalEvent, editPersonalEvent, deletePersonalEvent, showToast, showAlert } = useRootStore(
     useShallow((s) => ({
       addPersonalEvent: s.addPersonalEvent,
@@ -193,376 +189,305 @@ export function PersonalEventModal({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.keyboardRoot}
+    <>
+      <AppBottomSheetModal
+        visible={visible}
+        onClose={onClose}
+        eyebrow="LIFE PLANNER & REMINDERS"
+        title={existingEvent ? 'Edit Milestone' : 'Add Milestone or Event'}
+        maxHeight="92%"
+        contentContainerStyle={{ paddingHorizontal: spacing.base, paddingBottom: 24 }}
       >
-        <View style={styles.backdrop}>
-          <Pressable
-            style={StyleSheet.absoluteFill}
-            onPress={onClose}
-            accessibilityRole="button"
-            accessibilityLabel="Dismiss modal"
+        {/* Event Title */}
+        <View style={{ marginTop: spacing.md }}>
+          <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 6 }]}>
+            EVENT OR MILESTONE TITLE *
+          </Text>
+          <TextField
+            placeholder="e.g. Partner's Birthday, Wedding Anniversary, Rent Due"
+            value={title}
+            onChangeText={setTitle}
+            autoFocus={!existingEvent}
           />
+        </View>
 
-          <View
-            style={[
-              styles.sheetContainer,
-              {
-                backgroundColor: colors.surface,
-                paddingBottom: Math.max(insets.bottom, 20) + 12,
-              },
-            ]}
-          >
-            {/* Grab Handle */}
-            <View style={styles.dragHandleBar}>
-              <View style={styles.dragHandlePill} />
-            </View>
-
-            {/* Header Row */}
-            <View style={styles.headerRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={[typography.captionBold, { color: colors.primary }]}>
-                  LIFE PLANNER & REMINDERS
-                </Text>
-                <Text style={[typography.heading, { color: colors.text.primary, marginTop: 2 }]}>
-                  {existingEvent ? 'Edit Milestone' : 'Add Milestone or Event'}
-                </Text>
-              </View>
-              <PressableScale
-                onPress={onClose}
-                scaleTo={0.92}
-                style={[styles.closeBtn, { backgroundColor: colors.surface1 }]}
-                accessibilityRole="button"
-                accessibilityLabel="Close sheet"
-              >
-                <Ionicons name="close" size={18} color={colors.text.secondary} />
-              </PressableScale>
-            </View>
-
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: spacing.base, paddingBottom: 20 }}
-            >
-              {/* Event Title */}
-              <View style={{ marginTop: spacing.md }}>
-                <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 6 }]}>
-                  EVENT OR MILESTONE TITLE *
-                </Text>
-                <TextField
-                  placeholder="e.g. Partner's Birthday, Wedding Anniversary, Rent Due"
-                  value={title}
-                  onChangeText={setTitle}
-                />
-              </View>
-
-              {/* Event Date */}
-              <View style={{ marginTop: spacing.md }}>
-                <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 6 }]}>
-                  DATE *
-                </Text>
+        {/* Category Selector */}
+        <View style={{ marginTop: spacing.lg }}>
+          <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 8 }]}>
+            EVENT TYPE
+          </Text>
+          <View style={styles.categoryGrid}>
+            {CATEGORIES.map((cat) => {
+              const isSelected = category === cat.id;
+              return (
                 <PressableScale
+                  key={cat.id}
                   onPress={() => {
                     try {
                       Haptics.selectionAsync();
                     } catch {}
-                    setShowDatePicker(true);
+                    setCategory(cat.id);
                   }}
-                  scaleTo={0.98}
-                  style={[
-                    styles.datePickerTrigger,
-                    {
-                      backgroundColor: colors.surface1,
-                      borderColor: colors.primary + '33',
-                    },
-                  ]}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Event date: ${dateStr}. Tap to select from calendar.`}
+                  scaleTo={0.95}
                 >
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Ionicons name="calendar" size={18} color={colors.primary} style={{ marginRight: 10 }} />
-                    <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                      {dateStr || 'Select event date'}
+                  <SquircleSurface
+                    radius={12}
+                    smoothing={1}
+                    fill={isSelected ? colors.primaryAlpha : colors.surface1}
+                    stroke={isSelected ? colors.primary : colors.border}
+                    strokeWidth={1}
+                    style={styles.categoryChip}
+                  >
+                    <Ionicons
+                      name={cat.icon}
+                      size={15}
+                      color={isSelected ? colors.primary : colors.text.secondary}
+                      style={{ marginRight: 6 }}
+                    />
+                    <Text
+                      style={[
+                        typography.captionBold,
+                        { color: isSelected ? colors.primary : colors.text.primary },
+                      ]}
+                    >
+                      {cat.label}
                     </Text>
-                  </View>
-                  <View style={[styles.datePickerPill, { backgroundColor: colors.primary + '18' }]}>
-                    <Text style={[typography.captionBold, { color: colors.primary }]}>Select Date</Text>
-                  </View>
+                  </SquircleSurface>
                 </PressableScale>
-              </View>
-
-              {/* Category Selection */}
-              <View style={{ marginTop: spacing.lg }}>
-                <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 8 }]}>
-                  CATEGORY
-                </Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 2 }}>
-                  {CATEGORIES.map((cat) => {
-                    const isSelected = category === cat.id;
-                    return (
-                      <PressableScale
-                        key={cat.id}
-                        onPress={() => {
-                          try {
-                            Haptics.selectionAsync();
-                          } catch {}
-                          setCategory(cat.id);
-                        }}
-                        scaleTo={0.94}
-                        style={[
-                          styles.catPill,
-                          {
-                            backgroundColor: isSelected ? colors.primary : colors.surface1,
-                          },
-                        ]}
-                      >
-                        <Ionicons
-                          name={cat.icon}
-                          size={15}
-                          color={isSelected ? colors.onPrimary : colors.text.primary}
-                          style={{ marginRight: 6 }}
-                        />
-                        <Text
-                          style={[
-                            typography.captionBold,
-                            { color: isSelected ? colors.onPrimary : colors.text.primary },
-                          ]}
-                        >
-                          {cat.label}
-                        </Text>
-                      </PressableScale>
-                    );
-                  })}
-                </ScrollView>
-              </View>
-
-              {/* Relationship (for birthdays / anniversaries) */}
-              {(category === 'birthday' || category === 'anniversary') && (
-                <View style={{ marginTop: spacing.lg }}>
-                  <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 8 }]}>
-                    HONORING WHO?
-                  </Text>
-                  <View style={styles.chipsWrap}>
-                    {RELATIONSHIPS.map((rel) => {
-                      const isSelected = relationship === rel.id;
-                      return (
-                        <PressableScale
-                          key={rel.id}
-                          onPress={() => {
-                            try {
-                              Haptics.selectionAsync();
-                            } catch {}
-                            setRelationship(rel.id);
-                          }}
-                          scaleTo={0.95}
-                          style={[
-                            styles.relChip,
-                            {
-                              backgroundColor: isSelected ? colors.primary : colors.surface1,
-                            },
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              typography.captionBold,
-                              {
-                                color: isSelected ? colors.onPrimary : colors.text.primary,
-                                fontSize: 12,
-                              },
-                            ]}
-                          >
-                            {rel.label}
-                          </Text>
-                        </PressableScale>
-                      );
-                    })}
-                  </View>
-                </View>
-              )}
-
-              {/* Recurrence Selection */}
-              <View style={{ marginTop: spacing.lg }}>
-                <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 8 }]}>
-                  RECURRENCE CADENCE
-                </Text>
-                <View style={styles.recurrenceRow}>
-                  {RECURRENCE_OPTIONS.map((rec) => {
-                    const isSelected = recurrence === rec.id;
-                    return (
-                      <PressableScale
-                        key={rec.id}
-                        onPress={() => {
-                          try {
-                            Haptics.selectionAsync();
-                          } catch {}
-                          setRecurrence(rec.id);
-                        }}
-                        scaleTo={0.94}
-                        style={[
-                          styles.recurrencePill,
-                          {
-                            backgroundColor: isSelected ? colors.primary : colors.surface1,
-                          },
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            typography.captionBold,
-                            {
-                              color: isSelected ? colors.onPrimary : colors.text.primary,
-                              fontSize: 12,
-                            },
-                          ]}
-                        >
-                          {rec.label}
-                        </Text>
-                      </PressableScale>
-                    );
-                  })}
-                </View>
-              </View>
-
-              {/* Optional Time & Notes */}
-              <View style={{ marginTop: spacing.lg }}>
-                <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 6 }]}>
-                  SCHEDULED TIME (HH:MM, OPTIONAL)
-                </Text>
-                <TextField
-                  placeholder="e.g. 19:30 or 09:00"
-                  value={time}
-                  onChangeText={setTime}
-                />
-              </View>
-
-              <View style={{ marginTop: spacing.md }}>
-                <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 6 }]}>
-                  PRIVATE NOTES & DETAILS (OPTIONAL)
-                </Text>
-                <TextField
-                  placeholder="Gift ideas, reservation details, address..."
-                  value={notes}
-                  onChangeText={setNotes}
-                  multiline
-                  numberOfLines={2}
-                />
-              </View>
-
-              {/* Action Buttons */}
-              <View style={{ marginTop: spacing.xl, gap: 10 }}>
-                <Button
-                  label={existingEvent ? 'Save Changes' : 'Save Event to Calendar'}
-                  onPress={handleSave}
-                  size="lg"
-                />
-                {existingEvent && (
-                  <Button
-                    label="Delete Event"
-                    variant="ghost"
-                    onPress={handleDelete}
-                    size="md"
-                  />
-                )}
-              </View>
-            </ScrollView>
+              );
+            })}
           </View>
         </View>
-      </KeyboardAvoidingView>
+
+        {/* Date Selector */}
+        <View style={{ marginTop: spacing.lg }}>
+          <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 6 }]}>
+            DATE *
+          </Text>
+          <PressableScale
+            onPress={() => {
+              try {
+                Haptics.selectionAsync();
+              } catch {}
+              setShowDatePicker(true);
+            }}
+            scaleTo={0.98}
+            accessibilityRole="button"
+            accessibilityLabel={`Date: ${dateStr}. Tap to select from calendar.`}
+          >
+            <SquircleSurface
+              radius={14}
+              smoothing={1}
+              fill={colors.surface1}
+              stroke={colors.primary + '33'}
+              strokeWidth={1}
+              style={styles.datePickerTrigger}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="calendar-outline" size={18} color={colors.primary} style={{ marginRight: 10 }} />
+                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                  {dateStr || 'Select date'}
+                </Text>
+              </View>
+              <SquircleSurface
+                radius={8}
+                smoothing={1}
+                fill={colors.primary + '18'}
+                style={styles.datePickerPill}
+              >
+                <Text style={[typography.captionBold, { color: colors.primary }]}>Select Date</Text>
+              </SquircleSurface>
+            </SquircleSurface>
+          </PressableScale>
+        </View>
+
+        {/* Recurrence Selection */}
+        <View style={{ marginTop: spacing.lg }}>
+          <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 8 }]}>
+            RECURRENCE
+          </Text>
+          <View style={styles.recurrenceRow}>
+            {RECURRENCE_OPTIONS.map((opt) => {
+              const isSelected = recurrence === opt.id;
+              return (
+                <PressableScale
+                  key={opt.id}
+                  onPress={() => {
+                    try {
+                      Haptics.selectionAsync();
+                    } catch {}
+                    setRecurrence(opt.id);
+                  }}
+                  scaleTo={0.96}
+                  style={styles.recurrenceScale}
+                >
+                  <SquircleSurface
+                    radius={12}
+                    smoothing={1}
+                    fill={isSelected ? colors.primary : colors.surface1}
+                    stroke={isSelected ? colors.primary : colors.border}
+                    strokeWidth={1}
+                    style={styles.recurrencePill}
+                  >
+                    <Text
+                      style={[
+                        typography.captionBold,
+                        { color: isSelected ? colors.onPrimary : colors.text.primary },
+                      ]}
+                    >
+                      {opt.label}
+                    </Text>
+                  </SquircleSurface>
+                </PressableScale>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* Relationship (For Birthdays / Anniversaries) */}
+        {(category === 'birthday' || category === 'anniversary') && (
+          <View style={{ marginTop: spacing.lg }}>
+            <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 8 }]}>
+              WHO IS THIS FOR?
+            </Text>
+            <View style={styles.categoryGrid}>
+              {RELATIONSHIPS.map((rel) => {
+                const isSelected = relationship === rel.id;
+                return (
+                  <PressableScale
+                    key={rel.id}
+                    onPress={() => {
+                      try {
+                        Haptics.selectionAsync();
+                      } catch {}
+                      setRelationship(rel.id);
+                    }}
+                    scaleTo={0.95}
+                  >
+                    <SquircleSurface
+                      radius={12}
+                      smoothing={1}
+                      fill={isSelected ? colors.primaryAlpha : colors.surface1}
+                      stroke={isSelected ? colors.primary : colors.border}
+                      strokeWidth={1}
+                      style={styles.relationshipChip}
+                    >
+                      <Text
+                        style={[
+                          typography.captionBold,
+                          { color: isSelected ? colors.primary : colors.text.primary },
+                        ]}
+                      >
+                        {rel.label}
+                      </Text>
+                    </SquircleSurface>
+                  </PressableScale>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
+        {/* Time of Day (Optional) */}
+        <View style={{ marginTop: spacing.lg }}>
+          <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 6 }]}>
+            TIME OF DAY (OPTIONAL)
+          </Text>
+          <TextField
+            placeholder="e.g. 10:30 AM, 7:00 PM Dinner"
+            value={time}
+            onChangeText={setTime}
+          />
+        </View>
+
+        {/* Notes (Optional) */}
+        <View style={{ marginTop: spacing.lg }}>
+          <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 6 }]}>
+            NOTES / GIFT IDEAS / LOCATION
+          </Text>
+          <TextField
+            placeholder="Gift ideas, reservation numbers, address, reminders..."
+            value={notes}
+            onChangeText={setNotes}
+            multiline
+            numberOfLines={2}
+          />
+        </View>
+
+        {/* Action Buttons */}
+        <View style={{ marginTop: spacing.xl, gap: 10 }}>
+          <Button
+            label={existingEvent ? 'Update Milestone' : 'Save Milestone'}
+            onPress={handleSave}
+            size="lg"
+          />
+          {existingEvent && (
+            <Button
+              label="Delete Event"
+              variant="ghost"
+              onPress={handleDelete}
+              size="md"
+            />
+          )}
+        </View>
+      </AppBottomSheetModal>
 
       {/* DatePicker Modal */}
       <DatePickerModal
         visible={showDatePicker}
         value={dateStr}
         title="Select Event Date"
+        initialView={category === 'birthday' ? 'year' : 'day'}
         onChange={(val) => {
           setDateStr(val);
           setShowDatePicker(false);
         }}
         onClose={() => setShowDatePicker(false)}
       />
-    </Modal>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  keyboardRoot: {
-    flex: 1,
-  },
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(18, 16, 15, 0.45)',
-    justifyContent: 'flex-end',
-  },
-  sheetContainer: {
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    maxHeight: '90%',
-  },
-  dragHandleBar: {
-    alignItems: 'center',
-    paddingVertical: 10,
-  },
-  dragHandlePill: {
-    width: 38,
-    height: 4.5,
-    borderRadius: 3,
-    backgroundColor: 'rgba(0, 0, 0, 0.16)',
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingBottom: 14,
-    borderBottomColor: 'rgba(0, 0, 0, 0.05)',
-  },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  catPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 14,
-  },
-  chipsWrap: {
+  categoryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
   },
-  relChip: {
+  categoryChip: {
+    alignItems: 'center',
+    flexDirection: 'row',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 12,
+  },
+  relationshipChip: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  datePickerTrigger: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+  },
+  datePickerPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
   recurrenceRow: {
     flexDirection: 'row',
     gap: 8,
   },
-  recurrencePill: {
+  recurrenceScale: {
     flex: 1,
+  },
+  recurrencePill: {
+    alignItems: 'center',
     height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
     justifyContent: 'center',
-  },
-  datePickerTrigger: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 14,
-    paddingVertical: 13,
-    borderRadius: 14,
-  },
-  datePickerPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
   },
 });
 

@@ -177,6 +177,16 @@ const WORDS: Record<keyof typeof SCALES, string[]> = {
  * 1–10 scale. Swipe along it (or tap a segment) to set it; each step clicks with a light
  * haptic. Screen readers can increase or decrease it.
  */
+const SCALE_ICONS: Record<keyof typeof SCALES, keyof typeof Ionicons.glyphMap> = {
+  energy: 'flash-outline',
+  mood: 'happy-outline',
+  stress: 'pulse-outline',
+};
+
+/**
+ * 1–10 interactive scale with smooth swipe/drag gesture, tactile haptic ticks,
+ * visual fill, and discrete tap targets.
+ */
 function Scale({
   kind,
   label,
@@ -193,28 +203,36 @@ function Scale({
   onChange: (v: number) => void;
 }) {
   const { colors, typography, spacing } = useTheme();
-  const width = useRef(0);
-  const last = useRef(value);
-  last.current = value;
-  const set = (v: number) => {
-    const next = Math.max(1, Math.min(10, v));
-    if (next === last.current) return;
-    last.current = next;
-    Haptics.selectionAsync().catch(() => undefined);
-    onChange(next);
+  const trackWidth = useRef(0);
+  const lastVal = useRef(value);
+  lastVal.current = value;
+
+  const updateFromPosition = (x: number) => {
+    if (trackWidth.current <= 0) return;
+    const clampedX = Math.max(0, Math.min(trackWidth.current, x));
+    const step = Math.min(10, Math.max(1, Math.round((clampedX / trackWidth.current) * 9) + 1));
+    if (step !== lastVal.current) {
+      lastVal.current = step;
+      try {
+        Haptics.selectionAsync();
+      } catch {}
+      onChange(step);
+    }
   };
-  const fromX = (x: number) => set(Math.ceil((Math.max(0, Math.min(width.current - 1, x)) / Math.max(1, width.current)) * 10));
-  const gesture = Gesture.Race(
-    Gesture.Pan()
-      .activeOffsetX([-6, 6])
-      .failOffsetY([-14, 14])
-      .runOnJS(true)
-      .onBegin((e) => fromX(e.x))
-      .onUpdate((e) => fromX(e.x)),
-    Gesture.Tap()
-      .runOnJS(true)
-      .onEnd((e) => fromX(e.x)),
-  );
+
+  const panGesture = Gesture.Pan()
+    .activeOffsetX([-5, 5])
+    .failOffsetY([-25, 25])
+    .runOnJS(true)
+    .onBegin((e) => updateFromPosition(e.x))
+    .onUpdate((e) => updateFromPosition(e.x));
+
+  const tapGesture = Gesture.Tap()
+    .runOnJS(true)
+    .onEnd((e) => updateFromPosition(e.x));
+
+  const combinedGesture = Gesture.Race(panGesture, tapGesture);
+
   return (
     <View
       accessible
@@ -222,29 +240,81 @@ function Scale({
       accessibilityLabel={label}
       accessibilityValue={{ min: 1, max: 10, now: value, text: `${value} of 10, ${WORDS[kind][value - 1]}` }}
       accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
-      onAccessibilityAction={(e: AccessibilityActionEvent) => set(value + (e.nativeEvent.actionName === 'increment' ? 1 : -1))}
+      onAccessibilityAction={(e: AccessibilityActionEvent) => {
+        const next = Math.max(1, Math.min(10, value + (e.nativeEvent.actionName === 'increment' ? 1 : -1)));
+        onChange(next);
+      }}
     >
       <View style={styles.rowBetween}>
-        <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{label}</Text>
-        <Text style={[typography.subheading, { color: colors.primary }]}>
-          {WORDS[kind][value - 1]} · {value}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Ionicons name={SCALE_ICONS[kind]} size={18} color={colors.primary} style={{ marginRight: 6 }} />
+          <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{label}</Text>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Pressable
+            hitSlop={8}
+            onPress={() => {
+              if (value > 1) {
+                try { Haptics.selectionAsync(); } catch {}
+                onChange(value - 1);
+              }
+            }}
+            style={[styles.miniStep, { backgroundColor: colors.surface1, marginRight: 8 }]}
+            accessibilityLabel={`Decrease ${label}`}
+          >
+            <Ionicons name="remove" size={14} color={colors.text.primary} />
+          </Pressable>
+          <Text style={[typography.subheading, { color: colors.primary, minWidth: 84, textAlign: 'center' }]}>
+            {WORDS[kind][value - 1]} · {value}
+          </Text>
+          <Pressable
+            hitSlop={8}
+            onPress={() => {
+              if (value < 10) {
+                try { Haptics.selectionAsync(); } catch {}
+                onChange(value + 1);
+              }
+            }}
+            style={[styles.miniStep, { backgroundColor: colors.surface1, marginLeft: 8 }]}
+            accessibilityLabel={`Increase ${label}`}
+          >
+            <Ionicons name="add" size={14} color={colors.text.primary} />
+          </Pressable>
+        </View>
       </View>
-      <GestureDetector gesture={gesture}>
+
+      <GestureDetector gesture={combinedGesture}>
         <View
-          style={[styles.scale, { marginTop: spacing.sm }]}
+          style={[styles.scaleTrackContainer, { marginTop: spacing.sm }]}
           onLayout={(e) => {
-            width.current = e.nativeEvent.layout.width;
+            trackWidth.current = e.nativeEvent.layout.width;
           }}
         >
-          {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-            <View key={n} style={[styles.segment, { backgroundColor: n <= value ? colors.primary : colors.surface1, opacity: n <= value ? 0.55 + n * 0.045 : 1 }]} />
-          ))}
+          <View style={styles.scale}>
+            {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
+              const active = n <= value;
+              const isThumb = n === value;
+              return (
+                <View
+                  key={n}
+                  style={[
+                    styles.segment,
+                    {
+                      backgroundColor: active ? colors.primary : colors.surface1,
+                      opacity: active ? 0.6 + n * 0.04 : 0.8,
+                      transform: isThumb ? [{ scaleY: 1.15 }] : undefined,
+                    },
+                  ]}
+                />
+              );
+            })}
+          </View>
         </View>
       </GestureDetector>
+
       <View style={[styles.rowBetween, { marginTop: 6 }]}>
         <Text style={[typography.caption, { color: colors.text.muted }]}>{low}</Text>
-        <Text style={[typography.caption, { color: colors.text.muted }]}>Swipe to set</Text>
+        <Text style={[typography.caption, { color: colors.primary, opacity: 0.8 }]}>Swipe or tap along bar</Text>
         <Text style={[typography.caption, { color: colors.text.muted }]}>{high}</Text>
       </View>
     </View>
@@ -263,8 +333,10 @@ function StepButton({ icon, label, onPress }: { icon: 'add' | 'remove'; label: s
 const styles = StyleSheet.create({
   card: { padding: 16, marginBottom: 12 },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  scale: { flexDirection: 'row', gap: 4, height: 40, paddingVertical: 4 },
-  segment: { flex: 1, borderRadius: 6 },
+  scaleTrackContainer: { paddingVertical: 6, justifyContent: 'center' },
+  scale: { flexDirection: 'row', gap: 4, height: 42, alignItems: 'center' },
+  segment: { flex: 1, height: 36, borderRadius: 8 },
+  miniStep: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   stepper: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   stepBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { type ReactNode } from 'react';
 import {
   ActivityIndicator,
   StyleProp,
@@ -9,104 +9,147 @@ import {
   ViewStyle,
 } from 'react-native';
 import { useTheme } from '../../theme/useTheme';
-import { PressableScale } from './PressableScale';
+import { PressableScale, type PressableScaleProps } from './PressableScale';
 import { SquircleSurface } from './SquircleSurface';
 
-export interface ButtonProps {
+type Variant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'tinted';
+type SizeKey = 'sm' | 'md' | 'lg';
+type SizeProp = SizeKey | 'small' | 'medium' | 'large';
+
+export interface ButtonProps extends Omit<PressableScaleProps, 'style' | 'children'> {
   label?: string;
-  title?: string; // support Neev API
-  onPress?: () => void;
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
-  size?: 'sm' | 'md' | 'lg' | 'small' | 'medium' | 'large';
-  disabled?: boolean;
+  title?: string;
+  variant?: Variant;
+  size?: SizeProp;
   loading?: boolean;
+  disabled?: boolean;
   style?: StyleProp<ViewStyle>;
-  icon?: React.ReactNode;
-  /** Defaults to the visible label; set it for symbol-only buttons. */
+  onPress?: () => void;
+  icon?: ReactNode;
   accessibilityLabel?: string;
 }
 
+const SIZE_ALIAS: Record<SizeProp, SizeKey> = {
+  sm: 'sm',
+  small: 'sm',
+  md: 'md',
+  medium: 'md',
+  lg: 'lg',
+  large: 'lg',
+};
+
+/**
+ * SIZES:
+ * radius: squircle corner radius
+ * scaleTo: smaller buttons compress slightly more for consistent tactile feedback
+ * hitSlop: sm is 40pt tall, padded up to 48pt minimum touch target
+ */
+const SIZES = {
+  sm: { radius: 12, scaleTo: 0.95, hitSlop: 4, minHeight: 40, paddingHorizontal: 16 },
+  md: { radius: 14, scaleTo: 0.97, hitSlop: 0, minHeight: 48, paddingHorizontal: 20 },
+  lg: { radius: 16, scaleTo: 0.98, hitSlop: 0, minHeight: 54, paddingHorizontal: 24 },
+} as const;
+
+type Colors = ReturnType<typeof useTheme>['colors'];
+type Palette = { fill: string; text: string; stroke?: string };
+
+function getPalette(variant: Variant, disabled: boolean, colors: Colors): Palette {
+  if (disabled) {
+    const solid = variant === 'primary' || variant === 'danger' || variant === 'secondary';
+    return { fill: solid ? colors.surface2 : 'transparent', text: colors.text.muted };
+  }
+  switch (variant) {
+    case 'primary':
+      return { fill: colors.primary, text: colors.onPrimary };
+    case 'danger':
+      return { fill: colors.error, text: '#FFFFFF' };
+    case 'outline':
+      return { fill: 'transparent', text: colors.text.primary, stroke: colors.borderStrong || colors.border };
+    case 'ghost':
+      return { fill: 'transparent', text: colors.primary };
+    case 'tinted':
+      return { fill: colors.primaryAlpha, text: colors.primary };
+    case 'secondary':
+    default:
+      return { fill: colors.surface1, text: colors.text.primary, stroke: colors.border };
+  }
+}
+
+/**
+ * Universal Button / AppButton.
+ * Height is a minimum, never fixed, and label truncates instead of wrapping out of bounds.
+ * Loading keeps the label in layout (hidden) and overlays the spinner, so the button
+ * never changes size or causes subpixel jitter when toggling loading.
+ */
 export const Button: React.FC<ButtonProps> = ({
   label,
   title,
-  onPress,
   variant = 'primary',
   size = 'md',
-  disabled = false,
   loading = false,
+  disabled = false,
   style,
+  onPress,
   icon,
   accessibilityLabel,
+  ...rest
 }) => {
-  const { colors, typography, spacing } = useTheme();
+  const { colors, typography } = useTheme();
   const displayLabel = label || title || '';
 
-  const normalizedSize = size === 'small' ? 'sm' : size === 'large' ? 'lg' : size === 'medium' ? 'md' : size;
-
-  let bg = colors.primary;
-  let textColor = colors.onPrimary;
-  let stroke: string | undefined = undefined;
-
-  if (variant === 'secondary') {
-    bg = colors.surface1;
-    textColor = colors.text.primary;
-  } else if (variant === 'outline') {
-    bg = 'transparent';
-    textColor = colors.primary;
-    stroke = colors.borderStrong;
-  } else if (variant === 'ghost') {
-    bg = 'transparent';
-    textColor = colors.text.secondary;
-  } else if (variant === 'danger') {
-    bg = colors.error;
-    textColor = '#FFFFFF';
-  }
-
-  const radius = normalizedSize === 'sm' ? 12 : normalizedSize === 'lg' ? 16 : 14;
-  const minHeight = normalizedSize === 'sm' ? 40 : normalizedSize === 'lg' ? 54 : 48;
-  const paddingH = normalizedSize === 'sm' ? spacing.md : normalizedSize === 'lg' ? spacing.xl : spacing.lg;
+  const sizeKey = SIZE_ALIAS[size] || 'md';
+  const metrics = SIZES[sizeKey];
+  const palette = getPalette(variant, disabled, colors);
+  const inactive = disabled || loading;
 
   const textStyle: TextStyle = {
-    color: disabled ? colors.text.muted : textColor,
-    ...(normalizedSize === 'sm' ? typography.subbodyBold : typography.bodyBold),
+    color: palette.text,
+    ...(sizeKey === 'sm' ? typography.subbodyBold : typography.bodyBold),
     textAlign: 'center',
   };
 
-  const inactive = disabled || loading;
-
   return (
     <PressableScale
+      style={style}
       onPress={onPress}
       disabled={inactive}
-      scaleTo={normalizedSize === 'sm' ? 0.96 : 0.98}
-      style={style}
+      disabledOpacity={1}
+      scaleTo={metrics.scaleTo}
+      hitSlop={metrics.hitSlop}
       accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel ?? (label || title)}
+      accessibilityLabel={accessibilityLabel ?? displayLabel}
       accessibilityState={{ disabled: inactive, busy: loading }}
+      {...rest}
     >
       <SquircleSurface
-        radius={radius}
+        radius={metrics.radius}
         smoothing={1}
-        fill={disabled ? colors.surface2 : bg}
-        stroke={stroke}
+        fill={palette.fill}
+        stroke={palette.stroke}
+        strokeWidth={palette.stroke ? 1 : 0}
         style={[
           styles.surface,
           {
-            minHeight,
-            paddingHorizontal: paddingH,
+            minHeight: metrics.minHeight,
+            paddingHorizontal: metrics.paddingHorizontal,
           },
         ]}
       >
-        {loading ? (
-          <ActivityIndicator color={textColor} size="small" />
-        ) : (
-          <View style={styles.row}>
+        <View style={styles.content}>
+          <View style={[styles.row, loading && styles.hidden]}>
             {icon}
             {displayLabel ? (
-              <Text style={[textStyle, icon ? { marginLeft: 8 } : null]}>{displayLabel}</Text>
+              <Text numberOfLines={1} style={[textStyle, icon ? { marginLeft: 8 } : null]}>
+                {displayLabel}
+              </Text>
             ) : null}
           </View>
-        )}
+          {loading ? (
+            <View style={styles.spinner} pointerEvents="none">
+              <ActivityIndicator color={palette.text} size="small" />
+            </View>
+          ) : null}
+        </View>
       </SquircleSurface>
     </PressableScale>
   );
@@ -116,12 +159,26 @@ export const AppButton = Button;
 
 const styles = StyleSheet.create({
   surface: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  content: {
+    alignItems: 'center',
+    flexShrink: 1,
     justifyContent: 'center',
   },
   row: {
+    alignItems: 'center',
     flexDirection: 'row',
+    flexShrink: 1,
+    justifyContent: 'center',
+  },
+  hidden: {
+    opacity: 0,
+  },
+  spinner: {
+    ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
   },

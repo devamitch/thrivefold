@@ -21,7 +21,12 @@ export default function GoalsScreen() {
     setOnboardingAnswers({
       goals: goals.includes(goal) ? goals.filter((g) => g !== goal) : [...goals, goal],
     });
-  const next = () => router.push('/(onboarding)/baseline');
+  const next = () => {
+    if (goals.length === 0) {
+      setOnboardingAnswers({ goals: ['Steady daily habits'] });
+    }
+    router.push('/(onboarding)/baseline');
+  };
 
   return (
     <OnboardingScaffold

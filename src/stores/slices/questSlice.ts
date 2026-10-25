@@ -35,6 +35,7 @@ import {
   EMPTY_BASELINE,
   fitFor,
   isSetupSectionAnswered,
+  SETUP_REWARDS,
   setupLedgerKey,
   setupReward,
   type SetupSection,
@@ -97,6 +98,10 @@ export interface QuestSlice {
   refitDailyQuests: () => void;
   /** Awards a setup step's fixed XP once, if the step has really been answered. */
   claimSetupReward: (section: SetupSection) => { awarded: boolean; xp: number };
+  /** Evaluates and auto-claims XP for all answered setup sections that haven't been claimed yet. */
+  autoClaimAnsweredSetupRewards: () => { claimedCount: number; totalXp: number };
+  /** Synchronizes and auto-claims all answered setup steps into the ledger idempotently. */
+  syncSetupRewards: () => { claimedCount: number; totalXp: number };
   /** Completes today's open meal-log quest from a meal the person logged in the app. */
   completeMealQuest: (description: string) => { title: string; xp: number } | null;
   /**
@@ -360,6 +365,25 @@ export const createQuestSlice: StateCreator<RootState, [['zustand/persist', unkn
       commit({ rewardLedger: ledger, pendingSync: [...state.pendingSync, { kind: 'setup', key, section }] });
       return { awarded: true, xp: reward.xp };
     },
+
+    autoClaimAnsweredSetupRewards: () => {
+      let claimedCount = 0;
+      let totalXp = 0;
+      const state = get();
+      const answers = setupAnswersOf(state);
+      for (const item of SETUP_REWARDS) {
+        if (isSetupSectionAnswered(item.section, answers)) {
+          const res = get().claimSetupReward(item.section);
+          if (res.awarded) {
+            claimedCount += 1;
+            totalXp += res.xp;
+          }
+        }
+      }
+      return { claimedCount, totalXp };
+    },
+
+    syncSetupRewards: () => get().autoClaimAnsweredSetupRewards(),
 
     completeMealQuest: (description) => {
       const date = today();

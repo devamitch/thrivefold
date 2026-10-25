@@ -81,12 +81,12 @@ export const SanctuaryHeader: React.FC<HeaderProps> = ({
           <HeaderBackButton />
         ) : null}
 
-        <View style={styles.centerSlot}>
+        <View style={[styles.centerSlot, showBack ? { paddingLeft: 8 } : { paddingLeft: 0 }]}>
           {eyebrow ? (
             <Animated.Text
               style={[
                 typography.label,
-                { color: colors.primary, letterSpacing: 0.9 },
+                { color: colors.primary, letterSpacing: 0.9, textAlign: 'left' },
                 animatedEyebrowStyle,
               ]}
               numberOfLines={1}
@@ -98,7 +98,7 @@ export const SanctuaryHeader: React.FC<HeaderProps> = ({
           <Animated.Text
             style={[
               typography.subheading,
-              { color: colors.text.primary },
+              { color: colors.text.primary, textAlign: 'left' },
               animatedTitleStyle,
             ]}
             numberOfLines={1}
@@ -239,6 +239,7 @@ const styles = StyleSheet.create({
   centerSlot: {
     flex: 1,
     justifyContent: 'center',
+    alignItems: 'flex-start',
     paddingHorizontal: 8,
   },
   leftRow: {

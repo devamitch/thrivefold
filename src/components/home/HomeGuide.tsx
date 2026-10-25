@@ -1,15 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, type Href } from 'expo-router';
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { useRootStore, useShallow } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
 import { Card } from '../ui/Card';
+import { PressableScale } from '../ui/PressableScale';
+import { SquircleSurface } from '../ui/SquircleSurface';
 
 /**
  * First-run guide on Home: the three things that make Thrivefold work, each ticked off
  * from real activity. Hides itself once all three are done, or when dismissed.
+ * Enhanced with SquircleSurface and PressableScale.
  */
 export function HomeGuide() {
   const router = useRouter();
@@ -53,20 +56,26 @@ export function HomeGuide() {
     <Card style={{ padding: spacing.base, marginTop: spacing.md }}>
       <View style={styles.rowBetween}>
         <Text style={[typography.subheading, { color: colors.text.primary }]}>How Thrivefold works</Text>
-        <Pressable onPress={dismiss} hitSlop={10} accessibilityRole="button" accessibilityLabel="Hide this guide">
+        <PressableScale onPress={dismiss} hitSlop={10} scaleTo={0.9} accessibilityRole="button" accessibilityLabel="Hide this guide">
           <Ionicons name="close" size={18} color={colors.text.muted} />
-        </Pressable>
+        </PressableScale>
       </View>
       {steps.map((s, i) => (
-        <Pressable
+        <PressableScale
           key={s.title}
           onPress={() => router.push(s.route)}
+          scaleTo={0.98}
           accessibilityRole="button"
           style={styles.step}
         >
-          <View style={[styles.badge, { backgroundColor: s.done ? colors.successSurface : colors.primaryAlpha }]}>
+          <SquircleSurface
+            radius={12}
+            smoothing={1}
+            fill={s.done ? colors.successSurface : colors.primaryAlpha}
+            style={styles.badge}
+          >
             <Ionicons name={s.done ? 'checkmark' : s.icon} size={18} color={s.done ? colors.success : colors.primary} />
-          </View>
+          </SquircleSurface>
           <View style={styles.flex}>
             <Text style={[typography.bodyBold, { color: colors.text.primary, textDecorationLine: s.done ? 'line-through' : 'none' }]}>
               {i + 1}. {s.title}
@@ -74,7 +83,7 @@ export function HomeGuide() {
             <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>{s.body}</Text>
           </View>
           {!s.done ? <Ionicons name="chevron-forward" size={16} color={colors.text.muted} /> : null}
-        </Pressable>
+        </PressableScale>
       ))}
       <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.sm }]}>
         Every quest and workout earns XP. XP raises your level and moves you along your roadmap.
@@ -84,8 +93,10 @@ export function HomeGuide() {
 }
 
 const styles = StyleSheet.create({
-  badge: { alignItems: 'center', borderRadius: 12, height: 36, justifyContent: 'center', marginRight: 12, width: 36 },
+  badge: { alignItems: 'center', height: 36, justifyContent: 'center', marginRight: 12, width: 36 },
   flex: { flex: 1 },
   rowBetween: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
   step: { alignItems: 'center', flexDirection: 'row', paddingVertical: 10 },
 });
+
+export default HomeGuide;

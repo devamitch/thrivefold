@@ -1,15 +1,17 @@
-import React from 'react';
-import { Text, StyleSheet, Pressable, ViewStyle, TextStyle, StyleProp } from 'react-native';
-import { useTheme } from '../../theme/useTheme';
-
 import * as Haptics from 'expo-haptics';
+import React from 'react';
+import { StyleProp, StyleSheet, Text, TextStyle, View, ViewStyle } from 'react-native';
+import { useTheme } from '../../theme/useTheme';
+import { PressableScale } from './PressableScale';
+import { SquircleSurface } from './SquircleSurface';
 
-interface ChipProps {
+export interface ChipProps {
   label: string;
   subtext?: string;
   selected?: boolean;
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
+  icon?: React.ReactNode;
 }
 
 export const Chip: React.FC<ChipProps> = ({
@@ -18,6 +20,7 @@ export const Chip: React.FC<ChipProps> = ({
   selected = false,
   onPress,
   style,
+  icon,
 }) => {
   const { colors, typography, spacing } = useTheme();
 
@@ -30,18 +33,12 @@ export const Chip: React.FC<ChipProps> = ({
     }
   };
 
-  const chipStyle: ViewStyle = {
-    backgroundColor: selected ? colors.primaryAlpha : colors.surface1,
-    borderColor: 'transparent',
-    borderRadius: 14,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    marginRight: spacing.sm,
-    marginBottom: spacing.sm,
-  };
+  const bg = selected ? colors.primaryAlpha : colors.surface1;
+  const stroke = selected ? colors.primary : colors.border;
+  const labelColor = selected ? colors.primary : colors.text.primary;
 
   const labelStyle: TextStyle = {
-    color: selected ? colors.primary : colors.text.primary,
+    color: labelColor,
     ...typography.subbodyBold,
   };
 
@@ -52,25 +49,57 @@ export const Chip: React.FC<ChipProps> = ({
   };
 
   return (
-    <Pressable
+    <PressableScale
       onPress={handlePress}
-      style={({ pressed }) => [
-        styles.chip,
-        chipStyle,
-        pressed && { opacity: 0.8, transform: [{ scale: 0.97 }] },
-        style,
-      ]}
+      scaleTo={0.96}
+      style={[styles.chip, style]}
       accessibilityRole="checkbox"
       accessibilityState={{ checked: selected }}
+      accessibilityLabel={subtext ? `${label}, ${subtext}` : label}
     >
-      <Text style={labelStyle}>{label}</Text>
-      {subtext && <Text style={subtextStyle}>{subtext}</Text>}
-    </Pressable>
+      <SquircleSurface
+        radius={14}
+        smoothing={1}
+        fill={bg}
+        stroke={stroke}
+        strokeWidth={1}
+        style={[
+          styles.surface,
+          {
+            paddingVertical: spacing.sm,
+            paddingHorizontal: spacing.md,
+          },
+        ]}
+      >
+        <View style={styles.content}>
+          {icon ? <View style={styles.iconWrap}>{icon}</View> : null}
+          <View>
+            <Text style={labelStyle}>{label}</Text>
+            {subtext && <Text style={subtextStyle}>{subtext}</Text>}
+          </View>
+        </View>
+      </SquircleSurface>
+    </PressableScale>
   );
 };
 
 const styles = StyleSheet.create({
   chip: {
     alignSelf: 'flex-start',
+    marginBottom: 8,
+    marginRight: 8,
+  },
+  surface: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  content: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  iconWrap: {
+    marginRight: 6,
   },
 });
+
+export default Chip;

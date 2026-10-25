@@ -11,7 +11,7 @@
   */
 
 import React, { useEffect, useMemo, useRef } from 'react';
-import { StyleSheet, View, Text, Pressable } from 'react-native';
+import { StyleSheet, View, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,6 +27,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useRootStore } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
+import { PressableScale } from './PressableScale';
 import { SquircleSurface } from './SquircleSurface';
 
 const SWIPE_DISMISS_THRESHOLD = 30;
@@ -148,10 +149,15 @@ export function MindfulNotificationBanner() {
             style={styles.surface}
           >
             <View style={styles.contentRow}>
-              {/* Tone Icon Tile */}
-              <View style={[styles.iconTile, { backgroundColor: tone.bg }]}>
+              {/* Tone Icon Tile with SquircleSurface */}
+              <SquircleSurface
+                radius={12}
+                smoothing={1}
+                fill={tone.bg}
+                style={styles.iconTile}
+              >
                 <Ionicons name={tone.iconName} size={18} color={tone.color} />
-              </View>
+              </SquircleSurface>
 
               {/* Notification Body */}
               <View style={styles.textColumn}>
@@ -172,34 +178,42 @@ export function MindfulNotificationBanner() {
                 </Text>
 
                 {activeToast.actionLabel && (
-                  <Pressable
+                  <PressableScale
                     onPress={handleAction}
-                    style={({ pressed }) => [
-                      styles.actionButton,
-                      { backgroundColor: tone.bg },
-                      pressed && { opacity: 0.8 },
-                    ]}
+                    scaleTo={0.94}
+                    style={{ alignSelf: 'flex-start', marginTop: 8 }}
                   >
-                    <Text style={[typography.captionBold, styles.actionText, { color: tone.color }]}>
-                      {activeToast.actionLabel}
-                    </Text>
-                  </Pressable>
+                    <SquircleSurface
+                      radius={8}
+                      smoothing={1}
+                      fill={tone.bg}
+                      style={styles.actionButton}
+                    >
+                      <Text style={[typography.captionBold, styles.actionText, { color: tone.color }]}>
+                        {activeToast.actionLabel}
+                      </Text>
+                    </SquircleSurface>
+                  </PressableScale>
                 )}
               </View>
 
               {/* Dismiss Button */}
-              <Pressable
+              <PressableScale
                 onPress={handleDismiss}
                 hitSlop={12}
-                style={({ pressed }) => [
-                  styles.dismissButton,
-                  pressed && { opacity: 0.6, transform: [{ scale: 0.92 }] },
-                ]}
+                scaleTo={0.9}
                 accessibilityRole="button"
                 accessibilityLabel="Dismiss notification"
               >
-                <Ionicons name="close" size={15} color={colors.text.muted} />
-              </Pressable>
+                <SquircleSurface
+                  radius={14}
+                  smoothing={1}
+                  fill="rgba(0,0,0,0.05)"
+                  style={styles.dismissButton}
+                >
+                  <Ionicons name="close" size={15} color={colors.text.muted} />
+                </SquircleSurface>
+              </PressableScale>
             </View>
           </SquircleSurface>
         </Animated.View>

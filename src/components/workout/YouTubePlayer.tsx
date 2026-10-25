@@ -6,6 +6,7 @@ import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 export interface YouTubePlayerHandle {
   play: () => void;
   pause: () => void;
+  seek: (seconds: number) => void;
 }
 
 interface Props {
@@ -30,14 +31,18 @@ var player;
 function send(m){window.ReactNativeWebView.postMessage(JSON.stringify(m));}
 function onYouTubeIframeAPIReady(){
   player=new YT.Player('p',{videoId:'${videoId}',host:'https://www.youtube-nocookie.com',
-    playerVars:{playsinline:1,rel:0,modestbranding:1,controls:1,fs:0,origin:'${ORIGIN}'},
+    playerVars:{playsinline:1,rel:0,modestbranding:0,controls:1,fs:1,cc_load_policy:1,origin:'${ORIGIN}'},
     events:{
       onReady:function(){try{player.setPlaybackQuality('small');}catch(e){}send({t:'ready'});},
       onStateChange:function(e){send({t:'state',s:e.data});},
       onError:function(e){send({t:'error',c:e.data});}
     }});
 }
-window.__tf={play:function(){if(!player||!player.playVideo)return;player.unMute&&player.unMute();player.setPlaybackQuality&&player.setPlaybackQuality('small');player.playVideo();},pause:function(){player&&player.pauseVideo&&player.pauseVideo();}};
+window.__tf={
+  play:function(){if(!player||!player.playVideo)return;player.unMute&&player.unMute();player.playVideo();},
+  pause:function(){player&&player.pauseVideo&&player.pauseVideo();},
+  seek:function(sec){player&&player.seekTo&&player.seekTo(sec,true);}
+};
 </script></body></html>`;
 
 /**
@@ -63,6 +68,7 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandle, Props>(function You
   useImperativeHandle(ref, () => ({
     play: () => web.current?.injectJavaScript(embedded ? 'window.__tf&&window.__tf.play();true;' : searchJs('play')),
     pause: () => web.current?.injectJavaScript(embedded ? 'window.__tf&&window.__tf.pause();true;' : searchJs('pause')),
+    seek: (sec: number) => web.current?.injectJavaScript(embedded ? `window.__tf&&window.__tf.seek(${sec});true;` : `(function(){var v=document.querySelector('video');if(v){v.currentTime=${sec};}})();true;`),
   }));
 
   // On the search page, report play/pause of whichever video is open.
@@ -98,7 +104,7 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandle, Props>(function You
         domStorageEnabled
         onMessage={onMessage}
         setSupportMultipleWindows={false}
-        allowsFullscreenVideo={false}
+        allowsFullscreenVideo={true}
         onError={() => setFailed(true)}
         injectedJavaScript={embedded ? undefined : watcher}
         onLoadEnd={embedded ? undefined : () => setReady(true)}

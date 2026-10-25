@@ -6,11 +6,12 @@ import { SquircleSurface } from './SquircleSurface';
 
 export interface CardProps {
   children?: React.ReactNode;
-  variant?: 'surface' | 'surface1' | 'surface2' | 'surface3' | 'glass' | 'tinted';
+  variant?: 'surface' | 'surface1' | 'surface2' | 'surface3' | 'glass' | 'tinted' | 'outline';
   style?: StyleProp<ViewStyle>;
   onPress?: () => void;
   radius?: number;
   padding?: number;
+  stroke?: string;
   /** When true, avoids drawing SVG path on high-frequency virtualized lists */
   nativeSurface?: boolean;
 }
@@ -22,16 +23,29 @@ export const Card: React.FC<CardProps> = ({
   onPress,
   radius = 20,
   padding,
+  stroke,
   nativeSurface = false,
 }) => {
   const { colors, spacing } = useTheme();
 
   let bg = colors.surface;
-  if (variant === 'surface1') bg = colors.surface1;
-  if (variant === 'surface2') bg = colors.surface2;
-  if (variant === 'surface3') bg = colors.surface3;
-  if (variant === 'glass') bg = colors.surfaceGlass;
-  if (variant === 'tinted') bg = colors.primaryAlpha;
+  let resolvedStroke = stroke ?? colors.border;
+
+  if (variant === 'surface1') {
+    bg = colors.surface1;
+  } else if (variant === 'surface2') {
+    bg = colors.surface2;
+  } else if (variant === 'surface3') {
+    bg = colors.surface3;
+  } else if (variant === 'glass') {
+    bg = colors.surfaceGlass;
+  } else if (variant === 'tinted') {
+    bg = colors.primaryAlpha;
+    resolvedStroke = stroke ?? colors.primary;
+  } else if (variant === 'outline') {
+    bg = 'transparent';
+    resolvedStroke = stroke ?? (colors.borderStrong || colors.border);
+  }
 
   const defaultPadding = padding !== undefined ? padding : spacing.base;
 
@@ -42,6 +56,8 @@ export const Card: React.FC<CardProps> = ({
           styles.base,
           {
             backgroundColor: bg,
+            borderColor: resolvedStroke,
+            borderWidth: resolvedStroke ? 1 : 0,
             borderRadius: radius,
             padding: defaultPadding,
           },
@@ -54,7 +70,7 @@ export const Card: React.FC<CardProps> = ({
 
     if (onPress) {
       return (
-        <PressableScale onPress={onPress} scaleTo={0.985}>
+        <PressableScale onPress={onPress} scaleTo={0.98}>
           {content}
         </PressableScale>
       );
@@ -67,6 +83,8 @@ export const Card: React.FC<CardProps> = ({
       radius={radius}
       smoothing={1}
       fill={bg}
+      stroke={resolvedStroke}
+      strokeWidth={resolvedStroke ? 1 : 0}
       style={[styles.base, { padding: defaultPadding }, style]}
     >
       {children}
@@ -75,7 +93,7 @@ export const Card: React.FC<CardProps> = ({
 
   if (onPress) {
     return (
-      <PressableScale onPress={onPress} scaleTo={0.985}>
+      <PressableScale onPress={onPress} scaleTo={0.98}>
         {surface}
       </PressableScale>
     );
@@ -86,7 +104,6 @@ export const Card: React.FC<CardProps> = ({
 
 const styles = StyleSheet.create({
   base: {
-    borderColor: 'transparent',
     overflow: 'hidden',
   },
 });

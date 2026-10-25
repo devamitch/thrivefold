@@ -56,22 +56,56 @@ export const createIntegrationSlice: StateCreator<RootState, [['zustand/persist'
   auditLog: [],
 
   recordConsent: (source, scopes, decision) =>
-    set((s) => ({
-      consentRecords: [{ id: id('consent'), source, scopes, decision, at: new Date().toISOString() }, ...s.consentRecords].slice(0, 500),
-      auditLog: [
-        {
+    set((s) => {
+      const action: AuditEvent['action'] = decision === 'granted' ? 'consent_granted' : 'consent_revoked';
+      const detail = scopes.join(', ') || 'all';
+
+      // Offload to SQLite for long-term durable storage
+      try {
+        const { enqueueTelemetryEvent } = require('../../services/telemetry/sqliteAnalyticsStore');
+        enqueueTelemetryEvent({
           id: id('audit'),
-          at: new Date().toISOString(),
-          action: decision === 'granted' ? ('consent_granted' as const) : ('consent_revoked' as const),
-          source,
-          detail: scopes.join(', ') || 'all',
-        },
-        ...s.auditLog,
-      ].slice(0, 1000),
-    })),
+          type: 'button_click',
+          timestamp: new Date().toISOString(),
+          screen: 'system',
+          targetId: String(action),
+          metadata: { source, detail, decision },
+        });
+      } catch {}
+
+      return {
+        consentRecords: [{ id: id('consent'), source, scopes, decision, at: new Date().toISOString() }, ...s.consentRecords].slice(0, 50),
+        auditLog: [
+          {
+            id: id('audit'),
+            at: new Date().toISOString(),
+            action,
+            source,
+            detail,
+          },
+          ...s.auditLog,
+        ].slice(0, 50),
+      };
+    }),
 
   audit: (action, source, detail) =>
-    set((s) => ({ auditLog: [{ id: id('audit'), at: new Date().toISOString(), action, source, detail }, ...s.auditLog].slice(0, 1000) })),
+    set((s) => {
+      try {
+        const { enqueueTelemetryEvent } = require('../../services/telemetry/sqliteAnalyticsStore');
+        enqueueTelemetryEvent({
+          id: id('audit'),
+          type: 'button_click',
+          timestamp: new Date().toISOString(),
+          screen: 'system',
+          targetId: String(action),
+          metadata: { source, detail },
+        });
+      } catch {}
+
+      return {
+        auditLog: [{ id: id('audit'), at: new Date().toISOString(), action, source, detail }, ...s.auditLog].slice(0, 50),
+      };
+    }),
 
   setHealthConnect: (healthConnect) => set({ healthConnect }),
   setBleDevice: (bleDevice) => set({ bleDevice }),

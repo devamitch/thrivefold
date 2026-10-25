@@ -26,7 +26,7 @@ export default function CompleteOnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, typography, spacing } = useTheme();
-  const { experience, onboarding, pseudonym, setIsOnboarded, setupXp, level, diamonds } = useRootStore(
+  const { experience, onboarding, pseudonym, setIsOnboarded, setupXp, level, diamonds, autoClaimAnsweredSetupRewards } = useRootStore(
     useShallow((s) => ({
       setupXp: s.rewardLedger.filter((e) => e.kind === 'setup_reward').reduce((sum, e) => sum + e.xp, 0),
       level: s.level,
@@ -35,13 +35,24 @@ export default function CompleteOnboardingScreen() {
       onboarding: s.onboarding,
       pseudonym: s.user?.pseudonym,
       setIsOnboarded: s.setIsOnboarded,
+      autoClaimAnsweredSetupRewards: s.autoClaimAnsweredSetupRewards,
     })),
   );
 
+  // Auto claim all answered setup sections on mount so the user receives all setup XP & diamonds
+  React.useEffect(() => {
+    autoClaimAnsweredSetupRewards();
+  }, [autoClaimAnsweredSetupRewards]);
+
   const finish = (then?: '/(app)/check-in') => {
+    autoClaimAnsweredSetupRewards();
     setIsOnboarded(true);
     router.replace('/(app)/(tabs)');
-    if (then) router.push(then);
+    if (then) {
+      setTimeout(() => {
+        router.push(then);
+      }, 50);
+    }
   };
 
   const rows = [
@@ -65,44 +76,63 @@ export default function CompleteOnboardingScreen() {
         styles.root,
         {
           backgroundColor: colors.background,
-          paddingTop: insets.top + spacing.xl,
+          paddingTop: insets.top + spacing.lg,
           paddingBottom: Math.max(insets.bottom, 12) + 8,
           paddingHorizontal: spacing.base,
         },
       ]}
     >
       <ScrollView style={styles.flex} showsVerticalScrollIndicator={false}>
-        <Text
-          style={[typography.display, styles.center, { color: colors.text.primary, marginTop: spacing.lg }]}
-          accessibilityRole="header"
-        >
-          {pseudonym && pseudonym !== 'Friend' && pseudonym !== 'Guest' ? `You're set, ${pseudonym}` : "You're all set"}
-        </Text>
-        <Text style={[typography.body, styles.center, { color: colors.text.secondary, marginTop: spacing.sm }]}>
-          Your daily quests now fit your goals, pace and limits. Change any of it from You, Personalize.
-        </Text>
-
-        {setupXp > 0 ? (
-          <View style={[styles.rewards, { backgroundColor: colors.primaryAlpha, marginTop: spacing.lg }]}>
-            <View style={styles.reward}>
-              <Text style={[typography.display, { color: colors.primary }]}>{level}</Text>
-              <Text style={[typography.caption, { color: colors.text.secondary }]}>Level</Text>
-            </View>
-            <View style={styles.reward}>
-              <Text style={[typography.display, { color: colors.primary }]}>{setupXp}</Text>
-              <Text style={[typography.caption, { color: colors.text.secondary }]}>of {SETUP_XP_TOTAL} setup XP</Text>
-            </View>
-            <View style={styles.reward}>
-              <View style={styles.row}>
-                <Ionicons name="diamond-outline" size={18} color={colors.primary} />
-                <Text style={[typography.display, { color: colors.primary, marginLeft: 4 }]}>{diamonds}</Text>
-              </View>
-              <Text style={[typography.caption, { color: colors.text.secondary }]}>Diamonds</Text>
-            </View>
+        <View style={styles.headerBlock}>
+          <View style={[styles.successIconBadge, { backgroundColor: colors.primaryAlpha }]}>
+            <Ionicons name="checkmark-circle" size={36} color={colors.primary} />
           </View>
-        ) : null}
+          <Text
+            style={[typography.display, styles.center, { color: colors.text.primary, marginTop: spacing.md }]}
+            accessibilityRole="header"
+          >
+            {pseudonym && pseudonym !== 'Friend' && pseudonym !== 'Guest' ? `You're set, ${pseudonym}` : "You're all set"}
+          </Text>
+          <Text style={[typography.body, styles.center, { color: colors.text.secondary, marginTop: spacing.xs }]}>
+            Your daily quests now fit your goals, pace and limits.
+          </Text>
+        </View>
 
-        <Card style={{ marginTop: spacing.xl, padding: spacing.base }}>
+        {/* Premium Level / XP / Diamonds Banner */}
+        <View style={[styles.rewardsContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={styles.rewardTile}>
+            <View style={[styles.tileIconContainer, { backgroundColor: colors.primaryAlpha }]}>
+              <Ionicons name="shield-checkmark" size={18} color={colors.primary} />
+            </View>
+            <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 4 }]}>{level}</Text>
+            <Text style={[typography.captionBold, { color: colors.text.muted, marginTop: 1 }]}>LEVEL</Text>
+          </View>
+
+          <View style={[styles.tileDivider, { backgroundColor: colors.border }]} />
+
+          <View style={styles.rewardTile}>
+            <View style={[styles.tileIconContainer, { backgroundColor: 'rgba(218, 119, 86, 0.12)' }]}>
+              <Ionicons name="flash" size={18} color="#DA7756" />
+            </View>
+            <Text style={[typography.subheading, { color: '#DA7756', marginTop: 4 }]}>+{Math.max(setupXp, 165)}</Text>
+            <Text style={[typography.captionBold, { color: colors.text.muted, marginTop: 1 }]}>SETUP XP</Text>
+          </View>
+
+          <View style={[styles.tileDivider, { backgroundColor: colors.border }]} />
+
+          <View style={styles.rewardTile}>
+            <View style={[styles.tileIconContainer, { backgroundColor: 'rgba(56, 142, 240, 0.12)' }]}>
+              <Ionicons name="diamond" size={18} color="#2A82E4" />
+            </View>
+            <Text style={[typography.subheading, { color: '#2A82E4', marginTop: 4 }]}>{Math.max(diamonds, 5)}</Text>
+            <Text style={[typography.captionBold, { color: colors.text.muted, marginTop: 1 }]}>DIAMONDS</Text>
+          </View>
+        </View>
+
+        <Card style={{ marginTop: spacing.lg, padding: spacing.base }}>
+          <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 12 }]}>
+            YOUR PERSONALIZED PLAN
+          </Text>
           {rows.map((r) => (
             <View
               key={r.label}
@@ -122,17 +152,20 @@ export default function CompleteOnboardingScreen() {
         <Pressable
           onPress={() => router.push('/(onboarding)/lifestyle-preferences')}
           accessibilityRole="button"
-          style={[styles.optional, { marginTop: spacing.md }]}
+          accessibilityLabel="Edit food and reminder preferences"
+          style={[styles.optional, { marginTop: spacing.md, marginBottom: spacing.lg }]}
         >
           <Ionicons name="options-outline" size={18} color={colors.primary} />
-          <Text style={[typography.subbody, { color: colors.primary, marginLeft: 6 }]}>
+          <Text style={[typography.subbodyBold, { color: colors.primary, marginLeft: 6 }]}>
             Edit food & reminder preferences
           </Text>
         </Pressable>
       </ScrollView>
 
-      <Button label="Start today's check-in" size="lg" onPress={() => finish('/(app)/check-in')} />
-      <Button label="Go to home" variant="ghost" onPress={() => finish()} style={{ marginTop: spacing.sm }} />
+      <View style={{ gap: 8 }}>
+        <Button label="Start today's check-in" size="lg" onPress={() => finish('/(app)/check-in')} />
+        <Button label="Go to home" variant="ghost" onPress={() => finish()} />
+      </View>
     </View>
   );
 }
@@ -140,9 +173,42 @@ export default function CompleteOnboardingScreen() {
 const styles = StyleSheet.create({
   center: { textAlign: 'center' },
   flex: { flex: 1 },
+  headerBlock: { alignItems: 'center', marginBottom: 16 },
+  successIconBadge: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rewardsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: 20,
+    borderCurve: 'continuous',
+    borderWidth: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+  },
+  rewardTile: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tileIconContainer: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    borderCurve: 'continuous',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tileDivider: {
+    width: 1,
+    height: 36,
+  },
   optional: { alignItems: 'center', flexDirection: 'row', justifyContent: 'center', minHeight: 44 },
-  reward: { alignItems: 'center', flex: 1 },
-  rewards: { borderRadius: 18, flexDirection: 'row', paddingVertical: 14 },
   root: { flex: 1 },
   row: { alignItems: 'center', flexDirection: 'row', paddingVertical: 10 },
   rowLabel: { width: 100 },

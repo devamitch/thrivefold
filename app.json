@@ -7,9 +7,7 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/images/app-icon-all.png",
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "android": {
       "package": "com.amit.thrivefold",
       "versionCode": 1,
@@ -46,13 +44,18 @@
       "config": {
         "usesNonExemptEncryption": false
       },
+      "infoPlist": {
+        "NSCameraUsageDescription": "Thrivefold uses your camera for private, on-device pose estimation, exercise tracking, and nutrition meal photos.",
+        "NSPhotoLibraryUsageDescription": "Thrivefold accesses your library to select nutrition meal photos and attach letter stamps.",
+        "NSPhotoLibraryAddUsageDescription": "Thrivefold saves your exported wellness data spreadsheets, summaries, and receipts to your device.",
+        "NSHealthShareUsageDescription": "Thrivefold reads your steps, heart rate, and sleep to provide mindful daily guidance.",
+        "NSHealthUpdateUsageDescription": "Thrivefold syncs completed mindful workouts and training sessions to your health records."
+      },
       "privacyManifests": {
         "NSPrivacyAccessedAPITypes": [
           {
             "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
-            "NSPrivacyAccessedAPITypeReasons": [
-              "CA92.1"
-            ]
+            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
           }
         ]
       }
@@ -113,6 +116,16 @@
           "modes": [],
           "bluetoothAlwaysPermission": "Thrivefold connects to a heart-rate monitor you choose, only while you are using it.",
           "neverForLocation": true
+        }
+      ],
+      "@react-native-firebase/app",
+      [
+        "@react-native-firebase/analytics",
+        {
+          "ios": {
+            "withoutAdIdSupport": true,
+            "googleAppMeasurementOnDeviceConversion": true
+          }
         }
       ]
     ],

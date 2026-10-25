@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { BaselineQuestions } from '../../components/onboarding/BaselineQuestions';
@@ -9,7 +9,7 @@ import { Card } from '../../components/ui/Card';
 import { Chip } from '../../components/ui/Chip';
 import { ScreenContainer } from '../../components/ui/ScreenContainer';
 import { formatLocalDate } from '../../domain/calendar/universalCalendarEngine';
-import { fitFor, SETUP_REWARDS, setupLedgerKey } from '../../domain/game/setupProfile';
+import { EMPTY_BASELINE, fitFor, isSetupSectionAnswered, SETUP_REWARDS, setupLedgerKey } from '../../domain/game/setupProfile';
 import { constraintsFor, goalsFor, ROUTINE_LENGTHS } from '../../domain/onboarding/options';
 import { useRootStore, useShallow } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
@@ -34,12 +34,29 @@ export default function PersonalizeScreen() {
       todayCheckIn: s.checkInHistory.find((c) => c.date === formatLocalDate(new Date())),
     })),
   );
+
+  useEffect(() => {
+    useRootStore.getState().autoClaimAnsweredSetupRewards();
+  }, []);
+
   const fit = fitFor(onboarding, todayCheckIn ?? null);
   const { goals, constraints, routineMinutes } = onboarding;
-  const unclaimed = SETUP_REWARDS.filter((r) => !ledger.some((e) => e.key === setupLedgerKey(r.section)));
+  const answers = {
+    goals: onboarding?.goals ?? [],
+    constraints: onboarding?.constraints ?? [],
+    routineMinutes: onboarding?.routineMinutes ?? null,
+    diet: onboarding?.diet ?? null,
+    observances: onboarding?.observances ?? [],
+    baseline: { ...EMPTY_BASELINE, ...onboarding?.baseline },
+  };
+  const unanswered = SETUP_REWARDS.filter(
+    (r) => !ledger.some((e) => e.key === setupLedgerKey(r.section)) && !isSetupSectionAnswered(r.section, answers),
+  );
 
   const toggle = (list: string[], item: string) => (list.includes(item) ? list.filter((x) => x !== item) : [...list, item]);
-  const claimAll = () => unclaimed.forEach((r) => claimSetupReward(r.section));
+  const claimAll = () => {
+    useRootStore.getState().autoClaimAnsweredSetupRewards();
+  };
 
   return (
     <ScreenContainer
@@ -81,7 +98,7 @@ export default function PersonalizeScreen() {
         ) : null}
       </Card>
 
-      {unclaimed.length > 0 ? (
+      {unanswered.length > 0 ? (
         <Pressable
           onPress={claimAll}
           accessibilityRole="button"
@@ -89,7 +106,7 @@ export default function PersonalizeScreen() {
         >
           <Ionicons name="trophy-outline" size={16} color={colors.primary} />
           <Text style={[typography.subbodyBold, styles.flex, { color: colors.primary, marginLeft: 8 }]}>
-            {unclaimed.reduce((sum, r) => sum + r.xp, 0)} setup XP still open. Answer below, then tap to collect.
+            {unanswered.reduce((sum, r) => sum + r.xp, 0)} setup XP open. Answer below to earn them automatically.
           </Text>
         </Pressable>
       ) : null}

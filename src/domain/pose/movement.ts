@@ -17,6 +17,16 @@ export interface Landmark {
 /** MediaPipe Pose landmark indices used here. */
 export const LM = {
   nose: 0,
+  leftEyeInner: 1,
+  leftEye: 2,
+  leftEyeOuter: 3,
+  rightEyeInner: 4,
+  rightEye: 5,
+  rightEyeOuter: 6,
+  leftEar: 7,
+  rightEar: 8,
+  mouthLeft: 9,
+  mouthRight: 10,
   leftShoulder: 11,
   rightShoulder: 12,
   leftElbow: 13,
@@ -37,6 +47,18 @@ export const LM = {
 
 /** Bones drawn on the camera overlay. */
 export const SKELETON: [number, number][] = [
+  // Facial and head landmarks
+  [LM.leftEye, LM.rightEye],
+  [LM.leftEye, LM.nose],
+  [LM.rightEye, LM.nose],
+  [LM.leftEar, LM.leftEye],
+  [LM.rightEar, LM.rightEye],
+  [LM.mouthLeft, LM.mouthRight],
+  [LM.nose, LM.mouthLeft],
+  [LM.nose, LM.mouthRight],
+  [LM.leftEar, LM.leftShoulder],
+  [LM.rightEar, LM.rightShoulder],
+  // Body skeleton
   [LM.leftShoulder, LM.rightShoulder],
   [LM.leftShoulder, LM.leftElbow],
   [LM.leftElbow, LM.leftWrist],
@@ -75,7 +97,9 @@ export type MovementId =
   | 'bird_dog'
   | 'balance'
   | 'down_dog'
-  | 'warrior';
+  | 'warrior'
+  | 'eye_rest_blink'
+  | 'neck_head_tilt';
 
 type Triplet = [number, number, number];
 
@@ -123,8 +147,18 @@ const HIP = side([LM.leftShoulder, LM.leftHip, LM.leftKnee], [LM.rightShoulder, 
 const BODY_LINE = side([LM.leftShoulder, LM.leftHip, LM.leftAnkle], [LM.rightShoulder, LM.rightHip, LM.rightAnkle]);
 
 const ANKLE = side([LM.leftKnee, LM.leftAnkle, LM.leftFoot], [LM.rightKnee, LM.rightAnkle, LM.rightFoot]);
+const NECK = side([LM.leftEar, LM.leftShoulder, LM.leftHip], [LM.rightEar, LM.rightShoulder, LM.rightHip]);
+const FACE = side([LM.leftEye, LM.nose, LM.leftEar], [LM.rightEye, LM.nose, LM.rightEar]);
 
 const seen = (l: Landmark | undefined) => Boolean(l && l.visibility >= MIN_LANDMARK_CONFIDENCE);
+
+/** Head upright and eyes relaxed with horizontal alignment for 20-20-20 pause. */
+function eyesRelaxedLevel(l: Landmark[]): boolean {
+  if (!seen(l[LM.nose]) || !seen(l[LM.leftEye]) || !seen(l[LM.rightEye])) return false;
+  const dy = Math.abs(l[LM.leftEye].y - l[LM.rightEye].y);
+  const dx = Math.abs(l[LM.leftEye].x - l[LM.rightEye].x);
+  return dx > 0.02 && dy / dx < 0.35;
+}
 
 /** Shoulders-to-ankles line within 35 degrees of horizontal: lying or in a plank. */
 function horizontal(l: Landmark[]): boolean {
@@ -378,12 +412,41 @@ export const MOVEMENTS: MovementDefinition[] = [
     holdWhen: warriorShape,
     holdHint: 'Bend your front knee and reach both arms out wide.',
   },
+  {
+    id: 'eye_rest_blink',
+    title: '20-20-20 Eye Rest & Mindful Blink',
+    cue: 'Hold phone comfortably at eye level. Soften your gaze and relax facial muscles.',
+    kind: 'hold',
+    joints: FACE,
+    low: 0,
+    high: 180,
+    pattern: 'extend',
+    targetReps: 20,
+    checks: [],
+    holdWhen: eyesRelaxedLevel,
+    holdHint: 'Hold head level and gaze softly straight ahead.',
+  },
+  {
+    id: 'neck_head_tilt',
+    title: 'Lateral Neck Stretch',
+    cue: 'Face camera. Gently tilt one ear towards your shoulder.',
+    kind: 'reps',
+    joints: NECK,
+    low: 75,
+    high: 105,
+    pattern: 'flex',
+    targetReps: 8,
+    checks: [],
+  },
 ];
 
 export const movementById = (id: string) => MOVEMENTS.find((m) => m.id === id);
 
 /** Workout exercises the camera can check, and the movement used for each. */
 export const EXERCISE_MOVEMENT: Record<string, MovementId> = {
+  eye_rest_20_20: 'eye_rest_blink',
+  neck_desk_stretch: 'neck_head_tilt',
+  desk_break_eyes: 'eye_rest_blink',
   squat_bw: 'squat',
   goblet_squat: 'squat',
   chair_squat: 'sit_to_stand',

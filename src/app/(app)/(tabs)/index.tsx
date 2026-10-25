@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, type Href } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import { Link, useRouter, type Href } from 'expo-router';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 
@@ -17,7 +17,12 @@ import { computeInsights, recentLoad } from '../../../domain/ai/insights';
 import { getCyclePredictions } from '../../../domain/health/cycleCalculations';
 import { currentLevelProgress } from '../../../domain/game/gameCatalogService';
 import { questFamily, type QuestFamily } from '../../../domain/game/progression';
-import { SETUP_REWARDS } from '../../../domain/game/setupProfile';
+import {
+  SETUP_REWARDS,
+  setupLedgerKey,
+  isSetupSectionAnswered,
+  EMPTY_BASELINE,
+} from '../../../domain/game/setupProfile';
 import { DAY_PART_LABEL, dayPartAt, splitByTime } from '../../../domain/game/timeOfDay';
 import { formatLocalDate, generateDayAgenda, type CalendarEvent } from '../../../domain/calendar/universalCalendarEngine';
 import { useAgendaSources } from '../../../hooks/useAgendaSources';
@@ -30,30 +35,30 @@ import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import type { ProductExperience } from '../../../theme/tokens';
 import { useTheme } from '../../../theme/useTheme';
 
-type Tool = { icon: keyof typeof Ionicons.glyphMap; label: string; route: Href };
+type Tool = { icon: keyof typeof Ionicons.glyphMap; label: string; subtitle: string; route: Href };
 
 /** The tools that matter most per experience, plus shared ones. */
 const TOOLS: Record<ProductExperience, Tool[]> = {
   women_health: [
-    { icon: 'water-outline', label: 'Cycle', route: '/(app)/health/cycle' },
-    { icon: 'pulse-outline', label: 'Symptoms', route: '/(app)/health/symptoms' },
-    { icon: 'barbell-outline', label: 'Workouts', route: '/(app)/health/exercise' },
+    { icon: 'water-outline', label: 'Cycle', subtitle: 'Phase & dates', route: '/(app)/health/cycle' },
+    { icon: 'pulse-outline', label: 'Symptoms', subtitle: 'Body insights', route: '/(app)/health/symptoms' },
+    { icon: 'barbell-outline', label: 'Workouts', subtitle: 'Guided plans', route: '/(app)/health/exercise' },
   ],
   men_health: [
-    { icon: 'barbell-outline', label: 'Workouts', route: '/(app)/health/exercise' },
-    { icon: 'body-outline', label: "Men's health", route: '/(app)/health/men' },
-    { icon: 'calendar-outline', label: 'Calendar', route: '/(app)/calendar' },
+    { icon: 'barbell-outline', label: 'Workouts', subtitle: 'Strength & reps', route: '/(app)/health/exercise' },
+    { icon: 'body-outline', label: "Men's health", subtitle: 'Targeted care', route: '/(app)/health/men' },
+    { icon: 'calendar-outline', label: 'Calendar', subtitle: 'Habits & plans', route: '/(app)/calendar' },
   ],
   pride_wellbeing: [
-    { icon: 'heart-outline', label: 'Self-care', route: '/(app)/health/pride' },
-    { icon: 'barbell-outline', label: 'Workouts', route: '/(app)/health/exercise' },
-    { icon: 'calendar-outline', label: 'Calendar', route: '/(app)/calendar' },
+    { icon: 'heart-outline', label: 'Self-care', subtitle: 'Affirming care', route: '/(app)/health/pride' },
+    { icon: 'barbell-outline', label: 'Workouts', subtitle: 'Guided plans', route: '/(app)/health/exercise' },
+    { icon: 'calendar-outline', label: 'Calendar', subtitle: 'Habits & plans', route: '/(app)/calendar' },
   ],
 };
 const SHARED_TOOLS: Tool[] = [
-  { icon: 'restaurant-outline', label: 'Food', route: '/(app)/health/nutrition' },
-  { icon: 'moon-outline', label: 'Sleep', route: '/(app)/health/sleep' },
-  { icon: 'book-outline', label: 'Journal', route: '/(app)/journal' },
+  { icon: 'restaurant-outline', label: 'Nutrition', subtitle: 'Meals & macros', route: '/(app)/health/nutrition' },
+  { icon: 'moon-outline', label: 'Rest', subtitle: 'Bedtime log', route: '/(app)/health/sleep' },
+  { icon: 'book-outline', label: 'Journal', subtitle: 'Reflections', route: '/(app)/journal' },
 ];
 
 const EVENT_ICON: Partial<Record<CalendarEvent['kind'], keyof typeof Ionicons.glyphMap>> = {
@@ -94,6 +99,9 @@ export default function HomeScreen() {
   const s = useRootStore(
     useShallow((st) => ({
       user: st.user,
+      isOnboarded: st.isOnboarded,
+      onboarding: st.onboarding,
+      rewardLedger: st.rewardLedger,
       cycleData: st.cycleData,
       checkInHistory: st.checkInHistory,
       quests: st.todayQuests,
@@ -176,7 +184,27 @@ export default function HomeScreen() {
     sleep ? { label: 'Last sleep', value: `${Math.floor(sleep.value / 60)}h ${Math.round(sleep.value % 60)}m` } : null,
     heart ? { label: 'Avg heart rate', value: `${Math.round(heart.value)} bpm` } : null,
   ].filter((t): t is { label: string; value: string } => t !== null);
-  const setupOpen = SETUP_REWARDS.length - s.setupClaimed;
+  useEffect(() => {
+    useRootStore.getState().autoClaimAnsweredSetupRewards();
+  }, []);
+
+  const setupOpen = useMemo(() => {
+    if (s.isOnboarded) return 0;
+    const answers = {
+      goals: s.onboarding?.goals ?? [],
+      constraints: s.onboarding?.constraints ?? [],
+      routineMinutes: s.onboarding?.routineMinutes ?? null,
+      diet: s.onboarding?.diet ?? null,
+      observances: s.onboarding?.observances ?? [],
+      baseline: { ...EMPTY_BASELINE, ...s.onboarding?.baseline },
+    };
+    return SETUP_REWARDS.filter((r) => {
+      const isClaimed = s.rewardLedger.some((e) => e.key === setupLedgerKey(r.section));
+      if (isClaimed) return false;
+      return !isSetupSectionAnswered(r.section, answers);
+    }).length;
+  }, [s.isOnboarded, s.onboarding, s.rewardLedger]);
+
   const alsoToday = generateDayAgenda(today(), { experience, cycleData: s.cycleData, ...agendaSources }).filter(
     (e) => !['task', 'cycle_phase'].includes(e.kind) && !e.id.startsWith('checkin_'),
   );
@@ -222,24 +250,35 @@ export default function HomeScreen() {
 
       <HomeGuide />
 
-      {deviceTiles.length > 0 ? (
-        <Animated.View entering={enter(1)}>
-          <Card onPress={() => router.push('/(app)/health/integrations')} style={{ padding: spacing.base, marginTop: spacing.md }}>
+      <Animated.View entering={enter(1)}>
+        <Link href="/(app)/health/integrations" asChild>
+          <Card style={{ padding: spacing.base, marginTop: spacing.md }}>
             <View style={styles.rowBetween}>
-              <Text style={[typography.captionBold, { color: colors.text.muted }]}>FROM YOUR DEVICES</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="pulse-outline" size={18} color={colors.primary} style={{ marginRight: 8 }} />
+                <Text style={[typography.captionBold, { color: colors.text.muted }]}>HEALTH CONNECT & SENSORS</Text>
+              </View>
               <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
             </View>
-            <View style={[styles.metrics, { marginTop: spacing.sm }]}>
-              {deviceTiles.map((t) => (
-                <View key={t.label} style={[styles.metric, { backgroundColor: colors.surface1 }]}>
-                  <Text style={[typography.subheading, { color: colors.text.primary }]}>{t.value}</Text>
-                  <Text style={[typography.caption, { color: colors.text.muted }]}>{t.label}</Text>
-                </View>
-              ))}
-            </View>
+            {deviceTiles.length > 0 ? (
+              <View style={[styles.metrics, { marginTop: spacing.sm }]}>
+                {deviceTiles.map((t) => (
+                  <View key={t.label} style={[styles.metric, { backgroundColor: colors.surface1 }]}>
+                    <Text style={[typography.subheading, { color: colors.text.primary }]}>{t.value}</Text>
+                    <Text style={[typography.caption, { color: colors.text.muted }]}>{t.label}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <View style={{ marginTop: spacing.xs }}>
+                <Text style={[typography.subbody, { color: colors.text.secondary }]}>
+                  Connect steps, sleep, and heart rate for mindful daily sync.
+                </Text>
+              </View>
+            )}
           </Card>
-        </Animated.View>
-      ) : null}
+        </Link>
+      </Animated.View>
 
       {setupOpen > 0 ? (
         <Animated.View entering={enter(1)}>
@@ -372,23 +411,31 @@ export default function HomeScreen() {
 
       </Animated.View>
 
-      {/* Tools */}
-      <Animated.View entering={enter(4)}>
-        <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm }]}>Tools</Text>
-        <View style={styles.grid}>
+      {/* Wellness Tools */}
+      <Animated.View entering={enter(4)} style={{ marginTop: spacing.xl, marginBottom: spacing.xl }}>
+        <View style={styles.sectionHeader}>
+          <Text style={[typography.subheading, { color: colors.text.primary }]}>Wellness Tools</Text>
+          <Text style={[typography.caption, { color: colors.text.muted }]}>Quick access</Text>
+        </View>
+        <View style={styles.toolsGrid}>
           {[...TOOLS[experience], ...SHARED_TOOLS].slice(0, 6).map((t) => (
-            <PressableScale
-              key={t.label}
-              onPress={() => router.push(t.route)}
-              accessibilityRole="button"
-              accessibilityLabel={t.label}
-              style={[styles.tool, { backgroundColor: colors.surface }]}
-            >
-              <Ionicons name={t.icon} size={20} color={colors.primary} />
-              <Text style={[typography.captionBold, { color: colors.text.primary, marginTop: 6 }]} numberOfLines={1}>
-                {t.label}
-              </Text>
-            </PressableScale>
+            <Link key={t.label} href={t.route as Href} asChild>
+              <PressableScale
+                accessibilityRole="button"
+                accessibilityLabel={t.label}
+                style={[styles.toolTile, { backgroundColor: colors.surface, borderColor: colors.border }]}
+              >
+                <View style={[styles.toolIconTile, { backgroundColor: colors.primaryAlpha }]}>
+                  <Ionicons name={t.icon} size={22} color={colors.primary} />
+                </View>
+                <Text style={[typography.subbodyBold, { color: colors.text.primary, marginTop: 8, textAlign: 'center' }]} numberOfLines={1}>
+                  {t.label}
+                </Text>
+                <Text style={[typography.caption, { color: colors.text.muted, marginTop: 2, textAlign: 'center' }]} numberOfLines={1}>
+                  {t.subtitle}
+                </Text>
+              </PressableScale>
+            </Link>
           ))}
         </View>
       </Animated.View>
@@ -454,6 +501,29 @@ const styles = StyleSheet.create({
   metric: { alignItems: 'center', borderRadius: 14, flex: 1, paddingVertical: 10 },
   chips: { gap: 8 },
   iconTile: { alignItems: 'center', borderRadius: 12, height: 40, justifyContent: 'center', width: 40 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  tool: { alignItems: 'center', borderCurve: 'continuous', borderRadius: 18, flexBasis: '30%', flexGrow: 1, paddingVertical: 14 },
+  toolsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginTop: 6,
+  },
+  toolTile: {
+    width: '31.3%',
+    flexGrow: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 6,
+    borderRadius: 18,
+    borderCurve: 'continuous',
+    borderWidth: 1,
+  },
+  toolIconTile: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    borderCurve: 'continuous',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

@@ -6,7 +6,7 @@ import { AppHeader } from '../../../components/ui/AppHeader';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { SettingsRow } from '../../../components/ui/SettingsRow';
 import { signOutEverywhere } from '../../../services/account/accountService';
-import { eraseLocalData } from '../../../services/privacy/localData';
+import { eraseLocalData, exportDataToCsvFile } from '../../../services/privacy/localData';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
 
@@ -46,6 +46,21 @@ export default function AccountScreen() {
         onPress={() => {
           resetOnboarding();
           router.replace('/');
+        }}
+      />
+      <SettingsRow
+        icon="download-outline"
+        title="Export all data (Excel / CSV)"
+        subtitle="Save check-ins, workouts, meals, cycle records and logs as a spreadsheet."
+        onPress={async () => {
+          const ok = await exportDataToCsvFile();
+          if (!ok) {
+            showAlert({
+              title: 'Export Failed',
+              message: 'Could not generate the export spreadsheet file.',
+              confirmText: 'OK',
+            });
+          }
         }}
       />
       <SettingsRow icon="log-out-outline" title={user?.isGuest ? 'Leave guest mode' : 'Sign out'} subtitle="Your records stay on this phone." onPress={signOut} />

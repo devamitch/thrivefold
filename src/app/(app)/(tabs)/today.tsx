@@ -23,11 +23,13 @@ import { useTheme } from '../../../theme/useTheme';
 import {
   ScreenContainer,
   AppHeader,
+  HeaderIconButton,
   PeriodLoggerModal,
   PersonalEventModal,
   AnimatedTabBar,
   TabItem,
   Button,
+  AppBottomSheetModal,
 } from '../../../components/ui';
 import {
   MonthGridView,
@@ -391,6 +393,9 @@ export default function TodayScreen() {
         <AppHeader
           title={isWomen ? 'Cycle and calendar' : 'Plan'}
           subtitle={isWomen ? 'Periods, estimates, events and quests by date' : 'Your calendar, quests and recovery'}
+          rightAction={
+            <HeaderIconButton icon="menu-outline" label="Open menu" onPress={() => useRootStore.getState().setDrawerOpen(true)} />
+          }
         />
       }
       scrollMode="shell-scroll-view"
@@ -553,72 +558,35 @@ export default function TodayScreen() {
         }}
       />
 
-      {/* Dedicated Clean Cycle History / Milestones Modal */}
-      <Modal
+      {/* Dedicated Clean Cycle History / Milestones Bottom Sheet Modal */}
+      <AppBottomSheetModal
         visible={showHistoryModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowHistoryModal(false)}
+        onClose={() => setShowHistoryModal(false)}
+        title={isWomen ? 'Cycle History & Records' : 'Milestones & Events'}
+        eyebrow="HISTORY & INSIGHTS"
+        maxHeight="92%"
+        contentContainerStyle={{ paddingBottom: 24 }}
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.historyModalBackdrop}
-        >
-          <View style={styles.historyModalBackdrop}>
-            <Pressable
-              style={StyleSheet.absoluteFill}
-              onPress={() => setShowHistoryModal(false)}
-              accessibilityRole="button"
-              accessibilityLabel="Close history modal"
-            />
-            <View
-              style={[
-                styles.historySheetContainer,
-                {
-                  backgroundColor: colors.surface,
-                  paddingBottom: Math.max(insets.bottom, 20) + 16,
-                },
-              ]}
-            >
-              <View style={styles.historyHandleBar}>
-                <View style={styles.historyHandlePill} />
-              </View>
-
-              <View style={styles.historyHeaderRow}>
-                <Text style={[typography.heading, { color: colors.text.primary }]}>
-                  {isWomen ? 'Cycle History & Records' : 'Milestones & Events'}
-                </Text>
-                <Button
-                  label="Done"
-                  size="sm"
-                  variant="ghost"
-                  onPress={() => setShowHistoryModal(false)}
-                />
-              </View>
-
-              <CycleHistoryView
-                isWomen={isWomen}
-                cycleData={cycleData}
-                personalEvents={personalEvents}
-                advancedCycleMetrics={advancedCycleMetrics}
-                onLogPeriod={handleLogPeriodBleeding}
-                onAddMilestone={handleOpenMilestoneModal}
-                onEditPeriod={(rec) => {
-                  setSelectedDateStr(rec.startDate);
-                  setShowHistoryModal(false);
-                  setShowPeriodModal(true);
-                }}
-                onDeletePeriod={handleDeletePeriod}
-                onEditMilestone={(pe) => {
-                  setShowHistoryModal(false);
-                  handleEditMilestone(pe);
-                }}
-                onDeleteMilestone={handleDeleteMilestone}
-              />
-            </View>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
+        <CycleHistoryView
+          isWomen={isWomen}
+          cycleData={cycleData}
+          personalEvents={personalEvents}
+          advancedCycleMetrics={advancedCycleMetrics}
+          onLogPeriod={handleLogPeriodBleeding}
+          onAddMilestone={handleOpenMilestoneModal}
+          onEditPeriod={(rec) => {
+            setSelectedDateStr(rec.startDate);
+            setShowHistoryModal(false);
+            setShowPeriodModal(true);
+          }}
+          onDeletePeriod={handleDeletePeriod}
+          onEditMilestone={(pe) => {
+            setShowHistoryModal(false);
+            handleEditMilestone(pe);
+          }}
+          onDeleteMilestone={handleDeleteMilestone}
+        />
+      </AppBottomSheetModal>
     </ScreenContainer>
   );
 }

@@ -83,7 +83,7 @@ export function isSetupSectionAnswered(section: SetupSection, a: SetupAnswers): 
     case 'mind_baseline':
       return a.baseline.sleep !== null && a.baseline.stress !== null;
     case 'constraints':
-      return a.routineMinutes !== null;
+      return a.routineMinutes !== null || a.constraints.length > 0;
     case 'lifestyle':
       return a.diet !== null || a.observances.length > 0;
   }

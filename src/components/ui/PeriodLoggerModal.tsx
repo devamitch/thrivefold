@@ -1,139 +1,93 @@
-/**
- * Thrivefold Period & Cycle Logger Sheet
- * Clinical-grade, serene bottom sheet for recording, editing, backdating, and correcting
- * menstrual bleeding records, flow intensities, and physical symptoms.
- */
-
-import React, { useState, useEffect } from 'react';
-import {
-  Modal,
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Pressable,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import React, { useState } from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
+import type { PeriodLogRecord, FlowIntensity } from '../../stores/slices/healthSlice';
+import { useRootStore } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
-import { useRootStore, PeriodLogRecord, FlowIntensity } from '../../stores/useRootStore';
+import { AppBottomSheetModal } from './AppBottomSheetModal';
 import { Button } from './Button';
-import { TextField } from './TextField';
-import { PressableScale } from './PressableScale';
 import { DatePickerModal } from './DatePickerModal';
-import { formatLocalDate } from '../../domain/calendar/universalCalendarEngine';
+import { PressableScale } from './PressableScale';
+import { SquircleSurface } from './SquircleSurface';
+import { TextField } from './TextField';
 
 interface PeriodLoggerModalProps {
   visible: boolean;
-  initialDateStr: string;
   existingRecord?: PeriodLogRecord | null;
+  initialDate?: string;
+  initialDateStr?: string;
   onClose: () => void;
   onSaved?: () => void;
 }
 
-const FLOW_OPTIONS: {
-  intensity: FlowIntensity;
-  label: string;
-  desc: string;
-  color: string;
-  bg: string;
-}[] = [
-  {
-    intensity: 'spotting',
-    label: 'Spotting',
-    desc: 'Light droplets',
-    color: '#D47A88',
-    bg: 'rgba(212, 122, 136, 0.12)',
-  },
-  {
-    intensity: 'light',
-    label: 'Light',
-    desc: 'Gentle flow',
-    color: '#DA7756',
-    bg: 'rgba(218, 119, 86, 0.12)',
-  },
-  {
-    intensity: 'medium',
-    label: 'Medium',
-    desc: 'Regular flow',
-    color: '#C25538',
-    bg: 'rgba(194, 85, 56, 0.15)',
-  },
-  {
-    intensity: 'heavy',
-    label: 'Heavy',
-    desc: 'High volume',
-    color: '#9E371C',
-    bg: 'rgba(158, 55, 28, 0.18)',
-  },
+const FLOW_OPTIONS = [
+  { intensity: 'spotting' as const, label: 'Spotting', desc: 'Minimal bleeding, drops only', color: '#D97706', bg: '#FEF3C7' },
+  { intensity: 'light' as const, label: 'Light', desc: 'Low flow, gentle absorption', color: '#E11D48', bg: '#FFE4E6' },
+  { intensity: 'medium' as const, label: 'Medium', desc: 'Standard moderate regular flow', color: '#BE123C', bg: '#FCE7F3' },
+  { intensity: 'heavy' as const, label: 'Heavy', desc: 'Intense flow requiring frequent care', color: '#881337', bg: '#FEE2E2' },
 ];
 
 const COMMON_SYMPTOMS = [
-  'Cramps',
+  'Mild Cramps',
+  'Severe Pelvic Cramps',
+  'Headache / Migraine',
   'Lower Back Ache',
   'Bloating',
-  'Headache',
+  'Fatigue / Exhaustion',
   'Tender Breasts',
-  'Fatigue',
   'Mood Swings',
+  'Brain Fog',
   'Food Cravings',
-  'Joint Pain',
-  'Nausea',
-  'Restless Sleep',
-  'Pelvic Heaviness',
+  'Insomnia',
+  'Acne Flare-up',
 ];
 
 export function PeriodLoggerModal({
   visible,
-  initialDateStr,
   existingRecord,
+  initialDate,
+  initialDateStr,
   onClose,
   onSaved,
 }: PeriodLoggerModalProps) {
   const { colors, typography, spacing } = useTheme();
-  const insets = useSafeAreaInsets();
 
   const logPeriod = useRootStore((s) => s.logPeriod);
-  const editPeriod = useRootStore((s) => s.editPeriod);
   const deletePeriod = useRootStore((s) => s.deletePeriod);
   const showToast = useRootStore((s) => s.showToast);
   const showAlert = useRootStore((s) => s.showAlert);
 
-  const [startDate, setStartDate] = useState(initialDateStr);
-  const [endDate, setEndDate] = useState('');
-  const [isOngoing, setIsOngoing] = useState(true);
-  const [flowIntensity, setFlowIntensity] = useState<FlowIntensity>('medium');
-  const [painLevel, setPainLevel] = useState(3);
-  const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>(['Cramps']);
-  const [notes, setNotes] = useState('');
+  const todayStr = new Date().toISOString().split('T')[0];
+  const effectiveInitialDate = initialDate ?? initialDateStr ?? todayStr;
+
+  const [startDate, setStartDate] = useState(
+    existingRecord ? existingRecord.startDate : effectiveInitialDate
+  );
+  const [endDate, setEndDate] = useState<string | null>(
+    existingRecord ? (existingRecord.endDate ?? null) : null
+  );
+  const [isOngoing, setIsOngoing] = useState(
+    existingRecord ? !!existingRecord.isOngoing : false
+  );
+  const [flowIntensity, setFlowIntensity] = useState<FlowIntensity>(
+    existingRecord?.flowIntensity || 'medium'
+  );
+  const [painLevel, setPainLevel] = useState<number>(
+    existingRecord?.painLevel !== undefined ? existingRecord.painLevel : 2
+  );
+  const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>(
+    existingRecord?.symptoms || []
+  );
+  const [notes, setNotes] = useState(existingRecord?.notes || '');
+
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
-
-  useEffect(() => {
-    if (existingRecord) {
-      setStartDate(existingRecord.startDate);
-      setEndDate(existingRecord.endDate || '');
-      setIsOngoing(existingRecord.isOngoing ?? !existingRecord.endDate);
-      setFlowIntensity(existingRecord.flowIntensity || 'medium');
-      setPainLevel(existingRecord.painLevel ?? 3);
-      setSelectedSymptoms(existingRecord.symptoms || []);
-      setNotes(existingRecord.notes || '');
-    } else {
-      setStartDate(initialDateStr || formatLocalDate(new Date()));
-      setEndDate('');
-      setIsOngoing(true);
-      setFlowIntensity('medium');
-      setPainLevel(3);
-      setSelectedSymptoms(['Cramps']);
-      setNotes('');
-    }
-  }, [existingRecord, initialDateStr, visible]);
-
-  if (!visible) return null;
 
   const toggleSymptom = (sym: string) => {
     try {
@@ -145,66 +99,56 @@ export function PeriodLoggerModal({
   };
 
   const handleSave = () => {
-    try {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch {}
-
-    const cleanStart = startDate.trim() || initialDateStr || formatLocalDate(new Date());
-    const cleanEnd = isOngoing ? undefined : (endDate.trim() || cleanStart);
-
-    // Validate date format YYYY-MM-DD
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!dateRegex.test(cleanStart)) {
-      showAlert({
-        title: 'Invalid Start Date',
-        message: 'Please enter a valid start date formatted as YYYY-MM-DD.',
-        confirmText: 'Got it',
-      });
-      return;
-    }
-    if (cleanEnd && !dateRegex.test(cleanEnd)) {
-      showAlert({
-        title: 'Invalid End Date',
-        message: 'Please enter a valid end date formatted as YYYY-MM-DD.',
-        confirmText: 'Got it',
-      });
-      return;
-    }
-    if (cleanEnd && cleanEnd < cleanStart) {
-      showAlert({
-        title: 'Date Order Conflict',
-        message: 'End date cannot be earlier than start date.',
-        confirmText: 'Review dates',
+    if (!startDate) {
+      showToast({
+        type: 'warning',
+        title: 'Start Date Required',
+        message: 'Please choose when bleeding commenced.',
       });
       return;
     }
 
-    const payload = {
-      startDate: cleanStart,
-      endDate: cleanEnd,
+    if (!isOngoing && !endDate) {
+      showToast({
+        type: 'warning',
+        title: 'End Date Required',
+        message: 'Please provide an end date or mark bleeding as ongoing today.',
+      });
+      return;
+    }
+
+    if (!isOngoing && endDate && endDate < startDate) {
+      showToast({
+        type: 'error',
+        title: 'Invalid Date Range',
+        message: 'End date cannot be prior to start date.',
+      });
+      return;
+    }
+
+    const payload: Omit<PeriodLogRecord, 'id' | 'loggedAt'> & { id?: string } = {
+      ...(existingRecord?.id ? { id: existingRecord.id } : {}),
+      startDate,
+      endDate: isOngoing ? undefined : (endDate || undefined),
       isOngoing,
       flowIntensity,
       painLevel,
       symptoms: selectedSymptoms,
-      notes: notes.trim() || undefined,
+      notes: notes.trim() ? notes.trim() : undefined,
     };
 
-    if (existingRecord) {
-      editPeriod(existingRecord.id, payload);
-      showToast({
-        type: 'success',
-        title: 'Period Updated',
-        message: `Saved corrections for ${payload.startDate}. Projections recalculated.`,
-      });
-    } else {
-      logPeriod(payload);
-      showToast({
-        type: 'success',
-        title: 'Period Logged',
-        message: `Recorded bleeding starting ${payload.startDate}. Calendar ranges updated.`,
-      });
-    }
+    try {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch {}
 
+    logPeriod(payload);
+    showToast({
+      type: 'success',
+      title: existingRecord ? 'Period Updated' : 'Period Logged',
+      message: isOngoing
+        ? 'Active period recorded. Cycle engine updated.'
+        : `Recorded ${startDate} to ${endDate}.`,
+    });
     onSaved?.();
     onClose();
   };
@@ -212,9 +156,10 @@ export function PeriodLoggerModal({
   const handleDelete = () => {
     if (!existingRecord) return;
     showAlert({
-      title: 'Delete Period Record?',
-      message: `Are you sure you want to remove the period record for ${existingRecord.startDate}? Cycle projections will be recalculated.`,
-      confirmText: 'Delete',
+      title: 'Delete Period Entry?',
+      message: 'This will remove this menstrual cycle entry from your history and cycle predictions.',
+      confirmText: 'Delete Record',
+      cancelText: 'Cancel',
       destructive: true,
       onConfirm: () => {
         try {
@@ -233,338 +178,326 @@ export function PeriodLoggerModal({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.keyboardRoot}
+    <>
+      <AppBottomSheetModal
+        visible={visible}
+        onClose={onClose}
+        eyebrow="MENSTRUAL HEALTH LOG"
+        title={existingRecord ? 'Edit Period Entry' : 'Log Period Bleeding'}
+        maxHeight="92%"
+        contentContainerStyle={{ paddingHorizontal: spacing.base, paddingBottom: 20 }}
       >
-        <View style={styles.backdrop}>
-          <Pressable
-            style={StyleSheet.absoluteFill}
-            onPress={onClose}
+        {/* Start Date Field */}
+        <View style={{ marginTop: spacing.md }}>
+          <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 6 }]}>
+            PERIOD START DATE *
+          </Text>
+          <PressableScale
+            onPress={() => {
+              try {
+                Haptics.selectionAsync();
+              } catch {}
+              setShowStartDatePicker(true);
+            }}
+            scaleTo={0.98}
             accessibilityRole="button"
-            accessibilityLabel="Dismiss logger sheet"
-          />
-
-          <View
-            style={[
-              styles.sheetContainer,
-              {
-                backgroundColor: colors.surface,
-                paddingBottom: Math.max(insets.bottom, 20) + 12,
-              },
-            ]}
+            accessibilityLabel={`Start date: ${startDate}. Tap to select from calendar.`}
           >
-            {/* Grab Handle */}
-            <View style={styles.dragHandleBar}>
-              <View style={styles.dragHandlePill} />
-            </View>
-
-            {/* Header Row */}
-            <View style={styles.headerRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={[typography.captionBold, { color: colors.primary }]}>
-                  MENSTRUAL HEALTH LOG
-                </Text>
-                <Text style={[typography.heading, { color: colors.text.primary, marginTop: 2 }]}>
-                  {existingRecord ? 'Edit Period Entry' : 'Log Period Bleeding'}
+            <SquircleSurface
+              radius={14}
+              smoothing={1}
+              fill={colors.surface1}
+              stroke={colors.primary + '33'}
+              strokeWidth={1}
+              style={styles.datePickerTrigger}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="calendar" size={18} color={colors.primary} style={{ marginRight: 10 }} />
+                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                  {startDate || 'Select start date'}
                 </Text>
               </View>
-              <PressableScale
-                onPress={onClose}
-                scaleTo={0.92}
-                style={[styles.closeBtn, { backgroundColor: colors.surface1 }]}
-                accessibilityRole="button"
-                accessibilityLabel="Close sheet"
+              <SquircleSurface
+                radius={8}
+                smoothing={1}
+                fill={colors.primary + '18'}
+                style={styles.datePickerPill}
               >
-                <Ionicons name="close" size={18} color={colors.text.secondary} />
-              </PressableScale>
-            </View>
+                <Text style={[typography.captionBold, { color: colors.primary }]}>Select Date</Text>
+              </SquircleSurface>
+            </SquircleSurface>
+          </PressableScale>
+        </View>
 
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: spacing.base, paddingBottom: 20 }}
+        {/* Ongoing Bleeding Switch */}
+        <PressableScale
+          onPress={() => {
+            try {
+              Haptics.selectionAsync();
+            } catch {}
+            setIsOngoing(!isOngoing);
+          }}
+          scaleTo={0.98}
+          style={{ marginTop: spacing.md }}
+        >
+          <SquircleSurface
+            radius={16}
+            smoothing={1}
+            fill={colors.surface1}
+            stroke={colors.border}
+            strokeWidth={1}
+            style={styles.ongoingCard}
+          >
+            <View style={{ flex: 1, paddingRight: 12 }}>
+              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                Bleeding is ongoing today
+              </Text>
+              <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                {isOngoing
+                  ? 'Continuous active flow. An end date can be added once bleeding finishes.'
+                  : 'Bleeding has concluded. Enter the end date below.'}
+              </Text>
+            </View>
+            <SquircleSurface
+              radius={7}
+              smoothing={1}
+              fill={isOngoing ? colors.primary : 'transparent'}
+              stroke={isOngoing ? colors.primary : colors.text.muted}
+              strokeWidth={1.5}
+              style={styles.toggleBox}
             >
-              {/* Start Date Field */}
-              <View style={{ marginTop: spacing.md }}>
-                <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 6 }]}>
-                  PERIOD START DATE *
-                </Text>
+              {isOngoing && <Ionicons name="checkmark" size={14} color={colors.onPrimary} />}
+            </SquircleSurface>
+          </SquircleSurface>
+        </PressableScale>
+
+        {/* End Date Field (if not ongoing) */}
+        {!isOngoing && (
+          <View style={{ marginTop: spacing.md }}>
+            <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 6 }]}>
+              PERIOD END DATE *
+            </Text>
+            <PressableScale
+              onPress={() => {
+                try {
+                  Haptics.selectionAsync();
+                } catch {}
+                setShowEndDatePicker(true);
+              }}
+              scaleTo={0.98}
+              accessibilityRole="button"
+              accessibilityLabel={`End date: ${endDate || startDate}. Tap to select from calendar.`}
+            >
+              <SquircleSurface
+                radius={14}
+                smoothing={1}
+                fill={colors.surface1}
+                stroke={colors.primary + '33'}
+                strokeWidth={1}
+                style={styles.datePickerTrigger}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="calendar-outline" size={18} color={colors.primary} style={{ marginRight: 10 }} />
+                  <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                    {endDate || startDate || 'Select end date'}
+                  </Text>
+                </View>
+                <SquircleSurface
+                  radius={8}
+                  smoothing={1}
+                  fill={colors.primary + '18'}
+                  style={styles.datePickerPill}
+                >
+                  <Text style={[typography.captionBold, { color: colors.primary }]}>Select Date</Text>
+                </SquircleSurface>
+              </SquircleSurface>
+            </PressableScale>
+          </View>
+        )}
+
+        {/* Flow Intensity Selection */}
+        <View style={{ marginTop: spacing.lg }}>
+          <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 8 }]}>
+            FLOW INTENSITY
+          </Text>
+          <View style={styles.flowGrid}>
+            {FLOW_OPTIONS.map((opt) => {
+              const isSelected = flowIntensity === opt.intensity;
+              return (
                 <PressableScale
+                  key={opt.intensity}
                   onPress={() => {
                     try {
                       Haptics.selectionAsync();
                     } catch {}
-                    setShowStartDatePicker(true);
+                    setFlowIntensity(opt.intensity);
                   }}
-                  scaleTo={0.98}
-                  style={[
-                    styles.datePickerTrigger,
-                    {
-                      backgroundColor: colors.surface1,
-                      borderColor: colors.primary + '33',
-                    },
-                  ]}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Start date: ${startDate}. Tap to select from calendar.`}
+                  scaleTo={0.96}
+                  style={styles.flowCardScale}
                 >
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Ionicons name="calendar" size={18} color={colors.primary} style={{ marginRight: 10 }} />
-                    <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                      {startDate || 'Select start date'}
-                    </Text>
-                  </View>
-                  <View style={[styles.datePickerPill, { backgroundColor: colors.primary + '18' }]}>
-                    <Text style={[typography.captionBold, { color: colors.primary }]}>Select Date</Text>
-                  </View>
-                </PressableScale>
-              </View>
-
-              {/* Ongoing Bleeding Switch */}
-              <PressableScale
-                onPress={() => {
-                  try {
-                    Haptics.selectionAsync();
-                  } catch {}
-                  setIsOngoing(!isOngoing);
-                }}
-                scaleTo={0.98}
-                style={[
-                  styles.ongoingCard,
-                  { backgroundColor: colors.surface1, marginTop: spacing.md },
-                ]}
-              >
-                <View style={{ flex: 1, paddingRight: 12 }}>
-                  <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                    Bleeding is ongoing today
-                  </Text>
-                  <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                    {isOngoing
-                      ? 'Continuous active flow. An end date can be added once bleeding finishes.'
-                      : 'Bleeding has concluded. Enter the end date below.'}
-                  </Text>
-                </View>
-                <View
-                  style={[
-                    styles.toggleBox,
-                    {
-                      backgroundColor: isOngoing ? colors.primary : 'transparent',
-                      borderColor: isOngoing ? colors.primary : colors.text.muted,
-                    },
-                  ]}
-                >
-                  {isOngoing && <Ionicons name="checkmark" size={14} color={colors.onPrimary} />}
-                </View>
-              </PressableScale>
-
-              {/* End Date Field (if not ongoing) */}
-              {!isOngoing && (
-                <View style={{ marginTop: spacing.md }}>
-                  <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 6 }]}>
-                    PERIOD END DATE *
-                  </Text>
-                  <PressableScale
-                    onPress={() => {
-                      try {
-                        Haptics.selectionAsync();
-                      } catch {}
-                      setShowEndDatePicker(true);
-                    }}
-                    scaleTo={0.98}
-                    style={[
-                      styles.datePickerTrigger,
-                      {
-                        backgroundColor: colors.surface1,
-                        borderColor: colors.primary + '33',
-                      },
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel={`End date: ${endDate || startDate}. Tap to select from calendar.`}
+                  <SquircleSurface
+                    radius={16}
+                    smoothing={1}
+                    fill={isSelected ? opt.bg : colors.surface1}
+                    stroke={isSelected ? opt.color : colors.border}
+                    strokeWidth={1}
+                    style={styles.flowCard}
                   >
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <Ionicons name="calendar-outline" size={18} color={colors.primary} style={{ marginRight: 10 }} />
-                      <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                        {endDate || startDate || 'Select end date'}
+                      <SquircleSurface
+                        radius={5}
+                        smoothing={1}
+                        fill={opt.color}
+                        style={styles.flowIndicatorDot}
+                      />
+                      <Text
+                        style={[
+                          typography.subbodyBold,
+                          { color: isSelected ? opt.color : colors.text.primary, marginLeft: 8 },
+                        ]}
+                      >
+                        {opt.label}
                       </Text>
                     </View>
-                    <View style={[styles.datePickerPill, { backgroundColor: colors.primary + '18' }]}>
-                      <Text style={[typography.captionBold, { color: colors.primary }]}>Select Date</Text>
-                    </View>
-                  </PressableScale>
-                </View>
-              )}
-
-              {/* Flow Intensity Selection */}
-              <View style={{ marginTop: spacing.lg }}>
-                <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 8 }]}>
-                  FLOW INTENSITY
-                </Text>
-                <View style={styles.flowGrid}>
-                  {FLOW_OPTIONS.map((opt) => {
-                    const isSelected = flowIntensity === opt.intensity;
-                    return (
-                      <PressableScale
-                        key={opt.intensity}
-                        onPress={() => {
-                          try {
-                            Haptics.selectionAsync();
-                          } catch {}
-                          setFlowIntensity(opt.intensity);
-                        }}
-                        scaleTo={0.96}
-                        style={[
-                          styles.flowCard,
-                          {
-                            backgroundColor: isSelected ? opt.bg : colors.surface1,
-                            borderColor: isSelected ? opt.color : 'transparent',
-                          },
-                        ]}
-                      >
-                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                          <View style={[styles.flowIndicatorDot, { backgroundColor: opt.color }]} />
-                          <Text
-                            style={[
-                              typography.subbodyBold,
-                              { color: isSelected ? opt.color : colors.text.primary, marginLeft: 8 },
-                            ]}
-                          >
-                            {opt.label}
-                          </Text>
-                        </View>
-                        <Text style={[typography.caption, { color: colors.text.muted, marginTop: 4 }]}>
-                          {opt.desc}
-                        </Text>
-                      </PressableScale>
-                    );
-                  })}
-                </View>
-              </View>
-
-              {/* Pain & Cramp Level (0 to 10 scale) */}
-              <View style={{ marginTop: spacing.lg }}>
-                <View style={styles.rowBetween}>
-                  <Text style={[typography.captionBold, { color: colors.text.muted }]}>
-                    CRAMPS & PHYSICAL DISCOMFORT
-                  </Text>
-                  <Text style={[typography.captionBold, { color: colors.primary }]}>
-                    {painLevel === 0
-                      ? '0 (None)'
-                      : painLevel <= 3
-                      ? `${painLevel}/10 (Mild)`
-                      : painLevel <= 6
-                      ? `${painLevel}/10 (Moderate)`
-                      : `${painLevel}/10 (Severe)`}
-                  </Text>
-                </View>
-
-                <View style={styles.painStrip}>
-                  {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => {
-                    const isSelected = painLevel === num;
-                    return (
-                      <PressableScale
-                        key={num}
-                        onPress={() => {
-                          try {
-                            Haptics.selectionAsync();
-                          } catch {}
-                          setPainLevel(num);
-                        }}
-                        scaleTo={0.92}
-                        style={[
-                          styles.painBtn,
-                          {
-                            backgroundColor: isSelected ? colors.primary : colors.surface1,
-                          },
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            typography.captionBold,
-                            {
-                              color: isSelected ? colors.onPrimary : colors.text.primary,
-                              fontSize: 12,
-                            },
-                          ]}
-                        >
-                          {num}
-                        </Text>
-                      </PressableScale>
-                    );
-                  })}
-                </View>
-              </View>
-
-              {/* Physical Symptoms */}
-              <View style={{ marginTop: spacing.lg }}>
-                <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 8 }]}>
-                  PHYSICAL & EMOTIONAL SENSATIONS
-                </Text>
-                <View style={styles.chipsWrap}>
-                  {COMMON_SYMPTOMS.map((sym) => {
-                    const isSelected = selectedSymptoms.includes(sym);
-                    return (
-                      <PressableScale
-                        key={sym}
-                        onPress={() => toggleSymptom(sym)}
-                        scaleTo={0.95}
-                        style={[
-                          styles.symptomChip,
-                          {
-                            backgroundColor: isSelected ? colors.primary : colors.surface1,
-                          },
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            typography.captionBold,
-                            {
-                              color: isSelected ? colors.onPrimary : colors.text.primary,
-                              fontSize: 12,
-                            },
-                          ]}
-                        >
-                          {sym}
-                        </Text>
-                      </PressableScale>
-                    );
-                  })}
-                </View>
-              </View>
-
-              {/* Personal Notes */}
-              <View style={{ marginTop: spacing.lg }}>
-                <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 6 }]}>
-                  PERSONAL NOTES (OPTIONAL)
-                </Text>
-                <TextField
-                  placeholder="Rest, hydration, remedies, comfort measures..."
-                  value={notes}
-                  onChangeText={setNotes}
-                  multiline
-                  numberOfLines={2}
-                />
-              </View>
-
-              {/* Action Buttons */}
-              <View style={{ marginTop: spacing.xl, gap: 10 }}>
-                <Button
-                  label={existingRecord ? 'Save Changes' : 'Confirm & Save Period'}
-                  onPress={handleSave}
-                  size="lg"
-                />
-                {existingRecord && (
-                  <Button
-                    label="Delete Record"
-                    variant="ghost"
-                    onPress={handleDelete}
-                    size="md"
-                  />
-                )}
-              </View>
-            </ScrollView>
+                    <Text style={[typography.caption, { color: colors.text.muted, marginTop: 4 }]}>
+                      {opt.desc}
+                    </Text>
+                  </SquircleSurface>
+                </PressableScale>
+              );
+            })}
           </View>
         </View>
-      </KeyboardAvoidingView>
+
+        {/* Pain & Cramp Level */}
+        <View style={{ marginTop: spacing.lg }}>
+          <View style={styles.rowBetween}>
+            <Text style={[typography.captionBold, { color: colors.text.muted }]}>
+              CRAMPS & PHYSICAL DISCOMFORT
+            </Text>
+            <Text style={[typography.captionBold, { color: colors.primary }]}>
+              {painLevel === 0
+                ? '0 (None)'
+                : painLevel <= 3
+                ? `${painLevel}/10 (Mild)`
+                : painLevel <= 6
+                ? `${painLevel}/10 (Moderate)`
+                : `${painLevel}/10 (Severe)`}
+            </Text>
+          </View>
+
+          <View style={styles.painStrip}>
+            {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => {
+              const isSelected = painLevel === num;
+              return (
+                <PressableScale
+                  key={num}
+                  onPress={() => {
+                    try {
+                      Haptics.selectionAsync();
+                    } catch {}
+                    setPainLevel(num);
+                  }}
+                  scaleTo={0.92}
+                  style={styles.painBtnScale}
+                >
+                  <SquircleSurface
+                    radius={10}
+                    smoothing={1}
+                    fill={isSelected ? colors.primary : colors.surface1}
+                    stroke={isSelected ? colors.primary : colors.border}
+                    strokeWidth={1}
+                    style={styles.painBtn}
+                  >
+                    <Text
+                      style={[
+                        typography.captionBold,
+                        {
+                          color: isSelected ? colors.onPrimary : colors.text.primary,
+                          fontSize: 12,
+                        },
+                      ]}
+                    >
+                      {num}
+                    </Text>
+                  </SquircleSurface>
+                </PressableScale>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* Physical Symptoms */}
+        <View style={{ marginTop: spacing.lg }}>
+          <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 8 }]}>
+            PHYSICAL & EMOTIONAL SENSATIONS
+          </Text>
+          <View style={styles.chipsWrap}>
+            {COMMON_SYMPTOMS.map((sym) => {
+              const isSelected = selectedSymptoms.includes(sym);
+              return (
+                <PressableScale
+                  key={sym}
+                  onPress={() => toggleSymptom(sym)}
+                  scaleTo={0.95}
+                >
+                  <SquircleSurface
+                    radius={12}
+                    smoothing={1}
+                    fill={isSelected ? colors.primary : colors.surface1}
+                    stroke={isSelected ? colors.primary : colors.border}
+                    strokeWidth={1}
+                    style={styles.symptomChip}
+                  >
+                    <Text
+                      style={[
+                        typography.captionBold,
+                        {
+                          color: isSelected ? colors.onPrimary : colors.text.primary,
+                          fontSize: 12,
+                        },
+                      ]}
+                    >
+                      {sym}
+                    </Text>
+                  </SquircleSurface>
+                </PressableScale>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* Personal Notes */}
+        <View style={{ marginTop: spacing.lg }}>
+          <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 6 }]}>
+            PERSONAL NOTES (OPTIONAL)
+          </Text>
+          <TextField
+            placeholder="Rest, hydration, remedies, comfort measures..."
+            value={notes}
+            onChangeText={setNotes}
+            multiline
+            numberOfLines={2}
+          />
+        </View>
+
+        {/* Action Buttons */}
+        <View style={{ marginTop: spacing.xl, gap: 10 }}>
+          <Button
+            label={existingRecord ? 'Save Changes' : 'Confirm & Save Period'}
+            onPress={handleSave}
+            size="lg"
+          />
+          {existingRecord && (
+            <Button
+              label="Delete Record"
+              variant="ghost"
+              onPress={handleDelete}
+              size="md"
+            />
+          )}
+        </View>
+      </AppBottomSheetModal>
 
       {/* DatePicker Modals */}
       <DatePickerModal
@@ -589,80 +522,51 @@ export function PeriodLoggerModal({
         }}
         onClose={() => setShowEndDatePicker(false)}
       />
-    </Modal>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  keyboardRoot: {
-    flex: 1,
-  },
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(18, 16, 15, 0.45)',
-    justifyContent: 'flex-end',
-  },
-  sheetContainer: {
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    maxHeight: '90%',
-  },
-  dragHandleBar: {
+  datePickerTrigger: {
     alignItems: 'center',
-    paddingVertical: 10,
-  },
-  dragHandlePill: {
-    width: 38,
-    height: 4.5,
-    borderRadius: 3,
-    backgroundColor: 'rgba(0, 0, 0, 0.16)',
-  },
-  headerRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingBottom: 14,
-    borderBottomColor: 'rgba(0, 0, 0, 0.05)',
+    paddingHorizontal: 14,
+    paddingVertical: 13,
   },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+  datePickerPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
   ongoingCard: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
     padding: 14,
-    borderRadius: 16,
   },
   toggleBox: {
-    width: 22,
-    height: 22,
-    borderRadius: 7,
     alignItems: 'center',
+    height: 22,
     justifyContent: 'center',
+    width: 22,
   },
   flowGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
   },
-  flowCard: {
+  flowCardScale: {
     width: '48%',
+  },
+  flowCard: {
     padding: 12,
-    borderRadius: 16,
   },
   flowIndicatorDot: {
-    width: 10,
     height: 10,
-    borderRadius: 5,
+    width: 10,
   },
   rowBetween: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 8,
   },
@@ -670,11 +574,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 4,
   },
-  painBtn: {
+  painBtnScale: {
     flex: 1,
-    height: 36,
-    borderRadius: 10,
+  },
+  painBtn: {
     alignItems: 'center',
+    height: 36,
     justifyContent: 'center',
   },
   chipsWrap: {
@@ -685,20 +590,6 @@ const styles = StyleSheet.create({
   symptomChip: {
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 12,
-  },
-  datePickerTrigger: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 14,
-    paddingVertical: 13,
-    borderRadius: 14,
-  },
-  datePickerPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
   },
 });
 

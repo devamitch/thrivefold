@@ -69,10 +69,10 @@ export function OnboardingScaffold({
   const stepReward = reward ? setupReward(reward) : null;
 
   const continueStep = () => {
+    onPrimary();
     if (reward && claimSetupReward(reward).awarded) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
     }
-    onPrimary();
   };
 
   useEffect(() => {

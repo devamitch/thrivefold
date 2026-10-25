@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
@@ -8,6 +8,7 @@ import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { PressableScale } from '../ui/PressableScale';
+import { SquircleSurface } from '../ui/SquircleSurface';
 import {
   CalendarEvent,
   DayRangeInfo,
@@ -86,11 +87,19 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
                 onPrevDay();
               }}
               scaleTo={0.9}
-              style={[styles.dateNavBtn, { backgroundColor: colors.surface1 }]}
               accessibilityRole="button"
               accessibilityLabel="Previous day"
             >
-              <Ionicons name="chevron-back" size={16} color={colors.text.primary} />
+              <SquircleSurface
+                radius={14}
+                smoothing={1}
+                fill={colors.surface1}
+                stroke={colors.border}
+                strokeWidth={1}
+                style={styles.dateNavBtn}
+              >
+                <Ionicons name="chevron-back" size={16} color={colors.text.primary} />
+              </SquircleSurface>
             </PressableScale>
             {!isToday && (
               <PressableScale
@@ -101,11 +110,20 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
                   onJumpToday();
                 }}
                 scaleTo={0.93}
-                style={[styles.todayJumpPill, { backgroundColor: colors.surface1, marginHorizontal: 4 }]}
+                style={{ marginHorizontal: 4 }}
                 accessibilityRole="button"
                 accessibilityLabel="Jump to today"
               >
-                <Text style={[typography.captionBold, { color: colors.primary }]}>Today</Text>
+                <SquircleSurface
+                  radius={10}
+                  smoothing={1}
+                  fill={colors.surface1}
+                  stroke={colors.border}
+                  strokeWidth={1}
+                  style={styles.todayJumpPill}
+                >
+                  <Text style={[typography.captionBold, { color: colors.primary }]}>Today</Text>
+                </SquircleSurface>
               </PressableScale>
             )}
             <PressableScale
@@ -116,33 +134,48 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
                 onNextDay();
               }}
               scaleTo={0.9}
-              style={[styles.dateNavBtn, { backgroundColor: colors.surface1 }]}
               accessibilityRole="button"
               accessibilityLabel="Next day"
             >
-              <Ionicons name="chevron-forward" size={16} color={colors.text.primary} />
+              <SquircleSurface
+                radius={14}
+                smoothing={1}
+                fill={colors.surface1}
+                stroke={colors.border}
+                strokeWidth={1}
+                style={styles.dateNavBtn}
+              >
+                <Ionicons name="chevron-forward" size={16} color={colors.text.primary} />
+              </SquircleSurface>
             </PressableScale>
           </View>
         </View>
 
         {/* Phase Badge & Biological Summary (For Women) */}
         {isWomen && (
-          <View style={[styles.phaseDetailCard, { backgroundColor: colors.surface1, marginTop: spacing.md }]}>
+          <SquircleSurface
+            radius={14}
+            smoothing={1}
+            fill={colors.surface1}
+            stroke={colors.border}
+            strokeWidth={1}
+            style={[styles.phaseDetailCard, { marginTop: spacing.md }]}
+          >
             <View style={styles.rowBetween}>
               <View style={{ flexDirection: 'row', alignItems: 'center', flexShrink: 1, paddingRight: 6 }}>
-                <View
-                  style={[
-                    styles.phaseIndicatorRing,
-                    {
-                      backgroundColor: selectedDateRangeInfo.isRecordedPeriod
-                        ? '#DA7756'
-                        : selectedDateRangeInfo.isOvulationPeak
-                        ? '#E2B258'
-                        : selectedDateRangeInfo.isFollicular
-                        ? '#84AF8E'
-                        : colors.primary,
-                    },
-                  ]}
+                <SquircleSurface
+                  radius={6}
+                  smoothing={1}
+                  fill={
+                    selectedDateRangeInfo.isRecordedPeriod
+                      ? '#DA7756'
+                      : selectedDateRangeInfo.isOvulationPeak
+                      ? '#E2B258'
+                      : selectedDateRangeInfo.isFollicular
+                      ? '#84AF8E'
+                      : colors.primary
+                  }
+                  style={styles.phaseIndicatorRing}
                 />
                 <Text style={[typography.bodyBold, { color: colors.text.primary, marginLeft: 8 }]}>
                   {selectedDateRangeInfo.phaseLabel}
@@ -160,24 +193,39 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
             <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>
               {phaseConfig.energyDesc} • {phaseConfig.description}
             </Text>
-          </View>
+          </SquircleSurface>
         )}
 
         {/* Holiday Banner if present */}
         {selectedDateHoliday && (
-          <View style={[styles.milestoneNotice, { backgroundColor: '#FEF3C7', marginTop: spacing.sm }]}>
+          <SquircleSurface
+            radius={12}
+            smoothing={1}
+            fill="#FEF3C7"
+            stroke="#FDE68A"
+            strokeWidth={1}
+            style={[styles.milestoneNotice, { marginTop: spacing.sm }]}
+          >
             <Ionicons name="flag" size={16} color="#D97706" style={{ marginRight: 8 }} />
             <Text style={[typography.captionBold, { color: '#92400E', flex: 1 }]}>
               {selectedDateHoliday.name}
             </Text>
-          </View>
+          </SquircleSurface>
         )}
 
         {/* Personal Milestones (Birthdays, Anniversaries) */}
         {selectedDateMilestones.length > 0 && (
           <View style={{ marginTop: spacing.sm, gap: 6 }}>
             {selectedDateMilestones.map((ms) => (
-              <View key={ms.id} style={[styles.milestoneNotice, { backgroundColor: 'rgba(226, 178, 88, 0.20)' }]}>
+              <SquircleSurface
+                key={ms.id}
+                radius={12}
+                smoothing={1}
+                fill="rgba(226, 178, 88, 0.16)"
+                stroke="rgba(226, 178, 88, 0.3)"
+                strokeWidth={1}
+                style={styles.milestoneNotice}
+              >
                 <Ionicons name="gift" size={16} color={colors.primary} style={{ marginRight: 8 }} />
                 <View style={{ flex: 1 }}>
                   <Text style={[typography.captionBold, { color: colors.text.primary }]}>
@@ -189,14 +237,21 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
                   </Text>
                 </View>
                 <Badge label={ms.recurrence === 'yearly' ? 'Annual' : 'Milestone'} variant="neutral" />
-              </View>
+              </SquircleSurface>
             ))}
           </View>
         )}
 
         {/* Bleeding Log summary if already recorded on this date */}
         {isWomen && existingPeriodRecord && (
-          <View style={[styles.recordedBleedBanner, { backgroundColor: 'rgba(218, 119, 86, 0.15)', marginTop: spacing.sm }]}>
+          <SquircleSurface
+            radius={14}
+            smoothing={1}
+            fill="rgba(218, 119, 86, 0.12)"
+            stroke="rgba(218, 119, 86, 0.25)"
+            strokeWidth={1}
+            style={[styles.recordedBleedBanner, { marginTop: spacing.sm }]}
+          >
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Ionicons name="water" size={16} color="#DA7756" style={{ marginRight: 8 }} />
               <View style={{ flex: 1 }}>
@@ -210,14 +265,22 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
               <PressableScale
                 onPress={onLogPeriod}
                 scaleTo={0.92}
-                style={[styles.editBleedBtn, { backgroundColor: colors.surface }]}
                 accessibilityRole="button"
                 accessibilityLabel="Edit recorded bleed"
               >
-                <Text style={[typography.captionBold, { color: colors.primary }]}>Edit</Text>
+                <SquircleSurface
+                  radius={8}
+                  smoothing={1}
+                  fill={colors.surface}
+                  stroke={colors.border}
+                  strokeWidth={1}
+                  style={styles.editBleedBtn}
+                >
+                  <Text style={[typography.captionBold, { color: colors.primary }]}>Edit</Text>
+                </SquircleSurface>
               </PressableScale>
             </View>
-          </View>
+          </SquircleSurface>
         )}
 
         {/* Action Buttons: Log Period Bleeding & Add Personal Milestone */}
@@ -260,7 +323,12 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
 
         {/* Progress Track */}
         {agendaEvents.length > 0 && (
-          <View style={[styles.taskProgressBarTrack, { backgroundColor: colors.surface1 }]}>
+          <SquircleSurface
+            radius={3}
+            smoothing={1}
+            fill={colors.surface1}
+            style={styles.taskProgressBarTrack}
+          >
             <View
               style={[
                 styles.taskProgressBarFill,
@@ -274,7 +342,7 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
                 },
               ]}
             />
-          </View>
+          </SquircleSurface>
         )}
 
         <View style={{ marginTop: spacing.md }}>
@@ -288,62 +356,70 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
                   onSelectTask(event);
                 }}
                 scaleTo={0.98}
-                style={[
-                  styles.agendaTaskCard,
-                  {
-                    backgroundColor: isDone ? colors.surface1 : colors.surface,
-                    marginBottom: 8,
-                  },
-                ]}
+                style={{ marginBottom: 8 }}
                 accessibilityRole="button"
                 accessibilityLabel={`Task: ${event.title}, ${isDone ? 'Completed' : 'Pending'}`}
               >
-                <View style={styles.agendaCheckRow}>
-                  <Pressable
-                    onPress={() => onToggleEvent(event)}
-                    hitSlop={8}
-                    style={[
-                      styles.checkbox,
-                      {
-                        borderColor: isDone ? colors.primary : colors.text.muted,
-                        backgroundColor: isDone ? colors.primary : 'transparent',
-                      },
-                    ]}
-                  >
-                    {isDone && <Ionicons name="checkmark" size={14} color={colors.onPrimary} />}
-                  </Pressable>
-
-                  <View style={{ flex: 1, marginLeft: 12 }}>
-                    <Text
-                      style={[
-                        typography.bodyBold,
-                        {
-                          color: isDone ? colors.text.muted : colors.text.primary,
-                          textDecorationLine: isDone ? 'line-through' : 'none',
-                        },
-                      ]}
+                <SquircleSurface
+                  radius={14}
+                  smoothing={1}
+                  fill={isDone ? colors.surface1 : colors.surface}
+                  stroke={colors.border}
+                  strokeWidth={1}
+                  style={styles.agendaTaskCard}
+                >
+                  <View style={styles.agendaCheckRow}>
+                    <PressableScale
+                      onPress={() => onToggleEvent(event)}
+                      hitSlop={8}
+                      scaleTo={0.9}
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: isDone }}
                     >
-                      {event.title}
-                    </Text>
-                    {event.description ? (
-                      <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]} numberOfLines={2}>
-                        {event.description}
-                      </Text>
-                    ) : null}
-                    {event.startTime ? (
-                      <Text style={[typography.caption, { color: colors.primary, marginTop: 4 }]}>
-                        Scheduled: {event.startTime} {event.endTime ? `– ${event.endTime}` : ''}
-                      </Text>
-                    ) : null}
-                  </View>
+                      <SquircleSurface
+                        radius={7}
+                        smoothing={1}
+                        fill={isDone ? colors.primary : 'transparent'}
+                        stroke={isDone ? colors.primary : colors.text.muted}
+                        strokeWidth={1.5}
+                        style={styles.checkbox}
+                      >
+                        {isDone && <Ionicons name="checkmark" size={14} color={colors.onPrimary} />}
+                      </SquircleSurface>
+                    </PressableScale>
 
-                  <View style={{ alignItems: 'flex-end', flexShrink: 0, marginLeft: 8 }}>
-                    <Badge label={event.kind.replace('_', ' ')} variant="neutral" />
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}>
-                      <Ionicons name="chevron-forward" size={14} color={colors.text.muted} />
+                    <View style={{ flex: 1, marginLeft: 12 }}>
+                      <Text
+                        style={[
+                          typography.bodyBold,
+                          {
+                            color: isDone ? colors.text.muted : colors.text.primary,
+                            textDecorationLine: isDone ? 'line-through' : 'none',
+                          },
+                        ]}
+                      >
+                        {event.title}
+                      </Text>
+                      {event.description ? (
+                        <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]} numberOfLines={2}>
+                          {event.description}
+                        </Text>
+                      ) : null}
+                      {event.startTime ? (
+                        <Text style={[typography.caption, { color: colors.primary, marginTop: 4 }]}>
+                          Scheduled: {event.startTime} {event.endTime ? `– ${event.endTime}` : ''}
+                        </Text>
+                      ) : null}
+                    </View>
+
+                    <View style={{ alignItems: 'flex-end', flexShrink: 0, marginLeft: 8 }}>
+                      <Badge label={event.kind.replace('_', ' ')} variant="neutral" />
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}>
+                        <Ionicons name="chevron-forward" size={14} color={colors.text.muted} />
+                      </View>
                     </View>
                   </View>
-                </View>
+                </SquircleSurface>
               </PressableScale>
             );
           })}
@@ -360,40 +436,33 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   dateNavBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
     alignItems: 'center',
+    height: 28,
     justifyContent: 'center',
+    width: 28,
   },
   todayJumpPill: {
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 10,
   },
   phaseDetailCard: {
     padding: 12,
-    borderRadius: 14,
   },
   phaseIndicatorRing: {
-    width: 12,
     height: 12,
-    borderRadius: 6,
+    width: 12,
   },
   milestoneNotice: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
     padding: 10,
-    borderRadius: 12,
   },
   recordedBleedBanner: {
     padding: 12,
-    borderRadius: 14,
   },
   editBleedBtn: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 8,
   },
   actionRow: {
     flexDirection: 'row',
@@ -401,28 +470,25 @@ const styles = StyleSheet.create({
   },
   taskProgressBarTrack: {
     height: 6,
-    borderRadius: 3,
-    overflow: 'hidden',
     marginTop: 10,
+    overflow: 'hidden',
   },
   taskProgressBarFill: {
     height: '100%',
-    borderRadius: 3,
   },
   agendaTaskCard: {
     padding: 12,
-    borderRadius: 14,
-    borderColor: 'rgba(0,0,0,0.04)',
   },
   agendaCheckRow: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
   },
   checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 7,
     alignItems: 'center',
+    height: 22,
     justifyContent: 'center',
+    width: 22,
   },
 });
+
+export default SelectedDateOverviewCard;

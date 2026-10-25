@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { AppState, StyleSheet, View } from 'react-native';
-import { Redirect, Stack } from 'expo-router';
+import { Redirect, Stack, usePathname } from 'expo-router';
 
 import { useRootStore } from '../../stores/useRootStore';
 import { flushProgressionSync } from '../../services/sync/progressionSync';
@@ -8,6 +8,7 @@ import { syncQuestReminders } from '../../services/notifications/questReminders'
 import { AppDrawer } from '../../components/navigation/AppDrawer';
 import { DrawerSceneWrapper } from '../../components/navigation/DrawerSceneWrapper';
 import { enqueueFinishedWeeks, flushSummaryOutbox } from '../../services/sync/summaryOutbox';
+import { analytics } from '../../services/telemetry/analyticsService';
 import { useTheme } from '../../theme/useTheme';
 
 /** Queues finished weeks and sends them if this person opted in; never throws. */
@@ -21,12 +22,20 @@ function runSummaryQueue() {
 }
 
 export default function AppLayout() {
+  const pathname = usePathname();
   const isAuthenticated = useRootStore((s) => s.isAuthenticated);
   const ensureDailyQuests = useRootStore((s) => s.ensureDailyQuests);
   const isOnboarded = useRootStore((s) => s.isOnboarded);
   const pendingCount = useRootStore((s) => s.pendingSync.length);
   const openCount = useRootStore((s) => s.todayQuests.filter((q) => !q.isCompleted && q.status !== 'skipped').length);
   const remindersOn = useRootStore((s) => s.questRemindersEnabled);
+
+  // Track active pathname so forceful app restarts restore exact location
+  useEffect(() => {
+    if (pathname && pathname !== '/') {
+      analytics.logNavigation(pathname);
+    }
+  }, [pathname]);
 
   // Reminders follow what is still open today.
   useEffect(() => {

@@ -11,8 +11,34 @@ import { ScreenWrapper } from '../../components/ui/ScreenWrapper';
 import { useRootStore, useShallow } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
 
-const DIETS = ['No preference', 'Vegetarian', 'Vegan', 'Pescatarian', 'Gluten-free', 'Halal', 'Kosher', 'No onion or garlic'];
-const REMINDERS = ['Fasting days', 'Weekly rest day', 'Meditation days', 'Festival dates I choose'];
+const DIETS = [
+  'No preference',
+  'Flexitarian / Mindful',
+  'Non-Vegetarian',
+  'Vegetarian',
+  'Vegan',
+  'Pescatarian',
+  'Gluten-free',
+  'Halal',
+  'Kosher',
+  'Sattvic',
+  'No onion or garlic',
+];
+const REMINDERS = [
+  'Weekly digital reset day',
+  'Meditation & Mindfulness',
+  'Ramadan & Islamic Fasting',
+  'Ekadashi, Navratri & Hindu Occasions',
+  'Lent & Christian Reflection',
+  'Shabbat & Jewish Holy Days',
+  'Buddhist Uposatha Days',
+  'Jain Paryushana & Ahimsa Days',
+  'Sikh Gurpurab Observance',
+  'Parsi Navroz & Good Deeds',
+  'Workers Day & Community Solidarity',
+  'Earth & Solstice Reverence',
+  'Universal gratitude & lovingkindness',
+];
 
 /**
  * Optional preferences (master spec §3.3 step 7 and §23.7). Nothing is pre-selected,
@@ -34,14 +60,16 @@ export default function LifestylePreferencesScreen() {
 
   const toggleReminder = (item: string) =>
     setOnboardingAnswers({
-      observances: observances.includes(item) ? observances.filter((i) => i !== item) : [...observances, item],
+      observances: observances.includes(item)
+        ? observances.filter((i) => i !== item)
+        : [...observances, item],
     });
 
   const next = () => {
+    claimSetupReward('lifestyle');
     if (!isOnboarded) {
       router.push('/(onboarding)/complete');
     } else {
-      claimSetupReward('lifestyle');
       router.back();
     }
   };
@@ -55,7 +83,9 @@ export default function LifestylePreferencesScreen() {
         </Text>
       </Card>
 
-      <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: spacing.sm }]}>
+      <Text
+        style={[typography.subheading, { color: colors.text.primary, marginBottom: spacing.sm }]}
+      >
         Eating preference
       </Text>
       <View style={styles.chips}>
@@ -69,12 +99,22 @@ export default function LifestylePreferencesScreen() {
         ))}
       </View>
 
-      <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.xl, marginBottom: spacing.sm }]}>
+      <Text
+        style={[
+          typography.subheading,
+          { color: colors.text.primary, marginTop: spacing.xl, marginBottom: spacing.sm },
+        ]}
+      >
         Reminders you'd like
       </Text>
       <View style={styles.chips}>
         {REMINDERS.map((r) => (
-          <Chip key={r} label={r} selected={observances.includes(r)} onPress={() => toggleReminder(r)} />
+          <Chip
+            key={r}
+            label={r}
+            selected={observances.includes(r)}
+            onPress={() => toggleReminder(r)}
+          />
         ))}
       </View>
 
@@ -96,7 +136,7 @@ export default function LifestylePreferencesScreen() {
     return (
       <OnboardingScaffold
         step="lifestyle-preferences"
-      reward="lifestyle"
+        reward="lifestyle"
         title="Food & lifestyle choices"
         subtitle="Shapes nutrition and reminder suggestions. Skip if you prefer flexible options."
         primaryLabel={diet || observances.length ? 'Continue' : 'Continue without choices'}

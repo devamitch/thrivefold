@@ -24,7 +24,15 @@ export default function DiscoverPenPalsScreen() {
 
   const [selectedTopic, setSelectedTopic] = useState('All Topics');
 
-  const topics = ['All Topics', 'Mindful Habits', 'Literature & Poetry', 'Nature & Hiking', 'Language Exchange', 'Tea & Quiet Living'];
+  const topics = [
+    'All Topics',
+    'Mindful Habits',
+    'Shared Values & Faith Dialogue',
+    'Literature & Poetry',
+    'Nature & Hiking',
+    'Language Exchange',
+    'Tea & Quiet Living',
+  ];
 
   // Real people only. Matching needs the correspondence service, which isn't live in
   // this release, so there is nobody to show yet — never invented profiles.

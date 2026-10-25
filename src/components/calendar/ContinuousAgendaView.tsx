@@ -1,16 +1,14 @@
-import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 
+import { AgendaDayGroup, CalendarEvent } from '../../domain/calendar/universalCalendarEngine';
 import { useTheme } from '../../theme/useTheme';
-import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
+import { Card } from '../ui/Card';
 import { PressableScale } from '../ui/PressableScale';
-import {
-  CalendarEvent,
-  AgendaDayGroup,
-} from '../../domain/calendar/universalCalendarEngine';
+import { SquircleSurface } from '../ui/SquircleSurface';
 
 export interface ContinuousAgendaViewProps {
   agendaRangeData: AgendaDayGroup[];
@@ -44,12 +42,7 @@ export const ContinuousAgendaView: React.FC<ContinuousAgendaViewProps> = ({
             Starting from {selectedDateStr}
           </Text>
         </View>
-        <Button
-          label="+ Milestone"
-          size="sm"
-          variant="outline"
-          onPress={onOpenMilestoneModal}
-        />
+        <Button label="+ Milestone" size="sm" variant="outline" onPress={onOpenMilestoneModal} />
       </View>
 
       <View style={{ marginTop: spacing.md }}>
@@ -61,15 +54,14 @@ export const ContinuousAgendaView: React.FC<ContinuousAgendaViewProps> = ({
           if (!hasItems && !dayGroup.isToday) return null;
 
           return (
-            <View
+            <SquircleSurface
               key={dayGroup.date}
-              style={[
-                styles.agendaDayGroupCard,
-                {
-                  backgroundColor: dayGroup.isToday ? colors.surface1 : colors.surface,
-                  borderColor: dayGroup.isToday ? colors.primary : colors.surface1,
-                },
-              ]}
+              radius={16}
+              smoothing={2}
+              fill={dayGroup.isToday ? colors.surface1 : colors.surface}
+              stroke={dayGroup.isToday ? colors.primary : colors.border}
+              strokeWidth={1}
+              style={[styles.agendaDayGroupCard, { marginBottom: 10 }]}
             >
               <PressableScale
                 onPress={() => onSelectDate(dayGroup.date)}
@@ -79,11 +71,11 @@ export const ContinuousAgendaView: React.FC<ContinuousAgendaViewProps> = ({
                 accessibilityLabel={`${dayGroup.date} group`}
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center', flexShrink: 1 }}>
-                  <View
-                    style={[
-                      styles.agendaDateBadge,
-                      { backgroundColor: dayGroup.isToday ? colors.primary : colors.surface1 },
-                    ]}
+                  <SquircleSurface
+                    radius={12}
+                    smoothing={1}
+                    fill={dayGroup.isToday ? colors.primary : colors.surface1}
+                    style={styles.agendaDateBadge}
                   >
                     <Text
                       style={[
@@ -104,14 +96,16 @@ export const ContinuousAgendaView: React.FC<ContinuousAgendaViewProps> = ({
                     >
                       {dayGroup.dayName}
                     </Text>
-                  </View>
+                  </SquircleSurface>
 
                   <View style={{ marginLeft: 10, flexShrink: 1 }}>
                     <Text style={[typography.captionBold, { color: colors.text.primary }]}>
                       {dayGroup.monthName} {dayGroup.dayOfMonth}, {dayGroup.date.slice(0, 4)}
                     </Text>
                     {isWomen && (
-                      <Text style={[typography.caption, { color: colors.text.muted, fontSize: 10 }]}>
+                      <Text
+                        style={[typography.caption, { color: colors.text.muted, fontSize: 10 }]}
+                      >
                         {dayGroup.rangeInfo.phaseLabel}
                       </Text>
                     )}
@@ -119,12 +113,8 @@ export const ContinuousAgendaView: React.FC<ContinuousAgendaViewProps> = ({
                 </View>
 
                 <View style={{ flexDirection: 'row', gap: 4, flexShrink: 0 }}>
-                  {dayGroup.holiday && (
-                    <Badge label={dayGroup.holiday.name} variant="warning" />
-                  )}
-                  {dayGroup.isToday && (
-                    <Badge label="Today" variant="primary" />
-                  )}
+                  {dayGroup.holiday && <Badge label={dayGroup.holiday.name} variant="warning" />}
+                  {dayGroup.isToday && <Badge label="Today" variant="primary" />}
                 </View>
               </PressableScale>
 
@@ -132,13 +122,28 @@ export const ContinuousAgendaView: React.FC<ContinuousAgendaViewProps> = ({
               {dayGroup.personalEvents && dayGroup.personalEvents.length > 0 && (
                 <View style={{ marginTop: 8, gap: 4 }}>
                   {dayGroup.personalEvents.map((pe) => (
-                    <View key={pe.id} style={[styles.agendaMilestoneRow, { backgroundColor: 'rgba(226, 178, 88, 0.15)' }]}>
-                      <Ionicons name="gift-outline" size={13} color={colors.primary} style={{ marginRight: 6 }} />
-                      <Text style={[typography.captionBold, { color: colors.text.primary, flex: 1 }]}>
+                    <SquircleSurface
+                      key={pe.id}
+                      radius={10}
+                      smoothing={1}
+                      fill="rgba(226, 178, 88, 0.15)"
+                      stroke="rgba(226, 178, 88, 0.25)"
+                      strokeWidth={1}
+                      style={styles.agendaMilestoneRow}
+                    >
+                      <Ionicons
+                        name="gift-outline"
+                        size={13}
+                        color={colors.primary}
+                        style={{ marginRight: 6 }}
+                      />
+                      <Text
+                        style={[typography.captionBold, { color: colors.text.primary, flex: 1 }]}
+                      >
                         {pe.title}
                       </Text>
                       <Badge label={pe.category} variant="neutral" />
-                    </View>
+                    </SquircleSurface>
                   ))}
                 </View>
               )}
@@ -156,48 +161,68 @@ export const ContinuousAgendaView: React.FC<ContinuousAgendaViewProps> = ({
                           onSelectTaskForVerification(ev);
                         }}
                         scaleTo={0.98}
-                        style={[styles.agendaTaskSubRow, { backgroundColor: isDone ? colors.surface1 : colors.surface }]}
                         accessibilityRole="button"
                         accessibilityLabel={`Task ${ev.title}`}
                       >
-                        <Pressable
-                          onPress={() => onToggleEvent(ev)}
-                          hitSlop={8}
-                          style={[
-                            styles.checkboxSmall,
-                            {
-                              borderColor: isDone ? colors.primary : colors.text.muted,
-                              backgroundColor: isDone ? colors.primary : 'transparent',
-                            },
-                          ]}
+                        <SquircleSurface
+                          radius={10}
+                          smoothing={1}
+                          fill={isDone ? colors.surface1 : colors.surface}
+                          stroke={colors.border}
+                          strokeWidth={1}
+                          style={styles.agendaTaskSubRow}
                         >
-                          {isDone && <Ionicons name="checkmark" size={11} color={colors.onPrimary} />}
-                        </Pressable>
-                        <Text
-                          style={[
-                            typography.captionBold,
-                            {
-                              color: isDone ? colors.text.muted : colors.text.primary,
-                              textDecorationLine: isDone ? 'line-through' : 'none',
-                              flex: 1,
-                              marginLeft: 8,
-                            },
-                          ]}
-                          numberOfLines={1}
-                        >
-                          {ev.title}
-                        </Text>
-                        <Badge label={ev.kind.replace('_', ' ')} variant="neutral" />
+                          <PressableScale
+                            onPress={() => onToggleEvent(ev)}
+                            hitSlop={8}
+                            scaleTo={0.9}
+                            accessibilityRole="checkbox"
+                            accessibilityState={{ checked: isDone }}
+                          >
+                            <SquircleSurface
+                              radius={6}
+                              smoothing={1}
+                              fill={isDone ? colors.primary : 'transparent'}
+                              stroke={isDone ? colors.primary : colors.text.muted}
+                              strokeWidth={1.5}
+                              style={styles.checkboxSmall}
+                            >
+                              {isDone && (
+                                <Ionicons name="checkmark" size={11} color={colors.onPrimary} />
+                              )}
+                            </SquircleSurface>
+                          </PressableScale>
+                          <Text
+                            style={[
+                              typography.captionBold,
+                              {
+                                color: isDone ? colors.text.muted : colors.text.primary,
+                                textDecorationLine: isDone ? 'line-through' : 'none',
+                                flex: 1,
+                                marginLeft: 8,
+                              },
+                            ]}
+                            numberOfLines={1}
+                          >
+                            {ev.title}
+                          </Text>
+                          <Badge label={ev.kind.replace('_', ' ')} variant="neutral" />
+                        </SquircleSurface>
                       </PressableScale>
                     );
                   })}
                 </View>
               ) : (
-                <Text style={[typography.caption, { color: colors.text.muted, marginTop: 6, fontStyle: 'italic' }]}>
+                <Text
+                  style={[
+                    typography.caption,
+                    { color: colors.text.muted, marginTop: 6, fontStyle: 'italic' },
+                  ]}
+                >
                   Rest & restore day
                 </Text>
               )}
-            </View>
+            </SquircleSurface>
           );
         })}
       </View>
@@ -213,33 +238,29 @@ const styles = StyleSheet.create({
   },
   agendaDayGroupCard: {
     padding: 12,
-    borderRadius: 16,
-    marginBottom: 10,
   },
   agendaDateBadge: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
     alignItems: 'center',
+    height: 38,
     justifyContent: 'center',
+    width: 38,
   },
   agendaMilestoneRow: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
     padding: 8,
-    borderRadius: 10,
   },
   agendaTaskSubRow: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
     padding: 8,
-    borderRadius: 10,
   },
   checkboxSmall: {
-    width: 18,
-    height: 18,
-    borderRadius: 6,
     alignItems: 'center',
+    height: 18,
     justifyContent: 'center',
+    width: 18,
   },
 });
+
+export default ContinuousAgendaView;

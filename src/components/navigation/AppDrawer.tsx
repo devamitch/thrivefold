@@ -52,7 +52,7 @@ export function AppDrawer() {
     if (reduceMotion) {
       progress.value = open ? 1 : 0;
     } else {
-      progress.value = withTiming(open ? 1 : 0, { duration: 280, easing: Easing.out(Easing.cubic) });
+      progress.value = withTiming(open ? 1 : 0, { duration: 250, easing: Easing.out(Easing.cubic) });
     }
   }, [open, reduceMotion, progress]);
 
@@ -177,20 +177,30 @@ export function AppDrawer() {
                     accessibilityState={{ selected: active }}
                     style={({ pressed }) => [
                       styles.item,
-                      { paddingHorizontal: spacing.base, opacity: pressed ? 0.7 : 1 },
+                      {
+                        marginHorizontal: spacing.sm,
+                        paddingHorizontal: spacing.sm,
+                        borderRadius: 14,
+                        backgroundColor: active ? colors.primaryAlpha : 'transparent',
+                        opacity: pressed ? 0.7 : 1,
+                      },
                     ]}
                   >
-                    <SquircleSurface
-                      radius={11}
-                      fill={active ? colors.primary : colors.surface}
-                      style={styles.itemIcon}
-                    >
-                      <Ionicons name={it.icon} size={17} color={active ? colors.onPrimary : colors.text.secondary} />
-                    </SquircleSurface>
+                    <View style={styles.itemIcon}>
+                      <Ionicons
+                        name={it.icon}
+                        size={19}
+                        color={active ? colors.primary : colors.text.secondary}
+                      />
+                    </View>
                     <Text
                       style={[
                         active ? typography.bodyBold : typography.body,
-                        { color: active ? colors.primary : colors.text.primary, marginLeft: 12, flex: 1 },
+                        {
+                          color: active ? colors.primary : colors.text.primary,
+                          marginLeft: 12,
+                          flex: 1,
+                        },
                       ]}
                       numberOfLines={1}
                     >
