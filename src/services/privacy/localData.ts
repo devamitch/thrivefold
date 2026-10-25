@@ -10,6 +10,8 @@ import { wipeLocalData } from '../../stores/persistStorage';
 import { wipeSummaryOutbox } from '../sync/summaryOutbox';
 import { useRootStore } from '../../stores/useRootStore';
 import { formatLocalDate } from '../../domain/calendar/universalCalendarEngine';
+import { worldviewExportRows } from '../../domain/identity/worldview';
+import { buildXlsx, toBase64, type Sheet } from './xlsx';
 
 export function buildLocalExport(): string {
   const state = useRootStore.getState();
@@ -181,42 +183,124 @@ export function buildCsvSpreadsheetExport(): string {
   return lines.join('\n');
 }
 
+const local = (iso?: string | null) => (iso ? new Date(iso).toLocaleString() : '');
+
 /**
- * Saves and opens native share sheet for the exported CSV file.
+ * The person's data as an Excel workbook (V3 §3): an About sheet that lists every category
+ * with its row count and the time zone, then one sheet per category. Instants appear in both
+ * local time and UTC; calendar dates are the local day they were recorded for.
  */
-export async function exportDataToCsvFile(): Promise<boolean> {
-  try {
-    const csv = buildCsvSpreadsheetExport();
-    const filename = `thrivefold_export_${formatLocalDate(new Date())}.csv`;
+export function buildExportWorkbook(now = new Date()): Sheet[] {
+  const s = useRootStore.getState();
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'unknown';
+  const sheets: Sheet[] = [];
+  const add = (name: string, header: string[], rows: (string | number | null | undefined)[][]) =>
+    sheets.push({ name, rows: [header, ...rows] });
 
-    if (Platform.OS === 'web') {
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      return true;
-    }
+  add('Check-ins', ['Date (local day)', 'Mood 1-10', 'Energy 1-10', 'Stress 1-10', 'Sleep hours', 'Intensity', 'Symptoms', 'Notes', 'Record ID'],
+    (s.checkInHistory ?? []).map((c) => [c.date, c.mood, c.energy, c.stress, c.sleepHours, c.intensity ?? '', (c.symptoms ?? []).join('; '), c.notes ?? '', c.id]));
+  add('Cycle', ['Start (local day)', 'End', 'Ongoing', 'Flow', 'Pain 0-10', 'Symptoms', 'Notes', 'Logged (local)', 'Logged (UTC)', 'Record ID'],
+    (s.cycleData?.periodHistory ?? []).map((p) => [p.startDate, p.endDate ?? '', p.isOngoing ? 'Yes' : 'No', p.flowIntensity, p.painLevel ?? '', (p.symptoms ?? []).join('; '), p.notes ?? '', local(p.loggedAt), p.loggedAt, p.id]));
+  add('Workouts', ['Date (local day)', 'Plan', 'Started (local)', 'Finished (local)', 'Started (UTC)', 'Finished (UTC)', 'How it was checked', 'Sets', 'Record ID'],
+    (s.workoutSessions ?? []).map((w) => [w.date, w.planId, local(w.startedAt), local(w.finishedAt), w.startedAt, w.finishedAt, w.verification, w.entries?.reduce((n, e) => n + (e.sets?.length ?? 0), 0) ?? 0, w.id]));
+  add('Activities', ['Date (local day)', 'Type', 'Minutes', 'Distance km', 'Effort 1-10', 'Note', 'Record ID'],
+    (s.activityLogs ?? []).map((a) => [a.date, a.type, a.minutes, a.distanceKm ?? '', a.effort ?? '', a.note ?? '', a.id]));
+  add('Meals', ['Date (local day)', 'Meal', 'Time', 'Items', 'Record ID'],
+    (s.mealLogs ?? []).map((m) => [m.date, m.type, m.at ?? '', (m.items ?? []).map((it: { name?: string; foodId?: string }) => it.name ?? it.foodId ?? '').join('; '), m.id]));
+  add('Water', ['Date (local day)', 'Glasses'], Object.entries(s.hydration ?? {}).sort().map(([d, n]) => [d, n]));
+  add('Medications', ['Name', 'Dose', 'Time', 'Record ID'], (s.medications ?? []).map((m) => [m.name, m.dose, m.time, m.id]));
+  add('Journal', ['Written (local)', 'Written (UTC)', 'Title', 'Text', 'Mood tag', 'Record ID'],
+    (s.journalEntries ?? []).map((j) => [local(j.createdAt), j.createdAt, j.title, j.content, j.moodTag, j.id]));
+  add('Calendar events', ['Date', 'Title', 'Category', 'Repeats', 'Notes', 'Record ID'],
+    (s.personalEvents ?? []).map((e) => [e.date, e.title, e.category, e.recurrence ?? '', e.notes ?? '', e.id]));
+  add('Quests', ['Assigned (local day)', 'Task', 'Status', 'Assignment ID'],
+    (s.dailyAssignments ?? []).map((q) => [q.assignedDate, q.taskId, q.status, q.assignmentId]));
+  add('Device readings', ['Date (local day)', 'Kind', 'Value'], (s.deviceReadings ?? []).map((r) => [r.date, r.kind, r.value]));
+  add('AI memories', ['Created (UTC)', 'Category', 'Memory', 'Source', 'Record ID'],
+    (s.aiMemories ?? []).map((m) => [m.createdAt, m.category, m.content, m.source, m.id]));
+  add('Beliefs and culture', ['Field', 'Value'], worldviewExportRows(s.worldviewProfile).map((r) => [r.label, r.value]));
+  add('Access history', ['When (UTC)', 'Action', 'Source', 'Detail'], (s.auditLog ?? []).map((a) => [a.at, a.action, a.source, a.detail]));
 
-    const dir = FileSystem.cacheDirectory ?? FileSystem.documentDirectory;
-    if (!dir) return false;
-    const path = `${dir}${filename}`;
-    await FileSystem.writeAsStringAsync(path, csv, { encoding: FileSystem.EncodingType.UTF8 });
+  const about: Sheet = {
+    name: 'About this export',
+    rows: [
+      ['Thrivefold personal data export', ''],
+      ['Exported (local)', now.toLocaleString()],
+      ['Exported (UTC)', now.toISOString()],
+      ['Time zone', tz],
+      ['Account', s.user?.isGuest ? 'Guest on this phone' : s.user?.email ?? 'Local profile'],
+      ['Scope', 'Everything Thrivefold keeps on this phone for you. Letters and groups live on the server.'],
+      ['', ''],
+      ['Sheet', 'Rows'],
+      ...sheets.map((sh) => [sh.name, sh.rows.length - 1]),
+    ],
+  };
+  return [about, ...sheets];
+}
 
-    await Share.share({
-      title: 'Export Thrivefold Data (CSV / Excel)',
-      url: path,
-      message: 'Here is your exported Thrivefold personal wellness spreadsheet.',
-    });
+async function saveFile(filename: string, mime: string, base64: string, title: string): Promise<boolean> {
+  if (Platform.OS === 'web') {
+    const bin = atob(base64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const url = URL.createObjectURL(new Blob([bytes], { type: mime }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
     return true;
+  }
+  if (Platform.OS === 'android') {
+    // React Native's Share ignores files on Android; the system folder picker saves it for real.
+    const SAF = FileSystem.StorageAccessFramework;
+    const perm = await SAF.requestDirectoryPermissionsAsync();
+    if (!perm.granted) return false;
+    const uri = await SAF.createFileAsync(perm.directoryUri, filename.replace(/\.[^.]+$/, ''), mime);
+    await FileSystem.writeAsStringAsync(uri, base64, { encoding: FileSystem.EncodingType.Base64 });
+    return true;
+  }
+  const dir = FileSystem.cacheDirectory ?? FileSystem.documentDirectory;
+  if (!dir) return false;
+  const path = `${dir}${filename}`;
+  await FileSystem.writeAsStringAsync(path, base64, { encoding: FileSystem.EncodingType.Base64 });
+  await Share.share({ title, url: path });
+  return true;
+}
+
+/** Saves the Excel workbook where the person chooses (Android) or opens the share sheet (iOS). */
+export async function exportDataToWorkbook(): Promise<boolean> {
+  try {
+    const bytes = buildXlsx(buildExportWorkbook());
+    return await saveFile(
+      `thrivefold_export_${formatLocalDate(new Date())}.xlsx`,
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      toBase64(bytes),
+      'Thrivefold data export',
+    );
   } catch {
     return false;
   }
 }
+
+/** The complete raw record as JSON, for moving to another app or keeping a full backup. */
+export async function exportRawJson(): Promise<boolean> {
+  try {
+    return await saveFile(
+      `thrivefold_export_${formatLocalDate(new Date())}.json`,
+      'application/json',
+      toBase64(new TextEncoder().encode(buildLocalExport())),
+      'Thrivefold raw data export',
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** @deprecated Kept for older callers; exports the Excel workbook. */
+export const exportDataToCsvFile = exportDataToWorkbook;
 
 /** Erases every Thrivefold record on this device and returns the app to a fresh state. */
 export function eraseLocalData(): void {

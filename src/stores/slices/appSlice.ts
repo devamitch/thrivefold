@@ -4,6 +4,7 @@ import type { RootState } from '../rootTypes';
 
 import { EMPTY_BASELINE, type Baseline } from '../../domain/game/setupProfile';
 import { ProductExperience } from '../../theme/tokens';
+import { normaliseWorldviewProfile, type WorldviewProfile } from '../../domain/identity/worldview';
 
 export type ThemeMode = 'system' | 'light' | 'dark';
 
@@ -67,6 +68,8 @@ export interface AppSlice {
   /** Version of the Terms and Privacy policy the person agreed to, and when. */
   termsAcceptedVersion: string | null;
   termsAcceptedAt: string | null;
+  /** Beliefs and culture, chosen by the person; on this phone only, never used for access. */
+  worldviewProfile: WorldviewProfile | null;
   quietHoursEnabled: boolean;
   /** Opt-in, generic reminders for open quests (off by default). */
   questRemindersEnabled: boolean;
@@ -105,6 +108,8 @@ export interface AppSlice {
   setOnboardingStep: (step: string | null) => void;
   confirmAdult: () => void;
   acceptTerms: (version: string) => void;
+  setWorldviewProfile: (input: { ids: string[]; selfDescribed?: string | null; observanceReminders?: boolean }) => void;
+  clearWorldviewProfile: () => void;
   resetOnboarding: () => void;
   setQuietHours: (enabled: boolean, start?: string, end?: string) => void;
   toggleOfflineMode: () => void;
@@ -132,6 +137,7 @@ export const createAppSlice: StateCreator<
   adultConfirmedAt: null,
   termsAcceptedVersion: null,
   termsAcceptedAt: null,
+  worldviewProfile: null,
   quietHoursEnabled: true,
   questRemindersEnabled: false,
   homeGuideDone: false,
@@ -195,6 +201,8 @@ export const createAppSlice: StateCreator<
   setOnboardingStep: (onboardingStep) => set({ onboardingStep }),
   confirmAdult: () => set({ adultConfirmedAt: new Date().toISOString() }),
   acceptTerms: (version) => set({ termsAcceptedVersion: version, termsAcceptedAt: new Date().toISOString() }),
+  setWorldviewProfile: (input) => set({ worldviewProfile: normaliseWorldviewProfile(input) }),
+  clearWorldviewProfile: () => set({ worldviewProfile: null }),
   // Starts onboarding again with blank answers; health records are untouched.
   resetOnboarding: () =>
     set({ isOnboarded: false, onboarding: EMPTY_ONBOARDING, onboardingStep: null }),

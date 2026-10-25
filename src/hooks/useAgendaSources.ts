@@ -5,6 +5,7 @@ import { getTaskById } from '../domain/game/gameCatalogService';
 import { totals } from '../domain/nutrition/foods';
 import { useRootStore, useShallow } from '../stores/useRootStore';
 import { generateObservanceCalendarEvents, type FaithTradition } from '../domain/community/religionEngine';
+import { observanceSetsFor } from '../domain/identity/worldview';
 import type { PersonalCalendarEvent } from '../stores/slices/healthSlice';
 
 /**
@@ -13,7 +14,7 @@ import type { PersonalCalendarEvent } from '../stores/slices/healthSlice';
  * One source so Today and the Calendar screen agree.
  */
 export function useAgendaSources() {
-  const { assignments, sessions, meals, checkIns, personalEvents, observances } = useRootStore(
+  const { assignments, sessions, meals, checkIns, personalEvents, observances, worldview } = useRootStore(
     useShallow((s) => ({
       personalEvents: s.personalEvents,
       assignments: s.dailyAssignments,
@@ -21,12 +22,14 @@ export function useAgendaSources() {
       meals: s.mealLogs,
       checkIns: s.checkInHistory,
       observances: s.onboarding.observances ?? [],
+      worldview: s.worldviewProfile,
     })),
   );
 
   return useMemo(() => {
-    // Map user's voluntary observances to supported faith traditions
-    const selectedTraditions: FaithTradition[] = [];
+    // Only observances the person chose: the Beliefs and culture screen, plus reminders
+    // picked during setup. Nothing is inferred.
+    const selectedTraditions: FaithTradition[] = [...observanceSetsFor(worldview)];
     for (const obs of observances) {
       const lower = obs.toLowerCase();
       if (lower.includes('islam') || lower.includes('ramadan')) selectedTraditions.push('islam');
@@ -40,7 +43,7 @@ export function useAgendaSources() {
     }
 
     const currentYear = new Date().getFullYear();
-    const observanceEvents = selectedTraditions.flatMap((t) =>
+    const observanceEvents = [...new Set(selectedTraditions)].flatMap((t) =>
       generateObservanceCalendarEvents(t, [], currentYear),
     );
 
@@ -81,5 +84,5 @@ export function useAgendaSources() {
       personalEvents: mergedPersonalEvents,
       observanceEvents,
     };
-  }, [assignments, sessions, meals, checkIns, personalEvents, observances]);
+  }, [assignments, sessions, meals, checkIns, personalEvents, observances, worldview]);
 }

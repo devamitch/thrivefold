@@ -16,7 +16,7 @@ describe('Thrivefold Religion & Values Finishing Engine', () => {
       'sikhism',
       'jainism',
       'parsi',
-      'communist_solidarity',
+      'civic',
       'indigenous_earth',
       'secular_mindful',
       'universal_spiritual',
@@ -55,11 +55,11 @@ describe('Thrivefold Religion & Values Finishing Engine', () => {
     expect(events.some((e) => e.title.includes('Makar Sankranti'))).toBe(true);
   });
 
-  test('Parsi, Communist solidarity, and Indigenous traditions generate correctly', () => {
+  test('Parsi, civic (not a faith) and Indigenous observances generate correctly', () => {
     const parsiEvents = generateObservanceCalendarEvents('parsi', [], 2026);
     expect(parsiEvents.some((e) => e.title.includes('Navroz'))).toBe(true);
 
-    const solidarityEvents = generateObservanceCalendarEvents('communist_solidarity', [], 2026);
+    const solidarityEvents = generateObservanceCalendarEvents('civic', [], 2026);
     expect(solidarityEvents.some((e) => e.title.includes('Workers Day'))).toBe(true);
 
     const indigenousEvents = generateObservanceCalendarEvents('indigenous_earth', [], 2026);
@@ -87,7 +87,7 @@ describe('Thrivefold Religion & Values Finishing Engine', () => {
 
     const result = evaluateValuesAlignment(userA, userB);
     expect(result.compatible).toBe(true);
-    expect(result.score).toBeGreaterThanOrEqual(70);
+    expect(result.score).toBeGreaterThanOrEqual(60);
     expect(result.sharedValues).toContain('mindfulness');
     expect(result.sharedValues).toContain('nature');
     expect(result.connectionReason).toContain('mindfulness');

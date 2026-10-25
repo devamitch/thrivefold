@@ -189,6 +189,9 @@ export default function SettingsScreen() {
         <Link href={'/(onboarding)/lifestyle-preferences' as Href} asChild>
           <SettingsRow icon="restaurant-outline" title="Food preferences" subtitle="Nutrition focus and meal timing" />
         </Link>
+        <Link href={'/(app)/you/beliefs' as Href} asChild>
+          <SettingsRow icon="globe-outline" title="Beliefs and culture" subtitle="Optional, private, for observance reminders" />
+        </Link>
         <Link href={'/(app)/you/reminders' as Href} asChild>
           <SettingsRow icon="notifications-outline" title="Reminders" subtitle="Quest reminders and quiet hours" />
         </Link>

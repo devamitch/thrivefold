@@ -1,12 +1,12 @@
 /**
- * Voluntary Faith, Observance & Values Engine for Thrivefold
+ * Observance reminders and shared-values notes.
  *
- * Strict Compliance:
- * 1. Zero inference: Never infer faith, diet, or tradition from name, phone, GPS, AI or contacts.
- * 2. Voluntary opt-in: Users self-declare observances only if they wish to receive calendar
- *    wellbeing reminders (e.g. fasting windows, rest days, meditation dates).
- * 3. Non-exclusionary: Values matching in adult correspondence supports mindful dialogue
- *    and shared interests without discrimination or exclusionary bans.
+ * 1. Zero inference: never infer faith, diet or tradition from name, phone, GPS, AI or contacts.
+ * 2. Voluntary: observance sets come only from the person's own choice
+ *    (domain/identity/worldview.ts `observanceSetsFor`).
+ * 3. Non-exclusionary: values alignment uses shared values the person listed; religion or
+ *    worldview never raises, lowers or gates anything.
+ * Civic observances (e.g. May Day) are their own set: an ideology is not a faith (V3 §6).
  */
 
 import type { CalendarEvent } from '../calendar/universalCalendarEngine';
@@ -22,7 +22,7 @@ export type FaithTradition =
   | 'sikhism'
   | 'jainism'
   | 'parsi'
-  | 'communist_solidarity'
+  | 'civic'
   | 'indigenous_earth'
   | 'bahai'
   | 'other';
@@ -289,10 +289,10 @@ export const FAITH_OBSERVANCES: Record<FaithTradition, ObservanceDefinition[]> =
       day: 23,
     },
   ],
-  communist_solidarity: [
+  civic: [
     {
       id: 'may_day_solidarity',
-      tradition: 'communist_solidarity',
+      tradition: 'civic',
       name: 'International Workers Day (May Day)',
       category: 'reflection',
       description: 'Celebrating universal worker dignity, collective wellbeing, fair labor, and social solidarity.',
@@ -301,7 +301,7 @@ export const FAITH_OBSERVANCES: Record<FaithTradition, ObservanceDefinition[]> =
     },
     {
       id: 'mutual_aid_day',
-      tradition: 'communist_solidarity',
+      tradition: 'civic',
       name: 'Communal Mutual Aid & Cooperation Day',
       category: 'reflection',
       description: 'Practical community support, food sharing, shared spaces, and collective care.',
@@ -437,20 +437,10 @@ export function evaluateValuesAlignment(
     }
   }
 
-  // Tradition preferences
+  // Religion or worldview never changes the score (V3 §6: no ranking or gating by belief).
   let connectionReason = 'Shared human values and intentional living.';
-  if (userA.voluntaryTradition && userB.voluntaryTradition) {
-    if (userA.voluntaryTradition === userB.voluntaryTradition) {
-      score += 10;
-      connectionReason = 'Mutual alignment in spiritual/cultural traditions and life pace.';
-    } else if (
-      userA.dialoguePreference === 'interfaith_dialogue' ||
-      userB.dialoguePreference === 'interfaith_dialogue'
-    ) {
-      score += 8;
-      connectionReason =
-        'Complementary perspectives with enthusiasm for respectful interfaith dialogue.';
-    }
+  if (userA.dialoguePreference === 'interfaith_dialogue' || userB.dialoguePreference === 'interfaith_dialogue') {
+    connectionReason = 'Open to respectful conversation across different perspectives.';
   }
 
   if (sharedValues.length > 0) {
