@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { usePathname, useRouter, type Href } from 'expo-router';
 import React, { memo, useCallback, useMemo, type ReactNode } from 'react';
@@ -296,7 +297,11 @@ export function AppDrawer() {
           >
             <SquircleSurface radius={22} fill={palette.wash} style={styles.profileCard}>
               <SquircleSurface radius={16} fill={palette.accentWash} style={styles.avatar}>
-                <Ionicons name={AVATAR_ICON[experience]} size={22} color={palette.accent} />
+                {user?.photoUrl ? (
+                  <Image source={{ uri: user.photoUrl }} style={styles.avatarPhoto} contentFit="cover" accessibilityIgnoresInvertColors />
+                ) : (
+                  <Ionicons name={AVATAR_ICON[experience]} size={22} color={palette.accent} />
+                )}
               </SquircleSurface>
               <SquircleSurface style={styles.profileText}>
                 <Text numberOfLines={1} style={[typography.subheading, { color: palette.ink }]}>
@@ -412,6 +417,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     height: 44,
     justifyContent: 'center',
+    width: 44,
+  },
+  avatarPhoto: {
+    height: 44,
     width: 44,
   },
   profileText: {
