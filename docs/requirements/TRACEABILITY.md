@@ -1,5 +1,25 @@
 # Requirements Traceability Matrix
 
+## Update — 2026-10-25 (5): calendar views, groups, Home, unified activities
+
+Checks: compile 0, lint 0, `pnpm test` 177/177, `pnpm test:db` 87/87. Not seen on device.
+Migration 9 written and tested on PGlite, **not pushed** (CLI not linked here).
+
+| Requirement | Status | Where | Evidence |
+| --- | --- | --- | --- |
+| Calendar Day/Week/Month/Year/Agenda + 7/30/90-day range | implemented | `(app)/calendar/index.tsx` | tsc; year view 11 ms |
+| Phase per date, monthly/weekly repeats, no invented times | fixed | `universalCalendarEngine.ts` | `agenda-sources.test.ts` |
+| Personal events on every calendar view; add/edit from calendar | implemented | `useAgendaSources`, `PersonalEventModal` | — |
+| Work and travel events | implemented | `PersonalCalendarEvent.category` | — |
+| Groups: join L6, create L10, founder-verified listing | implemented | migration 9, `circles/index.tsx`, `queries.ts` | `test:db` (9 checks) |
+| Dating gate L20, women start conversations | implemented (gate only) | `policy/engine.ts`, migration 9 | `progression-gates.test.ts` |
+| Religion inference | declined | — | DECISIONS_AND_CONFLICTS 2026-10-25 |
+| Home hero, week glance, one daily plan | implemented | `home/TodayHero`, `home/WeekGlance` | not device-tested |
+| Quests and workouts share one row | implemented | `game/ActivityRow` | — |
+| Drawer simplified; Health Connect entry | implemented | `drawerItems.ts` | `drawer-routes.test.ts` |
+| Check-in swipe gestures | implemented | `check-in/index.tsx` | not device-tested |
+| Left-aligned header titles | implemented | `AppHeader`, `CollapsingHeader` | — |
+
 ## Update — 2026-10-25 (4): You split, motion, date picker, theme
 
 Checks: compile 0, lint 0, `pnpm test` 172/172. Not seen on device (installed build is signed

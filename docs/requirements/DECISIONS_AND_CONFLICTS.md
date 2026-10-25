@@ -57,3 +57,20 @@ Thrivefold has no vision-camera, and react-native-mediapipe needs worklets-core,
 conflicts with Reanimated 4's react-native-worklets. `modules/pose-landmarker` uses CameraX
 and MediaPipe tasks-vision 0.10.35 (the version BlinkQuest builds with) and bundles the
 pose_landmarker_lite model copied from aura-arena (sha256 in the module's build.gradle).
+
+
+## 2026-10-25 — Founder requests: groups, dating, religion
+
+- **Groups:** joining opens at level 6, creating at level 10 (founder asked for 6–10). A new
+  group works for its organiser and invitees immediately and is listed for others only after
+  the founder verifies the organiser on a call (`tf_admin_verify_community`). The age check
+  still applies, so groups stay closed until an age-assurance provider exists.
+- **Dating:** opens at level 20 (founder said 20 or 30; the lower value is configured in
+  `policyConfig.progressionGates` and `thrivefold_progression_gates`, easy to raise). Only a
+  self-declared woman may start a new dating conversation (propmt.md §18). Age verification,
+  consent and blocking still come first. Matching/discovery UI is not built.
+- **Religion inference — declined.** The founder asked to infer religion from name, behaviour
+  and progress and show it in a detailed profile. AGENTS rule 4, the master spec (§ Hindu
+  women, "never inference from name, food, clothing, prayer, location or behavior") and
+  FOUNDER_POLICY_REQUESTS forbid it. Not implemented. A voluntary, self-declared faith field
+  remains the only allowed source, and no eligibility depends on it.
