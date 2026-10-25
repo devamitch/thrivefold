@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { Link, type Href } from 'expo-router';
 import React, { useState } from 'react';
-import { Modal, StyleSheet, Text, TextInput } from 'react-native';
+import { Modal, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { Badge } from '../../../components/ui/Badge';
@@ -77,19 +78,21 @@ export default function SettingsScreen() {
               <PressableScale
                 onPress={() => setIsEditingProfile(true)}
                 scaleTo={0.94}
-                accessibilityLabel="Edit Profile Avatar"
+                accessibilityLabel="Change your name and emblem"
               >
-                <SquircleSurface
-                  radius={20}
-                  smoothing={1}
-                  fill={colors.primaryAlpha}
-                  style={styles.avatarCircle}
-                >
-                  <Ionicons name={currentAvatar.icon} size={32} color={colors.primary} />
-                  <SquircleSurface radius={7} smoothing={1} fill={colors.primary} style={styles.editBadge}>
-                    <Ionicons name="pencil" size={10} color={colors.onPrimary} />
+                <View style={styles.avatarWrap}>
+                  <SquircleSurface radius={22} fill={colors.primaryAlpha} style={styles.avatarCircle}>
+                    {user?.photoUrl ? (
+                      <Image source={{ uri: user.photoUrl }} style={styles.avatarPhoto} contentFit="cover" accessibilityIgnoresInvertColors />
+                    ) : (
+                      <Ionicons name={currentAvatar.icon} size={30} color={colors.primary} />
+                    )}
                   </SquircleSurface>
-                </SquircleSurface>
+                  {/* Outside the clipped avatar, so it is never cut off */}
+                  <SquircleSurface radius={9} fill={colors.primary} style={styles.editBadge}>
+                    <Ionicons name="pencil" size={11} color={colors.onPrimary} />
+                  </SquircleSurface>
+                </View>
               </PressableScale>
 
               <SquircleSurface style={{ flex: 1, marginLeft: 16 }}>
@@ -123,20 +126,9 @@ export default function SettingsScreen() {
                   </Text>
                 ) : null}
                 <SquircleSurface style={styles.badgeRow}>
-                  <Badge
-                    label={user?.isGuest ? 'Guest' : user?.email ? 'Signed in' : 'On this device'}
-                    variant="neutral"
-                  />
-                  <Badge
-                    label={`Lvl ${level}`}
-                    variant="primary"
-                    style={{ marginLeft: 6 }}
-                  />
-                  <Badge
-                    label={`${currentStreak}d Streak`}
-                    variant="primary"
-                    style={{ marginLeft: 6 }}
-                  />
+                  <Badge label={`Level ${level}`} variant="primary" />
+                  {currentStreak > 0 ? <Badge label={`${currentStreak} day streak`} variant="primary" /> : null}
+                  <Badge label={user?.isGuest ? 'Guest' : user?.email ? 'Signed in' : 'On this phone'} variant="neutral" />
                 </SquircleSurface>
               </SquircleSurface>
             </SquircleSurface>
@@ -309,21 +301,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  avatarWrap: {
+    height: 68,
+    width: 68,
+  },
   avatarCircle: {
     width: 64,
     height: 64,
-    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
+  },
+  avatarPhoto: {
+    height: 64,
+    width: 64,
   },
   editBadge: {
     position: 'absolute',
-    bottom: -2,
-    right: -2,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    bottom: 0,
+    right: 0,
+    width: 22,
+    height: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -332,6 +329,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 6,
     flexWrap: 'wrap',
+    gap: 6,
   },
   editBtn: {
     paddingHorizontal: 12,
