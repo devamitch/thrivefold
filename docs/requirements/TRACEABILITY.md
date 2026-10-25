@@ -1,5 +1,21 @@
 # Requirements Traceability Matrix
 
+## Update — 2026-10-25 (11): pen-pal letters live, overflow pass
+
+Checks: compile 0, lint 0, `pnpm test` 188/188, `pnpm test:db` 94/94. Seen on the emulator: Train,
+Check in, Calendar, Nutrition, Sleep, Cycle tab and screen.
+
+| Item | Status | Where | Commit |
+| --- | --- | --- | --- |
+| Letters used invented data (fixed recipient, fake names and distances, dead Open button) | fixed: Supabase via React Query (inbox, sent, send, read, decline, reply, discover) | `services/supabase/letters.ts`, `letters/*` | e9d7ce2 |
+| Server chip catalogue empty in production (every send would fail) | migration 10 seeds the 23 approved chips | `20261025000010_*` | e9d7ce2 |
+| Pen-pal discovery read all social profiles | `tf_intro_candidates`: verified adults who accept introductions; caller must be verified | migration 10, `test:db` (+7 checks) | e9d7ce2 |
+| Truncated labels (Train tools, Cycle tab buttons); phase shown with no period | fixed | `exercise.tsx`, `SelectedDateOverviewCard`, calendar engine | a7b5e72 |
+| Dating pathway | **not built, on purpose**: the spec marks it REVIEW_REQUIRED (legal/platform review), identity rules are founder requests needing review, meetups excluded | `policy/engine.ts` | — |
+| Migrations 9 and 10 on the live project | BLOCKED: CLI not logged in/linked here. Owner: `supabase login && supabase link --project-ref lymbgfzngpkvcadrkvui && supabase db push` | — | — |
+| Correspondence for real users | BLOCKED: needs an age-assurance provider to set `is_age_verified` (REQ-013) | `navigation/eligibility.ts` | — |
+| Coach on a real camera, voice commands | NOT TESTED / not started (emulator camera is a test pattern) | `health/coach/[planId]` | — |
+
 ## Update — 2026-10-25 (10): crash, key warnings, sheets, drawer, layout boxes
 
 Checks: compile 0, lint 0, `pnpm test` 188/188. Seen on the Pixel emulator (debug build + Metro):
