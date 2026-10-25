@@ -15,11 +15,11 @@ export function TrendBars({ points, max, label, unit = '' }: { points: TrendPoin
   const values = points.map((p) => p.value).filter((v): v is number => v !== null);
   const avg = values.length ? Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 10) / 10 : null;
   return (
-    <View accessible accessibilityLabel={`${label}: ${values.length ? `average ${avg}${unit} over ${values.length} days` : 'no data yet'}`}>
+    <View accessible accessibilityLabel={`${label}: ${values.length ? `average ${avg}${unit} over ${values.length} day${values.length === 1 ? '' : 's'}` : 'no data yet'}`}>
       <View style={styles.row}>
         <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{label}</Text>
         <Text style={[typography.caption, { color: colors.text.secondary }]}>
-          {avg !== null ? `avg ${avg}${unit} · ${values.length} days` : 'No entries yet'}
+          {avg !== null ? `avg ${avg}${unit} · ${values.length} day${values.length === 1 ? '' : 's'}` : 'No entries yet'}
         </Text>
       </View>
       <View style={styles.bars}>

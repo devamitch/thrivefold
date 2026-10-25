@@ -36,7 +36,7 @@ const SETTINGS: { id: 'all' | WorkoutPlan['setting']; label: string }[] = [
 const TRAIN_TOOLS: { icon: keyof typeof Ionicons.glyphMap; label: string; route: Href }[] = [
   { icon: 'library-outline', label: 'Library', route: '/(app)/train/library' as Href },
   { icon: 'create-outline', label: 'Log reps', route: '/(app)/train/log' as Href },
-  { icon: 'bicycle-outline', label: 'Run or sport', route: '/(app)/health/activity' as Href },
+  { icon: 'bicycle-outline', label: 'Activity', route: '/(app)/health/activity' as Href },
   { icon: 'scan-outline', label: 'Form check', route: '/(app)/health/pose-check' as Href },
 ];
 

@@ -707,7 +707,7 @@ export function getDayRangeInfo(
       isFollicular: false,
       isLuteal: false,
       isPmsWindow: false,
-      phaseLabel: 'No Cycle Baseline',
+      phaseLabel: 'No period logged yet',
       holiday,
       personalEvents: matchingPersonalEvents,
       taskStats,

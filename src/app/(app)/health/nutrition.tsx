@@ -103,7 +103,7 @@ export default function NutritionScreen() {
           </Text>
           <Link href={'/(onboarding)/lifestyle-preferences' as Href} asChild>
             <Button
-              label="Edit Food Preferences"
+              label="Edit food preferences"
               size="sm"
               variant="outline"
               style={{ marginTop: 12, alignSelf: 'flex-start' }}
@@ -139,13 +139,13 @@ export default function NutritionScreen() {
 
           <View style={styles.stepperRow}>
             <Button
-              label="- Glass"
+              label="Remove glass"
               variant="outline"
               size="sm"
               onPress={() => setWaterGlasses((v) => Math.max(0, v - 1))}
             />
             <Button
-              label="+ Glass (250ml)"
+              label="Add glass (250 ml)"
               variant="primary"
               size="sm"
               onPress={() => setWaterGlasses((v) => Math.min(12, v + 1))}

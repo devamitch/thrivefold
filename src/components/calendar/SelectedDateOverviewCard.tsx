@@ -72,7 +72,7 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
         <View style={styles.rowBetween}>
           <View style={{ flex: 1, paddingRight: 8 }}>
             <Text style={[typography.captionBold, { color: colors.text.muted }]}>
-              {isToday ? "TODAY'S RHYTHM & FOCUS" : 'DAY FOCUS'}
+              {isToday ? 'Today' : 'Selected day'}
             </Text>
             <Text style={[typography.heading, { color: colors.text.primary, marginTop: 2 }]}>
               {formattedDate}
@@ -177,17 +177,22 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
                   {selectedDateRangeInfo.phaseLabel}
                 </Text>
               </View>
-              <Badge
-                label={
-                  selectedDateRangeInfo.isFollicular && selectedDateRangeInfo.isRecordedPeriod
-                    ? 'Follicular Overlap'
-                    : phaseConfig.label
-                }
-                variant="neutral"
-              />
+              {selectedDateRangeInfo.rangeType !== 'none' ? (
+                <Badge
+                  label={
+                    selectedDateRangeInfo.isFollicular && selectedDateRangeInfo.isRecordedPeriod
+                      ? 'Follicular overlap'
+                      : phaseConfig.label
+                  }
+                  variant="neutral"
+                />
+              ) : null}
             </View>
+            {/* Without a logged period there is no phase: say so instead of describing one. */}
             <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>
-              {phaseConfig.energyDesc} • {phaseConfig.description}
+              {selectedDateRangeInfo.rangeType === 'none'
+                ? 'Log the first day of a period to see phase estimates for each day.'
+                : `${phaseConfig.energyDesc} • ${phaseConfig.description}`}
             </Text>
           </SquircleSurface>
         )}
@@ -279,7 +284,7 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
         <View style={[styles.actionRow, { marginTop: spacing.md }]}>
           {isWomen && (
             <Button
-              label={existingPeriodRecord ? 'Edit Period Entry' : 'Log Period Bleeding'}
+              label={existingPeriodRecord ? 'Edit period' : 'Log period'}
               size="sm"
               variant={existingPeriodRecord ? 'outline' : 'primary'}
               onPress={onLogPeriod}
@@ -287,7 +292,7 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
             />
           )}
           <Button
-            label="+ Add Milestone"
+            label="Add event"
             size="sm"
             variant="outline"
             onPress={onAddMilestone}
@@ -301,10 +306,10 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
         <View style={styles.rowBetween}>
           <View style={{ flex: 1, paddingRight: 8 }}>
             <Text style={[typography.captionBold, { color: colors.text.muted }]}>
-              TASKS & VERIFICATIONS FOR {selectedDateStr}
+              Tasks for {selectedDateStr}
             </Text>
             <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 2 }]}>
-              Daily Tasks, Rituals & Habits
+              Tasks and habits
             </Text>
           </View>
           <Badge

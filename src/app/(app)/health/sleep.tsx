@@ -49,13 +49,13 @@ export default function SleepScreen() {
           <View style={styles.tipRow}>
             <Ionicons name="sunny-outline" size={20} color={colors.primary} />
             <Text style={[typography.subbody, { color: colors.text.secondary, marginLeft: 10, flex: 1 }]}>
-              Early Sunlight: Get 10–15 minutes of outdoor light exposure within 1 hour of waking to anchor cortisol.
+              Morning light: 10–15 minutes outdoors within an hour of waking helps set your body clock.
             </Text>
           </View>
           <View style={[styles.tipRow, { marginTop: 12 }]}>
             <Ionicons name="moon-outline" size={20} color={colors.primary} />
             <Text style={[typography.subbody, { color: colors.text.secondary, marginLeft: 10, flex: 1 }]}>
-              Night Wind-Down: Dim screens 60 minutes before bed; engage parasympathetic 4-7-8 box breathing.
+              Evening wind-down: dim screens about an hour before bed and try slow 4-7-8 breathing.
             </Text>
           </View>
         </Card>
