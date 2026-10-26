@@ -21,22 +21,45 @@ import { LM, SKELETON } from '../../domain/pose/movement';
 import { useTheme } from '../../theme/useTheme';
 
 const N = 33;
-const MAJOR_JOINTS = [
+const LEFT_JOINTS = [
   LM.leftShoulder,
-  LM.rightShoulder,
   LM.leftElbow,
-  LM.rightElbow,
   LM.leftWrist,
-  LM.rightWrist,
   LM.leftHip,
-  LM.rightHip,
   LM.leftKnee,
-  LM.rightKnee,
   LM.leftAnkle,
+];
+
+const RIGHT_JOINTS = [
+  LM.rightShoulder,
+  LM.rightElbow,
+  LM.rightWrist,
+  LM.rightHip,
+  LM.rightKnee,
   LM.rightAnkle,
 ];
-const MIN_VIS = 0.45;
-const FOLLOW = 0.85;
+
+const FEET_BONES: [number, number][] = [
+  [LM.leftAnkle, LM.leftHeel],
+  [LM.leftHeel, LM.leftFoot],
+  [LM.leftFoot, LM.leftAnkle],
+  [LM.rightAnkle, LM.rightHeel],
+  [LM.rightHeel, LM.rightFoot],
+  [LM.rightFoot, LM.rightAnkle],
+];
+
+const HEAD_BONES: [number, number][] = [
+  [LM.leftEyeInner, LM.leftEye],
+  [LM.leftEye, LM.leftEyeOuter],
+  [LM.rightEyeInner, LM.rightEye],
+  [LM.rightEye, LM.rightEyeOuter],
+  [LM.mouthLeft, LM.mouthRight],
+  [LM.nose, LM.leftEyeInner],
+  [LM.nose, LM.rightEyeInner],
+];
+
+const MIN_VIS = 0.42;
+const FOLLOW = 0.88;
 
 /**
  * High-performance, snappy tracking:
@@ -124,6 +147,7 @@ export const PoseOverlay = memo(function PoseOverlay({
   const shown = useSharedValue<number[]>(new Array(N * 3).fill(0));
   const present = useSharedValue(0);
   const handsShown = useSharedValue<number[]>([]);
+  const faceShown = useSharedValue<number[]>([]);
 
   // One Euro state: filtered position, velocity (px/ms), visibility
   const fx = useSharedValue<number[]>([]);
@@ -170,6 +194,14 @@ export const PoseOverlay = memo(function PoseOverlay({
     if (h.length || handsShown.value.length) {
       handsShown.value = h.length
         ? easeInto(handsShown.value, toStage(h), reduceMotion ? 1 : FOLLOW)
+        : [];
+    }
+
+    // Face mesh tracking
+    const f = feed.face?.value ?? [];
+    if (f.length || faceShown.value.length) {
+      faceShown.value = f.length
+        ? easeInto(faceShown.value, toStage(f), reduceMotion ? 1 : FOLLOW)
         : [];
     }
 
@@ -255,14 +287,33 @@ export const PoseOverlay = memo(function PoseOverlay({
     return path;
   };
 
-  // Main kinetic skeleton lines
+  // Main kinetic skeleton lines (torso, arms, legs, feet support triangles, and facial features)
   const bones = useDerivedValue(() => {
-    const path = bonePath(SKELETON, shown.value, present.value);
     const s = shown.value;
+    const path = bonePath(SKELETON, s, present.value);
+    if (present.value <= 0) return path;
+
+    // Feet support triangles (grounded base)
+    for (const [a, b] of FEET_BONES) {
+      if (s[a * 3 + 2] >= MIN_VIS && s[b * 3 + 2] >= MIN_VIS) {
+        path.moveTo(s[a * 3], s[a * 3 + 1]);
+        path.lineTo(s[b * 3], s[b * 3 + 1]);
+      }
+    }
+
+    // Facial feature contours (eyes, nose bridge, mouth)
+    for (const [a, b] of HEAD_BONES) {
+      if (s[a * 3 + 2] >= MIN_VIS && s[b * 3 + 2] >= MIN_VIS) {
+        path.moveTo(s[a * 3], s[a * 3 + 1]);
+        path.lineTo(s[b * 3], s[b * 3 + 1]);
+      }
+    }
+
+    // Cervical spine from shoulder midpoint to nose
     const n = LM.nose * 3;
     const l = LM.leftShoulder * 3;
     const r = LM.rightShoulder * 3;
-    if (present.value > 0 && s[n + 2] >= MIN_VIS && s[l + 2] >= MIN_VIS && s[r + 2] >= MIN_VIS) {
+    if (s[n + 2] >= MIN_VIS && s[l + 2] >= MIN_VIS && s[r + 2] >= MIN_VIS) {
       path.moveTo((s[l] + s[r]) / 2, (s[l + 1] + s[r + 1]) / 2);
       path.lineTo(s[n], s[n + 1]);
     }
@@ -284,26 +335,65 @@ export const PoseOverlay = memo(function PoseOverlay({
     return path;
   });
 
-  // Crisp solid luminous nodes on major articulation joints
-  const joints = useDerivedValue(() => {
+  // Left articulation joints (electric cyan #00E5FF)
+  const leftJoints = useDerivedValue(() => {
     const path = Skia.Path.Make();
     const s = shown.value;
     if (present.value <= 0) return path;
-    for (const i of MAJOR_JOINTS) {
-      if (s[i * 3 + 2] >= MIN_VIS) path.addCircle(s[i * 3], s[i * 3 + 1], 2.6);
+    for (const i of LEFT_JOINTS) {
+      if (s[i * 3 + 2] >= MIN_VIS) path.addCircle(s[i * 3], s[i * 3 + 1], 2.8);
     }
-    const n = LM.nose * 3;
-    if (s[n + 2] >= MIN_VIS) path.addCircle(s[n], s[n + 1], 2.8);
     return path;
   });
 
-  // Delicate glowing outer aura around major articulation joints
-  const jointRings = useDerivedValue(() => {
+  const leftJointRings = useDerivedValue(() => {
     const path = Skia.Path.Make();
     const s = shown.value;
     if (present.value <= 0) return path;
-    for (const i of MAJOR_JOINTS) {
-      if (s[i * 3 + 2] >= MIN_VIS) path.addCircle(s[i * 3], s[i * 3 + 1], 4.8);
+    for (const i of LEFT_JOINTS) {
+      if (s[i * 3 + 2] >= MIN_VIS) path.addCircle(s[i * 3], s[i * 3 + 1], 5.6);
+    }
+    return path;
+  });
+
+  // Right articulation joints (electric amber #FF9100)
+  const rightJoints = useDerivedValue(() => {
+    const path = Skia.Path.Make();
+    const s = shown.value;
+    if (present.value <= 0) return path;
+    for (const i of RIGHT_JOINTS) {
+      if (s[i * 3 + 2] >= MIN_VIS) path.addCircle(s[i * 3], s[i * 3 + 1], 2.8);
+    }
+    return path;
+  });
+
+  const rightJointRings = useDerivedValue(() => {
+    const path = Skia.Path.Make();
+    const s = shown.value;
+    if (present.value <= 0) return path;
+    for (const i of RIGHT_JOINTS) {
+      if (s[i * 3 + 2] >= MIN_VIS) path.addCircle(s[i * 3], s[i * 3 + 1], 5.6);
+    }
+    return path;
+  });
+
+  // Center alignment nose dot
+  const nosePip = useDerivedValue(() => {
+    const path = Skia.Path.Make();
+    const s = shown.value;
+    if (present.value <= 0) return path;
+    const n = LM.nose * 3;
+    if (s[n + 2] >= MIN_VIS) path.addCircle(s[n], s[n + 1], 3.2);
+    return path;
+  });
+
+  // Dense face mesh pips
+  const faceMesh = useDerivedValue(() => {
+    const path = Skia.Path.Make();
+    const fp = faceShown.value;
+    if (present.value <= 0 || fp.length === 0) return path;
+    for (let i = 0; i + 1 < fp.length; i += 2) {
+      path.addCircle(fp[i], fp[i + 1], 1.2);
     }
     return path;
   });
@@ -489,15 +579,25 @@ export const PoseOverlay = memo(function PoseOverlay({
         color={colors.error}
       />
 
-      {/* Layer 4: Joint articulation: glowing aura + crisp core pip */}
-      <Path path={jointRings} style="stroke" strokeWidth={1.0} color={glow} opacity={0.55} />
-      <Path path={joints} color={colors.callText} />
+      {/* Layer 4: Left articulation: cyan glowing aura + crisp core pip */}
+      <Path path={leftJointRings} style="stroke" strokeWidth={1.2} color="#00E5FF" opacity={0.65} />
+      <Path path={leftJoints} color="#FFFFFF" />
 
-      {/* Layer 5: High-contrast fault joint alerts */}
+      {/* Layer 5: Right articulation: amber glowing aura + crisp core pip */}
+      <Path path={rightJointRings} style="stroke" strokeWidth={1.2} color="#FF9100" opacity={0.65} />
+      <Path path={rightJoints} color="#FFFFFF" />
+
+      {/* Layer 6: Center alignment nose dot */}
+      <Path path={nosePip} color="#FFFFFF" />
+
+      {/* Layer 7: Face mesh dense pips */}
+      <Path path={faceMesh} color="#00E5FF" opacity={0.35} />
+
+      {/* Layer 8: High-contrast fault joint alerts */}
       <Path path={faultHalos} style="stroke" strokeWidth={2.0} color={colors.error} opacity={0.7} />
       <Path path={faultJoints} color={colors.error} />
 
-      {/* Layer 6: Measured angle reticle & arc */}
+      {/* Layer 9: Measured angle reticle & arc */}
       <Path
         path={angleArc}
         style="stroke"
@@ -507,14 +607,14 @@ export const PoseOverlay = memo(function PoseOverlay({
       />
       <Path path={angleVertex} color={glow} />
 
-      {/* Layer 7: Hands kinetic lines & pips */}
+      {/* Layer 10: Hands kinetic lines & pips */}
       <Path
         path={handLines}
         style="stroke"
         strokeWidth={1.2}
         strokeCap="round"
-        color={glow}
-        opacity={0.4}
+        color="#00E5FF"
+        opacity={0.45}
       />
       <Path path={handJoints} color={colors.callText} />
 

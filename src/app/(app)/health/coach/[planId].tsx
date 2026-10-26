@@ -143,6 +143,27 @@ export default function CoachScreen() {
         }
         return;
       }
+      if (g === 'cross_arms') {
+        autoPaused.current = true;
+        player.current?.pause();
+        say('Paused. Take a moment.');
+        return;
+      }
+      if (g === 'hands_on_hips') {
+        setRest((r) => r + 30);
+        say('Added 30 seconds rest.');
+        return;
+      }
+      if (g === 't_pose') {
+        if (itemIdx > 0) {
+          say('Going back');
+          session.setItemIdx(itemIdx - 1);
+          session.setSetIdx(0);
+        } else {
+          say('At first exercise');
+        }
+        return;
+      }
       if (rest > 0) {
         say('Skipping rest');
         setRest(0);
@@ -159,6 +180,7 @@ export default function CoachScreen() {
       rest,
       countdown,
       item,
+      itemIdx,
       movement,
       cameraOn,
       completeSet,

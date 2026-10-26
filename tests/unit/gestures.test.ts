@@ -47,3 +47,17 @@ test('a brief raise does not fire', () => {
   }
   expect(any).toBe(false);
 });
+
+test('detects crossed arms and hands on hips', () => {
+  const crossed = body(false, false);
+  crossed[LM.leftWrist] = p(0.51, 0.42);
+  crossed[LM.rightWrist] = p(0.49, 0.42);
+  expect(gestureIn(crossed)).toBe('cross_arms');
+
+  const onHips = body(false, false);
+  onHips[LM.leftHip] = p(0.44, 0.6);
+  onHips[LM.rightHip] = p(0.56, 0.6);
+  onHips[LM.leftWrist] = p(0.45, 0.6);
+  onHips[LM.rightWrist] = p(0.55, 0.6);
+  expect(gestureIn(onHips)).toBe('hands_on_hips');
+});

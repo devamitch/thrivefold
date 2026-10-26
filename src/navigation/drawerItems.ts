@@ -56,7 +56,6 @@ export const DRAWER_SECTIONS: { title: string; items: Item[] }[] = [
     title: 'Together',
     items: [
       { label: 'Letters', icon: 'mail-outline', route: '/(app)/letters', social: true },
-      { label: 'Dating', icon: 'heart-circle-outline', route: '/(app)/dating', social: true, minLevel: 20 },
       { label: 'Circles', icon: 'people-outline', route: '/(app)/circles', minLevel: 6 },
       { label: 'Organizations', icon: 'business-outline', route: '/(app)/organizations', minLevel: 6 },
     ],

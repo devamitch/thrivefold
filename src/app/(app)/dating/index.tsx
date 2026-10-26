@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter, type Href } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 import { ChipComposer } from '../../../components/dating/ChipComposer';
@@ -20,27 +20,64 @@ import {
   useDatingCandidates,
   useDatingConversations,
   useDatingProfile,
+  useSaveDatingProfile,
   useStartConversation,
   type DatingCandidate,
+  type DatingGender,
 } from '../../../services/supabase/dating';
 import { useRootStore } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
 
-/** Dating home: people to meet and your conversations. Every rule is checked on the server. */
+/** Letter exchange: verified adults, unhurried correspondence. */
 export default function DatingScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
   const showAlert = useRootStore((s) => s.showAlert);
+  const experience = useRootStore((s) => s.experience);
+  const onboarding = useRootStore((s) => s.onboarding);
   const [tab, setTab] = useState<'discover' | 'chats'>('discover');
   const [hello, setHello] = useState<DatingCandidate | null>(null);
+  const [synthesizing, setSynthesizing] = useState(false);
 
   const profile = useDatingProfile(true);
   const hasProfile = Boolean(profile.data);
   const candidates = useDatingCandidates(hasProfile && tab === 'discover');
   const chats = useDatingConversations(hasProfile);
   const start = useStartConversation();
+  const save = useSaveDatingProfile();
   const unread = (chats.data ?? []).reduce((n, c) => n + c.unread, 0);
   const canStart = profile.data?.gender === 'woman';
+
+  // Smart auto-synthesis: rather than blocking the user with a questionnaire,
+  // the app auto-derives the initial correspondence profile from the user's ongoing journey.
+  useEffect(() => {
+    if (!profile.isLoading && !profile.data && !profile.error && !save.isPending && !synthesizing) {
+      setSynthesizing(true);
+      const gender: DatingGender =
+        experience === 'women_health' ? 'woman' : experience === 'men_health' ? 'man' : 'nonbinary';
+      const interested_in: DatingGender[] =
+        gender === 'woman' ? ['man', 'woman'] : gender === 'man' ? ['woman'] : ['woman', 'man', 'nonbinary'];
+      const interests =
+        onboarding?.goals && onboarding.goals.length > 0
+          ? onboarding.goals.slice(0, 4)
+          : ['Walks', 'Reading', 'Fitness', 'Nature'];
+
+      save.mutate({
+        gender,
+        interested_in,
+        interests,
+        prompt_chip_ids: [],
+        is_active: true,
+        preferences: {
+          age_band: '25-34',
+          want_age_bands: ['18-24', '25-34', '35-44', '45-54', '55+'],
+          languages: ['English'],
+          intention: 'friendship_first',
+          pace: 'slow',
+        },
+      });
+    }
+  }, [profile.isLoading, profile.data, profile.error, save.isPending, synthesizing, experience, onboarding]);
 
   const errorCard = (e: unknown) => (
     <Card style={{ padding: spacing.lg }}>
@@ -65,20 +102,29 @@ export default function DatingScreen() {
         }
       />
       <View>
-        {profile.isLoading ? (
-          <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} />
+        {profile.isLoading || synthesizing || save.isPending ? (
+          <View style={{ alignItems: 'center', marginTop: spacing.xl, padding: spacing.lg }}>
+            <ActivityIndicator color={colors.primary} />
+            <Text style={[typography.caption, { color: colors.text.secondary, marginTop: spacing.sm }]}>
+              {synthesizing || save.isPending ? 'Preparing your correspondence profile...' : 'Loading letter exchange...'}
+            </Text>
+          </View>
         ) : profile.error ? (
           errorCard(profile.error)
         ) : !hasProfile ? (
           <Card style={{ padding: spacing.lg }}>
-            <Text style={[typography.subheading, { color: colors.text.primary }]}>Set up your correspondence profile</Text>
+            <Text style={[typography.subheading, { color: colors.text.primary }]}>Connecting to Letter Exchange</Text>
             <Text style={[typography.body, { color: colors.text.secondary, marginTop: 6 }]}>
-              Say how you identify and who you’d like to write to. No photos, no exact location, no contact details. Women send the
-              first letter; anyone can reply. You can pause or delete your profile any time.
+              Thoughtful correspondence between verified adults.
             </Text>
-            <Link href={'/(app)/dating/profile' as Href} asChild>
-              <Button label="Set up profile" style={{ marginTop: spacing.md }} />
-            </Link>
+            <Button
+              label="Retry"
+              style={{ marginTop: spacing.md }}
+              onPress={() => {
+                setSynthesizing(false);
+                profile.refetch();
+              }}
+            />
           </Card>
         ) : (
           <>
