@@ -229,6 +229,96 @@ export const EXERCISES: Exercise[] = [
   { id: 'band_pull_apart', name: 'Band pull-apart', pattern: 'pull', equipment: 'band', weighted: false,
     steps: ['Hold a band at shoulder height, arms straight.', 'Pull the band apart to your chest.', 'Return slowly.'],
     easier: 'Lighter band.', harder: 'Pause at the chest.', safety: 'Keep shoulders down, away from ears.' },
+
+  // ── Indian Yoga (Hatha / classical) ──
+  { id: 'surya_namaskar', name: 'Surya Namaskar (Sun salutation)', pattern: 'yoga', equipment: 'none', weighted: false,
+    steps: [
+      'Pranamasana — stand, palms together at chest.',
+      'Hastauttanasana — raise arms, gentle backbend.',
+      'Uttanasana — fold forward, palms to floor.',
+      'Ashwa Sanchalanasana — step right leg back, low lunge.',
+      'Dandasana — plank position.',
+      'Ashtanga Namaskara — lower knees, chest and chin to floor.',
+      'Bhujangasana — cobra; press chest up.',
+      'Adho Mukha Svanasana — downward dog.',
+      'Repeat lunge and fold, then rise and return to prayer.',
+    ],
+    easier: 'Knees down throughout; skip cobra.', harder: 'Faster flow, 6–12 rounds.', safety: 'Move with the breath; skip with wrist, knee or back pain.' },
+  { id: 'virabhadrasana_1', name: 'Virabhadrasana I (Warrior I)', pattern: 'yoga', equipment: 'none', weighted: false, timed: true,
+    steps: ['Step left foot back, turn it 45°.', 'Bend front knee over ankle.', 'Hips squared forward.', 'Raise arms overhead, palms facing.'],
+    easier: 'Shorter stance, hands at hips.', harder: 'Deeper lunge, longer hold.', safety: 'Keep back heel grounded.' },
+  { id: 'virabhadrasana_3', name: 'Virabhadrasana III (Warrior III)', pattern: 'balance', equipment: 'none', weighted: false, timed: true,
+    steps: ['From Warrior I, shift weight to front foot.', 'Hinge forward, extend back leg and arms.', 'Body parallel to floor; gaze down.'],
+    easier: 'Hands on a chair; small hip height.', harder: 'Arms alongside body; eyes closed.', safety: 'Stand near a wall.' },
+  { id: 'malasana', name: 'Malasana (Garland / yogi squat)', pattern: 'mobility', equipment: 'none', weighted: false, timed: true,
+    steps: ['Feet wider than hips, toes out.', 'Squat deep, bringing hips low.', 'Elbows press knees out; palms together.'],
+    easier: 'Heels on a rolled towel.', harder: 'Arms extended overhead.', safety: 'Avoid with knee pain; use support.' },
+  { id: 'naukasana', name: 'Naukasana (Boat pose)', pattern: 'core', equipment: 'none', weighted: false, timed: true,
+    steps: ['Sit, knees bent, lean back slightly.', 'Lift feet to knee height; balance on sit-bones.', 'Arms parallel to floor; chest open.'],
+    easier: 'Hold knees with hands.', harder: 'Extend legs to 45°.', safety: 'Keep lower back long, not rounded.' },
+  { id: 'vrikshasana', name: 'Vrikshasana (Tree pose)', pattern: 'balance', equipment: 'none', weighted: false, timed: true,
+    steps: ['Stand; fix gaze on a point.', 'Place one foot on inner calf or thigh (not the knee).', 'Grow tall; arms rise overhead or to prayer.'],
+    easier: 'Toes touching floor, hand on wall.', harder: 'Eyes closed; arms wide.', safety: 'Use a wall when learning.' },
+  { id: 'trikonasana', name: 'Trikonasana (Triangle pose)', pattern: 'mobility', equipment: 'none', weighted: false, timed: true,
+    steps: ['Feet wide, front foot forward.', 'Reach the front arm forward, then lower to the shin or floor.', 'Top arm reaches up; gaze follows.'],
+    easier: 'Hand on knee; smaller stance.', harder: 'Block on floor, longer hold.', safety: 'Avoid over-rotating the spine.' },
+
+  // ── Kalaripayattu (Kerala martial art fundamentals) ──
+  { id: 'kalaripayattu_ashva', name: 'Ashva stance (Horse stance)', pattern: 'squat', equipment: 'none', weighted: false, timed: true,
+    steps: ['Feet twice shoulder-width, toes out 45°.', 'Sink hips to thigh-parallel.', 'Spine tall, weight even on both feet.', 'Hold steady; breathe through the nose.'],
+    easier: 'Shallower squat, shorter hold.', harder: 'Deeper, longer hold with eyes closed.', safety: 'Ease into it; protect the knees — stop with any sharp joint pain.' },
+  { id: 'kalaripayattu_tiger', name: 'Vyaghra (Tiger step)', pattern: 'mobility', equipment: 'none', weighted: false,
+    steps: ['Start on all fours.', 'Arch the back and push hips back — cat-cow flow.', 'Spring one leg forward in a wide low lunge.', 'Return and repeat on the other side.'],
+    easier: 'Slower steps, shallower lunge.', harder: 'Add a flowing jump into the lunge.', safety: 'Warm up hips and wrists first.' },
+  { id: 'kalaripayattu_horse_kick', name: 'Kalaripayattu side kick', pattern: 'plyometric', equipment: 'none', weighted: false,
+    steps: ['Stand in Ashva stance.', 'Shift weight to one leg.', 'Chamber the knee, then extend the leg to the side with the heel.', 'Return and alternate.'],
+    easier: 'Light tap, hold a wall.', harder: 'Higher kick, faster rhythm.', safety: 'Warm up hips; no forced range of motion.' },
+  { id: 'kalaripayattu_eagle', name: 'Garuda (Eagle leap)', pattern: 'plyometric', equipment: 'none', weighted: false,
+    steps: ['From Ashva stance, coil the body.', 'Explode up and twist in the air.', 'Land softly back in stance.'],
+    easier: 'Vertical jump without twist.', harder: 'Full rotation, land silently.', safety: 'Clear space; land with soft knees.' },
+
+  // ── Hindu / Desi body exercises ──
+  { id: 'dand_baithak', name: 'Dand-Baithak (Hindu squat + pushup circuit)', pattern: 'squat', equipment: 'none', weighted: false,
+    steps: [
+      'Hindu squat: rise on toes at the bottom, swing arms forward as you sink.',
+      'Hindu pushup: from downward dog, sweep chest forward through a low arc, press up to cobra, return.',
+      'Alternate one squat, one pushup per rep.',
+    ],
+    easier: 'Do Hindu squats or pushups separately.', harder: 'Faster tempo, more rounds.', safety: 'Ease into the shoulder range; stop with wrist pain.' },
+  { id: 'hindu_squat', name: 'Hindu squat (Bethak)', pattern: 'squat', equipment: 'none', weighted: false,
+    steps: ['Feet hip-width, heels lift slightly as you descend.', 'Swing arms forward and down.', 'Squat fully, then drive through balls of feet to stand.'],
+    easier: 'Slower tempo, smaller heel lift.', harder: 'Rapid continuous rhythm.', safety: 'Stop with knee pain; prioritise a flat floor.' },
+  { id: 'hindu_pushup', name: 'Hindu pushup (Dand)', pattern: 'push', equipment: 'none', weighted: false,
+    steps: ['Start in downward dog (pike).', 'Sweep chest forward low to the floor.', 'Press into cobra.', 'Push back to pike.'],
+    easier: 'Knees down, narrower arc.', harder: 'Full range; add a pause in cobra.', safety: 'Keep wrists neutral; skip with shoulder impingement.' },
+  { id: 'surya_namaskar_b', name: 'Surya Namaskar B (dynamic flow)', pattern: 'yoga', equipment: 'none', weighted: false,
+    steps: [
+      'Utkatasana — chair pose.', 'Fold and jump or step back.', 'Chaturanga or knees-chest-chin.', 'Upward dog.', 'Downward dog — hold 5 breaths.',
+      'Warrior I right.', 'Return, repeat Warrior I left.', 'Jump or step to Utkatasana, then Tadasana.',
+    ],
+    easier: 'Step transitions, knees down.', harder: 'Jump transitions, full vinyasa.', safety: 'Move with the breath; rest in child\'s pose anytime.' },
+
+  // ── Martial arts basics ──
+  { id: 'jab_cross_combo', name: 'Jab-cross punch combination', pattern: 'plyometric', equipment: 'none', weighted: false,
+    steps: ['Stand in orthodox or southpaw stance (dominant foot back).', 'Jab with the lead hand — short, straight, return fast.', 'Cross with the rear hand — rotate hips, drive through the punch.', 'Cycle continuously.'],
+    easier: 'Shadow box slowly; focus on rotation.', harder: 'Add footwork; increase tempo.', safety: 'Shadow boxing only — no contact training without supervision.' },
+  { id: 'muay_thai_teep', name: 'Push kick (Teep)', pattern: 'plyometric', equipment: 'none', weighted: false,
+    steps: ['Stand in stance.', 'Chamber the front knee up to hip height.', 'Push the heel forward, extending the leg.', 'Retract and return to stance.'],
+    easier: 'Slow chamber only; hold a wall.', harder: 'Combine with jab-cross; add speed.', safety: 'Stand near a wall when learning balance.' },
+  { id: 'shadow_boxing', name: 'Shadow boxing', pattern: 'cardio', equipment: 'none', weighted: false, timed: true,
+    steps: ['Move around a space using your feet.', 'Throw jabs, crosses, hooks and upper-cuts at controlled speed.', 'Include slips, rolls and head movement.'],
+    easier: 'Focus on one punch at a time.', harder: 'Add knee or kick combinations.', safety: 'Control punches fully; no swinging.' },
+  { id: 'squat_roundhouse', name: 'Squat to roundhouse kick', pattern: 'plyometric', equipment: 'none', weighted: false,
+    steps: ['Squat down.', 'Rise and chamber the knee.', 'Pivot on the support foot, swing the shin and foot in an arc.', 'Return to stance.'],
+    easier: 'Squat only or kick only.', harder: 'Add speed; increase squat depth.', safety: 'Only kick in open space; warm up hips.' },
+
+  // ── Antigravity / inversion mobility ──
+  { id: 'wall_handstand_hold', name: 'Wall handstand hold', pattern: 'balance', equipment: 'none', weighted: false, timed: true,
+    steps: ['Stand a foot from the wall.', 'Place hands shoulder-width, kick up one leg at a time.', 'Both heels touch the wall; body in a line.', 'Breathe steadily.'],
+    easier: 'Pike on hands with feet on a box.', harder: 'Free-balance kick-up.', safety: 'Skip with wrist, shoulder or blood-pressure issues; always have a soft surface.' },
+  { id: 'shoulder_stand', name: 'Shoulder stand (Sarvangasana)', pattern: 'yoga', equipment: 'none', weighted: false, timed: true,
+    steps: ['Lie on your back.', 'Lift legs and hips; support the back with hands.', 'Body vertical from shoulders to toes.', 'Chin tucked lightly; breathe.'],
+    easier: 'Legs up the wall (Viparita Karani).', harder: 'Lower one leg to the floor (Halasana prep).', safety: 'Skip with neck problems or high blood pressure.' },
 ];
 
 export const PLANS: WorkoutPlan[] = [
@@ -330,6 +420,55 @@ export const PLANS: WorkoutPlan[] = [
       { exerciseId: 'db_row', sets: 3, target: 10, restSeconds: 75 },
       { exerciseId: 'side_plank', sets: 2, target: 30, restSeconds: 30 },
       { exerciseId: 'bird_dog', sets: 2, target: 10, restSeconds: 30 },
+    ] },
+
+  // ── Indian Yoga plans ──
+  { id: 'surya_namaskar_flow', title: 'Surya Namaskar flow', summary: 'Classical 12-step sun salutation sequence — moving meditation.', setting: 'yoga', level: 'beginner', minutes: 20,
+    items: [
+      { exerciseId: 'surya_namaskar', sets: 4, target: 1, restSeconds: 30 },
+      { exerciseId: 'vrikshasana', sets: 2, target: 30, restSeconds: 15 },
+      { exerciseId: 'virabhadrasana_1', sets: 2, target: 20, restSeconds: 15 },
+      { exerciseId: 'malasana', sets: 2, target: 30, restSeconds: 20 },
+      { exerciseId: 'child_pose', sets: 1, target: 60, restSeconds: 0 },
+    ] },
+  { id: 'indian_classical_yoga', title: 'Indian classical yoga', summary: 'Hatha asanas: warriors, triangle, boat and inversions.', setting: 'yoga', level: 'intermediate', minutes: 30,
+    items: [
+      { exerciseId: 'surya_namaskar', sets: 2, target: 1, restSeconds: 20 },
+      { exerciseId: 'virabhadrasana_1', sets: 2, target: 30, restSeconds: 15 },
+      { exerciseId: 'virabhadrasana_3', sets: 2, target: 20, restSeconds: 20 },
+      { exerciseId: 'trikonasana', sets: 2, target: 30, restSeconds: 15 },
+      { exerciseId: 'naukasana', sets: 3, target: 20, restSeconds: 20 },
+      { exerciseId: 'shoulder_stand', sets: 1, target: 30, restSeconds: 30 },
+      { exerciseId: 'child_pose', sets: 1, target: 60, restSeconds: 0 },
+    ] },
+
+  // ── Kalaripayattu plan ──
+  { id: 'kalaripayattu_foundations', title: 'Kalaripayattu foundations', summary: 'Kerala martial art — stances, tiger steps, kicks.', setting: 'home', level: 'beginner', minutes: 25,
+    items: [
+      { exerciseId: 'kalaripayattu_ashva', sets: 3, target: 30, restSeconds: 30 },
+      { exerciseId: 'kalaripayattu_tiger', sets: 3, target: 8, restSeconds: 30 },
+      { exerciseId: 'kalaripayattu_horse_kick', sets: 3, target: 10, restSeconds: 30 },
+      { exerciseId: 'kalaripayattu_eagle', sets: 2, target: 6, restSeconds: 45 },
+      { exerciseId: 'malasana', sets: 2, target: 30, restSeconds: 20 },
+    ] },
+
+  // ── Hindu / Desi body plan ──
+  { id: 'hindu_dand_baithak', title: 'Dand-Baithak circuit', summary: 'Traditional Hindu squats and pushups for total-body strength.', setting: 'home', level: 'intermediate', minutes: 20,
+    items: [
+      { exerciseId: 'hindu_squat', sets: 3, target: 20, restSeconds: 45 },
+      { exerciseId: 'hindu_pushup', sets: 3, target: 10, restSeconds: 45 },
+      { exerciseId: 'dand_baithak', sets: 2, target: 8, restSeconds: 60 },
+      { exerciseId: 'kalaripayattu_ashva', sets: 2, target: 30, restSeconds: 30 },
+    ] },
+
+  // ── Martial arts HIIT ──
+  { id: 'martial_arts_hiit', title: 'Martial arts HIIT', summary: 'Shadow boxing, kicks and functional combat movement.', setting: 'hiit', level: 'intermediate', minutes: 25,
+    items: [
+      { exerciseId: 'shadow_boxing', sets: 3, target: 60, restSeconds: 30 },
+      { exerciseId: 'jab_cross_combo', sets: 3, target: 20, restSeconds: 30 },
+      { exerciseId: 'muay_thai_teep', sets: 3, target: 10, restSeconds: 30 },
+      { exerciseId: 'squat_roundhouse', sets: 2, target: 8, restSeconds: 40 },
+      { exerciseId: 'kalaripayattu_eagle', sets: 2, target: 5, restSeconds: 45 },
     ] },
 ];
 
