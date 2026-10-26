@@ -22,6 +22,7 @@ export { CoachBanner, type BannerTone } from './CoachBanner';
 export { CountdownOverlay } from './CountdownOverlay';
 export { RestOverlay } from './RestOverlay';
 export { GlassButton } from './GlassButton';
+export { CoachVideoStage, type VideoDisplayMode } from './CoachVideoStage';
 
 export { useCoachSession, clock, say, type Phase, type DoneSummary, type ExerciseResult } from './useCoachSession';
 export { usePoseTracking } from './usePoseTracking';

@@ -55,6 +55,7 @@ export function usePoseTracking({
   const [framing, setFraming] = useState<FramingCue | null>(null);
   const [rep, setRep] = useState<RepState>(initialRepState());
   const [gestureProgress, setGestureProgress] = useState<{ g: Gesture | null; p: number }>({ g: null, p: 0 });
+  const gestureProgressRef = useRef<{ g: Gesture | null; p: number }>({ g: null, p: 0 });
 
   const repRef = useRef<RepState>(initialRepState());
   const hasPersonRef = useRef(false);
@@ -130,8 +131,11 @@ export function usePoseTracking({
         if (g.fired) onGesture(g.fired);
         const nextG = g.state.latched ? null : g.state.current;
         const nextP = g.state.latched ? 0 : Math.round(g.progress * 10) / 10;
-        if (nextP !== gestureProgress.p || nextG !== gestureProgress.g)
+        const gp = gestureProgressRef.current;
+        if (nextP !== gp.p || nextG !== gp.g) {
+          gestureProgressRef.current = { g: nextG, p: nextP };
           setGestureProgress({ g: nextG, p: nextP });
+        }
       }
 
       // Framing cues — debounced so single bad frames don't flash
@@ -207,14 +211,16 @@ export function usePoseTracking({
       }
 
       const doneNow = value >= item.target;
-      if (now - lastUi.current > 100 || doneNow || next.fault !== before.fault) {
+      const valueChanged = value !== progressOf(before);
+      const faultChanged = next.fault?.title !== before.fault?.title;
+      if (valueChanged || faultChanged || doneNow || now - lastUi.current > 200) {
         lastUi.current = now;
         setRep(next);
       }
       if (doneNow) onCompleteSet(value);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [checking, movement, item, videoPlaying, onCompleteSet, gestureProgress, onGesture,
+    [checking, movement, item, videoPlaying, onCompleteSet, onGesture,
      feed, facing, countdown, timed, progressOf, sayFn],
   );
 

@@ -38,6 +38,7 @@ import {
   CoachBanner,
   CoachHUD,
   CoachIntro,
+  CoachVideoStage,
   CountdownOverlay,
   GlassButton,
   RestOverlay,
@@ -112,14 +113,14 @@ export default function CoachScreen() {
   const [cameraOn, setCameraOn] = useState(false);
   const [facing, setFacing] = useState<'front' | 'back'>('front');
   const [fullTracking, setFullTracking] = useState(false);
-  const [pipLarge, setPipLarge] = useState(false);
   const [videoPlaying, setVideoPlaying] = useState(false);
   const [videoMounted, setVideoMounted] = useState(false);
   const [stage, setStage] = useState({ width: 0, height: 0 });
   const countdownArmed = useRef(false);
   const autoPaused = useRef(false);
   const player = useRef<YouTubePlayerHandle>(null);
-  const counterPulseAnimStyle = { transform: [{ scale: 1 }] }; // placeholder — real value from usePoseTracking
+  const hasWatched = useRootStore((s) => (item ? Boolean(s.watchedTutorials[item.exerciseId]) : false));
+  const markTutorialWatched = useRootStore((s) => s.markTutorialWatched);
 
   // ── Checking active ───────────────────────────────────────────────────────
   const checking =
@@ -327,7 +328,6 @@ export default function CoachScreen() {
   const remaining = Math.max(0, item.target - counted);
   const share = Math.min(1, counted / Math.max(1, item.target));
   const starting = cameraMain && !poseTrack.trackingReady && !poseTrack.cameraError;
-  const pipWidth = Math.round(Math.min(stage.width || 360, 520) * (pipLarge ? 0.72 : 0.42));
 
   const upNext =
     setIdx + 1 < item.sets
@@ -543,37 +543,24 @@ export default function CoachScreen() {
             active={fullTracking}
             onPress={() => setFullTracking((v) => !v)}
           />
-          <GlassButton
-            icon={pipLarge ? 'contract' : 'film-outline'}
-            label={pipLarge ? 'Make tutorial smaller' : 'Make tutorial bigger'}
-            onPress={() => setPipLarge((v) => !v)}
-          />
         </View>
       ) : null}
 
-      {/* PiP tutorial video (when camera is the main view) */}
+      {/* Tutorial video stage: handles first-time skippable auto-play, PiP, and minimized pill */}
       {cameraMain ? (
-        <CoachGlass
-          radius={18}
-          style={[styles.pip, { top: insets.top + 72, left: spacing.base, width: pipWidth }]}
-        >
-          {videoTile}
-          <View style={styles.pipControls} pointerEvents="box-none">
-            <PressableScale
-              onPress={() => {
-                autoPaused.current = false;
-                if (videoPlaying) player.current?.pause();
-                else player.current?.play();
-              }}
-              accessibilityRole="button"
-              accessibilityLabel={videoPlaying ? 'Pause tutorial' : 'Play tutorial'}
-              hitSlop={8}
-              style={[styles.pipBtn, { backgroundColor: colors.callSurface }]}
-            >
-              <Ionicons name={videoPlaying ? 'pause' : 'play'} size={14} color={colors.callText} />
-            </PressableScale>
-          </View>
-        </CoachGlass>
+        <CoachVideoStage
+          ref={player}
+          exerciseId={item.exerciseId}
+          exerciseName={exercise.name}
+          videoId={video?.videoId}
+          hasWatched={hasWatched}
+          onMarkWatched={() => markTutorialWatched(item.exerciseId)}
+          videoPlaying={videoPlaying}
+          onPlayingChange={setVideoPlaying}
+          stageWidth={stage.width}
+          topInset={insets.top}
+          cameraMain={cameraMain}
+        />
       ) : null}
 
       {/* Coaching banner — one message at a time */}
