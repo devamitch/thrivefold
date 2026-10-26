@@ -98,11 +98,39 @@ export default function MealLogScreen() {
     }
   };
 
-  const save = () => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const save = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+    let finalAiNote = aiAnalysisNote;
+    try {
+      if (!finalAiNote && items.length > 0) {
+        setAnalyzingAi(true);
+        const res = await analyzeMealMacrosWithAi(items, note);
+        finalAiNote = `${res.kcal} kcal · ${res.protein}g protein · ${res.carbs}g carbs · ${res.fat}g fat (${res.notes})`;
+        setAiAnalysisNote(finalAiNote);
+      }
+    } catch {
+      // Safe fallback
+    } finally {
+      setAnalyzingAi(false);
+    }
+
     const st = useRootStore.getState();
-    const finalNote = [note.trim(), aiAnalysisNote].filter(Boolean).join(' · ');
-    st.saveMealLog({ date: formatLocalDate(new Date()), at: new Date().toISOString(), type, photoUri: photo ?? undefined, items, note: finalNote || undefined });
-    const description = items.map((i) => `${i.servings} x ${foodById(i.foodId)?.name ?? i.foodId}`).join(', ') || finalNote || 'Meal';
+    const finalNote = [note.trim(), finalAiNote].filter(Boolean).join(' · ');
+    st.saveMealLog({
+      date: formatLocalDate(new Date()),
+      at: new Date().toISOString(),
+      type,
+      photoUri: photo ?? undefined,
+      items,
+      note: finalNote || undefined,
+    });
+    const description =
+      items.map((i) => `${i.servings} x ${foodById(i.foodId)?.name ?? i.foodId}`).join(', ') ||
+      finalNote ||
+      'Meal';
     const quest = st.completeMealQuest(description);
     st.showToast({
       type: 'success',
@@ -110,6 +138,7 @@ export default function MealLogScreen() {
       message: `${sum.kcal} kcal · ${sum.protein} g protein.${quest ? ` Quest done: ${quest.title} (+${quest.xp} XP).` : ''}`,
     });
     syncSmartHealthReminders().catch(() => undefined);
+    setSubmitting(false);
     router.back();
   };
 
@@ -117,7 +146,14 @@ export default function MealLogScreen() {
     <ScreenContainer
       header={<AppHeader title="Log a meal" subtitle="Photo, foods and macros" showBack />}
       scrollMode="shell-scroll-view"
-      footer={<Button label={items.length ? `Save meal · ${sum.kcal} kcal` : 'Add at least one food'} size="lg" disabled={items.length === 0} onPress={save} />}
+      footer={
+        <Button
+          label={submitting ? 'Analyzing & saving...' : items.length ? `Save meal · ${sum.kcal} kcal` : 'Add at least one food'}
+          size="lg"
+          disabled={items.length === 0 || submitting}
+          onPress={save}
+        />
+      }
     >
       <View style={styles.chips}>
         {TYPES.map((t) => (
