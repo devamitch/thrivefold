@@ -67,7 +67,12 @@ export interface Quest {
   isReplacement: boolean;
 }
 
-export type AchievementModalType = 'daily_goal' | 'level_clear' | 'double_milestone' | 'slow_letters_unlocked';
+export type AchievementModalType =
+  | 'daily_goal'
+  | 'level_clear'
+  | 'double_milestone'
+  | 'slow_letters_unlocked'
+  | 'workout_complete';
 
 export interface AchievementModalPayload {
   type: AchievementModalType;
@@ -79,6 +84,12 @@ export interface AchievementModalPayload {
   dailyPointsTarget?: number;
   diamondsEarned?: number;
   xpEarned?: number;
+  workoutSummary?: {
+    planTitle: string;
+    minutes?: number;
+    formScore?: number;
+    setsOrReps?: string;
+  };
   unlockedFeature?: 'letters';
   onDismiss?: () => void;
 }

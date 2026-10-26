@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter, type Href } from 'expo-router';
 import React, { useEffect } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -79,6 +79,13 @@ export function AchievementModal() {
   let iconColor = colors.primary;
 
   switch (modal.type) {
+    case 'workout_complete':
+      iconName = 'flame-outline';
+      badgeLabel = 'WORKOUT COMPLETED';
+      badgeVariant = 'primary';
+      iconBgColor = colors.primaryAlpha;
+      iconColor = colors.primary;
+      break;
     case 'double_milestone':
       iconName = 'medal-outline';
       badgeLabel = 'DOUBLE MILESTONE';
@@ -138,8 +145,19 @@ export function AchievementModal() {
           accessibilityViewIsModal
           accessibilityRole="alert"
         >
-          <SquircleSurface radius={28} fill={colors.surface} style={styles.content}>
-            {/* Top Icon Badge */}
+          <FrostedView
+            tone="surface"
+            intensity={95}
+            tintOpacity={Platform.OS === 'android' ? 0.92 : 0.82}
+            style={[
+              styles.content,
+              {
+                borderRadius: 28,
+                borderColor: colors.border,
+                borderWidth: StyleSheet.hairlineWidth,
+              },
+            ]}
+          >
             <View style={styles.center}>
               <SquircleSurface shape="circle" fill={iconBgColor} style={styles.iconCircle}>
                 <Ionicons name={iconName} size={32} color={iconColor} />
@@ -217,6 +235,53 @@ export function AchievementModal() {
                       </View>
                     </View>
                   </SquircleSurface>
+                </>
+              ) : modal.type === 'workout_complete' ? (
+                <>
+                  <SquircleSurface radius={18} fill={colors.surface1} style={styles.statCard}>
+                    <View style={styles.row}>
+                      <SquircleSurface
+                        shape="circle"
+                        fill={colors.primaryAlpha}
+                        style={styles.smallIcon}
+                      >
+                        <Ionicons name="flame-outline" size={18} color={colors.primary} />
+                      </SquircleSurface>
+                      <View style={styles.flex}>
+                        <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                          {modal.workoutSummary?.planTitle ?? 'Workout Session'}
+                        </Text>
+                        <Text style={[typography.caption, { color: colors.text.secondary }]}>
+                          +{modal.xpEarned ?? 0} XP earned · {modal.workoutSummary?.minutes ?? 1} min
+                        </Text>
+                      </View>
+                    </View>
+                  </SquircleSurface>
+                  {modal.workoutSummary?.formScore !== undefined ? (
+                    <SquircleSurface
+                      radius={18}
+                      fill={colors.surface1}
+                      style={[styles.statCard, { marginTop: 8 }]}
+                    >
+                      <View style={styles.row}>
+                        <SquircleSurface
+                          shape="circle"
+                          fill={colors.primaryAlpha}
+                          style={styles.smallIcon}
+                        >
+                          <Ionicons name="scan-outline" size={18} color={colors.accent} />
+                        </SquircleSurface>
+                        <View style={styles.flex}>
+                          <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                            {Math.round(modal.workoutSummary.formScore * 100)}% Clean Form
+                          </Text>
+                          <Text style={[typography.caption, { color: colors.text.secondary }]}>
+                            Camera-verified movement · High-precision tracking
+                          </Text>
+                        </View>
+                      </View>
+                    </SquircleSurface>
+                  ) : null}
                 </>
               ) : modal.type === 'level_clear' ? (
                 <SquircleSurface radius={18} fill={colors.surface1} style={styles.statCard}>
@@ -316,7 +381,7 @@ export function AchievementModal() {
                 />
               )}
             </View>
-          </SquircleSurface>
+          </FrostedView>
         </Animated.View>
       </View>
     </Modal>

@@ -6,7 +6,7 @@
 
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -19,7 +19,6 @@ import { useRootStore } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
 import { Button } from './Button';
 import FrostedView from './FrostedView';
-import { SquircleSurface } from './SquircleSurface';
 
 const IN = { duration: 240, easing: Easing.bezier(0.16, 1, 0.3, 1) };
 
@@ -58,8 +57,8 @@ export function CustomAlert() {
   const iconName: keyof typeof Ionicons.glyphMap = alert.destructive
     ? 'trash-outline'
     : alert.title.toLowerCase().includes('workout') || alert.title.toLowerCase().includes('end')
-    ? 'flag-outline'
-    : 'information-circle-outline';
+      ? 'flag-outline'
+      : 'information-circle-outline';
 
   const iconColor = alert.destructive ? colors.error : colors.primary;
   const iconBg = alert.destructive ? colors.error + '18' : colors.primaryAlpha;
@@ -76,7 +75,13 @@ export function CustomAlert() {
         <Animated.View
           style={[StyleSheet.absoluteFill, { backgroundColor: colors.scrim }, backdropStyle]}
         >
-          <FrostedView tone="dark" tintOpacity={0.5} intensity={35} style={StyleSheet.absoluteFill} pointerEvents="none" />
+          <FrostedView
+            tone="dark"
+            tintOpacity={0.5}
+            intensity={35}
+            style={StyleSheet.absoluteFill}
+            pointerEvents="none"
+          />
 
           <Pressable
             style={StyleSheet.absoluteFill}
@@ -90,10 +95,18 @@ export function CustomAlert() {
           accessibilityViewIsModal
           accessibilityRole="alert"
         >
-          <SquircleSurface
-            radius={28}
-            fill={colors.surface}
-            style={[styles.content, { borderColor: colors.border, borderWidth: StyleSheet.hairlineWidth }]}
+          <FrostedView
+            tone="surface"
+            intensity={95}
+            tintOpacity={Platform.OS === 'android' ? 0.92 : 0.82}
+            style={[
+              styles.content,
+              {
+                borderRadius: 28,
+                borderColor: colors.border,
+                borderWidth: StyleSheet.hairlineWidth,
+              },
+            ]}
           >
             {/* Header Icon Badge */}
             <View style={[styles.iconBadge, { backgroundColor: iconBg }]}>
@@ -126,7 +139,7 @@ export function CustomAlert() {
                 onPress={handleConfirm}
               />
             </View>
-          </SquircleSurface>
+          </FrostedView>
         </Animated.View>
       </View>
     </Modal>

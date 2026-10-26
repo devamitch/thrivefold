@@ -82,10 +82,12 @@ export function FrostedView({
           : 0.55
         : tone === 'dark'
           ? 0.48
-          : 0.65
+          : 0.60
       : tone === 'dark'
         ? 0.48
-        : 0.72);
+        : tone === 'canvas'
+          ? 0.48
+          : 0.55);
 
   return (
     <View style={[styles.clip, style]} pointerEvents={pointerEvents}>
@@ -95,7 +97,6 @@ export function FrostedView({
           intensity={intensity}
           tint={tone === 'dark' ? 'systemThinMaterialDark' : 'systemThinMaterialLight'}
           blurMethod="dimezisBlurViewSdk31Plus"
-          experimentalBlurMethod="dimezisBlurViewSdk31Plus"
           blurTarget={hasAndroidTarget && target ? target : undefined}
           blurReductionFactor={2}
         />

@@ -84,7 +84,7 @@ export function SessionComplete({ done, elapsed, planTitle }: SessionCompletePro
           ]}
         >
           <View style={[styles.xpPill, { backgroundColor: colors.primaryAlpha }]}>
-            <Ionicons name="sparkles" size={16} color={colors.primary} />
+            <Ionicons name="flame-outline" size={16} color={colors.primary} />
             <Text style={[typography.subheading, { color: colors.primary, marginLeft: 6 }]}>
               +{done.xp} XP Earned
             </Text>

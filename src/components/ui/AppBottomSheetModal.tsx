@@ -213,10 +213,21 @@ export function AppBottomSheetModal({
             }}
             style={[styles.sheet, { maxHeight }, sheetAnimatedStyle]}
           >
-            <SquircleSurface
-              fill={colors.surface}
-              radius={SHEET_RADIUS}
-              style={styles.surfaceBleed}
+            <FrostedView
+              tone="surface"
+              intensity={90}
+              tintOpacity={Platform.OS === 'android' ? 0.88 : 0.75}
+              style={[
+                styles.surfaceBleed,
+                {
+                  borderTopLeftRadius: SHEET_RADIUS,
+                  borderTopRightRadius: SHEET_RADIUS,
+                  borderTopWidth: 1,
+                  borderLeftWidth: 1,
+                  borderRightWidth: 1,
+                  borderColor: colors.border,
+                },
+              ]}
               pointerEvents="none"
             />
 
@@ -231,7 +242,7 @@ export function AppBottomSheetModal({
                     <View style={styles.handleSpacer} />
                   )}
 
-                  {(Boolean(title) || Boolean(eyebrow) || Boolean(subtitle) || showCloseButton || Boolean(headerRight)) && (
+                  {(Boolean(title) || Boolean(eyebrow) || Boolean(subtitle)) && (
                     <View style={styles.headerRow}>
                       <View style={styles.titleColumn}>
                         {eyebrow ? (
@@ -269,32 +280,35 @@ export function AppBottomSheetModal({
                           </Text>
                         ) : null}
                       </View>
-
-                      <View style={styles.headerActions}>
-                        {headerRight}
-                        {showCloseButton && (
-                          <PressableScale
-                            onPress={startCloseAnimation}
-                            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                            scaleTo={0.92}
-                            accessibilityRole="button"
-                            accessibilityLabel="Close"
-                          >
-                            <SquircleSurface
-                              shape="circle"
-                              fill={colors.surface2}
-                              style={styles.closeButton}
-                              pointerEvents="none"
-                            >
-                              <Ionicons name="close" size={18} color={colors.text.secondary} />
-                            </SquircleSurface>
-                          </PressableScale>
-                        )}
-                      </View>
+                      <View style={styles.headerActionsPlaceholder} />
                     </View>
                   )}
                 </View>
               </GestureDetector>
+
+              {(showCloseButton || Boolean(headerRight)) && (
+                <View style={styles.headerActionsAbsolute} pointerEvents="box-none">
+                  {headerRight}
+                  {showCloseButton && (
+                    <Pressable
+                      onPress={startCloseAnimation}
+                      hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
+                      style={({ pressed }) => [
+                        styles.closeButton,
+                        {
+                          backgroundColor: colors.surface2,
+                          borderRadius: 17,
+                          opacity: pressed ? 0.6 : 1,
+                        },
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Close"
+                    >
+                      <Ionicons name="close" size={18} color={colors.text.secondary} />
+                    </Pressable>
+                  )}
+                </View>
+              )}
 
               {scrolled ? (
                 <View style={[styles.divider, { backgroundColor: colors.borderStrong }]} />

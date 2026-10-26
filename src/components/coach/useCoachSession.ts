@@ -283,15 +283,20 @@ export function useCoachSession({ planId, assignmentId }: UseCoachSessionOpts) {
       }
       if (!useRootStore.getState().achievementModal) {
         store.showAchievementModal({
-          type: 'level_clear',
-          title: 'Movement Milestone',
-          subtitle: xp > 0 ? `Earned +${xp} XP` : 'Workout Completed',
+          type: 'workout_complete',
+          title: 'Workout Complete!',
+          subtitle: xp > 0 ? `+${xp} XP Earned · ${plan.title}` : plan.title,
           details: form && form.formScore >= 0.8
             ? `Form score ${Math.round(form.formScore * 100)}%! Clean movement and focused posture rewarded with high-precision XP.`
             : `Great consistency! You completed ${plan.title} with dedication.`,
           level: useRootStore.getState().level,
           diamondsEarned: xp > 0 ? 1 : 0,
           xpEarned: xp,
+          workoutSummary: {
+            planTitle: plan.title,
+            minutes,
+            formScore: form?.formScore,
+          },
         });
       }
     }
