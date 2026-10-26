@@ -71,6 +71,13 @@ export default function SafetyScreen() {
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: spacing.xxl }]}>
         {/* Quick Safety Hub Links */}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+          <Link href={'/(app)/safety/someone-to-talk' as Href} asChild>
+            <Button
+              label="Someone to Talk To"
+              size="sm"
+              icon={<Ionicons name="heart-circle" size={14} color={colors.onPrimary} />}
+            />
+          </Link>
           <Link href={'/(app)/safety/urgent-support' as Href} asChild>
             <Button
               label="24/7 Helplines"

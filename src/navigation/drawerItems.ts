@@ -48,6 +48,7 @@ export const DRAWER_SECTIONS: DrawerSection[] = [
       { label: 'Sleep', icon: 'moon-outline', route: '/(app)/health/sleep' },
       { label: 'Medications', icon: 'medkit-outline', route: '/(app)/health/medications' },
       { label: 'Journal', icon: 'book-outline', route: '/(app)/journal' },
+      { label: 'Someone to talk to', icon: 'heart-circle-outline', route: '/(app)/safety/someone-to-talk' },
       { label: 'Health Connect', icon: 'pulse-outline', route: '/(app)/health/integrations' },
       { label: 'All health tools', icon: 'apps-outline', route: '/(app)/health' },
     ],

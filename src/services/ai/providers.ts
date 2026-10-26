@@ -9,7 +9,7 @@
  * (long context, embeddings) should go through Supabase edge functions.
  */
 
-import { env, pickGeminiKey, pickGroqKey } from './env';
+import { env, pickGeminiKey, pickGroqKey, pickOpenRouterKey, isLocalOnly } from './env';
 
 export interface AiMessage {
   role: 'user' | 'assistant' | 'system';
@@ -87,7 +87,7 @@ async function askGroq(messages: AiMessage[], systemPrompt?: string): Promise<Ai
 // ── OpenRouter ──────────────────────────────────────────────────────────────
 
 async function askOpenRouter(messages: AiMessage[], systemPrompt?: string): Promise<AiResponse> {
-  const key = env.OPENROUTER_API_KEY;
+  const key = pickOpenRouterKey();
   if (!key) throw new Error('no_openrouter_key');
 
   const model = 'google/gemini-2.0-flash-exp:free';
@@ -114,6 +114,97 @@ async function askOpenRouter(messages: AiMessage[], systemPrompt?: string): Prom
   return { text, provider: 'openrouter', model };
 }
 
+/**
+ * Validates a user-provided API key by executing a 1-token test ping.
+ */
+export async function testProviderKey(
+  provider: 'gemini' | 'groq' | 'openrouter' | 'sarvam',
+  key: string,
+): Promise<{ ok: boolean; message: string; latencyMs: number }> {
+  const start = Date.now();
+  const trimmed = key.trim();
+  if (!trimmed) {
+    return { ok: false, message: 'Key cannot be empty', latencyMs: 0 };
+  }
+
+  try {
+    if (provider === 'gemini') {
+      const model = 'gemini-2.0-flash';
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${trimmed}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: 'ping' }] }],
+          generationConfig: { maxOutputTokens: 2 },
+        }),
+      });
+      const latency = Date.now() - start;
+      if (!res.ok) {
+        return { ok: false, message: `API Error ${res.status} (Check key permissions)`, latencyMs: latency };
+      }
+      return { ok: true, message: `Connected (${latency}ms)`, latencyMs: latency };
+    }
+
+    if (provider === 'groq') {
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${trimmed}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [{ role: 'user', content: 'ping' }],
+          max_tokens: 2,
+        }),
+      });
+      const latency = Date.now() - start;
+      if (!res.ok) {
+        return { ok: false, message: `API Error ${res.status} (Invalid key)`, latencyMs: latency };
+      }
+      return { ok: true, message: `Connected (${latency}ms)`, latencyMs: latency };
+    }
+
+    if (provider === 'openrouter') {
+      const res = await fetch('https://openrouter.ai/api/v1/auth/key', {
+        headers: { Authorization: `Bearer ${trimmed}` },
+      });
+      const latency = Date.now() - start;
+      if (!res.ok) {
+        return { ok: false, message: `API Error ${res.status}`, latencyMs: latency };
+      }
+      return { ok: true, message: `Valid key (${latency}ms)`, latencyMs: latency };
+    }
+
+    if (provider === 'sarvam') {
+      const res = await fetch('https://api.sarvam.ai/text-to-speech', {
+        method: 'POST',
+        headers: {
+          'api-subscription-key': trimmed,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          inputs: ['hi'],
+          target_language_code: 'en-IN',
+          speaker: 'shubh',
+        }),
+      });
+      const latency = Date.now() - start;
+      if (!res.ok) {
+        return { ok: false, message: `API Error ${res.status}`, latencyMs: latency };
+      }
+      return { ok: true, message: `Connected (${latency}ms)`, latencyMs: latency };
+    }
+
+    return { ok: false, message: 'Unknown provider', latencyMs: 0 };
+  } catch (err) {
+    const latency = Date.now() - start;
+    return { ok: false, message: err instanceof Error ? err.message : 'Network failure', latencyMs: latency };
+  }
+}
+
+
 // ── Cascade: try each provider in order ─────────────────────────────────────
 
 /**
@@ -122,8 +213,11 @@ async function askOpenRouter(messages: AiMessage[], systemPrompt?: string): Prom
  */
 export async function askAi(
   messages: AiMessage[],
-  opts?: { systemPrompt?: string; preferredProvider?: 'gemini' | 'groq' | 'openrouter' },
+  opts?: { systemPrompt?: string; preferredProvider?: 'gemini' | 'groq' | 'openrouter'; forceCloud?: boolean },
 ): Promise<AiResponse> {
+  if (isLocalOnly() && !opts?.forceCloud) {
+    return { text: '', provider: 'none', model: 'local_only' };
+  }
   const system = opts?.systemPrompt;
   const providers = [askGemini, askGroq, askOpenRouter];
 

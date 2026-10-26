@@ -270,6 +270,9 @@ export default function InsightsScreen() {
             <Link href={'/(app)/ai/model-status' as Href} asChild>
               <LinkRow label="What runs on this device" icon="hardware-chip-outline" />
             </Link>
+            <Link href={'/(app)/settings/ai-byok' as Href} asChild>
+              <LinkRow label="Bring Your Own Key (BYOK)" icon="key-outline" />
+            </Link>
           </View>
         </Card>
       </View>

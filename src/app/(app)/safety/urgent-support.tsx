@@ -1,6 +1,7 @@
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import React from 'react';
 import { Text, StyleSheet, ScrollView, Linking, View } from 'react-native';
+import { Link, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
@@ -64,6 +65,14 @@ export default function UrgentSupportScreen() {
           <Text style={[typography.caption, { color: colors.text.secondary, lineHeight: 18 }]}>
             If you or someone you know is in acute distress or experiencing thoughts of self-harm, please connect with a compassionate professional immediately. Thrivefold does not substitute emergency intervention.
           </Text>
+          <Link href={'/(app)/safety/someone-to-talk' as Href} asChild>
+            <Button
+              label="Talk With Voice Support & Grounding"
+              size="sm"
+              style={{ marginTop: 12, alignSelf: 'flex-start' }}
+              icon={<Ionicons name="heart-circle" size={14} color={colors.onPrimary} />}
+            />
+          </Link>
         </Card>
 
         {helplines.map((hl) => (

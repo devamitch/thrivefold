@@ -1,34 +1,43 @@
 /**
- * usePoseTracking — encapsulates camera pose detection, landmark shared values,
- * gesture detection, framing cues, and rep counting.
+ * usePoseTracking — camera pose events, overlay feed, gestures, framing cues, rep counting.
+ *
+ * Hot-path changes vs the old version:
+ *  - the native flat points array goes to the overlay as-is (no per-frame n*3 copy);
+ *  - 2 shared-value writes per frame instead of 7 (size only when it changes);
+ *  - face/hands are no longer pushed (off this release);
+ *  - framing cues evaluated at most every 100 ms.
  */
 
-import { useCallback, useRef, useState } from 'react';
-import { useSharedValue } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { landmarksOf, type PoseFrame } from 'pose-landmarker';
+import { useCallback, useRef, useState } from 'react';
+import { useSharedValue } from 'react-native-reanimated';
 
+import { cuesEngine } from '@/domain/coach/cuesEngine';
+import { IDLE_NUDGE_MS, idleLine, repLine, secondsLine } from '@/domain/pose/coachVoice';
 import { initialGestureState, stepGesture, type Gesture } from '@/domain/pose/gestures';
 import {
   framingCue,
   initialRepState,
-  movementForExercise,
-  setProgress,
   stepReps,
   type FramingCue,
   type MovementDefinition,
   type RepState,
 } from '@/domain/pose/movement';
-import { repLine, secondsLine, idleLine, IDLE_NUDGE_MS } from '@/domain/pose/coachVoice';
-import { cuesEngine } from '@/domain/coach/cuesEngine';
 
 const FRAMING_ON_MS = 700;
 const FRAMING_OFF_MS = 500;
+const FRAMING_EVAL_MS = 100;
 
-/** Moves that raise arms — hand gestures are suppressed during these. */
 const ARM_MOVES = new Set([
-  'arm_raise', 'jumping_jack', 'bird_dog', 'warrior',
-  'arms_out', 'reach', 'pull_apart', 'elbow_bend',
+  'arm_raise',
+  'jumping_jack',
+  'bird_dog',
+  'warrior',
+  'arms_out',
+  'reach',
+  'pull_apart',
+  'elbow_bend',
 ]);
 
 interface UsePoseTrackingOpts {
@@ -40,6 +49,8 @@ interface UsePoseTrackingOpts {
   countdown: number;
   videoPlaying: boolean;
   rest: number;
+  /** 'off' while positioning/countdown/tutorial; 'set' during a set; 'rest' between sets. */
+  gestureMode?: 'off' | 'set' | 'rest';
   onGesture: (g: Gesture) => void;
   onCompleteSet: (value: number) => void;
   sayFn: (text: string) => void;
@@ -47,15 +58,29 @@ interface UsePoseTrackingOpts {
 }
 
 export function usePoseTracking({
-  checking, movement, item, timed, facing, countdown,
-  videoPlaying, rest, onGesture, onCompleteSet, sayFn, progressOf,
+  checking,
+  movement,
+  item,
+  timed,
+  facing,
+  countdown,
+  videoPlaying,
+  rest,
+  gestureMode = 'off',
+  onGesture,
+  onCompleteSet,
+  sayFn,
+  progressOf,
 }: UsePoseTrackingOpts) {
   const [hasPerson, setHasPerson] = useState(false);
   const [trackingReady, setTrackingReady] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [framing, setFraming] = useState<FramingCue | null>(null);
   const [rep, setRep] = useState<RepState>(initialRepState());
-  const [gestureProgress, setGestureProgress] = useState<{ g: Gesture | null; p: number }>({ g: null, p: 0 });
+  const [gestureProgress, setGestureProgress] = useState<{ g: Gesture | null; p: number }>({
+    g: null,
+    p: 0,
+  });
   const gestureProgressRef = useRef<{ g: Gesture | null; p: number }>({ g: null, p: 0 });
 
   const repRef = useRef<RepState>(initialRepState());
@@ -64,6 +89,11 @@ export function usePoseTracking({
   const idleSince = useRef(0);
   const idleNudged = useRef(false);
   const gestureRef = useRef(initialGestureState());
+  const lastFramingAt = useRef(0);
+  const personSince = useRef(0);
+  const gestureCooldownUntil = useRef(0);
+  const seqRef = useRef(0);
+  const dimsRef = useRef({ w: 0, h: 0 });
   const framingRef = useRef<{
     shown: FramingCue | null;
     pending: string | null;
@@ -72,22 +102,15 @@ export function usePoseTracking({
     spokenAt: Record<string, number>;
   }>({ shown: null, pending: null, since: 0, clearSince: 0, spokenAt: {} });
 
-  // Shared values for PoseOverlay (worklet thread, no re-renders per frame)
   const feedPoints = useSharedValue<number[]>([]);
   const feedW = useSharedValue(0);
   const feedH = useSharedValue(0);
-  const feedFace = useSharedValue<number[]>([]);
-  const feedHands = useSharedValue<number[]>([]);
   const feedSeq = useSharedValue(0);
-  const feedCapturedAt = useSharedValue(0);
   const feed = useRef({
     points: feedPoints,
     frameW: feedW,
     frameH: feedH,
-    face: feedFace,
-    hands: feedHands,
     seq: feedSeq,
-    capturedAt: feedCapturedAt,
   }).current;
 
   const counterPulse = useSharedValue(1);
@@ -102,64 +125,95 @@ export function usePoseTracking({
       const { frameWidth, frameHeight, timestamp } = e.nativeEvent;
       const rawPts = e.nativeEvent.points;
       const n = (rawPts.length / 4) | 0;
-      const flat = new Array(n * 3);
-      for (let i = 0; i < n; i++) {
-        const off4 = i * 4;
-        const off3 = i * 3;
-        flat[off3] = rawPts[off4];
-        flat[off3 + 1] = rawPts[off4 + 1];
-        flat[off3 + 2] = rawPts[off4 + 3]; // visibility
+
+      // ---- overlay feed: minimal, no copies ----
+      const d = dimsRef.current;
+      if (d.w !== frameWidth || d.h !== frameHeight) {
+        d.w = frameWidth;
+        d.h = frameHeight;
+        feed.frameW.value = frameWidth;
+        feed.frameH.value = frameHeight;
       }
-      feed.frameW.value = frameWidth;
-      feed.frameH.value = frameHeight;
-      feed.points.value = flat;
-      feed.capturedAt.value = e.nativeEvent.capturedAt ?? 0;
-      feed.seq.value = feed.seq.value + 1;
-      feed.face.value = e.nativeEvent.face ?? [];
-      feed.hands.value = (e.nativeEvent.hands ?? []).flat();
+      feed.points.value = rawPts;
+      seqRef.current += 1;
+      feed.seq.value = seqRef.current;
 
       const seen = n > 0;
       if (seen !== hasPersonRef.current) {
         hasPersonRef.current = seen;
         setHasPerson(seen);
       }
-      if (!seen) return;
+      if (!seen) {
+        personSince.current = 0;
+        return;
+      }
 
       const landmarks = landmarksOf(rawPts);
       const now = Date.now();
+      if (!personSince.current) personSince.current = now;
 
-      // Gesture detection (suppressed during arm-raising exercises)
+      // Gestures. Locked unless: a set or rest is running, the person has been in frame and
+      // framed correctly for 1.5 s, the 3.5 s cooldown after the last gesture is over, and the
+      // exercise does not use the arms. Mid-set only "both hands up" is accepted; the rest of
+      // the gestures only work between sets. This stops positioning poses (hands on hips,
+      // T-pose, crossed arms) from firing commands.
       const armsBusy = checking && movement && ARM_MOVES.has(movement.id);
-      if (!armsBusy) {
+      const steady = now - personSince.current > 1500 && !framingRef.current.shown;
+      const gestureOn =
+        gestureMode !== 'off' && steady && now >= gestureCooldownUntil.current && !armsBusy;
+      if (gestureOn) {
         const g = stepGesture(gestureRef.current, landmarks, now);
-        gestureRef.current = g.state;
-        if (g.fired) onGesture(g.fired);
-        const nextG = g.state.latched ? null : g.state.current;
-        const nextP = g.state.latched ? 0 : Math.round(g.progress * 4) / 4;
+        let st = g.state;
+        let fired = g.fired;
+        let prog = g.progress;
+        const cur = st.current;
+        if (cur && gestureMode === 'set' && cur !== 'both_hands') {
+          st = initialGestureState();
+          fired = null;
+          prog = 0;
+        }
+        gestureRef.current = st;
+        if (fired) {
+          gestureCooldownUntil.current = now + 3500;
+          onGesture(fired);
+        }
+        const nextG = st.latched ? null : st.current;
+        const nextP = st.latched ? 0 : Math.round(prog * 4) / 4;
         const gp = gestureProgressRef.current;
         if (nextG !== gp.g || (nextG && Math.abs(nextP - gp.p) >= 0.25) || nextP === 1) {
           gestureProgressRef.current = { g: nextG, p: nextP };
           setGestureProgress({ g: nextG, p: nextP });
         }
+      } else if (gestureRef.current.current || gestureProgressRef.current.g) {
+        gestureRef.current = initialGestureState();
+        gestureProgressRef.current = { g: null, p: 0 };
+        setGestureProgress({ g: null, p: 0 });
       }
 
-      // Framing cues — debounced so single bad frames don't flash
-      if (movement) {
+      // Framing cues — throttled + debounced
+      if (movement && now - lastFramingAt.current >= FRAMING_EVAL_MS) {
+        lastFramingAt.current = now;
         const f = framingCue(movement, landmarks, facing === 'front');
         const fr = framingRef.current;
         if (f) {
-          if (fr.pending !== f.id) { fr.pending = f.id; fr.since = now; }
+          if (fr.pending !== f.id) {
+            fr.pending = f.id;
+            fr.since = now;
+          }
           fr.clearSince = 0;
           if (fr.shown?.id !== f.id && now - fr.since >= FRAMING_ON_MS) {
             fr.shown = f;
             setFraming(f);
             if (countdown === 0) {
-              const decision = cuesEngine.proposeCue({
-                id: f.id,
-                category: 'FRAMING',
-                bannerText: f.text,
-                tone: 'framing',
-              }, now);
+              const decision = cuesEngine.proposeCue(
+                {
+                  id: f.id,
+                  category: 'FRAMING',
+                  bannerText: f.text,
+                  tone: 'framing',
+                },
+                now,
+              );
               if (decision.shouldSpeak && decision.spokenTextToSpeak) {
                 fr.spokenAt[f.id] = now;
                 sayFn(decision.spokenTextToSpeak);
@@ -184,18 +238,18 @@ export function usePoseTracking({
       const next = stepReps(movement, before, landmarks, timestamp);
       repRef.current = next;
 
-      // Form fault feedback
       if (!before.fault && next.fault) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => undefined);
-        const decision = cuesEngine.proposeCue({
-          id: next.fault.id,
-          category: 'FORM_FAULT',
-          bannerText: next.fault.fix,
-          tone: 'fault',
-        }, now);
-        if (decision.shouldSpeak && decision.spokenTextToSpeak) {
-          sayFn(decision.spokenTextToSpeak);
-        }
+        const decision = cuesEngine.proposeCue(
+          {
+            id: next.fault.id,
+            category: 'FORM_FAULT',
+            bannerText: next.fault.fix,
+            tone: 'fault',
+          },
+          now,
+        );
+        if (decision.shouldSpeak && decision.spokenTextToSpeak) sayFn(decision.spokenTextToSpeak);
       } else if (before.fault && !next.fault) {
         cuesEngine.resolveFault(before.fault.id, now);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
@@ -207,42 +261,45 @@ export function usePoseTracking({
         if (!inSeconds && !next.fault) {
           const line = repLine(next.reps, item.target, !before.repHadFault);
           if (line) {
-            const decision = cuesEngine.proposeCue({
-              id: `rep_${next.reps}`,
-              category: 'RHYTHM_COUNT',
-              bannerText: line,
-              tone: 'cue',
-              durationMs: 1500,
-            }, now);
-            if (decision.shouldSpeak && decision.spokenTextToSpeak) {
+            const decision = cuesEngine.proposeCue(
+              {
+                id: `rep_${next.reps}`,
+                category: 'RHYTHM_COUNT',
+                bannerText: line,
+                tone: 'cue',
+                durationMs: 1500,
+              },
+              now,
+            );
+            if (decision.shouldSpeak && decision.spokenTextToSpeak)
               sayFn(decision.spokenTextToSpeak);
-            }
           }
         }
       }
 
       const value = progressOf(next);
-      if (value !== progressOf(before)) {
+      const prevValue = progressOf(before);
+      if (value !== prevValue) {
         idleSince.current = now;
         idleNudged.current = false;
       }
-      if (inSeconds && value > 0 && value !== progressOf(before)) {
+      if (inSeconds && value > 0 && value !== prevValue) {
         const line = secondsLine(value, item.target);
         if (line) {
-          const decision = cuesEngine.proposeCue({
-            id: `sec_${value}`,
-            category: 'TRANSITION',
-            bannerText: line,
-            tone: 'cue',
-            durationMs: 1800,
-          }, now);
-          if (decision.shouldSpeak && decision.spokenTextToSpeak) {
-            sayFn(decision.spokenTextToSpeak);
-          }
+          const decision = cuesEngine.proposeCue(
+            {
+              id: `sec_${value}`,
+              category: 'TRANSITION',
+              bannerText: line,
+              tone: 'cue',
+              durationMs: 1800,
+            },
+            now,
+          );
+          if (decision.shouldSpeak && decision.spokenTextToSpeak) sayFn(decision.spokenTextToSpeak);
         }
       }
 
-      // Idle nudge: person in view but nothing counting for a while
       if (
         !idleNudged.current &&
         idleSince.current > 0 &&
@@ -251,31 +308,43 @@ export function usePoseTracking({
         !next.fault
       ) {
         idleNudged.current = true;
-        const line = idleLine(movement.kind);
-        const decision = cuesEngine.proposeCue({
-          id: 'idle_nudge',
-          category: 'ENCOURAGEMENT',
-          bannerText: line,
-          tone: 'cue',
-          durationMs: 3000,
-        }, now);
-        if (decision.shouldSpeak && decision.spokenTextToSpeak) {
-          sayFn(decision.spokenTextToSpeak);
-        }
+        const decision = cuesEngine.proposeCue(
+          {
+            id: 'idle_nudge',
+            category: 'ENCOURAGEMENT',
+            bannerText: idleLine(movement.kind),
+            tone: 'cue',
+            durationMs: 3000,
+          },
+          now,
+        );
+        if (decision.shouldSpeak && decision.spokenTextToSpeak) sayFn(decision.spokenTextToSpeak);
       }
 
       const doneNow = value >= item.target;
-      const valueChanged = value !== progressOf(before);
       const faultChanged = next.fault?.title !== before.fault?.title;
-      if (valueChanged || faultChanged || doneNow) {
+      if (value !== prevValue || faultChanged || doneNow) {
         lastUi.current = now;
         setRep(next);
       }
       if (doneNow) onCompleteSet(value);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [checking, movement, item, videoPlaying, onCompleteSet, onGesture,
-     feed, facing, countdown, timed, progressOf, sayFn],
+    [
+      checking,
+      movement,
+      item,
+      videoPlaying,
+      onCompleteSet,
+      onGesture,
+      feed,
+      facing,
+      countdown,
+      timed,
+      progressOf,
+      sayFn,
+      gestureMode,
+    ],
   );
 
   const poseHandler = useRef(handlePose);

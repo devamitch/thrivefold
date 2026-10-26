@@ -198,6 +198,9 @@ export default function SettingsScreen() {
         <Link href={'/(app)/you/privacy' as Href} asChild>
           <SettingsRow icon="lock-closed-outline" title="Privacy and data" subtitle="Export, connected apps, backup and safety" />
         </Link>
+        <Link href={'/(app)/settings/ai-byok' as Href} asChild>
+          <SettingsRow icon="key-outline" title="AI & API Keys (BYOK)" subtitle="Bring Your Own Key or run 100% on-device" />
+        </Link>
         <Link href={'/(app)/you/account' as Href} asChild>
           <SettingsRow icon="person-circle-outline" title="Account" subtitle="Sign out, redo setup or erase" />
         </Link>

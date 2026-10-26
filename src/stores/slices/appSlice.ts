@@ -48,6 +48,16 @@ export interface AlertOptions {
   destructive?: boolean;
 }
 
+export interface UserApiKeys {
+  gemini?: string;
+  groq?: string;
+  openrouter?: string;
+  sarvam?: string;
+  elevenlabs?: string;
+}
+
+export type AiDeliveryMode = 'local_only' | 'byok' | 'hybrid';
+
 export interface AppSlice {
   experience: ProductExperience;
   /** True once the person picked (or confirmed a suggested) experience; nothing is preselected. */
@@ -89,6 +99,14 @@ export interface AppSlice {
   /** Explicit consent to send typed questions to the cloud AI companion. Off by default. */
   cloudAiConsent: boolean;
   setCloudAiConsent: (on: boolean) => void;
+  /** BYOK: User-provided API keys (Gemini, Groq, OpenRouter, Sarvam) stored securely on-device. */
+  userApiKeys: UserApiKeys;
+  /** AI Delivery Mode: 'local_only' (100% on-device, default), 'byok' (user keys), or 'hybrid'. */
+  aiDeliveryMode: AiDeliveryMode;
+  setUserApiKey: (provider: keyof UserApiKeys, key: string) => void;
+  clearUserApiKey: (provider: keyof UserApiKeys) => void;
+  clearAllUserApiKeys: () => void;
+  setAiDeliveryMode: (mode: AiDeliveryMode) => void;
   /** Opt-in experimental Beta Mode: unlocks Beta Lab, experimental pose, and motion blur. Off by default. */
   betaMode: boolean;
   setBetaMode: (on: boolean) => void;
@@ -160,6 +178,23 @@ export const createAppSlice: StateCreator<
   setCrashReports: (crashReports) => set({ crashReports }),
   cloudAiConsent: false,
   setCloudAiConsent: (cloudAiConsent) => set({ cloudAiConsent }),
+  userApiKeys: {},
+  aiDeliveryMode: 'local_only',
+  setUserApiKey: (provider, key) =>
+    set((state) => ({
+      userApiKeys: {
+        ...state.userApiKeys,
+        [provider]: key.trim(),
+      },
+    })),
+  clearUserApiKey: (provider) =>
+    set((state) => {
+      const next = { ...state.userApiKeys };
+      delete next[provider];
+      return { userApiKeys: next };
+    }),
+  clearAllUserApiKeys: () => set({ userApiKeys: {} }),
+  setAiDeliveryMode: (aiDeliveryMode) => set({ aiDeliveryMode }),
   betaMode: false,
   setBetaMode: (betaMode) => set({ betaMode }),
   setUsageAnalytics: (usageAnalytics) => set({ usageAnalytics }),
