@@ -382,7 +382,7 @@ export default function CoachScreen() {
             }
           : checking && movement
             ? {
-                icon: 'sparkles-outline',
+                icon: 'pulse-outline',
                 title: liveCue(movement, poseTrack.rep, poseTrack.hasPerson),
                 tone: 'cue',
               }

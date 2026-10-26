@@ -271,7 +271,7 @@ export const CoachVideoStage = forwardRef<YouTubePlayerHandle, CoachVideoStagePr
           <View style={[styles.firstTimeBottomBar, { paddingHorizontal: spacing.base }]}>
             <CoachGlass radius={24} style={styles.firstTimeGlass}>
               <View style={styles.firstTimeInfo}>
-                <Ionicons name="sparkles" size={18} color={colors.primary} />
+                <Ionicons name="play-circle-outline" size={18} color={colors.primary} />
                 <Text
                   style={[
                     typography.captionBold,
