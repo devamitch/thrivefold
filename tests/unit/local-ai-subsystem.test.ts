@@ -270,3 +270,53 @@ describe('Local AI - Stateful LangGraph Orchestration & Cohort Clustering', () =
     expect(clusters.gentle_paced_cohort.userIds).toContain('u2');
   });
 });
+
+describe('Local AI - Hybrid RAG Pipeline', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const {
+    getExerciseCatalogDocuments,
+    rankSparseBM25,
+    retrieveHybridEvidence,
+    answerWithHybridRag,
+  } = require('../../src/services/local-ai/rag/hybridRagPipeline') as typeof import('../../src/services/local-ai/rag/hybridRagPipeline');
+
+  test('P0: getExerciseCatalogDocuments indexes exercise library with steps and safety', () => {
+    const docs = getExerciseCatalogDocuments();
+    expect(docs.length).toBeGreaterThan(20);
+    const squatDoc = docs.find((d) => d.id.includes('squat'));
+    expect(squatDoc).toBeDefined();
+    expect(squatDoc?.content).toContain('Steps:');
+    expect(squatDoc?.sourceType).toBe('exercise_catalog');
+  });
+
+  test('P0: rankSparseBM25 ranks documents relevant to query keyword', () => {
+    const docs = getExerciseCatalogDocuments();
+    const hits = rankSparseBM25(docs, 'squat knees');
+    expect(hits.length).toBeGreaterThan(0);
+    expect(hits[0].doc.title.toLowerCase()).toContain('squat');
+    expect(hits[0].score).toBeGreaterThan(0);
+  });
+
+  test('P0: retrieveHybridEvidence fuses results with RRF scores', async () => {
+    const hits = await retrieveHybridEvidence('usr-rag-1', 'squat posture', 3);
+    expect(hits.length).toBeGreaterThan(0);
+    expect(hits[0].hybridScore).toBeGreaterThan(0);
+    expect(hits[0].snippet).toBeDefined();
+  });
+
+  test('P0: answerWithHybridRag answers with verified citations', async () => {
+    const res = await answerWithHybridRag('usr-rag-1', 'How do I do a squat safely?');
+    expect(res.isGrounded).toBe(true);
+    expect(res.citations.length).toBeGreaterThan(0);
+    expect(res.citations[0]).toContain('Exercise Catalog');
+    expect(res.confidence).toBeGreaterThan(0.7);
+  });
+
+  test('P0: answerWithHybridRag stays honest when no records match', async () => {
+    const res = await answerWithHybridRag('usr-rag-1', 'quantum electrodynamics astrophysics');
+    expect(res.isGrounded).toBe(false);
+    expect(res.answer).toContain('not find enough relevant records');
+    expect(res.citations).toHaveLength(0);
+  });
+});
+

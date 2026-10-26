@@ -219,6 +219,7 @@ credentials.json
 *play-service-account*.json
 blinkquest-*.json
 **/backups/
+.local-backups/
 *.original.*
 
 # Agent skills are shared, versioned instructions for every AI tool (see AGENTS.md).

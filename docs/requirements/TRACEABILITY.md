@@ -1,5 +1,19 @@
 # Requirements Traceability Matrix
 
+## Update — 2026-10-26 (19): Local AI runtime, Analytical Memory, Hybrid RAG, Coach camera fix
+
+Checks: compile 0, lint 0, `pnpm test` 258/258 (+26 tests passed), `pnpm test:db` 145/145.
+Gradle: `:local-ai:compileDebugKotlin` passed.
+
+| Item | Status | Where | Commit |
+| --- | --- | --- | --- |
+| Local AI native module | Kotlin Expo Module wrapping Llamatik 0.12.0 (`llama.cpp` ARM NEON), memory headroom guard, thread serialization, streaming, GGUF catalog | `modules/local-ai/*` | 16196e4 |
+| Analytical vector memory | SQLite store (`thrivefold-local-memory.db`), 384d cosine similarity, deduplication, user isolation, GDPR/DPDP export/erase | `services/local-ai/memory/*` | 16196e4 |
+| Hybrid RAG pipeline | Dense vector + BM25 sparse fusion (RRF), catalog & note retrieval, evidence citations, hallucination safeguards | `services/local-ai/rag/*` | (this round) |
+| Authoritative Infrastructure Map | Published canonical boundaries across SQLite, Supabase, TanStack Query, Zustand, Firebase & Local AI | `docs/architecture/*` | (this round) |
+| Coach camera memory churn & phone heat | Eliminated 30 bitmap allocations/s by recycling intermediate unrotated camera bitmaps immediately (`bitmap.recycle()`) | `modules/pose-landmarker/android/*` | (this round) |
+| Backup cleanup | Relocated stray source tree backups to `.local-backups/` and updated `.gitignore` | `.gitignore`, `.local-backups/` | (this round) |
+
 ## Update — 2026-10-26 (18): groups, AI companion, social gate, coach tracking
 
 Checks: compile 0, lint 0, `pnpm test` 232/232, `pnpm test:db` 145/145. Migrations 14 and 15

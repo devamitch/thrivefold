@@ -355,6 +355,9 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
         if (frontFacing) postScale(-1f, 1f, bitmap.width / 2f, bitmap.height / 2f)
       }
       val upright = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+      if (upright != bitmap) {
+        bitmap.recycle()
+      }
       frameW = upright.width
       frameH = upright.height
       val ts = maxOf(lastTs + 1, SystemClock.uptimeMillis() - age)
