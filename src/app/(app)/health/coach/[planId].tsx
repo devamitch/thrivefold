@@ -55,6 +55,8 @@ import {
   YouTubePlayer,
   type YouTubePlayerHandle,
 } from '../../../../components/workout/YouTubePlayer';
+import { PoseDetectionAdapter } from '../../../../features/beta-lab/experiments/pose-detection/PoseDetectionAdapter';
+import { getBetaSettings } from '../../../../features/beta-lab/flags/betaFlags';
 import { videoFor } from '../../../../content/exerciseVideos';
 import {
   voiceCommandResponseSpeech,
@@ -131,6 +133,7 @@ export default function CoachScreen() {
     item ? Boolean(s.watchedTutorials[item.exerciseId]) : false,
   );
   const markTutorialWatched = useRootStore((s) => s.markTutorialWatched);
+  const betaMode = useRootStore((s) => s.betaMode);
 
   // ── Checking active ───────────────────────────────────────────────────────
   const checking =
@@ -539,17 +542,32 @@ export default function CoachScreen() {
 
       {/* Full-screen background: camera or video */}
       {cameraMain && PoseCameraView ? (
-        <PoseCameraView
-          style={StyleSheet.absoluteFill}
-          active={phase === 'live'}
-          facing={facing}
-          face={fullTracking}
-          hands={fullTracking}
-          minIntervalMs={rest > 0 ? 250 : 0}
-          onPose={poseTrack.onPose}
-          onPoseReady={poseTrack.onPoseReady}
-          onPoseError={poseTrack.onPoseError}
-        />
+        betaMode ? (
+          <PoseDetectionAdapter
+            engine={getBetaSettings().poseEngine}
+            style={StyleSheet.absoluteFill}
+            active={phase === 'live'}
+            facing={facing}
+            face={fullTracking}
+            hands={fullTracking}
+            minIntervalMs={rest > 0 ? 250 : 0}
+            onPose={poseTrack.onPose}
+            onPoseReady={poseTrack.onPoseReady}
+            onPoseError={poseTrack.onPoseError}
+          />
+        ) : (
+          <PoseCameraView
+            style={StyleSheet.absoluteFill}
+            active={phase === 'live'}
+            facing={facing}
+            face={fullTracking}
+            hands={fullTracking}
+            minIntervalMs={rest > 0 ? 250 : 0}
+            onPose={poseTrack.onPose}
+            onPoseReady={poseTrack.onPoseReady}
+            onPoseError={poseTrack.onPoseError}
+          />
+        )
       ) : (
         videoTile
       )}

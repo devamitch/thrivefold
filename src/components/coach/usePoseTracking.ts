@@ -100,15 +100,15 @@ export function usePoseTracking({
   const handlePose = useCallback(
     (e: { nativeEvent: PoseFrame }) => {
       const { frameWidth, frameHeight, timestamp } = e.nativeEvent;
-      const landmarks = landmarksOf(e.nativeEvent.points);
-      const now = Date.now();
-
-      // Push flat array to shared values — worklet reads them without JS
-      const flat = new Array(landmarks.length * 3);
-      for (let i = 0; i < landmarks.length; i++) {
-        flat[i * 3] = landmarks[i].x;
-        flat[i * 3 + 1] = landmarks[i].y;
-        flat[i * 3 + 2] = landmarks[i].visibility;
+      const rawPts = e.nativeEvent.points;
+      const n = (rawPts.length / 4) | 0;
+      const flat = new Array(n * 3);
+      for (let i = 0; i < n; i++) {
+        const off4 = i * 4;
+        const off3 = i * 3;
+        flat[off3] = rawPts[off4];
+        flat[off3 + 1] = rawPts[off4 + 1];
+        flat[off3 + 2] = rawPts[off4 + 3]; // visibility
       }
       feed.frameW.value = frameWidth;
       feed.frameH.value = frameHeight;
@@ -118,11 +118,15 @@ export function usePoseTracking({
       feed.face.value = e.nativeEvent.face ?? [];
       feed.hands.value = (e.nativeEvent.hands ?? []).flat();
 
-      const seen = landmarks.length > 0;
+      const seen = n > 0;
       if (seen !== hasPersonRef.current) {
         hasPersonRef.current = seen;
         setHasPerson(seen);
       }
+      if (!seen) return;
+
+      const landmarks = landmarksOf(rawPts);
+      const now = Date.now();
 
       // Gesture detection (suppressed during arm-raising exercises)
       const armsBusy = checking && movement && ARM_MOVES.has(movement.id);

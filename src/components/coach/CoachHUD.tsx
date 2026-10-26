@@ -15,6 +15,7 @@ import type { Exercise } from '../../domain/fitness/workouts';
 import type { MovementDefinition, RepState } from '../../domain/pose/movement';
 import { useTheme } from '../../theme/useTheme';
 import { FrostedView } from '../ui/FrostedView';
+import { GlassIconButton, GlassMarks } from '../ui/GlassOrbButton';
 import { PressableScale } from '../ui/PressableScale';
 import { ProgressRing } from '../workout/CoachGlass';
 
@@ -115,14 +116,15 @@ export function CoachHUD({
           </Text>
         </View>
 
-        <PressableScale
-          onPress={onSetDone}
-          accessibilityRole="button"
-          accessibilityLabel={remaining > 0 ? 'Set done' : 'Next'}
-          style={[styles.doneBtn, { backgroundColor: colors.primary }]}
-        >
-          <Ionicons name="checkmark" size={26} color={colors.onPrimary} />
-        </PressableScale>
+        <View style={styles.doneBtnWrap}>
+          <GlassIconButton
+            path={GlassMarks.check}
+            accessibilityLabel={remaining > 0 ? 'Set done' : 'Next'}
+            onPress={onSetDone}
+            size={52}
+            tone="primary"
+          />
+        </View>
       </FrostedView>
     </View>
   );
@@ -132,13 +134,8 @@ const styles = StyleSheet.create({
   bottomBar: { bottom: 0, left: 0, position: 'absolute', right: 0 },
   center: { alignItems: 'center', flex: 1, justifyContent: 'center' },
   counterBig: { fontSize: 34, lineHeight: 40 },
-  doneBtn: {
-    alignItems: 'center',
-    borderRadius: 28,
-    height: 56,
-    justifyContent: 'center',
-    marginLeft: 10,
-    width: 56,
+  doneBtnWrap: {
+    marginLeft: 6,
   },
   flex: { flex: 1 },
   hud: { alignItems: 'center', flexDirection: 'row', padding: 12 },

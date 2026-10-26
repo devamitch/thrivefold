@@ -46,8 +46,8 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
     const val MODEL_VERSION = "mediapipe-pose_landmarker_lite-float16-v1"
     const val FACE_ASSET = "face_landmarker.task"
     const val HAND_ASSET = "hand_landmarker.task"
-    /** ~30 results a second: every result the model produces on a mid-range phone. */
-    private const val MIN_EMIT_INTERVAL_MS = 30L
+    /** ~60 results a second: deliver detections immediately as they finish. */
+    private const val MIN_EMIT_INTERVAL_MS = 16L
     private const val TAG = "PoseCamera"
     /** Face and hand results older than this are dropped rather than drawn in the wrong place. */
     private const val STALE_MS = 500L

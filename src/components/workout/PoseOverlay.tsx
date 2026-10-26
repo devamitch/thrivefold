@@ -198,31 +198,29 @@ export const PoseOverlay = memo(function PoseOverlay({
       present.value = Math.min(1, present.value + 0.2);
     }
 
-    const snap = reduceMotion || present.value < 0.2;
-
-    // Responsive, jitter-free joint alignment on every single display frame (60fps)
+    // Immediate 1:1 instantaneous joint alignment with zero trailing lag
     shown.modify((s) => {
       'worklet';
       for (let i = 0; i < N; i++) {
-        const tx = p[i * 3] * fw * scale + dx;
-        const ty = p[i * 3 + 1] * fh * scale + dy;
-        const dist = Math.abs(tx - s[i * 3]) + Math.abs(ty - s[i * 3 + 1]);
-        const f = snap || dist > 60 ? 1 : FOLLOW;
-        s[i * 3] = s[i * 3] + (tx - s[i * 3]) * f;
-        s[i * 3 + 1] = s[i * 3 + 1] + (ty - s[i * 3 + 1]) * f;
+        s[i * 3] = p[i * 3] * fw * scale + dx;
+        s[i * 3 + 1] = p[i * 3 + 1] * fh * scale + dy;
         s[i * 3 + 2] = p[i * 3 + 2];
       }
       return s;
     });
 
-    // Face and hands: smooth follow
-    const f = feed.face?.value ?? [];
-    if (f.length || faceShown.value.length) {
-      faceShown.value = f.length ? easeInto(faceShown.value, toStage(f), snap ? 1 : FOLLOW) : [];
+    // Face and hands: only process if actually provided
+    const f = feed.face?.value;
+    if (f && f.length > 0) {
+      faceShown.value = toStage(f);
+    } else if (faceShown.value.length > 0) {
+      faceShown.value = [];
     }
-    const h = feed.hands?.value ?? [];
-    if (h.length || handsShown.value.length) {
-      handsShown.value = h.length ? easeInto(handsShown.value, toStage(h), snap ? 1 : FOLLOW) : [];
+    const h = feed.hands?.value;
+    if (h && h.length > 0) {
+      handsShown.value = toStage(h);
+    } else if (handsShown.value.length > 0) {
+      handsShown.value = [];
     }
   }, true);
 
@@ -569,17 +567,17 @@ export const PoseOverlay = memo(function PoseOverlay({
         color={colors.error}
       />
 
-      {/* Layer 4: Left articulation: calm athletic pista/sage subtle aura + crisp core pip */}
-      <Path path={leftJointRings} style="stroke" strokeWidth={1.2} color="#ffffff" opacity={0.65} />
+      {/* Layer 4: Left articulation: calm athletic pista subtle aura + crisp core pip */}
+      <Path path={leftJointRings} style="stroke" strokeWidth={1.4} color="#A2C2A2" opacity={0.7} />
       <Path path={leftJoints} color="#FFFFFF" />
 
-      {/* Layer 5: Right articulation: warm terracotta/clay subtle aura + crisp core pip */}
+      {/* Layer 5: Right articulation: warm terracotta subtle aura + crisp core pip */}
       <Path
         path={rightJointRings}
         style="stroke"
-        strokeWidth={1.2}
-        color="#c86d516a"
-        opacity={0.65}
+        strokeWidth={1.4}
+        color="#C86D51"
+        opacity={0.7}
       />
       <Path path={rightJoints} color="#FFFFFF" />
 
