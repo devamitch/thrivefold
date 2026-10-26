@@ -38,12 +38,12 @@ const FOLLOW = 0.6;
  * ~60 ms behind the sensor. So the skeleton is drawn where the body is in the visible frame.
  */
 const MIN_CUTOFF_HZ = 1.4;
-const BETA = 0.006;
+const BETA = 0.014;
 const D_CUTOFF_HZ = 1.2;
 const PREVIEW_LAG_MS = 60;
 const MAX_LEAD_MS = 140;
-/** Display frames ease this far towards the predicted point: hides the 10 Hz steps. */
-const DISPLAY_FOLLOW = 0.55;
+/** Display frames ease this far towards the predicted point: snappy follow prevents trailing lag. */
+const DISPLAY_FOLLOW = 0.78;
 
 /** Latest detection, written straight from the camera event (no React state). */
 export interface PoseFeed {
@@ -136,7 +136,7 @@ export const PoseOverlay = memo(function PoseOverlay({
   // The frame callback runs on the UI thread only while there is motion to show: a new
   // detection wakes it, and it sleeps once the drawing has settled.
   const awake = useSharedValue(false);
-  // eslint-disable-next-line prefer-const
+
   let frame: ReturnType<typeof useFrameCallback>;
   const wake = useCallback(() => frame.setActive(true), []); // eslint-disable-line react-hooks/exhaustive-deps
   const sleep = useCallback(() => frame.setActive(false), []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -462,26 +462,17 @@ export const PoseOverlay = memo(function PoseOverlay({
           <DashPathEffect intervals={[10, 8]} />
         </Path>
       </Group>
-      {/* Two soft halos, then a crisp white core with a brand-to-white gradient */}
+      {/* Refined cyber-kinetic bones: subtle neon bloom + crisp laser core */}
       <Path
         path={bones}
         style="stroke"
-        strokeWidth={18}
+        strokeWidth={7}
         strokeCap="round"
         strokeJoin="round"
         color={glow}
-        opacity={0.18}
+        opacity={0.32}
       />
-      <Path
-        path={bones}
-        style="stroke"
-        strokeWidth={8}
-        strokeCap="round"
-        strokeJoin="round"
-        color={glow}
-        opacity={0.55}
-      />
-      <Path path={bones} style="stroke" strokeWidth={3} strokeCap="round" strokeJoin="round">
+      <Path path={bones} style="stroke" strokeWidth={0.8} strokeCap="round" strokeJoin="round">
         <LinearGradient
           start={vec(0, 0)}
           end={vec(0, height)}
@@ -491,42 +482,42 @@ export const PoseOverlay = memo(function PoseOverlay({
       <Path
         path={faultBones}
         style="stroke"
-        strokeWidth={6}
+        strokeWidth={4.5}
         strokeCap="round"
         color={colors.error}
       />
       <Path
         path={angleArc}
         style="stroke"
-        strokeWidth={4}
+        strokeWidth={3}
         strokeCap="round"
         color={colors.callText}
       />
-      <Path path={jointRings} style="stroke" strokeWidth={2} color={glow} opacity={0.8} />
+      <Path path={jointRings} style="stroke" strokeWidth={1.4} color={glow} opacity={0.85} />
       <Path path={joints} color={colors.callText} />
       <Path path={faultJoints} color={colors.error} />
-      {/* Face and hands, thinner, so the body stays the main read */}
+      {/* Face and hands, subtle and lightweight to preserve high frame rate */}
       <Path
         path={faceLines}
         style="stroke"
-        strokeWidth={1.4}
+        strokeWidth={1.0}
         strokeJoin="round"
         color={colors.callText}
-        opacity={0.75}
+        opacity={0.4}
       />
-      <Path path={irises} style="stroke" strokeWidth={1.6} color={glow} />
+      <Path path={irises} style="stroke" strokeWidth={1.4} color={glow} />
       <Path
         path={handLines}
         style="stroke"
-        strokeWidth={6}
+        strokeWidth={3}
         strokeCap="round"
         color={glow}
-        opacity={0.3}
+        opacity={0.25}
       />
       <Path
         path={handLines}
         style="stroke"
-        strokeWidth={2}
+        strokeWidth={1.8}
         strokeCap="round"
         color={colors.callText}
       />
