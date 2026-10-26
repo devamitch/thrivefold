@@ -53,3 +53,20 @@
   - `pnpm lint` -> PASS (0 errors).
   - `pnpm test:db` -> PASS (145 Postgres RLS tests passed).
 
+---
+
+## Milestone 4: Exercise Capability Registry & Gaming Engine Auto-Completion Unification
+- **Status**: IMPLEMENTED & AUTOMATED TESTED
+- **Components Implemented**:
+  - `src/domain/pose/capabilityRegistry.ts`: Comprehensive 56-movement Exercise Capability Registry mapping every exercise in the catalog to explicit, honest support levels (`camera_verified_reps`, `camera_verified_hold`, `camera_assisted_sequence`, `timer_guided`, `instruction_guided`), camera angles (front/side/45), framing requirements (full/upper/floor), and UI badges (`Verified`, `Sequence`, `Timer`, `Guided`).
+  - `src/components/coach/CoachIntro.tsx`: Integrated honest capability badges into workout plan preview cards, informing users prior to workout start whether an exercise will be camera-verified, sequence-guided, or instruction-led, eliminating misleading UI indicators.
+  - `docs/implementation/EXERCISE_CAPABILITY_AUDIT.md` & `.json`: Documented machine-readable capability audit across all 56 catalog movements, tracking status, required camera framing, and fallback execution.
+  - `src/stores/slices/questSlice.ts`: Implemented `completeCheckInQuest`, `completeSleepQuest`, `completeSymptomQuest`, and `completeReflectionQuest` to auto-complete assigned daily quests from real user activity, respecting verification classes (`verified` vs `self_reported`) and zero-XP privacy rules for sensitive health tracking.
+  - `src/stores/slices/healthSlice.ts`: Integrated `addCheckIn` and `addJournalEntry` with `questSlice`, ensuring that completing daily check-ins, sleep logging, symptom recording, or writing journal reflections automatically fulfills assigned daily quests in the append-only reward ledger.
+- **Verification**:
+  - `pnpm compile` -> PASS (0 errors, strict tsc).
+  - `pnpm test` -> PASS (39 suites, 278 tests passed, including `tests/unit/exercise-capability.test.ts` and `tests/unit/quest-auto-completion.test.ts`).
+  - `pnpm lint` -> PASS (0 errors, 0 warnings).
+  - `pnpm test:db` -> PASS (145 Postgres RLS tests passed on PGlite).
+
+

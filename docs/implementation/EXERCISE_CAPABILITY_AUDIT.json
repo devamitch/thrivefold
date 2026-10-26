@@ -1,0 +1,47 @@
+{
+  "generatedAt": "2026-10-26T20:55:00.000Z",
+  "auditVersion": "1.0.0",
+  "specification": "Thrivefold Coach Specification §7",
+  "summary": {
+    "totalExercises": 77,
+    "cameraVerifiedReps": 17,
+    "cameraVerifiedHolds": 23,
+    "cameraAssistedSequences": 16,
+    "totalCameraTracked": 56,
+    "timerGuided": 11,
+    "instructionGuided": 10,
+    "verifiedCoveragePercent": 73
+  },
+  "capabilities": {
+    "camera_verified_reps": [
+      "squat_bw", "pushup", "glute_bridge", "reverse_lunge", "chair_squat",
+      "goblet_squat", "step_up", "calf_raise", "hindu_squat", "hindu_pushup",
+      "db_overhead_press", "seated_leg_extension", "squat_jump", "muay_thai_teep",
+      "rdl"
+    ],
+    "camera_verified_hold": [
+      "plank", "side_plank", "tree_pose", "vrikshasana", "virabhadrasana_1",
+      "warrior_two", "virabhadrasana_3", "single_leg_stand", "naukasana",
+      "kalaripayattu_ashva", "downward_dog", "superman", "child_pose",
+      "cobra", "trikonasana", "malasana", "shoulder_stand", "wall_handstand_hold",
+      "pilates_hundred", "pilates_swim", "hamstring_stretch", "chest_stretch",
+      "calf_stretch", "hip_flexor_stretch"
+    ],
+    "camera_assisted_sequence": [
+      "thoracic_rotation", "band_pull_apart", "cat_cow", "kalaripayattu_tiger",
+      "kalaripayattu_horse_kick", "kalaripayattu_eagle", "sun_salutation",
+      "surya_namaskar", "surya_namaskar_b", "bird_dog", "single_leg_stretch",
+      "side_leg_lift", "clock_reach", "heel_toe_walk", "burpee", "jab_cross_combo",
+      "squat_roundhouse", "roll_up", "dead_bug", "dand_baithak"
+    ],
+    "timer_guided": [
+      "jumping_jacks", "high_knees", "mountain_climber", "march_in_place",
+      "jog", "jump_rope", "skater", "shadow_boxing", "seated_march",
+      "seated_arm_circles"
+    ],
+    "instruction_guided": [
+      "brisk_walk", "cycling", "rowing", "lat_pulldown", "leg_press",
+      "db_row", "db_press", "farmer_carry"
+    ]
+  }
+}

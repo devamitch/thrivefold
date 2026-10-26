@@ -12,6 +12,7 @@ import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { PressableScale } from '../ui/PressableScale';
 import { exerciseById } from '../../domain/fitness/workouts';
+import { getExerciseCapability } from '../../domain/pose/capabilityRegistry';
 import { movementForExercise } from '../../domain/pose/movement';
 import { WORKOUT_XP_BASE, WORKOUT_FORM_MULTIPLIER } from '../../domain/game/progression';
 import { useTheme } from '../../theme/useTheme';
@@ -96,24 +97,81 @@ export function CoachIntro({ plan, exercise, cameraBuilt, linkedQuest, onStart, 
         </Text>
         {plan.items.map((i) => {
           const ex = exerciseById(i.exerciseId);
+          const cap = getExerciseCapability(i.exerciseId);
+          const framingText =
+            cap.framing === 'floor'
+              ? 'Floor view'
+              : cap.framing === 'upper'
+                ? 'Upper body'
+                : cap.cameraAngle === 'side'
+                  ? 'Side profile'
+                  : 'Full body';
+
           return (
-            <View key={i.exerciseId} style={[styles.row, { marginTop: spacing.sm }]}>
-              <Ionicons
-                name={movementForExercise(i.exerciseId) ? 'scan-outline' : 'list-outline'}
-                size={16}
-                color={movementForExercise(i.exerciseId) ? colors.primary : colors.text.muted}
-              />
-              <Text style={[typography.subbody, styles.flex, { color: colors.text.primary, marginLeft: 8 }]}>
-                {ex?.name}
-              </Text>
-              <Text style={[typography.caption, { color: colors.text.muted }]}>
-                {i.sets} x {i.target} {ex?.timed ? 's' : 'reps'}
-              </Text>
+            <View key={i.exerciseId} style={[styles.exerciseCard, { backgroundColor: colors.surface1, marginTop: spacing.sm }]}>
+              <View style={styles.row}>
+                <Ionicons
+                  name={
+                    cap.mode === 'camera_verified_reps' || cap.mode === 'camera_verified_hold'
+                      ? 'scan-outline'
+                      : cap.mode === 'camera_assisted_sequence'
+                        ? 'pulse-outline'
+                        : cap.mode === 'timer_guided'
+                          ? 'timer-outline'
+                          : 'book-outline'
+                  }
+                  size={18}
+                  color={cap.isCameraVerified ? colors.primary : colors.text.muted}
+                />
+                <Text style={[typography.bodyBold, styles.flex, { color: colors.text.primary, marginLeft: 8 }]}>
+                  {ex?.name}
+                </Text>
+                <View
+                  style={[
+                    styles.capBadge,
+                    {
+                      backgroundColor:
+                        cap.badgeTone === 'verified'
+                          ? colors.primaryAlpha
+                          : cap.badgeTone === 'sequence'
+                            ? colors.accent
+                            : colors.surface2,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      typography.captionBold,
+                      {
+                        color:
+                          cap.badgeTone === 'verified'
+                            ? colors.primary
+                            : cap.badgeTone === 'sequence'
+                              ? colors.accentText
+                              : colors.text.secondary,
+                      },
+                    ]}
+                  >
+                    {cap.badgeLabel}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={[styles.row, { marginTop: 6, justifyContent: 'space-between' }]}>
+                <Text style={[typography.caption, { color: colors.text.muted }]}>
+                  {i.sets} x {i.target} {ex?.timed ? 's' : 'reps'} · {framingText}
+                </Text>
+                {ex?.easier ? (
+                  <Text style={[typography.caption, { color: colors.text.secondary, fontStyle: 'italic' }]}>
+                    Mod: {ex.easier}
+                  </Text>
+                ) : null}
+              </View>
             </View>
           );
         })}
         <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.sm }]}>
-          Exercises marked with the scan icon are checked by the camera.
+          Every movement displays an honest capability level. Camera-checked exercises verify form and award bonus XP.
         </Text>
         <Text style={[typography.caption, { color: colors.warning, marginTop: spacing.md }]}>
           {exercise.safety}
@@ -130,6 +188,15 @@ export function CoachIntro({ plan, exercise, cameraBuilt, linkedQuest, onStart, 
 }
 
 const styles = StyleSheet.create({
+  capBadge: {
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  exerciseCard: {
+    borderRadius: 12,
+    padding: 12,
+  },
   flex: { flex: 1 },
   round: { alignItems: 'center', borderRadius: 22, height: 44, justifyContent: 'center', width: 44 },
   row: { alignItems: 'center', flexDirection: 'row' },

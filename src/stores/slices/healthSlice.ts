@@ -381,10 +381,21 @@ export const createHealthSlice: StateCreator<
       };
     });
     // A hard day lightens today's unstarted quests (setupProfile.fitFor).
-    if (record.date === formatLocalDate(new Date())) get().refitDailyQuests();
+    if (record.date === formatLocalDate(new Date())) {
+      get().refitDailyQuests();
+      try {
+        get().completeCheckInQuest(record.mood, record.notes);
+        if (record.sleepHours > 0) get().completeSleepQuest(record.sleepHours);
+        if (record.symptoms && record.symptoms.length > 0) {
+          for (const s of record.symptoms) {
+            get().completeSymptomQuest(s, record.date);
+          }
+        }
+      } catch {}
+    }
   },
 
-  addJournalEntry: (title, content, moodTag = 7) =>
+  addJournalEntry: (title, content, moodTag = 7) => {
     set((state) => ({
       journalEntries: [
         {
@@ -397,7 +408,11 @@ export const createHealthSlice: StateCreator<
         },
         ...state.journalEntries,
       ],
-    })),
+    }));
+    try {
+      get().completeReflectionQuest(content);
+    } catch {}
+  },
 
   deleteJournalEntry: (id) =>
     set((state) => ({

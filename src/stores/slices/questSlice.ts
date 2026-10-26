@@ -121,6 +121,14 @@ export interface QuestSlice {
   syncSetupRewards: () => { claimedCount: number; totalXp: number };
   /** Completes today's open meal-log quest from a meal the person logged in the app. */
   completeMealQuest: (description: string) => { title: string; xp: number } | null;
+  /** Completes today's open check-in quest from a check-in the person logged. */
+  completeCheckInQuest: (feelingOrMood: number, note?: string) => { title: string; xp: number } | null;
+  /** Completes today's open sleep quest from sleep hours logged. */
+  completeSleepQuest: (durationHours: number, restedRating?: number) => { title: string; xp: number } | null;
+  /** Completes today's open symptom quest from symptoms recorded. */
+  completeSymptomQuest: (symptom: string, dateStr?: string) => { title: string; xp: number } | null;
+  /** Completes today's open reflection quest from a journal reflection written. */
+  completeReflectionQuest: (content: string) => { title: string; xp: number } | null;
   /**
    * Completes exactly the assignment a workout was started from, if that assignment's own
    * objective accepts the workout as evidence. Standalone workouts never complete quests.
@@ -473,6 +481,92 @@ export const createQuestSlice: StateCreator<RootState, [['zustand/persist', unkn
         if (task?.objective?.type !== 'meal_log') continue;
         const result = get().submitQuestEvidence(asg.assignmentId, {
           answers: { mealDescription: description },
+          elapsedSeconds: 0,
+          completedStepIds: task.instructions.map((i) => i.id),
+          attested: true,
+        });
+        if (result.success) return { title: task.title, xp: result.earnedXp };
+      }
+      return null;
+    },
+
+    completeCheckInQuest: (feelingOrMood, note) => {
+      const date = today();
+      for (const asg of get().dailyAssignments.filter((a) => a.assignedDate === date && ACTIVE_STATUSES.includes(a.status))) {
+        const task = getTaskById(asg.taskId);
+        if (!task) continue;
+        const type = task.objective?.type;
+        if (type !== 'checkin' && type !== 'self_reported_checkin') continue;
+        const answers: Record<string, string | number> = {};
+        if (type === 'self_reported_checkin') {
+          answers.feeling = Math.max(1, Math.min(5, Math.round(feelingOrMood / 2)));
+        } else {
+          answers.feeling = typeof feelingOrMood === 'number' ? `${feelingOrMood}/10` : String(feelingOrMood);
+          answers.note = note && note.trim().length >= 3 ? note.trim() : 'Daily check-in completed';
+        }
+        const result = get().submitQuestEvidence(asg.assignmentId, {
+          answers,
+          elapsedSeconds: 0,
+          completedStepIds: task.instructions.map((i) => i.id),
+          attested: true,
+        });
+        if (result.success) return { title: task.title, xp: result.earnedXp };
+      }
+      return null;
+    },
+
+    completeSleepQuest: (durationHours, restedRating = 4) => {
+      const date = today();
+      for (const asg of get().dailyAssignments.filter((a) => a.assignedDate === date && ACTIVE_STATUSES.includes(a.status))) {
+        const task = getTaskById(asg.taskId);
+        if (!task || task.objective?.type !== 'sleep_log') continue;
+        const minutes = Math.max(1, Math.min(1440, Math.round(durationHours * 60)));
+        const result = get().submitQuestEvidence(asg.assignmentId, {
+          answers: {
+            durationMinutes: minutes,
+            restedRating: Math.max(1, Math.min(5, restedRating)),
+          },
+          elapsedSeconds: 0,
+          completedStepIds: task.instructions.map((i) => i.id),
+          attested: true,
+        });
+        if (result.success) return { title: task.title, xp: result.earnedXp };
+      }
+      return null;
+    },
+
+    completeSymptomQuest: (symptom, dateStr) => {
+      const date = dateStr ?? today();
+      for (const asg of get().dailyAssignments.filter((a) => a.assignedDate === today() && ACTIVE_STATUSES.includes(a.status))) {
+        const task = getTaskById(asg.taskId);
+        if (!task || task.objective?.type !== 'symptom_record') continue;
+        const result = get().submitQuestEvidence(asg.assignmentId, {
+          answers: {
+            symptomType: symptom.trim().slice(0, 50),
+            date,
+          },
+          elapsedSeconds: 0,
+          completedStepIds: task.instructions.map((i) => i.id),
+          attested: true,
+        });
+        if (result.success) return { title: task.title, xp: result.earnedXp };
+      }
+      return null;
+    },
+
+    completeReflectionQuest: (content) => {
+      const date = today();
+      for (const asg of get().dailyAssignments.filter((a) => a.assignedDate === date && ACTIVE_STATUSES.includes(a.status))) {
+        const task = getTaskById(asg.taskId);
+        if (!task || task.objective?.type !== 'structured_reflection') continue;
+        const form = objectiveFormFor(task);
+        if (!form) continue;
+        const answers: Record<string, string> = {};
+        for (const f of form.fields) {
+          answers[f.id] = content.slice(0, 200);
+        }
+        const result = get().submitQuestEvidence(asg.assignmentId, {
+          answers,
           elapsedSeconds: 0,
           completedStepIds: task.instructions.map((i) => i.id),
           attested: true,
