@@ -127,11 +127,7 @@ export function DrawerSceneWrapper({
               : progress.value > (drawerOpen ? 0.6 : 0.4);
 
         drawerTarget.value = open ? 1 : 0;
-        progress.value = reduceMotion
-          ? open
-            ? 1
-            : 0
-          : withTiming(open ? 1 : 0, DRAWER_TIMING);
+        progress.value = reduceMotion ? (open ? 1 : 0) : withTiming(open ? 1 : 0, DRAWER_TIMING);
 
         if (open !== drawerOpen) {
           runOnJS(tick)();

@@ -12,6 +12,14 @@ export interface Item {
   social?: boolean;
   /** Minimum progression level required to see this item. */
   minLevel?: number;
+  /** Shown only when Beta Mode is active. */
+  betaOnly?: boolean;
+}
+
+export interface DrawerSection {
+  title: string;
+  betaOnly?: boolean;
+  items: Item[];
 }
 
 /**
@@ -19,7 +27,7 @@ export interface Item {
  * entry here opens a real route. Entries follow the person's experience and eligibility;
  * gated routes also check access themselves.
  */
-export const DRAWER_SECTIONS: { title: string; items: Item[] }[] = [
+export const DRAWER_SECTIONS: DrawerSection[] = [
   {
     title: 'Today',
     items: [
@@ -58,6 +66,13 @@ export const DRAWER_SECTIONS: { title: string; items: Item[] }[] = [
       { label: 'Letters', icon: 'mail-outline', route: '/(app)/letters', social: true },
       { label: 'Circles', icon: 'people-outline', route: '/(app)/circles', minLevel: 6 },
       { label: 'Organizations', icon: 'business-outline', route: '/(app)/organizations', minLevel: 6 },
+    ],
+  },
+  {
+    title: 'Lab & Beta',
+    betaOnly: true,
+    items: [
+      { label: 'Beta Lab', icon: 'flask-outline', route: '/(app)/beta-lab', betaOnly: true },
     ],
   },
 ];

@@ -89,6 +89,9 @@ export interface AppSlice {
   /** Explicit consent to send typed questions to the cloud AI companion. Off by default. */
   cloudAiConsent: boolean;
   setCloudAiConsent: (on: boolean) => void;
+  /** Opt-in experimental Beta Mode: unlocks Beta Lab, experimental pose, and motion blur. Off by default. */
+  betaMode: boolean;
+  setBetaMode: (on: boolean) => void;
   setUsageAnalytics: (on: boolean) => void;
   setShareWeeklySummaries: (enabled: boolean) => void;
   setQuestRemindersEnabled: (enabled: boolean) => void;
@@ -157,6 +160,8 @@ export const createAppSlice: StateCreator<
   setCrashReports: (crashReports) => set({ crashReports }),
   cloudAiConsent: false,
   setCloudAiConsent: (cloudAiConsent) => set({ cloudAiConsent }),
+  betaMode: false,
+  setBetaMode: (betaMode) => set({ betaMode }),
   setUsageAnalytics: (usageAnalytics) => set({ usageAnalytics }),
   setShareWeeklySummaries: (shareWeeklySummaries) => set({ shareWeeklySummaries }),
   setQuestRemindersEnabled: (questRemindersEnabled) => set({ questRemindersEnabled }),

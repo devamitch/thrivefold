@@ -1,13 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Image } from 'expo-image';
 import { usePathname, useRouter, type Href } from 'expo-router';
 import React, { memo, useCallback, useMemo, type ReactNode, type RefObject } from 'react';
 import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   useWindowDimensions,
   View,
@@ -21,29 +21,29 @@ import Animated, {
   type SharedValue,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { DRAWER_SECTIONS } from '../../navigation/drawerItems';
 import { useRootStore, useShallow } from '../../stores/useRootStore';
 import type { ThemeColors } from '../../theme/colors';
 import type { ProductExperience } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
-import { FrostedView } from '../ui/FrostedView';
 import { PressableScale } from '../ui/PressableScale';
 import { SquircleSurface } from '../ui/SquircleSurface';
 import { drawerProgress, drawerWidthFor } from './drawerProgress';
 
 /* -------------------------------------------------------------------------------------------------
- * The drawer is a deep, per-experience room behind the light screen, which slides aside to
- * reveal it. It takes the dock colours of the current experience (terracotta on umber, brass on
- * slate, amethyst on plum) as one solid fill: no shadows, borders or glows.
+ * The drawer is a deep, per-experience room behind the light screen: it takes the dock colours
+ * (terracotta on warm umber, brass on slate, amethyst on plum) as one solid fill, so the
+ * receded screen separates by fill alone: no shadows, no borders, no decorative glows.
+ * Every colour derives from theme tokens.
  * ----------------------------------------------------------------------------------------------- */
 
 type DrawerItem = (typeof DRAWER_SECTIONS)[number]['items'][number];
 
 const SETTINGS_ROUTE = '/(app)/(tabs)/settings';
 
-/** Promoted to tiles at the top, so they are left out of the list below. */
 const QUICK: {
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
@@ -75,20 +75,23 @@ const withAlpha = (hex: string, a: number) => {
 
 function buildPalette(c: ThemeColors) {
   return {
+    bg: c.dock,
     accent: c.dockActive,
+    accentSecondary: c.accent,
     onAccent: c.dock,
     ink: c.callText,
-    inkSoft: withAlpha(c.callText, 0.86),
-    inkMuted: withAlpha(c.callText, 0.56),
+    inkSoft: withAlpha(c.callText, 0.84),
+    inkMuted: withAlpha(c.callText, 0.58),
     wash: withAlpha(c.callText, 0.08),
-    washStrong: withAlpha(c.callText, 0.12),
+    washStrong: withAlpha(c.callText, 0.14),
     accentWash: withAlpha(c.dockActive, 0.2),
   };
 }
 type Palette = ReturnType<typeof buildPalette>;
 
 /** Route matching that understands expo-router groups and index routes, and prefers the most specific item. */
-const cleanRoute = (route: string) => route.replace(/\/\([^)]+\)/g, '').replace(/\/index$/, '') || '/';
+const cleanRoute = (route: string) =>
+  route.replace(/\/\([^)]+\)/g, '').replace(/\/index$/, '') || '/';
 const matchScore = (path: string, route: string) => {
   const r = cleanRoute(route);
   if (path === r) return r.length + 2;
@@ -104,7 +107,7 @@ const tick = () => {
 
 /* ----------------------------------------------------------------------------------------------- */
 
-/** Rows drift in one after another as the drawer opens, and follow the finger while dragged. */
+/** Rows rise in one after another as the drawer opens, and follow the finger while it is dragged. */
 const Reveal = memo(function Reveal({
   index,
   progress,
@@ -116,10 +119,10 @@ const Reveal = memo(function Reveal({
   style?: StyleProp<ViewStyle>;
   children: ReactNode;
 }) {
-  const start = Math.min(0.18 + index * 0.025, 0.5);
+  const start = Math.min(0.04 + index * 0.024, 0.4);
   const animated = useAnimatedStyle(() => {
     const t = interpolate(progress.value, [start, start + 0.45], [0, 1], Extrapolation.CLAMP);
-    return { opacity: t, transform: [{ translateX: (1 - t) * -18 }] };
+    return { opacity: t, transform: [{ translateX: (1 - t) * -20 }] };
   });
   return <Animated.View style={[style, animated]}>{children}</Animated.View>;
 });
@@ -139,30 +142,32 @@ const DrawerRow = memo(function DrawerRow({
   return (
     <PressableScale
       onPress={() => onPress(item.route)}
-      scaleTo={0.97}
+      scaleTo={0.98}
       accessibilityRole="button"
       accessibilityLabel={item.label}
       accessibilityState={{ selected: active }}
     >
-      <SquircleSurface radius={16} fill={active ? palette.accentWash : 'transparent'} style={styles.row}>
+      <View style={[styles.row, active && { backgroundColor: palette.wash }]}>
         <Ionicons
           name={active ? (item.icon.replace('-outline', '') as typeof item.icon) : item.icon}
           size={20}
-          color={active ? palette.accent : palette.inkSoft}
+          color={active ? palette.accent : palette.ink}
           style={styles.rowIcon}
         />
         <Text
           numberOfLines={1}
           style={[
             active ? typography.bodyBold : typography.body,
-            styles.flex,
+            styles.rowLabel,
             { color: active ? palette.ink : palette.inkSoft },
           ]}
         >
           {item.label}
         </Text>
-        {active ? <View style={[styles.activeBar, { backgroundColor: palette.accent }]} /> : null}
-      </SquircleSurface>
+        {active ? (
+          <View style={[styles.activeBar, { backgroundColor: palette.accent }]} />
+        ) : null}
+      </View>
     </PressableScale>
   );
 });
@@ -173,23 +178,26 @@ type Row =
   | { kind: 'title'; key: string; title: string; index: number }
   | { kind: 'item'; key: string; item: DrawerItem; index: number };
 
-export function AppDrawer({ blurTarget }: { blurTarget: RefObject<View | null> }) {
+export function AppDrawer({ blurTarget: _blurTarget }: { blurTarget?: RefObject<View | null> }) {
   const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { colors, typography, experience } = useTheme();
 
-  const { open, setOpen, socialOpen, user, level, currentStreak } = useRootStore(
-    useShallow((s) => ({
-      open: s.drawerOpen,
-      setOpen: s.setDrawerOpen,
-      socialOpen: s.isSocialPathRevealed,
-      user: s.user,
-      level: s.level,
-      currentStreak: s.currentStreak,
-    })),
-  );
+  const { open, setOpen, socialOpen, user, level, currentStreak, betaMode, setBetaMode } =
+    useRootStore(
+      useShallow((s) => ({
+        open: s.drawerOpen,
+        setOpen: s.setDrawerOpen,
+        socialOpen: s.isSocialPathRevealed,
+        user: s.user,
+        level: s.level,
+        currentStreak: s.currentStreak,
+        betaMode: s.betaMode,
+        setBetaMode: s.setBetaMode,
+      })),
+    );
 
   const palette = useMemo(() => buildPalette(colors), [colors]);
   const panelWidth = drawerWidthFor(width);
@@ -197,35 +205,28 @@ export function AppDrawer({ blurTarget }: { blurTarget: RefObject<View | null> }
 
   const panelStyle = useAnimatedStyle(() => ({
     opacity: interpolate(progress.value, [0, 0.12], [0, 1], Extrapolation.CLAMP),
-    transform: [
-      {
-        translateX: interpolate(progress.value, [0, 1], [-36, 0], Extrapolation.CLAMP),
-      },
-    ],
+    transform: [{ translateX: interpolate(progress.value, [0, 1], [-32, 0], Extrapolation.CLAMP) }],
   }));
 
-  // A soft accent light that rises behind the profile as the room opens.
   const glowStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 1], [0, 0.5], Extrapolation.CLAMP),
-    transform: [{ scale: interpolate(progress.value, [0, 1], [0.6, 1], Extrapolation.CLAMP) }],
+    opacity: interpolate(progress.value, [0.1, 1], [0, 1], Extrapolation.CLAMP),
   }));
-
-  const devEnableAll =
-    process.env.NODE_ENV !== 'test' && process.env.EXPO_PUBLIC_ENABLE_ALL_FEATURES === 'true';
 
   const sections = useMemo(
     () =>
       DRAWER_SECTIONS.map((sec) => ({
         ...sec,
-        items: sec.items.filter(
-          (it) =>
-            !QUICK_ROUTES.has(it.route) &&
-            (devEnableAll || !it.only || it.only.includes(experience)) &&
-            (devEnableAll || !it.social || socialOpen) &&
-            (devEnableAll || !it.minLevel || level >= it.minLevel),
-        ),
+        items: sec.items.filter((it) => {
+          if (QUICK_ROUTES.has(it.route)) return false;
+          if (it.betaOnly) return betaMode;
+          if (sec.betaOnly && !betaMode) return false;
+          if (it.only && !it.only.includes(experience)) return false;
+          if (it.social && !socialOpen) return false;
+          if (it.minLevel && level < it.minLevel) return false;
+          return true;
+        }),
       })).filter((sec) => sec.items.length > 0),
-    [experience, socialOpen, level, devEnableAll],
+    [experience, socialOpen, level, betaMode],
   );
 
   const activeRoute = useMemo(() => {
@@ -244,14 +245,9 @@ export function AppDrawer({ blurTarget }: { blurTarget: RefObject<View | null> }
 
   const rows = useMemo(() => {
     const out: Row[] = [];
-    let i = 2; // profile and quick tiles reveal first
+    let i = 2; // you + quick reveal first
     for (const sec of sections) {
-      out.push({
-        kind: 'title',
-        key: `t:${sec.title}`,
-        title: sec.title,
-        index: i++,
-      });
+      out.push({ kind: 'title', key: `t:${sec.title}`, title: sec.title, index: i++ });
       for (const it of sec.items) out.push({ kind: 'item', key: it.route, item: it, index: i++ });
     }
     return out;
@@ -259,8 +255,6 @@ export function AppDrawer({ blurTarget }: { blurTarget: RefObject<View | null> }
 
   const close = useCallback(() => setOpen(false), [setOpen]);
 
-  // Close first, then navigate once the screen has mostly settled, so the push doesn't
-  // animate underneath a still-receded scene.
   const go = useCallback(
     (route: string) => {
       tick();
@@ -271,32 +265,32 @@ export function AppDrawer({ blurTarget }: { blurTarget: RefObject<View | null> }
     [pathname, router, setOpen],
   );
 
+  const onToggleBeta = useCallback(
+    (val: boolean) => {
+      tick();
+      setBetaMode(val);
+    },
+    [setBetaMode],
+  );
+
   return (
     <View
-      style={[styles.root, { backgroundColor: colors.dock }]}
+      style={[styles.root, { backgroundColor: palette.bg }]}
       pointerEvents={open ? 'auto' : 'none'}
       importantForAccessibility={open ? 'auto' : 'no-hide-descendants'}
       accessibilityElementsHidden={!open}
     >
-      {/* Frosted room: a blurred echo of the screen that slid aside, deep-tinted in the dock
-          colour (a plain tint where the platform cannot blur). */}
-      <FrostedView
-        tone="dark"
-        intensity={90}
-        tintOpacity={0.8}
-        blurTarget={blurTarget}
-        style={StyleSheet.absoluteFill}
-        pointerEvents="none"
-      />
+      {/* Ambient background glow — gives the deep room its warmth */}
       <Animated.View pointerEvents="none" style={[styles.glow, glowStyle]}>
-        <Svg width="100%" height="100%">
+        <Svg width="420" height="420" viewBox="0 0 420 420">
           <Defs>
             <RadialGradient id="drawerGlow" cx="50%" cy="50%" r="50%">
-              <Stop offset="0" stopColor={palette.accent} stopOpacity={0.55} />
-              <Stop offset="1" stopColor={palette.accent} stopOpacity={0} />
+              <Stop offset="0%" stopColor={palette.accent} stopOpacity="0.28" />
+              <Stop offset="60%" stopColor={palette.accent} stopOpacity="0.08" />
+              <Stop offset="100%" stopColor={palette.accent} stopOpacity="0" />
             </RadialGradient>
           </Defs>
-          <Rect x="0" y="0" width="100%" height="100%" fill="url(#drawerGlow)" />
+          <Circle cx="210" cy="210" r="210" fill="url(#drawerGlow)" />
         </Svg>
       </Animated.View>
 
@@ -315,7 +309,7 @@ export function AppDrawer({ blurTarget }: { blurTarget: RefObject<View | null> }
         ]}
       >
         <View style={styles.inner}>
-          {/* You */}
+          {/* You — Profile Header */}
           <Reveal index={0} progress={progress} style={styles.headRow}>
             <PressableScale
               onPress={() => go(SETTINGS_ROUTE)}
@@ -378,8 +372,16 @@ export function AppDrawer({ blurTarget }: { blurTarget: RefObject<View | null> }
                   accessibilityLabel={q.label}
                   accessibilityState={{ selected: on }}
                 >
-                  <SquircleSurface radius={20} fill={on ? palette.accent : palette.wash} style={styles.quick}>
-                    <Ionicons name={q.icon} size={20} color={on ? palette.onAccent : palette.accent} />
+                  <SquircleSurface
+                    radius={20}
+                    fill={on ? palette.accent : palette.wash}
+                    style={styles.quick}
+                  >
+                    <Ionicons
+                      name={q.icon}
+                      size={20}
+                      color={on ? palette.onAccent : palette.accent}
+                    />
                     <Text
                       numberOfLines={1}
                       style={[
@@ -427,7 +429,67 @@ export function AppDrawer({ blurTarget }: { blurTarget: RefObject<View | null> }
                   </Reveal>
                 ),
               )}
+
+              {/* Beta Mode Toggle Row — perfectly integrated, minimal & sleek */}
+              <Reveal index={rows.length + 2} progress={progress} style={styles.betaRowWrap}>
+                <SquircleSurface
+                  radius={18}
+                  smoothing={1}
+                  fill={betaMode ? palette.accentWash : palette.wash}
+                  style={styles.betaCard}
+                >
+                  <View style={styles.betaCardLeft}>
+                    <SquircleSurface
+                      radius={12}
+                      fill={betaMode ? palette.accent : palette.washStrong}
+                      style={styles.betaIconSurface}
+                    >
+                      <Ionicons
+                        name={betaMode ? 'flask' : 'flask-outline'}
+                        size={17}
+                        color={betaMode ? palette.onAccent : palette.inkSoft}
+                      />
+                    </SquircleSurface>
+                    <View style={styles.betaTextCol}>
+                      <View style={styles.betaHeadingRow}>
+                        <Text style={[typography.bodyBold, { color: palette.ink }]}>
+                          Beta Mode
+                        </Text>
+                        {betaMode ? (
+                          <SquircleSurface radius={8} fill={palette.accent} style={styles.badge}>
+                            <Text
+                              style={[
+                                typography.captionBold,
+                                { color: palette.onAccent, fontSize: 10 },
+                              ]}
+                            >
+                              ON
+                            </Text>
+                          </SquircleSurface>
+                        ) : null}
+                      </View>
+                      <Text
+                        numberOfLines={1}
+                        style={[typography.caption, { color: palette.inkMuted, marginTop: 1 }]}
+                      >
+                        Experimental tech & Lab
+                      </Text>
+                    </View>
+                  </View>
+                  <Switch
+                    value={betaMode}
+                    onValueChange={onToggleBeta}
+                    thumbColor={betaMode ? palette.accent : palette.inkMuted}
+                    trackColor={{
+                      false: palette.washStrong,
+                      true: palette.accentWash,
+                    }}
+                    accessibilityLabel="Toggle Beta Mode"
+                  />
+                </SquircleSurface>
+              </Reveal>
             </ScrollView>
+
             {/* The list dissolves into the footer instead of being cut off */}
             <LinearGradient
               pointerEvents="none"
@@ -436,8 +498,8 @@ export function AppDrawer({ blurTarget }: { blurTarget: RefObject<View | null> }
             />
           </View>
 
-          {/* Footer */}
-          <Reveal index={rows.length + 2} progress={progress} style={styles.footer}>
+          {/* Footer: Safety and Support */}
+          <Reveal index={rows.length + 3} progress={progress} style={styles.footer}>
             <PressableScale
               onPress={() => go('/(app)/safety')}
               scaleTo={0.98}
@@ -516,7 +578,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   listContent: {
-    paddingBottom: 16,
+    paddingBottom: 24,
     paddingTop: 4,
   },
   sectionTitle: {
@@ -526,6 +588,7 @@ const styles = StyleSheet.create({
   },
   row: {
     alignItems: 'center',
+    borderRadius: 14,
     flexDirection: 'row',
     gap: 14,
     minHeight: 46,
@@ -534,10 +597,49 @@ const styles = StyleSheet.create({
   rowIcon: {
     width: 22,
   },
+  rowLabel: {
+    flex: 1,
+  },
   activeBar: {
     borderRadius: 2,
     height: 18,
     width: 3,
+  },
+  betaRowWrap: {
+    marginTop: 18,
+    paddingHorizontal: 4,
+  },
+  betaCard: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  betaCardLeft: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    gap: 12,
+    marginRight: 8,
+  },
+  betaIconSurface: {
+    alignItems: 'center',
+    height: 32,
+    justifyContent: 'center',
+    width: 32,
+  },
+  betaTextCol: {
+    flex: 1,
+  },
+  betaHeadingRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 6,
+  },
+  badge: {
+    paddingHorizontal: 6,
+    paddingVertical: 1,
   },
   glow: {
     height: 420,
