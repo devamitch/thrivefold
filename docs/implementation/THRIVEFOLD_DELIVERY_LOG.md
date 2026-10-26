@@ -99,5 +99,34 @@
   - `pnpm test` -> PASS (39 suites, 278 tests passed).
   - `pnpm lint` -> PASS (0 errors, 0 warnings).
 
+---
+
+## Milestone 7: Hands-Free Gesture Remote Controls, Human Voice Coaching, Squircle UI Integration & Device Screenshots
+- **Status**: IMPLEMENTED, AUTOMATED TESTED, BUILD VERIFIED & DEVICE VERIFIED
+- **Components Implemented**:
+  - `src/components/ui/Squircle.tsx`: Resolved duplicate export `SquircleShape` conflict (TS2308) with `SquircleSurface.tsx` by importing the canonical type, restoring clean strict exports across `src/components/ui/index.ts`.
+  - `src/domain/pose/coachVoice.ts`: Implemented `gestureTriggerSpeech`, `gestureIntroSpeech`, and `humanCoachingEncouragement` to provide warm, conversational human voice feedback for camera gestures and workout encouragement.
+  - `src/components/coach/GestureRemoteGuideModal.tsx`: Created interactive hands-free camera control guide bottom sheet modal explaining all 5 computer-vision tracked pose gestures (One Hand = Play/Pause Video, Both Hands = Finish Set / Skip Rest, Cross Arms = Pause Workout, Hands on Hips = +30s Extra Rest, T-Pose = Go Back / Rewind Move) with "Hear Coach Explain" voice playback.
+  - `src/components/coach/CoachIntro.tsx`: Added dedicated Hands-Free Remote Gestures squircle card with gesture badges, interactive modal triggers, and audio coaching preview prior to workout start.
+  - `src/app/(app)/health/coach/[planId].tsx`: Wired `gestureTriggerSpeech` into `onGesture`, updated live banner tracking for all 5 gestures with dedicated icons and feedback, added quick-access hands-free gesture guide button to right rail, and improved startup human coach greeting.
+  - `tests/unit/coach-voice.test.ts`: Added unit tests verifying gesture feedback speech generation, intro speech content, and trainer encouragement phrases.
+- **Physical Device & Build Verification**:
+  - `pnpm compile` -> PASS (0 errors, strict tsc).
+  - `pnpm lint` -> PASS (0 errors, 0 warnings).
+  - `pnpm test` -> PASS (39 suites, 279/279 tests passing).
+  - `cd android && ./gradlew :app:assembleRelease --quiet` -> PASS (144.1 MB release APK).
+  - `adb -s ZD2225KYKD install -r android/app/build/outputs/apk/release/app-release.apk` -> Streamed Install Success on physical reference device Moto G71.
+  - Verified active PID `22362` with zero crashes.
+  - Captured 8 authentic production-grade screenshots in `marketing/launch/screenshots/` and `docs/marketing/screenshots/`:
+    1. `01_home_screen.png`: Home dashboard
+    2. `02_coach_intro_remote_gestures.png`: Pre-workout Coach Intro with Hands-Free Remote Gestures card
+    3. `03_coach_intro_exercises_list.png`: Workout exercises list with honest capability badges
+    4. `03_coach_gesture_guide_modal.png`: Interactive Hands-Free Camera Gesture Guide modal
+    5. `04_coach_live_workout_camera.png`: Live camera workout session
+    6. `04_coach_live_rest_screen.png`: Live rest timer overlay with gesture guide button and next move
+    7. `05_coach_in_workout_gesture_modal.png`: In-workout gesture bottom sheet modal
+    8. `06_train_screen_hub.png`: Train hub with weekly activity rings, quest integration, and tool chips
+
+
 
 

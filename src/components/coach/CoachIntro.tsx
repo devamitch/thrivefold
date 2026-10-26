@@ -4,13 +4,16 @@
  */
 
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import React, { useState } from 'react';
 import { ScrollView, Text, View, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { PressableScale } from '../ui/PressableScale';
+import { Squircle } from '../ui/Squircle';
+import { SquircleSurface } from '../ui/SquircleSurface';
+import { GestureRemoteGuideModal } from './GestureRemoteGuideModal';
 import { exerciseById } from '../../domain/fitness/workouts';
 import { getExerciseCapability } from '../../domain/pose/capabilityRegistry';
 import { movementForExercise } from '../../domain/pose/movement';
@@ -31,6 +34,7 @@ interface CoachIntroProps {
 export function CoachIntro({ plan, exercise, cameraBuilt, linkedQuest, onStart, onBack }: CoachIntroProps) {
   const insets = useSafeAreaInsets();
   const { colors, typography, spacing } = useTheme();
+  const [showGestureModal, setShowGestureModal] = useState(false);
 
   return (
     <View style={[styles.flex, { backgroundColor: colors.background, paddingTop: insets.top }]}>
@@ -71,15 +75,80 @@ export function CoachIntro({ plan, exercise, cameraBuilt, linkedQuest, onStart, 
           Your camera fills the stage with a live skeleton and rep count; the tutorial plays below it.
         </Text>
 
-        <Card style={{ padding: spacing.base, marginTop: spacing.lg }}>
+        {/* Dedicated Hands-Free Camera Remote Control Section */}
+        {cameraBuilt ? (
+          <Squircle
+            radius={20}
+            fill={colors.surface1}
+            style={[
+              styles.gestureBox,
+              {
+                borderColor: colors.border,
+                borderWidth: StyleSheet.hairlineWidth,
+                marginTop: spacing.md,
+              },
+            ]}
+          >
+            <View style={styles.row}>
+              <View style={[styles.tipIconBox, { backgroundColor: colors.primaryAlpha }]}>
+                <Ionicons name="hand-left-outline" size={22} color={colors.primary} />
+              </View>
+              <View style={[styles.flex, { marginLeft: 12 }]}>
+                <Text style={[typography.subheading, { color: colors.text.primary }]}>
+                  Hands-Free Remote Gestures
+                </Text>
+                <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                  Control workout 6–10ft away without touching your phone
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.gestureGrid}>
+              {[
+                { icon: 'hand-left-outline', label: '1 Hand', action: 'Play/Pause Demo' },
+                { icon: 'body-outline', label: 'Both Hands', action: 'Finish Set / Skip Rest' },
+                { icon: 'pause-circle-outline', label: 'Cross Arms', action: 'Pause Workout' },
+                { icon: 'time-outline', label: 'Hands on Hips', action: '+30s Rest' },
+                { icon: 'arrow-undo-outline', label: 'T-Pose', action: 'Go Back' },
+              ].map((g) => (
+                <View
+                  key={g.label}
+                  style={[styles.gesturePill, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                >
+                  <Ionicons name={g.icon as keyof typeof Ionicons.glyphMap} size={15} color={colors.primary} />
+                  <Text style={[typography.captionBold, { color: colors.text.primary, marginLeft: 6 }]}>
+                    {g.label}:
+                  </Text>
+                  <Text style={[typography.caption, { color: colors.text.secondary, marginLeft: 4 }]}>
+                    {g.action}
+                  </Text>
+                </View>
+              ))}
+            </View>
+
+            <PressableScale
+              onPress={() => setShowGestureModal(true)}
+              style={[styles.learnBtn, { backgroundColor: colors.primaryAlpha, marginTop: spacing.sm }]}
+              accessibilityRole="button"
+              accessibilityLabel="Open Camera Gesture Guide and hear Coach explain"
+            >
+              <Ionicons name="volume-high-outline" size={16} color={colors.primary} />
+              <Text style={[typography.subbodyBold, { color: colors.primary, marginLeft: 8 }]}>
+                Hear Coach Explain Gestures & View Guide
+              </Text>
+              <Ionicons name="chevron-forward" size={16} color={colors.primary} style={{ marginLeft: 'auto' }} />
+            </PressableScale>
+          </Squircle>
+        ) : null}
+
+        <Card style={{ padding: spacing.base, marginTop: spacing.md }}>
           {[
             ['videocam-outline', cameraBuilt
               ? 'The camera counts reps and checks your form for the exercises it knows.'
               : 'Form checking is not available in this build; the coach still runs videos, sets and rest.'],
             ['pause-circle-outline', 'If your form slips, the video pauses and shows exactly what to fix.'],
             ['ribbon-outline', `Good form (80%+) earns ${WORKOUT_XP_BASE * WORKOUT_FORM_MULTIPLIER} XP instead of ${WORKOUT_XP_BASE}.`],
-            ['hand-left-outline', 'Hands-free: one hand above head = pause/play video. Both hands = finish set or skip rest.'],
-            ['volume-high-outline', 'Voice counts in, names reps and says what to fix. You can mute it.'],
+            ['volume-high-outline', 'Voice counts in, names reps, confirms gestures, and coaches form in real time.'],
             ['eye-off-outline', 'Everything runs on this phone. No photos or video are saved or sent.'],
             ['phone-portrait-outline', 'Prop the phone up about two metres away, side-on, with your whole body in view.'],
           ].map(([icon, text]) => (
@@ -183,6 +252,12 @@ export function CoachIntro({ plan, exercise, cameraBuilt, linkedQuest, onStart, 
           style={{ marginTop: spacing.lg }}
         />
       </ScrollView>
+
+      {/* Interactive Hands-Free Gesture Guide Bottom Sheet */}
+      <GestureRemoteGuideModal
+        visible={showGestureModal}
+        onClose={() => setShowGestureModal(false)}
+      />
     </View>
   );
 }
@@ -198,6 +273,35 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   flex: { flex: 1 },
+  gestureBox: {
+    padding: 16,
+  },
+  gestureGrid: {
+    gap: 8,
+    marginTop: 12,
+  },
+  gesturePill: {
+    alignItems: 'center',
+    borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+  },
+  learnBtn: {
+    alignItems: 'center',
+    borderRadius: 12,
+    flexDirection: 'row',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
   round: { alignItems: 'center', borderRadius: 22, height: 44, justifyContent: 'center', width: 44 },
   row: { alignItems: 'center', flexDirection: 'row' },
+  tipIconBox: {
+    alignItems: 'center',
+    borderRadius: 12,
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
+  },
 });

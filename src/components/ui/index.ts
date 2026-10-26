@@ -27,3 +27,4 @@ export * from './FrostedView';
 export * from './Toggle';
 export * from './AchievementModal';
 export * from './GlassOrbButton';
+export * from './Squircle';

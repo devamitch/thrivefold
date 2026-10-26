@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter, type Href } from 'expo-router';
 import React, { useEffect } from 'react';
-import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -117,7 +117,7 @@ export function AchievementModal() {
         <Animated.View
           style={[StyleSheet.absoluteFill, { backgroundColor: colors.scrim }, backdropStyle]}
         >
-          {Platform.OS === 'ios' ? <FrostedView style={StyleSheet.absoluteFill} /> : null}
+          <FrostedView style={StyleSheet.absoluteFill} />
           <Pressable
             style={StyleSheet.absoluteFill}
             onPress={handleDismiss}

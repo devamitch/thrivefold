@@ -4,6 +4,8 @@
  * always sounds the same and tests can pin it down.
  */
 
+import type { Gesture } from './gestures';
+
 const PRAISE = ['Nice.', 'Good one.', 'Strong.', 'Smooth.', 'Lovely control.', 'That’s it.'];
 const PUSH = ['Keep it steady.', 'Breathe out as you move.', 'You’ve got this.', 'Stay with it.'];
 
@@ -75,4 +77,43 @@ export function idleLine(kind: 'reps' | 'hold'): string {
 /** Halfway through a rest, a tip for what comes next. */
 export function restTipLine(nextName: string, cue?: string): string {
   return cue ? `Next up, ${nextName}. ${cue}` : `Next up, ${nextName}.`;
+}
+
+/** Spoken introduction explaining hands-free remote camera controls. */
+export function gestureIntroSpeech(): string {
+  return 'Hey! You can control this workout completely hands-free from six to ten feet back. Raise one hand to pause or play the demo video. Raise both hands to finish your set or skip rest. Cross your arms over your chest to pause anytime. Put your hands on your hips to add thirty seconds of rest, or spread your arms wide in a T-pose to step back. I am watching your form and counting every clean rep.';
+}
+
+/** Human conversational voice feedback when a camera gesture is triggered. */
+export function gestureTriggerSpeech(
+  g: Gesture,
+  context: { videoPlaying?: boolean; rest?: boolean; itemIdx?: number } = {},
+): string {
+  switch (g) {
+    case 'one_hand':
+      return context.videoPlaying
+        ? 'Pausing the video for you. Take your time.'
+        : 'Resuming the demo video. Follow along with me!';
+    case 'both_hands':
+      return context.rest
+        ? 'Skipping rest. Let’s jump right back into it!'
+        : 'Set completed! Strong effort. Take a breather.';
+    case 'cross_arms':
+      return 'Workout paused. Catch your breath and shake out your arms. Uncross or tap to continue.';
+    case 'hands_on_hips':
+      return 'Got it! Added thirty seconds of extra rest. Breathe deep and reset.';
+    case 't_pose':
+      return (context.itemIdx ?? 0) > 0
+        ? 'Going back to the previous exercise. Let’s reset your rhythm.'
+        : 'You’re already at the first exercise. Let’s crush this one!';
+  }
+}
+
+/** Encouragement phrases as a real personal trainer would give during challenging sets. */
+export function humanCoachingEncouragement(reps: number, target: number): string | null {
+  const left = target - reps;
+  if (left === 2) return 'Two more, stay strong!';
+  if (left === 1) return 'Final rep, finish with full control!';
+  if (reps === Math.floor(target / 2)) return 'Halfway point! Looking solid, keep that rhythm.';
+  return null;
 }

@@ -39,6 +39,7 @@ import {
   CoachIntro,
   CoachVideoStage,
   CountdownOverlay,
+  GestureRemoteGuideModal,
   RestOverlay,
   SessionComplete,
   useCoachSession,
@@ -56,6 +57,7 @@ import {
 } from '../../../../components/workout/YouTubePlayer';
 import { videoFor } from '../../../../content/exerciseVideos';
 import { exerciseById } from '../../../../domain/fitness/workouts';
+import { gestureTriggerSpeech } from '../../../../domain/pose/coachVoice';
 import { type Gesture } from '../../../../domain/pose/gestures';
 import { liveCue, summarize } from '../../../../domain/pose/movement';
 import { useRootStore } from '../../../../stores/useRootStore';
@@ -115,6 +117,7 @@ export default function CoachScreen() {
   const [fullTracking, setFullTracking] = useState(false);
   const [videoPlaying, setVideoPlaying] = useState(false);
   const [videoMounted, setVideoMounted] = useState(false);
+  const [showGestureModal, setShowGestureModal] = useState(false);
   const [stage, setStage] = useState({ width: 0, height: 0 });
   const countdownArmed = useRef(false);
   const autoPaused = useRef(false);
@@ -132,40 +135,39 @@ export default function CoachScreen() {
   const onGesture = useCallback(
     (g: Gesture) => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+      const speech = gestureTriggerSpeech(g, {
+        videoPlaying,
+        rest: rest > 0,
+        itemIdx,
+      });
+      say(speech);
+
       if (g === 'one_hand') {
         autoPaused.current = false;
         if (videoPlaying) {
           player.current?.pause();
-          say('Video paused');
         } else {
           player.current?.play();
-          say('Playing');
         }
         return;
       }
       if (g === 'cross_arms') {
         autoPaused.current = true;
         player.current?.pause();
-        say('Paused. Take a moment.');
         return;
       }
       if (g === 'hands_on_hips') {
         setRest((r) => r + 30);
-        say('Added 30 seconds rest.');
         return;
       }
       if (g === 't_pose') {
         if (itemIdx > 0) {
-          say('Going back');
           session.setItemIdx(itemIdx - 1);
           session.setSetIdx(0);
-        } else {
-          say('At first exercise');
         }
         return;
       }
       if (rest > 0) {
-        say('Skipping rest');
         setRest(0);
       } else if (countdown === 0 && item && poseTrack) {
         const counted = progressOf(poseTrack.repRef.current);
@@ -174,7 +176,6 @@ export default function CoachScreen() {
         );
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       videoPlaying,
       rest,
@@ -186,6 +187,7 @@ export default function CoachScreen() {
       completeSet,
       progressOf,
       say,
+      session,
       setRest,
     ],
   );
@@ -283,7 +285,7 @@ export default function CoachScreen() {
     poseTrack.setTrackingReady(false);
     startedAt.current = new Date().toISOString();
     setPhase('live');
-    say(allowed ? 'Hi. Prop the phone up and step back so I can see you.' : "Let's begin.");
+    say(allowed ? 'Hi! Prop your phone up about two metres back so I can see you. You can control me hands-free with gestures.' : "Let's begin. Stay strong and focus on your form.");
     countdownArmed.current = true;
     if (!allowed) {
       countdownArmed.current = false;
@@ -374,15 +376,30 @@ export default function CoachScreen() {
   } | null =
     gestureProgress.g && gestureProgress.p > 0
       ? {
-          icon: 'hand-left-outline',
+          icon:
+            gestureProgress.g === 'cross_arms'
+              ? 'pause-circle-outline'
+              : gestureProgress.g === 'hands_on_hips'
+                ? 'time-outline'
+                : gestureProgress.g === 't_pose'
+                  ? 'arrow-undo-outline'
+                  : 'hand-left-outline',
           title:
             gestureProgress.g === 'one_hand'
               ? videoPlaying
-                ? 'Pausing video'
-                : 'Playing video'
-              : rest > 0
-                ? 'Skipping rest'
-                : 'Finishing set',
+                ? 'Pausing video...'
+                : 'Playing video...'
+              : gestureProgress.g === 'cross_arms'
+                ? 'Pausing workout...'
+                : gestureProgress.g === 'hands_on_hips'
+                  ? 'Adding +30s rest...'
+                  : gestureProgress.g === 't_pose'
+                    ? itemIdx > 0
+                      ? 'Going back...'
+                      : 'At first exercise'
+                    : rest > 0
+                      ? 'Skipping rest...'
+                      : 'Finishing set...',
           tone: 'gesture',
         }
       : fault
@@ -568,6 +585,14 @@ export default function CoachScreen() {
             onPress={() => setFullTracking((v) => !v)}
             size={44}
           />
+          <PressableScale
+            onPress={() => setShowGestureModal(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Hands-free gesture guide"
+            style={[styles.gestureBtn, { backgroundColor: 'rgba(16, 20, 26, 0.76)', borderColor: 'rgba(255, 255, 255, 0.16)' }]}
+          >
+            <Ionicons name="hand-left-outline" size={20} color={colors.primary} />
+          </PressableScale>
         </View>
       ) : null}
 
@@ -664,6 +689,12 @@ export default function CoachScreen() {
           onSkipRest={() => setRest(0)}
         />
       ) : null}
+
+      {/* Hands-Free Camera Gesture Remote Guide Bottom Sheet */}
+      <GestureRemoteGuideModal
+        visible={showGestureModal}
+        onClose={() => setShowGestureModal(false)}
+      />
     </View>
   );
 }
@@ -681,6 +712,14 @@ const styles = StyleSheet.create({
   center: { alignItems: 'center', flex: 1, justifyContent: 'center', padding: 8 },
   faultEdge: { borderWidth: 4 },
   flex: { flex: 1 },
+  gestureBtn: {
+    alignItems: 'center',
+    borderRadius: 22,
+    borderWidth: StyleSheet.hairlineWidth,
+    height: 44,
+    justifyContent: 'center',
+    width: 44,
+  },
   pip: { aspectRatio: 16 / 9, position: 'absolute' },
   pipBtn: {
     alignItems: 'center',
