@@ -54,14 +54,23 @@ export function SocialGate({ feature }: { feature: 'letters' | 'dating' }) {
   ];
   const next = steps.find((x) => !x.done);
   return (
-    <ScreenWrapper scrollable footer={next ? <Button label={next.label} onPress={next.action} /> : undefined}>
+    <ScreenWrapper
+      scrollable
+      footer={next ? <Button label={next.label} onPress={next.action} /> : undefined}
+    >
       <Header
         title={feature === 'letters' ? 'Letters' : 'Dating'}
-        subtitle={feature === 'letters' ? 'Slow pen-pal letters, made of cards' : 'Verified adults, messages made of cards'}
+        subtitle={
+          feature === 'letters'
+            ? 'Slow pen-pal letters, made of cards'
+            : 'Verified adults, messages made of cards'
+        }
         showBack
       />
       <Card style={{ padding: spacing.lg }}>
-        <Text style={[typography.subheading, { color: colors.text.primary }]}>A few steps first</Text>
+        <Text style={[typography.subheading, { color: colors.text.primary }]}>
+          A few steps first
+        </Text>
         {steps.map((x) => (
           <View key={x.title} style={[styles.row, { marginTop: spacing.md }]}>
             <Ionicons
@@ -71,10 +80,38 @@ export function SocialGate({ feature }: { feature: 'letters' | 'dating' }) {
             />
             <View style={styles.flex}>
               <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{x.title}</Text>
-              <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>{x.body}</Text>
+              <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                {x.body}
+              </Text>
             </View>
           </View>
         ))}
+        {process.env.EXPO_PUBLIC_ENABLE_ALL_FEATURES === 'true' && (
+          <View
+            style={{
+              marginTop: spacing.lg,
+              paddingTop: spacing.md,
+            }}
+          >
+            <Button
+              label="Test Mode: Instant Unlock & Enter"
+              variant="outline"
+              onPress={() => {
+                s.grantConsent('social_path');
+                s.reveal(true);
+                const cur = useRootStore.getState().user;
+                if (cur) {
+                  useRootStore.getState().setUser({ ...cur, isAgeVerified: true });
+                } else {
+                  useRootStore.getState().continueAsGuest();
+                  const guest = useRootStore.getState().user;
+                  if (guest) useRootStore.getState().setUser({ ...guest, isAgeVerified: true });
+                }
+                router.replace(feature === 'letters' ? '/(app)/letters' : '/(app)/dating');
+              }}
+            />
+          </View>
+        )}
       </Card>
     </ScreenWrapper>
   );

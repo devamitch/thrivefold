@@ -210,6 +210,9 @@ export function AppDrawer({ blurTarget }: { blurTarget: RefObject<View | null> }
     transform: [{ scale: interpolate(progress.value, [0, 1], [0.6, 1], Extrapolation.CLAMP) }],
   }));
 
+  const devEnableAll =
+    process.env.NODE_ENV !== 'test' && process.env.EXPO_PUBLIC_ENABLE_ALL_FEATURES === 'true';
+
   const sections = useMemo(
     () =>
       DRAWER_SECTIONS.map((sec) => ({
@@ -217,12 +220,12 @@ export function AppDrawer({ blurTarget }: { blurTarget: RefObject<View | null> }
         items: sec.items.filter(
           (it) =>
             !QUICK_ROUTES.has(it.route) &&
-            (!it.only || it.only.includes(experience)) &&
-            (!it.social || socialOpen) &&
-            (!it.minLevel || level >= it.minLevel),
+            (devEnableAll || !it.only || it.only.includes(experience)) &&
+            (devEnableAll || !it.social || socialOpen) &&
+            (devEnableAll || !it.minLevel || level >= it.minLevel),
         ),
       })).filter((sec) => sec.items.length > 0),
-    [experience, socialOpen, level],
+    [experience, socialOpen, level, devEnableAll],
   );
 
   const activeRoute = useMemo(() => {

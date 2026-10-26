@@ -34,6 +34,9 @@ export const env = Object.freeze({
 
   // ── Memory / RAG ──
   MEM0_API_KEY: process.env.EXPO_PUBLIC_MEM0_API_KEY ?? '',
+
+  // ── Device Testing Override ──
+  ENABLE_ALL_FEATURES: process.env.EXPO_PUBLIC_ENABLE_ALL_FEATURES === 'true',
 });
 
 /** True when at least one AI provider is configured. */
