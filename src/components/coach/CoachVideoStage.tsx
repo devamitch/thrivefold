@@ -21,7 +21,7 @@ import { CoachGlass } from '../workout/CoachGlass';
 import { YouTubePlayer, type YouTubePlayerHandle } from '../workout/YouTubePlayer';
 import { useTheme } from '../../theme/useTheme';
 
-export type VideoDisplayMode = 'fullscreen' | 'pip' | 'minimized';
+export type VideoDisplayMode = 'fullscreen' | 'pip' | 'minimized' | 'hidden';
 
 interface CoachVideoStageProps {
   exerciseId: string;
@@ -35,6 +35,7 @@ interface CoachVideoStageProps {
   topInset: number;
   cameraMain: boolean;
   onSkipFirstTime?: () => void;
+  onModeChange?: (mode: VideoDisplayMode) => void;
 }
 
 export const CoachVideoStage = forwardRef<YouTubePlayerHandle, CoachVideoStageProps>(
@@ -51,6 +52,7 @@ export const CoachVideoStage = forwardRef<YouTubePlayerHandle, CoachVideoStagePr
       topInset,
       cameraMain,
       onSkipFirstTime,
+      onModeChange,
     },
     ref,
   ) {
@@ -58,7 +60,12 @@ export const CoachVideoStage = forwardRef<YouTubePlayerHandle, CoachVideoStagePr
     const playerRef = useRef<YouTubePlayerHandle>(null);
 
     // Initial mode: if never watched, show fullscreen preview; if already watched, minimize by default
-    const [mode, setMode] = useState<VideoDisplayMode>(hasWatched ? 'minimized' : 'fullscreen');
+    const [mode, setModeState] = useState<VideoDisplayMode>(hasWatched ? 'minimized' : 'fullscreen');
+
+    const setMode = (m: VideoDisplayMode) => {
+      setModeState(m);
+      if (onModeChange) onModeChange(m);
+    };
 
     useImperativeHandle(ref, () => ({
       play: () => playerRef.current?.play(),
@@ -68,7 +75,7 @@ export const CoachVideoStage = forwardRef<YouTubePlayerHandle, CoachVideoStagePr
 
     // If exercise changes, update mode based on whether it was watched
     useEffect(() => {
-      setMode(hasWatched ? 'minimized' : 'fullscreen');
+      setModeState(hasWatched ? 'minimized' : 'fullscreen');
     }, [exerciseId, hasWatched]);
 
     const handleSkipFirstTime = () => {
@@ -78,6 +85,31 @@ export const CoachVideoStage = forwardRef<YouTubePlayerHandle, CoachVideoStagePr
     };
 
     const pipWidth = Math.round(Math.min(stageWidth || 360, 520) * 0.44);
+
+    // MODE 0: COMPLETELY HIDDEN / UNMOUNTED (Zero background WebView overhead)
+    if (mode === 'hidden') {
+      return (
+        <Animated.View
+          entering={FadeIn.duration(200)}
+          exiting={FadeOut.duration(150)}
+          style={[styles.minimizedPill, { top: topInset + 72, left: spacing.base }]}
+        >
+          <PressableScale
+            onPress={() => setMode('pip')}
+            accessibilityRole="button"
+            accessibilityLabel="Show exercise video tutorial"
+            hitSlop={8}
+          >
+            <CoachGlass radius={20} style={styles.minimizedContent}>
+              <Ionicons name="videocam-outline" size={16} color={colors.callMuted} />
+              <Text style={[typography.captionBold, { color: colors.callMuted, marginLeft: 6 }]}>
+                Video Off
+              </Text>
+            </CoachGlass>
+          </PressableScale>
+        </Animated.View>
+      );
+    }
 
     const videoElement = (
       <YouTubePlayer
@@ -98,19 +130,30 @@ export const CoachVideoStage = forwardRef<YouTubePlayerHandle, CoachVideoStagePr
           exiting={FadeOut.duration(150)}
           style={[styles.minimizedPill, { top: topInset + 72, left: spacing.base }]}
         >
-          <PressableScale
-            onPress={() => setMode('pip')}
-            accessibilityRole="button"
-            accessibilityLabel="Expand tutorial video"
-            hitSlop={8}
-          >
-            <CoachGlass radius={20} style={styles.minimizedContent}>
-              <Ionicons name="film-outline" size={16} color={colors.callText} />
-              <Text style={[typography.captionBold, { color: colors.callText, marginLeft: 6 }]}>
-                Tutorial
-              </Text>
-            </CoachGlass>
-          </PressableScale>
+          <View style={styles.minimizedRow}>
+            <PressableScale
+              onPress={() => setMode('pip')}
+              accessibilityRole="button"
+              accessibilityLabel="Expand tutorial video"
+              hitSlop={8}
+            >
+              <CoachGlass radius={20} style={styles.minimizedContent}>
+                <Ionicons name="film-outline" size={16} color={colors.callText} />
+                <Text style={[typography.captionBold, { color: colors.callText, marginLeft: 6 }]}>
+                  Tutorial
+                </Text>
+              </CoachGlass>
+            </PressableScale>
+            <PressableScale
+              onPress={() => setMode('hidden')}
+              accessibilityRole="button"
+              accessibilityLabel="Completely hide video"
+              hitSlop={8}
+              style={[styles.pillCloseBtn, { backgroundColor: colors.callSurface }]}
+            >
+              <Ionicons name="close" size={14} color={colors.callMuted} />
+            </PressableScale>
+          </View>
         </Animated.View>
       );
     }
@@ -128,7 +171,7 @@ export const CoachVideoStage = forwardRef<YouTubePlayerHandle, CoachVideoStagePr
         >
           <CoachGlass radius={18} style={styles.pipGlass}>
             {videoElement}
-            {/* Top controls: Fullscreen & Minimize */}
+            {/* Top controls: Fullscreen, Minimize, and Hide */}
             <View style={styles.pipTopControls} pointerEvents="box-none">
               <PressableScale
                 onPress={() => setMode('fullscreen')}
@@ -142,11 +185,20 @@ export const CoachVideoStage = forwardRef<YouTubePlayerHandle, CoachVideoStagePr
               <PressableScale
                 onPress={() => setMode('minimized')}
                 accessibilityRole="button"
-                accessibilityLabel="Minimize tutorial"
+                accessibilityLabel="Minimize tutorial to pill"
                 hitSlop={6}
                 style={[styles.miniControlBtn, { backgroundColor: colors.callSurface }]}
               >
                 <Ionicons name="contract-outline" size={13} color={colors.callText} />
+              </PressableScale>
+              <PressableScale
+                onPress={() => setMode('hidden')}
+                accessibilityRole="button"
+                accessibilityLabel="Completely close video"
+                hitSlop={6}
+                style={[styles.miniControlBtn, { backgroundColor: colors.callSurface }]}
+              >
+                <Ionicons name="close" size={13} color={colors.callMuted} />
               </PressableScale>
             </View>
 
@@ -289,6 +341,18 @@ const styles = StyleSheet.create({
   minimizedPill: {
     position: 'absolute',
     zIndex: 40,
+  },
+  minimizedRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 6,
+  },
+  pillCloseBtn: {
+    alignItems: 'center',
+    borderRadius: 14,
+    height: 28,
+    justifyContent: 'center',
+    width: 28,
   },
   pipBottomControls: {
     bottom: 6,
