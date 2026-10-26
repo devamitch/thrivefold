@@ -1,9 +1,9 @@
 /**
- * CoachHUD — the bottom heads-up display during live coaching.
- * Shows progress ring with rep count, what's next, and the "set done" button.
+ * CoachHUD — bottom card during a set.
+ * Big numeral + "/ target", one thin progress bar, one status line, the glass done orb.
+ * Plain translucent glass (no backdrop blur over the camera).
  */
 
-import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import type { TextStyle } from 'react-native';
 import { StyleSheet, Text, View } from 'react-native';
@@ -14,10 +14,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Exercise } from '../../domain/fitness/workouts';
 import type { MovementDefinition, RepState } from '../../domain/pose/movement';
 import { useTheme } from '../../theme/useTheme';
-import { FrostedView } from '../ui/FrostedView';
 import { GlassIconButton, GlassMarks } from '../ui/GlassOrbButton';
-import { PressableScale } from '../ui/PressableScale';
-import { ProgressRing } from '../workout/CoachGlass';
+import { CoachGlass } from '../workout/CoachGlass';
 
 interface UpNext {
   ex: Exercise | undefined;
@@ -38,6 +36,9 @@ interface CoachHUDProps {
   onSetDone: () => void;
 }
 
+/** Height of the card above the safe-area inset; the banner sits above it. */
+export const COACH_HUD_HEIGHT = 88;
+
 export function CoachHUD({
   counted,
   remaining,
@@ -52,92 +53,74 @@ export function CoachHUD({
 }: CoachHUDProps) {
   const insets = useSafeAreaInsets();
   const { colors, typography, spacing } = useTheme();
+  const target = counted + remaining;
+  const unitLabel = unit === 's' ? 'seconds' : 'reps';
+  const status =
+    !movement && cameraMain
+      ? 'Not camera-checked · tap ✓ when done'
+      : upNext
+        ? `Next · ${upNext.ex?.name ?? 'Exercise'} · set ${upNext.set}/${upNext.of}`
+        : 'Last set';
 
   return (
     <View
-      style={[
-        styles.bottomBar,
-        { paddingHorizontal: spacing.base, paddingBottom: insets.bottom + spacing.base },
-      ]}
+      style={[styles.bar, { paddingHorizontal: spacing.base, paddingBottom: insets.bottom + 8 }]}
     >
-      <FrostedView
-        tone="dark"
-        tintOpacity={0.84}
-        style={[
-          styles.hud,
-          {
-            borderRadius: 28,
-            borderColor: 'rgba(255, 255, 255, 0.12)',
-            borderWidth: StyleSheet.hairlineWidth,
-          },
-        ]}
-      >
+      <CoachGlass radius={28} style={styles.card}>
         <View
-          style={styles.ringBox}
-          accessibilityLabel={`${counted} of ${counted + remaining} ${unit}. ${remaining} to go`}
+          style={styles.left}
           accessibilityLiveRegion="polite"
+          accessibilityLabel={`${counted} of ${target} ${unitLabel}`}
         >
-          <ProgressRing
-            size={88}
-            stroke={7}
-            progress={share}
-            color={fault ? colors.error : colors.primary}
-            track={colors.callSurfaceStrong}
-          />
-          <View style={[StyleSheet.absoluteFill, styles.center]}>
-            <Animated.Text
-              style={[
-                typography.display,
-                styles.counterBig,
-                { color: colors.callText },
-                counterStyle,
-              ]}
-            >
-              {counted}
-            </Animated.Text>
-          </View>
-        </View>
-
-        <View style={[styles.flex, { marginLeft: 14 }]}>
-          <Text style={[typography.bodyBold, { color: colors.callText }]} numberOfLines={1}>
-            {remaining > 0
-              ? `${remaining} ${unit === 's' ? 's' : remaining === 1 ? 'rep' : 'reps'} to go`
-              : 'Target reached'}
-          </Text>
-          <Text
-            style={[typography.caption, { color: colors.callMuted, marginTop: 2 }]}
-            numberOfLines={2}
+          <Animated.Text
+            style={[typography.display, styles.num, { color: colors.callText }, counterStyle]}
           >
-            {!movement && cameraMain
-              ? 'Not camera-checked: tap done when finished'
-              : upNext
-                ? `Next: ${upNext.ex?.name ?? 'Exercise'} · set ${upNext.set}/${upNext.of}`
-                : 'Last set of the workout'}
+            {counted}
+          </Animated.Text>
+          <Text style={[typography.caption, { color: colors.callMuted }]}>/ {target}</Text>
+        </View>
+
+        <View style={styles.mid}>
+          <Text
+            style={[typography.captionBold, { color: colors.callMuted, letterSpacing: 0.6 }]}
+            numberOfLines={1}
+          >
+            {unitLabel.toUpperCase()}
+          </Text>
+          <View style={[styles.track, { backgroundColor: colors.callSurfaceStrong }]}>
+            <View
+              style={[
+                styles.fill,
+                {
+                  width: `${Math.round(share * 100)}%`,
+                  backgroundColor: fault ? colors.error : colors.callText,
+                },
+              ]}
+            />
+          </View>
+          <Text style={[typography.caption, { color: colors.callMuted }]} numberOfLines={1}>
+            {status}
           </Text>
         </View>
 
-        <View style={styles.doneBtnWrap}>
-          <GlassIconButton
-            path={GlassMarks.check}
-            accessibilityLabel={remaining > 0 ? 'Set done' : 'Next'}
-            onPress={onSetDone}
-            size={52}
-            tone="primary"
-          />
-        </View>
-      </FrostedView>
+        <GlassIconButton
+          path={GlassMarks.check}
+          accessibilityLabel={remaining > 0 ? 'Set done' : 'Next'}
+          onPress={onSetDone}
+          size={48}
+          tone="primary"
+        />
+      </CoachGlass>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  bottomBar: { bottom: 0, left: 0, position: 'absolute', right: 0 },
-  center: { alignItems: 'center', flex: 1, justifyContent: 'center' },
-  counterBig: { fontSize: 34, lineHeight: 40 },
-  doneBtnWrap: {
-    marginLeft: 6,
-  },
-  flex: { flex: 1 },
-  hud: { alignItems: 'center', flexDirection: 'row', padding: 12 },
-  ringBox: { height: 88, minWidth: 88, justifyContent: 'center' },
+  bar: { bottom: 0, left: 0, position: 'absolute', right: 0 },
+  card: { alignItems: 'center', flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 12 },
+  fill: { borderRadius: 2, height: 4 },
+  left: { alignItems: 'flex-start', minWidth: 64 },
+  mid: { flex: 1, gap: 5, marginHorizontal: 12 },
+  num: { fontSize: 38, lineHeight: 42 },
+  track: { borderRadius: 2, height: 4, overflow: 'hidden' },
 });
