@@ -1,5 +1,5 @@
 import { calculateBmi, validateVital, synthesizeLocalHealthInsights } from '../../src/domain/health/vitals';
-import { identifyFoodsFromPhoto } from '../../src/domain/nutrition/foodVision';
+import { identifyFoodsFromPhoto, analyzeMealMacrosWithAi } from '../../src/domain/nutrition/foodVision';
 import { checkInRewardXp } from '../../src/domain/game/progression';
 
 describe('Vitals, Height, Weight & BMI Engine', () => {
@@ -98,6 +98,17 @@ describe('Photo Food & Macro Identification', () => {
     const fallback = identifyFoodsFromPhoto('file:///data/meals/17290000.jpg');
     expect(fallback.candidates.length).toBeGreaterThanOrEqual(3);
     expect(fallback.estimatedKcal).toBeGreaterThan(0);
+  });
+
+  test('analyzeMealMacrosWithAi computes valid macros with offline fallback', async () => {
+    const result = await analyzeMealMacrosWithAi([
+      { foodId: 'roti', servings: 2 },
+      { foodId: 'dal', servings: 1 },
+    ]);
+    expect(result.kcal).toBeGreaterThanOrEqual(350);
+    expect(result.protein).toBeGreaterThanOrEqual(15);
+    expect(result.carbs).toBeGreaterThanOrEqual(50);
+    expect(result.source).toBeDefined();
   });
 });
 

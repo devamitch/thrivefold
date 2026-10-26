@@ -14,7 +14,8 @@ import { Chip } from '../../../components/ui/Chip';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngine';
 import { foodById, searchFoods, totals, type MealItem } from '../../../domain/nutrition/foods';
-import { identifyFoodsFromPhoto, type FoodCandidate } from '../../../domain/nutrition/foodVision';
+import { identifyFoodsFromPhoto, analyzeMealMacrosWithAi, type FoodCandidate } from '../../../domain/nutrition/foodVision';
+import { syncSmartHealthReminders } from '../../../services/notifications/smartHealthReminders';
 import { useRootStore } from '../../../stores/useRootStore';
 import type { MealLog } from '../../../stores/slices/healthSlice';
 import { useTheme } from '../../../theme/useTheme';
@@ -46,6 +47,8 @@ export default function MealLogScreen() {
   const [items, setItems] = useState<MealItem[]>([]);
   const [query, setQuery] = useState('');
   const [note, setNote] = useState('');
+  const [analyzingAi, setAnalyzingAi] = useState(false);
+  const [aiAnalysisNote, setAiAnalysisNote] = useState<string | null>(null);
   const sum = useMemo(() => totals(items), [items]);
   const results = useMemo(() => searchFoods(query).slice(0, query ? 20 : 12), [query]);
 
@@ -84,16 +87,29 @@ export default function MealLogScreen() {
   const change = (foodId: string, delta: number) =>
     setItems((cur) => cur.map((i) => (i.foodId === foodId ? { ...i, servings: Math.max(0, i.servings + delta) } : i)).filter((i) => i.servings > 0));
 
+  const analyzeWithAi = async () => {
+    if (items.length === 0) return;
+    setAnalyzingAi(true);
+    try {
+      const res = await analyzeMealMacrosWithAi(items, note);
+      setAiAnalysisNote(`${res.kcal} kcal · ${res.protein}g protein · ${res.carbs}g carbs · ${res.fat}g fat (${res.notes})`);
+    } finally {
+      setAnalyzingAi(false);
+    }
+  };
+
   const save = () => {
     const st = useRootStore.getState();
-    st.saveMealLog({ date: formatLocalDate(new Date()), at: new Date().toISOString(), type, photoUri: photo ?? undefined, items, note: note.trim() || undefined });
-    const description = items.map((i) => `${i.servings} x ${foodById(i.foodId)?.name ?? i.foodId}`).join(', ') || note.trim() || 'Meal';
+    const finalNote = [note.trim(), aiAnalysisNote].filter(Boolean).join(' · ');
+    st.saveMealLog({ date: formatLocalDate(new Date()), at: new Date().toISOString(), type, photoUri: photo ?? undefined, items, note: finalNote || undefined });
+    const description = items.map((i) => `${i.servings} x ${foodById(i.foodId)?.name ?? i.foodId}`).join(', ') || finalNote || 'Meal';
     const quest = st.completeMealQuest(description);
     st.showToast({
       type: 'success',
       title: 'Meal saved',
       message: `${sum.kcal} kcal · ${sum.protein} g protein.${quest ? ` Quest done: ${quest.title} (+${quest.xp} XP).` : ''}`,
     });
+    syncSmartHealthReminders().catch(() => undefined);
     router.back();
   };
 
@@ -191,6 +207,22 @@ export default function MealLogScreen() {
             </View>
           );
         })}
+        {items.length > 0 ? (
+          <View style={{ marginTop: 10, paddingTop: 10, borderTopColor: colors.border, borderTopWidth: StyleSheet.hairlineWidth }}>
+            <Button
+              label={analyzingAi ? 'Analyzing with AI...' : 'Verify macros with AI'}
+              variant="outline"
+              size="sm"
+              disabled={analyzingAi}
+              onPress={analyzeWithAi}
+            />
+            {aiAnalysisNote ? (
+              <Text style={[typography.caption, { color: colors.primary, marginTop: 6 }]}>
+                {aiAnalysisNote}
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
         {items.length === 0 ? (
           <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: spacing.sm }]}>Add what is on the plate below.</Text>
         ) : null}

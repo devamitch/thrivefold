@@ -115,3 +115,81 @@ export function identifyFoodsFromPhoto(photoUri: string, userHint?: string): Foo
     provider: 'local_vision',
   };
 }
+
+export interface AiMacroAnalysis {
+  kcal: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  fiber?: number;
+  notes: string;
+  source: 'ai_model' | 'local_database';
+}
+
+/**
+ * Analyzes meal items and user notes using the configured AI multi-provider model (Gemini/Groq/OpenRouter)
+ * to estimate detailed macronutrients. Falls back seamlessly to verified local IFCT/USDA values if offline.
+ */
+export async function analyzeMealMacrosWithAi(
+  items: MealItem[],
+  userNote?: string,
+): Promise<AiMacroAnalysis> {
+  const localTotals = totals(items);
+  const foodDescriptions = items
+    .map((i) => {
+      const f = foodById(i.foodId);
+      return f ? `${i.servings}x ${f.name} (${f.serving})` : null;
+    })
+    .filter(Boolean)
+    .join(', ');
+
+  const prompt = `You are a clinical nutrition macro expert.
+Meal description: ${foodDescriptions || userNote || 'Standard balanced meal'}.
+User notes: ${userNote || 'none'}.
+
+Analyze this meal and return ONLY valid JSON with keys:
+{
+  "kcal": number,
+  "protein": number,
+  "carbs": number,
+  "fat": number,
+  "fiber": number,
+  "notes": "brief 1 sentence breakdown"
+}
+Do not include markdown ticks or additional commentary.`;
+
+  try {
+    const { askAi } = await import('../../services/ai/providers');
+    const res = await askAi([{ role: 'user', content: prompt }]);
+    const clean = res.text.replace(/```json/g, '').replace(/```/g, '').trim();
+    const parsed = JSON.parse(clean);
+
+    if (
+      typeof parsed.kcal === 'number' &&
+      typeof parsed.protein === 'number' &&
+      typeof parsed.carbs === 'number' &&
+      typeof parsed.fat === 'number'
+    ) {
+      return {
+        kcal: Math.round(parsed.kcal),
+        protein: Math.round(parsed.protein * 10) / 10,
+        carbs: Math.round(parsed.carbs * 10) / 10,
+        fat: Math.round(parsed.fat * 10) / 10,
+        fiber: parsed.fiber ? Math.round(parsed.fiber * 10) / 10 : undefined,
+        notes: parsed.notes || 'Verified with multi-provider AI model.',
+        source: 'ai_model',
+      };
+    }
+  } catch {
+    // Graceful offline fallback to verified local USDA/IFCT calculations
+  }
+
+  return {
+    kcal: localTotals.kcal,
+    protein: localTotals.protein,
+    carbs: localTotals.carbs,
+    fat: localTotals.fat,
+    notes: 'Calculated using USDA & Indian Food Composition Tables (IFCT).',
+    source: 'local_database',
+  };
+}
