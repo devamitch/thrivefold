@@ -1,5 +1,15 @@
 # Requirements Traceability Matrix
 
+## Update — 2026-10-26 (23): Tools Grid Live Indicators & Home Focus Setup Synchronization
+
+Checks: compile 0, lint 0, `pnpm test` 278/278, `pnpm test:db` 145/145.
+
+| Item | Status | Where | Commit |
+| --- | --- | --- | --- |
+| Tools Grid Live Indicators | Real-time `hasActivity` indicator dots, `chevron-forward` touch affordances, and border-accented squircles | `src/components/home/ToolsGrid.tsx` | 87460d7 |
+| Home Focus Setup Sync | Focus-aware `useFocusEffect` setup auto-claim, clearing setup steps upon returning to Home | `src/app/(app)/(tabs)/index.tsx` | 87460d7 |
+| Inline Lifestyle & Reminders | Direct selection for diets and observances on Personalize screen with smart claim | `src/app/(app)/personalize.tsx` | 87460d7 |
+
 ## Update — 2026-10-26 (22): Onboarding Setup Step Completion, Home Transparency & Sheet Physics
 
 Checks: compile 0, lint 0, `pnpm test` 278/278, `pnpm test:db` 145/145.
