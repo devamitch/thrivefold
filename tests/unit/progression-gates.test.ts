@@ -40,3 +40,18 @@ test('level never overrides age verification or consent', () => {
   expect(evaluateFeatureEligibility('dating_profile', adult({ level: 99, age: 17 })).reasonCode).toBe('UNDERAGE_FORBIDDEN');
   expect(evaluateFeatureEligibility('dating_profile', adult({ level: 99, consentedFeatures: [] })).reasonCode).toBe('NEEDS_EXPLICIT_CONSENT');
 });
+
+test('canUseDirectLetters requires age assurance, social consent, and Level 20', () => {
+  const { canUseDirectLetters } = require('../../src/navigation/eligibility');
+  const user = { isAgeVerified: true } as any;
+
+  // Level 19: false
+  expect(canUseDirectLetters({ isSocialPathRevealed: true, user, level: 19 })).toBe(false);
+  // Level 20 without age verification: false
+  expect(canUseDirectLetters({ isSocialPathRevealed: true, user: { isAgeVerified: false } as any, level: 20 })).toBe(false);
+  // Level 20 without social consent: false
+  expect(canUseDirectLetters({ isSocialPathRevealed: false, user, level: 20 })).toBe(false);
+  // All criteria met: true
+  expect(canUseDirectLetters({ isSocialPathRevealed: true, user, level: 20 })).toBe(true);
+});
+
