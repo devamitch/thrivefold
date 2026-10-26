@@ -482,7 +482,7 @@ export const PoseOverlay = memo(function PoseOverlay({
       <Path
         path={faultBones}
         style="stroke"
-        strokeWidth={4.5}
+        strokeWidth={4}
         strokeCap="round"
         color={colors.error}
       />
@@ -493,19 +493,19 @@ export const PoseOverlay = memo(function PoseOverlay({
         strokeCap="round"
         color={colors.callText}
       />
-      <Path path={jointRings} style="stroke" strokeWidth={1.4} color={glow} opacity={0.85} />
+      <Path path={jointRings} style="stroke" strokeWidth={1.2} color={glow} opacity={0.85} />
       <Path path={joints} color={colors.callText} />
       <Path path={faultJoints} color={colors.error} />
       {/* Face and hands, subtle and lightweight to preserve high frame rate */}
       <Path
         path={faceLines}
         style="stroke"
-        strokeWidth={1.0}
+        strokeWidth={0.8}
         strokeJoin="round"
         color={colors.callText}
         opacity={0.4}
       />
-      <Path path={irises} style="stroke" strokeWidth={1.4} color={glow} />
+      <Path path={irises} style="stroke" strokeWidth={1.2} color={glow} />
       <Path
         path={handLines}
         style="stroke"
@@ -517,7 +517,7 @@ export const PoseOverlay = memo(function PoseOverlay({
       <Path
         path={handLines}
         style="stroke"
-        strokeWidth={1.8}
+        strokeWidth={1.5}
         strokeCap="round"
         color={colors.callText}
       />
