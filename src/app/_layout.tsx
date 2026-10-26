@@ -7,6 +7,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useRootStore } from '../stores/useRootStore';
 import { useTheme } from '../theme/useTheme';
 
+// import { BlurRoot } from '@/components/ui';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { AnimatedSplash } from '../components/brand/AnimatedSplash';
 import { ErrorBoundary } from '../components/ErrorBoundary';
@@ -27,15 +28,16 @@ export default function RootLayout() {
   }, [resetDailyQuotaIfNewDay]);
 
   return (
-    <GestureHandlerRootView style={styles.container}>
-      <SafeAreaProvider>
-        <PersistQueryClientProvider
-          client={queryClient}
-          persistOptions={{
-            persister: queryPersister,
-            maxAge: PERSIST_MAX_AGE,
-          }}
-        >
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{
+        persister: queryPersister,
+        maxAge: PERSIST_MAX_AGE,
+      }}
+    >
+      <GestureHandlerRootView style={styles.container}>
+        <SafeAreaProvider>
+          {/* <BlurRoot> */}
           <ErrorBoundary>
             <ThemedStatusBar />
             <Stack
@@ -55,9 +57,10 @@ export default function RootLayout() {
             <AchievementModal />
             {splash ? <AnimatedSplash onDone={() => setSplash(false)} /> : null}
           </ErrorBoundary>
-        </PersistQueryClientProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+          {/* </BlurRoot> */}
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </PersistQueryClientProvider>
   );
 }
 

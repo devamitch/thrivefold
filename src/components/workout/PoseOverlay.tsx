@@ -205,7 +205,7 @@ export const PoseOverlay = memo(function PoseOverlay({
     const captured = feed.capturedAt?.value ?? 0;
     const t = captured > 0 && now - captured < 1000 ? captured : now - 40;
     const isNewDetection = seq !== lastSeq.value;
-    const isStale = captured > 0 && now - captured > 280;
+    const isStale = captured > 0 && now - captured > 500;
 
     if (isStale) {
       if (handsShown.value.length > 0) handsShown.value = [];
@@ -620,12 +620,12 @@ export const PoseOverlay = memo(function PoseOverlay({
         color={colors.error}
       />
 
-      {/* Layer 4: Left articulation: cyan glowing aura + crisp core pip */}
-      <Path path={leftJointRings} style="stroke" strokeWidth={1.2} color="#00E5FF" opacity={0.65} />
+      {/* Layer 4: Left articulation: calm athletic pista/sage subtle aura + crisp core pip */}
+      <Path path={leftJointRings} style="stroke" strokeWidth={1.2} color="#7DB58E" opacity={0.65} />
       <Path path={leftJoints} color="#FFFFFF" />
 
-      {/* Layer 5: Right articulation: amber glowing aura + crisp core pip */}
-      <Path path={rightJointRings} style="stroke" strokeWidth={1.2} color="#FF9100" opacity={0.65} />
+      {/* Layer 5: Right articulation: warm terracotta/clay subtle aura + crisp core pip */}
+      <Path path={rightJointRings} style="stroke" strokeWidth={1.2} color="#C86D51" opacity={0.65} />
       <Path path={rightJoints} color="#FFFFFF" />
 
       {/* Layer 6: Center alignment nose dot */}
@@ -635,7 +635,7 @@ export const PoseOverlay = memo(function PoseOverlay({
       <Path
         path={faceContours}
         style="stroke"
-        strokeWidth={1.5}
+        strokeWidth={1.3}
         strokeCap="round"
         strokeJoin="round"
         color="#8EB9A0"
@@ -661,16 +661,16 @@ export const PoseOverlay = memo(function PoseOverlay({
       <Path
         path={handLines}
         style="stroke"
-        strokeWidth={3.0}
+        strokeWidth={2.4}
         strokeCap="round"
         strokeJoin="round"
         color="#7DB58E"
-        opacity={0.45}
+        opacity={0.4}
       />
       <Path
         path={handLines}
         style="stroke"
-        strokeWidth={1.5}
+        strokeWidth={1.2}
         strokeCap="round"
         strokeJoin="round"
         color="#FFFFFF"

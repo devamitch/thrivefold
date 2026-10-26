@@ -544,7 +544,7 @@ export default function CoachScreen() {
           active={phase === 'live'}
           facing={facing}
           face={fullTracking}
-          hands={true}
+          hands={fullTracking}
           minIntervalMs={rest > 0 ? 250 : 0}
           onPose={poseTrack.onPose}
           onPoseReady={poseTrack.onPoseReady}

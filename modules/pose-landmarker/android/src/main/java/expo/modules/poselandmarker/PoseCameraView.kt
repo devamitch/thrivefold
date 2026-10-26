@@ -50,7 +50,7 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
     private const val MIN_EMIT_INTERVAL_MS = 30L
     private const val TAG = "PoseCamera"
     /** Face and hand results older than this are dropped rather than drawn in the wrong place. */
-    private const val STALE_MS = 280L
+    private const val STALE_MS = 500L
 
     /**
      * The face points sent to JS, in this order (must match FACE_GROUPS in index.ts): eyes,
