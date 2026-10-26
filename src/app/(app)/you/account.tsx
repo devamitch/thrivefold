@@ -78,13 +78,13 @@ export default function AccountScreen() {
         <SettingsRow
           icon="person-remove-outline"
           title="Delete my account"
-          subtitle="Removes your account and server data (letters, dating, groups, rewards), then this phone."
+          subtitle="Removes your account and server data (letters, correspondence, groups, rewards), then this phone."
           tone="danger"
           onPress={() =>
             showAlert({
               title: 'Delete your account for good?',
               message:
-                'Your Thrivefold account and everything on the server are deleted: letters, dating conversations, group memberships, rewards, age check and consents. Then this phone is erased. This can’t be undone. Export first if you want a copy.',
+                'Your Thrivefold account and everything on the server are deleted: letters, correspondence conversations, group memberships, rewards, age check and consents. Then this phone is erased. This can’t be undone. Export first if you want a copy.',
               confirmText: 'Delete account',
               destructive: true,
               onConfirm: async () => {

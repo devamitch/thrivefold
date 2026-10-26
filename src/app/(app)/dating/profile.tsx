@@ -104,7 +104,7 @@ export default function DatingProfileScreen() {
 
   const onDelete = () =>
     showAlert({
-      title: 'Delete your dating profile?',
+      title: 'Delete your correspondence profile?',
       message: 'You disappear from Discover. Existing conversations stay until you or the other person end them.',
       confirmText: 'Delete',
       destructive: true,
@@ -127,14 +127,14 @@ export default function DatingProfileScreen() {
       scrollable
       footer={
         <Button
-          label={!gender ? 'Choose how you identify' : into.length === 0 ? 'Choose who you’d like to meet' : 'Save profile'}
+          label={!gender ? 'Choose how you identify' : into.length === 0 ? 'Choose who you’d like to write to' : 'Save profile'}
           onPress={onSave}
           loading={save.isPending}
           disabled={!gender || into.length === 0 || save.isPending}
         />
       }
     >
-      <Header title="Dating profile" subtitle="Only what you choose to share" showBack />
+      <Header title="Correspondence profile" subtitle="Only what you choose to share" showBack />
       <View>
         {section('I am', 'Your own answer; it is never guessed.')}
         <View style={styles.wrap}>
@@ -143,7 +143,7 @@ export default function DatingProfileScreen() {
           ))}
         </View>
 
-        {section('I’d like to meet')}
+        {section('I’d like to write to')}
         <View style={styles.wrap}>
           {GENDERS.map((g) => (
             <Chip key={g.id} label={g.label} selected={into.includes(g.id)} onPress={() => setInto((l) => toggleIn(l, g.id, 3))} />
@@ -157,7 +157,7 @@ export default function DatingProfileScreen() {
           ))}
         </View>
 
-        {section('Ages I’d like to meet', 'None selected means any age. It works both ways: you only see people whose range includes you.')}
+        {section('Ages I’d like to write to', 'None selected means any age. It works both ways: you only see people whose range includes you.')}
         <View style={styles.wrap}>
           {AGE_BANDS.map((b) => (
             <Chip key={b} label={b} selected={wantAges.includes(b)} onPress={() => setWantAges((l) => toggleIn(l, b, 5))} />
@@ -210,7 +210,7 @@ export default function DatingProfileScreen() {
         </Card>
 
         {profile.data ? (
-          <Button label="Delete dating profile" variant="ghost" onPress={onDelete} style={{ marginTop: spacing.md }} />
+          <Button label="Delete correspondence profile" variant="ghost" onPress={onDelete} style={{ marginTop: spacing.md }} />
         ) : null}
       </View>
     </ScreenWrapper>

@@ -62,7 +62,7 @@ export default function ThriveChatScreen() {
       <ScreenWrapper scrollable footer={<Button label="I agree, start" onPress={() => setConsent(true)} />}>
         <Header title="Ask Thrive" subtitle="Optional AI companion" showBack />
         <Card style={{ padding: spacing.lg }}>
-          <Ionicons name="sparkles-outline" size={26} color={colors.primary} />
+          <Ionicons name="chatbubbles-outline" size={26} color={colors.primary} />
           <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.sm }]}>
             Before you start
           </Text>

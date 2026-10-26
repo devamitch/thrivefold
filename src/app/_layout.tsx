@@ -10,6 +10,7 @@ import { useRootStore } from '../stores/useRootStore';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { MindfulNotificationBanner } from '../components/ui/MindfulNotificationBanner';
 import { CustomAlert } from '../components/ui/CustomAlert';
+import { AchievementModal } from '../components/ui/AchievementModal';
 import { AnimatedSplash } from '../components/brand/AnimatedSplash';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { PERSIST_MAX_AGE, queryClient, queryPersister } from '../services/supabase/queryClient';
@@ -51,6 +52,7 @@ export default function RootLayout() {
             </Stack>
             <MindfulNotificationBanner />
             <CustomAlert />
+            <AchievementModal />
             {splash ? <AnimatedSplash onDone={() => setSplash(false)} /> : null}
           </ErrorBoundary>
         </PersistQueryClientProvider>

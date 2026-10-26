@@ -95,7 +95,7 @@ export default function PrivacyScreen() {
         right={<Toggle value={s.crash} onValueChange={s.setCrash} accessibilityLabel="Send crash reports" />}
       />
       <SettingsRow
-        icon="sparkles-outline"
+        icon="chatbubble-ellipses-outline"
         title="AI companion (Ask Thrive)"
         subtitle="Sends only what you type in Ask Thrive to an AI provider through Thrivefold's server. Off by default."
         right={<Toggle value={s.cloudAi} onValueChange={s.setCloudAi} accessibilityLabel="AI companion" />}

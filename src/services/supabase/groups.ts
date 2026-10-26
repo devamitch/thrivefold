@@ -39,10 +39,10 @@ export const EVENT_LABEL: Record<GroupEventType, string> = {
   expert_qa: 'Questions with an expert',
   practice_session: 'Practice session',
 };
-export const REACTIONS: { id: GroupReaction; icon: 'heart' | 'hand-left' | 'sparkles' | 'people' }[] = [
+export const REACTIONS: { id: GroupReaction; icon: 'heart' | 'hand-left' | 'leaf' | 'people' }[] = [
   { id: 'heart', icon: 'heart' },
   { id: 'support', icon: 'hand-left' },
-  { id: 'thanks', icon: 'sparkles' },
+  { id: 'thanks', icon: 'leaf' },
   { id: 'same', icon: 'people' },
 ];
 

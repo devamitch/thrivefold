@@ -302,12 +302,12 @@ export function useBlockPerson() {
 
 export function datingErrorText(e: unknown): string {
   const m = e instanceof Error ? e.message : String(e);
-  if (m.includes('not_authenticated')) return 'Sign in to use dating.';
-  if (m.includes('age_verification_required')) return 'Dating needs an age check. Start it from You > Account > Age check.';
-  if (m.includes('level_required')) return 'Dating opens at level 20.';
-  if (m.includes('account_restricted')) return 'Your account can’t use dating right now.';
-  if (m.includes('dating_profile_required')) return 'Set up your dating profile first.';
-  if (m.includes('women_start_conversations')) return 'In Thrivefold dating, women send the first message. You can reply once someone writes to you.';
+  if (m.includes('not_authenticated')) return 'Sign in to use direct correspondence.';
+  if (m.includes('age_verification_required')) return 'Direct correspondence needs an age check. Start it from You > Account > Age check.';
+  if (m.includes('level_required')) return 'Direct correspondence opens at level 20.';
+  if (m.includes('account_restricted')) return 'Your account can’t use direct correspondence right now.';
+  if (m.includes('dating_profile_required')) return 'Set up your correspondence profile first.';
+  if (m.includes('women_start_conversations')) return 'In letter exchanges, women send the first note. You can reply once someone writes to you.';
   if (m.includes('recipient_unavailable')) return 'This person isn’t available.';
   if (m.includes('conversation_exists')) return 'You already have a conversation with this person.';
   if (m.includes('daily_introduction_limit')) return 'You can start three new conversations a day. Try again tomorrow.';

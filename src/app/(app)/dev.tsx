@@ -56,6 +56,7 @@ export default function DevToolsScreen() {
       updateCycleData: st.updateCycleData,
       clearCycleData: st.clearCycleData,
       resetDailyQuotaIfNewDay: st.resetDailyQuotaIfNewDay,
+      showAchievementModal: st.showAchievementModal,
     })),
   );
 
@@ -201,6 +202,7 @@ export default function DevToolsScreen() {
     { name: 'Journal', route: '/(app)/journal', icon: 'book-outline', group: 'Social & Journal' },
     { name: 'New Journal Entry', route: '/(app)/journal/new', icon: 'create-outline', group: 'Social & Journal' },
     { name: 'Letterbox', route: '/(app)/letters', icon: 'mail-outline', group: 'Social & Journal' },
+    { name: 'Direct Letter Exchange', route: '/(app)/dating', icon: 'chatbubbles-outline', group: 'Social & Journal' },
     { name: 'Private Circles', route: '/(app)/circles', icon: 'people-outline', group: 'Social & Journal' },
     { name: 'AI Memory Vault', route: '/(app)/ai', icon: 'hardware-chip-outline', group: 'Systems' },
     { name: 'Safety & Appeals', route: '/(app)/safety', icon: 'shield-outline', group: 'Systems' },
@@ -625,6 +627,68 @@ export default function DevToolsScreen() {
             <Chip
               label="Selection Tap"
               onPress={() => Haptics.selectionAsync()}
+            />
+          </View>
+
+          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: spacing.md, marginBottom: spacing.sm }]}>
+            Test Achievement Modals (NO Sparkles · Calm Editorial UI):
+          </Text>
+          <View style={styles.chipRow}>
+            <Chip
+              label="Daily Goal Modal"
+              onPress={() =>
+                store.showAchievementModal({
+                  type: 'daily_goal',
+                  title: 'Daily Goal Achieved',
+                  subtitle: '45 points reached today',
+                  details: 'You hit your daily target of 40 points! Your consistency builds lasting momentum.',
+                  dailyPoints: 45,
+                  dailyPointsTarget: 40,
+                  diamondsEarned: 1,
+                })
+              }
+            />
+            <Chip
+              label="Level Clear Modal"
+              onPress={() =>
+                store.showAchievementModal({
+                  type: 'level_clear',
+                  title: 'Level 5 Cleared',
+                  subtitle: 'You advanced to Level 5',
+                  details: 'Milestone for Level 4 cleared. Cumulative XP and steady practice build your foundation.',
+                  level: 5,
+                  diamondsEarned: 1,
+                })
+              }
+            />
+            <Chip
+              label="Double Milestone Modal"
+              onPress={() =>
+                store.showAchievementModal({
+                  type: 'double_milestone',
+                  title: 'Double Milestone',
+                  subtitle: 'Level 5 reached & daily target achieved!',
+                  details: 'You earned 50 daily points and advanced to Level 5 in a single stride.',
+                  level: 5,
+                  dailyPoints: 50,
+                  dailyPointsTarget: 40,
+                  diamondsEarned: 2,
+                })
+              }
+            />
+            <Chip
+              label="Direct Letters Unlocked (L20)"
+              onPress={() =>
+                store.showAchievementModal({
+                  type: 'slow_letters_unlocked',
+                  title: 'Direct Letters Unlocked',
+                  subtitle: 'Milestone reached: Level 20',
+                  details: 'You have cleared Level 20. Thoughtful card correspondence with verified adults is now open in your Letterbox.',
+                  level: 20,
+                  diamondsEarned: 1,
+                  unlockedFeature: 'letters',
+                })
+              }
             />
           </View>
         </Card>

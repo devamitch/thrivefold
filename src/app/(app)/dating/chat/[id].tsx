@@ -78,7 +78,7 @@ export default function DatingChatScreen() {
     setSheet(null);
     showAlert({
       title: `Block ${who}?`,
-      message: 'They can’t see or contact you anywhere in Thrivefold: dating, letters or groups.',
+      message: 'They can’t see or contact you anywhere in Thrivefold: letters or groups.',
       confirmText: 'Block',
       cancelText: 'Cancel',
       destructive: true,

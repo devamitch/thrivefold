@@ -177,7 +177,7 @@ export function evaluateFeatureEligibility(
       featureId,
       reasonCode: 'FIRST_CONTACT_NOT_ALLOWED',
       policyVersion: POLICY_VERSION,
-      message: 'In dating, women start new conversations. You can reply once someone writes to you.',
+      message: 'In letter exchanges, women start new conversations. You can reply once someone writes to you.',
     };
   }
 

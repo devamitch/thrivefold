@@ -51,12 +51,12 @@ export default function DatingScreen() {
   return (
     <ScreenWrapper scrollable>
       <Header
-        title="Dating"
-        subtitle="Verified adults, messages made of cards"
+        title="Letter Exchange"
+        subtitle="Verified adults, thoughtful unhurried correspondence"
         showBack
         rightAction={
           <Link href={'/(app)/dating/profile' as Href} asChild>
-            <PressableScale accessibilityRole="button" accessibilityLabel="Your dating profile">
+            <PressableScale accessibilityRole="button" accessibilityLabel="Your correspondence profile">
               <SquircleSurface shape="circle" fill={colors.surface1} style={styles.iconBtn}>
                 <Ionicons name="person-circle-outline" size={22} color={colors.text.primary} />
               </SquircleSurface>
@@ -71,10 +71,10 @@ export default function DatingScreen() {
           errorCard(profile.error)
         ) : !hasProfile ? (
           <Card style={{ padding: spacing.lg }}>
-            <Text style={[typography.subheading, { color: colors.text.primary }]}>Set up your dating profile</Text>
+            <Text style={[typography.subheading, { color: colors.text.primary }]}>Set up your correspondence profile</Text>
             <Text style={[typography.body, { color: colors.text.secondary, marginTop: 6 }]}>
-              Say how you identify and who you’d like to meet. No photos, no exact location, no contact details. Women send the
-              first message; anyone can reply. You can pause or delete your profile any time.
+              Say how you identify and who you’d like to write to. No photos, no exact location, no contact details. Women send the
+              first letter; anyone can reply. You can pause or delete your profile any time.
             </Text>
             <Link href={'/(app)/dating/profile' as Href} asChild>
               <Button label="Set up profile" style={{ marginTop: spacing.md }} />
@@ -92,7 +92,7 @@ export default function DatingScreen() {
                 {!canStart ? (
                   <Card variant="surface1" style={{ padding: spacing.base, marginBottom: spacing.md }}>
                     <Text style={[typography.caption, { color: colors.text.secondary }]}>
-                      In Thrivefold dating, women send the first message. People you match with can write to you, and you can
+                      In Thrivefold letter exchanges, women send the first note. People you connect with can write to you, and you can
                       reply in Chats.
                     </Text>
                   </Card>
@@ -121,12 +121,12 @@ export default function DatingScreen() {
                               .join(' · ') || 'Verified adult'}
                           </Text>
                         </View>
-                        {canStart ? <Button label="Say hello" size="sm" onPress={() => setHello(c)} /> : null}
+                        {canStart ? <Button label="Send note" size="sm" onPress={() => setHello(c)} /> : null}
                       </View>
                       {c.intro ? <Text style={[typography.body, { color: colors.text.secondary, marginTop: 8 }]}>{c.intro}</Text> : null}
                       {(c.shared_interests ?? []).length > 0 || (c.shared_languages ?? []).length > 0 ? (
                         <View style={[styles.common, { backgroundColor: colors.primaryAlpha }]}>
-                          <Ionicons name="sparkles-outline" size={14} color={colors.primary} />
+                          <Ionicons name="link-outline" size={14} color={colors.primary} />
                           <Text style={[typography.captionBold, styles.flex, { color: colors.primary }]} numberOfLines={2}>
                             In common: {[...(c.shared_interests ?? []), ...(c.shared_languages ?? [])].join(', ')}
                           </Text>
@@ -178,10 +178,10 @@ export default function DatingScreen() {
         )}
       </View>
 
-      <AppBottomSheetModal visible={Boolean(hello)} onClose={() => setHello(null)} title={`Say hello to ${hello?.pseudonym ?? ''}`} subtitle="Up to six cards. You can start three new conversations a day.">
+      <AppBottomSheetModal visible={Boolean(hello)} onClose={() => setHello(null)} title={`Write to ${hello?.pseudonym ?? ''}`} subtitle="Up to six cards. You can start three new conversations a day.">
         <ChipComposer
           sending={start.isPending}
-          sendLabel="Send hello"
+          sendLabel="Send note"
           onSend={(chipIds) =>
             hello &&
             start.mutate(

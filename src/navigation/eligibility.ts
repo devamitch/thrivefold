@@ -15,7 +15,12 @@ const DEV_ENABLE_ALL =
 export const canUseCorrespondence = (s: Pick<RootState, 'isSocialPathRevealed' | 'user'>): boolean =>
   DEV_ENABLE_ALL || Boolean(s.isSocialPathRevealed && s.user?.isAgeVerified);
 
-/** Dating (spec §18): same adult gate as correspondence; the server adds level 20 and its rules. */
-export const canUseDating = (s: Pick<RootState, 'isSocialPathRevealed' | 'user'>): boolean =>
-  DEV_ENABLE_ALL || canUseCorrespondence(s);
+/**
+ * Direct correspondence / letter exchange: adult age check, social consent, and Level 20 foundation.
+ * The app and server gate this behind real age assurance and active wellbeing practice.
+ */
+export const canUseDating = (s: Pick<RootState, 'isSocialPathRevealed' | 'user' | 'level'>): boolean =>
+  DEV_ENABLE_ALL || Boolean(canUseCorrespondence(s) && (s.level ?? 1) >= 20);
+
+export const canUseDirectLetters = canUseDating;
 
