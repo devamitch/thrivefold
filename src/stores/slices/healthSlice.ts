@@ -6,6 +6,7 @@ import { formatLocalDate } from '../../domain/calendar/universalCalendarEngine';
 import type { PoseSessionSummary } from '../../domain/pose/movement';
 import type { MealItem } from '../../domain/nutrition/foods';
 import type { ActivityLog, WorkoutSession } from '../../domain/fitness/workouts';
+import type { VitalRecord } from '../../domain/health/vitals';
 
 
 export type FlowIntensity = 'none' | 'spotting' | 'light' | 'medium' | 'heavy';
@@ -177,6 +178,14 @@ export interface HealthSlice {
   addPersonalEvent: (event: Omit<PersonalCalendarEvent, 'id'>) => void;
   editPersonalEvent: (id: string, updates: Partial<PersonalCalendarEvent>) => void;
   deletePersonalEvent: (id: string) => void;
+  // Height, Weight, BMI & Vitals tracking
+  heightCm: number | null;
+  weightKg: number | null;
+  vitalsHistory: VitalRecord[];
+  setHeightCm: (cm: number | null) => void;
+  setWeightKg: (kg: number | null) => void;
+  logVital: (vital: Omit<VitalRecord, 'id' | 'createdAt'>) => string;
+  deleteVital: (id: string) => void;
 }
 
 const isoDay = (d: Date) => formatLocalDate(d);
@@ -364,22 +373,55 @@ export const createHealthSlice: StateCreator<
     return id;
   },
 
+  heightCm: null,
+  weightKg: null,
+  vitalsHistory: [],
+  setHeightCm: (heightCm) => set({ heightCm }),
+  setWeightKg: (weightKg) => set({ weightKg }),
+  logVital: (vital) => {
+    const id = `vit_${Date.now()}`;
+    const entry: VitalRecord = { ...vital, id, createdAt: new Date().toISOString() };
+    set((state) => ({
+      vitalsHistory: [entry, ...state.vitalsHistory].slice(0, 1000),
+      ...(vital.type === 'height' ? { heightCm: vital.value } : {}),
+      ...(vital.type === 'weight' ? { weightKg: vital.value } : {}),
+    }));
+    return id;
+  },
+  deleteVital: (id) =>
+    set((state) => ({ vitalsHistory: state.vitalsHistory.filter((v) => v.id !== id) })),
+
   deleteWorkoutSession: (id) =>
     set((state) => ({ workoutSessions: state.workoutSessions.filter((w) => w.id !== id) })),
 
   addCheckIn: (record) => {
+    let streak = 0;
     set((state) => {
       // One check-in per day: saving again updates that day's record.
       const checkInHistory = [
         { ...record, id: `chk_${Date.now()}` },
         ...state.checkInHistory.filter((r) => r.date !== record.date),
       ];
+      streak = streakFrom(checkInHistory);
       return {
         checkInHistory,
         completedCheckInDaysCount: new Set(checkInHistory.map((r) => r.date)).size,
-        currentStreak: streakFrom(checkInHistory),
+        currentStreak: streak,
       };
     });
+
+    // Claim incremental streak XP & milestone bonuses
+    try {
+      const res = get().claimCheckInReward(record.date, streak);
+      if (res.awarded) {
+        get().showToast({
+          type: 'success',
+          title: `Daily Check-In Recorded (+${res.xp} XP)`,
+          message: `${streak} day streak! ${res.streakBonus > 0 ? `Includes +${res.streakBonus} XP streak bonus.` : ''}${res.milestoneBonus > 0 ? ` Milestone +${res.milestoneBonus} XP bonus!` : ''}`,
+        });
+      }
+    } catch {}
+
     // A hard day lightens today's unstarted quests (setupProfile.fitFor).
     if (record.date === formatLocalDate(new Date())) {
       get().refitDailyQuests();

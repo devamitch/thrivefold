@@ -14,6 +14,7 @@ import { Chip } from '../../../components/ui/Chip';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngine';
 import { foodById, searchFoods, totals, type MealItem } from '../../../domain/nutrition/foods';
+import { identifyFoodsFromPhoto, type FoodCandidate } from '../../../domain/nutrition/foodVision';
 import { useRootStore } from '../../../stores/useRootStore';
 import type { MealLog } from '../../../stores/slices/healthSlice';
 import { useTheme } from '../../../theme/useTheme';
@@ -41,6 +42,7 @@ export default function MealLogScreen() {
   const { colors, typography, spacing } = useTheme();
   const [type, setType] = useState<MealLog['type']>(typeForNow);
   const [photo, setPhoto] = useState<string | null>(null);
+  const [candidates, setCandidates] = useState<FoodCandidate[]>([]);
   const [items, setItems] = useState<MealItem[]>([]);
   const [query, setQuery] = useState('');
   const [note, setNote] = useState('');
@@ -66,6 +68,12 @@ export default function MealLogScreen() {
       const dest = `${dir}${Date.now()}.jpg`;
       await FileSystem.copyAsync({ from: res.assets[0].uri, to: dest });
       setPhoto(dest);
+
+      // On-device food and macro candidate identification
+      const detected = identifyFoodsFromPhoto(dest, note);
+      if (detected.candidates.length > 0) {
+        setCandidates(detected.candidates);
+      }
     } catch {
       // Safe fallback if photo selection was canceled or interrupted
     }
@@ -112,6 +120,40 @@ export default function MealLogScreen() {
           <Button label="From gallery" variant="ghost" size="sm" onPress={() => pick(false)} style={styles.flex} />
         </View>
       )}
+
+      {candidates.length > 0 ? (
+        <Card style={{ padding: spacing.base, marginTop: spacing.md, borderColor: colors.primaryAlpha, borderWidth: 1 }}>
+          <View style={[styles.row, { justifyContent: 'space-between', marginBottom: 8 }]}>
+            <View style={styles.row}>
+              <Ionicons name="sparkles" size={16} color={colors.primary} />
+              <Text style={[typography.subbodyBold, { color: colors.text.primary, marginLeft: 6 }]}>
+                Detected from photo
+              </Text>
+            </View>
+            <PressableScale
+              onPress={() => {
+                candidates.forEach((c) => add(c.food.id));
+                setCandidates([]);
+              }}
+              accessibilityLabel="Add all detected foods"
+            >
+              <Text style={[typography.captionBold, { color: colors.primary }]}>+ Add all</Text>
+            </PressableScale>
+          </View>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+            {candidates.map((c) => (
+              <Chip
+                key={c.food.id}
+                label={`+ ${c.food.name} (${c.food.kcal} kcal)`}
+                onPress={() => {
+                  add(c.food.id);
+                  setCandidates((prev) => prev.filter((p) => p.food.id !== c.food.id));
+                }}
+              />
+            ))}
+          </View>
+        </Card>
+      ) : null}
 
       <Card style={{ padding: spacing.base, marginTop: spacing.md }}>
         <View style={styles.macros}>

@@ -30,6 +30,7 @@ import {
   WORKOUT_REWARDS_PER_DAY,
   workoutRewardsOn,
   workoutRewardXp,
+  checkInRewardXp,
 } from '../../domain/game/progression';
 import {
   EMPTY_BASELINE,
@@ -147,6 +148,8 @@ export interface QuestSlice {
   completeAssignmentWithWorkout: (assignmentId: string, facts: WorkoutFacts) => { title: string; xp: number } | null;
   /** Pays a finished workout once: base XP, or ten times that with good camera-checked form. */
   claimWorkoutReward: (sessionId: string, form: WorkoutFormEvidence | null) => { awarded: boolean; xp: number; reason?: 'daily_limit' | 'duplicate' };
+  /** Awards incremental XP and streak milestone bonuses for daily check-in once per date. */
+  claimCheckInReward: (date: string, streak: number) => { awarded: boolean; xp: number; streakBonus: number; milestoneBonus: number };
   skipDailyTask: (assignmentId: string, reason?: string) => boolean;
   getReplacementOptions: (assignmentId: string) => ReplacementOption[];
   acceptReplacement: (skippedAssignmentId: string, taskId: string) => boolean;
@@ -627,6 +630,28 @@ export const createQuestSlice: StateCreator<RootState, [['zustand/persist', unkn
         ],
       });
       return { awarded: true, xp };
+    },
+
+    claimCheckInReward: (date, streak) => {
+      const state = get();
+      const key = `checkin_reward:${date}`;
+      if (state.rewardLedger.some((e) => e.key === key)) {
+        return { awarded: false, xp: 0, streakBonus: 0, milestoneBonus: 0 };
+      }
+      const reward = checkInRewardXp(streak);
+      const ledger = appendLedger(state.rewardLedger, {
+        key,
+        kind: 'task_reward',
+        xp: reward.xp,
+        diamonds: reward.milestoneBonus > 0 ? 5 : 0,
+        taskPoints: 10,
+        gameDate: date,
+        sourceId: `checkin-${date}`,
+        policyVersion: ECONOMY_VERSION,
+        createdAt: new Date().toISOString(),
+      });
+      commit({ rewardLedger: ledger });
+      return { awarded: true, ...reward };
     },
 
     skipDailyTask: (assignmentId, reason) => {

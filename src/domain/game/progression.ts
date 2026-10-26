@@ -100,6 +100,39 @@ export const workoutRewardXp = (form: WorkoutFormEvidence | null | undefined): n
 export const workoutRewardsOn = (ledger: LedgerEntry[], gameDate: string): number =>
   ledger.filter((e) => e.kind === 'workout_reward' && e.gameDate === gameDate).length;
 
+// ---------------------------------------------------------------- daily check-ins
+
+export const CHECKIN_BASE_XP = 20;
+
+/**
+ * Computes incremental XP for daily check-in based on consecutive streak days:
+ * - Day 1: 20 XP
+ * - Day 2: 30 XP (+10 streak bonus)
+ * - Day 3: 65 XP (+20 streak bonus + 25 milestone bonus!)
+ * - Day 7: 130 XP (+60 streak bonus + 50 milestone bonus!)
+ * - Day 14: 200 XP (+80 streak bonus + 100 milestone bonus!)
+ * - Day 30: 350 XP (+80 streak bonus + 250 milestone bonus!)
+ */
+export function checkInRewardXp(streak: number): {
+  xp: number;
+  streakBonus: number;
+  milestoneBonus: number;
+} {
+  const streakBonus = Math.min(Math.max(0, streak - 1) * 10, 80);
+  let milestoneBonus = 0;
+  if (streak === 3) milestoneBonus = 25;
+  else if (streak === 7) milestoneBonus = 50;
+  else if (streak === 14) milestoneBonus = 100;
+  else if (streak === 30) milestoneBonus = 250;
+  else if (streak > 0 && streak % 30 === 0) milestoneBonus = 300;
+
+  return {
+    xp: CHECKIN_BASE_XP + streakBonus + milestoneBonus,
+    streakBonus,
+    milestoneBonus,
+  };
+}
+
 // ---------------------------------------------------------------- levels
 
 export interface LevelProgress {
