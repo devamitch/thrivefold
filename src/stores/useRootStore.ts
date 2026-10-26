@@ -57,13 +57,18 @@ export const useRootStore = create<RootState>()(
         }
         return state as unknown as RootState;
       },
-      // Data only: actions are recreated, live toasts and alert dialogs are never persisted.
+      // Data only: actions are recreated, live toasts, alert dialogs and achievement modals are never persisted.
       partialize: (state) =>
         Object.fromEntries(
           Object.entries(state).filter(
             // todayQuests is a projection of dailyAssignments and is rebuilt on load.
             ([key, value]) =>
-              typeof value !== 'function' && key !== 'toasts' && key !== 'alert' && key !== 'todayQuests' && key !== 'drawerOpen',
+              typeof value !== 'function' &&
+              key !== 'toasts' &&
+              key !== 'alert' &&
+              key !== 'achievementModal' &&
+              key !== 'todayQuests' &&
+              key !== 'drawerOpen',
           ),
         ) as Partial<RootState>,
     },
@@ -82,5 +87,5 @@ export type {
   PregnancyDetails,
   PersonalCalendarEvent,
 } from './slices/healthSlice';
-export type { Quest } from './slices/questSlice';
+export type { Quest, AchievementModalPayload, AchievementModalType } from './slices/questSlice';
 export { xpForLevel } from './slices/questSlice';

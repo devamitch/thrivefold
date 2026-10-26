@@ -67,6 +67,22 @@ export interface Quest {
   isReplacement: boolean;
 }
 
+export type AchievementModalType = 'daily_goal' | 'level_clear' | 'double_milestone' | 'slow_letters_unlocked';
+
+export interface AchievementModalPayload {
+  type: AchievementModalType;
+  title: string;
+  subtitle: string;
+  details?: string;
+  level?: number;
+  dailyPoints?: number;
+  dailyPointsTarget?: number;
+  diamondsEarned?: number;
+  xpEarned?: number;
+  unlockedFeature?: 'letters';
+  onDismiss?: () => void;
+}
+
 export interface QuestSlice {
   /** Append-only reward ledger; every balance below is derived from it. */
   rewardLedger: LedgerEntry[];
@@ -92,6 +108,7 @@ export interface QuestSlice {
   todayQuests: Quest[];
   dailyPoints: number;
   dailyGoalReached: boolean;
+  achievementModal: AchievementModalPayload | null;
 
   ensureDailyQuests: () => void;
   /** Re-picks today's open quests after goals, limits or baseline change; done ones stay. */
@@ -119,6 +136,8 @@ export interface QuestSlice {
   setEmblem: (emblem: string) => void;
   resolveSync: (key: string) => void;
   unlockAchievement: (achievementId: string) => void;
+  showAchievementModal: (payload: AchievementModalPayload) => void;
+  hideAchievementModal: () => void;
 }
 
 const today = () => formatLocalDate(new Date());
@@ -235,9 +254,14 @@ export const createQuestSlice: StateCreator<RootState, [['zustand/persist', unkn
   set,
   get,
 ) => {
-  /** Applies a ledger/assignment change, settles level and daily-goal rewards, re-derives. */
+  /** Applies a ledger/assignment change, settles level and daily-goal rewards, re-derives, and surfaces achievement modals. */
   const commit = (patch: Partial<QuestSlice>) => {
-    const s = { ...get(), ...patch };
+    const stateBefore = get();
+    const prevLevel = stateBefore.level;
+    const prevDailyGoal = stateBefore.dailyGoalReached;
+    const prevTarget = stateBefore.dailyPointsTarget;
+
+    const s = { ...stateBefore, ...patch };
     const ledger = settleMilestones(s.rewardLedger, {
       levels: getGameCatalog().levels,
       completedCheckpoints: new Set(s.completedCheckpoints),
@@ -245,7 +269,63 @@ export const createQuestSlice: StateCreator<RootState, [['zustand/persist', unkn
       dailyTarget: s.dailyTargetDate === today() ? s.dailyPointsTarget : 0,
       now: new Date().toISOString(),
     });
-    set({ ...patch, rewardLedger: ledger, ...derive({ ...s, rewardLedger: ledger }) });
+    const derived = derive({ ...s, rewardLedger: ledger });
+
+    const levelCleared = prevLevel > 0 && derived.level > prevLevel;
+    const dailyGoalCleared = prevTarget > 0 && !prevDailyGoal && derived.dailyGoalReached;
+
+    let modalToTrigger: AchievementModalPayload | null = null;
+    if (levelCleared && dailyGoalCleared) {
+      modalToTrigger = {
+        type: 'double_milestone',
+        title: 'Double Milestone',
+        subtitle: `Level ${derived.level} reached & daily target achieved!`,
+        details: `You earned ${derived.dailyPoints} daily points and advanced to Level ${derived.level} in a single stride.`,
+        level: derived.level,
+        dailyPoints: derived.dailyPoints,
+        dailyPointsTarget: s.dailyPointsTarget,
+        diamondsEarned: 2,
+      };
+    } else if (levelCleared) {
+      const isLevel20 = derived.level >= 20 && prevLevel < 20;
+      if (isLevel20) {
+        modalToTrigger = {
+          type: 'slow_letters_unlocked',
+          title: 'Direct Letters Unlocked',
+          subtitle: 'Milestone reached: Level 20',
+          details: 'You have cleared Level 20. Thoughtful card correspondence with verified adults is now open in your Letterbox.',
+          level: derived.level,
+          diamondsEarned: 1,
+          unlockedFeature: 'letters',
+        };
+      } else {
+        modalToTrigger = {
+          type: 'level_clear',
+          title: `Level ${derived.level} Cleared`,
+          subtitle: `You advanced to Level ${derived.level}`,
+          details: `You cleared Level ${prevLevel} and reached Level ${derived.level}. Steady consistency creates lasting change.`,
+          level: derived.level,
+          diamondsEarned: 1,
+        };
+      }
+    } else if (dailyGoalCleared) {
+      modalToTrigger = {
+        type: 'daily_goal',
+        title: 'Daily Goal Achieved',
+        subtitle: `${derived.dailyPoints} points reached today`,
+        details: `You hit your daily target of ${s.dailyPointsTarget} points! Your consistency builds lasting momentum.`,
+        dailyPoints: derived.dailyPoints,
+        dailyPointsTarget: s.dailyPointsTarget,
+        diamondsEarned: 1,
+      };
+    }
+
+    set({
+      ...patch,
+      rewardLedger: ledger,
+      ...derived,
+      ...(modalToTrigger ? { achievementModal: modalToTrigger } : {}),
+    });
   };
 
   return {
@@ -267,6 +347,7 @@ export const createQuestSlice: StateCreator<RootState, [['zustand/persist', unkn
     todayQuests: [],
     dailyPoints: 0,
     dailyGoalReached: false,
+    achievementModal: null,
 
     ensureDailyQuests: () => {
       const state = get();
@@ -610,6 +691,9 @@ export const createQuestSlice: StateCreator<RootState, [['zustand/persist', unkn
       set((state) =>
         state.achievements.includes(achievementId) ? state : { achievements: [...state.achievements, achievementId] },
       ),
+
+    showAchievementModal: (payload) => set({ achievementModal: payload }),
+    hideAchievementModal: () => set({ achievementModal: null }),
   };
 };
 

@@ -25,3 +25,4 @@ export * from './GuidedTimer';
 export * from './TrendBars';
 export * from './FrostedView';
 export * from './Toggle';
+export * from './AchievementModal';
