@@ -448,16 +448,16 @@ export default function CoachScreen() {
         />
       ) : null}
 
-      {/* Gradient shades for readability */}
+      {/* Smart gradient vignettes for cinematic camera contrast and readability */}
       <LinearGradient
         pointerEvents="none"
-        colors={[colors.callSurface, 'transparent']}
-        style={[styles.shadeTop, { height: insets.top + 150 }]}
+        colors={['rgba(11, 13, 16, 0.85)', 'rgba(11, 13, 16, 0.35)', 'transparent']}
+        style={[styles.shadeTop, { height: insets.top + 160 }]}
       />
       <LinearGradient
         pointerEvents="none"
-        colors={['transparent', colors.callSurface]}
-        style={[styles.shadeBottom, { height: insets.bottom + 220 }]}
+        colors={['transparent', 'rgba(11, 13, 16, 0.45)', 'rgba(11, 13, 16, 0.95)']}
+        style={[styles.shadeBottom, { height: insets.bottom + 230 }]}
       />
 
       {/* Red border when form is wrong */}
