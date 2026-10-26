@@ -127,6 +127,35 @@
     7. `05_coach_in_workout_gesture_modal.png`: In-workout gesture bottom sheet modal
     8. `06_train_screen_hub.png`: Train hub with weekly activity rings, quest integration, and tool chips
 
+---
 
-
-
+## Milestone 8: Physical Device End-to-End Delivery & Verification (Moto G71 `ZD2225KYKD`)
+- **Status**: DELIVERED, VERIFIED ON DEVICE, 100% PASS
+- **Target Hardware**: Motorola Moto G71 5G (Physical hardware, Serial: `ZD2225KYKD`, Android 12) + Emulator-5554
+- **Verification Evidence**:
+  - `pnpm compile` -> PASS (Strict `tsc --noEmit -p . --pretty` with 0 errors).
+  - `pnpm lint` -> PASS (ESLint on `src` and `tests` with 0 warnings/errors).
+  - `pnpm test` -> PASS (39 test suites, 279/279 tests passed).
+  - `pnpm test:db` -> PASS (145/145 Postgres RLS & security assertions passed on PGlite).
+  - `cd android && ./gradlew :app:assembleRelease` -> BUILD SUCCESSFUL in 16s (Release APK: 144.1 MB).
+  - `adb -s ZD2225KYKD install -r android/app/build/outputs/apk/release/app-release.apk` -> Streamed Install Success.
+  - `adb -s emulator-5554 install -r android/app/build/outputs/apk/release/app-release.apk` -> Streamed Install Success.
+- **End-to-End User Flow Verified on Moto G71**:
+  1. **Clean Boot & Splash**: App launches with authentic brand splash into Welcome screen.
+  2. **Multi-Step Onboarding**:
+     - Completed Name ("Dev") and selected experience ("Men's health").
+     - Privacy & Age Assurance consent: Explicit 18+ checkbox and consent recording without pre-ticking.
+     - Focus goals & baseline questions answered: Claimed setup rewards (`body_baseline`, `mind_baseline`).
+     - Movement constraints and routine duration (10 min) selected.
+     - Food & lifestyle choices: Tested "Continue without choices" fallback; verified `diet: 'No preference'` correctly recorded and `lifestyle` reward claimed.
+     - Level Progression: Seamless Level Clear modals (`Level 4 Cleared`, `Level 5 Cleared`) with `FrostedView` rendering.
+  3. **Home Setup Completion**:
+     - Home screen opened cleanly: Level 5, 165 XP, 20 Diamonds.
+     - "3 setup steps left" card cleanly dismissed; 0 ambiguous cards remaining.
+     - ToolsGrid rendered with live activity status dots for active items and clean squircle card borders.
+  4. **Train & Coach Stage**:
+     - Train hub displayed weekly activity stats, today's movement quest ("Plan a realistic activity week"), and suggested workouts.
+     - Workout intro displayed honest capability badges (`[Camera-Verified Reps]`, `[Camera-Verified Hold]`, `[Sequence Guided]`).
+     - Hands-Free Remote Gestures card presented full CV gesture controls and guide.
+     - Camera permissions requested and granted through native Android system dialog.
+     - Workout session completed and verified in "Also Today" logged activities.
