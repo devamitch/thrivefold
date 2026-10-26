@@ -172,6 +172,8 @@ export interface HealthSlice {
   deletePeriod: (id: string) => void;
   setReproductiveContext: (context: ReproductiveContext, pregnancy?: PregnancyDetails) => void;
   clearCycleData: () => void;
+  watchedTutorials: Record<string, boolean>;
+  markTutorialWatched: (exerciseId: string) => void;
   addPersonalEvent: (event: Omit<PersonalCalendarEvent, 'id'>) => void;
   editPersonalEvent: (id: string, updates: Partial<PersonalCalendarEvent>) => void;
   deletePersonalEvent: (id: string) => void;
@@ -298,6 +300,11 @@ export const createHealthSlice: StateCreator<
   workoutSessions: [],
   poseSessions: [],
   mealLogs: [],
+  watchedTutorials: {},
+  markTutorialWatched: (exerciseId) =>
+    set((state) => ({
+      watchedTutorials: { ...state.watchedTutorials, [exerciseId]: true },
+    })),
   saveMealLog: (meal) => {
     const id = `meal_${Date.now()}`;
     set((state) => ({ mealLogs: [{ ...meal, id }, ...state.mealLogs].slice(0, 1000) }));
