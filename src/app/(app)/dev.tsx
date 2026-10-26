@@ -19,10 +19,18 @@ import { ProductExperience } from '../../theme/tokens';
 import { ThemeMode } from '../../stores/slices/appSlice';
 import { useTheme } from '../../theme/useTheme';
 import { formatLocalDate } from '../../domain/calendar/universalCalendarEngine';
+import { LocalAI, MODEL_PRESETS, getRecommendedModel } from '../../../modules/local-ai';
+import { classifyReflection } from '../../services/local-ai/tasks/classification';
+import { extractWellnessEntities } from '../../services/local-ai/tasks/entityExtraction';
+import { statefulOrchestrator } from '../../services/local-ai/orchestration/langGraphOrchestrator';
+import { memoryStore } from '../../services/local-ai/memory/memoryStore';
 
 export default function DevToolsScreen() {
   const router = useRouter();
   const { colors, typography, spacing, isDark } = useTheme();
+
+  const [aiLog, setAiLog] = React.useState<string>('Offline AI Subsystem ready.');
+  const [isAiBusy, setIsAiBusy] = React.useState<boolean>(false);
 
   const store = useRootStore(
     useShallow((st) => ({
@@ -692,8 +700,171 @@ export default function DevToolsScreen() {
             />
           </View>
         </Card>
+
+        {/* ── 9. Local AI & Analytical Memory Diagnostics ── */}
+        <Text style={[typography.label, { color: colors.primary, marginTop: spacing.lg, marginBottom: spacing.sm }]}>
+          LOCAL AI & ANALYTICAL MEMORY SUBSYSTEM
+        </Text>
+        <Card style={styles.card}>
+          <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: spacing.sm }]}>
+            Native LLaMA / Llamatik offline inference & SQLite vector memory:
+          </Text>
+
+          <View style={{ gap: 6, marginBottom: spacing.md }}>
+            <View style={styles.infoRow}>
+              <Text style={[typography.captionBold, { color: colors.text.primary }]}>Native Engine: </Text>
+              <Text style={[typography.caption, { color: colors.text.secondary }]}>
+                {LocalAI.isAvailable() ? 'Llamatik (llama.cpp ARM NEON)' : 'Not Linked / Simulated'}
+              </Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={[typography.captionBold, { color: colors.text.primary }]}>Loaded Weights: </Text>
+              <Text style={[typography.caption, { color: colors.text.secondary }]}>
+                {LocalAI.isLoaded() ? LocalAI.getRuntimeStatus().loadedFileName : 'None (Lazy-unloaded)'}
+              </Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={[typography.captionBold, { color: colors.text.primary }]}>Presets in Catalog: </Text>
+              <Text style={[typography.caption, { color: colors.text.secondary }]}>
+                {MODEL_PRESETS.map((m) => m.parameters).join(' · ')}
+              </Text>
+            </View>
+          </View>
+
+          <SquircleSurface
+            radius={12}
+            smoothing={0.8}
+            fill={colors.surface1}
+            style={{ padding: 12, marginBottom: spacing.md }}
+          >
+            <Text style={[typography.captionBold, { color: colors.primary, marginBottom: 4 }]}>
+              DIAGNOSTIC LOG:
+            </Text>
+            <Text
+              style={[
+                typography.caption,
+                { color: colors.text.primary, fontFamily: 'monospace' },
+              ]}
+              numberOfLines={6}
+            >
+              {aiLog}
+            </Text>
+          </SquircleSurface>
+
+          <View style={{ gap: 8 }}>
+            <Button
+              variant="secondary"
+              label="1. Detect Physical RAM & Storage"
+              icon={<Ionicons name="hardware-chip-outline" size={18} color={colors.text.primary} />}
+              disabled={isAiBusy}
+              onPress={() => {
+                try {
+                  const caps = LocalAI.getDeviceCapabilities();
+                  const rec = getRecommendedModel(caps.availableRamMb);
+                  setAiLog(
+                    `RAM: ${caps.availableRamMb}MB free / ${caps.totalRamMb}MB total\nStorage: ${Math.round(caps.availableStorageBytes / (1024 * 1024))}MB free\nThreads: ${caps.optimalThreads}\nRecommended: ${rec.name} (${rec.parameters})`
+                  );
+                  store.showToast({ type: 'success', message: 'Hardware capabilities measured.' });
+                } catch (e: unknown) {
+                  setAiLog(`Device capability check: ${e instanceof Error ? e.message : String(e)}`);
+                }
+              }}
+            />
+
+            <Button
+              variant="secondary"
+              label="2. Test Tone Classification (Zod Validated)"
+              icon={<Ionicons name="sparkles-outline" size={18} color={colors.text.primary} />}
+              disabled={isAiBusy}
+              onPress={async () => {
+                setIsAiBusy(true);
+                try {
+                  const res = await classifyReflection(
+                    'Work was overwhelming today, heart racing with anxiety and strict deadlines'
+                  );
+                  setAiLog(
+                    `Classification: [${res.category.toUpperCase()}]\nConfidence: ${Math.round(res.confidence * 100)}%\nAction: ${res.suggestedAction}\nReasoning: ${res.reasoning ?? 'Deterministic'}`
+                  );
+                  store.showToast({ type: 'success', message: 'Tone classified.' });
+                } catch (e: unknown) {
+                  setAiLog(`Classification error: ${e instanceof Error ? e.message : String(e)}`);
+                } finally {
+                  setIsAiBusy(false);
+                }
+              }}
+            />
+
+            <Button
+              variant="secondary"
+              label="3. Test Entity Extraction (Sleep, Water, Steps)"
+              icon={<Ionicons name="fitness-outline" size={18} color={colors.text.primary} />}
+              disabled={isAiBusy}
+              onPress={async () => {
+                setIsAiBusy(true);
+                try {
+                  const res = await extractWellnessEntities(
+                    'Slept 7.5 hours, drank 3 liters of water, mild lower back stiffness after 10000 steps'
+                  );
+                  setAiLog(
+                    `Extracted Metrics: ${JSON.stringify(res.metrics)}\nSymptoms: ${res.symptoms.join(', ') || 'None'}\nHabits: ${res.habitsMentioned.join(', ') || 'Hydration, Walking'}`
+                  );
+                  store.showToast({ type: 'success', message: 'Entities extracted.' });
+                } catch (e: unknown) {
+                  setAiLog(`Entity extraction error: ${e instanceof Error ? e.message : String(e)}`);
+                } finally {
+                  setIsAiBusy(false);
+                }
+              }}
+            />
+
+            <Button
+              variant="secondary"
+              label="4. Run LangGraph Workflow & Commit Memory"
+              icon={<Ionicons name="git-network-outline" size={18} color={colors.text.primary} />}
+              disabled={isAiBusy}
+              onPress={async () => {
+                setIsAiBusy(true);
+                try {
+                  const uid = store.user?.id || 'dev_guest';
+                  const res = await statefulOrchestrator.runWorkflow(
+                    uid,
+                    {
+                      type: 'classify',
+                      text: 'Peaceful morning walk in the crisp air, felt centered and calm',
+                    },
+                    { autoCommitMemories: true }
+                  );
+                  setAiLog(
+                    `LangGraph Workflow Complete:\nStage Checkpoints: intake -> evidence -> execution -> validation -> commit\nRetrieved: ${res.retrievedMemoriesCount} memories\nCommitted: ${res.committedMemoriesCount} new items`
+                  );
+                  store.showToast({ type: 'success', message: 'Stateful workflow passed.' });
+                } catch (e: unknown) {
+                  setAiLog(`Workflow error: ${e instanceof Error ? e.message : String(e)}`);
+                } finally {
+                  setIsAiBusy(false);
+                }
+              }}
+            />
+
+            <Button
+              variant="secondary"
+              label="5. Clear Local Analytical Memory Store"
+              icon={<Ionicons name="trash-bin-outline" size={18} color={colors.text.primary} />}
+              disabled={isAiBusy}
+              onPress={() => {
+                confirmAction('Clear Memory?', 'This purges all private SQLite analytical memories.', async () => {
+                  const uid = store.user?.id || 'dev_guest';
+                  await memoryStore.eraseAllUserMemories(uid);
+                  setAiLog('Analytical SQLite memory cleared.');
+                  store.showToast({ type: 'success', message: 'Memories erased.' });
+                });
+              }}
+            />
+          </View>
+        </Card>
       </View>
     </ScreenWrapper>
+
   );
 }
 
