@@ -56,8 +56,11 @@ import {
   type YouTubePlayerHandle,
 } from '../../../../components/workout/YouTubePlayer';
 import { videoFor } from '../../../../content/exerciseVideos';
+import {
+  voiceCommandResponseSpeech,
+  type VoiceCommand,
+} from '../../../../domain/coach/voiceCommands';
 import { exerciseById } from '../../../../domain/fitness/workouts';
-import { voiceCommandResponseSpeech, type VoiceCommand } from '../../../../domain/coach/voiceCommands';
 import { gestureTriggerSpeech } from '../../../../domain/pose/coachVoice';
 import { type Gesture } from '../../../../domain/pose/gestures';
 import { liveCue, summarize } from '../../../../domain/pose/movement';
@@ -124,7 +127,9 @@ export default function CoachScreen() {
   const countdownArmed = useRef(false);
   const autoPaused = useRef(false);
   const player = useRef<YouTubePlayerHandle>(null);
-  const hasWatched = useRootStore((s) => (item ? Boolean(s.watchedTutorials[item.exerciseId]) : false));
+  const hasWatched = useRootStore((s) =>
+    item ? Boolean(s.watchedTutorials[item.exerciseId]) : false,
+  );
   const markTutorialWatched = useRootStore((s) => s.markTutorialWatched);
 
   // ── Checking active ───────────────────────────────────────────────────────
@@ -132,6 +137,8 @@ export default function CoachScreen() {
     phase === 'live' && cameraOn && Boolean(movement) && rest === 0 && countdown === 0;
   const cameraMain = cameraOn && Boolean(PoseCameraView);
   const video = item ? videoFor(item.exerciseId) : undefined;
+
+  const poseTrackRef = useRef<ReturnType<typeof usePoseTracking> | null>(null);
 
   // ── Gesture handler ───────────────────────────────────────────────────────
   const onGesture = useCallback(
@@ -171,26 +178,26 @@ export default function CoachScreen() {
       }
       if (rest > 0) {
         setRest(0);
-      } else if (countdown === 0 && item && poseTrack) {
-        const counted = progressOf(poseTrack.repRef.current);
+      } else if (countdown === 0 && item && poseTrackRef.current) {
+        const counted = progressOf(poseTrackRef.current.repRef.current);
         completeSet(
-          cameraOn && movement && poseTrack.repRef.current.validFrames > 0 ? counted : item.target,
+          cameraOn && movement && poseTrackRef.current.repRef.current.validFrames > 0 ? counted : item.target,
         );
       }
     },
     [
       videoPlaying,
       rest,
+      itemIdx,
+      say,
       countdown,
       item,
-      itemIdx,
-      movement,
-      cameraOn,
-      completeSet,
-      progressOf,
-      say,
-      session,
       setRest,
+      session,
+      progressOf,
+      completeSet,
+      cameraOn,
+      movement,
     ],
   );
 
@@ -208,13 +215,13 @@ export default function CoachScreen() {
     onCompleteSet: useCallback(
       (value: number) => {
         // record summary before completing set
-        if (movement && poseTrack?.repRef.current.validFrames > 0) {
+        if (movement && poseTrackRef.current && poseTrackRef.current.repRef.current.validFrames > 0) {
           session.results.current[item!.exerciseId] ??= { sets: [], summaries: [] };
           session.results.current[item!.exerciseId].summaries.push(
-            summarize(movement, poseTrack.repRef.current),
+            summarize(movement, poseTrackRef.current.repRef.current),
           );
         }
-        poseTrack?.resetReps();
+        poseTrackRef.current?.resetReps();
         autoPaused.current = false;
         completeSet(value);
       },
@@ -224,6 +231,7 @@ export default function CoachScreen() {
     sayFn: say,
     progressOf,
   });
+  poseTrackRef.current = poseTrack;
 
   // Auto-pause video on form fault, resume when fixed
   useEffect(() => {
@@ -353,7 +361,11 @@ export default function CoachScreen() {
     poseTrack.setTrackingReady(false);
     startedAt.current = new Date().toISOString();
     setPhase('live');
-    say(allowed ? 'Hi! Prop your phone up about two metres back so I can see you. You can control me hands-free with gestures.' : "Let's begin. Stay strong and focus on your form.");
+    say(
+      allowed
+        ? 'Hi! Prop your phone up about two metres back so I can see you. You can control me hands-free with gestures.'
+        : "Let's begin. Stay strong and focus on your form.",
+    );
     countdownArmed.current = true;
     if (!allowed) {
       countdownArmed.current = false;
@@ -611,11 +623,11 @@ export default function CoachScreen() {
                   styles.setSeg,
                   {
                     backgroundColor:
-                        i < setIdx
-                          ? colors.primary
-                          : i === setIdx
-                            ? colors.callText
-                            : colors.callSurfaceStrong,
+                      i < setIdx
+                        ? colors.primary
+                        : i === setIdx
+                          ? colors.callText
+                          : colors.callSurfaceStrong,
                   },
                 ]}
               />
@@ -657,7 +669,13 @@ export default function CoachScreen() {
             onPress={() => setShowGestureModal(true)}
             accessibilityRole="button"
             accessibilityLabel="Hands-free gesture & voice controls guide"
-            style={[styles.gestureBtn, { backgroundColor: 'rgba(16, 20, 26, 0.76)', borderColor: 'rgba(255, 255, 255, 0.16)' }]}
+            style={[
+              styles.gestureBtn,
+              {
+                backgroundColor: 'rgba(16, 20, 26, 0.76)',
+                borderColor: 'rgba(255, 255, 255, 0.16)',
+              },
+            ]}
           >
             <Ionicons name="mic-outline" size={20} color={colors.primary} />
           </PressableScale>

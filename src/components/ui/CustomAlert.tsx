@@ -66,7 +66,7 @@ export function CustomAlert() {
         <Animated.View
           style={[StyleSheet.absoluteFill, { backgroundColor: colors.scrim }, backdropStyle]}
         >
-          <FrostedView style={StyleSheet.absoluteFill} />
+          <FrostedView tone="dark" tintOpacity={0.45} intensity={30} style={StyleSheet.absoluteFill} pointerEvents="none" />
 
           <Pressable
             style={StyleSheet.absoluteFill}

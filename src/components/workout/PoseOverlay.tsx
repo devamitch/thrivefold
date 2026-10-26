@@ -189,21 +189,13 @@ export const PoseOverlay = memo(function PoseOverlay({
       return out;
     };
 
-    // Hands tracking
+    // Hands tracking: instantaneous 60fps projection without lag or sticking
     const h = feed.hands?.value ?? [];
-    if (h.length || handsShown.value.length) {
-      handsShown.value = h.length
-        ? easeInto(handsShown.value, toStage(h), reduceMotion ? 1 : FOLLOW)
-        : [];
-    }
+    handsShown.value = h.length ? toStage(h) : [];
 
-    // Face mesh tracking
+    // Face mesh tracking: instantaneous 60fps projection without lag or sticking
     const f = feed.face?.value ?? [];
-    if (f.length || faceShown.value.length) {
-      faceShown.value = f.length
-        ? easeInto(faceShown.value, toStage(f), reduceMotion ? 1 : FOLLOW)
-        : [];
-    }
+    faceShown.value = f.length ? toStage(f) : [];
 
     // No detection: smoothly fade out guide / skeleton
     if (p.length < N * 3) {
@@ -585,8 +577,8 @@ export const PoseOverlay = memo(function PoseOverlay({
       {/* Layer 6: Center alignment nose dot */}
       <Path path={nosePip} color="#FFFFFF" />
 
-      {/* Layer 7: Face mesh dense pips */}
-      <Path path={faceMesh} color="#00E5FF" opacity={0.35} />
+      {/* Layer 7: Face mesh dense pips — warm terracotta accent */}
+      <Path path={faceMesh} color={colors.accentText} opacity={0.55} />
 
       {/* Layer 8: High-contrast fault joint alerts */}
       <Path path={faultHalos} style="stroke" strokeWidth={2.0} color={colors.error} opacity={0.7} />
@@ -606,10 +598,10 @@ export const PoseOverlay = memo(function PoseOverlay({
       <Path
         path={handLines}
         style="stroke"
-        strokeWidth={1.2}
+        strokeWidth={1.5}
         strokeCap="round"
-        color="#00E5FF"
-        opacity={0.45}
+        color={colors.primary}
+        opacity={0.65}
       />
       <Path path={handJoints} color={colors.callText} />
 

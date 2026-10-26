@@ -17,6 +17,7 @@ import { AppHeader } from '../../../components/ui/AppHeader';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { Chip } from '../../../components/ui/Chip';
+import { FrostedView } from '../../../components/ui/FrostedView';
 import { PressableScale } from '../../../components/ui/PressableScale';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { Squircle } from '../../../components/ui/Squircle';
@@ -309,21 +310,23 @@ export default function PoseCheckScreen() {
       scrollMode="shell-scroll-view"
       footer={
         phase === 'setup' ? (
-          <SquircleSurface
-            radius={0}
-            fill={colors.surface}
+          <FrostedView
+            tone="surface"
+            intensity={70}
+            tintOpacity={0.88}
             style={[
               styles.stickyFooter,
               {
-                paddingBottom: insets.bottom + spacing.xs,
+                paddingBottom: Math.max(insets.bottom, 12),
                 paddingTop: spacing.sm,
+                paddingHorizontal: spacing.base,
                 borderTopColor: colors.border,
                 borderTopWidth: StyleSheet.hairlineWidth,
               },
             ]}
           >
             <Button label="Allow camera and start" size="lg" onPress={start} />
-          </SquircleSurface>
+          </FrostedView>
         ) : undefined
       }
     >

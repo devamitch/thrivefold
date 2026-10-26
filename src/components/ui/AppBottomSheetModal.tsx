@@ -113,9 +113,10 @@ export function AppBottomSheetModal({
   }, [visible, reduceMotion, screenHeight, translateY]);
 
   const dragPan = Gesture.Pan()
-    .activeOffsetY([6, 1000])
-    .failOffsetY([-20, 0])
+    .activeOffsetY([5, 1000])
+    .failOffsetY([-15, 0])
     .failOffsetX([-45, 45])
+    .shouldCancelWhenOutside(false)
     .onUpdate((e) => {
       'worklet';
       // Rubber-band upward, natural drag downward
@@ -134,6 +135,20 @@ export function AppBottomSheetModal({
       } else {
         translateY.value = withTiming(0, SETTLE);
       }
+    });
+
+  const closeTap = Gesture.Tap()
+    .maxDuration(300)
+    .onEnd(() => {
+      'worklet';
+      runOnJS(startCloseAnimation)();
+    });
+
+  const backdropTap = Gesture.Tap()
+    .maxDuration(300)
+    .onEnd(() => {
+      'worklet';
+      runOnJS(startCloseAnimation)();
     });
 
   const sheetAnimatedStyle = useAnimatedStyle(() => ({
@@ -186,18 +201,20 @@ export function AppBottomSheetModal({
         <Animated.View
           style={[
             StyleSheet.absoluteFill,
-            { backgroundColor: 'rgba(10, 10, 10, 0.51)' },
+            { backgroundColor: 'rgba(10, 10, 10, 0.48)' },
             backdropAnimatedStyle,
           ]}
         >
-          <FrostedView style={StyleSheet.absoluteFill} pointerEvents="none" />
+          <FrostedView tone="dark" tintOpacity={0.45} intensity={30} style={StyleSheet.absoluteFill} pointerEvents="none" />
 
-          <Pressable
-            style={StyleSheet.absoluteFill}
-            onPress={startCloseAnimation}
-            accessibilityRole="button"
-            accessibilityLabel="Close sheet"
-          />
+          <GestureDetector gesture={backdropTap}>
+            <Pressable
+              style={StyleSheet.absoluteFill}
+              onPress={startCloseAnimation}
+              accessibilityRole="button"
+              accessibilityLabel="Close sheet"
+            />
+          </GestureDetector>
         </Animated.View>
 
         <KeyboardAvoidingView
@@ -281,22 +298,23 @@ export function AppBottomSheetModal({
                 <View style={styles.headerActionsAbsolute} pointerEvents="box-none">
                   {headerRight}
                   {showCloseButton && (
-                    <PressableScale
-                      onPress={startCloseAnimation}
-                      hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
-                      scaleTo={0.92}
-                      accessibilityRole="button"
-                      accessibilityLabel="Close"
-                    >
-                      <SquircleSurface
-                        shape="circle"
-                        fill={colors.surface2}
-                        style={styles.closeButton}
-                        pointerEvents="none"
+                    <GestureDetector gesture={closeTap}>
+                      <Pressable
+                        onPress={startCloseAnimation}
+                        hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
+                        accessibilityRole="button"
+                        accessibilityLabel="Close"
                       >
-                        <Ionicons name="close" size={18} color={colors.text.secondary} />
-                      </SquircleSurface>
-                    </PressableScale>
+                        <SquircleSurface
+                          shape="circle"
+                          fill={colors.surface2}
+                          style={styles.closeButton}
+                          pointerEvents="none"
+                        >
+                          <Ionicons name="close" size={18} color={colors.text.secondary} />
+                        </SquircleSurface>
+                      </Pressable>
+                    </GestureDetector>
                   )}
                 </View>
               )}

@@ -28,12 +28,12 @@ import {
   type ViewStyle,
 } from 'react-native';
 import {
+  Easing,
   Extrapolation,
   interpolate,
   useDerivedValue,
   useReducedMotion,
   useSharedValue,
-  withSpring,
   withTiming,
   type SharedValue,
 } from 'react-native-reanimated';
@@ -41,8 +41,9 @@ import {
 import { useTheme } from '../../theme/useTheme';
 import { PressableScale } from './PressableScale';
 
-const MORPH = { damping: 20, stiffness: 240, mass: 0.7 } as const;
-const PRESS = { damping: 20, stiffness: 420 } as const;
+const PRESS_IN_TIMING = { duration: 90, easing: Easing.out(Easing.cubic) } as const;
+const PRESS_OUT_TIMING = { duration: 130, easing: Easing.out(Easing.cubic) } as const;
+const MORPH_TIMING = { duration: 180, easing: Easing.bezier(0.2, 0, 0, 1) } as const;
 const MIN_TARGET = 48;
 const STROKE_WIDTH = 2;
 const ROUNDED_FILL_STROKE = 1.4;
@@ -146,10 +147,10 @@ function usePressPhysics(canvas: number, reduceMotion: boolean) {
     const half = canvas / 2;
     tx.value = clamp((event.nativeEvent.locationX - half) / half, -1, 1);
     ty.value = clamp((event.nativeEvent.locationY - half) / half, -1, 1);
-    press.value = reduceMotion ? withTiming(1, { duration: 60 }) : withSpring(1, PRESS);
+    press.value = reduceMotion ? withTiming(1, { duration: 60 }) : withTiming(1, PRESS_IN_TIMING);
   };
   const onPressOut = () => {
-    press.value = reduceMotion ? withTiming(0, { duration: 90 }) : withSpring(0, PRESS);
+    press.value = reduceMotion ? withTiming(0, { duration: 90 }) : withTiming(0, PRESS_OUT_TIMING);
   };
   return { press, tx, ty, onPressIn, onPressOut };
 }
@@ -272,7 +273,7 @@ export const PlayPauseButton = memo(function PlayPauseButton({
   const morph = useSharedValue(playing ? 1 : 0);
   useEffect(() => {
     const next = playing ? 1 : 0;
-    morph.value = reduceMotion ? withTiming(next, { duration: 120 }) : withSpring(next, MORPH);
+    morph.value = reduceMotion ? withTiming(next, { duration: 120 }) : withTiming(next, MORPH_TIMING);
   }, [morph, playing, reduceMotion]);
 
   const tone: GlassOrbTone = variant === 'primary' ? 'primary' : 'neutral';

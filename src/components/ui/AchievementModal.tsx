@@ -121,11 +121,11 @@ export function AchievementModal() {
         <Animated.View
           style={[
             StyleSheet.absoluteFill,
-            { backgroundColor: 'rgba(10, 10, 10, 0.51)' },
+            { backgroundColor: 'rgba(10, 10, 10, 0.48)' },
             backdropStyle,
           ]}
         >
-          <FrostedView style={StyleSheet.absoluteFill} pointerEvents="none" />
+          <FrostedView tone="dark" tintOpacity={0.45} intensity={30} style={StyleSheet.absoluteFill} pointerEvents="none" />
           <Pressable
             style={StyleSheet.absoluteFill}
             onPress={handleDismiss}

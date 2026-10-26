@@ -14,6 +14,7 @@ import { getExerciseCapability } from '../../domain/pose/capabilityRegistry';
 import { useTheme } from '../../theme/useTheme';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
+import { FrostedView } from '../ui/FrostedView';
 import { PressableScale } from '../ui/PressableScale';
 import { Squircle } from '../ui/Squircle';
 import { GestureRemoteGuideModal } from './GestureRemoteGuideModal';
@@ -42,13 +43,23 @@ export function CoachIntro({
   const [showGestureModal, setShowGestureModal] = useState(false);
 
   return (
-    <View style={[styles.flex, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-      <ScrollView
-        contentContainerStyle={{
-          paddingTop: spacing.lg,
-          paddingBottom: insets.bottom + spacing.lg,
-          paddingHorizontal: spacing.base,
-        }}
+    <View style={[styles.flex, { backgroundColor: colors.background }]}>
+      {/* Pinned Sticky Frosted Header Bar */}
+      <FrostedView
+        tone="surface"
+        intensity={60}
+        tintOpacity={0.9}
+        style={[
+          styles.topBar,
+          {
+            paddingTop: insets.top + 6,
+            paddingBottom: 8,
+            paddingHorizontal: spacing.base,
+            borderBottomColor: colors.border,
+            borderBottomWidth: StyleSheet.hairlineWidth,
+            zIndex: 10,
+          },
+        ]}
       >
         <PressableScale
           onPress={onBack}
@@ -58,70 +69,103 @@ export function CoachIntro({
         >
           <Ionicons name="chevron-back" size={20} color={colors.text.primary} />
         </PressableScale>
+        <View style={styles.topBarCenter}>
+          <Text
+            style={[
+              typography.captionBold,
+              { color: colors.accentText, letterSpacing: 0.8, textTransform: 'uppercase' },
+            ]}
+          >
+            Virtual Coach
+          </Text>
+        </View>
+        <View style={styles.roundPlaceholder} />
+      </FrostedView>
 
-        <Text style={[typography.display, { color: colors.text.primary, marginTop: spacing.lg }]}>
+      <ScrollView
+        contentContainerStyle={{
+          paddingTop: spacing.xs,
+          paddingBottom: insets.bottom + 84,
+          paddingHorizontal: spacing.base,
+        }}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={[typography.display, { color: colors.text.primary, marginTop: spacing.xs }]}>
           {plan.title}
         </Text>
 
         {linkedQuest ? (
-          <View style={[styles.row, { marginTop: spacing.sm }]}>
-            <Ionicons name="flag-outline" size={16} color={colors.primary} />
+          <View style={[styles.row, { marginTop: spacing.xs }]}>
+            <Ionicons name="flag-outline" size={15} color={colors.primary} />
             <Text
               style={[
                 typography.subbodyBold,
                 styles.flex,
                 { color: colors.primary, marginLeft: 6 },
               ]}
+              numberOfLines={1}
             >
-              For today's quest: {linkedQuest.title}. Finishing completes it.
+              For today's quest: {linkedQuest.title}
             </Text>
           </View>
         ) : (
-          <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.sm }]}>
-            A standalone workout: saved to your history and calendar.
+          <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.xs }]}>
+            Standalone workout · Saved to history and calendar
           </Text>
         )}
 
-        <Text style={[typography.body, { color: colors.text.secondary, marginTop: spacing.xs }]}>
-          Your camera fills the stage with a live skeleton and rep count; the tutorial plays below
-          it.
+        <Text style={[typography.body, { color: colors.text.secondary, marginTop: 4 }]}>
+          Your camera fills the stage with live skeleton tracking and reps; tutorial plays below.
         </Text>
 
-        {/* Dedicated Hands-Free Camera Remote Control Section */}
+        {/* Compact Hands-Free Remote Control Box */}
         {cameraBuilt ? (
           <Squircle
-            radius={20}
+            radius={18}
             fill={colors.surface1}
             style={[
               styles.gestureBox,
               {
                 borderColor: colors.border,
                 borderWidth: StyleSheet.hairlineWidth,
-                marginTop: spacing.md,
+                marginTop: spacing.sm,
               },
             ]}
           >
-            <View style={styles.row}>
-              <View style={[styles.tipIconBox, { backgroundColor: colors.primaryAlpha }]}>
-                <Ionicons name="hand-left-outline" size={22} color={colors.primary} />
+            <View style={[styles.row, { justifyContent: 'space-between' }]}>
+              <View style={styles.row}>
+                <View style={[styles.tipIconBox, { backgroundColor: colors.primaryAlpha }]}>
+                  <Ionicons name="hand-left-outline" size={18} color={colors.primary} />
+                </View>
+                <View style={{ marginLeft: 10 }}>
+                  <Text style={[typography.subheading, { color: colors.text.primary }]}>
+                    Hands-Free Gestures & Voice
+                  </Text>
+                  <Text style={[typography.caption, { color: colors.text.secondary }]}>
+                    Control 6–10ft away without touching phone
+                  </Text>
+                </View>
               </View>
-              <View style={[styles.flex, { marginLeft: 12 }]}>
-                <Text style={[typography.subheading, { color: colors.text.primary }]}>
-                  Hands-Free Remote Gestures
+
+              <PressableScale
+                onPress={() => setShowGestureModal(true)}
+                style={[styles.guidePill, { backgroundColor: colors.primaryAlpha }]}
+                accessibilityRole="button"
+                accessibilityLabel="Open Camera Gesture Guide"
+              >
+                <Ionicons name="help-circle-outline" size={14} color={colors.primary} />
+                <Text style={[typography.captionBold, { color: colors.primary, marginLeft: 4 }]}>
+                  Guide
                 </Text>
-                <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                  Control workout 6–10ft away without touching your phone
-                </Text>
-              </View>
+              </PressableScale>
             </View>
 
             <View style={styles.gestureGrid}>
               {[
-                { icon: 'hand-left-outline', label: '1 Hand', action: 'Play/Pause Demo' },
-                { icon: 'body-outline', label: 'Both Hands', action: 'Finish Set / Skip Rest' },
+                { icon: 'hand-left-outline', label: '1 Hand', action: 'Demo Play/Pause' },
+                { icon: 'body-outline', label: '2 Hands', action: 'Finish Set / Next' },
                 { icon: 'pause-circle-outline', label: 'Cross Arms', action: 'Pause Workout' },
-                { icon: 'time-outline', label: 'Hands on Hips', action: '+30s Rest' },
-                { icon: 'arrow-undo-outline', label: 'T-Pose', action: 'Go Back' },
+                { icon: 'mic-outline', label: 'Voice', action: '"Coach Pause / Next"' },
               ].map((g) => (
                 <View
                   key={g.label}
@@ -132,86 +176,59 @@ export function CoachIntro({
                 >
                   <Ionicons
                     name={g.icon as keyof typeof Ionicons.glyphMap}
-                    size={15}
+                    size={14}
                     color={colors.primary}
                   />
                   <Text
-                    style={[typography.captionBold, { color: colors.text.primary, marginLeft: 6 }]}
+                    style={[typography.captionBold, { color: colors.text.primary, marginLeft: 5 }]}
                   >
-                    {g.label}:
+                    {g.label}
                   </Text>
                   <Text
-                    style={[typography.caption, { color: colors.text.secondary, marginLeft: 4 }]}
+                    style={[typography.caption, { color: colors.text.muted, marginLeft: 4 }]}
+                    numberOfLines={1}
                   >
-                    {g.action}
+                    · {g.action}
                   </Text>
                 </View>
               ))}
             </View>
-
-            <PressableScale
-              onPress={() => setShowGestureModal(true)}
-              style={[
-                styles.learnBtn,
-                { backgroundColor: colors.primaryAlpha, marginTop: spacing.sm },
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel="Open Camera Gesture Guide and hear Coach explain"
-            >
-              <Ionicons name="volume-high-outline" size={16} color={colors.primary} />
-              <Text style={[typography.subbodyBold, { color: colors.primary, marginLeft: 8 }]}>
-                Hear Coach Explain Gestures & View Guide
-              </Text>
-              <Ionicons
-                name="chevron-forward"
-                size={16}
-                color={colors.primary}
-                style={{ marginLeft: 'auto' }}
-              />
-            </PressableScale>
           </Squircle>
         ) : null}
 
-        <Card style={{ padding: spacing.base, marginTop: spacing.md }}>
+        {/* Feature Highlights Card */}
+        <Card style={{ padding: spacing.sm, marginTop: spacing.sm }}>
           {[
             [
               'videocam-outline',
               cameraBuilt
-                ? 'The camera counts reps and checks your form for the exercises it knows.'
-                : 'Form checking is not available in this build; the coach still runs videos, sets and rest.',
-            ],
-            [
-              'pause-circle-outline',
-              'If your form slips, the video pauses and shows exactly what to fix.',
+                ? 'Camera counts reps and checks your form in real-time.'
+                : 'Guided sets, timer and rest available without camera verification.',
             ],
             [
               'ribbon-outline',
-              `Good form (80%+) earns ${WORKOUT_XP_BASE * WORKOUT_FORM_MULTIPLIER} XP instead of ${WORKOUT_XP_BASE}.`,
+              `Good form (80%+) earns ${WORKOUT_XP_BASE * WORKOUT_FORM_MULTIPLIER} XP instead of ${WORKOUT_XP_BASE} XP.`,
             ],
             [
               'volume-high-outline',
-              'Voice counts in, names reps, confirms gestures, and coaches form in real time.',
+              'Voice counts in, names reps, confirms gestures, and coaches live.',
             ],
             [
-              'eye-off-outline',
-              'Everything runs on this phone. No photos or video are saved or sent.',
-            ],
-            [
-              'phone-portrait-outline',
-              'Prop the phone up about two metres away, side-on, with your whole body in view.',
+              'shield-checkmark-outline',
+              '100% on-device. No photos or video are saved or sent anywhere.',
             ],
           ].map(([icon, text]) => (
-            <View key={text} style={[styles.row, { marginBottom: spacing.sm }]}>
+            <View key={text} style={[styles.row, { marginVertical: 4 }]}>
               <Ionicons
                 name={icon as keyof typeof Ionicons.glyphMap}
-                size={18}
+                size={16}
                 color={colors.primary}
               />
               <Text
                 style={[
-                  typography.subbody,
+                  typography.caption,
                   styles.flex,
-                  { color: colors.text.secondary, marginLeft: 10 },
+                  { color: colors.text.secondary, marginLeft: 8 },
                 ]}
               >
                 {text}
@@ -221,7 +238,7 @@ export function CoachIntro({
         </Card>
 
         <Text
-          style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg }]}
+          style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.md }]}
         >
           In this workout
         </Text>
@@ -242,7 +259,7 @@ export function CoachIntro({
               key={i.exerciseId}
               style={[
                 styles.exerciseCard,
-                { backgroundColor: colors.surface1, marginTop: spacing.sm },
+                { backgroundColor: colors.surface1, marginTop: spacing.xs },
               ]}
             >
               <View style={styles.row}>
@@ -256,7 +273,7 @@ export function CoachIntro({
                           ? 'timer-outline'
                           : 'book-outline'
                   }
-                  size={18}
+                  size={16}
                   color={cap.isCameraVerified ? colors.primary : colors.text.muted}
                 />
                 <Text
@@ -285,6 +302,7 @@ export function CoachIntro({
                     style={[
                       typography.captionBold,
                       {
+                        fontSize: 10,
                         color:
                           cap.badgeTone === 'verified'
                             ? colors.primary
@@ -299,7 +317,7 @@ export function CoachIntro({
                 </View>
               </View>
 
-              <View style={[styles.row, { marginTop: 6, justifyContent: 'space-between' }]}>
+              <View style={[styles.row, { marginTop: 4, justifyContent: 'space-between' }]}>
                 <Text style={[typography.caption, { color: colors.text.muted }]}>
                   {i.sets} x {i.target} {ex?.timed ? 's' : 'reps'} · {framingText}
                 </Text>
@@ -317,23 +335,26 @@ export function CoachIntro({
             </View>
           );
         })}
-        <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.sm }]}>
-          Every movement displays an honest capability level. Camera-checked exercises verify form
-          and award bonus XP.
+        <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.xs }]}>
+          Every movement displays an honest capability level. Camera-checked exercises verify form.
         </Text>
-        <Text style={[typography.caption, { color: colors.warning, marginTop: spacing.md }]}>
-          {exercise.safety}
-        </Text>
+        {exercise.safety ? (
+          <Text style={[typography.caption, { color: colors.warning, marginTop: spacing.xs }]}>
+            {exercise.safety}
+          </Text>
+        ) : null}
       </ScrollView>
 
-      {/* Sticky Bottom Footer */}
-      <View
+      {/* Frosted Sticky Bottom Footer */}
+      <FrostedView
+        tone="surface"
+        intensity={70}
+        tintOpacity={0.9}
         style={[
           styles.stickyFooter,
           {
-            backgroundColor: colors.surface,
-            paddingBottom: insets.bottom + spacing.xs,
-            paddingTop: spacing.sm,
+            paddingBottom: Math.max(insets.bottom, 12),
+            paddingTop: 10,
             paddingHorizontal: spacing.base,
             borderTopColor: colors.border,
             borderTopWidth: StyleSheet.hairlineWidth,
@@ -341,11 +362,11 @@ export function CoachIntro({
         ]}
       >
         <Button
-          label={cameraBuilt ? 'Allow camera and start' : 'Start'}
+          label={cameraBuilt ? 'Allow camera and start' : 'Start workout'}
           size="lg"
           onPress={onStart}
         />
-      </View>
+      </FrostedView>
 
       {/* Interactive Hands-Free Gesture Guide Bottom Sheet */}
       <GestureRemoteGuideModal
@@ -357,54 +378,74 @@ export function CoachIntro({
 }
 
 const styles = StyleSheet.create({
-  stickyFooter: {
-    width: '100%',
-  },
   capBadge: {
-    borderRadius: 8,
-    paddingHorizontal: 8,
+    borderRadius: 6,
+    paddingHorizontal: 7,
     paddingVertical: 2,
   },
   exerciseCard: {
     borderRadius: 12,
-    padding: 12,
+    padding: 10,
   },
   flex: { flex: 1 },
   gestureBox: {
-    padding: 16,
+    padding: 12,
   },
   gestureGrid: {
-    gap: 8,
-    marginTop: 12,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 8,
   },
   gesturePill: {
     alignItems: 'center',
-    borderRadius: 10,
+    borderRadius: 8,
     borderWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
-    paddingHorizontal: 10,
-    paddingVertical: 7,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    width: '48.5%',
   },
-  learnBtn: {
+  guidePill: {
     alignItems: 'center',
     borderRadius: 12,
     flexDirection: 'row',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
   },
   round: {
     alignItems: 'center',
-    borderRadius: 22,
-    height: 44,
+    borderRadius: 20,
+    height: 38,
     justifyContent: 'center',
-    width: 44,
+    width: 38,
+  },
+  roundPlaceholder: {
+    height: 38,
+    width: 38,
   },
   row: { alignItems: 'center', flexDirection: 'row' },
+  stickyFooter: {
+    bottom: 0,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+  },
   tipIconBox: {
     alignItems: 'center',
-    borderRadius: 12,
-    height: 40,
+    borderRadius: 10,
+    height: 34,
     justifyContent: 'center',
-    width: 40,
+    width: 34,
+  },
+  topBar: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  topBarCenter: {
+    alignItems: 'center',
+    flex: 1,
   },
 });
+

@@ -8,6 +8,7 @@ import { useTheme } from '../theme/useTheme';
 import { useRootStore } from '../stores/useRootStore';
 
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import { BlurRoot } from '../components/ui/FrostedView';
 import { MindfulNotificationBanner } from '../components/ui/MindfulNotificationBanner';
 import { CustomAlert } from '../components/ui/CustomAlert';
 import { AchievementModal } from '../components/ui/AchievementModal';
@@ -38,18 +39,20 @@ export default function RootLayout() {
         >
           <ErrorBoundary>
             <ThemedStatusBar />
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                animation: 'slide_from_right',
-              }}
-            >
-              <Stack.Screen name="index" />
-              <Stack.Screen name="(public)" />
-              <Stack.Screen name="(auth)" />
-              <Stack.Screen name="(onboarding)" />
-              <Stack.Screen name="(app)" />
-            </Stack>
+            <BlurRoot>
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  animation: 'slide_from_right',
+                }}
+              >
+                <Stack.Screen name="index" />
+                <Stack.Screen name="(public)" />
+                <Stack.Screen name="(auth)" />
+                <Stack.Screen name="(onboarding)" />
+                <Stack.Screen name="(app)" />
+              </Stack>
+            </BlurRoot>
             <MindfulNotificationBanner />
             <CustomAlert />
             <AchievementModal />
