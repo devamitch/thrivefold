@@ -20,6 +20,7 @@ import {
   type RepState,
 } from '@/domain/pose/movement';
 import { repLine, secondsLine, idleLine, IDLE_NUDGE_MS } from '@/domain/pose/coachVoice';
+import { cuesEngine } from '@/domain/coach/cuesEngine';
 
 const FRAMING_ON_MS = 700;
 const FRAMING_OFF_MS = 500;
@@ -148,9 +149,17 @@ export function usePoseTracking({
           if (fr.shown?.id !== f.id && now - fr.since >= FRAMING_ON_MS) {
             fr.shown = f;
             setFraming(f);
-            if (countdown === 0 && now - (fr.spokenAt[f.id] ?? 0) > 6000) {
-              fr.spokenAt[f.id] = now;
-              sayFn(f.text);
+            if (countdown === 0) {
+              const decision = cuesEngine.proposeCue({
+                id: f.id,
+                category: 'FRAMING',
+                bannerText: f.text,
+                tone: 'framing',
+              }, now);
+              if (decision.shouldSpeak && decision.spokenTextToSpeak) {
+                fr.spokenAt[f.id] = now;
+                sayFn(decision.spokenTextToSpeak);
+              }
             }
           }
         } else {
@@ -174,8 +183,17 @@ export function usePoseTracking({
       // Form fault feedback
       if (!before.fault && next.fault) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => undefined);
-        sayFn(next.fault.fix);
+        const decision = cuesEngine.proposeCue({
+          id: next.fault.id,
+          category: 'FORM_FAULT',
+          bannerText: next.fault.fix,
+          tone: 'fault',
+        }, now);
+        if (decision.shouldSpeak && decision.spokenTextToSpeak) {
+          sayFn(decision.spokenTextToSpeak);
+        }
       } else if (before.fault && !next.fault) {
+        cuesEngine.resolveFault(before.fault.id, now);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
       }
 
@@ -184,7 +202,18 @@ export function usePoseTracking({
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
         if (!inSeconds && !next.fault) {
           const line = repLine(next.reps, item.target, !before.repHadFault);
-          if (line) sayFn(line);
+          if (line) {
+            const decision = cuesEngine.proposeCue({
+              id: `rep_${next.reps}`,
+              category: 'RHYTHM_COUNT',
+              bannerText: line,
+              tone: 'cue',
+              durationMs: 1500,
+            }, now);
+            if (decision.shouldSpeak && decision.spokenTextToSpeak) {
+              sayFn(decision.spokenTextToSpeak);
+            }
+          }
         }
       }
 
@@ -195,7 +224,18 @@ export function usePoseTracking({
       }
       if (inSeconds && value > 0 && value !== progressOf(before)) {
         const line = secondsLine(value, item.target);
-        if (line) sayFn(line);
+        if (line) {
+          const decision = cuesEngine.proposeCue({
+            id: `sec_${value}`,
+            category: 'TRANSITION',
+            bannerText: line,
+            tone: 'cue',
+            durationMs: 1800,
+          }, now);
+          if (decision.shouldSpeak && decision.spokenTextToSpeak) {
+            sayFn(decision.spokenTextToSpeak);
+          }
+        }
       }
 
       // Idle nudge: person in view but nothing counting for a while
@@ -207,7 +247,17 @@ export function usePoseTracking({
         !next.fault
       ) {
         idleNudged.current = true;
-        sayFn(idleLine(movement.kind));
+        const line = idleLine(movement.kind);
+        const decision = cuesEngine.proposeCue({
+          id: 'idle_nudge',
+          category: 'ENCOURAGEMENT',
+          bannerText: line,
+          tone: 'cue',
+          durationMs: 3000,
+        }, now);
+        if (decision.shouldSpeak && decision.spokenTextToSpeak) {
+          sayFn(decision.spokenTextToSpeak);
+        }
       }
 
       const doneNow = value >= item.target;

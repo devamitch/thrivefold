@@ -34,6 +34,12 @@ export interface TelemetryEvent {
   metadata?: Record<string, unknown>;
 }
 
+let eventSeq = 0;
+function createTelemetryId(prefix: string): string {
+  eventSeq = (eventSeq + 1) % 1_000_000;
+  return `${prefix}_${Date.now()}_${eventSeq}`;
+}
+
 class AnalyticsService {
   private inMemoryEvents: TelemetryEvent[] = [];
   private maxEvents = 100;
@@ -48,7 +54,7 @@ class AnalyticsService {
     metadata?: Record<string, unknown>,
   ) {
     const event: TelemetryEvent = {
-      id: `evt_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      id: createTelemetryId('evt'),
       type: interactionType === 'swipe' ? 'swipe_gesture' : 'touch_tap',
       timestamp: new Date().toISOString(),
       screen,
@@ -63,7 +69,7 @@ class AnalyticsService {
    */
   logNavigation(toRoute: string, params?: Record<string, string>) {
     const event: TelemetryEvent = {
-      id: `nav_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      id: createTelemetryId('nav'),
       type: 'screen_view',
       timestamp: new Date().toISOString(),
       screen: toRoute,
@@ -79,6 +85,11 @@ class AnalyticsService {
     } catch {
       // Store not yet ready or in test environment
     }
+
+    try {
+      const { smartAggregations } = require('./smartAggregations');
+      smartAggregations.trackMoment('nav_moment', { screen: toRoute, metrics: params });
+    } catch {}
   }
 
   /**
@@ -101,7 +112,7 @@ class AnalyticsService {
     metrics?: { xp?: number; diamonds?: number; category?: string },
   ) {
     const event: TelemetryEvent = {
-      id: `game_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      id: createTelemetryId('game'),
       type: 'gamification_click',
       timestamp: new Date().toISOString(),
       screen: 'gamification',
@@ -109,6 +120,17 @@ class AnalyticsService {
       metadata: { action, ...metrics },
     };
     this.recordEvent(event);
+
+    try {
+      const { smartAggregations } = require('./smartAggregations');
+      smartAggregations.trackQuestMoment({
+        questId,
+        action: action === 'started' || action === 'completed' || action === 'claimed' ? action : 'started',
+        xp: metrics?.xp ?? 0,
+        diamonds: metrics?.diamonds,
+        category: metrics?.category,
+      });
+    } catch {}
   }
 
   /**
@@ -116,7 +138,7 @@ class AnalyticsService {
    */
   logLifecycle(status: AppStateStatus) {
     const event: TelemetryEvent = {
-      id: `life_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      id: createTelemetryId('life'),
       type: status === 'active' ? 'app_foreground' : 'app_background',
       timestamp: new Date().toISOString(),
       screen: 'app',
@@ -131,6 +153,11 @@ class AnalyticsService {
     } catch {
       // safe fallback
     }
+
+    try {
+      const { smartAggregations } = require('./smartAggregations');
+      smartAggregations.trackMoment('app_session', { screen: 'app', metrics: { status } });
+    } catch {}
   }
 
   /**
@@ -141,7 +168,7 @@ class AnalyticsService {
     const stack = typeof error === 'string' ? undefined : error.stack;
 
     const event: TelemetryEvent = {
-      id: `err_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      id: createTelemetryId('err'),
       type: 'crash_error',
       timestamp: new Date().toISOString(),
       screen: 'global',

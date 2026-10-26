@@ -236,6 +236,22 @@ export function useCoachSession({ planId, assignmentId }: UseCoachSessionOpts) {
         1,
         Math.round((Date.parse(finishedAt) - Date.parse(startedAt.current)) / 60000),
       );
+
+      try {
+        const { smartAggregations } = require('@/services/telemetry/smartAggregations');
+        const totalReps = entries.reduce(
+          (acc, e) => acc + e.sets.reduce((sAcc, s) => sAcc + s.value, 0),
+          0,
+        );
+        smartAggregations.trackCoachSession({
+          exerciseId: plan.id,
+          reps: totalReps,
+          targetReps: plan.items.reduce((acc, i) => acc + i.target, 0),
+          durationMs: Date.parse(finishedAt) - Date.parse(startedAt.current),
+          cleanFormPct: form?.formScore ?? 1,
+        });
+      } catch {}
+
       const quest = assignmentId
         ? store.completeAssignmentWithWorkout(assignmentId, {
             title: plan.title,

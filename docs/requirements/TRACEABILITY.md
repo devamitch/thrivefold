@@ -1,5 +1,17 @@
 # Requirements Traceability Matrix
 
+## Update — 2026-10-26 (20): Clear Cues Engine, Smart Moments Aggregations, Analytics Telemetry
+
+Checks: compile 0, lint 0, `pnpm test` 268/268 (+10 new tests passed), `pnpm test:db` 145/145.
+Release APK built in 2m 19s and installed on physical device Moto G71 (`ZD2225KYKD`).
+
+| Item | Status | Where | Commit |
+| --- | --- | --- | --- |
+| Clear Cues Engine | Deterministic, prioritized, debounced cue dispatcher (`SAFETY > FRAMING > FORM_FAULT > TRANSITION > RHYTHM_COUNT > ENCOURAGEMENT`), suppression of contradictory cues, 1.5s speech spacing to prevent audio collisions, body-neutral language | `src/domain/coach/cuesEngine.ts` | (this round) |
+| Smart Moments Aggregations | SQLite-backed Moments Engine (`thrivefold-moments.db` with WAL mode) capturing app sessions, coach workouts, quests, check-ins, AI tasks; calculates rolling daily summaries and coach performance statistics (FPS, p50/p95 latency) with 60-day auto-pruning | `src/services/telemetry/smartAggregations.ts` | (this round) |
+| Analytics Telemetry Hardening | Removed all `Math.random()` occurrences in telemetry per AGENTS.md Hard Rule 2; replaced with monotonic sequence generator; routed moments to smart aggregations | `src/services/telemetry/analyticsService.ts` | (this round) |
+| Virtual Coach Integration | Routed framing cues, form fault fixes, and rep cadence in `usePoseTracking.ts` through `cuesEngine`; tracked completed coach sessions in `useCoachSession.ts` | `src/components/coach/*` | (this round) |
+
 ## Update — 2026-10-26 (19): Local AI runtime, Analytical Memory, Hybrid RAG, Coach camera fix
 
 Checks: compile 0, lint 0, `pnpm test` 258/258 (+26 tests passed), `pnpm test:db` 145/145.

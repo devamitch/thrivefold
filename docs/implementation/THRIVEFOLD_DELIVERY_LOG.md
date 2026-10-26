@@ -23,11 +23,33 @@
 
 ---
 
-## Milestone 2: Infrastructure Mapping & Source Cleanup
-- **Status**: IMPLEMENTED
-- **Commit**: In progress
+## Milestone 2: Infrastructure Mapping, Hybrid RAG & Camera Thermal Fix
+- **Status**: IMPLEMENTED & AUTOMATED TESTED
+- **Commit**: `ca7f135` (`feat(ai-coach): add hybrid RAG, infrastructure map & camera memory fix`)
 - **Components Implemented**:
-  - Dated snapshot created in `.local-backups/thrivefold-repair-20261026-202000/`.
-  - Stray `.backup.*` files moved out of `src/` to `.local-backups/`.
-  - `.local-backups/` added to `.gitignore`.
-  - `docs/architecture/EXISTING_INFRASTRUCTURE_MAP.md` authored.
+  - `docs/architecture/EXISTING_INFRASTRUCTURE_MAP.md`: Canonical ownership across SQLite, Supabase, TanStack Query, Zustand, Firebase & Local AI.
+  - `src/services/local-ai/rag/hybridRagPipeline.ts`: Hybrid RAG combining dense vector cosine similarity with BM25 sparse keyword ranking via Reciprocal Rank Fusion (RRF, k=60), evidence grounding, and source citations.
+  - `modules/pose-landmarker/android/.../PoseCameraView.kt`: Fixed severe camera memory churn and phone heating by calling `if (upright != bitmap) { bitmap.recycle() }` immediately after upright transformation, eliminating 30 redundant multi-megabyte unrotated bitmap allocations per second.
+  - Source cleanup: Moved stray `.backup.*` files from `src/` to `.local-backups/thrivefold-repair-20261026-202000/src-backups/` and updated `.gitignore`.
+- **Verification**:
+  - `pnpm compile` -> PASS (0 errors).
+  - `pnpm test` -> PASS (35 suites, 258 tests passed).
+  - `pnpm test:db` -> PASS (145 Postgres RLS tests passed).
+  - `./gradlew :app:assembleRelease` -> BUILD SUCCESSFUL in 2m 19s (1054 tasks, release APK generated).
+  - Installed and verified on physical device Moto G71 (`ZD2225KYKD`).
+
+---
+
+## Milestone 3: Clear Cues Engine & Smart Moments Aggregations
+- **Status**: IMPLEMENTED & AUTOMATED TESTED
+- **Components Implemented**:
+  - `src/domain/coach/cuesEngine.ts`: Deterministic, prioritized, debounced Clear Cues Engine with strict priority hierarchy (`SAFETY > FRAMING > FORM_FAULT > TRANSITION > RHYTHM_COUNT > ENCOURAGEMENT`), suppression of contradictory cues, 1.5s speech spacing to prevent audio collisions, and body-neutral language.
+  - `src/services/telemetry/smartAggregations.ts`: Local SQLite-backed Moments Tracking & Smart Aggregations Engine (`thrivefold-moments.db` with WAL mode) computing daily activity rollups (active minutes, workout counts, reps, clean form %, quests completed, XP earned) and Coach performance statistics (average FPS, p50/p95 inference latencies, frame drops) with automatic 60-day pruning.
+  - `src/services/telemetry/analyticsService.ts`: Removed `Math.random()` to strictly follow AGENTS.md Hard Rule 2; replaced with monotonic sequence generator; wired gamification, navigation, and lifecycle events directly into smart moment aggregations.
+  - `src/components/coach/usePoseTracking.ts` & `useCoachSession.ts`: Integrated Clear Cues Engine for framing cues, form fault feedback, rep praise/push cadence, and idle nudges; captured end-of-workout performance moments into SQLite.
+- **Verification**:
+  - `pnpm compile` -> PASS (0 errors).
+  - `pnpm test` -> PASS (37 suites, 268 tests passed).
+  - `pnpm lint` -> PASS (0 errors).
+  - `pnpm test:db` -> PASS (145 Postgres RLS tests passed).
+
