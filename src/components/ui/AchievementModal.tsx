@@ -38,6 +38,7 @@ export function AchievementModal() {
   const hideAchievementModal = useRootStore((s) => s.hideAchievementModal);
   const reduceMotion = useReducedMotion();
   const shown = useSharedValue(0);
+  const backdropShown = useSharedValue(1);
 
   useEffect(() => {
     if (modal) {
@@ -46,10 +47,13 @@ export function AchievementModal() {
       } catch {}
       shown.value = 0;
       shown.value = withTiming(1, reduceMotion ? { duration: 0 } : IN_ANIMATION);
-    }
-  }, [modal, reduceMotion, shown]);
 
-  const backdropStyle = useAnimatedStyle(() => ({ opacity: shown.value }));
+      backdropShown.value = 1;
+      backdropShown.value = withTiming(0, reduceMotion ? { duration: 0 } : IN_ANIMATION);
+    }
+  }, [modal, reduceMotion, shown, backdropShown]);
+
+  const backdropStyle = useAnimatedStyle(() => ({ opacity: backdropShown.value }));
   const dialogStyle = useAnimatedStyle(() => ({
     opacity: shown.value,
     transform: [{ scale: 0.92 + shown.value * 0.08 }],
@@ -115,9 +119,13 @@ export function AchievementModal() {
     >
       <View style={styles.overlay}>
         <Animated.View
-          style={[StyleSheet.absoluteFill, { backgroundColor: colors.scrim }, backdropStyle]}
+          style={[
+            StyleSheet.absoluteFill,
+            { backgroundColor: 'rgba(10, 10, 10, 0.51)' },
+            backdropStyle,
+          ]}
         >
-          <FrostedView style={StyleSheet.absoluteFill} />
+          <FrostedView style={StyleSheet.absoluteFill} pointerEvents="none" />
           <Pressable
             style={StyleSheet.absoluteFill}
             onPress={handleDismiss}
@@ -321,6 +329,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     padding: 24,
+    backgroundColor: 'rgba(10, 10, 10, 0.51)',
   },
   dialog: {
     maxWidth: 420,

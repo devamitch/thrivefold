@@ -67,9 +67,9 @@ const FOLLOW = 0.88;
  * - Minimal lag extrapolation so the skeleton matches what the user is doing live.
  * - Frame callback runs continuously on UI thread — NO bridge hops (runOnJS).
  */
-const MIN_CUTOFF_HZ = 1.6;
-const BETA = 0.08;
-const D_CUTOFF_HZ = 2.5;
+const MIN_CUTOFF_HZ = 1.0;
+const BETA = 0.005;
+const D_CUTOFF_HZ = 1.5;
 
 /** Latest detection, written straight from the camera event (no React state). */
 export interface PoseFeed {
@@ -218,9 +218,10 @@ export const PoseOverlay = memo(function PoseOverlay({
     const seq = feed.seq?.value ?? 0;
     const captured = feed.capturedAt?.value ?? 0;
     const t = captured > 0 && now - captured < 1000 ? captured : now - 40;
+    const isNewDetection = seq !== lastSeq.value;
 
     // New detection: update One Euro filter
-    if (seq !== lastSeq.value) {
+    if (isNewDetection) {
       lastSeq.value = seq;
       const fresh = fx.value.length !== N * 2 || reduceMotion;
       const dtMs = fresh ? 50 : Math.max(16, Math.min(250, t - detAt.value));
@@ -250,24 +251,18 @@ export const PoseOverlay = memo(function PoseOverlay({
       fdx.value = DX;
       vis.value = V;
       detAt.value = t;
+
+      // Update landmarks directly with filtered, jitter-free coordinates
+      shown.modify((s) => {
+        'worklet';
+        for (let i = 0; i < N; i++) {
+          s[i * 3] = X[i * 2];
+          s[i * 3 + 1] = X[i * 2 + 1];
+          s[i * 3 + 2] = V[i];
+        }
+        return s;
+      });
     }
-
-    const X = fx.value;
-    const DX = fdx.value;
-    const V = vis.value;
-    if (X.length !== N * 2) return;
-
-    // Responsive lead extrapolation
-    const lead = reduceMotion ? 0 : Math.max(0, Math.min(50, now - detAt.value));
-    shown.modify((s) => {
-      'worklet';
-      for (let i = 0; i < N; i++) {
-        s[i * 3] = X[i * 2] + DX[i * 2] * lead;
-        s[i * 3 + 1] = X[i * 2 + 1] + DX[i * 2 + 1] * lead;
-        s[i * 3 + 2] = V[i];
-      }
-      return s;
-    });
 
     if (present.value < 1) {
       present.value = Math.min(1, present.value + 0.15);

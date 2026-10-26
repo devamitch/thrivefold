@@ -57,9 +57,11 @@ import {
 } from '../../../../components/workout/YouTubePlayer';
 import { videoFor } from '../../../../content/exerciseVideos';
 import { exerciseById } from '../../../../domain/fitness/workouts';
+import { voiceCommandResponseSpeech, type VoiceCommand } from '../../../../domain/coach/voiceCommands';
 import { gestureTriggerSpeech } from '../../../../domain/pose/coachVoice';
 import { type Gesture } from '../../../../domain/pose/gestures';
 import { liveCue, summarize } from '../../../../domain/pose/movement';
+import { speakCoach } from '../../../../services/ai/coachVoiceService';
 import { useRootStore } from '../../../../stores/useRootStore';
 import { useTheme } from '../../../../theme/useTheme';
 
@@ -235,6 +237,72 @@ export default function CoachScreen() {
       autoPaused.current = false;
     }
   }, [poseTrack.rep.fault, videoPlaying]);
+
+  // ── Voice command dispatcher ──────────────────────────────────────────────
+  const executeVoiceCommand = useCallback(
+    (cmd: VoiceCommand) => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
+      const speech = voiceCommandResponseSpeech(cmd);
+      if (voiceOn) {
+        speakCoach(speech, true).catch(() => undefined);
+      }
+      switch (cmd) {
+        case 'pause':
+          autoPaused.current = true;
+          player.current?.pause();
+          break;
+        case 'resume':
+          if (rest > 0) {
+            setRest(0);
+          } else {
+            autoPaused.current = false;
+            player.current?.play();
+          }
+          break;
+        case 'next_set':
+          if (rest > 0) {
+            setRest(0);
+          } else if (countdown === 0 && item && poseTrack) {
+            const counted = progressOf(poseTrack.repRef.current);
+            completeSet(
+              cameraOn && movement && poseTrack.repRef.current.validFrames > 0
+                ? counted
+                : item.target,
+            );
+          }
+          break;
+        case 'add_rest':
+          setRest((r) => r + 30);
+          break;
+        case 'previous':
+          if (itemIdx > 0) {
+            session.setItemIdx(itemIdx - 1);
+            session.setSetIdx(0);
+          }
+          break;
+        case 'toggle_video':
+          setVideoPlaying((v) => !v);
+          break;
+        case 'help':
+          setShowGestureModal(true);
+          break;
+      }
+    },
+    [
+      voiceOn,
+      rest,
+      countdown,
+      item,
+      itemIdx,
+      cameraOn,
+      movement,
+      poseTrack,
+      completeSet,
+      progressOf,
+      session,
+      setRest,
+    ],
+  );
 
   // ── Counter pulse from poseTrack ──────────────────────────────────────────
   const counterAnimStyle = useAnimatedStyle(() => ({
@@ -464,7 +532,7 @@ export default function CoachScreen() {
           active={phase === 'live'}
           facing={facing}
           face={fullTracking}
-          hands={fullTracking}
+          hands={true}
           minIntervalMs={rest > 0 ? 250 : 0}
           onPose={poseTrack.onPose}
           onPoseReady={poseTrack.onPoseReady}
@@ -588,10 +656,10 @@ export default function CoachScreen() {
           <PressableScale
             onPress={() => setShowGestureModal(true)}
             accessibilityRole="button"
-            accessibilityLabel="Hands-free gesture guide"
+            accessibilityLabel="Hands-free gesture & voice controls guide"
             style={[styles.gestureBtn, { backgroundColor: 'rgba(16, 20, 26, 0.76)', borderColor: 'rgba(255, 255, 255, 0.16)' }]}
           >
-            <Ionicons name="hand-left-outline" size={20} color={colors.primary} />
+            <Ionicons name="mic-outline" size={20} color={colors.primary} />
           </PressableScale>
         </View>
       ) : null}
@@ -690,10 +758,11 @@ export default function CoachScreen() {
         />
       ) : null}
 
-      {/* Hands-Free Camera Gesture Remote Guide Bottom Sheet */}
+      {/* Hands-Free Camera Gesture & Voice Remote Guide Bottom Sheet */}
       <GestureRemoteGuideModal
         visible={showGestureModal}
         onClose={() => setShowGestureModal(false)}
+        onExecuteCommand={executeVoiceCommand}
       />
     </View>
   );

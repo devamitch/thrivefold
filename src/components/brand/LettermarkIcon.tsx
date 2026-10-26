@@ -1,11 +1,11 @@
-import { SquircleSurface } from '../ui/SquircleSurface';
-import React, { memo } from 'react';
-import { Text, StyleSheet, StyleProp, ViewStyle, ImageSourcePropType, View } from 'react-native';
 import { Image } from 'expo-image';
+import React, { memo } from 'react';
+import { ImageSourcePropType, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import Animated, {
+  Easing,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import { PressableScale } from '../ui/PressableScale';
 
@@ -158,7 +158,7 @@ export const LettermarkIcon = memo(function LettermarkIcon({
   style,
 }: LettermarkIconProps) {
   const meta = LETTERMARK_MAP[id] ?? LETTERMARK_MAP['womens-health'];
-  const pixelSize = typeof size === 'number' ? size : SIZE_PRESETS[size] ?? 52;
+  const pixelSize = typeof size === 'number' ? size : (SIZE_PRESETS[size] ?? 52);
   const radius = Math.round(pixelSize * 0.28); // Continuous squircle proportion
 
   const scale = useSharedValue(1);
@@ -169,13 +169,13 @@ export const LettermarkIcon = memo(function LettermarkIcon({
 
   const handlePressIn = () => {
     if (onPress) {
-      scale.value = withSpring(0.94, { damping: 14, stiffness: 240 });
+      scale.value = withTiming(0.94, { duration: 90, easing: Easing.out(Easing.cubic) });
     }
   };
 
   const handlePressOut = () => {
     if (onPress) {
-      scale.value = withSpring(1, { damping: 14, stiffness: 240 });
+      scale.value = withTiming(1, { duration: 130, easing: Easing.out(Easing.cubic) });
     }
   };
 
@@ -230,10 +230,7 @@ export const LettermarkIcon = memo(function LettermarkIcon({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       disabled={!onPress}
-      style={[
-        isRow ? styles.rowWrapper : styles.colWrapper,
-        { opacity: 1 },
-      ]}
+      style={[isRow ? styles.rowWrapper : styles.colWrapper, { opacity: 1 }]}
       accessibilityRole={onPress ? 'button' : 'none'}
       accessibilityLabel={meta.name}
     >

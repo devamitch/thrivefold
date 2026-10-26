@@ -1,9 +1,13 @@
-import { SquircleSurface } from './SquircleSurface';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import React, { useEffect } from 'react';
 import { LayoutChangeEvent, StyleSheet, Text, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { useTheme } from '../../theme/useTheme';
 import { PressableScale } from './PressableScale';
@@ -37,11 +41,9 @@ export const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({ tabs, activeTab,
 
   useEffect(() => {
     if (tabWidth.value > 0) {
-      indicatorTranslateX.value = withSpring(safeIndex * tabWidth.value, {
-        damping: 22,
-        overshootClamping: true,
-        stiffness: 240,
-        mass: 0.8,
+      indicatorTranslateX.value = withTiming(safeIndex * tabWidth.value, {
+        duration: 220,
+        easing: Easing.bezier(0.2, 0.9, 0.25, 1),
       });
     }
   }, [safeIndex, tabWidth, indicatorTranslateX]);

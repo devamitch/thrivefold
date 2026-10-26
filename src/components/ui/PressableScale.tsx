@@ -20,16 +20,18 @@ import {
   type ViewStyle,
 } from 'react-native';
 import Animated, {
+  Easing,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
-  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-/** Firm and quick: the surface feels resisted and tactile, never floaty. */
-const PRESS_SPRING = { damping: 26, stiffness: 420, mass: 0.6, overshootClamping: true } as const;
+/** Crisp and tactile timing curves: predictable and direct, never floaty or bouncy. */
+const PRESS_IN_TIMING = { duration: 80, easing: Easing.out(Easing.cubic) } as const;
+const PRESS_OUT_TIMING = { duration: 130, easing: Easing.out(Easing.cubic) } as const;
 
 export interface PressableScaleProps extends Omit<PressableProps, 'style'> {
   /**
@@ -64,24 +66,24 @@ export const PressableScale = memo(function PressableScale({
 
   const handlePressIn = useCallback(
     (e: GestureResponderEvent) => {
-      pressed.value = reduceMotion ? 1 : withSpring(1, PRESS_SPRING);
+      pressed.value = reduceMotion ? 1 : withTiming(1, PRESS_IN_TIMING);
       onPressIn?.(e);
     },
-    [onPressIn, pressed, reduceMotion]
+    [onPressIn, pressed, reduceMotion],
   );
 
   const handlePressOut = useCallback(
     (e: GestureResponderEvent) => {
-      pressed.value = reduceMotion ? 0 : withSpring(0, PRESS_SPRING);
+      pressed.value = reduceMotion ? 0 : withTiming(0, PRESS_OUT_TIMING);
       onPressOut?.(e);
     },
-    [onPressOut, pressed, reduceMotion]
+    [onPressOut, pressed, reduceMotion],
   );
 
   // If it becomes disabled mid-press (e.g. onPress flips `loading`), onPressOut can be
-  // skipped and the surface would stay shrunk. Always spring back.
+  // skipped and the surface would stay shrunk. Always animate back.
   useEffect(() => {
-    if (disabled) pressed.value = reduceMotion ? 0 : withSpring(0, PRESS_SPRING);
+    if (disabled) pressed.value = reduceMotion ? 0 : withTiming(0, PRESS_OUT_TIMING);
   }, [disabled, pressed, reduceMotion]);
 
   // Flatten once, keep the animated style directly in the array so Reanimated sees it.
@@ -91,7 +93,7 @@ export const PressableScale = memo(function PressableScale({
       animatedStyle,
       disabled && disabledOpacity < 1 ? { opacity: disabledOpacity } : null,
     ],
-    [style, animatedStyle, disabled, disabledOpacity]
+    [style, animatedStyle, disabled, disabledOpacity],
   );
 
   return (
@@ -103,7 +105,7 @@ export const PressableScale = memo(function PressableScale({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       onResponderTerminate={() => {
-        pressed.value = reduceMotion ? 0 : withSpring(0, PRESS_SPRING);
+        pressed.value = reduceMotion ? 0 : withTiming(0, PRESS_OUT_TIMING);
       }}
       style={composedStyle}
     />

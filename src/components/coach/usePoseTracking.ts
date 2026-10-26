@@ -131,9 +131,9 @@ export function usePoseTracking({
         gestureRef.current = g.state;
         if (g.fired) onGesture(g.fired);
         const nextG = g.state.latched ? null : g.state.current;
-        const nextP = g.state.latched ? 0 : Math.round(g.progress * 10) / 10;
+        const nextP = g.state.latched ? 0 : Math.round(g.progress * 4) / 4;
         const gp = gestureProgressRef.current;
-        if (nextP !== gp.p || nextG !== gp.g) {
+        if (nextG !== gp.g || (nextG && Math.abs(nextP - gp.p) >= 0.25) || nextP === 1) {
           gestureProgressRef.current = { g: nextG, p: nextP };
           setGestureProgress({ g: nextG, p: nextP });
         }
@@ -263,7 +263,7 @@ export function usePoseTracking({
       const doneNow = value >= item.target;
       const valueChanged = value !== progressOf(before);
       const faultChanged = next.fault?.title !== before.fault?.title;
-      if (valueChanged || faultChanged || doneNow || now - lastUi.current > 200) {
+      if (valueChanged || faultChanged || doneNow) {
         lastUi.current = now;
         setRep(next);
       }

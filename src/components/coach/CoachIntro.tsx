@@ -5,22 +5,20 @@
 
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { ScrollView, Text, View, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { exerciseById } from '../../domain/fitness/workouts';
+import { WORKOUT_FORM_MULTIPLIER, WORKOUT_XP_BASE } from '../../domain/game/progression';
+import { getExerciseCapability } from '../../domain/pose/capabilityRegistry';
+import { useTheme } from '../../theme/useTheme';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { PressableScale } from '../ui/PressableScale';
 import { Squircle } from '../ui/Squircle';
-import { SquircleSurface } from '../ui/SquircleSurface';
 import { GestureRemoteGuideModal } from './GestureRemoteGuideModal';
-import { exerciseById } from '../../domain/fitness/workouts';
-import { getExerciseCapability } from '../../domain/pose/capabilityRegistry';
-import { movementForExercise } from '../../domain/pose/movement';
-import { WORKOUT_XP_BASE, WORKOUT_FORM_MULTIPLIER } from '../../domain/game/progression';
-import { useTheme } from '../../theme/useTheme';
 
-import type { WorkoutPlan, Exercise } from '../../domain/fitness/workouts';
+import type { Exercise, WorkoutPlan } from '../../domain/fitness/workouts';
 
 interface CoachIntroProps {
   plan: WorkoutPlan;
@@ -31,7 +29,14 @@ interface CoachIntroProps {
   onBack: () => void;
 }
 
-export function CoachIntro({ plan, exercise, cameraBuilt, linkedQuest, onStart, onBack }: CoachIntroProps) {
+export function CoachIntro({
+  plan,
+  exercise,
+  cameraBuilt,
+  linkedQuest,
+  onStart,
+  onBack,
+}: CoachIntroProps) {
   const insets = useSafeAreaInsets();
   const { colors, typography, spacing } = useTheme();
   const [showGestureModal, setShowGestureModal] = useState(false);
@@ -61,7 +66,13 @@ export function CoachIntro({ plan, exercise, cameraBuilt, linkedQuest, onStart, 
         {linkedQuest ? (
           <View style={[styles.row, { marginTop: spacing.sm }]}>
             <Ionicons name="flag-outline" size={16} color={colors.primary} />
-            <Text style={[typography.subbodyBold, styles.flex, { color: colors.primary, marginLeft: 6 }]}>
+            <Text
+              style={[
+                typography.subbodyBold,
+                styles.flex,
+                { color: colors.primary, marginLeft: 6 },
+              ]}
+            >
               For today's quest: {linkedQuest.title}. Finishing completes it.
             </Text>
           </View>
@@ -72,7 +83,8 @@ export function CoachIntro({ plan, exercise, cameraBuilt, linkedQuest, onStart, 
         )}
 
         <Text style={[typography.body, { color: colors.text.secondary, marginTop: spacing.xs }]}>
-          Your camera fills the stage with a live skeleton and rep count; the tutorial plays below it.
+          Your camera fills the stage with a live skeleton and rep count; the tutorial plays below
+          it.
         </Text>
 
         {/* Dedicated Hands-Free Camera Remote Control Section */}
@@ -113,13 +125,24 @@ export function CoachIntro({ plan, exercise, cameraBuilt, linkedQuest, onStart, 
               ].map((g) => (
                 <View
                   key={g.label}
-                  style={[styles.gesturePill, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                  style={[
+                    styles.gesturePill,
+                    { backgroundColor: colors.surface, borderColor: colors.border },
+                  ]}
                 >
-                  <Ionicons name={g.icon as keyof typeof Ionicons.glyphMap} size={15} color={colors.primary} />
-                  <Text style={[typography.captionBold, { color: colors.text.primary, marginLeft: 6 }]}>
+                  <Ionicons
+                    name={g.icon as keyof typeof Ionicons.glyphMap}
+                    size={15}
+                    color={colors.primary}
+                  />
+                  <Text
+                    style={[typography.captionBold, { color: colors.text.primary, marginLeft: 6 }]}
+                  >
                     {g.label}:
                   </Text>
-                  <Text style={[typography.caption, { color: colors.text.secondary, marginLeft: 4 }]}>
+                  <Text
+                    style={[typography.caption, { color: colors.text.secondary, marginLeft: 4 }]}
+                  >
                     {g.action}
                   </Text>
                 </View>
@@ -128,7 +151,10 @@ export function CoachIntro({ plan, exercise, cameraBuilt, linkedQuest, onStart, 
 
             <PressableScale
               onPress={() => setShowGestureModal(true)}
-              style={[styles.learnBtn, { backgroundColor: colors.primaryAlpha, marginTop: spacing.sm }]}
+              style={[
+                styles.learnBtn,
+                { backgroundColor: colors.primaryAlpha, marginTop: spacing.sm },
+              ]}
               accessibilityRole="button"
               accessibilityLabel="Open Camera Gesture Guide and hear Coach explain"
             >
@@ -136,32 +162,67 @@ export function CoachIntro({ plan, exercise, cameraBuilt, linkedQuest, onStart, 
               <Text style={[typography.subbodyBold, { color: colors.primary, marginLeft: 8 }]}>
                 Hear Coach Explain Gestures & View Guide
               </Text>
-              <Ionicons name="chevron-forward" size={16} color={colors.primary} style={{ marginLeft: 'auto' }} />
+              <Ionicons
+                name="chevron-forward"
+                size={16}
+                color={colors.primary}
+                style={{ marginLeft: 'auto' }}
+              />
             </PressableScale>
           </Squircle>
         ) : null}
 
         <Card style={{ padding: spacing.base, marginTop: spacing.md }}>
           {[
-            ['videocam-outline', cameraBuilt
-              ? 'The camera counts reps and checks your form for the exercises it knows.'
-              : 'Form checking is not available in this build; the coach still runs videos, sets and rest.'],
-            ['pause-circle-outline', 'If your form slips, the video pauses and shows exactly what to fix.'],
-            ['ribbon-outline', `Good form (80%+) earns ${WORKOUT_XP_BASE * WORKOUT_FORM_MULTIPLIER} XP instead of ${WORKOUT_XP_BASE}.`],
-            ['volume-high-outline', 'Voice counts in, names reps, confirms gestures, and coaches form in real time.'],
-            ['eye-off-outline', 'Everything runs on this phone. No photos or video are saved or sent.'],
-            ['phone-portrait-outline', 'Prop the phone up about two metres away, side-on, with your whole body in view.'],
+            [
+              'videocam-outline',
+              cameraBuilt
+                ? 'The camera counts reps and checks your form for the exercises it knows.'
+                : 'Form checking is not available in this build; the coach still runs videos, sets and rest.',
+            ],
+            [
+              'pause-circle-outline',
+              'If your form slips, the video pauses and shows exactly what to fix.',
+            ],
+            [
+              'ribbon-outline',
+              `Good form (80%+) earns ${WORKOUT_XP_BASE * WORKOUT_FORM_MULTIPLIER} XP instead of ${WORKOUT_XP_BASE}.`,
+            ],
+            [
+              'volume-high-outline',
+              'Voice counts in, names reps, confirms gestures, and coaches form in real time.',
+            ],
+            [
+              'eye-off-outline',
+              'Everything runs on this phone. No photos or video are saved or sent.',
+            ],
+            [
+              'phone-portrait-outline',
+              'Prop the phone up about two metres away, side-on, with your whole body in view.',
+            ],
           ].map(([icon, text]) => (
             <View key={text} style={[styles.row, { marginBottom: spacing.sm }]}>
-              <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={18} color={colors.primary} />
-              <Text style={[typography.subbody, styles.flex, { color: colors.text.secondary, marginLeft: 10 }]}>
+              <Ionicons
+                name={icon as keyof typeof Ionicons.glyphMap}
+                size={18}
+                color={colors.primary}
+              />
+              <Text
+                style={[
+                  typography.subbody,
+                  styles.flex,
+                  { color: colors.text.secondary, marginLeft: 10 },
+                ]}
+              >
                 {text}
               </Text>
             </View>
           ))}
         </Card>
 
-        <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg }]}>
+        <Text
+          style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg }]}
+        >
           In this workout
         </Text>
         {plan.items.map((i) => {
@@ -177,7 +238,13 @@ export function CoachIntro({ plan, exercise, cameraBuilt, linkedQuest, onStart, 
                   : 'Full body';
 
           return (
-            <View key={i.exerciseId} style={[styles.exerciseCard, { backgroundColor: colors.surface1, marginTop: spacing.sm }]}>
+            <View
+              key={i.exerciseId}
+              style={[
+                styles.exerciseCard,
+                { backgroundColor: colors.surface1, marginTop: spacing.sm },
+              ]}
+            >
               <View style={styles.row}>
                 <Ionicons
                   name={
@@ -192,7 +259,13 @@ export function CoachIntro({ plan, exercise, cameraBuilt, linkedQuest, onStart, 
                   size={18}
                   color={cap.isCameraVerified ? colors.primary : colors.text.muted}
                 />
-                <Text style={[typography.bodyBold, styles.flex, { color: colors.text.primary, marginLeft: 8 }]}>
+                <Text
+                  style={[
+                    typography.bodyBold,
+                    styles.flex,
+                    { color: colors.text.primary, marginLeft: 8 },
+                  ]}
+                >
                   {ex?.name}
                 </Text>
                 <View
@@ -216,7 +289,7 @@ export function CoachIntro({ plan, exercise, cameraBuilt, linkedQuest, onStart, 
                           cap.badgeTone === 'verified'
                             ? colors.primary
                             : cap.badgeTone === 'sequence'
-                              ? colors.accentText
+                              ? colors.text.inverse
                               : colors.text.secondary,
                       },
                     ]}
@@ -231,7 +304,12 @@ export function CoachIntro({ plan, exercise, cameraBuilt, linkedQuest, onStart, 
                   {i.sets} x {i.target} {ex?.timed ? 's' : 'reps'} · {framingText}
                 </Text>
                 {ex?.easier ? (
-                  <Text style={[typography.caption, { color: colors.text.secondary, fontStyle: 'italic' }]}>
+                  <Text
+                    style={[
+                      typography.caption,
+                      { color: colors.text.secondary, fontStyle: 'italic' },
+                    ]}
+                  >
                     Mod: {ex.easier}
                   </Text>
                 ) : null}
@@ -240,18 +318,34 @@ export function CoachIntro({ plan, exercise, cameraBuilt, linkedQuest, onStart, 
           );
         })}
         <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.sm }]}>
-          Every movement displays an honest capability level. Camera-checked exercises verify form and award bonus XP.
+          Every movement displays an honest capability level. Camera-checked exercises verify form
+          and award bonus XP.
         </Text>
         <Text style={[typography.caption, { color: colors.warning, marginTop: spacing.md }]}>
           {exercise.safety}
         </Text>
+      </ScrollView>
+
+      {/* Sticky Bottom Footer */}
+      <View
+        style={[
+          styles.stickyFooter,
+          {
+            backgroundColor: colors.surface,
+            paddingBottom: insets.bottom + spacing.xs,
+            paddingTop: spacing.sm,
+            paddingHorizontal: spacing.base,
+            borderTopColor: colors.border,
+            borderTopWidth: StyleSheet.hairlineWidth,
+          },
+        ]}
+      >
         <Button
           label={cameraBuilt ? 'Allow camera and start' : 'Start'}
           size="lg"
           onPress={onStart}
-          style={{ marginTop: spacing.lg }}
         />
-      </ScrollView>
+      </View>
 
       {/* Interactive Hands-Free Gesture Guide Bottom Sheet */}
       <GestureRemoteGuideModal
@@ -263,6 +357,9 @@ export function CoachIntro({ plan, exercise, cameraBuilt, linkedQuest, onStart, 
 }
 
 const styles = StyleSheet.create({
+  stickyFooter: {
+    width: '100%',
+  },
   capBadge: {
     borderRadius: 8,
     paddingHorizontal: 8,
@@ -295,7 +392,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
-  round: { alignItems: 'center', borderRadius: 22, height: 44, justifyContent: 'center', width: 44 },
+  round: {
+    alignItems: 'center',
+    borderRadius: 22,
+    height: 44,
+    justifyContent: 'center',
+    width: 44,
+  },
   row: { alignItems: 'center', flexDirection: 'row' },
   tipIconBox: {
     alignItems: 'center',

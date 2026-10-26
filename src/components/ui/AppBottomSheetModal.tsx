@@ -21,7 +21,6 @@ import Animated, {
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -31,8 +30,8 @@ import FrostedView from './FrostedView';
 import { PressableScale } from './PressableScale';
 import { SquircleSurface } from './SquircleSurface';
 
-const SWIPE_CLOSE_THRESHOLD = 64;
-const SWIPE_VELOCITY_THRESHOLD = 600;
+const SWIPE_CLOSE_THRESHOLD = 50;
+const SWIPE_VELOCITY_THRESHOLD = 400;
 const SHEET_RADIUS = 30;
 // iOS sheet curves: a fast start that settles softly, no overshoot.
 const OPEN = { duration: 340, easing: Easing.bezier(0.2, 0.9, 0.25, 1) };
@@ -113,43 +112,66 @@ export function AppBottomSheetModal({
     }
   }, [visible, reduceMotion, screenHeight, translateY]);
 
-  const SPRING_CONFIG = { damping: 24, stiffness: 260 };
-
-  const makePan = (activeOffsetY: [number, number], failOffsetY: [number, number], enabled: boolean) =>
-    Gesture.Pan()
-      .activeOffsetY(activeOffsetY)
-      .failOffsetY(failOffsetY)
-      .failOffsetX([-24, 24])
-      .enabled(enabled)
-      .shouldCancelWhenOutside(false)
-      .onUpdate((e) => {
-        // Rubber-band upward, natural drag downward
-        translateY.value = e.translationY > 0 ? e.translationY : e.translationY * 0.15;
-      })
-      .onEnd((e) => {
-        if (e.translationY > SWIPE_CLOSE_THRESHOLD || e.velocityY > SWIPE_VELOCITY_THRESHOLD) {
-          runOnJS(startCloseAnimation)();
-        } else {
-          translateY.value = reduceMotion ? withTiming(0, SETTLE) : withSpring(0, SPRING_CONFIG);
-        }
-      });
-
-  // Body can drag down to dismiss whenever it is at top of scroll offset (!scrolled)
-  const bodyPan = makePan([10, 1000], [-15, 0], !scrolled);
-  // Header can always drag down to dismiss
-  const headerPan = makePan([5, 1000], [-15, 0], true);
+  const dragPan = Gesture.Pan()
+    .activeOffsetY([6, 1000])
+    .failOffsetY([-20, 0])
+    .failOffsetX([-45, 45])
+    .onUpdate((e) => {
+      'worklet';
+      // Rubber-band upward, natural drag downward
+      translateY.value = e.translationY > 0 ? e.translationY : e.translationY * 0.15;
+    })
+    .onEnd((e) => {
+      'worklet';
+      if (e.translationY > SWIPE_CLOSE_THRESHOLD || e.velocityY > SWIPE_VELOCITY_THRESHOLD) {
+        translateY.value = withTiming(
+          sheetHeight.value + 40,
+          reduceMotion ? { duration: 0 } : CLOSE,
+          (finished) => {
+            if (finished) runOnJS(onClose)();
+          },
+        );
+      } else {
+        translateY.value = withTiming(0, SETTLE);
+      }
+    });
 
   const sheetAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],
   }));
 
   const backdropAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(translateY.value, [0, Math.max(1, sheetHeight.value)], [1, 0], 'clamp'),
+    opacity: interpolate(translateY.value, [0, Math.max(sheetHeight.value, 1)], [1, 0], 'clamp'),
   }));
 
   if (!visible) return null;
 
   const bottomPad = Math.max(insets.bottom, 12) + 8;
+
+  const renderBody = () => (
+    <ScrollView
+      style={styles.body}
+      contentContainerStyle={[
+        footer ? null : { paddingBottom: bottomPad },
+        contentContainerStyle,
+      ]}
+      scrollEnabled={bodyScrolls}
+      nestedScrollEnabled
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+      overScrollMode="never"
+      bounces={false}
+      scrollEventThrottle={32}
+      onScroll={(e) => {
+        const next = e.nativeEvent.contentOffset.y > 2;
+        if (next !== scrolled) setScrolled(next);
+      }}
+      onLayout={(e) => setBodyViewportH(Math.round(e.nativeEvent.layout.height))}
+      onContentSizeChange={(_w, h) => setBodyContentH(Math.round(h))}
+    >
+      {children}
+    </ScrollView>
+  );
 
   return (
     <Modal
@@ -164,11 +186,11 @@ export function AppBottomSheetModal({
         <Animated.View
           style={[
             StyleSheet.absoluteFill,
-            { backgroundColor: colors.scrim },
+            { backgroundColor: 'rgba(10, 10, 10, 0.51)' },
             backdropAnimatedStyle,
           ]}
         >
-          <FrostedView style={StyleSheet.absoluteFill} />
+          <FrostedView style={StyleSheet.absoluteFill} pointerEvents="none" />
 
           <Pressable
             style={StyleSheet.absoluteFill}
@@ -184,32 +206,32 @@ export function AppBottomSheetModal({
           style={styles.keyboardAvoid}
           pointerEvents="box-none"
         >
-          <GestureDetector gesture={bodyPan}>
-            <Animated.View
-              accessibilityViewIsModal
-              onLayout={(e) => {
-                sheetHeight.value = e.nativeEvent.layout.height;
-              }}
-              style={[styles.sheet, { maxHeight }, sheetAnimatedStyle]}
-            >
-              <SquircleSurface
-                fill={colors.surface}
-                radius={SHEET_RADIUS}
-                style={styles.surfaceBleed}
-                pointerEvents="none"
-              />
+          <Animated.View
+            accessibilityViewIsModal
+            onLayout={(e) => {
+              sheetHeight.value = e.nativeEvent.layout.height;
+            }}
+            style={[styles.sheet, { maxHeight }, sheetAnimatedStyle]}
+          >
+            <SquircleSurface
+              fill={colors.surface}
+              radius={SHEET_RADIUS}
+              style={styles.surfaceBleed}
+              pointerEvents="none"
+            />
 
-              <GestureDetector gesture={headerPan}>
-                <View style={styles.header}>
+            <View style={styles.header}>
+              <GestureDetector gesture={dragPan}>
+                <View style={styles.headerDragArea}>
                   {showHandle ? (
-                    <View style={styles.handleContainer}>
+                    <View style={styles.handleContainer} hitSlop={{ top: 12, bottom: 12, left: 30, right: 30 }}>
                       <View style={[styles.handlePill, { backgroundColor: colors.text.muted }]} />
                     </View>
                   ) : (
                     <View style={styles.handleSpacer} />
                   )}
 
-                  {(Boolean(title) || showCloseButton || Boolean(headerRight)) && (
+                  {(Boolean(title) || Boolean(eyebrow) || Boolean(subtitle)) && (
                     <View style={styles.headerRow}>
                       <View style={styles.titleColumn}>
                         {eyebrow ? (
@@ -247,76 +269,68 @@ export function AppBottomSheetModal({
                           </Text>
                         ) : null}
                       </View>
-
-                      <View style={styles.headerActions}>
-                        {headerRight}
-                        {showCloseButton && (
-                          <PressableScale
-                            onPress={startCloseAnimation}
-                            hitSlop={8}
-                            scaleTo={0.92}
-                            accessibilityRole="button"
-                            accessibilityLabel="Close"
-                          >
-                            <SquircleSurface
-                              shape="circle"
-                              fill={colors.surface2}
-                              style={styles.closeButton}
-                            >
-                              <Ionicons name="close" size={18} color={colors.text.secondary} />
-                            </SquircleSurface>
-                          </PressableScale>
-                        )}
-                      </View>
+                      {(showCloseButton || Boolean(headerRight)) && (
+                        <View style={styles.headerActionsPlaceholder} />
+                      )}
                     </View>
                   )}
-                  {scrolled ? (
-                    <View style={[styles.divider, { backgroundColor: colors.borderStrong }]} />
-                  ) : null}
                 </View>
               </GestureDetector>
 
-              <ScrollView
-                style={styles.body}
-                contentContainerStyle={[
-                  footer ? null : { paddingBottom: bottomPad },
-                  contentContainerStyle,
-                ]}
-                scrollEnabled={bodyScrolls}
-                nestedScrollEnabled
-                keyboardShouldPersistTaps="handled"
-                showsVerticalScrollIndicator={false}
-                overScrollMode="never"
-                bounces={false}
-                scrollEventThrottle={32}
-                onScroll={(e) => {
-                  const next = e.nativeEvent.contentOffset.y > 2;
-                  if (next !== scrolled) setScrolled(next);
-                }}
-                onLayout={(e) => setBodyViewportH(Math.round(e.nativeEvent.layout.height))}
-                onContentSizeChange={(_w, h) => setBodyContentH(Math.round(h))}
-              >
-                {children}
-              </ScrollView>
-
-              {footer ? (
-                <View
-                  style={[
-                    styles.footer,
-                    { paddingBottom: bottomPad },
-                    bodyScrolls
-                      ? {
-                          borderTopColor: colors.borderStrong,
-                          borderTopWidth: StyleSheet.hairlineWidth,
-                        }
-                      : null,
-                  ]}
-                >
-                  {footer}
+              {(showCloseButton || Boolean(headerRight)) && (
+                <View style={styles.headerActionsAbsolute} pointerEvents="box-none">
+                  {headerRight}
+                  {showCloseButton && (
+                    <PressableScale
+                      onPress={startCloseAnimation}
+                      hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
+                      scaleTo={0.92}
+                      accessibilityRole="button"
+                      accessibilityLabel="Close"
+                    >
+                      <SquircleSurface
+                        shape="circle"
+                        fill={colors.surface2}
+                        style={styles.closeButton}
+                        pointerEvents="none"
+                      >
+                        <Ionicons name="close" size={18} color={colors.text.secondary} />
+                      </SquircleSurface>
+                    </PressableScale>
+                  )}
                 </View>
+              )}
+
+              {scrolled ? (
+                <View style={[styles.divider, { backgroundColor: colors.borderStrong }]} />
               ) : null}
-            </Animated.View>
-          </GestureDetector>
+            </View>
+
+            {bodyScrolls ? (
+              renderBody()
+            ) : (
+              <GestureDetector gesture={dragPan}>
+                {renderBody()}
+              </GestureDetector>
+            )}
+
+            {footer ? (
+              <View
+                style={[
+                  styles.footer,
+                  { paddingBottom: bottomPad },
+                  bodyScrolls
+                    ? {
+                        borderTopColor: colors.borderStrong,
+                        borderTopWidth: StyleSheet.hairlineWidth,
+                      }
+                    : null,
+                ]}
+              >
+                {footer}
+              </View>
+            ) : null}
+          </Animated.View>
         </KeyboardAvoidingView>
       </GestureHandlerRootView>
     </Modal>
@@ -358,10 +372,14 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
+    position: 'relative',
+  },
+  headerDragArea: {
+    width: '100%',
   },
   handleContainer: {
     alignItems: 'center',
-    height: 22,
+    height: 28,
     justifyContent: 'center',
     width: '100%',
   },
@@ -379,7 +397,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingBottom: 12,
-    paddingTop: 6,
+    paddingTop: 4,
   },
   titleColumn: {
     flex: 1,
@@ -388,10 +406,17 @@ const styles = StyleSheet.create({
   titleText: {
     letterSpacing: -0.2,
   },
-  headerActions: {
+  headerActionsAbsolute: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: 8,
+    position: 'absolute',
+    right: 20,
+    top: 26,
+    zIndex: 30,
+  },
+  headerActionsPlaceholder: {
+    width: 38,
   },
   closeButton: {
     alignItems: 'center',

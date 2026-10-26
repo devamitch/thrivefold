@@ -1,4 +1,4 @@
-import { makeMutable } from 'react-native-reanimated';
+import { Easing, makeMutable } from 'react-native-reanimated';
 
 /**
  * One animated value (0 closed, 1 open) shared by the panel, the screen that slides aside,
@@ -23,10 +23,9 @@ export const DRAWER_SCENE_RADIUS = 28;
 /** Width of the left strip that starts an open-swipe on tab roots. */
 export const DRAWER_EDGE_WIDTH = 36;
 
-/** One spring for button, swipe release and store changes. Clamped, so nothing bounces past the edge. */
-export const DRAWER_SPRING = {
-  damping: 28,
-  stiffness: 260,
-  mass: 0.9,
-  overshootClamping: true,
+/** Smooth predictable timing curve for drawer transitions — no spring oscillations. */
+export const DRAWER_TIMING = {
+  duration: 260,
+  easing: Easing.bezier(0.2, 0.9, 0.25, 1),
 } as const;
+

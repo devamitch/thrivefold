@@ -20,7 +20,7 @@ import Animated, {
   useAnimatedReaction,
   useAnimatedStyle,
   useReducedMotion,
-  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 
 import { useRootStore } from '../../stores/useRootStore';
@@ -30,7 +30,7 @@ import {
   DRAWER_EDGE_WIDTH,
   DRAWER_SCENE_RADIUS,
   DRAWER_SCENE_SCALE,
-  DRAWER_SPRING,
+  DRAWER_TIMING,
   drawerProgress,
   drawerTarget,
   drawerWidthFor,
@@ -78,7 +78,7 @@ export function DrawerSceneWrapper({
     const target = drawerOpen ? 1 : 0;
     if (drawerTarget.value === target) return;
     drawerTarget.value = target;
-    progress.value = reduceMotion ? target : withSpring(target, DRAWER_SPRING);
+    progress.value = reduceMotion ? target : withTiming(target, DRAWER_TIMING);
   }, [drawerOpen, reduceMotion, progress]);
 
   // Android back closes the drawer first.
@@ -131,7 +131,7 @@ export function DrawerSceneWrapper({
           ? open
             ? 1
             : 0
-          : withSpring(open ? 1 : 0, { ...DRAWER_SPRING, velocity: vx / slide });
+          : withTiming(open ? 1 : 0, DRAWER_TIMING);
 
         if (open !== drawerOpen) {
           runOnJS(tick)();

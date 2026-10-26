@@ -17,10 +17,10 @@ import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
+  Easing,
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -66,7 +66,10 @@ export function MindfulNotificationBanner() {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       } catch {}
-      translateY.value = withSpring(0, { damping: 24, stiffness: 300, overshootClamping: true });
+      translateY.value = withTiming(0, {
+        duration: 240,
+        easing: Easing.bezier(0.2, 0.9, 0.25, 1),
+      });
       opacity.value = withTiming(1, { duration: 180 });
 
       // Auto dismiss after 4.5s
@@ -99,7 +102,10 @@ export function MindfulNotificationBanner() {
           runOnJS(handleDismiss)();
         });
       } else {
-        translateY.value = withSpring(0, { damping: 24, stiffness: 350, overshootClamping: true });
+        translateY.value = withTiming(0, {
+          duration: 180,
+          easing: Easing.bezier(0.2, 0.9, 0.25, 1),
+        });
       }
     });
 
