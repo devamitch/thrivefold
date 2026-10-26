@@ -6,7 +6,6 @@ only point here. Skills with step-by-step methods live in `.agents/skills/*/SKIL
 (`.claude/skills` is a symlink to the same folder).
 
 Authoritative product spec: `../../thrivefold_ultimate_master_build_prompt_v2.md`.
-Verified status: `docs/requirements/TRACEABILITY.md` (top section).
 
 ## 1. Product in one paragraph
 
@@ -37,17 +36,17 @@ live yet. It is not a medical device and never diagnoses.
 
 ## 3. Map
 
-| Area | Path |
-| --- | --- |
+| Area                 | Path                                                                                                                                                                              |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Routes (Expo Router) | `src/app/` — `(auth)/sign-in`, `(onboarding)/*` (4 steps + optional prefs), `(app)/(tabs)` Home · Today · [Thrive orb → check-in] · Progress · You, pushed screens under `(app)/` |
-| Root resolver | `src/app/index.tsx` (signed out → sign-in, not onboarded → resume step, else home) |
-| Store | `src/stores/useRootStore.ts`, slices in `src/stores/slices/`, MMKV in `persistStorage.ts` |
-| Theme | `src/theme/colors.ts` (palette recipe), `typography.ts` (Geist), `tokens.ts`, `useTheme.ts` |
-| Components | `src/components/ui/*`, dock `navigation/CustomTabBar.tsx`, onboarding `onboarding/OnboardingScaffold.tsx` |
-| Policy engine | `src/domain/policy/engine.ts`, `ageAssurance.ts` (pure, tested) |
-| Privacy | `src/services/privacy/localData.ts` (export / erase) |
-| Backend | `supabase/migrations/*` (not deployed; needs its own project) |
-| Dev tools | `src/app/(app)/dev.tsx` (development builds only; linked from You) |
+| Root resolver        | `src/app/index.tsx` (signed out → sign-in, not onboarded → resume step, else home)                                                                                                |
+| Store                | `src/stores/useRootStore.ts`, slices in `src/stores/slices/`, MMKV in `persistStorage.ts`                                                                                         |
+| Theme                | `src/theme/colors.ts` (palette recipe), `typography.ts` (Geist), `tokens.ts`, `useTheme.ts`                                                                                       |
+| Components           | `src/components/ui/*`, dock `navigation/CustomTabBar.tsx`, onboarding `onboarding/OnboardingScaffold.tsx`                                                                         |
+| Policy engine        | `src/domain/policy/engine.ts`, `ageAssurance.ts` (pure, tested)                                                                                                                   |
+| Privacy              | `src/services/privacy/localData.ts` (export / erase)                                                                                                                              |
+| Backend              | `supabase/migrations/*` (not deployed; needs its own project)                                                                                                                     |
+| Dev tools            | `src/app/(app)/dev.tsx` (development builds only; linked from You)                                                                                                                |
 
 ## 4. Commands
 
