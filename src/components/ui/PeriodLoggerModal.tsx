@@ -44,6 +44,11 @@ const COMMON_SYMPTOMS = [
   'Acne Flare-up',
 ];
 
+/**
+ * Period logger: log when bleeding starts on a date with flow intensity,
+ * symptoms, pain level and notes. No end date — the cycle engine derives
+ * period duration from the gap between consecutive start-date logs.
+ */
 export function PeriodLoggerModal({
   visible,
   existingRecord,
@@ -65,12 +70,6 @@ export function PeriodLoggerModal({
   const [startDate, setStartDate] = useState(
     existingRecord ? existingRecord.startDate : effectiveInitialDate
   );
-  const [endDate, setEndDate] = useState<string | null>(
-    existingRecord ? (existingRecord.endDate ?? null) : null
-  );
-  const [isOngoing, setIsOngoing] = useState(
-    existingRecord ? !!existingRecord.isOngoing : false
-  );
   const [flowIntensity, setFlowIntensity] = useState<FlowIntensity>(
     existingRecord?.flowIntensity || 'medium'
   );
@@ -81,9 +80,10 @@ export function PeriodLoggerModal({
     existingRecord?.symptoms || []
   );
   const [notes, setNotes] = useState(existingRecord?.notes || '');
+  const [mood, setMood] = useState<number>(existingRecord?.mood ?? 5);
+  const [energy, setEnergy] = useState<number>(existingRecord?.energy ?? 5);
 
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
-  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
 
   const toggleSymptom = (sym: string) => {
     try {
@@ -98,26 +98,8 @@ export function PeriodLoggerModal({
     if (!startDate) {
       showToast({
         type: 'warning',
-        title: 'Start Date Required',
-        message: 'Please choose when bleeding commenced.',
-      });
-      return;
-    }
-
-    if (!isOngoing && !endDate) {
-      showToast({
-        type: 'warning',
-        title: 'End Date Required',
-        message: 'Please provide an end date or mark bleeding as ongoing today.',
-      });
-      return;
-    }
-
-    if (!isOngoing && endDate && endDate < startDate) {
-      showToast({
-        type: 'error',
-        title: 'Invalid Date Range',
-        message: 'End date cannot be prior to start date.',
+        title: 'Date Required',
+        message: 'Please choose when bleeding started.',
       });
       return;
     }
@@ -125,11 +107,14 @@ export function PeriodLoggerModal({
     const payload: Omit<PeriodLogRecord, 'id' | 'loggedAt'> & { id?: string } = {
       ...(existingRecord?.id ? { id: existingRecord.id } : {}),
       startDate,
-      endDate: isOngoing ? undefined : (endDate || undefined),
-      isOngoing,
+      // No endDate — the cycle engine derives period length from the gap
+      // between consecutive period start dates.
+      isOngoing: true,
       flowIntensity,
       painLevel,
       symptoms: selectedSymptoms,
+      mood,
+      energy,
       notes: notes.trim() ? notes.trim() : undefined,
     };
 
@@ -141,9 +126,7 @@ export function PeriodLoggerModal({
     showToast({
       type: 'success',
       title: existingRecord ? 'Period Updated' : 'Period Logged',
-      message: isOngoing
-        ? 'Active period recorded. Cycle engine updated.'
-        : `Recorded ${startDate} to ${endDate}.`,
+      message: `Recorded for ${new Date(startDate).toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}.`,
     });
     onSaved?.();
     onClose();
@@ -189,7 +172,7 @@ export function PeriodLoggerModal({
           </SheetFooterRow>
         }
       >
-        {/* Start Date Field */}
+        {/* Period Start Date */}
         <View style={{ marginTop: spacing.md }}>
           <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 6 }]}>
             PERIOD START DATE *
@@ -215,7 +198,7 @@ export function PeriodLoggerModal({
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Ionicons name="calendar" size={18} color={colors.primary} style={{ marginRight: 10 }} />
                 <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                  {startDate || 'Select start date'}
+                  {startDate || 'Select date'}
                 </Text>
               </View>
               <SquircleSurface
@@ -229,89 +212,6 @@ export function PeriodLoggerModal({
             </SquircleSurface>
           </PressableScale>
         </View>
-
-        {/* Ongoing Bleeding Switch */}
-        <PressableScale
-          onPress={() => {
-            try {
-              Haptics.selectionAsync();
-            } catch {}
-            setIsOngoing(!isOngoing);
-          }}
-          scaleTo={0.98}
-          style={{ marginTop: spacing.md }}
-        >
-          <SquircleSurface
-            radius={16}
-            smoothing={1}
-            fill={colors.surface1}
-            strokeWidth={1}
-            style={styles.ongoingCard}
-          >
-            <View style={{ flex: 1, paddingRight: 12 }}>
-              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                Bleeding is ongoing today
-              </Text>
-              <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                {isOngoing
-                  ? 'Continuous active flow. An end date can be added once bleeding finishes.'
-                  : 'Bleeding has concluded. Enter the end date below.'}
-              </Text>
-            </View>
-            <SquircleSurface
-              radius={7}
-              smoothing={1}
-              fill={isOngoing ? colors.primary : 'transparent'}
-              strokeWidth={1.5}
-              style={styles.toggleBox}
-            >
-              {isOngoing && <Ionicons name="checkmark" size={14} color={colors.onPrimary} />}
-            </SquircleSurface>
-          </SquircleSurface>
-        </PressableScale>
-
-        {/* End Date Field (if not ongoing) */}
-        {!isOngoing && (
-          <View style={{ marginTop: spacing.md }}>
-            <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 6 }]}>
-              PERIOD END DATE *
-            </Text>
-            <PressableScale
-              onPress={() => {
-                try {
-                  Haptics.selectionAsync();
-                } catch {}
-                setShowEndDatePicker(true);
-              }}
-              scaleTo={0.98}
-              accessibilityRole="button"
-              accessibilityLabel={`End date: ${endDate || startDate}. Tap to select from calendar.`}
-            >
-              <SquircleSurface
-                radius={14}
-                smoothing={1}
-                fill={colors.surface1}
-                strokeWidth={1}
-                style={styles.datePickerTrigger}
-              >
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Ionicons name="calendar-outline" size={18} color={colors.primary} style={{ marginRight: 10 }} />
-                  <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                    {endDate || startDate || 'Select end date'}
-                  </Text>
-                </View>
-                <SquircleSurface
-                  radius={8}
-                  smoothing={1}
-                  fill={colors.primary + '18'}
-                  style={styles.datePickerPill}
-                >
-                  <Text style={[typography.captionBold, { color: colors.primary }]}>Select Date</Text>
-                </SquircleSurface>
-              </SquircleSurface>
-            </PressableScale>
-          </View>
-        )}
 
         {/* Flow Intensity Selection */}
         <View style={{ marginTop: spacing.lg }}>
@@ -423,6 +323,87 @@ export function PeriodLoggerModal({
           </View>
         </View>
 
+        {/* Mood & Energy (quick selectors) */}
+        <View style={{ marginTop: spacing.lg }}>
+          <View style={styles.rowBetween}>
+            <Text style={[typography.captionBold, { color: colors.text.muted }]}>MOOD</Text>
+            <Text style={[typography.captionBold, { color: colors.primary }]}>{mood}/10</Text>
+          </View>
+          <View style={styles.painStrip}>
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => {
+              const isSelected = mood === num;
+              return (
+                <PressableScale
+                  key={num}
+                  onPress={() => {
+                    try { Haptics.selectionAsync(); } catch {}
+                    setMood(num);
+                  }}
+                  scaleTo={0.92}
+                  style={styles.painBtnScale}
+                >
+                  <SquircleSurface
+                    radius={10}
+                    smoothing={1}
+                    fill={isSelected ? colors.primary : colors.surface1}
+                    strokeWidth={1}
+                    style={styles.painBtn}
+                  >
+                    <Text
+                      style={[
+                        typography.captionBold,
+                        { color: isSelected ? colors.onPrimary : colors.text.primary, fontSize: 12 },
+                      ]}
+                    >
+                      {num}
+                    </Text>
+                  </SquircleSurface>
+                </PressableScale>
+              );
+            })}
+          </View>
+        </View>
+
+        <View style={{ marginTop: spacing.md }}>
+          <View style={styles.rowBetween}>
+            <Text style={[typography.captionBold, { color: colors.text.muted }]}>ENERGY</Text>
+            <Text style={[typography.captionBold, { color: colors.primary }]}>{energy}/10</Text>
+          </View>
+          <View style={styles.painStrip}>
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => {
+              const isSelected = energy === num;
+              return (
+                <PressableScale
+                  key={num}
+                  onPress={() => {
+                    try { Haptics.selectionAsync(); } catch {}
+                    setEnergy(num);
+                  }}
+                  scaleTo={0.92}
+                  style={styles.painBtnScale}
+                >
+                  <SquircleSurface
+                    radius={10}
+                    smoothing={1}
+                    fill={isSelected ? colors.primary : colors.surface1}
+                    strokeWidth={1}
+                    style={styles.painBtn}
+                  >
+                    <Text
+                      style={[
+                        typography.captionBold,
+                        { color: isSelected ? colors.onPrimary : colors.text.primary, fontSize: 12 },
+                      ]}
+                    >
+                      {num}
+                    </Text>
+                  </SquircleSurface>
+                </PressableScale>
+              );
+            })}
+          </View>
+        </View>
+
         {/* Physical Symptoms */}
         <View style={{ marginTop: spacing.lg }}>
           <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 8 }]}>
@@ -478,7 +459,7 @@ export function PeriodLoggerModal({
 
       </AppBottomSheetModal>
 
-      {/* DatePicker Modals */}
+      {/* DatePicker Modal */}
       <DatePickerModal
         visible={showStartDatePicker}
         value={startDate}
@@ -488,18 +469,6 @@ export function PeriodLoggerModal({
           setShowStartDatePicker(false);
         }}
         onClose={() => setShowStartDatePicker(false)}
-      />
-
-      <DatePickerModal
-        visible={showEndDatePicker}
-        value={endDate || startDate}
-        title="Select Period End Date"
-        minDate={startDate}
-        onChange={(val) => {
-          setEndDate(val);
-          setShowEndDatePicker(false);
-        }}
-        onClose={() => setShowEndDatePicker(false)}
       />
     </>
   );
@@ -516,17 +485,6 @@ const styles = StyleSheet.create({
   datePickerPill: {
     paddingHorizontal: 10,
     paddingVertical: 5,
-  },
-  ongoingCard: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    padding: 14,
-  },
-  toggleBox: {
-    alignItems: 'center',
-    height: 22,
-    justifyContent: 'center',
-    width: 22,
   },
   flowGrid: {
     flexDirection: 'row',
