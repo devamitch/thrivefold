@@ -85,5 +85,19 @@
   - `pnpm test` -> PASS (39 suites, 278 tests passed).
   - `pnpm lint` -> PASS (0 errors, 0 warnings).
 
+---
+
+## Milestone 6: Tools Grid Live Activity Indicators & Home Setup Focus Synchronization
+- **Status**: IMPLEMENTED & AUTOMATED TESTED
+- **Commits**: `87460d7` (`feat(home): add live activity indicators and card borders to tools grid`)
+- **Components Implemented**:
+  - `src/components/home/ToolsGrid.tsx`: Enhanced 2-column home tools grid with real-time `hasActivity` status dots (workouts logged this week, calories logged today, sleep recorded today, calendar items planned, journal notes written), `chevron-forward` touch affordance icons, and crisp `colors.border` squircle card surfaces.
+  - `src/app/(app)/(tabs)/index.tsx`: Upgraded setup rewards auto-claim with `useFocusEffect` to continuously synchronize and dismiss the open setup card immediately when navigating back from Personalize.
+  - `src/app/(app)/personalize.tsx`: Added inline `DIETS` eating preference selector and `REMINDERS` chips directly on the screen, enabling complete zero-state setup without requiring users to navigate into separate onboarding sub-screens.
+- **Verification**:
+  - `pnpm compile` -> PASS (0 errors, strict tsc).
+  - `pnpm test` -> PASS (39 suites, 278 tests passed).
+  - `pnpm lint` -> PASS (0 errors, 0 warnings).
+
 
 
