@@ -11,6 +11,8 @@ import * as Speech from 'expo-speech';
 import { poseModelVersion } from 'pose-landmarker';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { speakCoach } from '@/services/ai/coachVoiceService';
+
 import { formatLocalDate } from '@/domain/calendar/universalCalendarEngine';
 import { exerciseById, planById, type LoggedSet } from '@/domain/fitness/workouts';
 import {
@@ -46,8 +48,7 @@ export interface DoneSummary {
 /** Short spoken cues; never queued behind each other, so the voice stays in time. */
 export function say(text: string, voiceOn: boolean) {
   if (!voiceOn) return;
-  Speech.stop();
-  Speech.speak(text, { rate: 1.05, pitch: 1.0 });
+  void speakCoach(text, voiceOn);
 }
 
 export const clock = (s: number) =>
