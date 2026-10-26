@@ -665,20 +665,13 @@ export default function CoachScreen() {
             onPress={() => setFullTracking((v) => !v)}
             size={44}
           />
-          <PressableScale
-            onPress={() => setShowGestureModal(true)}
-            accessibilityRole="button"
+          <GlassIconButton
+            path={GlassMarks.info}
             accessibilityLabel="Hands-free gesture & voice controls guide"
-            style={[
-              styles.gestureBtn,
-              {
-                backgroundColor: 'rgba(16, 20, 26, 0.76)',
-                borderColor: 'rgba(255, 255, 255, 0.16)',
-              },
-            ]}
-          >
-            <Ionicons name="mic-outline" size={20} color={colors.primary} />
-          </PressableScale>
+            tone="neutral"
+            onPress={() => setShowGestureModal(true)}
+            size={44}
+          />
         </View>
       ) : null}
 
