@@ -72,7 +72,7 @@ export function FrostedView({
   const hasAndroidTarget = Boolean(target?.current);
   const blurs = Platform.OS === 'ios' || (ANDROID_BLUR && hasAndroidTarget);
   // With a real blur behind it the tint can be lighter; without one it carries the surface translucently.
-  // CRITICAL: tone='dark' must NEVER return high alpha or 1.0, otherwise modal backdrops become solid walls!
+  // CRITICAL: Never return opaque alpha 1.0 so surfaces remain translucent and frosted.
   const alpha =
     tintOpacity ??
     (blurs
@@ -82,10 +82,10 @@ export function FrostedView({
           : 0.55
         : tone === 'dark'
           ? 0.48
-          : 0.68
+          : 0.65
       : tone === 'dark'
-        ? 0.52
-        : 0.82);
+        ? 0.48
+        : 0.72);
 
   return (
     <View style={[styles.clip, style]} pointerEvents={pointerEvents}>

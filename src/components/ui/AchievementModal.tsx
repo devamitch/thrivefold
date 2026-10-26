@@ -38,7 +38,7 @@ export function AchievementModal() {
   const hideAchievementModal = useRootStore((s) => s.hideAchievementModal);
   const reduceMotion = useReducedMotion();
   const shown = useSharedValue(0);
-  const backdropShown = useSharedValue(1);
+  const backdropShown = useSharedValue(0);
 
   useEffect(() => {
     if (modal) {
@@ -48,8 +48,8 @@ export function AchievementModal() {
       shown.value = 0;
       shown.value = withTiming(1, reduceMotion ? { duration: 0 } : IN_ANIMATION);
 
-      backdropShown.value = 1;
-      backdropShown.value = withTiming(0, reduceMotion ? { duration: 0 } : IN_ANIMATION);
+      backdropShown.value = 0;
+      backdropShown.value = withTiming(1, reduceMotion ? { duration: 0 } : IN_ANIMATION);
     }
   }, [modal, reduceMotion, shown, backdropShown]);
 

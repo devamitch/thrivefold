@@ -133,6 +133,19 @@ export default function WorkoutSessionScreen() {
         .then(() => audit('sync_write', 'health_connect', `Workout "${plan.title}" written`))
         .catch(() => audit('sync_write', 'health_connect', `Workout "${plan.title}" could not be written`));
     }
+    const xpEarned = (reward.awarded ? reward.xp : 0) + (quest ? quest.xp : 0);
+    const store = useRootStore.getState();
+    if (!store.achievementModal) {
+      store.showAchievementModal({
+        type: 'level_clear',
+        title: 'Workout Completed',
+        subtitle: `${loggedSets} sets logged${xpEarned > 0 ? ` · +${xpEarned} XP` : ''}`,
+        details: `Great dedication! You completed ${plan.title}.${quest ? ` Quest done: ${quest.title}.` : ''} Use the camera coach next time for 10x XP.`,
+        level: store.level,
+        diamondsEarned: xpEarned > 0 ? 1 : 0,
+        xpEarned,
+      });
+    }
     router.back();
   };
 

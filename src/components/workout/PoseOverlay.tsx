@@ -189,20 +189,14 @@ export const PoseOverlay = memo(function PoseOverlay({
       return out;
     };
 
-    // Hands tracking: instantaneous 60fps projection without lag or sticking
-    const h = feed.hands?.value ?? [];
-    handsShown.value = h.length ? toStage(h) : [];
-
-    // Face mesh tracking: instantaneous 60fps projection without lag or sticking
-    const f = feed.face?.value ?? [];
-    faceShown.value = f.length ? toStage(f) : [];
-
     // No detection: smoothly fade out guide / skeleton
     if (p.length < N * 3) {
       if (present.value > 0) {
         present.value = Math.max(0, present.value - 0.12);
       }
       fx.value = [];
+      if (handsShown.value.length > 0) handsShown.value = [];
+      if (faceShown.value.length > 0) faceShown.value = [];
       return;
     }
 
@@ -211,10 +205,32 @@ export const PoseOverlay = memo(function PoseOverlay({
     const captured = feed.capturedAt?.value ?? 0;
     const t = captured > 0 && now - captured < 1000 ? captured : now - 40;
     const isNewDetection = seq !== lastSeq.value;
+    const isStale = captured > 0 && now - captured > 280;
 
-    // New detection: update One Euro filter
+    if (isStale) {
+      if (handsShown.value.length > 0) handsShown.value = [];
+      if (faceShown.value.length > 0) faceShown.value = [];
+    }
+
+    // New detection: update One Euro filter and hands/face projection
     if (isNewDetection) {
       lastSeq.value = seq;
+
+      // Hands tracking: instantaneous projection on detection arrival
+      const h = feed.hands?.value ?? [];
+      if (h.length > 0 && present.value > 0 && !isStale) {
+        handsShown.value = toStage(h);
+      } else if (handsShown.value.length > 0) {
+        handsShown.value = [];
+      }
+
+      // Face tracking: instantaneous projection on detection arrival
+      const f = feed.face?.value ?? [];
+      if (f.length > 0 && present.value > 0 && !isStale) {
+        faceShown.value = toStage(f);
+      } else if (faceShown.value.length > 0) {
+        faceShown.value = [];
+      }
       const fresh = fx.value.length !== N * 2 || reduceMotion;
       const dtMs = fresh ? 50 : Math.max(16, Math.min(250, t - detAt.value));
       const dtS = dtMs / 1000;
@@ -374,14 +390,52 @@ export const PoseOverlay = memo(function PoseOverlay({
     return path;
   });
 
-  // Dense face mesh pips
-  const faceMesh = useDerivedValue(() => {
+  // Refined facial tracking contours (brows, eyes, lips, jawline)
+  const faceContours = useDerivedValue(() => {
     const path = Skia.Path.Make();
     const fp = faceShown.value;
-    if (present.value <= 0 || fp.length === 0) return path;
-    for (let i = 0; i + 1 < fp.length; i += 2) {
-      path.addCircle(fp[i], fp[i + 1], 1.2);
-    }
+    if (present.value <= 0 || fp.length < 100) return path;
+
+    const connectLoop = (start: number, count: number, close: boolean) => {
+      'worklet';
+      if ((start + count) * 2 > fp.length) return;
+      path.moveTo(fp[start * 2], fp[start * 2 + 1]);
+      for (let i = 1; i < count; i++) {
+        const idx = (start + i) * 2;
+        path.lineTo(fp[idx], fp[idx + 1]);
+      }
+      if (close) {
+        path.lineTo(fp[start * 2], fp[start * 2 + 1]);
+      }
+    };
+
+    // Left eye (0..15, closed loop)
+    connectLoop(0, 16, true);
+    // Right eye (16..31, closed loop)
+    connectLoop(16, 16, true);
+    // Left brow (42..51)
+    connectLoop(42, 10, false);
+    // Right brow (52..61)
+    connectLoop(52, 10, false);
+    // Outer lips (62..81, closed loop)
+    connectLoop(62, 20, true);
+    // Face outline (82..117)
+    connectLoop(82, 36, false);
+
+    return path;
+  });
+
+  // Facial iris & feature pips
+  const facePips = useDerivedValue(() => {
+    const path = Skia.Path.Make();
+    const fp = faceShown.value;
+    if (present.value <= 0 || fp.length < 80) return path;
+    const lx = fp[32 * 2];
+    const ly = fp[32 * 2 + 1];
+    const rx = fp[37 * 2];
+    const ry = fp[37 * 2 + 1];
+    if (lx && ly) path.addCircle(lx, ly, 2.0);
+    if (rx && ry) path.addCircle(rx, ry, 2.0);
     return path;
   });
 
@@ -515,7 +569,7 @@ export const PoseOverlay = memo(function PoseOverlay({
   const handJoints = useDerivedValue(() => {
     const path = Skia.Path.Make();
     const hp = handsShown.value;
-    for (let i = 0; i + 1 < hp.length; i += 2) path.addCircle(hp[i], hp[i + 1], 1.6);
+    for (let i = 0; i + 1 < hp.length; i += 2) path.addCircle(hp[i], hp[i + 1], 2.0);
     return path;
   });
 
@@ -577,8 +631,17 @@ export const PoseOverlay = memo(function PoseOverlay({
       {/* Layer 6: Center alignment nose dot */}
       <Path path={nosePip} color="#FFFFFF" />
 
-      {/* Layer 7: Face mesh dense pips — warm terracotta accent */}
-      <Path path={faceMesh} color={colors.accentText} opacity={0.55} />
+      {/* Layer 7: Face tracking contours — authentic serene pista/sage accent */}
+      <Path
+        path={faceContours}
+        style="stroke"
+        strokeWidth={1.5}
+        strokeCap="round"
+        strokeJoin="round"
+        color="#8EB9A0"
+        opacity={0.8}
+      />
+      <Path path={facePips} color="#FFFFFF" opacity={0.95} />
 
       {/* Layer 8: High-contrast fault joint alerts */}
       <Path path={faultHalos} style="stroke" strokeWidth={2.0} color={colors.error} opacity={0.7} />
@@ -594,16 +657,25 @@ export const PoseOverlay = memo(function PoseOverlay({
       />
       <Path path={angleVertex} color={glow} />
 
-      {/* Layer 10: Hands kinetic lines & pips */}
+      {/* Layer 10: Hands kinetic lines & pips — serene pista laser */}
+      <Path
+        path={handLines}
+        style="stroke"
+        strokeWidth={3.0}
+        strokeCap="round"
+        strokeJoin="round"
+        color="#7DB58E"
+        opacity={0.45}
+      />
       <Path
         path={handLines}
         style="stroke"
         strokeWidth={1.5}
         strokeCap="round"
-        color={colors.primary}
-        opacity={0.65}
+        strokeJoin="round"
+        color="#FFFFFF"
       />
-      <Path path={handJoints} color={colors.callText} />
+      <Path path={handJoints} color="#FFFFFF" />
 
       {/* Corner mask for rounded display */}
       {cornerMask && maskColor ? <Path path={cornerMask} color={maskColor} /> : null}

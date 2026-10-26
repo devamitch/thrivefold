@@ -5,7 +5,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { Platform, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { AppHeader } from '../../../components/ui/AppHeader';
 import { Button } from '../../../components/ui/Button';
@@ -48,18 +48,27 @@ export default function MealLogScreen() {
   const results = useMemo(() => searchFoods(query).slice(0, query ? 20 : 12), [query]);
 
   const pick = async (camera: boolean) => {
-    const perm = camera ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) return;
-    const res = camera
-      ? await ImagePicker.launchCameraAsync({ quality: 0.6, allowsEditing: true, aspect: [4, 3] })
-      : await ImagePicker.launchImageLibraryAsync({ quality: 0.6, allowsEditing: true, aspect: [4, 3], mediaTypes: ['images'] });
-    if (res.canceled || !res.assets[0]) return;
-    // Keep the photo in the app's private folder, not the shared gallery.
-    const dir = `${FileSystem.documentDirectory}meals/`;
-    await FileSystem.makeDirectoryAsync(dir, { intermediates: true }).catch(() => undefined);
-    const dest = `${dir}${Date.now()}.jpg`;
-    await FileSystem.copyAsync({ from: res.assets[0].uri, to: dest });
-    setPhoto(dest);
+    try {
+      if (camera) {
+        const perm = await ImagePicker.requestCameraPermissionsAsync();
+        if (!perm.granted) return;
+      } else if (Platform.OS === 'ios') {
+        const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!perm.granted) return;
+      }
+      const res = camera
+        ? await ImagePicker.launchCameraAsync({ quality: 0.6, allowsEditing: true, aspect: [4, 3] })
+        : await ImagePicker.launchImageLibraryAsync({ quality: 0.6, allowsEditing: true, aspect: [4, 3], mediaTypes: ['images'] });
+      if (res.canceled || !res.assets[0]) return;
+      // Keep the photo in the app's private folder, not the shared gallery.
+      const dir = `${FileSystem.documentDirectory}meals/`;
+      await FileSystem.makeDirectoryAsync(dir, { intermediates: true }).catch(() => undefined);
+      const dest = `${dir}${Date.now()}.jpg`;
+      await FileSystem.copyAsync({ from: res.assets[0].uri, to: dest });
+      setPhoto(dest);
+    } catch {
+      // Safe fallback if photo selection was canceled or interrupted
+    }
   };
 
   const add = (foodId: string) =>

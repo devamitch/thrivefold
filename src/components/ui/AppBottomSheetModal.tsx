@@ -113,9 +113,9 @@ export function AppBottomSheetModal({
   }, [visible, reduceMotion, screenHeight, translateY]);
 
   const dragPan = Gesture.Pan()
-    .activeOffsetY([5, 1000])
+    .activeOffsetY([12, 1000])
     .failOffsetY([-15, 0])
-    .failOffsetX([-45, 45])
+    .failOffsetX([-35, 35])
     .shouldCancelWhenOutside(false)
     .onUpdate((e) => {
       'worklet';
@@ -135,20 +135,6 @@ export function AppBottomSheetModal({
       } else {
         translateY.value = withTiming(0, SETTLE);
       }
-    });
-
-  const closeTap = Gesture.Tap()
-    .maxDuration(300)
-    .onEnd(() => {
-      'worklet';
-      runOnJS(startCloseAnimation)();
-    });
-
-  const backdropTap = Gesture.Tap()
-    .maxDuration(300)
-    .onEnd(() => {
-      'worklet';
-      runOnJS(startCloseAnimation)();
     });
 
   const sheetAnimatedStyle = useAnimatedStyle(() => ({
@@ -200,21 +186,18 @@ export function AppBottomSheetModal({
       <GestureHandlerRootView style={styles.modalRoot}>
         <Animated.View
           style={[
-            StyleSheet.absoluteFill,
-            { backgroundColor: 'rgba(10, 10, 10, 0.48)' },
+            styles.backdrop,
             backdropAnimatedStyle,
           ]}
         >
-          <FrostedView tone="dark" tintOpacity={0.45} intensity={30} style={StyleSheet.absoluteFill} pointerEvents="none" />
+          <FrostedView tone="dark" tintOpacity={0.45} intensity={25} style={StyleSheet.absoluteFill} pointerEvents="none" />
 
-          <GestureDetector gesture={backdropTap}>
-            <Pressable
-              style={StyleSheet.absoluteFill}
-              onPress={startCloseAnimation}
-              accessibilityRole="button"
-              accessibilityLabel="Close sheet"
-            />
-          </GestureDetector>
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={startCloseAnimation}
+            accessibilityRole="button"
+            accessibilityLabel="Close sheet"
+          />
         </Animated.View>
 
         <KeyboardAvoidingView
@@ -248,7 +231,7 @@ export function AppBottomSheetModal({
                     <View style={styles.handleSpacer} />
                   )}
 
-                  {(Boolean(title) || Boolean(eyebrow) || Boolean(subtitle)) && (
+                  {(Boolean(title) || Boolean(eyebrow) || Boolean(subtitle) || showCloseButton || Boolean(headerRight)) && (
                     <View style={styles.headerRow}>
                       <View style={styles.titleColumn}>
                         {eyebrow ? (
@@ -286,38 +269,32 @@ export function AppBottomSheetModal({
                           </Text>
                         ) : null}
                       </View>
-                      {(showCloseButton || Boolean(headerRight)) && (
-                        <View style={styles.headerActionsPlaceholder} />
-                      )}
+
+                      <View style={styles.headerActions}>
+                        {headerRight}
+                        {showCloseButton && (
+                          <PressableScale
+                            onPress={startCloseAnimation}
+                            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                            scaleTo={0.92}
+                            accessibilityRole="button"
+                            accessibilityLabel="Close"
+                          >
+                            <SquircleSurface
+                              shape="circle"
+                              fill={colors.surface2}
+                              style={styles.closeButton}
+                              pointerEvents="none"
+                            >
+                              <Ionicons name="close" size={18} color={colors.text.secondary} />
+                            </SquircleSurface>
+                          </PressableScale>
+                        )}
+                      </View>
                     </View>
                   )}
                 </View>
               </GestureDetector>
-
-              {(showCloseButton || Boolean(headerRight)) && (
-                <View style={styles.headerActionsAbsolute} pointerEvents="box-none">
-                  {headerRight}
-                  {showCloseButton && (
-                    <GestureDetector gesture={closeTap}>
-                      <Pressable
-                        onPress={startCloseAnimation}
-                        hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
-                        accessibilityRole="button"
-                        accessibilityLabel="Close"
-                      >
-                        <SquircleSurface
-                          shape="circle"
-                          fill={colors.surface2}
-                          style={styles.closeButton}
-                          pointerEvents="none"
-                        >
-                          <Ionicons name="close" size={18} color={colors.text.secondary} />
-                        </SquircleSurface>
-                      </Pressable>
-                    </GestureDetector>
-                  )}
-                </View>
-              )}
 
               {scrolled ? (
                 <View style={[styles.divider, { backgroundColor: colors.borderStrong }]} />
@@ -423,6 +400,15 @@ const styles = StyleSheet.create({
   },
   titleText: {
     letterSpacing: -0.2,
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(10, 10, 10, 0.52)',
+  },
+  headerActions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
   },
   headerActionsAbsolute: {
     alignItems: 'center',

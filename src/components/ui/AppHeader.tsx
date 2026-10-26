@@ -12,6 +12,7 @@ export interface AppHeaderProps {
   subtitle?: string;
   eyebrow?: string;
   showBack?: boolean;
+  onBack?: () => void;
   rightAction?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   titleStyle?: StyleProp<TextStyle>;
@@ -62,8 +63,8 @@ export function HeaderIconButton({
   );
 }
 
-/** Back control: pops the stack with haptic feedback. */
-export function HeaderBackButton() {
+/** Back control: pops the stack with haptic feedback or invokes custom onBack. */
+export function HeaderBackButton({ onPress }: { onPress?: () => void } = {}) {
   const router = useRouter();
   return (
     <HeaderIconButton
@@ -71,8 +72,13 @@ export function HeaderBackButton() {
       iconSize={21}
       label="Go back"
       onPress={() => {
-        if (router.canGoBack()) router.back();
-        else router.replace('/(app)/(tabs)');
+        if (onPress) {
+          onPress();
+        } else if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace('/(app)/(tabs)');
+        }
       }}
     />
   );
@@ -126,6 +132,7 @@ export function AppHeader({
   subtitle,
   eyebrow,
   showBack = false,
+  onBack,
   rightAction,
   style,
   titleStyle,
@@ -141,7 +148,7 @@ export function AppHeader({
       <View style={[styles.compactToolbar, style]}>
         {hasLeft ? (
           <View style={styles.left}>
-            <HeaderBackButton />
+            <HeaderBackButton onPress={onBack} />
           </View>
         ) : null}
 
@@ -197,7 +204,7 @@ export function AppHeader({
     <View style={[styles.container, style]}>
       {showBack || rightAction ? (
         <View style={[styles.toolbar, !showBack && { justifyContent: 'flex-end' }]}>
-          {showBack ? <HeaderBackButton /> : null}
+          {showBack ? <HeaderBackButton onPress={onBack} /> : null}
           {rightAction ? <View style={styles.right}>{rightAction}</View> : null}
         </View>
       ) : null}
