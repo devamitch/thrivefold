@@ -42,7 +42,8 @@ export default function BaselineScreen() {
             stress: b.stress ?? 'prefer_not',
           },
         });
-        // The body and mind halves are separate setup steps; the scaffold claims the first.
+        // Both body and mind halves are separate setup steps; claim both when continuing
+        claimSetupReward('body_baseline');
         claimSetupReward('mind_baseline');
         next();
       }}

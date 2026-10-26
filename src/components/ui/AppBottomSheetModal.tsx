@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -22,11 +21,13 @@ import Animated, {
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
+  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTheme } from '../../theme/useTheme';
+import FrostedView from './FrostedView';
 import { PressableScale } from './PressableScale';
 import { SquircleSurface } from './SquircleSurface';
 
@@ -112,26 +113,31 @@ export function AppBottomSheetModal({
     }
   }, [visible, reduceMotion, screenHeight, translateY]);
 
-  const makePan = (activeOffset: number, enabled: boolean) =>
+  const SPRING_CONFIG = { damping: 24, stiffness: 260 };
+
+  const makePan = (activeOffsetY: [number, number], failOffsetY: [number, number], enabled: boolean) =>
     Gesture.Pan()
-      .activeOffsetY(activeOffset)
+      .activeOffsetY(activeOffsetY)
+      .failOffsetY(failOffsetY)
       .failOffsetX([-24, 24])
       .enabled(enabled)
       .shouldCancelWhenOutside(false)
       .onUpdate((e) => {
-        // Rubber-band upward, free movement downward.
+        // Rubber-band upward, natural drag downward
         translateY.value = e.translationY > 0 ? e.translationY : e.translationY * 0.15;
       })
       .onEnd((e) => {
         if (e.translationY > SWIPE_CLOSE_THRESHOLD || e.velocityY > SWIPE_VELOCITY_THRESHOLD) {
           runOnJS(startCloseAnimation)();
         } else {
-          translateY.value = withTiming(0, SETTLE);
+          translateY.value = reduceMotion ? withTiming(0, SETTLE) : withSpring(0, SPRING_CONFIG);
         }
       });
 
-  const bodyPan = makePan(14, !bodyScrolls);
-  const headerPan = makePan(6, true);
+  // Body can drag down to dismiss whenever it is at top of scroll offset (!scrolled)
+  const bodyPan = makePan([10, 1000], [-15, 0], !scrolled);
+  // Header can always drag down to dismiss
+  const headerPan = makePan([5, 1000], [-15, 0], true);
 
   const sheetAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],
@@ -156,11 +162,14 @@ export function AppBottomSheetModal({
     >
       <GestureHandlerRootView style={styles.modalRoot}>
         <Animated.View
-          style={[StyleSheet.absoluteFill, { backgroundColor: colors.scrim }, backdropAnimatedStyle]}
+          style={[
+            StyleSheet.absoluteFill,
+            { backgroundColor: colors.scrim },
+            backdropAnimatedStyle,
+          ]}
         >
-          {Platform.OS === 'ios' ? (
-            <BlurView intensity={18} tint="systemUltraThinMaterialDark" style={StyleSheet.absoluteFill} />
-          ) : null}
+          <FrostedView style={StyleSheet.absoluteFill} />
+
           <Pressable
             style={StyleSheet.absoluteFill}
             onPress={startCloseAnimation}
@@ -205,7 +214,10 @@ export function AppBottomSheetModal({
                       <View style={styles.titleColumn}>
                         {eyebrow ? (
                           <Text
-                            style={[typography.captionBold, { color: colors.accentText, marginBottom: 2 }]}
+                            style={[
+                              typography.captionBold,
+                              { color: colors.accentText, marginBottom: 2 },
+                            ]}
                             numberOfLines={1}
                           >
                             {eyebrow}
@@ -213,7 +225,11 @@ export function AppBottomSheetModal({
                         ) : null}
                         {title ? (
                           <Text
-                            style={[typography.heading, styles.titleText, { color: colors.text.primary }]}
+                            style={[
+                              typography.heading,
+                              styles.titleText,
+                              { color: colors.text.primary },
+                            ]}
                             numberOfLines={2}
                             accessibilityRole="header"
                           >
@@ -221,7 +237,12 @@ export function AppBottomSheetModal({
                           </Text>
                         ) : null}
                         {subtitle ? (
-                          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 3 }]}>
+                          <Text
+                            style={[
+                              typography.caption,
+                              { color: colors.text.secondary, marginTop: 3 },
+                            ]}
+                          >
                             {subtitle}
                           </Text>
                         ) : null}
@@ -237,7 +258,11 @@ export function AppBottomSheetModal({
                             accessibilityRole="button"
                             accessibilityLabel="Close"
                           >
-                            <SquircleSurface shape="circle" fill={colors.surface2} style={styles.closeButton}>
+                            <SquircleSurface
+                              shape="circle"
+                              fill={colors.surface2}
+                              style={styles.closeButton}
+                            >
                               <Ionicons name="close" size={18} color={colors.text.secondary} />
                             </SquircleSurface>
                           </PressableScale>
@@ -280,7 +305,10 @@ export function AppBottomSheetModal({
                     styles.footer,
                     { paddingBottom: bottomPad },
                     bodyScrolls
-                      ? { borderTopColor: colors.borderStrong, borderTopWidth: StyleSheet.hairlineWidth }
+                      ? {
+                          borderTopColor: colors.borderStrong,
+                          borderTopWidth: StyleSheet.hairlineWidth,
+                        }
                       : null,
                   ]}
                 >
@@ -299,7 +327,9 @@ export function AppBottomSheetModal({
 export function SheetFooterRow({ children }: { children: React.ReactNode }) {
   return (
     <View style={styles.footerRow}>
-      {React.Children.map(children, (child) => (child ? <View style={styles.footerCell}>{child}</View> : null))}
+      {React.Children.map(children, (child) =>
+        child ? <View style={styles.footerCell}>{child}</View> : null,
+      )}
     </View>
   );
 }

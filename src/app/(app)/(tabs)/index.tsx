@@ -1,7 +1,7 @@
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import { Ionicons } from '@expo/vector-icons';
-import { Link, useRouter, type Href } from 'expo-router';
-import React, { useEffect, useMemo, useState } from 'react';
+import { Link, useFocusEffect, useRouter, type Href } from 'expo-router';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 
@@ -195,11 +195,13 @@ export default function HomeScreen() {
       : null,
     heart ? { label: 'Avg heart rate', value: `${Math.round(heart.value)} bpm` } : null,
   ].filter((t): t is { label: string; value: string } => t !== null);
-  useEffect(() => {
-    useRootStore.getState().autoClaimAnsweredSetupRewards();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      useRootStore.getState().autoClaimAnsweredSetupRewards();
+    }, []),
+  );
 
-  const setupOpen = useMemo(() => {
+  const openSections = useMemo(() => {
     const answers = {
       goals: s.onboarding?.goals ?? [],
       constraints: s.onboarding?.constraints ?? [],
@@ -212,8 +214,10 @@ export default function HomeScreen() {
       const isClaimed = s.rewardLedger.some((e) => e.key === setupLedgerKey(r.section));
       if (isClaimed) return false;
       return !isSetupSectionAnswered(r.section, answers);
-    }).length;
+    });
   }, [s.onboarding, s.rewardLedger]);
+
+  const setupOpen = openSections.length;
 
   const alsoToday = generateDayAgenda(today(), {
     experience,
@@ -273,10 +277,10 @@ export default function HomeScreen() {
                 <Ionicons name="trophy-outline" size={20} color={colors.primary} />
                 <View style={[styles.flex, { marginLeft: 12 }]}>
                   <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                    {setupOpen} setup step{setupOpen === 1 ? '' : 's'} left
+                    {setupOpen} setup step{setupOpen === 1 ? '' : 's'} open
                   </Text>
-                  <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                    {setupOpen === 1 ? 'Answer it' : 'Answer them'} to fit your quests and earn the setup XP.
+                  <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]} numberOfLines={2}>
+                    {openSections.map((sec) => sec.title).join(' · ')}
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />

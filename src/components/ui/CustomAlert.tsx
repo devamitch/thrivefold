@@ -4,9 +4,8 @@
  * an iOS alert; the backdrop is a scrim (a blur inside a Modal is pixelated on Android).
  */
 
-import { BlurView } from 'expo-blur';
 import React, { useEffect } from 'react';
-import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -18,6 +17,7 @@ import Animated, {
 import { useRootStore } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
 import { Button } from './Button';
+import FrostedView from './FrostedView';
 import { SquircleSurface } from './SquircleSurface';
 
 const IN = { duration: 260, easing: Easing.bezier(0.2, 0.9, 0.25, 1) };
@@ -55,20 +55,39 @@ export function CustomAlert() {
   };
 
   return (
-    <Modal transparent animationType="none" statusBarTranslucent visible onRequestClose={handleCancel}>
+    <Modal
+      transparent
+      animationType="none"
+      statusBarTranslucent
+      visible
+      onRequestClose={handleCancel}
+    >
       <View style={styles.overlay}>
-        <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: colors.scrim }, backdropStyle]}>
-          {Platform.OS === 'ios' ? (
-            <BlurView intensity={16} tint="systemUltraThinMaterialDark" style={StyleSheet.absoluteFill} />
-          ) : null}
-          <Pressable style={StyleSheet.absoluteFill} onPress={handleCancel} accessibilityLabel="Dismiss" />
+        <Animated.View
+          style={[StyleSheet.absoluteFill, { backgroundColor: colors.scrim }, backdropStyle]}
+        >
+          <FrostedView style={StyleSheet.absoluteFill} />
+
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={handleCancel}
+            accessibilityLabel="Dismiss"
+          />
         </Animated.View>
 
-        <Animated.View style={[styles.dialog, dialogStyle]} accessibilityViewIsModal accessibilityRole="alert">
+        <Animated.View
+          style={[styles.dialog, dialogStyle]}
+          accessibilityViewIsModal
+          accessibilityRole="alert"
+        >
           <SquircleSurface radius={26} fill={colors.surface} style={styles.content}>
-            <Text style={[typography.subheading, styles.title, { color: colors.text.primary }]}>{alert.title}</Text>
+            <Text style={[typography.subheading, styles.title, { color: colors.text.primary }]}>
+              {alert.title}
+            </Text>
             {alert.message ? (
-              <Text style={[typography.body, styles.message, { color: colors.text.secondary }]}>{alert.message}</Text>
+              <Text style={[typography.body, styles.message, { color: colors.text.secondary }]}>
+                {alert.message}
+              </Text>
             ) : null}
 
             <View style={styles.actions}>

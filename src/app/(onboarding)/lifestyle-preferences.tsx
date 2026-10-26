@@ -67,6 +67,9 @@ export default function LifestylePreferencesScreen() {
     });
 
   const next = () => {
+    if (!diet && observances.length === 0) {
+      setOnboardingAnswers({ diet: 'No preference' });
+    }
     claimSetupReward('lifestyle');
     if (!isOnboarded) {
       router.push('/(onboarding)/complete');

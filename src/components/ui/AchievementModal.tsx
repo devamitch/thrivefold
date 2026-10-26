@@ -10,7 +10,6 @@
  */
 
 import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { useRouter, type Href } from 'expo-router';
 import React, { useEffect } from 'react';
@@ -27,7 +26,7 @@ import { useRootStore } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
 import { Badge } from './Badge';
 import { Button } from './Button';
-import { PressableScale } from './PressableScale';
+import FrostedView from './FrostedView';
 import { SquircleSurface } from './SquircleSurface';
 
 const IN_ANIMATION = { duration: 280, easing: Easing.bezier(0.18, 0.89, 0.32, 1) };
@@ -107,13 +106,23 @@ export function AchievementModal() {
   }
 
   return (
-    <Modal transparent animationType="none" statusBarTranslucent visible onRequestClose={handleDismiss}>
+    <Modal
+      transparent
+      animationType="none"
+      statusBarTranslucent
+      visible
+      onRequestClose={handleDismiss}
+    >
       <View style={styles.overlay}>
-        <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: colors.scrim }, backdropStyle]}>
-          {Platform.OS === 'ios' ? (
-            <BlurView intensity={20} tint="systemUltraThinMaterialDark" style={StyleSheet.absoluteFill} />
-          ) : null}
-          <Pressable style={StyleSheet.absoluteFill} onPress={handleDismiss} accessibilityLabel="Dismiss" />
+        <Animated.View
+          style={[StyleSheet.absoluteFill, { backgroundColor: colors.scrim }, backdropStyle]}
+        >
+          {Platform.OS === 'ios' ? <FrostedView style={StyleSheet.absoluteFill} /> : null}
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={handleDismiss}
+            accessibilityLabel="Dismiss"
+          />
         </Animated.View>
 
         <Animated.View
@@ -133,10 +142,22 @@ export function AchievementModal() {
             </View>
 
             {/* Title & Subtitle */}
-            <Text style={[typography.heading, styles.title, { color: colors.text.primary, marginTop: spacing.md }]}>
+            <Text
+              style={[
+                typography.heading,
+                styles.title,
+                { color: colors.text.primary, marginTop: spacing.md },
+              ]}
+            >
               {modal.title}
             </Text>
-            <Text style={[typography.bodyBold, styles.subtitle, { color: colors.primary, marginTop: 4 }]}>
+            <Text
+              style={[
+                typography.bodyBold,
+                styles.subtitle,
+                { color: colors.primary, marginTop: 4 },
+              ]}
+            >
               {modal.subtitle}
             </Text>
 
@@ -146,7 +167,11 @@ export function AchievementModal() {
                 <>
                   <SquircleSurface radius={18} fill={colors.surface1} style={styles.statCard}>
                     <View style={styles.row}>
-                      <SquircleSurface shape="circle" fill={colors.primaryAlpha} style={styles.smallIcon}>
+                      <SquircleSurface
+                        shape="circle"
+                        fill={colors.primaryAlpha}
+                        style={styles.smallIcon}
+                      >
                         <Ionicons name="trophy-outline" size={18} color={colors.primary} />
                       </SquircleSurface>
                       <View style={styles.flex}>
@@ -160,9 +185,17 @@ export function AchievementModal() {
                     </View>
                   </SquircleSurface>
 
-                  <SquircleSurface radius={18} fill={colors.surface1} style={[styles.statCard, { marginTop: 8 }]}>
+                  <SquircleSurface
+                    radius={18}
+                    fill={colors.surface1}
+                    style={[styles.statCard, { marginTop: 8 }]}
+                  >
                     <View style={styles.row}>
-                      <SquircleSurface shape="circle" fill={colors.primaryAlpha} style={styles.smallIcon}>
+                      <SquircleSurface
+                        shape="circle"
+                        fill={colors.primaryAlpha}
+                        style={styles.smallIcon}
+                      >
                         <Ionicons name="flag-outline" size={18} color={colors.accent} />
                       </SquircleSurface>
                       <View style={styles.flex}>
@@ -170,7 +203,8 @@ export function AchievementModal() {
                           Daily Target Reached
                         </Text>
                         <Text style={[typography.caption, { color: colors.text.secondary }]}>
-                          {modal.dailyPoints ?? 0} of {modal.dailyPointsTarget ?? 0} points · +1 Diamond
+                          {modal.dailyPoints ?? 0} of {modal.dailyPointsTarget ?? 0} points · +1
+                          Diamond
                         </Text>
                       </View>
                     </View>
@@ -179,7 +213,11 @@ export function AchievementModal() {
               ) : modal.type === 'level_clear' ? (
                 <SquircleSurface radius={18} fill={colors.surface1} style={styles.statCard}>
                   <View style={styles.row}>
-                    <SquircleSurface shape="circle" fill={colors.primaryAlpha} style={styles.smallIcon}>
+                    <SquircleSurface
+                      shape="circle"
+                      fill={colors.primaryAlpha}
+                      style={styles.smallIcon}
+                    >
                       <Ionicons name="trophy-outline" size={18} color={colors.primary} />
                     </SquircleSurface>
                     <View style={styles.flex}>
@@ -211,7 +249,11 @@ export function AchievementModal() {
               ) : modal.type === 'slow_letters_unlocked' ? (
                 <SquircleSurface radius={18} fill={colors.surface1} style={styles.statCard}>
                   <View style={styles.row}>
-                    <SquircleSurface shape="circle" fill={colors.primaryAlpha} style={styles.smallIcon}>
+                    <SquircleSurface
+                      shape="circle"
+                      fill={colors.primaryAlpha}
+                      style={styles.smallIcon}
+                    >
                       <Ionicons name="mail-open-outline" size={18} color={colors.primary} />
                     </SquircleSurface>
                     <View style={styles.flex}>
@@ -227,7 +269,13 @@ export function AchievementModal() {
               ) : null}
 
               {modal.details ? (
-                <Text style={[typography.subbody, styles.details, { color: colors.text.secondary, marginTop: 10 }]}>
+                <Text
+                  style={[
+                    typography.subbody,
+                    styles.details,
+                    { color: colors.text.secondary, marginTop: 10 },
+                  ]}
+                >
                   {modal.details}
                 </Text>
               ) : null}

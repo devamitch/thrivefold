@@ -69,4 +69,21 @@
   - `pnpm lint` -> PASS (0 errors, 0 warnings).
   - `pnpm test:db` -> PASS (145 Postgres RLS tests passed on PGlite).
 
+---
+
+## Milestone 5: Onboarding Setup Step Completion, Home Open-Step Transparency & Sheet Physics
+- **Status**: IMPLEMENTED & AUTOMATED TESTED
+- **Components Implemented**:
+  - `src/app/(onboarding)/lifestyle-preferences.tsx`: Defaulted unselected diet preference to `'No preference'` on continue, ensuring `claimSetupReward('lifestyle')` correctly executes and marks the lifestyle step completed.
+  - `src/app/(onboarding)/baseline.tsx`: Explicitly claims both `body_baseline` and `mind_baseline` rewards when continuing past baseline check-in.
+  - `src/app/(app)/(tabs)/index.tsx`: Recomputed open setup steps with detailed `openSections` metadata and updated Home card to display exact titles of remaining open steps, eliminating ambiguity when steps remain open.
+  - `src/components/ui/AppBottomSheetModal.tsx`: Enhanced pan gesture physics with spring settling (`damping: 24, stiffness: 260`), fail offsets for conflict-free scrolling, and top-of-scroll drag dismissal arbitration.
+  - `src/components/ui/AchievementModal.tsx` & `CustomAlert.tsx`: Replaced raw `BlurView` with cross-platform `FrostedView` for consistent backdrop rendering.
+  - `tests/unit/setup-profile.test.ts`: Added unit tests covering all setup section completion and reward answering criteria.
+- **Verification**:
+  - `pnpm compile` -> PASS (0 errors, strict tsc).
+  - `pnpm test` -> PASS (39 suites, 278 tests passed).
+  - `pnpm lint` -> PASS (0 errors, 0 warnings).
+
+
 

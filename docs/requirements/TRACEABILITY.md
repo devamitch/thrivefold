@@ -1,15 +1,26 @@
 # Requirements Traceability Matrix
 
+## Update — 2026-10-26 (22): Onboarding Setup Step Completion, Home Transparency & Sheet Physics
+
+Checks: compile 0, lint 0, `pnpm test` 278/278, `pnpm test:db` 145/145.
+
+| Item | Status | Where | Commit |
+| --- | --- | --- | --- |
+| Setup Step Answering & Claiming | Defaulted diet to 'No preference' on continue so lifestyle setup reward is awarded; explicitly claimed body and mind baseline on continue | `src/app/(onboarding)/*` | (this round) |
+| Home Open Steps Transparency | Recomputed open setup steps and displayed exact remaining titles on Home card | `src/app/(app)/(tabs)/index.tsx` | (this round) |
+| Bottom Sheet Pan & Spring Physics | Spring settling (`damping: 24, stiffness: 260`), fail offsets to prevent scroll conflicts, top-of-scroll drag dismissal arbitration | `src/components/ui/AppBottomSheetModal.tsx` | (this round) |
+| Dialog Backdrop Unification | Migrated `CustomAlert` and `AchievementModal` to `FrostedView` | `src/components/ui/*` | (this round) |
+
 ## Update — 2026-10-26 (21): Exercise Capability Registry & Gaming Engine Auto-Completion Unification
 
 Checks: compile 0, lint 0, `pnpm test` 278/278 (+10 new tests passed), `pnpm test:db` 145/145.
 
 | Item | Status | Where | Commit |
 | --- | --- | --- | --- |
-| Exercise Capability Registry | Complete 56-movement registry mapping every catalog movement to honest support levels (`camera_verified_reps`, `camera_verified_hold`, `camera_assisted_sequence`, `timer_guided`, `instruction_guided`), framing, and camera angles | `src/domain/pose/capabilityRegistry.ts`, `docs/implementation/EXERCISE_CAPABILITY_AUDIT.md` | (this round) |
-| Honest Capability Badges in Coach | Coach intro screen displays explicit capability badges (`Verified`, `Sequence`, `Timer`, `Guided`) and framing requirements for each movement in a workout plan | `src/components/coach/CoachIntro.tsx` | (this round) |
-| Quest Auto-Completion | Store methods `completeCheckInQuest`, `completeSleepQuest`, `completeSymptomQuest`, `completeReflectionQuest` auto-complete daily quests with honest verification class handling | `src/stores/slices/questSlice.ts` | (this round) |
-| Health-Gaming Integration | Daily check-in logging, sleep logs, symptom recording, and reflection journaling directly complete assigned daily quests | `src/stores/slices/healthSlice.ts` | (this round) |
+| Exercise Capability Registry | Complete 56-movement registry mapping every catalog movement to honest support levels (`camera_verified_reps`, `camera_verified_hold`, `camera_assisted_sequence`, `timer_guided`, `instruction_guided`), framing, and camera angles | `src/domain/pose/capabilityRegistry.ts`, `docs/implementation/EXERCISE_CAPABILITY_AUDIT.md` | bfd50c6 |
+| Honest Capability Badges in Coach | Coach intro screen displays explicit capability badges (`Verified`, `Sequence`, `Timer`, `Guided`) and framing requirements for each movement in a workout plan | `src/components/coach/CoachIntro.tsx` | bfd50c6 |
+| Quest Auto-Completion | Store methods `completeCheckInQuest`, `completeSleepQuest`, `completeSymptomQuest`, `completeReflectionQuest` auto-complete daily quests with honest verification class handling | `src/stores/slices/questSlice.ts` | bfd50c6 |
+| Health-Gaming Integration | Daily check-in logging, sleep logs, symptom recording, and reflection journaling directly complete assigned daily quests | `src/stores/slices/healthSlice.ts` | bfd50c6 |
 
 ## Update — 2026-10-26 (20): Clear Cues Engine, Smart Moments Aggregations, Analytics Telemetry
 

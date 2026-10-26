@@ -41,6 +41,9 @@ describe('setup rewards', () => {
     const preferNot = answers({ baseline: { activity: 'prefer_not', energy: 'prefer_not', sleep: 'prefer_not', stress: 'prefer_not' } });
     expect(isSetupSectionAnswered('body_baseline', preferNot)).toBe(true);
     expect(isSetupSectionAnswered('mind_baseline', preferNot)).toBe(true);
+    expect(isSetupSectionAnswered('constraints', answers({ routineMinutes: 10 }))).toBe(true);
+    expect(isSetupSectionAnswered('lifestyle', answers({ diet: 'No preference' }))).toBe(true);
+    expect(isSetupSectionAnswered('lifestyle', answers())).toBe(false);
   });
 
   test('rewards are fixed per step and never depend on the answer', () => {

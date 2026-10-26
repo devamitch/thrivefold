@@ -16,6 +16,33 @@ import { useRootStore, useShallow } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
 import { PressableScale } from '../../components/ui/PressableScale';
 
+const DIETS = [
+  'No preference',
+  'Flexitarian / Mindful',
+  'Non-Vegetarian',
+  'Vegetarian',
+  'Vegan',
+  'Pescatarian',
+  'Gluten-free',
+  'Halal',
+  'Kosher',
+  'Sattvic',
+  'No onion or garlic',
+];
+
+const REMINDERS = [
+  'Weekly digital reset day',
+  'Meditation & Mindfulness',
+  'Ramadan & Islamic Fasting',
+  'Ekadashi, Navratri & Hindu Occasions',
+  'Lent & Christian Reflection',
+  'Shabbat & Jewish Holy Days',
+  'Buddhist Uposatha Days',
+  'Jain Paryushana & Ahimsa Days',
+  'Sikh Gurpurab Observance',
+  'Universal gratitude & lovingkindness',
+];
+
 /**
  * Everything onboarding asked, editable at any time. Each change re-fits today's quests that
  * have not been started yet (questSlice.refitDailyQuests); finished quests and earned XP stay.
@@ -41,7 +68,7 @@ export default function PersonalizeScreen() {
   }, []);
 
   const fit = fitFor(onboarding, todayCheckIn ?? null);
-  const { goals, constraints, routineMinutes } = onboarding;
+  const { goals, constraints, routineMinutes, diet, observances = [] } = onboarding;
   const answers = {
     goals: onboarding?.goals ?? [],
     constraints: onboarding?.constraints ?? [],
@@ -55,7 +82,29 @@ export default function PersonalizeScreen() {
   );
 
   const toggle = (list: string[], item: string) => (list.includes(item) ? list.filter((x) => x !== item) : [...list, item]);
+  const toggleReminder = (item: string) =>
+    setOnboardingAnswers({
+      observances: observances.includes(item) ? observances.filter((i) => i !== item) : [...observances, item],
+    });
+
   const claimAll = () => {
+    // Fill any missing baseline or lifestyle items with sensible non-intrusive defaults
+    const b = onboarding.baseline ?? EMPTY_BASELINE;
+    const patch: Record<string, unknown> = {};
+    if (b.activity === null || b.energy === null || b.sleep === null || b.stress === null) {
+      patch.baseline = {
+        activity: b.activity ?? 'prefer_not',
+        energy: b.energy ?? 'prefer_not',
+        sleep: b.sleep ?? 'prefer_not',
+        stress: b.stress ?? 'prefer_not',
+      };
+    }
+    if (!onboarding.diet && (!onboarding.observances || onboarding.observances.length === 0)) {
+      patch.diet = 'No preference';
+    }
+    if (Object.keys(patch).length > 0) {
+      setOnboardingAnswers(patch);
+    }
     useRootStore.getState().autoClaimAnsweredSetupRewards();
   };
 
@@ -172,13 +221,41 @@ export default function PersonalizeScreen() {
         ))}
       </View>
 
+      <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.xl, marginBottom: spacing.sm }]}>
+        Eating preference
+      </Text>
+      <View style={styles.chips}>
+        {DIETS.map((d) => (
+          <Chip
+            key={d}
+            label={d}
+            selected={diet === d}
+            onPress={() => setOnboardingAnswers({ diet: diet === d ? null : d })}
+          />
+        ))}
+      </View>
+
+      <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.xl, marginBottom: spacing.sm }]}>
+        Optional reminders & observances
+      </Text>
+      <View style={styles.chips}>
+        {REMINDERS.map((r) => (
+          <Chip
+            key={r}
+            label={r}
+            selected={observances.includes(r)}
+            onPress={() => toggleReminder(r)}
+          />
+        ))}
+      </View>
+
       <Link href={'/(onboarding)/lifestyle-preferences' as Href} asChild>
         <Card style={{ marginTop: spacing.xl }}>
           <View style={styles.row}>
             <Ionicons name="restaurant-outline" size={20} color={colors.primary} />
             <View style={[styles.flex, { marginLeft: 12 }]}>
-              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Food and reminders</Text>
-              <Text style={[typography.caption, { color: colors.text.secondary }]}>Eating preference and the reminders you want</Text>
+              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>More lifestyle settings</Text>
+              <Text style={[typography.caption, { color: colors.text.secondary }]}>View full food and reflection details</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
           </View>
