@@ -34,10 +34,9 @@ const FOLLOW = 0.85;
  * - Minimal lag extrapolation so the skeleton matches what the user is doing live.
  * - Frame callback runs continuously on UI thread — NO bridge hops (runOnJS).
  */
-const MIN_CUTOFF_HZ = 2.8;
-const BETA = 0.02;
-const D_CUTOFF_HZ = 1.8;
-const DISPLAY_FOLLOW = 0.94;
+const MIN_CUTOFF_HZ = 1.6;
+const BETA = 0.08;
+const D_CUTOFF_HZ = 2.5;
 
 /** Latest detection, written straight from the camera event (no React state). */
 export interface PoseFeed {
@@ -218,15 +217,11 @@ export const PoseOverlay = memo(function PoseOverlay({
 
     // Responsive lead extrapolation
     const lead = reduceMotion ? 0 : Math.max(0, Math.min(50, now - detAt.value));
-    const snap = reduceMotion || present.value === 0;
-
     shown.modify((s) => {
       'worklet';
       for (let i = 0; i < N; i++) {
-        const tx = X[i * 2] + DX[i * 2] * lead;
-        const ty = X[i * 2 + 1] + DX[i * 2 + 1] * lead;
-        s[i * 3] = snap ? tx : s[i * 3] + (tx - s[i * 3]) * DISPLAY_FOLLOW;
-        s[i * 3 + 1] = snap ? ty : s[i * 3 + 1] + (ty - s[i * 3 + 1]) * DISPLAY_FOLLOW;
+        s[i * 3] = X[i * 2] + DX[i * 2] * lead;
+        s[i * 3 + 1] = X[i * 2 + 1] + DX[i * 2 + 1] * lead;
         s[i * 3 + 2] = V[i];
       }
       return s;
@@ -372,7 +367,7 @@ export const PoseOverlay = memo(function PoseOverlay({
   const guide = useDerivedValue(() => {
     const path = Skia.Path.Make();
     if (present.value >= 0.8) return path;
-    const gh = height * 0.60;
+    const gh = height * 0.6;
     const cx = width / 2;
     const top = height * 0.22;
     const headR = gh * 0.075;
