@@ -1,8 +1,9 @@
-import { SquircleSurface } from '../ui/SquircleSurface';
 import { Image } from 'expo-image';
 import React, { forwardRef, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, type ViewStyle, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, type ViewStyle } from 'react-native';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
+import { FrostedView } from '../ui';
+import { SquircleSurface } from '../ui/SquircleSurface';
 
 export interface YouTubePlayerHandle {
   play: () => void;
@@ -51,7 +52,10 @@ window.__tf={
  * reliably (the coach pauses the video when form needs fixing). Shows the thumbnail and a
  * spinner until the player is ready, which matters on slow mobile networks.
  */
-export const YouTubePlayer = forwardRef<YouTubePlayerHandle, Props>(function YouTubePlayer({ videoId, query, style, onPlayingChange }, ref) {
+export const YouTubePlayer = forwardRef<YouTubePlayerHandle, Props>(function YouTubePlayer(
+  { videoId, query, style, onPlayingChange },
+  ref,
+) {
   const web = useRef<WebView>(null);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -60,16 +64,30 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandle, Props>(function You
     () =>
       videoId
         ? { html: pageFor(videoId), baseUrl: ORIGIN }
-        : { uri: `https://m.youtube.com/results?search_query=${encodeURIComponent(query ?? 'exercise tutorial')}` },
+        : {
+            uri: `https://m.youtube.com/results?search_query=${encodeURIComponent(query ?? 'exercise tutorial')}`,
+          },
     [videoId, query],
   );
 
   // The search page's own <video> element is driven directly once a video is open.
-  const searchJs = (cmd: 'play' | 'pause') => `(function(){var v=document.querySelector('video');if(v){v.${cmd}();}})();true;`;
+  const searchJs = (cmd: 'play' | 'pause') =>
+    `(function(){var v=document.querySelector('video');if(v){v.${cmd}();}})();true;`;
   useImperativeHandle(ref, () => ({
-    play: () => web.current?.injectJavaScript(embedded ? 'window.__tf&&window.__tf.play();true;' : searchJs('play')),
-    pause: () => web.current?.injectJavaScript(embedded ? 'window.__tf&&window.__tf.pause();true;' : searchJs('pause')),
-    seek: (sec: number) => web.current?.injectJavaScript(embedded ? `window.__tf&&window.__tf.seek(${sec});true;` : `(function(){var v=document.querySelector('video');if(v){v.currentTime=${sec};}})();true;`),
+    play: () =>
+      web.current?.injectJavaScript(
+        embedded ? 'window.__tf&&window.__tf.play();true;' : searchJs('play'),
+      ),
+    pause: () =>
+      web.current?.injectJavaScript(
+        embedded ? 'window.__tf&&window.__tf.pause();true;' : searchJs('pause'),
+      ),
+    seek: (sec: number) =>
+      web.current?.injectJavaScript(
+        embedded
+          ? `window.__tf&&window.__tf.seek(${sec});true;`
+          : `(function(){var v=document.querySelector('video');if(v){v.currentTime=${sec};}})();true;`,
+      ),
   }));
 
   // On the search page, report play/pause of whichever video is open.
@@ -93,7 +111,7 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandle, Props>(function You
   };
 
   return (
-    <View style={[styles.root, style]}>
+    <SquircleSurface style={[styles.root, style]}>
       <WebView
         ref={web}
         source={source}
@@ -112,26 +130,39 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandle, Props>(function You
         allowsBackForwardNavigationGestures
       />
       {!ready || failed ? (
-        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        <SquircleSurface style={StyleSheet.absoluteFill} pointerEvents="none">
           {videoId ? (
-            <Image source={{ uri: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` }} style={StyleSheet.absoluteFill} contentFit="cover" />
+            <Image
+              source={{ uri: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` }}
+              style={StyleSheet.absoluteFill}
+              contentFit="cover"
+            />
           ) : null}
-          <View style={[StyleSheet.absoluteFill, styles.center]}>
+          <FrostedView style={[StyleSheet.absoluteFill, styles.center]}>
             {failed ? (
-              <Text style={styles.note}>The video could not load on this connection. Try again in a moment.</Text>
+              <Text style={styles.note}>
+                The video could not load on this connection. Try again in a moment.
+              </Text>
             ) : (
               <ActivityIndicator size="large" color="#FFFFFF" />
             )}
-          </View>
-        </View>
+          </FrostedView>
+        </SquircleSurface>
       ) : null}
-    </View>
+    </SquircleSurface>
   );
 });
 
 const styles = StyleSheet.create({
   center: { alignItems: 'center', justifyContent: 'center', padding: 16 },
-  note: { backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 10, color: '#FFFFFF', overflow: 'hidden', padding: 10, textAlign: 'center' },
+  note: {
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: 10,
+    color: '#FFFFFF',
+    overflow: 'hidden',
+    padding: 10,
+    textAlign: 'center',
+  },
   root: { backgroundColor: '#000', overflow: 'hidden' },
   web: { backgroundColor: '#000', flex: 1 },
 });

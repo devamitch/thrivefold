@@ -1,12 +1,9 @@
 import {
   Canvas,
-  DashPathEffect,
   FillType,
   Group,
-  LinearGradient,
   Path,
   Skia,
-  vec,
 } from '@shopify/react-native-skia';
 import React, { memo, useEffect } from 'react';
 import { StyleSheet } from 'react-native';
@@ -24,7 +21,20 @@ import { LM, SKELETON } from '../../domain/pose/movement';
 import { useTheme } from '../../theme/useTheme';
 
 const N = 33;
-const JOINTS = [...new Set(SKELETON.flat())];
+const MAJOR_JOINTS = [
+  LM.leftShoulder,
+  LM.rightShoulder,
+  LM.leftElbow,
+  LM.rightElbow,
+  LM.leftWrist,
+  LM.rightWrist,
+  LM.leftHip,
+  LM.rightHip,
+  LM.leftKnee,
+  LM.rightKnee,
+  LM.leftAnkle,
+  LM.rightAnkle,
+];
 const MIN_VIS = 0.45;
 const FOLLOW = 0.85;
 
@@ -274,68 +284,49 @@ export const PoseOverlay = memo(function PoseOverlay({
     return path;
   });
 
-  // Modern clean head posture beacon (halo & eye horizon)
-  const headBeacon = useDerivedValue(() => {
-    const path = Skia.Path.Make();
-    const s = shown.value;
-    if (present.value <= 0) return path;
-    const n = LM.nose * 3;
-    const le = LM.leftEye * 3;
-    const re = LM.rightEye * 3;
-    const ls = LM.leftShoulder * 3;
-    const rs = LM.rightShoulder * 3;
-
-    if (s[n + 2] >= MIN_VIS) {
-      // Sleek head posture halo
-      const shoulderSpan =
-        s[ls + 2] >= MIN_VIS && s[rs + 2] >= MIN_VIS
-          ? Math.hypot(s[ls] - s[rs], s[ls + 1] - s[rs + 1])
-          : 90;
-      const headRadius = Math.max(16, Math.min(32, shoulderSpan * 0.22));
-      path.addCircle(s[n], s[n + 1] - headRadius * 0.45, headRadius);
-    }
-
-    // Eye horizon line
-    if (s[le + 2] >= MIN_VIS && s[re + 2] >= MIN_VIS) {
-      path.moveTo(s[le], s[le + 1]);
-      path.lineTo(s[re], s[re + 1]);
-    }
-
-    return path;
-  });
-
-  // Inner solid laser joint pips
+  // Crisp solid luminous nodes on major articulation joints
   const joints = useDerivedValue(() => {
     const path = Skia.Path.Make();
     const s = shown.value;
     if (present.value <= 0) return path;
-    for (const i of JOINTS) {
-      if (s[i * 3 + 2] >= MIN_VIS) path.addCircle(s[i * 3], s[i * 3 + 1], 2.4);
+    for (const i of MAJOR_JOINTS) {
+      if (s[i * 3 + 2] >= MIN_VIS) path.addCircle(s[i * 3], s[i * 3 + 1], 2.6);
     }
     const n = LM.nose * 3;
-    if (s[n + 2] >= MIN_VIS) path.addCircle(s[n], s[n + 1], 3.0);
+    if (s[n + 2] >= MIN_VIS) path.addCircle(s[n], s[n + 1], 2.8);
     return path;
   });
 
-  // Outer glowing radar rings around joints
+  // Delicate glowing outer aura around major articulation joints
   const jointRings = useDerivedValue(() => {
     const path = Skia.Path.Make();
     const s = shown.value;
     if (present.value <= 0) return path;
-    for (const i of JOINTS) {
+    for (const i of MAJOR_JOINTS) {
+      if (s[i * 3 + 2] >= MIN_VIS) path.addCircle(s[i * 3], s[i * 3 + 1], 4.8);
+    }
+    return path;
+  });
+
+  // Warning beacon on fault joints
+  const faultJoints = useDerivedValue(() => {
+    const path = Skia.Path.Make();
+    const s = shown.value;
+    const hj = hot.value;
+    if (present.value <= 0 || hj.length === 0) return path;
+    for (const i of hj) {
       if (s[i * 3 + 2] >= MIN_VIS) path.addCircle(s[i * 3], s[i * 3 + 1], 5.5);
     }
     return path;
   });
 
-  // High-contrast warning halos on fault joints
-  const faultJoints = useDerivedValue(() => {
+  const faultHalos = useDerivedValue(() => {
     const path = Skia.Path.Make();
     const s = shown.value;
     const hj = hot.value;
-    if (present.value <= 0) return path;
+    if (present.value <= 0 || hj.length === 0) return path;
     for (const i of hj) {
-      if (s[i * 3 + 2] >= MIN_VIS) path.addCircle(s[i * 3], s[i * 3 + 1], 8.5);
+      if (s[i * 3 + 2] >= MIN_VIS) path.addCircle(s[i * 3], s[i * 3 + 1], 10.5);
     }
     return path;
   });
@@ -363,24 +354,59 @@ export const PoseOverlay = memo(function PoseOverlay({
     return path;
   });
 
-  // Elegant futuristic holographic silhouette guide when nobody is detected
+  const angleVertex = useDerivedValue(() => {
+    const path = Skia.Path.Make();
+    const s = shown.value;
+    const aj = arcJoints.value;
+    if (present.value <= 0 || aj.length !== 6) return path;
+    const conf = (k: number) =>
+      Math.min(s[aj[k] * 3 + 2], s[aj[k + 1] * 3 + 2], s[aj[k + 2] * 3 + 2]);
+    const k = conf(0) >= conf(3) ? 0 : 3;
+    if (conf(k) < MIN_VIS) return path;
+    const b = aj[k + 1];
+    path.addCircle(s[b * 3], s[b * 3 + 1], 3.2);
+    return path;
+  });
+
+  // Sleek athletic viewfinder reticle when user is stepping into frame
   const guide = useDerivedValue(() => {
     const path = Skia.Path.Make();
     if (present.value >= 0.8) return path;
-    const gh = height * 0.6;
+    const boxW = Math.min(width * 0.72, 340);
+    const boxH = Math.min(height * 0.78, 580);
     const cx = width / 2;
-    const top = height * 0.22;
-    const headR = gh * 0.075;
-    path.addCircle(cx, top + headR, headR);
-    const sh = top + headR * 2 + gh * 0.03;
-    const shoulderW = gh * 0.24;
-    path.addRRect(
-      Skia.RRectXY(Skia.XYWHRect(cx - shoulderW / 2, sh, shoulderW, gh * 0.38), 24, 24),
-    );
-    path.moveTo(cx - shoulderW * 0.25, sh + gh * 0.38);
-    path.lineTo(cx - shoulderW * 0.3, top + gh);
-    path.moveTo(cx + shoulderW * 0.25, sh + gh * 0.38);
-    path.lineTo(cx + shoulderW * 0.3, top + gh);
+    const cy = height / 2;
+    const left = cx - boxW / 2;
+    const right = cx + boxW / 2;
+    const top = cy - boxH / 2;
+    const bottom = cy + boxH / 2;
+    const arm = Math.min(boxW, boxH) * 0.12;
+    const r = 16;
+
+    // Top-left bracket
+    path.moveTo(left, top + arm);
+    path.lineTo(left, top + r);
+    path.quadTo(left, top, left + r, top);
+    path.lineTo(left + arm, top);
+
+    // Top-right bracket
+    path.moveTo(right - arm, top);
+    path.lineTo(right - r, top);
+    path.quadTo(right, top, right, top + r);
+    path.lineTo(right, top + arm);
+
+    // Bottom-right bracket
+    path.moveTo(right, bottom - arm);
+    path.lineTo(right - r, bottom);
+    path.quadTo(right, bottom, right - r, bottom);
+    path.lineTo(right - arm, bottom);
+
+    // Bottom-left bracket
+    path.moveTo(left + arm, bottom);
+    path.lineTo(left + r, bottom);
+    path.quadTo(left, bottom, left, bottom - r);
+    path.lineTo(left, bottom - arm);
+
     return path;
   });
 
@@ -412,7 +438,7 @@ export const PoseOverlay = memo(function PoseOverlay({
   const handJoints = useDerivedValue(() => {
     const path = Skia.Path.Make();
     const hp = handsShown.value;
-    for (let i = 0; i + 1 < hp.length; i += 2) path.addCircle(hp[i], hp[i + 1], 2.2);
+    for (let i = 0; i + 1 < hp.length; i += 2) path.addCircle(hp[i], hp[i + 1], 1.6);
     return path;
   });
 
@@ -420,7 +446,7 @@ export const PoseOverlay = memo(function PoseOverlay({
 
   return (
     <Canvas style={[StyleSheet.absoluteFill, { width, height }]} pointerEvents="none">
-      {/* Holographic stand-in guide */}
+      {/* Viewfinder stand-in guide */}
       <Group opacity={guideOpacity}>
         <Path
           path={guide}
@@ -429,30 +455,29 @@ export const PoseOverlay = memo(function PoseOverlay({
           color={colors.callText}
           strokeCap="round"
           strokeJoin="round"
-        >
-          <DashPathEffect intervals={[8, 8]} />
-        </Path>
+        />
       </Group>
 
       {/* Layer 1: Ambient kinetic bloom */}
       <Path
         path={bones}
         style="stroke"
-        strokeWidth={5.5}
+        strokeWidth={4.8}
         strokeCap="round"
         strokeJoin="round"
         color={glow}
-        opacity={0.22}
+        opacity={0.28}
       />
 
-      {/* Layer 2: Ultra-crisp laser core line with vertical cyber gradient */}
-      <Path path={bones} style="stroke" strokeWidth={2.8} strokeCap="round" strokeJoin="round">
-        <LinearGradient
-          start={vec(0, 0)}
-          end={vec(0, height)}
-          colors={[colors.callText, glow, primary]}
-        />
-      </Path>
+      {/* Layer 2: Ultra-crisp laser core line */}
+      <Path
+        path={bones}
+        style="stroke"
+        strokeWidth={2.2}
+        strokeCap="round"
+        strokeJoin="round"
+        color={colors.callText}
+      />
 
       {/* Layer 3: Warning fault bones (high-contrast alert) */}
       <Path
@@ -460,27 +485,19 @@ export const PoseOverlay = memo(function PoseOverlay({
         style="stroke"
         strokeWidth={3.8}
         strokeCap="round"
+        strokeJoin="round"
         color={colors.error}
       />
 
-      {/* Layer 4: Head posture beacon (minimalist halo & horizon line) */}
-      <Path
-        path={headBeacon}
-        style="stroke"
-        strokeWidth={1.8}
-        strokeCap="round"
-        color={glow}
-        opacity={0.85}
-      />
-
-      {/* Layer 5: Joint radar rings & inner solid laser pips */}
-      <Path path={jointRings} style="stroke" strokeWidth={1.2} color={glow} opacity={0.8} />
+      {/* Layer 4: Joint articulation: glowing aura + crisp core pip */}
+      <Path path={jointRings} style="stroke" strokeWidth={1.0} color={glow} opacity={0.55} />
       <Path path={joints} color={colors.callText} />
 
-      {/* Layer 6: High-contrast fault joint alerts */}
-      <Path path={faultJoints} style="stroke" strokeWidth={2.2} color={colors.error} />
+      {/* Layer 5: High-contrast fault joint alerts */}
+      <Path path={faultHalos} style="stroke" strokeWidth={2.0} color={colors.error} opacity={0.7} />
+      <Path path={faultJoints} color={colors.error} />
 
-      {/* Layer 7: Measured angle reticle & arc */}
+      {/* Layer 6: Measured angle reticle & arc */}
       <Path
         path={angleArc}
         style="stroke"
@@ -488,15 +505,16 @@ export const PoseOverlay = memo(function PoseOverlay({
         strokeCap="round"
         color={colors.callText}
       />
+      <Path path={angleVertex} color={glow} />
 
-      {/* Layer 8: Hands kinetic lines & pips */}
+      {/* Layer 7: Hands kinetic lines & pips */}
       <Path
         path={handLines}
         style="stroke"
-        strokeWidth={1.4}
+        strokeWidth={1.2}
         strokeCap="round"
         color={glow}
-        opacity={0.65}
+        opacity={0.4}
       />
       <Path path={handJoints} color={colors.callText} />
 

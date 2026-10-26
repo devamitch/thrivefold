@@ -9,7 +9,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown, FadeOut, useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { CoachGlass } from '../workout/CoachGlass';
+import { FrostedView } from '../ui/FrostedView';
 import { useTheme } from '../../theme/useTheme';
 
 export type BannerTone = 'gesture' | 'fault' | 'framing' | 'cue';
@@ -36,12 +36,22 @@ export function CoachBanner({ icon, title, text, tone, gestureProgress }: CoachB
       accessibilityLiveRegion={tone === 'fault' || tone === 'framing' ? 'assertive' : 'polite'}
       style={[styles.bannerWrap, { bottom: insets.bottom + 150, paddingHorizontal: spacing.base }]}
     >
-      <CoachGlass
-        radius={22}
+      <FrostedView
+        tone={tone === 'fault' || tone === 'gesture' ? 'surface' : 'dark'}
+        tintOpacity={tone === 'fault' || tone === 'gesture' ? 1 : 0.84}
         style={[
           styles.banner,
-          tone === 'fault' ? { backgroundColor: colors.error } : null,
-          tone === 'gesture' ? { backgroundColor: colors.primary } : null,
+          {
+            borderRadius: 22,
+            borderColor: tone === 'fault' ? colors.error : 'rgba(255, 255, 255, 0.12)',
+            borderWidth: StyleSheet.hairlineWidth,
+            backgroundColor:
+              tone === 'fault'
+                ? colors.error
+                : tone === 'gesture'
+                  ? colors.primary
+                  : 'rgba(16, 20, 26, 0.84)',
+          },
         ]}
       >
         <View
@@ -84,7 +94,7 @@ export function CoachBanner({ icon, title, text, tone, gestureProgress }: CoachB
             />
           </View>
         ) : null}
-      </CoachGlass>
+      </FrostedView>
     </Animated.View>
   );
 }

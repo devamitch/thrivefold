@@ -14,8 +14,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Exercise } from '../../domain/fitness/workouts';
 import type { MovementDefinition, RepState } from '../../domain/pose/movement';
 import { useTheme } from '../../theme/useTheme';
+import { FrostedView } from '../ui/FrostedView';
 import { PressableScale } from '../ui/PressableScale';
-import { CoachGlass, ProgressRing } from '../workout/CoachGlass';
+import { ProgressRing } from '../workout/CoachGlass';
 
 interface UpNext {
   ex: Exercise | undefined;
@@ -58,7 +59,18 @@ export function CoachHUD({
         { paddingHorizontal: spacing.base, paddingBottom: insets.bottom + spacing.base },
       ]}
     >
-      <CoachGlass radius={28} style={styles.hud}>
+      <FrostedView
+        tone="dark"
+        tintOpacity={0.84}
+        style={[
+          styles.hud,
+          {
+            borderRadius: 28,
+            borderColor: 'rgba(255, 255, 255, 0.12)',
+            borderWidth: StyleSheet.hairlineWidth,
+          },
+        ]}
+      >
         <View
           style={styles.ringBox}
           accessibilityLabel={`${counted} of ${counted + remaining} ${unit}. ${remaining} to go`}
@@ -111,7 +123,7 @@ export function CoachHUD({
         >
           <Ionicons name="checkmark" size={26} color={colors.onPrimary} />
         </PressableScale>
-      </CoachGlass>
+      </FrostedView>
     </View>
   );
 }

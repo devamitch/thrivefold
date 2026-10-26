@@ -17,8 +17,9 @@ import { useTheme } from '../../../theme/useTheme';
 const LINKS: { label: string; icon: keyof typeof Ionicons.glyphMap; route: string }[] = [
   { label: 'Inbox', icon: 'mail-outline', route: '/(app)/letters/inbox' },
   { label: 'Sent', icon: 'paper-plane-outline', route: '/(app)/letters/outbox' },
+  { label: 'Exchange', icon: 'chatbubbles-outline', route: '/(app)/dating' },
   { label: 'Stamps', icon: 'albums-outline', route: '/(app)/letters/stamps' },
-  { label: 'Preferences', icon: 'options-outline', route: '/(app)/letters/preferences' },
+  { label: 'Prefs', icon: 'options-outline', route: '/(app)/letters/preferences' },
 ];
 
 /** Slow letters: newest arrivals, a way to start, and the mailbox sections. */

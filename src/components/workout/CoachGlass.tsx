@@ -1,5 +1,4 @@
 import { Canvas, Path, Skia } from '@shopify/react-native-skia';
-import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, type ReactNode } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import {
@@ -13,9 +12,9 @@ import {
 import { useTheme } from '../../theme/useTheme';
 
 /**
- * Frosted glass for controls over the live camera. The camera preview is a SurfaceView that no
- * blur can sample, so the frost is a dark translucent body, a soft top sheen and a hairline
- * edge: it reads as glass over any background and costs nothing per frame.
+ * Modern frosted glass surface for controls overlaid on the camera preview.
+ * Clean, high-legibility dark translucent surface with hairline contrast border
+ * and continuous squircle corners. Zero artificial gradient streaks.
  */
 export function CoachGlass({
   children,
@@ -34,25 +33,16 @@ export function CoachGlass({
     <View
       style={[
         {
-          backgroundColor: colors.callSurface,
-          borderColor: colors.callSurfaceStrong,
+          backgroundColor: strong ? 'rgba(12, 16, 22, 0.92)' : 'rgba(16, 20, 26, 0.82)',
+          borderColor: colors.callSurfaceStrong ?? 'rgba(255, 255, 255, 0.12)',
           borderRadius: radius,
           borderWidth: StyleSheet.hairlineWidth,
+          borderCurve: 'continuous',
           overflow: 'hidden',
         },
         style,
       ]}
     >
-      {strong ? (
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.callSurface }]} />
-      ) : null}
-      <LinearGradient
-        pointerEvents="none"
-        colors={[colors.callSurfaceStrong, 'transparent']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 0.6 }}
-        style={StyleSheet.absoluteFill}
-      />
       {children}
     </View>
   );

@@ -43,7 +43,7 @@ export default function DatingChatScreen() {
   const markRead = useMarkConversationRead();
   const close = useCloseConversation();
   const block = useBlockPerson();
-  const who = conv?.other_pseudonym ?? name ?? 'Your match';
+  const who = conv?.other_pseudonym ?? name ?? 'Your correspondent';
   const open = conv?.status !== 'closed';
 
   // Mark incoming messages read whenever new ones arrive while the chat is open.

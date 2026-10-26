@@ -11,7 +11,6 @@
 
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { PoseCameraView, poseLandmarkerAvailable } from 'pose-landmarker';
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
@@ -40,13 +39,14 @@ import {
   CoachIntro,
   CoachVideoStage,
   CountdownOverlay,
-  GlassButton,
   RestOverlay,
   SessionComplete,
   useCoachSession,
   usePoseTracking,
 } from '../../../../components/coach';
 import { Button } from '../../../../components/ui/Button';
+import { FrostedView } from '../../../../components/ui/FrostedView';
+import { GlassIconButton, GlassMarks } from '../../../../components/ui/GlassOrbButton';
 import { PressableScale } from '../../../../components/ui/PressableScale';
 import { CoachGlass } from '../../../../components/workout/CoachGlass';
 import { PoseOverlay } from '../../../../components/workout/PoseOverlay';
@@ -447,19 +447,6 @@ export default function CoachScreen() {
           }
         />
       ) : null}
-
-      {/* Smart gradient vignettes for cinematic camera contrast and readability */}
-      <LinearGradient
-        pointerEvents="none"
-        colors={['rgba(11, 13, 16, 0.85)', 'rgba(11, 13, 16, 0.35)', 'transparent']}
-        style={[styles.shadeTop, { height: insets.top + 160 }]}
-      />
-      <LinearGradient
-        pointerEvents="none"
-        colors={['transparent', 'rgba(11, 13, 16, 0.45)', 'rgba(11, 13, 16, 0.95)']}
-        style={[styles.shadeBottom, { height: insets.bottom + 230 }]}
-      />
-
       {/* Red border when form is wrong */}
       {fault ? (
         <View
@@ -487,8 +474,25 @@ export default function CoachScreen() {
 
       {/* Top bar: end / exercise info / voice */}
       <View style={[styles.topBar, { top: insets.top + 8, paddingHorizontal: spacing.base }]}>
-        <GlassButton icon="close" label="End workout" onPress={confirmEnd} />
-        <CoachGlass radius={22} style={[styles.flex, styles.titlePill]}>
+        <GlassIconButton
+          path={GlassMarks.close}
+          accessibilityLabel="End workout"
+          onPress={confirmEnd}
+          size={44}
+        />
+        <FrostedView
+          tone="dark"
+          tintOpacity={0.82}
+          style={[
+            styles.flex,
+            styles.titlePill,
+            {
+              borderRadius: 22,
+              borderColor: 'rgba(255, 255, 255, 0.12)',
+              borderWidth: StyleSheet.hairlineWidth,
+            },
+          ]}
+        >
           <Text style={[typography.bodyBold, { color: colors.callText }]} numberOfLines={1}>
             {exercise.name}
           </Text>
@@ -500,11 +504,11 @@ export default function CoachScreen() {
                   styles.setSeg,
                   {
                     backgroundColor:
-                      i < setIdx
-                        ? colors.primary
-                        : i === setIdx
-                          ? colors.callText
-                          : colors.callSurfaceStrong,
+                        i < setIdx
+                          ? colors.primary
+                          : i === setIdx
+                            ? colors.callText
+                            : colors.callSurfaceStrong,
                   },
                 ]}
               />
@@ -513,35 +517,34 @@ export default function CoachScreen() {
               {itemIdx + 1}/{plan.items.length} · {clock(elapsed)}
             </Text>
           </View>
-        </CoachGlass>
-        <GlassButton
-          icon={voiceOn ? 'volume-high-outline' : 'volume-mute-outline'}
-          label={voiceOn ? 'Mute voice coach' : 'Turn on voice coach'}
-          onPress={() => {
-            if (voiceOn) {
-              /* Speech.stop() handled in hook */
-            }
-            setVoiceOn((v) => !v);
-          }}
+        </FrostedView>
+        <GlassIconButton
+          path={voiceOn ? GlassMarks.volume : GlassMarks.mute}
+          accessibilityLabel={voiceOn ? 'Mute voice coach' : 'Turn on voice coach'}
+          tone={voiceOn ? 'primary' : 'neutral'}
+          onPress={() => setVoiceOn((v) => !v)}
+          size={44}
         />
       </View>
 
       {/* Right rail: camera controls */}
       {cameraMain ? (
         <View style={[styles.rail, { top: insets.top + 72, right: spacing.base }]}>
-          <GlassButton
-            icon="camera-reverse-outline"
-            label="Flip camera"
+          <GlassIconButton
+            path={GlassMarks.flip}
+            accessibilityLabel="Flip camera"
             onPress={() => {
               poseTrack.setTrackingReady(false);
               setFacing((f) => (f === 'front' ? 'back' : 'front'));
             }}
+            size={44}
           />
-          <GlassButton
-            icon={fullTracking ? 'scan' : 'scan-outline'}
-            label="Track face and hands too"
-            active={fullTracking}
+          <GlassIconButton
+            path={GlassMarks.scan}
+            accessibilityLabel="Track face and hands too"
+            tone={fullTracking ? 'primary' : 'neutral'}
             onPress={() => setFullTracking((v) => !v)}
+            size={44}
           />
         </View>
       ) : null}
@@ -668,8 +671,6 @@ const styles = StyleSheet.create({
   rail: { gap: 10, position: 'absolute' },
   setSeg: { borderRadius: 2, height: 4, width: 18 },
   setsInline: { alignItems: 'center', flexDirection: 'row', gap: 4, marginTop: 4 },
-  shadeBottom: { bottom: 0, left: 0, position: 'absolute', right: 0 },
-  shadeTop: { left: 0, position: 'absolute', right: 0, top: 0 },
   startingCam: {
     alignItems: 'center',
     flexDirection: 'row',
