@@ -760,6 +760,31 @@ export const EXERCISE_MOVEMENT: Record<string, MovementId> = {
   calf_stretch: 'stretch_hold',
   child_pose: 'stretch_hold',
   band_pull_apart: 'pull_apart',
+  // Indian Yoga & Classical Flow
+  surya_namaskar: 'hip_hinge',
+  surya_namaskar_b: 'hip_hinge',
+  virabhadrasana_1: 'warrior',
+  virabhadrasana_3: 'balance',
+  malasana: 'squat',
+  naukasana: 'floor_hold',
+  vrikshasana: 'balance',
+  trikonasana: 'stretch_hold',
+  shoulder_stand: 'floor_hold',
+  // Kalaripayattu
+  kalaripayattu_ashva: 'squat',
+  kalaripayattu_tiger: 'squat',
+  kalaripayattu_horse_kick: 'leg_lift',
+  kalaripayattu_eagle: 'balance',
+  // Traditional Indian / Hindu Strength
+  dand_baithak: 'squat',
+  hindu_squat: 'squat',
+  hindu_pushup: 'pushup',
+  // Martial Arts & Inversion
+  jab_cross_combo: 'elbow_bend',
+  muay_thai_teep: 'knee_drive',
+  shadow_boxing: 'elbow_bend',
+  squat_roundhouse: 'squat',
+  wall_handstand_hold: 'floor_hold',
 };
 
 export const movementForExercise = (exerciseId: string) => {
