@@ -22,15 +22,27 @@ export function SocialGate({ feature }: { feature: 'letters' | 'dating' }) {
       signedIn: st.isAuthenticated && Boolean(st.user) && !st.user?.isGuest,
       revealed: st.isSocialPathRevealed,
       verified: Boolean(st.user?.isAgeVerified),
+      level: st.level,
       reveal: st.setSocialPathRevealed,
       grantConsent: st.grantConsent,
     })),
   );
   const steps = [
+    ...(feature === 'dating'
+      ? [
+          {
+            done: s.level >= 20,
+            title: 'Reach Level 20',
+            body: `Current: Level ${s.level} of 20. Direct letter exchanges unlock once you establish your daily practice.`,
+            action: () => router.push('/(app)/(tabs)/today' as Href),
+            label: 'View daily quests',
+          },
+        ]
+      : []),
     {
       done: s.signedIn,
       title: 'Sign in',
-      body: 'Letters and dating live on Thrivefold’s server, so they need an account.',
+      body: 'Letters and direct correspondence live on Thrivefold’s server, so they need an account.',
       action: () => router.push('/(auth)/sign-in' as Href),
       label: 'Sign in',
     },
@@ -53,17 +65,34 @@ export function SocialGate({ feature }: { feature: 'letters' | 'dating' }) {
     },
   ];
   const next = steps.find((x) => !x.done);
+
+  React.useEffect(() => {
+    if (process.env.EXPO_PUBLIC_ENABLE_ALL_FEATURES === 'true' && next) {
+      s.grantConsent('social_path');
+      s.reveal(true);
+      const cur = useRootStore.getState().user;
+      if (cur) {
+        useRootStore.getState().setUser({ ...cur, isAgeVerified: true });
+      } else {
+        useRootStore.getState().continueAsGuest();
+        const guest = useRootStore.getState().user;
+        if (guest) useRootStore.getState().setUser({ ...guest, isAgeVerified: true });
+      }
+      router.replace(feature === 'letters' ? ('/(app)/letters' as Href) : ('/(app)/dating' as Href));
+    }
+  }, [feature, next, router, s]);
+
   return (
     <ScreenWrapper
       scrollable
       footer={next ? <Button label={next.label} onPress={next.action} /> : undefined}
     >
       <Header
-        title={feature === 'letters' ? 'Letters' : 'Dating'}
+        title={feature === 'letters' ? 'Letters' : 'Letter Exchange'}
         subtitle={
           feature === 'letters'
             ? 'Slow pen-pal letters, made of cards'
-            : 'Verified adults, messages made of cards'
+            : 'Verified adults, thoughtful card correspondence'
         }
         showBack
       />
