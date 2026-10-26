@@ -69,7 +69,8 @@ export function FrostedView({
   const target = blurTarget ?? contextTarget;
   const base = tone === 'dark' ? colors.dock : tone === 'canvas' ? colors.background : colors.surface;
 
-  const blurs = Platform.OS === 'ios' || (ANDROID_BLUR && Boolean(target?.current || target));
+  const hasAndroidTarget = Boolean(target?.current);
+  const blurs = Platform.OS === 'ios' || (ANDROID_BLUR && hasAndroidTarget);
   // With a real blur behind it the tint can be lighter; without one it carries the surface translucently.
   // CRITICAL: tone='dark' must NEVER return high alpha or 1.0, otherwise modal backdrops become solid walls!
   const alpha =
@@ -95,7 +96,7 @@ export function FrostedView({
           tint={tone === 'dark' ? 'systemThinMaterialDark' : 'systemThinMaterialLight'}
           blurMethod="dimezisBlurViewSdk31Plus"
           experimentalBlurMethod="dimezisBlurViewSdk31Plus"
-          blurTarget={target ?? undefined}
+          blurTarget={hasAndroidTarget && target ? target : undefined}
           blurReductionFactor={2}
         />
       ) : null}

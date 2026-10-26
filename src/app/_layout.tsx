@@ -1,19 +1,18 @@
+import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import React, { useEffect, useState } from 'react';
-import { Stack } from 'expo-router';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar, StyleSheet } from 'react-native';
-import { useTheme } from '../theme/useTheme';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useRootStore } from '../stores/useRootStore';
+import { useTheme } from '../theme/useTheme';
 
-import { ErrorBoundary } from '../components/ErrorBoundary';
-import { BlurRoot } from '../components/ui/FrostedView';
-import { MindfulNotificationBanner } from '../components/ui/MindfulNotificationBanner';
-import { CustomAlert } from '../components/ui/CustomAlert';
-import { AchievementModal } from '../components/ui/AchievementModal';
-import { AnimatedSplash } from '../components/brand/AnimatedSplash';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { AnimatedSplash } from '../components/brand/AnimatedSplash';
+import { ErrorBoundary } from '../components/ErrorBoundary';
+import { AchievementModal } from '../components/ui/AchievementModal';
+import { CustomAlert } from '../components/ui/CustomAlert';
+import { MindfulNotificationBanner } from '../components/ui/MindfulNotificationBanner';
 import { PERSIST_MAX_AGE, queryClient, queryPersister } from '../services/supabase/queryClient';
 
 // The animated splash hides the native one once it is drawn on top of it.
@@ -39,20 +38,18 @@ export default function RootLayout() {
         >
           <ErrorBoundary>
             <ThemedStatusBar />
-            <BlurRoot>
-              <Stack
-                screenOptions={{
-                  headerShown: false,
-                  animation: 'slide_from_right',
-                }}
-              >
-                <Stack.Screen name="index" />
-                <Stack.Screen name="(public)" />
-                <Stack.Screen name="(auth)" />
-                <Stack.Screen name="(onboarding)" />
-                <Stack.Screen name="(app)" />
-              </Stack>
-            </BlurRoot>
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                animation: 'slide_from_right',
+              }}
+            >
+              <Stack.Screen name="index" />
+              <Stack.Screen name="(public)" />
+              <Stack.Screen name="(auth)" />
+              <Stack.Screen name="(onboarding)" />
+              <Stack.Screen name="(app)" />
+            </Stack>
             <MindfulNotificationBanner />
             <CustomAlert />
             <AchievementModal />
@@ -73,5 +70,11 @@ const styles = StyleSheet.create({
 /** One status bar for the whole app: dark icons on light canvases, light on dark. */
 function ThemedStatusBar() {
   const { isDark } = useTheme();
-  return <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} translucent backgroundColor="transparent" />;
+  return (
+    <StatusBar
+      barStyle={isDark ? 'light-content' : 'dark-content'}
+      translucent
+      backgroundColor="transparent"
+    />
+  );
 }
