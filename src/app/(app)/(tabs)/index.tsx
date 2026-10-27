@@ -8,9 +8,13 @@ import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 import { ActivityRow } from '../../../components/game/ActivityRow';
 import { SocialInvite } from '../../../components/home/SocialInvite';
 import { QuestSheet } from '../../../components/game/QuestSheet';
+import { AnalyticalMetricGrid } from '../../../components/home/AnalyticalMetricGrid';
 import { HomeGuide } from '../../../components/home/HomeGuide';
-import { TodayHero } from '../../../components/home/TodayHero';
+import { MetricBarChart } from '../../../components/home/MetricBarChart';
+import { TimeRangeFilter, type TimeRange } from '../../../components/home/TimeRangeFilter';
 import { ToolsGrid } from '../../../components/home/ToolsGrid';
+import { TrendAreaChart } from '../../../components/home/TrendAreaChart';
+import { VitalityRingGauge } from '../../../components/home/VitalityRingGauge';
 import { WeekGlance } from '../../../components/home/WeekGlance';
 import { AppHeader, HeaderIconButton } from '../../../components/ui/AppHeader';
 import { Card } from '../../../components/ui/Card';
@@ -20,6 +24,11 @@ import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { SettingsRow } from '../../../components/ui/SettingsRow';
 import { evaluateDeterministicRoutine } from '../../../domain/ai/deterministicRules';
 import { computeInsights, recentLoad } from '../../../domain/ai/insights';
+import {
+  computeVitalityScore,
+  getEqualizerBars,
+  getWeeklyTrendPoints,
+} from '../../../domain/analytics/dashboardAnalytics';
 import {
   formatLocalDate,
   generateDayAgenda,
@@ -93,6 +102,8 @@ export default function HomeScreen() {
       dailyPointsTarget: st.dailyPointsTarget,
       dailyGoalReached: st.dailyGoalReached,
       readings: st.deviceReadings,
+      hydration: st.hydration,
+      setHydration: st.setHydration,
       setupClaimed: st.rewardLedger.filter((e) => e.kind === 'setup_reward').length,
     })),
   );
@@ -100,6 +111,7 @@ export default function HomeScreen() {
   const agendaSources = useAgendaSources();
   const [filter, setFilter] = useState<'all' | QuestFamily>('all');
   const [openQuest, setOpenQuest] = useState<string | null>(null);
+  const [timeRange, setTimeRange] = useState<TimeRange>('today');
 
   const todaysCheckIn = s.checkInHistory.find((c) => c.date === today());
   const progress = useMemo(
@@ -161,6 +173,42 @@ export default function HomeScreen() {
     ? Math.round((Date.parse(today()) - Date.parse(lastCheckIn)) / 86_400_000)
     : 0;
 
+  // Latest value per kind from connected apps and devices; nothing shows without real readings.
+  const latest = (kind: string) =>
+    s.readings
+      .filter((r) => r.kind === kind)
+      .reduce<(typeof s.readings)[number] | null>((a, r) => (!a || r.date > a.date ? r : a), null);
+  const steps = latest('steps');
+  const sleep = latest('sleep_minutes');
+  const heart = latest('heart_rate_avg');
+
+  const vitality = useMemo(
+    () =>
+      computeVitalityScore({
+        todayCheckIn: todaysCheckIn ?? null,
+        recentCheckIns: s.checkInHistory,
+        questsDone: done,
+        questsTotal: active,
+        lastSleepMinutes: sleep?.value ?? null,
+      }),
+    [todaysCheckIn, s.checkInHistory, done, active, sleep],
+  );
+
+  const trendPoints = useMemo(
+    () => getWeeklyTrendPoints(s.checkInHistory, s.readings),
+    [s.checkInHistory, s.readings],
+  );
+
+  const stepBars = useMemo(
+    () => getEqualizerBars(s.readings, 'steps'),
+    [s.readings],
+  );
+
+  const todayHydration = s.hydration[today()] ?? 0;
+  const handleIncrementHydration = useCallback(() => {
+    s.setHydration(today(), todayHydration + 1);
+  }, [s, todayHydration]);
+
   const subtitle =
     !todaysCheckIn && daysAway >= 2
       ? 'Welcome back. Nothing to catch up on; start with today.'
@@ -172,14 +220,6 @@ export default function HomeScreen() {
             ? 'All of today’s quests are done.'
             : `${done} of ${active} quests done today.`;
 
-  // Latest value per kind from connected apps and devices; nothing shows without real readings.
-  const latest = (kind: string) =>
-    s.readings
-      .filter((r) => r.kind === kind)
-      .reduce<(typeof s.readings)[number] | null>((a, r) => (!a || r.date > a.date ? r : a), null);
-  const steps = latest('steps');
-  const sleep = latest('sleep_minutes');
-  const heart = latest('heart_rate_avg');
   const deviceTiles = [
     steps
       ? {
@@ -249,25 +289,68 @@ export default function HomeScreen() {
       }
       scrollMode="shell-scroll-view"
     >
+      {/* Vitality Score Arc Meter Hero */}
       <Animated.View entering={enter(0)}>
-        <TodayHero
-          done={done}
-          total={active}
+        <VitalityRingGauge
+          score={vitality.score}
+          tier={vitality.tier}
+          label={vitality.label}
+          subtext={vitality.subtext}
+          hasCheckInToday={vitality.hasCheckInToday}
+          energy={todaysCheckIn?.energy ?? null}
+          mood={todaysCheckIn?.mood ?? null}
+          sleepHours={
+            todaysCheckIn?.sleepHours ?? (sleep ? Math.round(sleep.value / 6) / 10 : null)
+          }
+          questsDone={done}
+          questsTotal={active}
           points={s.dailyPoints}
           target={s.dailyPointsTarget}
           level={progress.level}
           xpToNext={progress.next ? Math.max(0, progress.xpForNext - progress.xpIntoLevel) : null}
-          checkIn={todaysCheckIn ?? null}
           onCheckIn={() => router.push('/(app)/check-in')}
           onRoadmap={() => router.push('/(app)/roadmap' as Href)}
         />
+      </Animated.View>
+
+      {/* Analytical Controls & Responsive Charts */}
+      <Animated.View entering={enter(1)}>
+        <TimeRangeFilter selected={timeRange} onChange={setTimeRange} />
+
+        {timeRange === 'today' ? (
+          <AnalyticalMetricGrid
+            stepsCount={steps ? Math.round(steps.value) : null}
+            sleepMinutes={sleep ? Math.round(sleep.value) : null}
+            heartRateAvg={heart ? Math.round(heart.value) : null}
+            hydrationCount={todayHydration}
+            onIncrementHydration={handleIncrementHydration}
+          />
+        ) : (
+          <>
+            <TrendAreaChart
+              points={trendPoints}
+              onCheckIn={() => router.push('/(app)/check-in')}
+            />
+            <MetricBarChart
+              bars={stepBars}
+              title="Steps Distribution"
+              subtitle="Daily activity across the week"
+              totalDisplay={
+                steps
+                  ? `${(stepBars.reduce((a, b) => a + b.value, 0) / 1000).toFixed(1)}k total`
+                  : undefined
+              }
+              onPress={() => router.push('/(app)/health/integrations' as Href)}
+            />
+          </>
+        )}
       </Animated.View>
 
       <HomeGuide />
       <SocialInvite />
 
       {setupOpen > 0 ? (
-        <Animated.View entering={enter(1)}>
+        <Animated.View entering={enter(2)}>
           <Link href={'/(app)/personalize' as Href} asChild>
             <Card
               variant="tinted"

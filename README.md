@@ -27,6 +27,21 @@ Inspired by the serene minimalism of **Setu** and the sensory feedback mechanics
 
 ---
 
+## 🛡️ AnvayKosh (अन्वयकोश) Ecosystem Integration
+
+<div align="center">
+  <img src="assets/brand/anvaykosh-icon.svg" width="96" height="96" alt="AnvayKosh Ecosystem Icon" />
+  <p><em>Registered flagship application in the AnvayKosh unified private ecosystem.</em></p>
+</div>
+
+Thrivefold is a registered cornerstone application in the **AnvayKosh** private multi-app ecosystem:
+- **Anvay ID**: Fast, federated single sign-on across member apps (`Thrivefold`, `Neev`, `HarmonyBloom`, `BlinkQuest`, `Setu`).
+- **Anvay Vault**: Encrypted personal profile storing user identity basics, fitness streaks, and mindful habits while isolating sensitive pose landmarks on-device.
+- **Anvay Connect**: Authorized cross-app peer-to-peer protocol via verified deep links and Android 11+ `<queries>`.
+- **Anvay Sync**: Offline-first synchronization with non-destructive nullish merge (`coalesce`) and secure Supabase cloud reconciliation.
+
+---
+
 ## Getting Started
 
 ### Prerequisites

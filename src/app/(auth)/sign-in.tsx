@@ -20,7 +20,6 @@ import { AnimatedThrivefoldMark } from '../../components/brand/AnimatedThrivefol
 import { useTheme } from '../../theme/useTheme';
 import { PressableScale } from '../../components/ui/PressableScale';
 import { unifiedVaultSosService } from '../../services/auth/unifiedVaultSosService';
-import { AnvayKoshIcon } from '../../components/brand/AnvayKoshIcon';
 
 type Step = 'account' | 'name' | 'email' | 'code';
 
@@ -69,6 +68,7 @@ export default function SignInScreen() {
     else if (!res.cancelled) setAuthError(res.message);
   };
 
+  /*
   const handleVaultSos = async () => {
     if (busy) return;
     setBusy(true);
@@ -80,14 +80,15 @@ export default function SignInScreen() {
       } else if (res.status === 'not_installed') {
         setAuthError('No ecosystem app or cloud vault available. Sign in with Google or explore as guest.');
       } else if (res.status === 'failed') {
-        setAuthError('Could not connect to Unified Vault SOS.');
+        setAuthError('Could not connect to Anvay ID.');
       }
     } catch {
-      setAuthError('Failed to initiate Unified Vault SOS.');
+      setAuthError('Failed to initiate Anvay ID.');
     } finally {
       setBusy(false);
     }
   };
+  */
 
   const guest = () => {
     continueAsGuest();
@@ -181,6 +182,8 @@ export default function SignInScreen() {
             stay on this phone either way.
           </Text>
         </View>
+
+        {/* Anvay ID 1-Tap Ecosystem Sign-In (Uncomment to activate once deep-linking screen is configured)
         <PressableScale
           onPress={handleVaultSos}
           disabled={busy}
@@ -208,6 +211,8 @@ export default function SignInScreen() {
             </Text>
           </View>
         </PressableScale>
+        */}
+
         {googleAvailable() ? (
           <PressableScale
             onPress={google}
