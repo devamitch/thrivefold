@@ -48,15 +48,12 @@ import {
 import { Button } from '../../../../components/ui/Button';
 import { FrostedView } from '../../../../components/ui/FrostedView';
 import { GlassIconButton, GlassMarks } from '../../../../components/ui/GlassOrbButton';
-import { PressableScale } from '../../../../components/ui/PressableScale';
 import { CoachGlass } from '../../../../components/workout/CoachGlass';
 import { PoseOverlay } from '../../../../components/workout/PoseOverlay';
 import {
   YouTubePlayer,
   type YouTubePlayerHandle,
 } from '../../../../components/workout/YouTubePlayer';
-import { PoseDetectionAdapter } from '../../../../features/beta-lab/experiments/pose-detection/PoseDetectionAdapter';
-import { getBetaSettings } from '../../../../features/beta-lab/flags/betaFlags';
 import { videoFor } from '../../../../content/exerciseVideos';
 import {
   voiceCommandResponseSpeech,
@@ -66,6 +63,8 @@ import { exerciseById } from '../../../../domain/fitness/workouts';
 import { gestureTriggerSpeech } from '../../../../domain/pose/coachVoice';
 import { type Gesture } from '../../../../domain/pose/gestures';
 import { liveCue, summarize } from '../../../../domain/pose/movement';
+import { PoseDetectionAdapter } from '../../../../features/beta-lab/experiments/pose-detection/PoseDetectionAdapter';
+import { getBetaSettings } from '../../../../features/beta-lab/flags/betaFlags';
 import { speakCoach } from '../../../../services/ai/coachVoiceService';
 import { useRootStore } from '../../../../stores/useRootStore';
 import { useTheme } from '../../../../theme/useTheme';
@@ -184,7 +183,9 @@ export default function CoachScreen() {
       } else if (countdown === 0 && item && poseTrackRef.current) {
         const counted = progressOf(poseTrackRef.current.repRef.current);
         completeSet(
-          cameraOn && movement && poseTrackRef.current.repRef.current.validFrames > 0 ? counted : item.target,
+          cameraOn && movement && poseTrackRef.current.repRef.current.validFrames > 0
+            ? counted
+            : item.target,
         );
       }
     },
@@ -207,11 +208,7 @@ export default function CoachScreen() {
   // ── Pose tracking ─────────────────────────────────────────────────────────
   // gestureMode: 'off' while positioning/countdown/rest; 'set' only during an active set.
   const gestureMode: 'off' | 'set' | 'rest' =
-    phase === 'live' && rest === 0 && countdown === 0
-      ? 'set'
-      : rest > 0
-        ? 'rest'
-        : 'off';
+    phase === 'live' && rest === 0 && countdown === 0 ? 'set' : rest > 0 ? 'rest' : 'off';
 
   const poseTrack = usePoseTracking({
     checking,
@@ -227,7 +224,11 @@ export default function CoachScreen() {
     onCompleteSet: useCallback(
       (value: number) => {
         // record summary before completing set
-        if (movement && poseTrackRef.current && poseTrackRef.current.repRef.current.validFrames > 0) {
+        if (
+          movement &&
+          poseTrackRef.current &&
+          poseTrackRef.current.repRef.current.validFrames > 0
+        ) {
           session.results.current[item!.exerciseId] ??= { sets: [], summaries: [] };
           session.results.current[item!.exerciseId].summaries.push(
             summarize(movement, poseTrackRef.current.repRef.current),
@@ -400,7 +401,7 @@ export default function CoachScreen() {
       countdownArmed.current = false;
       setCountdown(4);
     }
-  }, [poseTrack.trackingReady, poseTrack.hasPerson]);
+  }, [poseTrack.trackingReady, poseTrack.hasPerson, setCountdown]);
 
   // ── Early returns ─────────────────────────────────────────────────────────
   if (!plan || !item || !exercise) {
@@ -460,11 +461,7 @@ export default function CoachScreen() {
   // nextItem: the item that will run AFTER this rest.
   // Within an exercise: same item (next set). After last set of an exercise: next plan item.
   const nextItem =
-    rest > 0
-      ? setIdx + 1 < item.sets
-        ? item
-        : plan.items[itemIdx + 1] ?? null
-      : null;
+    rest > 0 ? (setIdx + 1 < item.sets ? item : (plan.items[itemIdx + 1] ?? null)) : null;
 
   // Build banner data: most urgent first
   const { gestureProgress, framing } = poseTrack;

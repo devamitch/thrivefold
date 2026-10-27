@@ -156,7 +156,7 @@ export function AppBottomSheetModal({
         footer ? null : { paddingBottom: bottomPad },
         contentContainerStyle,
       ]}
-      scrollEnabled={bodyScrolls}
+      scrollEnabled
       nestedScrollEnabled
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
@@ -201,7 +201,7 @@ export function AppBottomSheetModal({
         </Animated.View>
 
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           enabled={avoidKeyboard}
           style={styles.keyboardAvoid}
           pointerEvents="box-none"

@@ -77,10 +77,10 @@ const HANDS: [number, number][] = [
   [16, 22],
 ];
 
-const STALE_MS = 350;
-const TAU_STILL_MS = 70;
-const TAU_FAST_MS = 14;
-const FAST_PX = 40;
+const STALE_MS = 150;      // was 350 — drop ghost landmarks faster
+const TAU_STILL_MS = 35;   // was 70  — joints settle 2× faster when still
+const TAU_FAST_MS = 10;    // was 14  — snap even quicker on fast motion
+const FAST_PX = 18;        // was 40  — trigger fast path on small movements too
 const DOT_GAP = 9;
 
 export interface PoseFeed {
@@ -162,10 +162,10 @@ export const PoseOverlay = memo(function PoseOverlay({
       lastSeq.value = seq;
       const p = feed.points.value;
       if (p.length >= N * STRIDE) {
-        const scale = Math.max(W / fw, H / fh); // FILL_CENTER, same as the preview
+        const scale = Math.min(W / fw, H / fh); // FIT_CENTER, matches native PreviewView.ScaleType.FIT_CENTER
         const dx = (W - fw * scale) / 2;
         const dy = (H - fh * scale) / 2;
-        if (present.value < 0.05 || now - arrivedAt.value > 400) snapNext.value = 1;
+        if (present.value < 0.05 || now - arrivedAt.value > 150) snapNext.value = 1;
         arrivedAt.value = now;
         hasBody.value = 1;
         target.modify((t) => {
@@ -201,8 +201,10 @@ export const PoseOverlay = memo(function PoseOverlay({
         } else {
           const ex = t[k] - s[k];
           const ey = t[k + 1] - s[k + 1];
-          const m = Math.min(1, Math.sqrt(ex * ex + ey * ey) / FAST_PX);
-          const a = 1 - Math.exp(-dt / (TAU_STILL_MS + (TAU_FAST_MS - TAU_STILL_MS) * m));
+          const distSq = ex * ex + ey * ey;
+          // When moving (> 3 px), track at 95% speed for instant real-time feel
+          // When still (<= 3 px), gently dampen sensor noise
+          const a = distSq > 9 ? 0.95 : 0.60;
           s[k] += ex * a;
           s[k + 1] += ey * a;
         }

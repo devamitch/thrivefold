@@ -57,7 +57,7 @@ export default function MealLogScreen() {
       if (camera) {
         const perm = await ImagePicker.requestCameraPermissionsAsync();
         if (!perm.granted) return;
-      } else if (Platform.OS === 'ios') {
+      } else {
         const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (!perm.granted) return;
       }

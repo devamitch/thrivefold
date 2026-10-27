@@ -39,7 +39,11 @@ export function CoachBanner({ icon, title, text, tone, gestureProgress }: CoachB
       accessibilityLiveRegion={tone === 'fault' || tone === 'framing' ? 'assertive' : 'polite'}
       style={[
         styles.wrap,
-        { bottom: insets.bottom + 8 + COACH_HUD_HEIGHT + 10, paddingHorizontal: spacing.base },
+        {
+          top: insets.top + 62,
+          paddingLeft: spacing.base,
+          paddingRight: spacing.base + 52,
+        },
       ]}
     >
       <CoachGlass radius={20} strong style={styles.pill}>

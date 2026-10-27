@@ -73,7 +73,9 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
   private val onPoseReady by EventDispatcher()
 
   private val previewView = PreviewView(context).also {
-    it.scaleType = PreviewView.ScaleType.FILL_CENTER
+    // FIT_CENTER (letterbox) keeps the full body in frame — feet stay visible.
+    // FILL_CENTER would crop top/bottom on tall screens hiding feet landmarks.
+    it.scaleType = PreviewView.ScaleType.FIT_CENTER
     it.implementationMode = PreviewView.ImplementationMode.PERFORMANCE
     addView(it, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
   }
