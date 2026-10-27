@@ -37,7 +37,7 @@ const MEASUREMENT_PROTOCOL_URL = 'https://www.google-analytics.com/mp/collect';
 class FirebaseAnalyticsManager {
   private clientId: string = `cid_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
   private userProperties: Record<string, string> = {
-    app_version: '1.0.0',
+    app_version: '1.0.1',
     platform: Platform.OS,
   };
 
