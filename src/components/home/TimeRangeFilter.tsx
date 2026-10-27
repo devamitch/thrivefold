@@ -1,8 +1,8 @@
-import * as Haptics from 'expo-haptics';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { useTheme } from '../../theme/useTheme';
+import { hapticSelection } from '../../services/haptics';
 import { PressableScale } from '../ui/PressableScale';
 import { SquircleSurface } from '../ui/SquircleSurface';
 
@@ -24,7 +24,7 @@ export function TimeRangeFilter({ selected, onChange }: Props) {
 
   const handlePress = (range: TimeRange) => {
     if (range !== selected) {
-      Haptics.selectionAsync().catch(() => {});
+      hapticSelection();
       onChange(range);
     }
   };

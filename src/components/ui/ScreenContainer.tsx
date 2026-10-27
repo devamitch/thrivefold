@@ -288,7 +288,7 @@ export function ScreenContainer({
             {children}
           </Animated.ScrollView>
         ) : resolvedScrollMode === 'external' ? (
-          <View style={[styles.externalBody, column]}>{children}</View>
+          <View style={[styles.externalBody, column, userContent]}>{children}</View>
         ) : (
           <View style={[styles.nonScrollContent, column, userContent, { paddingBottom }]}>
             {stickyHeader ? null : header}

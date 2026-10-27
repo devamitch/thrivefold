@@ -1,11 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Canvas, LinearGradient, Path, Skia, vec } from '@shopify/react-native-skia';
-import * as Haptics from 'expo-haptics';
 import { useRouter, type Href } from 'expo-router';
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { useTheme } from '../../theme/useTheme';
+import { hapticLight } from '../../services/haptics';
 import { Card } from '../ui/Card';
 import { PressableScale } from '../ui/PressableScale';
 
@@ -87,7 +87,7 @@ export function AnalyticalMetricGrid({
   }, [sleepRatio]);
 
   const handleAddWater = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    hapticLight();
     onIncrementHydration();
   };
 

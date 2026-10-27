@@ -28,6 +28,7 @@ export interface VitalityResult {
     stressBalance: number | null;
     questCompletionPct: number;
     sleepHours: number | null;
+    hydrationGlasses?: number | null;
   };
 }
 
@@ -68,8 +69,16 @@ export function computeVitalityScore(params: {
   questsDone: number;
   questsTotal: number;
   lastSleepMinutes: number | null;
+  todayHydrationGlasses?: number | null;
 }): VitalityResult {
-  const { todayCheckIn, recentCheckIns, questsDone, questsTotal, lastSleepMinutes } = params;
+  const {
+    todayCheckIn,
+    recentCheckIns,
+    questsDone,
+    questsTotal,
+    lastSleepMinutes,
+    todayHydrationGlasses,
+  } = params;
 
   const activeCheckIn = todayCheckIn ?? (recentCheckIns.length > 0 ? recentCheckIns[0] : null);
   const hasCheckInToday = Boolean(todayCheckIn);
@@ -115,12 +124,24 @@ export function computeVitalityScore(params: {
     }
   }
 
-  // Weighted calculation
-  const composite =
-    0.35 * energyMoodAvg +
-    0.20 * effectiveStressScore +
-    0.25 * questCompletionPct +
-    0.20 * sleepScore;
+  // 5. Hydration Component (0-100) — Target: 8 glasses (2,000 ml)
+  const hasHydration =
+    todayHydrationGlasses !== undefined && todayHydrationGlasses !== null;
+  const hydrationScore = hasHydration
+    ? Math.min(100, Math.round((todayHydrationGlasses / 8) * 100))
+    : 75;
+
+  // Weighted calculation (balanced 100% distribution)
+  const composite = hasHydration
+    ? 0.30 * energyMoodAvg +
+      0.15 * effectiveStressScore +
+      0.20 * questCompletionPct +
+      0.20 * sleepScore +
+      0.15 * hydrationScore
+    : 0.35 * energyMoodAvg +
+      0.20 * effectiveStressScore +
+      0.25 * questCompletionPct +
+      0.20 * sleepScore;
 
   const score = Math.max(0, Math.min(100, Math.round(composite)));
 
@@ -163,6 +184,7 @@ export function computeVitalityScore(params: {
       stressBalance,
       questCompletionPct,
       sleepHours,
+      hydrationGlasses: todayHydrationGlasses ?? null,
     },
   };
 }
@@ -296,3 +318,38 @@ export function getEqualizerBars(
 
   return bars;
 }
+
+/**
+ * Generates 7 vertical equalizer distribution bars for hydration (glasses of water).
+ */
+export function getWeeklyHydrationBars(
+  hydration: Record<string, number>,
+  referenceDate = new Date(),
+  targetGlasses = 8,
+): EqualizerBar[] {
+  const bars: EqualizerBar[] = [];
+  const todayStr = formatLocalDate(referenceDate);
+
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(referenceDate);
+    d.setDate(d.getDate() - i);
+    const dateStr = formatLocalDate(d);
+    const dayLabel = DAY_NAMES[d.getDay()];
+    const isToday = dateStr === todayStr;
+    const value = hydration[dateStr] ?? 0;
+    const displayValue = value > 0 ? `${value}` : '0';
+    const heightPct = Math.min(1, Math.max(0.08, value / targetGlasses));
+
+    bars.push({
+      dayLabel,
+      date: dateStr,
+      isToday,
+      value,
+      displayValue,
+      heightPct,
+    });
+  }
+
+  return bars;
+}
+

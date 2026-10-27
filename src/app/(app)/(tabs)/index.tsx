@@ -1,32 +1,34 @@
-import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useFocusEffect, useRouter, type Href } from 'expo-router';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 
 import { ActivityRow } from '../../../components/game/ActivityRow';
-import { SocialInvite } from '../../../components/home/SocialInvite';
 import { QuestSheet } from '../../../components/game/QuestSheet';
 import { AnalyticalMetricGrid } from '../../../components/home/AnalyticalMetricGrid';
+import { AnalyticsDetailSheet } from '../../../components/home/AnalyticsDetailSheet';
+import { DashboardHeader } from '../../../components/home/DashboardHeader';
+import { DashboardScreenContainer } from '../../../components/home/DashboardScreenContainer';
 import { HomeGuide } from '../../../components/home/HomeGuide';
+import { HydrationTrackerCard } from '../../../components/home/HydrationTrackerCard';
 import { MetricBarChart } from '../../../components/home/MetricBarChart';
+import { SocialInvite } from '../../../components/home/SocialInvite';
 import { TimeRangeFilter, type TimeRange } from '../../../components/home/TimeRangeFilter';
 import { ToolsGrid } from '../../../components/home/ToolsGrid';
 import { TrendAreaChart } from '../../../components/home/TrendAreaChart';
-import { VitalityRingGauge } from '../../../components/home/VitalityRingGauge';
+import { VitalityHero } from '../../../components/home/VitalityHero';
 import { WeekGlance } from '../../../components/home/WeekGlance';
-import { AppHeader, HeaderIconButton } from '../../../components/ui/AppHeader';
 import { Card } from '../../../components/ui/Card';
 import { Chip } from '../../../components/ui/Chip';
 import { PressableScale } from '../../../components/ui/PressableScale';
-import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { SettingsRow } from '../../../components/ui/SettingsRow';
 import { evaluateDeterministicRoutine } from '../../../domain/ai/deterministicRules';
 import { computeInsights, recentLoad } from '../../../domain/ai/insights';
 import {
   computeVitalityScore,
   getEqualizerBars,
+  getWeeklyHydrationBars,
   getWeeklyTrendPoints,
 } from '../../../domain/analytics/dashboardAnalytics';
 import {
@@ -46,9 +48,9 @@ import { DAY_PART_LABEL, dayPartAt, splitByTime } from '../../../domain/game/tim
 import { getCyclePredictions } from '../../../domain/health/cycleCalculations';
 import { useAgendaSources } from '../../../hooks/useAgendaSources';
 import { routeForEvent } from '../../../navigation/eventRoutes';
+import { hapticLight } from '../../../services/haptics';
 import type { Quest } from '../../../stores/slices/questSlice';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
-import type { ProductExperience } from '../../../theme/tokens';
 import { useTheme } from '../../../theme/useTheme';
 
 const EVENT_ICON: Partial<Record<CalendarEvent['kind'], keyof typeof Ionicons.glyphMap>> = {
@@ -104,6 +106,10 @@ export default function HomeScreen() {
       readings: st.deviceReadings,
       hydration: st.hydration,
       setHydration: st.setHydration,
+      addWaterLog: st.addWaterLog,
+      undoWaterLog: st.undoWaterLog,
+      hydrationTargetGlasses: st.hydrationTargetGlasses,
+      setHydrationTargetGlasses: st.setHydrationTargetGlasses,
       setupClaimed: st.rewardLedger.filter((e) => e.kind === 'setup_reward').length,
     })),
   );
@@ -112,6 +118,7 @@ export default function HomeScreen() {
   const [filter, setFilter] = useState<'all' | QuestFamily>('all');
   const [openQuest, setOpenQuest] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState<TimeRange>('today');
+  const [analyticsSheetOpen, setAnalyticsSheetOpen] = useState(false);
 
   const todaysCheckIn = s.checkInHistory.find((c) => c.date === today());
   const progress = useMemo(
@@ -182,6 +189,11 @@ export default function HomeScreen() {
   const sleep = latest('sleep_minutes');
   const heart = latest('heart_rate_avg');
 
+  const todayHydration = s.hydration[today()] ?? 0;
+  const handleIncrementHydration = useCallback(() => {
+    s.addWaterLog(250, today());
+  }, [s]);
+
   const vitality = useMemo(
     () =>
       computeVitalityScore({
@@ -190,8 +202,9 @@ export default function HomeScreen() {
         questsDone: done,
         questsTotal: active,
         lastSleepMinutes: sleep?.value ?? null,
+        todayHydrationGlasses: todayHydration,
       }),
-    [todaysCheckIn, s.checkInHistory, done, active, sleep],
+    [todaysCheckIn, s.checkInHistory, done, active, sleep, todayHydration],
   );
 
   const trendPoints = useMemo(
@@ -199,15 +212,9 @@ export default function HomeScreen() {
     [s.checkInHistory, s.readings],
   );
 
-  const stepBars = useMemo(
-    () => getEqualizerBars(s.readings, 'steps'),
-    [s.readings],
-  );
+  const stepBars = useMemo(() => getEqualizerBars(s.readings, 'steps'), [s.readings]);
 
-  const todayHydration = s.hydration[today()] ?? 0;
-  const handleIncrementHydration = useCallback(() => {
-    s.setHydration(today(), todayHydration + 1);
-  }, [s, todayHydration]);
+  const hydrationBars = useMemo(() => getWeeklyHydrationBars(s.hydration), [s.hydration]);
 
   const subtitle =
     !todaysCheckIn && daysAway >= 2
@@ -268,30 +275,26 @@ export default function HomeScreen() {
   const enter = (i: number) => (reduceMotion ? undefined : FadeIn.duration(180));
 
   return (
-    <ScreenContainer
-      header={
-        <AppHeader
+    <DashboardScreenContainer
+      header={({ scrollY, collapseProgress }) => (
+        <DashboardHeader
+          title={name ? name : 'Thrivefold'}
+          badgeText={`Lvl ${progress.level} · ${s.dailyPoints} pts`}
+          onMenuPress={() => useRootStore.getState().setDrawerOpen(true)}
+          scrollY={scrollY}
+          collapseProgress={collapseProgress}
+        />
+      )}
+      hero={({ scrollY, collapseProgress }) => (
+        <VitalityHero
           eyebrow={new Date().toLocaleDateString(undefined, {
             weekday: 'long',
             day: 'numeric',
             month: 'long',
           })}
-          title={name ? `${greeting()}, ${name}` : greeting()}
+          greeting={name ? `${greeting()}, ${name}` : greeting()}
           subtitle={subtitle}
-          rightAction={
-            <HeaderIconButton
-              icon="menu-outline"
-              label="Open menu"
-              onPress={() => useRootStore.getState().setDrawerOpen(true)}
-            />
-          }
-        />
-      }
-      scrollMode="shell-scroll-view"
-    >
-      {/* Vitality Score Arc Meter Hero */}
-      <Animated.View entering={enter(0)}>
-        <VitalityRingGauge
+          onMenuPress={() => useRootStore.getState().setDrawerOpen(true)}
           score={vitality.score}
           tier={vitality.tier}
           label={vitality.label}
@@ -302,6 +305,7 @@ export default function HomeScreen() {
           sleepHours={
             todaysCheckIn?.sleepHours ?? (sleep ? Math.round(sleep.value / 6) / 10 : null)
           }
+          hydrationGlasses={todayHydration}
           questsDone={done}
           questsTotal={active}
           points={s.dailyPoints}
@@ -310,27 +314,69 @@ export default function HomeScreen() {
           xpToNext={progress.next ? Math.max(0, progress.xpForNext - progress.xpIntoLevel) : null}
           onCheckIn={() => router.push('/(app)/check-in')}
           onRoadmap={() => router.push('/(app)/roadmap' as Href)}
+          scrollY={scrollY}
+          collapseProgress={collapseProgress}
         />
-      </Animated.View>
-
+      )}
+    >
       {/* Analytical Controls & Responsive Charts */}
       <Animated.View entering={enter(1)}>
         <TimeRangeFilter selected={timeRange} onChange={setTimeRange} />
 
         {timeRange === 'today' ? (
-          <AnalyticalMetricGrid
-            stepsCount={steps ? Math.round(steps.value) : null}
-            sleepMinutes={sleep ? Math.round(sleep.value) : null}
-            heartRateAvg={heart ? Math.round(heart.value) : null}
-            hydrationCount={todayHydration}
-            onIncrementHydration={handleIncrementHydration}
-          />
+          <>
+            <AnalyticalMetricGrid
+              stepsCount={steps ? Math.round(steps.value) : null}
+              sleepMinutes={sleep ? Math.round(sleep.value) : null}
+              heartRateAvg={heart ? Math.round(heart.value) : null}
+              hydrationCount={todayHydration}
+              onIncrementHydration={handleIncrementHydration}
+            />
+            <HydrationTrackerCard
+              glasses={todayHydration}
+              targetGlasses={s.hydrationTargetGlasses ?? 8}
+              onSetGlasses={(v) => s.setHydration(today(), v)}
+              onAddMl={(ml) => s.addWaterLog(ml, today())}
+              onUndo={() => s.undoWaterLog(today())}
+            />
+
+            {/* Weekly Analytics & Trends Bottom-Sheet Launcher */}
+            <PressableScale
+              onPress={() => {
+                hapticLight();
+                setAnalyticsSheetOpen(true);
+              }}
+              style={{ marginTop: spacing.md }}
+              accessibilityRole="button"
+              accessibilityLabel="Open weekly analytics and health trends sheet"
+            >
+              <Card variant="tinted" style={{ padding: spacing.base }}>
+                <View style={styles.rowBetween}>
+                  <View style={styles.rowCenter}>
+                    <View
+                      style={[styles.analyticsIconCircle, { backgroundColor: colors.surface1 }]}
+                    >
+                      <Ionicons name="analytics" size={18} color={colors.primary} />
+                    </View>
+                    <View style={{ marginLeft: 12 }}>
+                      <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                        Weekly Wellbeing Trajectory
+                      </Text>
+                      <Text
+                        style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}
+                      >
+                        Tap to expand 7-day vitality curves, rhythm & targets
+                      </Text>
+                    </View>
+                  </View>
+                  <Ionicons name="chevron-up" size={18} color={colors.primary} />
+                </View>
+              </Card>
+            </PressableScale>
+          </>
         ) : (
           <>
-            <TrendAreaChart
-              points={trendPoints}
-              onCheckIn={() => router.push('/(app)/check-in')}
-            />
+            <TrendAreaChart points={trendPoints} onCheckIn={() => router.push('/(app)/check-in')} />
             <MetricBarChart
               bars={stepBars}
               title="Steps Distribution"
@@ -342,6 +388,13 @@ export default function HomeScreen() {
               }
               onPress={() => router.push('/(app)/health/integrations' as Href)}
             />
+            <MetricBarChart
+              bars={hydrationBars}
+              title="Hydration Rhythm"
+              subtitle="Daily glasses of water (250 ml each)"
+              totalDisplay={`${hydrationBars.reduce((a, b) => a + b.value, 0)} glasses`}
+              onPress={() => router.push('/(app)/health/nutrition' as Href)}
+            />
           </>
         )}
       </Animated.View>
@@ -352,17 +405,17 @@ export default function HomeScreen() {
       {setupOpen > 0 ? (
         <Animated.View entering={enter(2)}>
           <Link href={'/(app)/personalize' as Href} asChild>
-            <Card
-              variant="tinted"
-              style={{ padding: spacing.base, marginTop: spacing.md }}
-            >
+            <Card variant="tinted" style={{ padding: spacing.base, marginTop: spacing.md }}>
               <View style={styles.rowBetween}>
                 <Ionicons name="trophy-outline" size={20} color={colors.primary} />
                 <View style={[styles.flex, { marginLeft: 12 }]}>
                   <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
                     {setupOpen} setup step{setupOpen === 1 ? '' : 's'} open
                   </Text>
-                  <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]} numberOfLines={2}>
+                  <Text
+                    style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}
+                    numberOfLines={2}
+                  >
                     {openSections.map((sec) => sec.title).join(' · ')}
                   </Text>
                 </View>
@@ -394,10 +447,7 @@ export default function HomeScreen() {
           </Text>
           <Link asChild href={'/(app)/calendar'}>
             <Link href={'/(app)/calendar' as Href} asChild>
-              <PressableScale
-                hitSlop={10}
-                accessibilityRole="button"
-              >
+              <PressableScale hitSlop={10} accessibilityRole="button">
                 <Text style={[typography.subbodyBold, { color: colors.primary }]}>Calendar</Text>
               </PressableScale>
             </Link>
@@ -540,9 +590,7 @@ export default function HomeScreen() {
 
       {deviceTiles.length > 0 ? (
         <Link href={'/(app)/health/integrations' as Href} asChild>
-          <Card
-            style={{ padding: spacing.base, marginTop: spacing.md }}
-          >
+          <Card style={{ padding: spacing.base, marginTop: spacing.md }}>
             <View style={styles.rowBetween}>
               <Text style={[typography.label, { color: colors.text.muted }]}>
                 From Health Connect
@@ -585,7 +633,18 @@ export default function HomeScreen() {
       </Animated.View>
 
       <QuestSheet assignmentId={openQuest} onClose={() => setOpenQuest(null)} />
-    </ScreenContainer>
+      <AnalyticsDetailSheet
+        visible={analyticsSheetOpen}
+        onClose={() => setAnalyticsSheetOpen(false)}
+        trendPoints={trendPoints}
+        stepBars={stepBars}
+        hydrationBars={hydrationBars}
+        targetGlasses={s.hydrationTargetGlasses ?? 8}
+        onSetTargetGlasses={(t) => s.setHydrationTargetGlasses(t)}
+        totalHydrationGlasses={todayHydration}
+        onCheckIn={() => router.push('/(app)/check-in')}
+      />
+    </DashboardScreenContainer>
   );
 }
 
@@ -659,5 +718,16 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     width: 40,
+  },
+  analyticsIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rowCenter: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });

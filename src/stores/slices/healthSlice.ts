@@ -119,6 +119,15 @@ export interface MealLog {
   note?: string;
 }
 
+export interface WaterLogEntry {
+  id: string;
+  date: string; // YYYY-MM-DD
+  timestamp: string; // ISO string
+  milliliters: number;
+  glasses: number;
+  source: 'manual' | 'health_connect';
+}
+
 export interface HealthSlice {
   currentStreak: number;
   completedCheckInDaysCount: number;
@@ -139,6 +148,12 @@ export interface HealthSlice {
   /** Glasses of water per date (YYYY-MM-DD). */
   hydration: Record<string, number>;
   setHydration: (date: string, glasses: number) => void;
+  /** Detailed water log entries with timestamps. */
+  waterLogs: WaterLogEntry[];
+  hydrationTargetGlasses: number;
+  addWaterLog: (milliliters: number, date?: string) => void;
+  undoWaterLog: (date?: string) => void;
+  setHydrationTargetGlasses: (target: number) => void;
   /** Edits an existing check-in for a date; does nothing if there is none. */
   patchCheckIn: (date: string, patch: Partial<Omit<DailyCheckInRecord, 'id' | 'date'>>) => void;
   medications: MedicationEntry[];
@@ -333,9 +348,66 @@ export const createHealthSlice: StateCreator<
 
   deleteActivityLog: (id) => set((state) => ({ activityLogs: state.activityLogs.filter((a) => a.id !== id) })),
   hydration: {},
+  waterLogs: [],
+  hydrationTargetGlasses: 8,
 
-  setHydration: (date, glasses) =>
-    set((state) => ({ hydration: { ...state.hydration, [date]: Math.max(0, Math.min(20, glasses)) } })),
+  setHydration: (date, glasses) => {
+    const clamped = Math.max(0, Math.min(24, Math.round(glasses * 10) / 10));
+    set((state) => ({ hydration: { ...state.hydration, [date]: clamped } }));
+    const root = get() as unknown as { completeHydrationQuest?: (g: number, d: string) => void };
+    if (typeof root.completeHydrationQuest === 'function') {
+      root.completeHydrationQuest(clamped, date);
+    }
+  },
+
+  addWaterLog: (milliliters, dateStr) => {
+    const date = dateStr ?? formatLocalDate(new Date());
+    const glasses = Math.round((milliliters / 250) * 10) / 10;
+    const entry: WaterLogEntry = {
+      id: `water_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      date,
+      timestamp: new Date().toISOString(),
+      milliliters,
+      glasses,
+      source: 'manual',
+    };
+    set((state) => {
+      const current = state.hydration[date] ?? 0;
+      const nextGlasses = Math.max(0, Math.min(24, Math.round((current + glasses) * 10) / 10));
+      return {
+        waterLogs: [entry, ...state.waterLogs].slice(0, 500),
+        hydration: { ...state.hydration, [date]: nextGlasses },
+      };
+    });
+    const root = get() as unknown as { completeHydrationQuest?: (g: number, d: string) => void; hydration: Record<string, number> };
+    if (typeof root.completeHydrationQuest === 'function') {
+      root.completeHydrationQuest(root.hydration[date] ?? 0, date);
+    }
+  },
+
+  undoWaterLog: (dateStr) => {
+    const date = dateStr ?? formatLocalDate(new Date());
+    const state = get();
+    const entryToUndo = state.waterLogs.find((w) => w.date === date);
+    if (!entryToUndo) {
+      const current = state.hydration[date] ?? 0;
+      state.setHydration(date, Math.max(0, current - 1));
+      return;
+    }
+    set((s) => {
+      const nextLogs = s.waterLogs.filter((w) => w.id !== entryToUndo.id);
+      const currentGlasses = s.hydration[date] ?? 0;
+      const nextGlasses = Math.max(0, Math.round((currentGlasses - entryToUndo.glasses) * 10) / 10);
+      return {
+        waterLogs: nextLogs,
+        hydration: { ...s.hydration, [date]: nextGlasses },
+      };
+    });
+  },
+
+  setHydrationTargetGlasses: (target) => {
+    set({ hydrationTargetGlasses: Math.max(4, Math.min(16, target)) });
+  },
 
   patchCheckIn: (date, patch) =>
     set((state) => ({

@@ -133,6 +133,8 @@ export interface QuestSlice {
   syncSetupRewards: () => { claimedCount: number; totalXp: number };
   /** Completes today's open meal-log quest from a meal the person logged in the app. */
   completeMealQuest: (description: string) => { title: string; xp: number } | null;
+  /** Completes today's open hydration quest from water intake logged. */
+  completeHydrationQuest: (glasses: number, dateStr?: string) => { title: string; xp: number } | null;
   /** Completes today's open check-in quest from a check-in the person logged. */
   completeCheckInQuest: (feelingOrMood: number, note?: string) => { title: string; xp: number } | null;
   /** Completes today's open sleep quest from sleep hours logged. */
@@ -500,6 +502,31 @@ export const createQuestSlice: StateCreator<RootState, [['zustand/persist', unkn
         if (task?.objective?.type !== 'meal_log') continue;
         const result = get().submitQuestEvidence(asg.assignmentId, {
           answers: { mealDescription: description },
+          elapsedSeconds: 0,
+          completedStepIds: task.instructions.map((i) => i.id),
+          attested: true,
+        });
+        if (result.success) return { title: task.title, xp: result.earnedXp };
+      }
+      return null;
+    },
+
+    completeHydrationQuest: (glasses, dateStr) => {
+      const date = dateStr ?? today();
+      for (const asg of get().dailyAssignments.filter((a) => a.assignedDate === date && ACTIVE_STATUSES.includes(a.status))) {
+        const task = getTaskById(asg.taskId);
+        if (!task) continue;
+        const type = task.objective?.type;
+        const isWater =
+          type === 'hydration_log' ||
+          type === 'water_log' ||
+          task.id.includes('hydration') ||
+          task.id.includes('water') ||
+          task.title.toLowerCase().includes('water') ||
+          task.title.toLowerCase().includes('hydration');
+        if (!isWater) continue;
+        const result = get().submitQuestEvidence(asg.assignmentId, {
+          answers: { glasses, date },
           elapsedSeconds: 0,
           completedStepIds: task.instructions.map((i) => i.id),
           attested: true,

@@ -168,4 +168,48 @@ describe('Gaming Engine - Quest Auto-Completion & Health Integration', () => {
     expect(updated.checkInHistory.length).toBe(1);
     expect(updated.checkInHistory[0].date).toBe(today);
   });
+
+  it('addWaterLog adds timestamped record and updates daily hydration glasses', () => {
+    const store = useRootStore.getState();
+    useRootStore.setState({ hydration: {}, waterLogs: [] });
+
+    store.addWaterLog(500, today);
+    let state = useRootStore.getState();
+    expect(state.hydration[today]).toBe(2);
+    expect(state.waterLogs.length).toBe(1);
+    expect(state.waterLogs[0].milliliters).toBe(500);
+    expect(state.waterLogs[0].glasses).toBe(2);
+
+    store.addWaterLog(250, today);
+    state = useRootStore.getState();
+    expect(state.hydration[today]).toBe(3);
+    expect(state.waterLogs.length).toBe(2);
+  });
+
+  it('undoWaterLog safely reverts the most recent water intake log', () => {
+    const store = useRootStore.getState();
+    useRootStore.setState({ hydration: {}, waterLogs: [] });
+
+    store.addWaterLog(500, today);
+    store.addWaterLog(250, today);
+    expect(useRootStore.getState().hydration[today]).toBe(3);
+
+    store.undoWaterLog(today);
+    const state = useRootStore.getState();
+    expect(state.hydration[today]).toBe(2);
+    expect(state.waterLogs.length).toBe(1);
+  });
+
+  it('setHydrationTargetGlasses updates and clamps personal water goal', () => {
+    const store = useRootStore.getState();
+    store.setHydrationTargetGlasses(10);
+    expect(useRootStore.getState().hydrationTargetGlasses).toBe(10);
+
+    store.setHydrationTargetGlasses(2);
+    expect(useRootStore.getState().hydrationTargetGlasses).toBe(4);
+
+    store.setHydrationTargetGlasses(25);
+    expect(useRootStore.getState().hydrationTargetGlasses).toBe(16);
+  });
 });
+

@@ -2,6 +2,7 @@ import {
   computeVitalityScore,
   getWeeklyTrendPoints,
   getEqualizerBars,
+  getWeeklyHydrationBars,
 } from '../../src/domain/analytics/dashboardAnalytics';
 import type { DailyCheckInRecord } from '../../src/stores/slices/healthSlice';
 import type { DeviceReading } from '../../src/domain/interop/readings';
@@ -33,6 +34,20 @@ describe('dashboardAnalytics', () => {
     expect(res.components.moodScore).toBe(90);
     expect(res.components.stressBalance).toBe(80); // (11 - 3) * 10
     expect(res.components.questCompletionPct).toBe(100);
+  });
+
+  it('incorporates todayHydrationGlasses into vitality score when provided', () => {
+    const res = computeVitalityScore({
+      todayCheckIn: mockCheckIn,
+      recentCheckIns: [mockCheckIn],
+      questsDone: 4,
+      questsTotal: 4,
+      lastSleepMinutes: 450,
+      todayHydrationGlasses: 8,
+    });
+
+    expect(res.score).toBeGreaterThanOrEqual(80);
+    expect(res.components.hydrationGlasses).toBe(8);
   });
 
   it('handles empty state gracefully without crashing', () => {
@@ -80,4 +95,20 @@ describe('dashboardAnalytics', () => {
     expect(todayBar?.displayValue).toBe('6.5k');
     expect(todayBar?.heightPct).toBeGreaterThan(0.5);
   });
+
+  it('generates 7 weekly hydration equalizer bars correctly', () => {
+    const ref = new Date('2026-10-28T12:00:00Z');
+    const hydration: Record<string, number> = {
+      '2026-10-28': 6,
+      '2026-10-27': 8,
+    };
+
+    const bars = getWeeklyHydrationBars(hydration, ref, 8);
+    expect(bars).toHaveLength(7);
+    const todayBar = bars.find((b) => b.isToday);
+    expect(todayBar?.value).toBe(6);
+    expect(todayBar?.displayValue).toBe('6');
+    expect(todayBar?.heightPct).toBe(0.75);
+  });
 });
+
