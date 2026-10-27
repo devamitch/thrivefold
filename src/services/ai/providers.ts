@@ -9,7 +9,8 @@
  * (long context, embeddings) should go through Supabase edge functions.
  */
 
-import { env, pickGeminiKey, pickGroqKey, pickOpenRouterKey, isLocalOnly } from './env';
+import { env, pickGeminiKey, pickGroqKey, pickOpenRouterKey, pickClaudeKey, isLocalOnly } from './env';
+import { recordAiInteraction, checkCloudAiPermission } from './aiInteractionStore';
 
 export interface AiMessage {
   role: 'user' | 'assistant' | 'system';
@@ -18,7 +19,7 @@ export interface AiMessage {
 
 export interface AiResponse {
   text: string;
-  provider: 'gemini' | 'groq' | 'openrouter' | 'none';
+  provider: 'gemini' | 'groq' | 'openrouter' | 'claude' | 'none';
   model: string;
 }
 
@@ -114,11 +115,50 @@ async function askOpenRouter(messages: AiMessage[], systemPrompt?: string): Prom
   return { text, provider: 'openrouter', model };
 }
 
+// ── Claude (Anthropic) ──────────────────────────────────────────────────────
+
+async function askClaude(messages: AiMessage[], systemPrompt?: string): Promise<AiResponse> {
+  const key = pickClaudeKey();
+  if (!key) throw new Error('no_claude_key');
+
+  const model = 'claude-3-5-haiku-latest';
+  const anthropicMessages = messages
+    .filter((m) => m.role !== 'system')
+    .map((m) => ({
+      role: m.role === 'assistant' ? 'assistant' : 'user',
+      content: m.content,
+    }));
+
+  const body: Record<string, unknown> = {
+    model,
+    max_tokens: 1024,
+    messages: anthropicMessages,
+  };
+  if (systemPrompt) {
+    body.system = systemPrompt;
+  }
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`claude_${res.status}`);
+  const json = (await res.json()) as { content?: { type: string; text?: string }[] };
+  const text = json.content?.[0]?.text ?? '';
+  return { text, provider: 'claude', model };
+}
+
 /**
  * Validates a user-provided API key by executing a 1-token test ping.
  */
 export async function testProviderKey(
-  provider: 'gemini' | 'groq' | 'openrouter' | 'sarvam',
+  provider: 'gemini' | 'groq' | 'openrouter' | 'claude' | 'sarvam',
   key: string,
 ): Promise<{ ok: boolean; message: string; latencyMs: number }> {
   const start = Date.now();
@@ -177,6 +217,28 @@ export async function testProviderKey(
       return { ok: true, message: `Valid key (${latency}ms)`, latencyMs: latency };
     }
 
+    if (provider === 'claude') {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': trimmed,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'claude-3-5-haiku-latest',
+          max_tokens: 2,
+          messages: [{ role: 'user', content: 'ping' }],
+        }),
+      });
+      const latency = Date.now() - start;
+      if (!res.ok) {
+        return { ok: false, message: `API Error ${res.status}`, latencyMs: latency };
+      }
+      return { ok: true, message: `Connected (${latency}ms)`, latencyMs: latency };
+    }
+
     if (provider === 'sarvam') {
       const res = await fetch('https://api.sarvam.ai/text-to-speech', {
         method: 'POST',
@@ -208,33 +270,94 @@ export async function testProviderKey(
 // ── Cascade: try each provider in order ─────────────────────────────────────
 
 /**
- * Ask the AI with automatic failover. Tries Gemini → Groq → OpenRouter.
+ * Ask the AI with automatic failover. Tries Gemini → Groq → OpenRouter → Claude.
  * Returns `{ provider: 'none' }` if all fail (never throws).
+ * Saves input & output in local SQLite and Supabase.
+ * Respects tier limits (guests blocked; non-BYOK registered users capped).
  */
 export async function askAi(
   messages: AiMessage[],
-  opts?: { systemPrompt?: string; preferredProvider?: 'gemini' | 'groq' | 'openrouter'; forceCloud?: boolean },
+  opts?: {
+    systemPrompt?: string;
+    preferredProvider?: 'gemini' | 'groq' | 'openrouter' | 'claude';
+    forceCloud?: boolean;
+    userId?: string;
+  },
 ): Promise<AiResponse> {
   if (isLocalOnly() && !opts?.forceCloud) {
     return { text: '', provider: 'none', model: 'local_only' };
   }
+
+  // Quota and permission check:
+  // Guests: 0 cloud access allowed (handled on-device).
+  // Non-BYOK registered users: strictly limited trial.
+  // BYOK users: unlimited.
+  let isGuest = true;
+  let hasByok = false;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { useRootStore } = require('../../stores/useRootStore');
+    const st = useRootStore.getState?.();
+    if (st) {
+      isGuest = !st.adultConfirmedAt && !st.isOnboarded;
+      const k = st.userApiKeys ?? {};
+      hasByok = !!(k.gemini || k.groq || k.openrouter || k.claude || k.sarvam);
+    }
+  } catch {
+    // ignore
+  }
+
+  const perm = checkCloudAiPermission({ isGuest, hasByok, userId: opts?.userId });
+  if (!perm.allowed && !opts?.forceCloud) {
+    return { text: '', provider: 'none', model: 'quota_exceeded' };
+  }
+
   const system = opts?.systemPrompt;
-  const providers = [askGemini, askGroq, askOpenRouter];
+  const providers = [askGemini, askGroq, askOpenRouter, askClaude];
 
   // Move preferred provider to front
   if (opts?.preferredProvider === 'groq') {
     providers.splice(0, 0, providers.splice(1, 1)[0]);
   } else if (opts?.preferredProvider === 'openrouter') {
     providers.splice(0, 0, providers.splice(2, 1)[0]);
+  } else if (opts?.preferredProvider === 'claude') {
+    providers.splice(0, 0, providers.splice(3, 1)[0]);
   }
+
+  const promptText = messages.map((m) => `${m.role}: ${m.content}`).join('\n');
+  const t0 = Date.now();
 
   for (const provider of providers) {
     try {
-      return await provider(messages, system);
+      const res = await provider(messages, system);
+      if (res.text) {
+        // Record input and output in SQLite & Supabase
+        recordAiInteraction({
+          userId: opts?.userId,
+          provider: res.provider,
+          model: res.model,
+          prompt: promptText,
+          response: res.text,
+          latencyMs: Date.now() - t0,
+          status: 'success',
+        }).catch(() => undefined);
+        return res;
+      }
     } catch {
       // try next
     }
   }
+
+  recordAiInteraction({
+    userId: opts?.userId,
+    provider: 'none',
+    model: 'none',
+    prompt: promptText,
+    response: '',
+    latencyMs: Date.now() - t0,
+    status: 'error',
+  }).catch(() => undefined);
+
   return { text: '', provider: 'none', model: '' };
 }
 

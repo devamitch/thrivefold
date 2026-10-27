@@ -20,6 +20,7 @@ export const env = Object.freeze({
   GROQ_API_KEY: process.env.EXPO_PUBLIC_GROQ_API_KEY ?? '',
   GROQ_API_KEY_2: process.env.EXPO_PUBLIC_GROQ_API_KEY_2 ?? '',
   OPENROUTER_API_KEY: process.env.EXPO_PUBLIC_OPENROUTER_API_KEY ?? '',
+  CLAUDE_API_KEY: process.env.EXPO_PUBLIC_CLAUDE_API_KEY ?? process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY ?? '',
 
   // ── Voice & Speech ──
   SARVAM_API_KEY: process.env.EXPO_PUBLIC_SARVAM_API_KEY ?? '',
@@ -43,6 +44,7 @@ export interface UserApiKeys {
   gemini?: string;
   groq?: string;
   openrouter?: string;
+  claude?: string;
   sarvam?: string;
   elevenlabs?: string;
 }
@@ -93,9 +95,11 @@ export function hasAiKeys(): boolean {
     userKeys.gemini ||
     userKeys.groq ||
     userKeys.openrouter ||
+    userKeys.claude ||
     env.GEMINI_API_KEY ||
     env.GROQ_API_KEY ||
-    env.OPENROUTER_API_KEY
+    env.OPENROUTER_API_KEY ||
+    env.CLAUDE_API_KEY
   );
 }
 
@@ -121,6 +125,14 @@ export function pickOpenRouterKey(): string {
   if (userKeys.openrouter) return userKeys.openrouter;
   if (isLocalOnly()) return '';
   return env.OPENROUTER_API_KEY;
+}
+
+/** Pick Claude key (User BYOK key takes precedence over build env). */
+export function pickClaudeKey(): string {
+  const userKeys = getUserKeys();
+  if (userKeys.claude) return userKeys.claude;
+  if (isLocalOnly()) return '';
+  return env.CLAUDE_API_KEY;
 }
 
 /** Pick Sarvam key (User BYOK key takes precedence over build env). */

@@ -54,6 +54,15 @@ const PROVIDERS: ProviderConfig[] = [
     icon: 'git-network-outline',
   },
   {
+    id: 'claude',
+    name: 'Anthropic Claude',
+    badge: 'Deep Reasoning',
+    description: 'State-of-the-art reasoning and thoughtful dialogue powered by Claude 3.5 Haiku & Sonnet.',
+    docsUrl: 'https://console.anthropic.com/settings/keys',
+    placeholder: 'sk-ant-...',
+    icon: 'bulb-outline',
+  },
+  {
     id: 'sarvam',
     name: 'Sarvam AI',
     badge: 'Indian Voice',
@@ -88,6 +97,7 @@ export default function AiByokScreen() {
     gemini: userApiKeys.gemini ?? '',
     groq: userApiKeys.groq ?? '',
     openrouter: userApiKeys.openrouter ?? '',
+    claude: userApiKeys.claude ?? '',
     sarvam: userApiKeys.sarvam ?? '',
   });
 
@@ -140,7 +150,7 @@ export default function AiByokScreen() {
     setTesting((prev) => ({ ...prev, [provider]: true }));
     try {
       const result = await testProviderKey(
-        provider as 'gemini' | 'groq' | 'openrouter' | 'sarvam',
+        provider as 'gemini' | 'groq' | 'openrouter' | 'claude' | 'sarvam',
         keyToTest,
       );
       setTestStatus((prev) => ({

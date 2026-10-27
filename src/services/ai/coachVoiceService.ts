@@ -1,8 +1,10 @@
 /**
  * Human Virtual Coach Voice Service
  *
- * Integrates Sarvam AI (bulbul:v3 neural TTS for warm, natural Indian voice)
- * and expo-speech (ultra-low latency on-device neural voice fallback).
+ * Ultra-low latency on-device neural voice (expo-speech) prioritized with
+ * a soothing, calm Indian male voice. Sarvam AI bulbul:v3 is strictly reserved
+ * for registered users who provide their own BYOK key (disabled for guests
+ * and test runs).
  */
 
 import * as Speech from 'expo-speech';
@@ -18,17 +20,81 @@ export interface VoiceCoachOptions {
 
 let preferredVoiceId: string | null = null;
 
-// Find and cache the most natural on-device neural voice
-async function resolveBestVoice(language = 'en-IN'): Promise<string | null> {
+function isGuestOrTesting(): boolean {
+  if (process.env.NODE_ENV === 'test') return true;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { useRootStore } = require('../../stores/useRootStore');
+    const store = useRootStore.getState?.();
+    if (!store) return false;
+    const isGuest = !store.adultConfirmedAt && !store.isOnboarded;
+    const hasSarvamByok = !!store.userApiKeys?.sarvam;
+    return isGuest || !hasSarvamByok;
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * Score available voices to find the most soothing, calm Indian male voice.
+ * Prioritizes Indian English / Hindi male voices (e.g. en-in male Google TTS, iOS Rishi).
+ */
+function scoreIndianMaleVoice(v: Speech.Voice): number {
+  const id = (v.identifier || '').toLowerCase();
+  const name = (v.name || '').toLowerCase();
+  const lang = (v.language || '').toLowerCase().replace('_', '-');
+  let score = 0;
+
+  // Primary: Indian English or Hindi
+  if (lang.startsWith('en-in')) {
+    score += 100;
+  } else if (lang.startsWith('hi-in') || lang.startsWith('hi')) {
+    score += 60;
+  } else if (lang.startsWith('en-')) {
+    score += 20;
+  }
+
+  // Male markers in Indian TTS (Google TTS: -end-, -ene-, #male; iOS: Rishi; Android: shubh)
+  const isMale =
+    id.includes('male') ||
+    name.includes('male') ||
+    id.includes('rishi') ||
+    name.includes('rishi') ||
+    id.includes('-end-') ||
+    id.includes('-ene-') ||
+    name.includes('shubh') ||
+    id.includes('shubh');
+  if (isMale) score += 50;
+
+  // Deduct for female voices to ensure a calm male voice is selected
+  const isFemale =
+    id.includes('female') ||
+    name.includes('female') ||
+    id.includes('neerja') ||
+    name.includes('neerja') ||
+    id.includes('-ena-') ||
+    id.includes('-enb-') ||
+    id.includes('-enc-');
+  if (isFemale) score -= 40;
+
+  // Enhanced / network neural quality boost
+  if (v.quality === Speech.VoiceQuality.Enhanced || id.includes('network')) {
+    score += 25;
+  }
+
+  return score;
+}
+
+// Find and cache the most soothing on-device Indian male voice
+async function resolveBestVoice(): Promise<string | null> {
   if (preferredVoiceId) return preferredVoiceId;
   try {
     const voices = await Speech.getAvailableVoicesAsync();
-    const match =
-      voices.find((v) => v.language.toLowerCase().startsWith('en-in') && v.quality === Speech.VoiceQuality.Enhanced) ||
-      voices.find((v) => v.language.toLowerCase().startsWith('en-in')) ||
-      voices.find((v) => v.quality === Speech.VoiceQuality.Enhanced);
-    if (match) {
-      preferredVoiceId = match.identifier;
+    if (voices && voices.length > 0) {
+      const sorted = [...voices].sort((a, b) => scoreIndianMaleVoice(b) - scoreIndianMaleVoice(a));
+      if (sorted[0] && scoreIndianMaleVoice(sorted[0]) > 0) {
+        preferredVoiceId = sorted[0].identifier;
+      }
     }
   } catch {
     // ignore
@@ -38,12 +104,18 @@ async function resolveBestVoice(language = 'en-IN'): Promise<string | null> {
 
 /**
  * Synthesize speech via Sarvam AI bulbul:v3.
- * Returns base64 WAV or writes to cache.
+ * Strictly gated: NOT available to guests or automated testing;
+ * requires registered user BYOK key.
  */
 export async function synthesizeSarvamSpeech(
   text: string,
   opts?: VoiceCoachOptions,
 ): Promise<string | null> {
+  // Guests & testing cannot use Sarvam AI voice; reserved for users with explicit BYOK key
+  if (isGuestOrTesting()) {
+    return null;
+  }
+
   const key = env.SARVAM_API_KEY || env.SARVAM_API_KEY_2;
   if (!key) return null;
 
@@ -82,6 +154,7 @@ export async function synthesizeSarvamSpeech(
 /**
  * Spoken cue for live coaching.
  * Non-blocking, never stacks cues, uses natural cadence.
+ * Always selects a soothing, calm Indian male voice.
  * Guards stop() behind isSpeakingAsync so rapid calls don't stutter.
  */
 export async function speakCoach(
@@ -96,15 +169,15 @@ export async function speakCoach(
     const speaking = await Speech.isSpeakingAsync().catch(() => false);
     if (speaking) Speech.stop();
 
-    const voice = await resolveBestVoice(opts?.language ?? 'en-IN');
+    const voice = await resolveBestVoice();
     Speech.speak(text, {
       language: opts?.language ?? 'en-IN',
-      rate: opts?.rate ?? 1.02,
-      pitch: opts?.pitch ?? 1.0,
+      rate: opts?.rate ?? 0.95,   // Calm, natural, soothing pace
+      pitch: opts?.pitch ?? 0.94, // Warm, deeper Indian male tone
       voice: voice ?? undefined,
     });
   } catch {
-    // fallback plain speak
-    Speech.speak(text);
+    // fallback plain speak with calm pitch
+    Speech.speak(text, { rate: 0.95, pitch: 0.94 });
   }
 }

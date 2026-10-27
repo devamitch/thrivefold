@@ -52,6 +52,7 @@ export interface UserApiKeys {
   gemini?: string;
   groq?: string;
   openrouter?: string;
+  claude?: string;
   sarvam?: string;
   elevenlabs?: string;
 }
