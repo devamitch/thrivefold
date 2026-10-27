@@ -59,7 +59,7 @@ export function HydrationTrackerCard({
       {/* Header */}
       <View style={styles.headerRow}>
         <View style={styles.headerLeft}>
-          <View style={[styles.iconCircle, { backgroundColor: colors.surface1 }]}>
+          <View style={[styles.iconCircle, { backgroundColor: colors.infoSurface }]}>
             <Ionicons name="water" size={20} color={colors.info} />
           </View>
           <View style={{ marginLeft: 10 }}>
@@ -76,7 +76,7 @@ export function HydrationTrackerCard({
           style={[
             styles.badge,
             {
-              backgroundColor: glasses >= targetGlasses ? colors.successSurface : colors.surface1,
+              backgroundColor: glasses >= targetGlasses ? colors.successSurface : colors.infoSurface,
             },
           ]}
         >
@@ -104,12 +104,12 @@ export function HydrationTrackerCard({
                 styles.capsule,
                 {
                   backgroundColor: isFilled ? colors.info : colors.surface1,
-                  borderColor: isFilled ? colors.info : colors.border,
+                  borderColor: isFilled ? colors.info : colors.surface2,
                 },
               ]}
             >
               {isFilled ? (
-                <Ionicons name="water" size={12} color={colors.surface} />
+                <Ionicons name="water" size={12} color="#FFFFFF" />
               ) : (
                 <View style={[styles.emptyDot, { backgroundColor: colors.surface3 }]} />
               )}
@@ -162,24 +162,24 @@ export function HydrationTrackerCard({
 
         <PressableScale
           onPress={() => handleAdd(250)}
-          style={[styles.adjustBtn, { backgroundColor: colors.primaryAlpha }]}
+          style={[styles.adjustBtn, { backgroundColor: colors.infoSurface }]}
           accessibilityRole="button"
           accessibilityLabel="Add 250ml glass of water"
         >
-          <Ionicons name="add" size={14} color={colors.primary} />
-          <Text style={[typography.captionBold, { color: colors.primary, marginLeft: 2 }]}>
+          <Ionicons name="add" size={14} color={colors.info} />
+          <Text style={[typography.captionBold, { color: colors.info, marginLeft: 2 }]}>
             +250 ml
           </Text>
         </PressableScale>
 
         <PressableScale
           onPress={() => handleAdd(500)}
-          style={[styles.adjustBtn, { backgroundColor: colors.primary }]}
+          style={[styles.adjustBtn, { backgroundColor: colors.info }]}
           accessibilityRole="button"
           accessibilityLabel="Add 500ml bottle of water"
         >
-          <Ionicons name="add" size={14} color={colors.onPrimary} />
-          <Text style={[typography.captionBold, { color: colors.onPrimary, marginLeft: 2 }]}>
+          <Ionicons name="add" size={14} color="#FFFFFF" />
+          <Text style={[typography.captionBold, { color: '#FFFFFF', marginLeft: 2 }]}>
             +500 ml
           </Text>
         </PressableScale>

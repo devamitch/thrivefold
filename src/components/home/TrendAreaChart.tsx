@@ -115,7 +115,7 @@ export function TrendAreaChart({ points, onCheckIn }: Props) {
                 <LinearGradient
                   start={vec(0, PADDING_Y)}
                   end={vec(0, CHART_HEIGHT)}
-                  colors={[colors.primaryAlpha, 'rgba(255, 255, 255, 0.0)']}
+                  colors={[colors.primaryAlpha, 'transparent']}
                 />
               </Path>
 

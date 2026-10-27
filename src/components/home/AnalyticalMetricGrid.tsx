@@ -143,7 +143,7 @@ export function AnalyticalMetricGrid({
         >
           <View style={styles.cardHeader}>
             <View style={[styles.iconBox, { backgroundColor: colors.surface1 }]}>
-              <Ionicons name="moon-outline" size={18} color={colors.primary} />
+              <Ionicons name="moon-outline" size={18} color={colors.accent} />
             </View>
             {/* Mini Sleep Arc */}
             <View style={styles.dialBox}>
@@ -197,7 +197,7 @@ export function AnalyticalMetricGrid({
                     styles.eqBar,
                     {
                       height: h,
-                      backgroundColor: heartRateAvg ? colors.primary : colors.surface2,
+                      backgroundColor: heartRateAvg ? colors.error : colors.surface2,
                     },
                   ]}
                 />
@@ -218,17 +218,17 @@ export function AnalyticalMetricGrid({
       <View style={styles.cell}>
         <Card style={[styles.metricCard, { padding: spacing.md }]}>
           <View style={styles.cardHeader}>
-            <View style={[styles.iconBox, { backgroundColor: colors.surface1 }]}>
+            <View style={[styles.iconBox, { backgroundColor: colors.infoSurface }]}>
               <Ionicons name="water-outline" size={18} color={colors.info} />
             </View>
             {/* Interactive + button */}
             <PressableScale
               onPress={handleAddWater}
-              style={[styles.addWaterBtn, { backgroundColor: colors.primary }]}
+              style={[styles.addWaterBtn, { backgroundColor: colors.info }]}
               accessibilityRole="button"
               accessibilityLabel="Add one glass of water"
             >
-              <Ionicons name="add" size={16} color={colors.onPrimary} />
+              <Ionicons name="add" size={16} color="#FFFFFF" />
             </PressableScale>
           </View>
 

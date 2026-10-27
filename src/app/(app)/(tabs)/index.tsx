@@ -278,7 +278,8 @@ export default function HomeScreen() {
     <DashboardScreenContainer
       header={({ scrollY, collapseProgress }) => (
         <DashboardHeader
-          title={name ? name : 'Thrivefold'}
+          title="Thrivefold"
+          userName={name ? name : undefined}
           badgeText={`Lvl ${progress.level} · ${s.dailyPoints} pts`}
           onMenuPress={() => useRootStore.getState().setDrawerOpen(true)}
           scrollY={scrollY}

@@ -15,6 +15,7 @@ import { PressableScale } from '../ui/PressableScale';
 
 export interface DashboardHeaderProps {
   title: string;
+  userName?: string;
   badgeText?: string;
   onMenuPress: () => void;
   scrollY: SharedValue<number>;
@@ -27,11 +28,13 @@ export const COMPACT_HEADER_CONTENT_HEIGHT = 52;
  * Pinned Dashboard Header:
  * - Conventional, full-width app header pinned at top behind transparent status bar.
  * - Solid primary background so content scrolling underneath never bleeds through.
- * - Houses app title, level/points status badge, and menu drawer toggle.
- * - Glitch-free, zero unnecessary opacity/scaling transitions for absolute visual stability.
+ * - Brand title ("Thrivefold") at top -> transitions cleanly to compact user title ("Aria") as hero scrolls.
+ * - Status badge and menu drawer toggle remain stably pinned throughout all dashboard sections.
+ * - Glitch-free, zero unnecessary scaling or layout jumps for absolute visual stability.
  */
 export function DashboardHeader({
   title,
+  userName,
   badgeText,
   onMenuPress,
   scrollY,
@@ -40,10 +43,32 @@ export function DashboardHeader({
   const insets = useSafeAreaInsets();
   const headerHeight = insets.top + COMPACT_HEADER_CONTENT_HEIGHT;
 
+  const compactTitle = userName && userName !== title ? userName : null;
+
   const headerBorderAnim = useAnimatedStyle(() => {
     const borderProgress = interpolate(scrollY.value, [0, 20], [0, 1], Extrapolation.CLAMP);
     return {
       borderBottomColor: borderProgress > 0.5 ? colors.onPrimarySurface : 'transparent',
+    };
+  });
+
+  const brandAnimStyle = useAnimatedStyle(() => {
+    if (!compactTitle) return { opacity: 1 };
+    const opacity = interpolate(scrollY.value, [40, 85], [1, 0], Extrapolation.CLAMP);
+    const translateY = interpolate(scrollY.value, [40, 85], [0, -4], Extrapolation.CLAMP);
+    return {
+      opacity,
+      transform: [{ translateY }],
+    };
+  });
+
+  const compactAnimStyle = useAnimatedStyle(() => {
+    if (!compactTitle) return { opacity: 0 };
+    const opacity = interpolate(scrollY.value, [55, 95], [0, 1], Extrapolation.CLAMP);
+    const translateY = interpolate(scrollY.value, [55, 95], [4, 0], Extrapolation.CLAMP);
+    return {
+      opacity,
+      transform: [{ translateY }],
     };
   });
 
@@ -62,12 +87,33 @@ export function DashboardHeader({
     >
       <View style={styles.content}>
         <View style={styles.titleRow}>
-          <Text
-            style={[typography.bodyBold, { color: colors.onPrimary, fontSize: 16 }]}
-            numberOfLines={1}
-          >
-            {title}
-          </Text>
+          <View style={styles.titleStack}>
+            <Animated.Text
+              style={[
+                typography.bodyBold,
+                styles.headerTitle,
+                { color: colors.onPrimary },
+                brandAnimStyle,
+              ]}
+              numberOfLines={1}
+            >
+              {title}
+            </Animated.Text>
+            {compactTitle ? (
+              <Animated.Text
+                style={[
+                  typography.bodyBold,
+                  styles.headerTitle,
+                  styles.absoluteTitle,
+                  { color: colors.onPrimary },
+                  compactAnimStyle,
+                ]}
+                numberOfLines={1}
+              >
+                {compactTitle}
+              </Animated.Text>
+            ) : null}
+          </View>
           {badgeText ? (
             <View style={[styles.badge, { backgroundColor: colors.onPrimarySurface }]}>
               <Text style={{ color: colors.onPrimary, fontSize: 11, fontWeight: '700' }}>
@@ -101,7 +147,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 100,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   content: {
     height: COMPACT_HEADER_CONTENT_HEIGHT,
@@ -115,6 +161,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
     marginRight: 12,
+  },
+  titleStack: {
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: 17,
+    letterSpacing: -0.3,
+  },
+  absoluteTitle: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
   },
   badge: {
     marginLeft: 8,
