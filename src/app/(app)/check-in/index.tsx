@@ -4,7 +4,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { StyleSheet, Text, TextInput, type AccessibilityActionEvent, View } from 'react-native';
 import { Link, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import { hapticSuccess, hapticSelection } from '../../../services/haptics';
 
 import { AppHeader } from '../../../components/ui/AppHeader';
 import { Button } from '../../../components/ui/Button';
@@ -66,9 +66,7 @@ export default function CheckInScreen() {
   const signal = useMemo(() => (note.trim().length > 3 ? classifyLocalInput({ text: note }) : null), [note]);
 
   const save = () => {
-    try {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch {}
+    hapticSuccess();
     updateTodayMetrics(energy, mood, stress, sleep);
     addCheckIn({ date, energy, mood, stress, sleepHours: sleep, symptoms, notes: note.trim() || undefined, intensity });
     showToast({ type: 'success', title: existing ? 'Check-in updated' : 'Check-in saved', message: 'Saved on this device.' });
@@ -217,9 +215,7 @@ function Scale({
     const step = Math.min(10, Math.max(1, Math.round((clampedX / trackWidth.current) * 9) + 1));
     if (step !== lastVal.current) {
       lastVal.current = step;
-      try {
-        Haptics.selectionAsync();
-      } catch {}
+      hapticSelection();
       onChange(step);
     }
   };
@@ -259,7 +255,7 @@ function Scale({
             hitSlop={8}
             onPress={() => {
               if (value > 1) {
-                try { Haptics.selectionAsync(); } catch {}
+                hapticSelection();
                 onChange(value - 1);
               }
             }}
@@ -275,7 +271,7 @@ function Scale({
             hitSlop={8}
             onPress={() => {
               if (value < 10) {
-                try { Haptics.selectionAsync(); } catch {}
+                hapticSelection();
                 onChange(value + 1);
               }
             }}

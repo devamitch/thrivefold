@@ -160,28 +160,155 @@ export default function SignInScreen() {
 
   if (step === 'account') {
     return (
-      <View style={[styles.root, { backgroundColor: colors.background, paddingTop: insets.top + spacing.md, paddingHorizontal: spacing.lg }]}>
-        <PressableScale
-          onPress={() => {
-            setAuthError(null);
-            setIntroSeen(false);
+      <View style={[styles.root, { backgroundColor: colors.background }]}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingTop: insets.top + spacing.md,
+            paddingBottom: insets.bottom + spacing.lg,
+            paddingHorizontal: spacing.lg,
           }}
-          accessibilityRole="button"
-          accessibilityLabel="See the introduction again"
-          style={[styles.back, { backgroundColor: colors.surface1 }]}
         >
-          <Ionicons name="chevron-back" size={20} color={colors.text.primary} />
-        </PressableScale>
-        <View style={styles.hero}>
-          <AnimatedThrivefoldMark size={132} />
-          <Text style={[typography.display, styles.center, { color: colors.text.primary, marginTop: spacing.lg }]} accessibilityRole="header">
-            Welcome to Thrivefold
-          </Text>
-          <Text style={[typography.body, styles.center, { color: colors.text.secondary, marginTop: spacing.xs }]}>
-            Sign in with Google and we will show you what your account shares so you can confirm it. Your health records
-            stay on this phone either way.
-          </Text>
-        </View>
+          <PressableScale
+            onPress={() => {
+              setAuthError(null);
+              setIntroSeen(false);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="See the introduction again"
+            style={[styles.back, { backgroundColor: colors.surface1 }]}
+          >
+            <Ionicons name="chevron-back" size={20} color={colors.text.primary} />
+          </PressableScale>
+          <View style={[styles.hero, { marginTop: spacing.sm }]}>
+            <AnimatedThrivefoldMark size={112} />
+            <Text style={[typography.display, styles.center, { color: colors.text.primary, marginTop: spacing.md }]} accessibilityRole="header">
+              Welcome to Thrivefold
+            </Text>
+            <Text style={[typography.body, styles.center, { color: colors.text.secondary, marginTop: spacing.xs }]}>
+              A calm, local-first sanctuary for your biological rhythm, daily check-ins, and holistic health.
+            </Text>
+          </View>
+
+          {/* Editorial Value & Privacy Guarantee Points */}
+          <SquircleSurface
+            radius={20}
+            fill={colors.surface1}
+            style={{ padding: spacing.md, marginVertical: spacing.md, width: '100%' }}
+          >
+            <Text
+              style={[
+                typography.caption,
+                {
+                  color: colors.primary,
+                  fontWeight: '700',
+                  letterSpacing: 0.8,
+                  textTransform: 'uppercase',
+                  marginBottom: spacing.xs,
+                },
+              ]}
+            >
+              Private & Transparent Authentication
+            </Text>
+
+            <View style={{ gap: 10, marginTop: 4 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+                <View
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 14,
+                    backgroundColor: colors.surface2,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginTop: 1,
+                  }}
+                >
+                  <Ionicons name="shield-checkmark-outline" size={15} color={colors.primary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[typography.bodyBold, { color: colors.text.primary, fontSize: 13 }]}>
+                    Local-First & Encrypted
+                  </Text>
+                  <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 1, lineHeight: 17 }]}>
+                    Sensitive check-ins, cycles, and journal notes stay stored on your device only.
+                  </Text>
+                </View>
+              </View>
+
+              <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+                <View
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 14,
+                    backgroundColor: colors.surface2,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginTop: 1,
+                  }}
+                >
+                  <Ionicons name="cloud-done-outline" size={15} color={colors.primary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[typography.bodyBold, { color: colors.text.primary, fontSize: 13 }]}>
+                    Seamless Device Restore
+                  </Text>
+                  <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 1, lineHeight: 17 }]}>
+                    Switch phones anytime without losing streaks, achievements, or customized routines.
+                  </Text>
+                </View>
+              </View>
+
+              <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+                <View
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 14,
+                    backgroundColor: colors.surface2,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginTop: 1,
+                  }}
+                >
+                  <Ionicons name="eye-off-outline" size={15} color={colors.primary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[typography.bodyBold, { color: colors.text.primary, fontSize: 13 }]}>
+                    Zero Ads or Data Broking
+                  </Text>
+                  <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 1, lineHeight: 17 }]}>
+                    No hidden trackers, third-party profiling, or monetization of personal health.
+                  </Text>
+                </View>
+              </View>
+
+              <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+                <View
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 14,
+                    backgroundColor: colors.surface2,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginTop: 1,
+                  }}
+                >
+                  <Ionicons name="checkmark-circle-outline" size={15} color={colors.primary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[typography.bodyBold, { color: colors.text.primary, fontSize: 13 }]}>
+                    1-Tap Guest Access Anytime
+                  </Text>
+                  <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 1, lineHeight: 17 }]}>
+                    Every core wellness tool is always 100% accessible offline without an account.
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </SquircleSurface>
 
         {/* Anvay ID 1-Tap Ecosystem Sign-In (Uncomment to activate once deep-linking screen is configured)
         <PressableScale
@@ -235,7 +362,8 @@ export default function SignInScreen() {
         ) : null}
         <Button label="Continue without an account" variant="ghost" onPress={() => setStep('name')} style={{ marginTop: spacing.xs }} />
         <Button label="Explore as guest" variant="ghost" onPress={guest} />
-        <View style={{ paddingBottom: insets.bottom + spacing.md }}>{legal}</View>
+          <View style={{ paddingBottom: spacing.md }}>{legal}</View>
+        </ScrollView>
       </View>
     );
   }

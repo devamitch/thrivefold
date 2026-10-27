@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import { hapticSelection } from '../../services/haptics';
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -45,7 +45,7 @@ export function ChipComposer({
   const preview = picked.map((id) => APPROVED_CHIPS.find((c) => c.id === id)?.text).filter(Boolean).join(' ');
 
   const toggle = (id: string) => {
-    Haptics.selectionAsync().catch(() => undefined);
+    hapticSelection();
     setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : p.length >= max ? p : [...p, id]));
   };
 

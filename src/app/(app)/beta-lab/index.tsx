@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import { hapticSelection } from '../../../services/haptics';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Switch, Text, useWindowDimensions, View } from 'react-native';
@@ -74,9 +74,7 @@ export default function BetaLabScreen() {
   const poseLab = useBetaPoseLab();
 
   const tick = useCallback(() => {
-    try {
-      Haptics.selectionAsync().catch(() => undefined);
-    } catch {}
+    hapticSelection();
   }, []);
 
   const selectTab = useCallback(

@@ -8,7 +8,7 @@
  *  - framing cues evaluated at most every 100 ms.
  */
 
-import * as Haptics from 'expo-haptics';
+import { hapticWarning, hapticLight, hapticMedium } from '../../services/haptics';
 import { landmarksOf, type PoseFrame } from 'pose-landmarker';
 import { useCallback, useRef, useState } from 'react';
 import {
@@ -276,7 +276,7 @@ export function usePoseTracking({
       repRef.current = next;
 
       if (!before.fault && next.fault) {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => undefined);
+        hapticWarning();
         speak(
           {
             id: next.fault.id,
@@ -288,7 +288,7 @@ export function usePoseTracking({
         );
       } else if (before.fault && !next.fault) {
         cuesEngine.resolveFault(before.fault.id, now);
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
+        hapticLight();
       }
 
       const inSeconds = movement.kind === 'hold' || timed;
@@ -297,7 +297,7 @@ export function usePoseTracking({
           withTiming(1.22, { duration: 90 }),
           withSpring(1, { damping: 12, stiffness: 200 }),
         );
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
+        hapticMedium();
         if (!inSeconds && !next.fault) {
           const line = repLine(next.reps, item.target, !before.repHadFault);
           if (line) {

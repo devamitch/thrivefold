@@ -2,7 +2,7 @@ import { SquircleSurface } from '../ui/SquircleSurface';
 import React from 'react';
 import { Text, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import { hapticLight } from '../../services/haptics';
 
 import { useTheme } from '../../theme/useTheme';
 import { Card } from '../ui/Card';
@@ -77,9 +77,7 @@ export const PersonalizedNourishmentCard: React.FC<PersonalizedNourishmentCardPr
             <PressableScale
               key={g}
               onPress={() => {
-                try {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                } catch {}
+                hapticLight();
                 onSetWaterGlasses(g);
               }}
               scaleTo={0.88}

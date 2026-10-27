@@ -10,9 +10,9 @@ import { SquircleSurface } from '../ui/SquircleSurface';
  */
 
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import type { Tabs } from 'expo-router';
 import { router } from 'expo-router';
+import { hapticMedium, hapticSelection } from '../../services/haptics';
 import { memo, useCallback, useEffect, useMemo, type ComponentProps } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, {
@@ -267,7 +267,7 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
       const event = navigation.emit({ type: 'tabPress', target: key, canPreventDefault: true });
       if (event.defaultPrevented) return;
       if (!focused) {
-        haptic(() => Haptics.selectionAsync());
+        hapticSelection();
         navigation.navigate(name);
       }
     },
@@ -275,7 +275,7 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
   );
 
   const handleOrbPress = useCallback(() => {
-    haptic(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium));
+    hapticMedium();
     // Navigate to check-in or quick action modal
     router.push('/(app)/check-in' as any);
   }, []);

@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import { hapticLight } from '../../../services/haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useRef, useState } from 'react';
 import { PermissionsAndroid, Platform, StyleSheet, Text, View } from 'react-native';
@@ -132,7 +132,7 @@ export default function PoseCheckScreen() {
       feed.face.value = e.nativeEvent.face ?? [];
       feed.hands.value = (e.nativeEvent.hands ?? []).flat();
       const counted = reps.current.reps > before;
-      if (counted) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
+      if (counted) hapticLight();
       const now = Date.now();
       if (counted || now - lastUi.current > 150) {
         lastUi.current = now;

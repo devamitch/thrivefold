@@ -4,7 +4,7 @@ import { Linking, ScrollView, StyleSheet, Text, TextInput, View } from 'react-na
 import { Link, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import * as Haptics from 'expo-haptics';
+import { hapticMedium, hapticSuccess } from '../../../services/haptics';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
@@ -32,9 +32,7 @@ export default function SafetyScreen() {
   ];
 
   const handleResourceAction = (res: typeof emergencyResources[0]) => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    } catch {}
+    hapticMedium();
 
     if (res.isSms) {
       Linking.openURL(`sms:${res.phone}?body=${res.body ?? 'HELLO'}`);
@@ -53,9 +51,7 @@ export default function SafetyScreen() {
       });
       return;
     }
-    try {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch {}
+    hapticSuccess();
     showToast({
       type: 'info',
       title: 'Report saved',

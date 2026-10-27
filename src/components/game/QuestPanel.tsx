@@ -2,7 +2,7 @@ import { SquircleSurface } from '../ui/SquircleSurface';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Text, StyleSheet, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import { hapticLight, hapticSuccess } from '../../services/haptics';
 
 import { useTheme } from '../../theme/useTheme';
 import { Badge } from '../ui/Badge';
@@ -104,9 +104,7 @@ export function QuestPanel({ assignmentId, onDone, onLeave }: QuestPanelProps) {
   }, [running]);
 
   const toggleTimer = () => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    } catch {}
+    hapticLight();
     if (running && startedAt.current !== null) {
       banked.current += Math.floor((Date.now() - startedAt.current) / 1000);
       startedAt.current = null;
@@ -167,9 +165,7 @@ export function QuestPanel({ assignmentId, onDone, onLeave }: QuestPanelProps) {
     }
     const result = submitQuestEvidence(assignmentId, evidence);
     if (result.success) {
-      try {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      } catch {}
+      hapticSuccess();
       setRunning(false);
       showToast({
         type: 'success',

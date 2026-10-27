@@ -2,7 +2,7 @@ import { SquircleSurface } from '../ui/SquircleSurface';
 import React from 'react';
 import { Text, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import { hapticSelection } from '../../services/haptics';
 
 import { useTheme } from '../../theme/useTheme';
 import { PressableScale } from '../ui/PressableScale';
@@ -46,9 +46,7 @@ export const CalendarViewModeSwitcher: React.FC<CalendarViewModeSwitcherProps> =
           <PressableScale
             key={mode.id}
             onPress={() => {
-              try {
-                Haptics.selectionAsync();
-              } catch {}
+              hapticSelection();
               onSelectMode(mode.id);
             }}
             scaleTo={0.94}

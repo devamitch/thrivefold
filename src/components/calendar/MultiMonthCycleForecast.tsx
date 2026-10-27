@@ -2,7 +2,7 @@ import { SquircleSurface } from '../ui/SquircleSurface';
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import { hapticSelection } from '../../services/haptics';
 
 import { useTheme } from '../../theme/useTheme';
 import { Card } from '../ui/Card';
@@ -204,9 +204,7 @@ export const MultiMonthCycleForecast: React.FC<MultiMonthCycleForecastProps> = (
           <PressableScale
             key={stage.stage}
             onPress={() => {
-              try {
-                Haptics.selectionAsync();
-              } catch {}
+              hapticSelection();
               onSelectStageIndex(idx);
             }}
             scaleTo={0.97}

@@ -3,7 +3,13 @@ import React from 'react';
 import { Share, StyleSheet, Text, View } from 'react-native';
 import { Link, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import {
+  hapticSuccess,
+  hapticLight,
+  hapticMedium,
+  hapticHeavy,
+  hapticSelection,
+} from '../../services/haptics';
 
 import { ScreenWrapper } from '../../components/ui/ScreenWrapper';
 import { Header } from '../../components/ui/Header';
@@ -120,9 +126,7 @@ export default function DevToolsScreen() {
       9,
     );
 
-    try {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch {}
+    hapticSuccess();
     store.showToast({
       type: 'success',
       title: 'Mock Data Injected',
@@ -622,19 +626,19 @@ export default function DevToolsScreen() {
           <View style={styles.chipRow}>
             <Chip
               label="Light Impact"
-              onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+              onPress={() => hapticLight()}
             />
             <Chip
               label="Medium Impact"
-              onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)}
+              onPress={() => hapticMedium()}
             />
             <Chip
               label="Heavy Impact"
-              onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy)}
+              onPress={() => hapticHeavy()}
             />
             <Chip
               label="Selection Tap"
-              onPress={() => Haptics.selectionAsync()}
+              onPress={() => hapticSelection()}
             />
           </View>
 

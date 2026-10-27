@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import { hapticSuccess } from '../../services/haptics';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
@@ -91,7 +91,7 @@ export default function ConfirmProfileScreen() {
     confirmAdult();
     if (profile.gender) setPrivateIdentity({ pronouns: '', genderDescription: profile.gender });
     setExperience(space);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+    hapticSuccess();
     router.replace('/');
   };
 

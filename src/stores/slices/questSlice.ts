@@ -342,6 +342,11 @@ export const createQuestSlice: StateCreator<RootState, [['zustand/persist', unkn
       };
     }
 
+    // Suppress achievement modals during onboarding
+    if (!stateBefore.isOnboarded) {
+      modalToTrigger = null;
+    }
+
     set({
       ...patch,
       rewardLedger: ledger,
@@ -822,7 +827,10 @@ export const createQuestSlice: StateCreator<RootState, [['zustand/persist', unkn
         state.achievements.includes(achievementId) ? state : { achievements: [...state.achievements, achievementId] },
       ),
 
-    showAchievementModal: (payload) => set({ achievementModal: payload }),
+    showAchievementModal: (payload) => {
+      if (!get().isOnboarded) return;
+      set({ achievementModal: payload });
+    },
     hideAchievementModal: () => set({ achievementModal: null }),
   };
 };

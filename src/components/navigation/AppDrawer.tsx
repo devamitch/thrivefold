@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import { hapticSelection } from '../../services/haptics';
 import { Image } from 'expo-image';
 import { usePathname, useRouter, type Href } from 'expo-router';
 import React, { memo, useCallback, useMemo, type ReactNode, type RefObject } from 'react';
@@ -99,9 +99,7 @@ const matchScore = (path: string, route: string) => {
 };
 
 const tick = () => {
-  try {
-    Haptics.selectionAsync().catch(() => undefined);
-  } catch {}
+  hapticSelection();
 };
 
 /* ----------------------------------------------------------------------------------------------- */

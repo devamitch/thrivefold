@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import { hapticSelection } from '../../services/haptics';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -29,7 +29,7 @@ const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 const YEAR_ROW = 56;
 const pad = (n: number) => String(n).padStart(2, '0');
 const iso = (y: number, m: number, d: number) => `${y}-${pad(m + 1)}-${pad(d)}`;
-const tick = () => Haptics.selectionAsync().catch(() => undefined);
+const tick = () => hapticSelection();
 
 /**
  * Gesture-driven bottom-sheet date picker with squircle geometry and tactile spring physics.

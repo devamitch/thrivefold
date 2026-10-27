@@ -5,7 +5,7 @@
  * set/rep tracking, rest timers, and session completion/saving.
  */
 
-import * as Haptics from 'expo-haptics';
+import { hapticLight, hapticSuccess } from '../../services/haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import * as Speech from 'expo-speech';
 import { poseModelVersion } from 'pose-landmarker';
@@ -141,7 +141,7 @@ export function useCoachSession({ planId, assignmentId }: UseCoachSessionOpts) {
       );
       introMs.current = Math.min(7000, 900 + intro.length * 60);
       say(intro, voiceRef.current);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
+      hapticLight();
       const t = setTimeout(() => setCountdown(3), introMs.current);
       return () => clearTimeout(t);
     }
@@ -152,7 +152,7 @@ export function useCoachSession({ planId, assignmentId }: UseCoachSessionOpts) {
     } else {
       say(String(countdown), voiceRef.current);
     }
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
+    hapticLight();
     const t = setTimeout(
       () => {
         setCountdown((c) => {
@@ -322,7 +322,7 @@ export function useCoachSession({ planId, assignmentId }: UseCoachSessionOpts) {
       const r = (results.current[item.exerciseId] ??= { sets: [], summaries: [] });
       r.sets.push(value);
       idleNudged.current = false;
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+      hapticSuccess();
       if (setIdx + 1 < item.sets) {
         say(setDoneLine(value, item.target, unit, item.restSeconds, null), voiceRef.current);
         setSetIdx(setIdx + 1);

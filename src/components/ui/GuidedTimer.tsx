@@ -1,7 +1,7 @@
 import { SquircleSurface } from './SquircleSurface';
 import React, { useEffect, useRef, useState } from 'react';
 import { Text, StyleSheet, View } from 'react-native';
-import * as Haptics from 'expo-haptics';
+import { hapticSuccess } from '../../services/haptics';
 
 import { useTheme } from '../../theme/useTheme';
 import { Button } from './Button';
@@ -32,9 +32,7 @@ export function GuidedTimer({ minutes, cues = [], startLabel = 'Start', onFinish
     if (left === 0 && running && !finished.current) {
       finished.current = true;
       setRunning(false);
-      try {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      } catch {}
+      hapticSuccess();
       onFinished?.();
     }
   }, [left, running, onFinished]);

@@ -10,7 +10,7 @@
  */
 
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import { hapticSuccess, hapticMedium } from '../../../../services/haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { PoseCameraView, poseLandmarkerAvailable } from 'pose-landmarker';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -145,7 +145,7 @@ export default function CoachScreen() {
   // ── Gesture handler ───────────────────────────────────────────────────────
   const onGesture = useCallback(
     (g: Gesture) => {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+      hapticSuccess();
       const speech = gestureTriggerSpeech(g, {
         videoPlaying,
         rest: rest > 0,
@@ -262,7 +262,7 @@ export default function CoachScreen() {
   // ── Voice command dispatcher ──────────────────────────────────────────────
   const executeVoiceCommand = useCallback(
     (cmd: VoiceCommand) => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
+      hapticMedium();
       const speech = voiceCommandResponseSpeech(cmd);
       if (voiceOn) {
         speakCoach(speech, true).catch(() => undefined);

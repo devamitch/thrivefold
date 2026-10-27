@@ -3,7 +3,7 @@ import React from 'react';
 import { StyleProp, StyleSheet, Text, TextStyle, ViewStyle, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import * as Haptics from 'expo-haptics';
+import { hapticLight } from '../../services/haptics';
 import { PressableScale } from './PressableScale';
 import { useTheme } from '../../theme/useTheme';
 
@@ -42,9 +42,7 @@ export function HeaderIconButton({
   return (
     <PressableScale
       onPress={() => {
-        try {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        } catch {}
+        hapticLight();
         onPress();
       }}
       hitSlop={8}

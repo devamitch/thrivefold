@@ -8,7 +8,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { Text, StyleSheet, Modal, KeyboardAvoidingView, Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, type Href } from 'expo-router';
-import * as Haptics from 'expo-haptics';
+import { hapticSelection, hapticLight, hapticSuccess } from '../../../services/haptics';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -249,27 +249,21 @@ export default function TodayScreen() {
   }, [isWomen, cycleData]);
 
   const handlePrevDay = useCallback(() => {
-    try {
-      Haptics.selectionAsync();
-    } catch {}
+    hapticSelection();
     const curr = parseLocalDate(selectedDateStr);
     curr.setDate(curr.getDate() - 1);
     setSelectedDateStr(formatLocalDate(curr));
   }, [selectedDateStr]);
 
   const handleNextDay = useCallback(() => {
-    try {
-      Haptics.selectionAsync();
-    } catch {}
+    hapticSelection();
     const curr = parseLocalDate(selectedDateStr);
     curr.setDate(curr.getDate() + 1);
     setSelectedDateStr(formatLocalDate(curr));
   }, [selectedDateStr]);
 
   const handleJumpToday = useCallback(() => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    } catch {}
+    hapticLight();
     const now = new Date();
     setSelectedDateStr(formatLocalDate(now));
     setCurrentMonthDate(now);
@@ -290,24 +284,18 @@ export default function TodayScreen() {
   );
 
   const handleLogPeriodBleeding = useCallback(() => {
-    try {
-      Haptics.selectionAsync();
-    } catch {}
+    hapticSelection();
     setShowPeriodModal(true);
   }, []);
 
   const handleOpenMilestoneModal = useCallback(() => {
-    try {
-      Haptics.selectionAsync();
-    } catch {}
+    hapticSelection();
     setSelectedMilestoneToEdit(null);
     setShowMilestoneModal(true);
   }, []);
 
   const handleEditMilestone = useCallback((milestone: PersonalCalendarEvent) => {
-    try {
-      Haptics.selectionAsync();
-    } catch {}
+    hapticSelection();
     setSelectedMilestoneToEdit(milestone);
     setShowMilestoneModal(true);
   }, []);
@@ -345,9 +333,7 @@ export default function TodayScreen() {
       router.push('/(app)/check-in');
       return;
     }
-    try {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch {}
+    hapticSuccess();
     const { id: _id, ...rest } = todaysCheckIn;
     addCheckIn({ ...rest, energy, mood });
     showToast({ type: 'success', message: "Today's check-in updated on this device." });
@@ -498,9 +484,7 @@ export default function TodayScreen() {
               setCurrentMonthDate(new Date(item.year, item.month, 1));
               setSelectedDateStr(item.estimatedPeriodStart);
               setActiveTab('calendar');
-              try {
-                Haptics.selectionAsync();
-              } catch {}
+              hapticSelection();
             }}
           />
         </Animated.View>

@@ -1,4 +1,4 @@
-import * as Haptics from 'expo-haptics';
+import { hapticLight } from '../../services/haptics';
 import React from 'react';
 import { StyleProp, StyleSheet, Text, TextStyle, ViewStyle, View } from 'react-native';
 import { useTheme } from '../../theme/useTheme';
@@ -26,9 +26,7 @@ export const Chip: React.FC<ChipProps> = ({
 
   const handlePress = () => {
     if (onPress) {
-      try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      } catch {}
+      hapticLight();
       onPress();
     }
   };

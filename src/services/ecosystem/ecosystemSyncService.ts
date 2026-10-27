@@ -438,7 +438,7 @@ export function unifyEcosystemData(
       ? exPref!.breakIntervalMin
       : 20,
     soundEnabled: inPref?.soundEnabled ?? exPref?.soundEnabled ?? true,
-    hapticsEnabled: inPref?.hapticsEnabled ?? exPref?.hapticsEnabled ?? true,
+    hapticsEnabled: inPref?.hapticsEnabled ?? exPref?.hapticsEnabled ?? false,
     notificationsEnabled: inPref?.notificationsEnabled ?? exPref?.notificationsEnabled ?? true,
     quietHoursEnabled: inPref?.quietHoursEnabled ?? exPref?.quietHoursEnabled ?? false,
     quietHoursStart: pickNonNullishString(exPref?.quietHoursStart, inPref?.quietHoursStart) || '22:00',

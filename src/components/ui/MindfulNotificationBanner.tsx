@@ -13,7 +13,7 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import * as Haptics from 'expo-haptics';
+import { hapticLight, hapticSelection } from '../../services/haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -50,9 +50,7 @@ export function MindfulNotificationBanner() {
 
   const handleDismiss = () => {
     if (activeToast) {
-      try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      } catch {}
+      hapticLight();
       hideToast(activeToast.id);
     }
   };
@@ -63,9 +61,7 @@ export function MindfulNotificationBanner() {
 
   useEffect(() => {
     if (activeToast) {
-      try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      } catch {}
+      hapticLight();
       translateY.value = withTiming(0, {
         duration: 240,
         easing: Easing.bezier(0.2, 0.9, 0.25, 1),
@@ -118,9 +114,7 @@ export function MindfulNotificationBanner() {
 
   const handleAction = () => {
     if (activeToast.actionRoute) {
-      try {
-        Haptics.selectionAsync();
-      } catch {}
+      hapticSelection();
       router.push(activeToast.actionRoute as any);
       hideToast(activeToast.id);
     }

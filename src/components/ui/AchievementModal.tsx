@@ -10,10 +10,10 @@
  */
 
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import { useRouter, type Href } from 'expo-router';
 import React, { useEffect } from 'react';
 import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { hapticSuccess } from '../../services/haptics';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -36,22 +36,21 @@ export function AchievementModal() {
   const router = useRouter();
   const modal = useRootStore((s) => s.achievementModal);
   const hideAchievementModal = useRootStore((s) => s.hideAchievementModal);
+  const isOnboarded = useRootStore((s) => s.isOnboarded);
   const reduceMotion = useReducedMotion();
   const shown = useSharedValue(0);
   const backdropShown = useSharedValue(0);
 
   useEffect(() => {
-    if (modal) {
-      try {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      } catch {}
+    if (modal && isOnboarded) {
+      hapticSuccess();
       shown.value = 0;
       shown.value = withTiming(1, reduceMotion ? { duration: 0 } : IN_ANIMATION);
 
       backdropShown.value = 0;
       backdropShown.value = withTiming(1, reduceMotion ? { duration: 0 } : IN_ANIMATION);
     }
-  }, [modal, reduceMotion, shown, backdropShown]);
+  }, [modal, isOnboarded, reduceMotion, shown, backdropShown]);
 
   const backdropStyle = useAnimatedStyle(() => ({ opacity: backdropShown.value }));
   const dialogStyle = useAnimatedStyle(() => ({
@@ -59,7 +58,8 @@ export function AchievementModal() {
     transform: [{ scale: 0.92 + shown.value * 0.08 }],
   }));
 
-  if (!modal) return null;
+  // While onboarding is active, achievement modals are strictly suppressed
+  if (!modal || !isOnboarded) return null;
 
   const handleDismiss = () => {
     modal.onDismiss?.();

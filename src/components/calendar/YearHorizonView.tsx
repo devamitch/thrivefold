@@ -2,7 +2,7 @@ import { SquircleSurface } from '../ui/SquircleSurface';
 import React from 'react';
 import { Text, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import { hapticSelection } from '../../services/haptics';
 
 import { useTheme } from '../../theme/useTheme';
 import { Card } from '../ui/Card';
@@ -64,9 +64,7 @@ export const YearHorizonView: React.FC<YearHorizonViewProps> = ({
             onPress={() => {
               const targetDate = new Date(yf.year, yf.monthIndex, 1);
               onSelectMonthDate(targetDate);
-              try {
-                Haptics.selectionAsync();
-              } catch {}
+              hapticSelection();
             }}
             scaleTo={0.96}
             style={[styles.yearMonthCard, { backgroundColor: colors.surface1 }]}

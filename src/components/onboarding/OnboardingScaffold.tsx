@@ -1,8 +1,8 @@
 import { SquircleSurface } from '../ui/SquircleSurface';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import * as Haptics from 'expo-haptics';
 import React, { useEffect } from 'react';
+import { hapticSuccess } from '../../services/haptics';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -73,7 +73,7 @@ export function OnboardingScaffold({
   const continueStep = () => {
     onPrimary();
     if (reward && claimSetupReward(reward).awarded) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+      hapticSuccess();
     }
   };
 

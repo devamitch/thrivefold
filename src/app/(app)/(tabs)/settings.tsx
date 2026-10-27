@@ -17,6 +17,7 @@ import { Button } from '../../../components/ui/Button';
 import { PressableScale } from '../../../components/ui/PressableScale';
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import { TextField } from '../../../components/ui/TextField';
+import { Toggle } from '../../../components/ui/Toggle';
 import { useTheme } from '../../../theme/useTheme';
 import { unifiedVaultSosService } from '../../../services/auth/unifiedVaultSosService';
 
@@ -47,6 +48,8 @@ export default function SettingsScreen() {
   const currentStreak = useRootStore((s) => s.currentStreak);
   const questsCompleted = useRootStore((s) => s.questsCompleted);
   const checkInDays = useRootStore((s) => s.completedCheckInDaysCount);
+  const hapticsEnabled = useRootStore((s) => s.hapticsEnabled);
+  const setHapticsEnabled = useRootStore((s) => s.setHapticsEnabled);
 
   const showAlert = useRootStore((s) => s.showAlert);
   const [syncingVault, setSyncingVault] = useState(false);
@@ -238,6 +241,18 @@ export default function SettingsScreen() {
         <Link href={'/(app)/you/reminders' as Href} asChild>
           <SettingsRow icon="notifications-outline" title="Reminders" subtitle="Quest reminders and quiet hours" />
         </Link>
+        <SettingsRow
+          icon="finger-print-outline"
+          title="Haptic feedback"
+          subtitle="Tactile response on taps and milestone achievements (off by default)"
+          right={
+            <Toggle
+              value={hapticsEnabled}
+              onValueChange={setHapticsEnabled}
+              accessibilityLabel="Enable or disable tactile haptic feedback"
+            />
+          }
+        />
         <Link href={'/(app)/you/privacy' as Href} asChild>
           <SettingsRow icon="lock-closed-outline" title="Privacy and data" subtitle="Export, connected apps, backup and safety" />
         </Link>

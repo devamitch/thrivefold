@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import { hapticSelection } from '../../../services/haptics';
 import { useRouter, type Href } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -43,7 +43,7 @@ const addDays = (d: string, n: number) => {
 const mondayOf = (d: string) => addDays(d, -((parseLocalDate(d).getDay() + 6) % 7));
 const longDay = (d: string) => parseLocalDate(d).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
 const shortDay = (d: string) => parseLocalDate(d).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
-const tick = () => Haptics.selectionAsync().catch(() => undefined);
+const tick = () => hapticSelection();
 /** Daily estimates that would drown out real records in longer views. */
 const isBackground = (e: CalendarEvent) => e.kind === 'cycle_phase';
 const weekOf = (d: string) => Array.from({ length: 7 }, (_, i) => addDays(mondayOf(d), i));

@@ -6,7 +6,7 @@
  */
 
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import { hapticSelection, hapticMedium, hapticSuccess } from '../../services/haptics';
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -134,9 +134,7 @@ export function PersonalEventModal({
       return;
     }
 
-    try {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch {}
+    hapticSuccess();
 
     if (existingEvent) {
       editPersonalEvent(existingEvent.id, {
@@ -174,9 +172,7 @@ export function PersonalEventModal({
       confirmText: 'Delete',
       destructive: true,
       onConfirm: () => {
-        try {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        } catch {}
+        hapticMedium();
         deletePersonalEvent(existingEvent.id);
         showToast({ type: 'info', message: 'Event removed from calendar.' });
         onClose();
@@ -225,9 +221,7 @@ export function PersonalEventModal({
                 <PressableScale
                   key={cat.id}
                   onPress={() => {
-                    try {
-                      Haptics.selectionAsync();
-                    } catch {}
+                    hapticSelection();
                     setCategory(cat.id);
                   }}
                   scaleTo={0.95}
@@ -267,9 +261,7 @@ export function PersonalEventModal({
           </Text>
           <PressableScale
             onPress={() => {
-              try {
-                Haptics.selectionAsync();
-              } catch {}
+              hapticSelection();
               setShowDatePicker(true);
             }}
             scaleTo={0.98}
@@ -313,9 +305,7 @@ export function PersonalEventModal({
                 <PressableScale
                   key={opt.id}
                   onPress={() => {
-                    try {
-                      Haptics.selectionAsync();
-                    } catch {}
+                    hapticSelection();
                     setRecurrence(opt.id);
                   }}
                   scaleTo={0.96}
@@ -356,9 +346,7 @@ export function PersonalEventModal({
                   <PressableScale
                     key={rel.id}
                     onPress={() => {
-                      try {
-                        Haptics.selectionAsync();
-                      } catch {}
+                      hapticSelection();
                       setRelationship(rel.id);
                     }}
                     scaleTo={0.95}

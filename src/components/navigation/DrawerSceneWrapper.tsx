@@ -1,5 +1,5 @@
 import { BlurTargetView } from 'expo-blur';
-import * as Haptics from 'expo-haptics';
+import { hapticLight } from '../../services/haptics';
 import { useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { ReactNode, useEffect, useMemo, useState, type RefObject } from 'react';
@@ -42,9 +42,7 @@ const IS_IOS = Platform.OS === 'ios';
 const FLICK_VELOCITY = 500;
 
 const tick = () => {
-  try {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
-  } catch {}
+  hapticLight();
 };
 
 /**

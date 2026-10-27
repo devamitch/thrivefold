@@ -1,6 +1,6 @@
-import * as Haptics from 'expo-haptics';
 import React, { useEffect } from 'react';
 import { Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
+import { hapticSelection } from '../../services/haptics';
 import Animated, {
   Easing,
   interpolateColor,
@@ -61,7 +61,7 @@ export function Toggle({ value, onValueChange, disabled, accessibilityLabel, sty
     <Pressable
       onPress={() => {
         if (disabled) return;
-        Haptics.selectionAsync().catch(() => undefined);
+        hapticSelection();
         onValueChange?.(!value);
       }}
       onPressIn={() => {

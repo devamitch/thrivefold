@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import { hapticSelection, hapticLight } from '../../services/haptics';
 
 import { useTheme } from '../../theme/useTheme';
 import { Card } from '../ui/Card';
@@ -81,9 +81,7 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <PressableScale
               onPress={() => {
-                try {
-                  Haptics.selectionAsync();
-                } catch {}
+                hapticSelection();
                 onPrevDay();
               }}
               scaleTo={0.9}
@@ -103,9 +101,7 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
             {!isToday && (
               <PressableScale
                 onPress={() => {
-                  try {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  } catch {}
+                  hapticLight();
                   onJumpToday();
                 }}
                 scaleTo={0.93}
@@ -126,9 +122,7 @@ export const SelectedDateOverviewCard: React.FC<SelectedDateOverviewCardProps> =
             )}
             <PressableScale
               onPress={() => {
-                try {
-                  Haptics.selectionAsync();
-                } catch {}
+                hapticSelection();
                 onNextDay();
               }}
               scaleTo={0.9}

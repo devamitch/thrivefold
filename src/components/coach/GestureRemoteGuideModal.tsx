@@ -7,7 +7,7 @@
  */
 
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import { hapticLight, hapticMedium } from '../../services/haptics';
 import * as Speech from 'expo-speech';
 import React, { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -139,7 +139,7 @@ export function GestureRemoteGuideModal({
 
   const toggleVoiceGuide = async () => {
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
+      hapticLight();
       if (isSpeaking) {
         Speech.stop();
         setIsSpeaking(false);
@@ -159,7 +159,7 @@ export function GestureRemoteGuideModal({
 
   const testVoiceCommand = async (item: VoiceItem) => {
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
+      hapticMedium();
       setActiveVoiceTest(item.command);
       const speech = voiceCommandResponseSpeech(item.command);
       await speakCoach(speech, true);

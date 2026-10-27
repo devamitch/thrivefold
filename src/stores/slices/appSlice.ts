@@ -114,6 +114,9 @@ export interface AppSlice {
   setUsageAnalytics: (on: boolean) => void;
   setShareWeeklySummaries: (enabled: boolean) => void;
   setQuestRemindersEnabled: (enabled: boolean) => void;
+  /** Tactile haptic feedback on touches and milestones. Off by default. */
+  hapticsEnabled: boolean;
+  setHapticsEnabled: (enabled: boolean) => void;
   quietHoursStart: string; // e.g. "22:00"
   quietHoursEnd: string; // e.g. "07:00"
   offlineModeForced: boolean;
@@ -201,6 +204,8 @@ export const createAppSlice: StateCreator<
   setUsageAnalytics: (usageAnalytics) => set({ usageAnalytics }),
   setShareWeeklySummaries: (shareWeeklySummaries) => set({ shareWeeklySummaries }),
   setQuestRemindersEnabled: (questRemindersEnabled) => set({ questRemindersEnabled }),
+  hapticsEnabled: false,
+  setHapticsEnabled: (hapticsEnabled) => set({ hapticsEnabled }),
   quietHoursStart: '22:00',
   quietHoursEnd: '07:00',
   offlineModeForced: false,

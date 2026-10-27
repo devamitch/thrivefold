@@ -2,7 +2,7 @@ import { SquircleSurface } from '../ui/SquircleSurface';
 import React from 'react';
 import { Text, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import { hapticSelection } from '../../services/haptics';
 
 import { useTheme } from '../../theme/useTheme';
 import { Card } from '../ui/Card';
@@ -52,9 +52,7 @@ export const WeekTimelineView: React.FC<WeekTimelineViewProps> = ({
             <PressableScale
               key={dayCell.date}
               onPress={() => {
-                try {
-                  Haptics.selectionAsync();
-                } catch {}
+                hapticSelection();
                 onSelectDate(dayCell.date);
               }}
               scaleTo={0.93}

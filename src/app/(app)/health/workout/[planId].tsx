@@ -4,7 +4,7 @@ import { Text, StyleSheet, TextInput, View } from 'react-native';
 import { watchHref } from '../../../../content/exerciseVideos';
 import { Link, useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import { hapticSuccess } from '../../../../services/haptics';
 
 import { ScreenWrapper } from '../../../../components/ui/ScreenWrapper';
 import { Header } from '../../../../components/ui/Header';
@@ -49,9 +49,7 @@ export default function WorkoutSessionScreen() {
     const id = setTimeout(() => {
       setRest((r) => r - 1);
       if (rest === 1) {
-        try {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        } catch {}
+        hapticSuccess();
       }
     }, 1000);
     return () => clearTimeout(id);

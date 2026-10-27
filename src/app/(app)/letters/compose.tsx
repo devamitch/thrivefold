@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import { hapticSelection, hapticSuccess } from '../../../services/haptics';
 import { Link, useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -37,7 +37,7 @@ const STAMP_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
   mountain: 'trail-sign-outline',
 };
 
-const tick = () => Haptics.selectionAsync().catch(() => undefined);
+const tick = () => hapticSelection();
 
 /**
  * Compose a chip-only letter to one person. The server checks everything (verified adults,
@@ -75,7 +75,7 @@ export default function LetterComposeScreen() {
       { recipientId: to, chipIds: selected, stampId },
       {
         onSuccess: () => {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+          hapticSuccess();
           showAlert({
             title: 'Letter sent',
             message: `It arrives for ${name ?? 'them'} in about 12 hours.`,

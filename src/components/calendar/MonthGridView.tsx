@@ -1,6 +1,6 @@
 import { SquircleSurface } from '../ui/SquircleSurface';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import { hapticSelection, hapticLight } from '../../services/haptics';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -54,9 +54,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
       <View style={styles.calendarNavRow}>
         <PressableScale
           onPress={() => {
-            try {
-              Haptics.selectionAsync();
-            } catch {}
+            hapticSelection();
             onPrevMonth();
           }}
           scaleTo={0.9}
@@ -83,9 +81,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <PressableScale
             onPress={() => {
-              try {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              } catch {}
+              hapticLight();
               onJumpToday();
             }}
             scaleTo={0.93}
@@ -98,9 +94,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
 
           <PressableScale
             onPress={() => {
-              try {
-                Haptics.selectionAsync();
-              } catch {}
+              hapticSelection();
               onNextMonth();
             }}
             scaleTo={0.9}
@@ -138,9 +132,7 @@ export const MonthGridView: React.FC<MonthGridViewProps> = ({
             <PressableScale
               key={cell.date}
               onPress={() => {
-                try {
-                  Haptics.selectionAsync();
-                } catch {}
+                hapticSelection();
                 onSelectDate(cell.date);
               }}
               style={[styles.gridCellContainer, { opacity: cell.isCurrentMonth ? 1 : 0.32 }]}

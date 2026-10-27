@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import { hapticSelection, hapticMedium, hapticSuccess } from '../../services/haptics';
 import React, { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -86,9 +86,7 @@ export function PeriodLoggerModal({
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
 
   const toggleSymptom = (sym: string) => {
-    try {
-      Haptics.selectionAsync();
-    } catch {}
+    hapticSelection();
     setSelectedSymptoms((prev) =>
       prev.includes(sym) ? prev.filter((s) => s !== sym) : [...prev, sym]
     );
@@ -118,9 +116,7 @@ export function PeriodLoggerModal({
       notes: notes.trim() ? notes.trim() : undefined,
     };
 
-    try {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch {}
+    hapticSuccess();
 
     logPeriod(payload);
     showToast({
@@ -141,9 +137,7 @@ export function PeriodLoggerModal({
       cancelText: 'Cancel',
       destructive: true,
       onConfirm: () => {
-        try {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        } catch {}
+        hapticMedium();
         deletePeriod(existingRecord.id);
         showToast({
           type: 'info',
@@ -179,9 +173,7 @@ export function PeriodLoggerModal({
           </Text>
           <PressableScale
             onPress={() => {
-              try {
-                Haptics.selectionAsync();
-              } catch {}
+              hapticSelection();
               setShowStartDatePicker(true);
             }}
             scaleTo={0.98}
@@ -225,9 +217,7 @@ export function PeriodLoggerModal({
                 <PressableScale
                   key={opt.intensity}
                   onPress={() => {
-                    try {
-                      Haptics.selectionAsync();
-                    } catch {}
+                    hapticSelection();
                     setFlowIntensity(opt.intensity);
                   }}
                   scaleTo={0.96}
@@ -290,9 +280,7 @@ export function PeriodLoggerModal({
                 <PressableScale
                   key={num}
                   onPress={() => {
-                    try {
-                      Haptics.selectionAsync();
-                    } catch {}
+                    hapticSelection();
                     setPainLevel(num);
                   }}
                   scaleTo={0.92}
@@ -336,7 +324,7 @@ export function PeriodLoggerModal({
                 <PressableScale
                   key={num}
                   onPress={() => {
-                    try { Haptics.selectionAsync(); } catch {}
+                    hapticSelection();
                     setMood(num);
                   }}
                   scaleTo={0.92}
@@ -376,7 +364,7 @@ export function PeriodLoggerModal({
                 <PressableScale
                   key={num}
                   onPress={() => {
-                    try { Haptics.selectionAsync(); } catch {}
+                    hapticSelection();
                     setEnergy(num);
                   }}
                   scaleTo={0.92}

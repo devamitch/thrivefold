@@ -2,7 +2,7 @@ import { SquircleSurface } from '../ui/SquircleSurface';
 import React, { useState, useEffect, useCallback } from 'react';
 import { Text, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import { hapticLight, hapticMedium, hapticSuccess } from '../../services/haptics';
 
 import { useTheme } from '../../theme/useTheme';
 import { Card } from '../ui/Card';
@@ -42,21 +42,15 @@ export const SomaticWellnessArcade: React.FC<SomaticWellnessArcadeProps> = React
         if (prev > 1) return prev - 1;
         if (breathPhase === 'inhale') {
           setBreathPhase('hold');
-          try {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          } catch {}
+          hapticMedium();
           return 7;
         } else if (breathPhase === 'hold') {
           setBreathPhase('exhale');
-          try {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          } catch {}
+          hapticLight();
           return 8;
         } else {
           setBreathPhase('inhale');
-          try {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          } catch {}
+          hapticSuccess();
           setBreathCycles((c) => {
             const nextCount = c + 1;
             if (nextCount === 1) {
@@ -79,15 +73,11 @@ export const SomaticWellnessArcade: React.FC<SomaticWellnessArcadeProps> = React
         if (prev > 1) return prev - 1;
         if (pelvicPhase === 'lift') {
           setPelvicPhase('release');
-          try {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          } catch {}
+          hapticLight();
           return 5;
         } else {
           setPelvicPhase('lift');
-          try {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          } catch {}
+          hapticMedium();
           setPelvicReps((r) => {
             const next = r + 1;
             if (next >= 3) {
@@ -104,9 +94,7 @@ export const SomaticWellnessArcade: React.FC<SomaticWellnessArcadeProps> = React
   }, [pelvicActive, pelvicPhase, onCompleteExercise]);
 
   const handleTapZen = useCallback(() => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    } catch {}
+    hapticLight();
     setZenTaps((t) => {
       const next = t + 1;
       if (next === 5) {
@@ -170,9 +158,7 @@ export const SomaticWellnessArcade: React.FC<SomaticWellnessArcadeProps> = React
           label={breathActive ? 'Pause Breathwork' : 'Start 4-7-8 Blossom'}
           variant={breathActive ? 'outline' : 'primary'}
           onPress={() => {
-            try {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            } catch {}
+            hapticMedium();
             setBreathActive(!breathActive);
           }}
           style={{ marginTop: spacing.md }}
@@ -208,9 +194,7 @@ export const SomaticWellnessArcade: React.FC<SomaticWellnessArcadeProps> = React
           label={pelvicActive ? 'Stop Exercise' : 'Start Pelvic Sync (3 Reps)'}
           variant={pelvicActive ? 'outline' : 'primary'}
           onPress={() => {
-            try {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            } catch {}
+            hapticMedium();
             setPelvicActive(!pelvicActive);
           }}
           style={{ marginTop: spacing.md }}

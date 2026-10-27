@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import { hapticSelection } from '../../services/haptics';
 import React, { useEffect } from 'react';
 import { LayoutChangeEvent, StyleSheet, Text, View } from 'react-native';
 import Animated, {
@@ -79,9 +79,7 @@ export const AnimatedTabBar: React.FC<AnimatedTabBarProps> = ({ tabs, activeTab,
             key={tab.id}
             onPress={() => {
               if (tab.id !== activeTab) {
-                try {
-                  Haptics.selectionAsync();
-                } catch {}
+                hapticSelection();
                 onTabChange(tab.id);
               }
             }}

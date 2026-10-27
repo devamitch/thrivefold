@@ -1,6 +1,6 @@
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import { hapticLight, hapticMedium, hapticSuccess } from '../../../services/haptics';
 import React, { useEffect, useState } from 'react';
 import { Modal, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
@@ -53,9 +53,7 @@ export default function GamesScreen() {
         setBreathTimer((prev) => {
           if (prev <= 1) {
             setBreathPhase((current) => {
-              try {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              } catch {}
+              hapticLight();
               if (current === 'Inhale') return 'Hold';
               if (current === 'Hold') return 'Exhale';
               if (current === 'Exhale') return 'Rest';
@@ -84,9 +82,7 @@ export default function GamesScreen() {
     if (flippedIndices.length === 2 || flippedIndices.includes(index) || cards[index].matched) {
       return;
     }
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    } catch {}
+    hapticLight();
 
     const nextFlipped = [...flippedIndices, index];
     setFlippedIndices(nextFlipped);
@@ -94,9 +90,7 @@ export default function GamesScreen() {
     if (nextFlipped.length === 2) {
       const [first, second] = nextFlipped;
       if (cards[first].label === cards[second].label) {
-        try {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        } catch {}
+        hapticSuccess();
         setTimeout(() => {
           setCards((prev) =>
             prev.map((c, i) => (i === first || i === second ? { ...c, matched: true } : c)),
@@ -137,9 +131,7 @@ export default function GamesScreen() {
   ];
 
   const handleStartGame = (gameId: string) => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    } catch {}
+    hapticMedium();
     setActiveSession(gameId);
     if (gameId === 'game_breathe') {
       setBreathPhase('Inhale');
