@@ -9,8 +9,8 @@ import { GoogleSignin, isErrorWithCode, isSuccessResponse, statusCodes } from '@
 import { birthDateFromPeople, factsFromPeople, type ProfileFacts } from '../../domain/account/googleProfile';
 import { supabase } from '../supabase/supabaseClient';
 
-const BIRTHDAY_SCOPE = 'https://www.googleapis.com/auth/user.birthday.read';
-const GENDER_SCOPE = 'https://www.googleapis.com/auth/user.gender.read';
+// Essential Google OpenID scopes only (profile, email) to prevent verification blocks or delays
+const NECESSARY_SCOPES = ['profile', 'email'];
 
 export interface GoogleProfile extends ProfileFacts {
   id: string;
@@ -33,7 +33,7 @@ export const googleAvailable = () => Boolean(webClientId);
 
 function configure() {
   if (configured) return;
-  GoogleSignin.configure({ webClientId, scopes: [BIRTHDAY_SCOPE, GENDER_SCOPE] });
+  GoogleSignin.configure({ webClientId, scopes: NECESSARY_SCOPES });
   configured = true;
 }
 
