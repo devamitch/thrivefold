@@ -46,7 +46,6 @@ import {
   usePoseTracking,
 } from '../../../../components/coach';
 import { Button } from '../../../../components/ui/Button';
-import { FrostedView } from '../../../../components/ui/FrostedView';
 import { GlassIconButton, GlassMarks } from '../../../../components/ui/GlassOrbButton';
 import { CoachGlass } from '../../../../components/workout/CoachGlass';
 import { PoseOverlay } from '../../../../components/workout/PoseOverlay';
@@ -632,19 +631,7 @@ export default function CoachScreen() {
           onPress={confirmEnd}
           size={44}
         />
-        <FrostedView
-          tone={'surface'}
-          tintOpacity={0.82}
-          style={[
-            styles.flex,
-            styles.titlePill,
-            {
-              borderRadius: 22,
-              borderColor: 'rgba(255, 255, 255, 0.12)',
-              borderWidth: StyleSheet.hairlineWidth,
-            },
-          ]}
-        >
+        <View style={[styles.flex, styles.titlePill, { justifyContent: 'center', gap: 6 }]}>
           <Text style={[typography.bodyBold, { color: colors.callText }]} numberOfLines={1}>
             {exercise.name}
           </Text>
@@ -669,7 +656,7 @@ export default function CoachScreen() {
               {itemIdx + 1}/{plan.items.length} · {clock(elapsed)}
             </Text>
           </View>
-        </FrostedView>
+        </View>
         <GlassIconButton
           path={voiceOn ? GlassMarks.volume : GlassMarks.mute}
           accessibilityLabel={voiceOn ? 'Mute voice coach' : 'Turn on voice coach'}

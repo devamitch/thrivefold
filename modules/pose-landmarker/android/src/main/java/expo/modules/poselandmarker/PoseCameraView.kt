@@ -87,7 +87,7 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
   private var lastEmit = 0L
   @Volatile private var inFlight = false
   @Volatile private var inFlightSince = 0L
-  private var usingGpu = false
+  @Volatile private var usingGpu = false
   private var faceOn = false
   private var handsOn = false
   @Volatile private var faceLandmarker: FaceLandmarker? = null
@@ -235,10 +235,16 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
     inFlight = false
     exec.execute {
       val pose = try {
-        createLandmarker(Delegate.CPU).also { usingGpu = false }
-      } catch (e: Exception) {
-        post { onPoseError(mapOf("code" to "model_unavailable", "message" to (e.message ?: "Pose model could not load"))) }
-        null
+        createLandmarker(Delegate.GPU).also { usingGpu = true }
+      } catch (gpuErr: Throwable) {
+        Log.w(TAG, "GPU delegate unavailable, using CPU: ${gpuErr.message}")
+        usingGpu = false
+        try {
+          createLandmarker(Delegate.CPU)
+        } catch (e: Throwable) {
+          post { onPoseError(mapOf("code" to "model_unavailable", "message" to (e.message ?: "Pose model could not load"))) }
+          null
+        }
       }
       if (!active) {
         pose?.close()
@@ -296,9 +302,12 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
       .setErrorListener { e ->
         if (usingGpu) {
           usingGpu = false
+          inFlight = false
+          Log.w(TAG, "GPU inference failed, falling back to CPU: ${e.message}")
           val old = landmarker
-          landmarker = try { createLandmarker(Delegate.CPU) } catch (_: Exception) { null }
-          old?.close()
+          landmarker = try { createLandmarker(Delegate.CPU) } catch (_: Throwable) { null }
+          val exec = executor
+          if (exec != null) exec.execute { old?.close() } else old?.close()
         } else {
           inFlight = false
           post { onPoseError(mapOf("code" to "inference_error", "message" to (e.message ?: ""))) }
