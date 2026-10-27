@@ -47,11 +47,10 @@ export function TrendAreaChart({ points, onCheckIn }: Props) {
     const availableHeight = CHART_HEIGHT - PADDING_Y * 2;
     const stepX = availableWidth / Math.max(1, points.length - 1);
 
-    // Map each point to (x, y)
-    // If a day has no data, we estimate smoothly from neighboring points or baseline (60)
+    // Map each point with data to (x, y); do not invent data for missing days
     const pts = points.map((p, idx) => {
       const x = PADDING_X + idx * stepX;
-      const effectiveVal = p.hasData ? p.vitality : 50;
+      const effectiveVal = p.vitality;
       // Invert Y: 100 at top (PADDING_Y), 0 at bottom (CHART_HEIGHT - PADDING_Y)
       const norm = Math.max(0, Math.min(100, effectiveVal)) / 100;
       const y = PADDING_Y + availableHeight * (1 - norm);
@@ -61,24 +60,47 @@ export function TrendAreaChart({ points, onCheckIn }: Props) {
     const line = Skia.Path.Make();
     const area = Skia.Path.Make();
 
-    line.moveTo(pts[0].x, pts[0].y);
-    area.moveTo(pts[0].x, CHART_HEIGHT);
-    area.lineTo(pts[0].x, pts[0].y);
+    // Group contiguous days with real data to break the curve at gaps
+    const segments: (typeof pts)[] = [];
+    let currentSegment: typeof pts = [];
 
-    for (let i = 0; i < pts.length - 1; i++) {
-      const curr = pts[i];
-      const next = pts[i + 1];
-      const cpX = (curr.x + next.x) / 2;
-
-      line.cubicTo(cpX, curr.y, cpX, next.y, next.x, next.y);
-      area.cubicTo(cpX, curr.y, cpX, next.y, next.x, next.y);
+    pts.forEach((pt) => {
+      if (pt.hasData) {
+        currentSegment.push(pt);
+      } else {
+        if (currentSegment.length > 0) {
+          segments.push(currentSegment);
+          currentSegment = [];
+        }
+      }
+    });
+    if (currentSegment.length > 0) {
+      segments.push(currentSegment);
     }
 
-    const lastPt = pts[pts.length - 1];
-    area.lineTo(lastPt.x, CHART_HEIGHT);
-    area.close();
+    segments.forEach((segment) => {
+      if (segment.length > 1) {
+        line.moveTo(segment[0].x, segment[0].y);
+        area.moveTo(segment[0].x, CHART_HEIGHT);
+        area.lineTo(segment[0].x, segment[0].y);
 
-    const active = pts.find((p) => p.isToday) ?? pts[pts.length - 1];
+        for (let i = 0; i < segment.length - 1; i++) {
+          const curr = segment[i];
+          const next = segment[i + 1];
+          const cpX = (curr.x + next.x) / 2;
+
+          line.cubicTo(cpX, curr.y, cpX, next.y, next.x, next.y);
+          area.cubicTo(cpX, curr.y, cpX, next.y, next.x, next.y);
+        }
+
+        const lastPt = segment[segment.length - 1];
+        area.lineTo(lastPt.x, CHART_HEIGHT);
+        area.close();
+      }
+    });
+
+    const ptsWithData = pts.filter((p) => p.hasData);
+    const active = pts.find((p) => p.isToday && p.hasData) ?? ptsWithData[ptsWithData.length - 1] ?? null;
 
     return { linePath: line, areaPath: area, coords: pts, activeCoord: active };
   }, [hasAnyData, points, containerWidth]);

@@ -109,7 +109,7 @@ export function HydrationTrackerCard({
               ]}
             >
               {isFilled ? (
-                <Ionicons name="water" size={12} color="#FFFFFF" />
+                <Ionicons name="water" size={12} color={colors.onPrimary} />
               ) : (
                 <View style={[styles.emptyDot, { backgroundColor: colors.surface3 }]} />
               )}
@@ -123,7 +123,7 @@ export function HydrationTrackerCard({
         {glasses >= targetGlasses
           ? 'Optimal daily hydration reached! Supporting metabolism, alertness and recovery.'
           : remaining === 1
-            ? 'Just 1 glass remaining to reach today’s 2,000 ml target.'
+            ? `Just 1 glass remaining to reach today’s ${targetMl.toLocaleString()} ml target.`
             : `${remaining} glasses (${remaining * 250} ml) to reach your daily hydration baseline.`}
       </Text>
 
@@ -178,8 +178,8 @@ export function HydrationTrackerCard({
           accessibilityRole="button"
           accessibilityLabel="Add 500ml bottle of water"
         >
-          <Ionicons name="add" size={14} color="#FFFFFF" />
-          <Text style={[typography.captionBold, { color: '#FFFFFF', marginLeft: 2 }]}>
+          <Ionicons name="add" size={14} color={colors.onPrimary} />
+          <Text style={[typography.captionBold, { color: colors.onPrimary, marginLeft: 2 }]}>
             +500 ml
           </Text>
         </PressableScale>

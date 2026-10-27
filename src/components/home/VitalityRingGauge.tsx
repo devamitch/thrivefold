@@ -40,6 +40,7 @@ interface Props {
   mood: number | null;
   sleepHours: number | null;
   hydrationGlasses?: number | null;
+  hydrationTargetGlasses?: number;
   questsDone: number;
   questsTotal: number;
   points: number;
@@ -75,6 +76,7 @@ export function VitalityRingGauge({
   mood,
   sleepHours,
   hydrationGlasses,
+  hydrationTargetGlasses = 8,
   questsDone,
   questsTotal,
   points,
@@ -106,7 +108,7 @@ export function VitalityRingGauge({
   useEffect(() => {
     const pPts = Math.min(1, Math.max(0, points / Math.max(1, target)));
     const pQst = questsTotal > 0 ? Math.min(1, Math.max(0, questsDone / questsTotal)) : 0;
-    const pWat = Math.min(1, Math.max(0, (hydrationGlasses ?? 0) / 8));
+    const pWat = Math.min(1, Math.max(0, (hydrationGlasses ?? 0) / Math.max(1, hydrationTargetGlasses)));
     const pVit = Math.min(1, Math.max(0, score / 100));
 
     progressPoints.value = withTiming(pPts, {
@@ -125,7 +127,7 @@ export function VitalityRingGauge({
       duration: 1200,
       easing: Easing.out(Easing.cubic),
     });
-  }, [points, target, questsDone, questsTotal, hydrationGlasses, score, progressPoints, progressQuests, progressWater, progressVitality]);
+  }, [points, target, questsDone, questsTotal, hydrationGlasses, hydrationTargetGlasses, score, progressPoints, progressQuests, progressWater, progressVitality]);
 
   // 1. Static background gear ticks path
   const bgTicksPath = useMemo(() => {
@@ -342,7 +344,7 @@ export function VitalityRingGauge({
               <View
                 style={[
                   styles.indicatorDot,
-                  { backgroundColor: displayMode === 'goals' ? '#FCD34D' : colors.onPrimary },
+                  { backgroundColor: displayMode === 'goals' ? colors.accent : colors.onPrimary },
                 ]}
               />
               <Text style={[typography.caption, { color: colors.onPrimary, fontWeight: '700' }]}>
@@ -356,28 +358,28 @@ export function VitalityRingGauge({
             numberOfLines={2}
           >
             {displayMode === 'goals'
-              ? `${questsDone} of ${questsTotal} quests · ${waterCount}/8 cups water`
+              ? `${questsDone} of ${questsTotal} quests · ${waterCount}/${hydrationTargetGlasses} cups water`
               : subtext}
           </Text>
 
           {/* Concentric Legend Chips */}
           <View style={styles.legendRow}>
             <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#FFFFFF' }]} />
+              <View style={[styles.legendDot, { backgroundColor: colors.onPrimary }]} />
               <Text style={[typography.caption, { color: colors.onPrimaryMuted, fontSize: 11 }]}>
                 {points}/{target} pts
               </Text>
             </View>
             <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#F97316' }]} />
+              <View style={[styles.legendDot, { backgroundColor: colors.accent }]} />
               <Text style={[typography.caption, { color: colors.onPrimaryMuted, fontSize: 11 }]}>
                 {questsDone}/{questsTotal} q
               </Text>
             </View>
             <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#38BDF8' }]} />
+              <View style={[styles.legendDot, { backgroundColor: colors.info }]} />
               <Text style={[typography.caption, { color: colors.onPrimaryMuted, fontSize: 11 }]}>
-                {waterCount}/8 c
+                {waterCount}/${hydrationTargetGlasses} c
               </Text>
             </View>
           </View>
@@ -390,7 +392,7 @@ export function VitalityRingGauge({
           style={styles.gaugeContainer}
           accessible
           accessibilityRole="button"
-          accessibilityLabel={`Concentric goal gauge: ${points} of ${target} points, ${questsDone} of ${questsTotal} quests, ${waterCount} of 8 cups water. Tap to toggle view.`}
+          accessibilityLabel={`Concentric goal gauge: ${points} of ${target} points, ${questsDone} of ${questsTotal} quests, ${waterCount} of ${hydrationTargetGlasses} cups water. Tap to toggle view.`}
         >
           <Canvas style={styles.canvas}>
             {/* 1. Background Gear Notches */}
@@ -407,7 +409,7 @@ export function VitalityRingGauge({
               style="stroke"
               strokeWidth={2.4}
               strokeCap="round"
-              color="#FCD34D"
+              color={colors.accent}
             />
 
             {/* 3. Outer Ring Background & Active Arc (Points / Level) */}

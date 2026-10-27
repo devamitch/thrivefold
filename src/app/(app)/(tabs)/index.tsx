@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Link, useFocusEffect, useRouter, type Href } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
+import { ScrollReveal } from '../../../components/home/ScrollReveal';
 
 import { ActivityRow } from '../../../components/game/ActivityRow';
 import { QuestSheet } from '../../../components/game/QuestSheet';
@@ -86,7 +86,6 @@ const today = () => formatLocalDate(new Date());
 export default function HomeScreen() {
   const router = useRouter();
   const { colors, typography, spacing, experience } = useTheme();
-  const reduceMotion = useReducedMotion();
 
   const s = useRootStore(
     useShallow((st) => ({
@@ -272,11 +271,9 @@ export default function HomeScreen() {
     ...agendaSources,
   }).filter((e) => !['task', 'cycle_phase'].includes(e.kind) && !e.id.startsWith('checkin_'));
 
-  const enter = (i: number) => (reduceMotion ? undefined : FadeIn.duration(180));
-
   return (
     <DashboardScreenContainer
-      header={({ scrollY, collapseProgress }) => (
+      header={({ scrollY, collapseProgress, pageProgress, scrollToTop }) => (
         <DashboardHeader
           title="Thrivefold"
           userName={name ? name : undefined}
@@ -284,6 +281,14 @@ export default function HomeScreen() {
           onMenuPress={() => useRootStore.getState().setDrawerOpen(true)}
           scrollY={scrollY}
           collapseProgress={collapseProgress}
+          pageProgress={pageProgress}
+          progress={s.dailyPoints / Math.max(1, s.dailyPointsTarget)}
+          statusLabel={
+            vitality.hasCheckInToday
+              ? `Vitality ${vitality.score}`
+              : `${s.dailyPoints}/${s.dailyPointsTarget} pts`
+          }
+          onCompactPress={scrollToTop}
         />
       )}
       hero={({ scrollY, collapseProgress }) => (
@@ -307,6 +312,7 @@ export default function HomeScreen() {
             todaysCheckIn?.sleepHours ?? (sleep ? Math.round(sleep.value / 6) / 10 : null)
           }
           hydrationGlasses={todayHydration}
+          hydrationTargetGlasses={s.hydrationTargetGlasses ?? 8}
           questsDone={done}
           questsTotal={active}
           points={s.dailyPoints}
@@ -321,7 +327,7 @@ export default function HomeScreen() {
       )}
     >
       {/* Analytical Controls & Responsive Charts */}
-      <Animated.View entering={enter(1)}>
+      <ScrollReveal index={0}>
         <TimeRangeFilter selected={timeRange} onChange={setTimeRange} />
 
         {timeRange === 'today' ? (
@@ -331,6 +337,7 @@ export default function HomeScreen() {
               sleepMinutes={sleep ? Math.round(sleep.value) : null}
               heartRateAvg={heart ? Math.round(heart.value) : null}
               hydrationCount={todayHydration}
+              hydrationTarget={s.hydrationTargetGlasses ?? 8}
               onIncrementHydration={handleIncrementHydration}
             />
             <HydrationTrackerCard
@@ -398,13 +405,17 @@ export default function HomeScreen() {
             />
           </>
         )}
-      </Animated.View>
+      </ScrollReveal>
 
-      <HomeGuide />
-      <SocialInvite />
+      <ScrollReveal index={1}>
+        <HomeGuide />
+      </ScrollReveal>
+      <ScrollReveal index={1}>
+        <SocialInvite />
+      </ScrollReveal>
 
       {setupOpen > 0 ? (
-        <Animated.View entering={enter(2)}>
+        <ScrollReveal index={2}>
           <Link href={'/(app)/personalize' as Href} asChild>
             <Card variant="surface" style={{ padding: spacing.base, marginTop: spacing.md }}>
               <View style={styles.rowBetween}>
@@ -426,11 +437,11 @@ export default function HomeScreen() {
               </View>
             </Card>
           </Link>
-        </Animated.View>
+        </ScrollReveal>
       ) : null}
 
       {recovery ? (
-        <Animated.View entering={enter(1)}>
+        <ScrollReveal index={2}>
           <Card variant="surface" style={{ padding: spacing.base, marginTop: spacing.md }}>
             <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
               {recovery.title}
@@ -439,21 +450,19 @@ export default function HomeScreen() {
               {recovery.aiExplanation.text}
             </Text>
           </Card>
-        </Animated.View>
+        </ScrollReveal>
       ) : null}
 
       {/* Quests */}
-      <Animated.View entering={enter(2)}>
+      <ScrollReveal index={2}>
         <View style={[styles.sectionHeader, { marginTop: spacing.lg }]}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>
             Today&apos;s plan
           </Text>
-          <Link asChild href={'/(app)/calendar'}>
-            <Link href={'/(app)/calendar' as Href} asChild>
-              <PressableScale hitSlop={10} accessibilityRole="button">
-                <Text style={[typography.subbodyBold, { color: colors.primary }]}>Calendar</Text>
-              </PressableScale>
-            </Link>
+          <Link href={'/(app)/calendar' as Href} asChild>
+            <PressableScale hitSlop={10} accessibilityRole="button">
+              <Text style={[typography.subbodyBold, { color: colors.primary }]}>Calendar</Text>
+            </PressableScale>
           </Link>
         </View>
 
@@ -533,10 +542,10 @@ export default function HomeScreen() {
             ))}
           </>
         ) : null}
-      </Animated.View>
+      </ScrollReveal>
 
       {/* Experience focus */}
-      <Animated.View entering={enter(3)}>
+      <ScrollReveal index={3}>
         {experience === 'women_health' ? (
           <Link href={'/(app)/health/cycle' as Href} asChild>
             <FocusCard
@@ -573,9 +582,9 @@ export default function HomeScreen() {
             />
           </Link>
         )}
-      </Animated.View>
+      </ScrollReveal>
 
-      <Animated.View entering={enter(3)}>
+      <ScrollReveal index={3}>
         <View style={[styles.sectionHeader, { marginTop: spacing.lg }]}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>This week</Text>
         </View>
@@ -589,51 +598,53 @@ export default function HomeScreen() {
             />
           </Link>
         ) : null}
-      </Animated.View>
+      </ScrollReveal>
 
-      {deviceTiles.length > 0 ? (
-        <Link href={'/(app)/health/integrations' as Href} asChild>
-          <Card style={{ padding: spacing.base, marginTop: spacing.md }}>
-            <View style={styles.rowBetween}>
-              <Text style={[typography.label, { color: colors.text.muted }]}>
-                From Health Connect
-              </Text>
-              <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
-            </View>
-            <View style={[styles.metrics, { marginTop: spacing.sm }]}>
-              {deviceTiles.map((t) => (
-                <View key={t.label} style={[styles.metric, { backgroundColor: colors.surface1 }]}>
-                  <Text style={[typography.subheading, { color: colors.text.primary }]}>
-                    {t.value}
-                  </Text>
-                  <Text style={[typography.caption, { color: colors.text.muted }]}>{t.label}</Text>
-                </View>
-              ))}
-            </View>
-          </Card>
-        </Link>
-      ) : (
-        <View style={{ marginTop: spacing.md }}>
+      <ScrollReveal index={4}>
+        {deviceTiles.length > 0 ? (
           <Link href={'/(app)/health/integrations' as Href} asChild>
-            <SettingsRow
-              icon="sync-outline"
-              title="Connect Health Connect"
-              subtitle="Bring in steps, sleep and heart rate"
-            />
+            <Card style={{ padding: spacing.base, marginTop: spacing.md }}>
+              <View style={styles.rowBetween}>
+                <Text style={[typography.label, { color: colors.text.muted }]}>
+                  From Health Connect
+                </Text>
+                <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
+              </View>
+              <View style={[styles.metrics, { marginTop: spacing.sm }]}>
+                {deviceTiles.map((t) => (
+                  <View key={t.label} style={[styles.metric, { backgroundColor: colors.surface1 }]}>
+                    <Text style={[typography.subheading, { color: colors.text.primary }]}>
+                      {t.value}
+                    </Text>
+                    <Text style={[typography.caption, { color: colors.text.muted }]}>{t.label}</Text>
+                  </View>
+                ))}
+              </View>
+            </Card>
           </Link>
-        </View>
-      )}
+        ) : (
+          <View style={{ marginTop: spacing.md }}>
+            <Link href={'/(app)/health/integrations' as Href} asChild>
+              <SettingsRow
+                icon="sync-outline"
+                title="Connect Health Connect"
+                subtitle="Bring in steps, sleep and heart rate"
+              />
+            </Link>
+          </View>
+        )}
+      </ScrollReveal>
 
       {/* Wellness Tools */}
-      <Animated.View
-        entering={enter(4)}
+      <ScrollReveal
+        index={4}
         style={{ marginTop: spacing.xl, marginBottom: spacing.xl }}
       >
         <View style={styles.sectionHeader}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>Tools</Text>
         </View>
         <ToolsGrid todayCount={alsoToday.length + active} />
-      </Animated.View>
+      </ScrollReveal>
 
       <QuestSheet assignmentId={openQuest} onClose={() => setOpenQuest(null)} />
       <AnalyticsDetailSheet
