@@ -11,7 +11,12 @@
 import * as Haptics from 'expo-haptics';
 import { landmarksOf, type PoseFrame } from 'pose-landmarker';
 import { useCallback, useRef, useState } from 'react';
-import { useSharedValue } from 'react-native-reanimated';
+import {
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { cuesEngine } from '@/domain/coach/cuesEngine';
 import { IDLE_NUDGE_MS, idleLine, repLine, secondsLine } from '@/domain/pose/coachVoice';
@@ -288,6 +293,10 @@ export function usePoseTracking({
 
       const inSeconds = movement.kind === 'hold' || timed;
       if (next.reps > before.reps) {
+        counterPulse.value = withSequence(
+          withTiming(1.22, { duration: 90 }),
+          withSpring(1, { damping: 12, stiffness: 200 }),
+        );
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
         if (!inSeconds && !next.fault) {
           const line = repLine(next.reps, item.target, !before.repHadFault);
@@ -314,6 +323,10 @@ export function usePoseTracking({
         idleNudged.current = false;
       }
       if (inSeconds && value > 0 && value !== prevValue) {
+        counterPulse.value = withSequence(
+          withTiming(1.08, { duration: 80 }),
+          withSpring(1, { damping: 14, stiffness: 240 }),
+        );
         const line = secondsLine(value, item.target);
         if (line) {
           speak(

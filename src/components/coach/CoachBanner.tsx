@@ -4,7 +4,7 @@
  */
 
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import React, { memo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeOut, useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -23,7 +23,13 @@ interface CoachBannerProps {
   gestureProgress?: number;
 }
 
-export function CoachBanner({ icon, title, text, tone, gestureProgress }: CoachBannerProps) {
+export const CoachBanner = memo(function CoachBanner({
+  icon,
+  title,
+  text,
+  tone,
+  gestureProgress,
+}: CoachBannerProps) {
   const insets = useSafeAreaInsets();
   const reduceMotion = useReducedMotion();
   const { colors, typography, spacing } = useTheme();
@@ -77,7 +83,7 @@ export function CoachBanner({ icon, title, text, tone, gestureProgress }: CoachB
       </CoachGlass>
     </Animated.View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   copy: { flex: 1, marginLeft: 10 },

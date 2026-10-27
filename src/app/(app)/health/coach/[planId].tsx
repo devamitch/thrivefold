@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { PoseCameraView, poseLandmarkerAvailable } from 'pose-landmarker';
-import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   BackHandler,
@@ -330,6 +330,32 @@ export default function CoachScreen() {
     transform: [{ scale: poseTrack.counterPulse.value }],
   }));
 
+  const upNext = useMemo(() => {
+    if (!item) return null;
+    if (setIdx + 1 < item.sets) {
+      return { ex: exercise, set: setIdx + 2, of: item.sets };
+    }
+    const nextPlanItem = plan?.items[itemIdx + 1];
+    if (nextPlanItem) {
+      return {
+        ex: exerciseById(nextPlanItem.exerciseId),
+        set: 1,
+        of: nextPlanItem.sets,
+      };
+    }
+    return null;
+  }, [item, setIdx, exercise, plan?.items, itemIdx]);
+
+  const handleSetDone = useCallback(() => {
+    if (!item) return;
+    const currentCount = progressOf(poseTrack.repRef.current);
+    completeSet(
+      cameraOn && movement && poseTrack.repRef.current.validFrames > 0
+        ? currentCount
+        : item.target,
+    );
+  }, [item, progressOf, poseTrack.repRef, completeSet, cameraOn, movement]);
+
   // ── Back button ───────────────────────────────────────────────────────────
   const confirmEnd = useCallback(() => {
     useRootStore.getState().showAlert({
@@ -446,17 +472,6 @@ export default function CoachScreen() {
   const remaining = Math.max(0, item.target - counted);
   const share = Math.min(1, counted / Math.max(1, item.target));
   const starting = cameraMain && !poseTrack.trackingReady && !poseTrack.cameraError;
-
-  const upNext =
-    setIdx + 1 < item.sets
-      ? { ex: exercise, set: setIdx + 2, of: item.sets }
-      : plan.items[itemIdx + 1]
-        ? {
-            ex: exerciseById(plan.items[itemIdx + 1].exerciseId),
-            set: 1,
-            of: plan.items[itemIdx + 1].sets,
-          }
-        : null;
 
   // nextItem: the item that will run AFTER this rest.
   // Within an exercise: same item (next set). After last set of an exercise: next plan item.
@@ -757,15 +772,7 @@ export default function CoachScreen() {
           movement={movement}
           upNext={upNext}
           counterStyle={counterAnimStyle}
-          onSetDone={() => {
-            if (!item) return;
-            const counted = progressOf(poseTrack.repRef.current);
-            completeSet(
-              cameraOn && movement && poseTrack.repRef.current.validFrames > 0
-                ? counted
-                : item.target,
-            );
-          }}
+          onSetDone={handleSetDone}
         />
       ) : null}
 

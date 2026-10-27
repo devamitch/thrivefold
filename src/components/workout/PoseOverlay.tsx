@@ -1,5 +1,5 @@
 import { Canvas, DashPathEffect, Group, Path, Skia } from '@shopify/react-native-skia';
-import React, { memo, useEffect } from 'react';
+import React, { memo, useEffect, useMemo } from 'react';
 import { StyleSheet } from 'react-native';
 import {
   useDerivedValue,
@@ -10,6 +10,15 @@ import {
 
 import { LM, SKELETON } from '../../domain/pose/movement';
 import { useTheme } from '../../theme/useTheme';
+
+const EMPTY_PATHS = {
+  bones: Skia.Path.Make(),
+  joints: Skia.Path.Make(),
+  rings: Skia.Path.Make(),
+  torso: Skia.Path.Make(),
+  fault: Skia.Path.Make(),
+  arc: Skia.Path.Make(),
+};
 
 const N = 33;
 const STRIDE = 4; // incoming: x, y, z, visibility
@@ -281,13 +290,14 @@ export const PoseOverlay = memo(function PoseOverlay({
 
   /** Every path for this frame, built in a single pass over the landmarks. */
   const geo = useDerivedValue(() => {
+    if (present.value <= 0.01) return EMPTY_PATHS;
+
     const bones = Skia.Path.Make();
     const joints = Skia.Path.Make();
     const rings = Skia.Path.Make();
     const torso = Skia.Path.Make();
     const fault = Skia.Path.Make();
     const arc = Skia.Path.Make();
-    if (present.value <= 0.01) return { bones, joints, rings, torso, fault, arc };
 
     const s = shown.value;
     const m = layerBits.value;

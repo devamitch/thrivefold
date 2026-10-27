@@ -4,7 +4,7 @@
  * Plain translucent glass (no backdrop blur over the camera).
  */
 
-import React from 'react';
+import React, { memo } from 'react';
 import type { TextStyle } from 'react-native';
 import { StyleSheet, Text, View } from 'react-native';
 import type { AnimatedStyle } from 'react-native-reanimated';
@@ -39,7 +39,7 @@ interface CoachHUDProps {
 /** Height of the card above the safe-area inset; the banner sits above it. */
 export const COACH_HUD_HEIGHT = 88;
 
-export function CoachHUD({
+export const CoachHUD = memo(function CoachHUD({
   counted,
   remaining,
   unit,
@@ -113,7 +113,7 @@ export function CoachHUD({
       </CoachGlass>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   bar: { bottom: 0, left: 0, position: 'absolute', right: 0 },
