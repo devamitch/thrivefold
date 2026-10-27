@@ -1,15 +1,10 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import Animated, {
-  Extrapolation,
-  interpolate,
-  useAnimatedStyle,
-  useReducedMotion,
-  type SharedValue,
-} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { SharedValue } from 'react-native-reanimated';
 
 import type { VitalityTier } from '../../domain/analytics/dashboardAnalytics';
+import { COMPACT_HEADER_CONTENT_HEIGHT } from './DashboardHeader';
 import { VitalityRingGauge } from './VitalityRingGauge';
 
 export interface VitalityHeroProps {
@@ -68,29 +63,13 @@ export function VitalityHero({
   greeting,
   subtitle,
   onMenuPress,
-  collapseProgress,
 }: VitalityHeroProps) {
   const insets = useSafeAreaInsets();
-  const reduceMotion = useReducedMotion();
-
-  const heroMotionStyle = useAnimatedStyle(() => {
-    if (reduceMotion) {
-      return {};
-    }
-    const progress = collapseProgress.value;
-    const translateY = interpolate(progress, [0, 0.75], [0, -14], Extrapolation.CLAMP);
-    const scale = interpolate(progress, [-0.5, 0, 0.75], [1.03, 1, 0.97], Extrapolation.CLAMP);
-    const opacity = interpolate(progress, [0, 0.85], [1, 0.3], Extrapolation.CLAMP);
-
-    return {
-      opacity,
-      transform: [{ translateY }, { scale }],
-    };
-  });
+  const topInset = insets.top + COMPACT_HEADER_CONTENT_HEIGHT;
 
   return (
     <View style={styles.outerWrapper}>
-      <Animated.View style={[styles.motionContainer, heroMotionStyle]}>
+      <View style={styles.motionContainer}>
         <VitalityRingGauge
           score={score}
           tier={tier}
@@ -114,9 +93,9 @@ export function VitalityHero({
           subtitle={subtitle}
           onMenuPress={onMenuPress}
           fullWidth
-          topInset={insets.top}
+          topInset={topInset}
         />
-      </Animated.View>
+      </View>
     </View>
   );
 }

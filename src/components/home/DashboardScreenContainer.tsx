@@ -11,13 +11,11 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useTabBarInset } from '../navigation/CustomTabBar';
-import {
-  updateDockOnScroll,
-  useShowChromeOnFocus,
-} from '../navigation/useScrollAwareDock';
 import { useLayout } from '../../theme/layout';
 import { useTheme } from '../../theme/useTheme';
+import { useTabBarInset } from '../navigation/CustomTabBar';
+import { updateDockOnScroll, useShowChromeOnFocus } from '../navigation/useScrollAwareDock';
+import { SquircleSurface } from '../ui';
 
 export const DASHBOARD_COLLAPSE_DISTANCE = 130;
 
@@ -80,11 +78,13 @@ export function DashboardScreenContainer({
   const clearance = dockInset + 24;
   const scrollCtx: DashboardScrollContext = { scrollY, collapseProgress };
 
-  return (
-    <View style={[styles.root, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+  const statusBarStyle = colors.onPrimary === '#FFFFFF' ? 'light-content' : 'dark-content';
 
-      {/* Pinned Sticky Dashboard Header (fades in as hero collapses) */}
+  return (
+    <View style={[styles.root, { backgroundColor: colors.primary }]}>
+      <StatusBar barStyle={statusBarStyle} translucent backgroundColor="transparent" />
+
+      {/* Pinned Conventional Dashboard Header */}
       {header(scrollCtx)}
 
       {/* Single Authoritative Vertical Scroll Surface */}
@@ -95,30 +95,22 @@ export function DashboardScreenContainer({
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         nestedScrollEnabled
-        contentContainerStyle={[
-          styles.scrollContent,
-          contentContainerStyle,
-        ]}
+        contentContainerStyle={[styles.scrollContent, contentContainerStyle]}
       >
-        {/* Full-width Vitality Hero with scroll-linked parallax */}
+        {/* Full-width Vitality Hero with natural document scrolling */}
         {hero(scrollCtx)}
 
         {/* Layered Squircle Dashboard Surface (overlaps bottom of hero) */}
-        <View
+        <SquircleSurface
           style={[
             styles.squircleSurface,
             {
-              backgroundColor: colors.background,
-              borderTopColor: colors.border,
+              borderTopColor: colors.borderStrong,
               paddingBottom: clearance,
             },
           ]}
+          fill={colors.background}
         >
-          {/* Subtle bottom-sheet style top handle */}
-          <View style={styles.handleContainer}>
-            <View style={[styles.handleBar, { backgroundColor: colors.surface2 }]} />
-          </View>
-
           {/* Dashboard Content Container */}
           <View
             style={[
@@ -131,7 +123,7 @@ export function DashboardScreenContainer({
           >
             {children}
           </View>
-        </View>
+        </SquircleSurface>
       </Animated.ScrollView>
     </View>
   );
@@ -147,27 +139,17 @@ const styles = StyleSheet.create({
   },
   squircleSurface: {
     width: '100%',
-    marginTop: -30,
+    marginTop: -28,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     borderTopWidth: StyleSheet.hairlineWidth,
-    overflow: 'hidden',
+    paddingTop: 16,
     zIndex: 10,
-    elevation: 4,
+    elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.05,
     shadowRadius: 8,
-  },
-  handleContainer: {
-    alignItems: 'center',
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  handleBar: {
-    width: 38,
-    height: 4,
-    borderRadius: 2,
   },
   contentColumn: {
     alignSelf: 'center',

@@ -258,17 +258,19 @@ export function VitalityRingGauge({
 
   return (
     <ContainerComp {...containerProps}>
-      {eyebrow || onMenuPress ? (
+      {eyebrow || (onMenuPress && !fullWidth) ? (
         <View style={styles.heroTopBar}>
-          <Text
-            style={[
-              typography.captionBold,
-              { color: colors.onPrimaryMuted, textTransform: 'uppercase', letterSpacing: 0.8, fontSize: 11 },
-            ]}
-          >
-            {eyebrow}
-          </Text>
-          {onMenuPress ? (
+          {eyebrow ? (
+            <Text
+              style={[
+                typography.captionBold,
+                { color: colors.onPrimaryMuted, textTransform: 'uppercase', letterSpacing: 0.8, fontSize: 11 },
+              ]}
+            >
+              {eyebrow}
+            </Text>
+          ) : null}
+          {onMenuPress && !fullWidth ? (
             <PressableScale
               onPress={onMenuPress}
               hitSlop={8}

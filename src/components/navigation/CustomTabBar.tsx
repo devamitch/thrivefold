@@ -1,4 +1,3 @@
-import { SquircleSurface } from '../ui/SquircleSurface';
 /**
  * Thrivefold Sanctuary Bottom Dock (Traced from Neev/BlinkQuest canonical dock architecture):
  * - Edge-to-edge, anchored to bottom: no side or bottom gaps; runs under system navigation area
@@ -12,7 +11,6 @@ import { SquircleSurface } from '../ui/SquircleSurface';
 import { Ionicons } from '@expo/vector-icons';
 import type { Tabs } from 'expo-router';
 import { router } from 'expo-router';
-import { hapticMedium, hapticSelection } from '../../services/haptics';
 import { memo, useCallback, useEffect, useMemo, type ComponentProps } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, {
@@ -25,6 +23,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { ClipPath, Defs, Path } from 'react-native-svg';
+import { hapticMedium, hapticSelection } from '../../services/haptics';
 
 import { useTheme } from '../../theme/useTheme';
 import { PressableScale } from '../ui/PressableScale';
@@ -306,10 +305,7 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
       pointerEvents="box-none"
       style={[styles.dock, containerAnimStyle]}
     >
-      <View
-        style={{ width: barW, height: barH, alignSelf: 'center' }}
-        pointerEvents="box-none"
-      >
+      <View style={{ width: barW, height: barH, alignSelf: 'center' }} pointerEvents="box-none">
         <Svg width={barW} height={barH} style={StyleSheet.absoluteFill} pointerEvents="none">
           <Defs>
             <ClipPath id="dockClip">
@@ -323,13 +319,8 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
         </Svg>
 
         {/* Tab buttons row */}
-        <View
-          style={[styles.row, { paddingHorizontal: bleed }]}
-          accessibilityRole="tablist"
-        >
-          <View style={styles.side}>
-            {left.map((route, i) => renderTab(route, i))}
-          </View>
+        <View style={[styles.row, { paddingHorizontal: bleed }]} accessibilityRole="tablist">
+          <View style={styles.side}>{left.map((route, i) => renderTab(route, i))}</View>
           <View style={styles.centerSlot} />
           <View style={styles.side}>
             {right.map((route, i) => renderTab(route, i + left.length))}

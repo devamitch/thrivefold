@@ -350,11 +350,11 @@ export default function HomeScreen() {
               accessibilityRole="button"
               accessibilityLabel="Open weekly analytics and health trends sheet"
             >
-              <Card variant="tinted" style={{ padding: spacing.base }}>
+              <Card variant="surface" style={{ padding: spacing.base }}>
                 <View style={styles.rowBetween}>
                   <View style={styles.rowCenter}>
                     <View
-                      style={[styles.analyticsIconCircle, { backgroundColor: colors.surface1 }]}
+                      style={[styles.analyticsIconCircle, { backgroundColor: colors.primaryAlpha }]}
                     >
                       <Ionicons name="analytics" size={18} color={colors.primary} />
                     </View>
@@ -405,9 +405,11 @@ export default function HomeScreen() {
       {setupOpen > 0 ? (
         <Animated.View entering={enter(2)}>
           <Link href={'/(app)/personalize' as Href} asChild>
-            <Card variant="tinted" style={{ padding: spacing.base, marginTop: spacing.md }}>
+            <Card variant="surface" style={{ padding: spacing.base, marginTop: spacing.md }}>
               <View style={styles.rowBetween}>
-                <Ionicons name="trophy-outline" size={20} color={colors.primary} />
+                <View style={[styles.iconTile, { backgroundColor: colors.primaryAlpha }]}>
+                  <Ionicons name="trophy-outline" size={20} color={colors.primary} />
+                </View>
                 <View style={[styles.flex, { marginLeft: 12 }]}>
                   <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
                     {setupOpen} setup step{setupOpen === 1 ? '' : 's'} open
@@ -428,7 +430,7 @@ export default function HomeScreen() {
 
       {recovery ? (
         <Animated.View entering={enter(1)}>
-          <Card variant="tinted" style={{ padding: spacing.base, marginTop: spacing.md }}>
+          <Card variant="surface" style={{ padding: spacing.base, marginTop: spacing.md }}>
             <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
               {recovery.title}
             </Text>

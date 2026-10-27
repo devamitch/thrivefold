@@ -101,13 +101,23 @@ export const SquircleSurface = memo(function SquircleSurface({
   const painted = (paint !== undefined && paint !== 'transparent') || Boolean(stroke);
   const edge = stroke ? strokeWidth : 0;
   const round = shape === 'pill' || shape === 'circle';
+
+  const hasSpecificCorners =
+    radiusProp === undefined &&
+    flat.borderRadius === undefined &&
+    (typeof flat.borderTopLeftRadius === 'number' ||
+      typeof flat.borderTopRightRadius === 'number' ||
+      typeof flat.borderBottomLeftRadius === 'number' ||
+      typeof flat.borderBottomRightRadius === 'number');
+
   // An explicit radius wins, then the style's borderRadius, else square corners.
   const radius = round
     ? 9999
     : (radiusProp ?? (typeof flat.borderRadius === 'number' ? flat.borderRadius : 0));
-  const clip = (clipContent ?? true) && painted && radius > 0 && flat.overflow !== 'visible';
+  const hasAnyRadius = radius > 0 || hasSpecificCorners;
+  const clip = (clipContent ?? true) && painted && hasAnyRadius && flat.overflow !== 'visible';
 
-  if (NativeSquircleView && shape === 'squircle' && radius >= NATIVE_MIN_RADIUS && painted) {
+  if (NativeSquircleView && shape === 'squircle' && radius >= NATIVE_MIN_RADIUS && painted && !hasSpecificCorners) {
     return (
       <NativeSquircleView
         {...rest}
@@ -130,13 +140,22 @@ export const SquircleSurface = memo(function SquircleSurface({
   }
 
   // Square and unpainted: a layout box. Pass the style through untouched so Fabric can flatten it.
-  if (radius === 0 && !fill && !stroke) {
+  if (!hasAnyRadius && !fill && !stroke) {
     return (
       <View {...rest} ref={ref} style={style}>
         {children}
       </View>
     );
   }
+
+  const radiusStyle = hasSpecificCorners
+    ? {
+        borderTopLeftRadius: flat.borderTopLeftRadius,
+        borderTopRightRadius: flat.borderTopRightRadius,
+        borderBottomLeftRadius: flat.borderBottomLeftRadius,
+        borderBottomRightRadius: flat.borderBottomRightRadius,
+      }
+    : { borderRadius: radius };
 
   return (
     <View
@@ -146,7 +165,7 @@ export const SquircleSurface = memo(function SquircleSurface({
         flat,
         {
           backgroundColor: paint,
-          borderRadius: radius,
+          ...radiusStyle,
           borderCurve: 'continuous',
           borderWidth: edge || flat.borderWidth,
           borderColor: stroke ?? flat.borderColor,

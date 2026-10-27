@@ -9,9 +9,9 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { hapticLight } from '../../services/haptics';
 import { useTheme } from '../../theme/useTheme';
 import { PressableScale } from '../ui/PressableScale';
-import { hapticLight } from '../../services/haptics';
 
 export interface DashboardHeaderProps {
   title: string;
@@ -24,30 +24,26 @@ export interface DashboardHeaderProps {
 export const COMPACT_HEADER_CONTENT_HEIGHT = 52;
 
 /**
- * Pinned Compact Dashboard Header:
- * - Seamlessly pinned at the top behind transparent status bar.
- * - Progressively revealed as the Vitality Hero collapses on scroll.
+ * Pinned Dashboard Header:
+ * - Conventional, full-width app header pinned at top behind transparent status bar.
  * - Solid primary background so content scrolling underneath never bleeds through.
- * - Houses compact title, level/points status badge, and menu drawer toggle.
+ * - Houses app title, level/points status badge, and menu drawer toggle.
+ * - Glitch-free, zero unnecessary opacity/scaling transitions for absolute visual stability.
  */
 export function DashboardHeader({
   title,
   badgeText,
   onMenuPress,
-  collapseProgress,
+  scrollY,
 }: DashboardHeaderProps) {
   const { colors, typography } = useTheme();
   const insets = useSafeAreaInsets();
   const headerHeight = insets.top + COMPACT_HEADER_CONTENT_HEIGHT;
 
-  const headerAnimStyle = useAnimatedStyle(() => {
-    const progress = collapseProgress.value;
-    const opacity = interpolate(progress, [0.35, 0.85], [0, 1], Extrapolation.CLAMP);
-    const translateY = interpolate(progress, [0.35, 0.85], [-8, 0], Extrapolation.CLAMP);
-
+  const headerBorderAnim = useAnimatedStyle(() => {
+    const borderProgress = interpolate(scrollY.value, [0, 20], [0, 1], Extrapolation.CLAMP);
     return {
-      opacity,
-      transform: [{ translateY }],
+      borderBottomColor: borderProgress > 0.5 ? colors.onPrimarySurface : 'transparent',
     };
   });
 
@@ -60,9 +56,8 @@ export function DashboardHeader({
           height: headerHeight,
           paddingTop: insets.top,
           backgroundColor: colors.primary,
-          borderBottomColor: colors.onPrimarySurface,
         },
-        headerAnimStyle,
+        headerBorderAnim,
       ]}
     >
       <View style={styles.content}>

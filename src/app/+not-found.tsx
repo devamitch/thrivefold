@@ -1,7 +1,6 @@
-import { SquircleSurface } from '../components/ui/SquircleSurface';
-import React from 'react';
-import { Text, StyleSheet, View } from 'react-native';
 import { Link } from 'expo-router';
+import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../theme/useTheme';
 
 export default function NotFoundScreen() {
@@ -12,7 +11,12 @@ export default function NotFoundScreen() {
       <Text style={[typography.heading, { color: colors.text.primary, marginBottom: spacing.sm }]}>
         Screen Not Found
       </Text>
-      <Text style={[typography.body, { color: colors.text.secondary, marginBottom: spacing.xl, textAlign: 'center' }]}>
+      <Text
+        style={[
+          typography.body,
+          { color: colors.text.secondary, marginBottom: spacing.xl, textAlign: 'center' },
+        ]}
+      >
         This screen doesn't exist or is not available for your current account profile.
       </Text>
       <Link href="/(app)/(tabs)" style={[styles.link, { color: colors.primary }]}>
