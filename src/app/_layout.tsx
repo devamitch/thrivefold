@@ -1,11 +1,13 @@
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import React, { useEffect, useState } from 'react';
-import { StatusBar, StyleSheet } from 'react-native';
+import { Linking, StatusBar, StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useRootStore } from '../stores/useRootStore';
 import { useTheme } from '../theme/useTheme';
+import { unifiedVaultSosService } from '../services/auth/unifiedVaultSosService';
+import { ecosystemSyncService } from '../services/ecosystem/ecosystemSyncService';
 
 // import { BlurRoot } from '@/components/ui';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
@@ -26,6 +28,22 @@ export default function RootLayout() {
   useEffect(() => {
     resetDailyQuotaIfNewDay();
   }, [resetDailyQuotaIfNewDay]);
+
+  // Unified Vault SOS deep-link handler (peer-to-peer mesh & callbacks)
+  useEffect(() => {
+    const handleUrl = async (url: string | null) => {
+      if (!url) return;
+      if (url.startsWith('thrivefold://unified-vault/callback') || url.startsWith('thrivefold://auth/callback') || url.includes('/callback?')) {
+        unifiedVaultSosService.handleIncomingVaultCallback(url);
+      } else if (url.startsWith('thrivefold://unified-vault')) {
+        await unifiedVaultSosService.handleIncomingVaultRequest(url);
+      }
+    };
+
+    void Linking.getInitialURL().then(handleUrl);
+    const sub = Linking.addEventListener('url', (e) => void handleUrl(e.url));
+    return () => sub.remove();
+  }, []);
 
   return (
     <PersistQueryClientProvider

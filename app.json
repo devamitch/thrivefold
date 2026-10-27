@@ -7,7 +7,9 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/images/app-icon-all.png",
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "android": {
       "package": "com.amit.thrivefold",
       "versionCode": 2,
@@ -26,7 +28,10 @@
         "android.permission.health.READ_SLEEP",
         "android.permission.health.READ_EXERCISE",
         "android.permission.health.READ_WEIGHT",
-        "android.permission.health.WRITE_EXERCISE"
+        "android.permission.health.WRITE_EXERCISE",
+        "android.permission.BLUETOOTH",
+        "android.permission.BLUETOOTH_ADMIN",
+        "android.permission.BLUETOOTH_CONNECT"
       ],
       "blockedPermissions": [
         "com.google.android.gms.permission.AD_ID",
@@ -54,7 +59,9 @@
         "NSPrivacyAccessedAPITypes": [
           {
             "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
-            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
+            "NSPrivacyAccessedAPITypeReasons": [
+              "CA92.1"
+            ]
           }
         ]
       }
@@ -134,7 +141,12 @@
       "typedRoutes": true
     },
     "extra": {
-      "googleWebClientId": "976390431722-9msfcuu1q0p2co1p40c3i4dnd6tuk8di.apps.googleusercontent.com"
-    }
+      "googleWebClientId": "976390431722-9msfcuu1q0p2co1p40c3i4dnd6tuk8di.apps.googleusercontent.com",
+      "router": {},
+      "eas": {
+        "projectId": "c8672e6c-cf56-450a-a097-eed822317968"
+      }
+    },
+    "owner": "amit98ch"
   }
 }

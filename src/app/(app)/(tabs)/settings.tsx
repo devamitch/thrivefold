@@ -18,6 +18,7 @@ import { PressableScale } from '../../../components/ui/PressableScale';
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import { TextField } from '../../../components/ui/TextField';
 import { useTheme } from '../../../theme/useTheme';
+import { unifiedVaultSosService } from '../../../services/auth/unifiedVaultSosService';
 
 const AVATAR_OPTIONS = [
   { id: 'lotus', icon: 'flower-outline' as const, label: 'Lotus' },
@@ -46,6 +47,38 @@ export default function SettingsScreen() {
   const currentStreak = useRootStore((s) => s.currentStreak);
   const questsCompleted = useRootStore((s) => s.questsCompleted);
   const checkInDays = useRootStore((s) => s.completedCheckInDaysCount);
+
+  const showAlert = useRootStore((s) => s.showAlert);
+  const [syncingVault, setSyncingVault] = useState(false);
+
+  const handleVaultSync = async () => {
+    setSyncingVault(true);
+    try {
+      const res = await unifiedVaultSosService.launchUnifiedVaultSos();
+      if (res.status === 'not_installed') {
+        showAlert({
+          title: 'Unified Vault SOS',
+          message:
+            'No local peer apps (Setu, Neev, HarmonyBloom, BlinkQuest) or offline cloud records were reachable. Install any ecosystem app to enable mesh profile sync.',
+          confirmText: 'Download Setu',
+          cancelText: 'Cancel',
+          onConfirm: () => {
+            void unifiedVaultSosService.openSetuDownload();
+          },
+        });
+      } else if (res.status === 'cloud_synced') {
+        showAlert({
+          title: 'Cloud Vault Synced',
+          message: 'Your unified profile, addresses, and biological rhythm have been updated from the cloud backend.',
+          confirmText: 'Great',
+        });
+      }
+    } catch {
+      // handled
+    } finally {
+      setSyncingVault(false);
+    }
+  };
 
   // Editing pseudonym state
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -179,6 +212,16 @@ export default function SettingsScreen() {
         <Link href={'/(app)/(tabs)/progress' as Href} asChild>
           <SettingsRow icon="trail-sign-outline" title="Roadmap" subtitle="Chapters, levels and what unlocks next" />
         </Link>
+
+        <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.md, marginBottom: spacing.sm }]}>
+          Unified Vault SOS
+        </Text>
+        <SettingsRow
+          icon="infinite-outline"
+          title="Connect with Unified Vault SOS"
+          subtitle="Peer mesh with Setu, Neev, HarmonyBloom & BlinkQuest (zero data loss)"
+          onPress={handleVaultSync}
+        />
 
         <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.md, marginBottom: spacing.sm }]}>
           Settings

@@ -70,3 +70,18 @@ pnpm web
 - [SECURITY_TEST_PLAN.md](file:///Volumes/Amit/Projects/Apps/thrivefold/SECURITY_TEST_PLAN.md): Threat modeling, penetration testing, and RLS policies.
 - [DECISIONS_AND_CONFLICTS.md](file:///Volumes/Amit/Projects/Apps/thrivefold/docs/requirements/DECISIONS_AND_CONFLICTS.md): Architectural Decision Records.
 - [FOUNDER_POLICY_REQUESTS.md](file:///Volumes/Amit/Projects/Apps/thrivefold/docs/requirements/FOUNDER_POLICY_REQUESTS.md): Sensitive policy governance status ledger.
+
+---
+
+## 🛡️ AnvayKosh (अन्वयकोश) Ecosystem Integration
+
+<p align="center">
+  <img src="assets/brand/anvaykosh-icon.svg" width="96" height="96" alt="AnvayKosh Ecosystem Icon" />
+</p>
+
+Thrivefold is a member application in the **AnvayKosh** private multi-app ecosystem:
+
+- **Anvay ID**: 1-tap single sign-on powered by federated peer discovery. If Setu is present, it acts as the master vault. If not, Thrivefold or sibling apps (`Neev`, `HarmonyBloom`, `BlinkQuest`) serve as the Anvay Vault Provider.
+- **Anvay Vault**: Encrypted personal profile storing user demographics, daily health scores, cycle records, workout habits, and non-destructive coalesced preferences.
+- **Anvay Connect**: Peer-to-peer deep-link channel (`thrivefold://unified-vault`) with package validation and state-nonce tamper verification.
+- **Anvay Sync**: Offline-first synchronization with non-destructive nullish merge (`coalesce`) and secure Supabase cloud reconciliation.

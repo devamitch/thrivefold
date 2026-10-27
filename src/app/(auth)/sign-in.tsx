@@ -19,7 +19,8 @@ import { IntroSlider } from '../../components/onboarding/IntroSlider';
 import { AnimatedThrivefoldMark } from '../../components/brand/AnimatedThrivefoldMark';
 import { useTheme } from '../../theme/useTheme';
 import { PressableScale } from '../../components/ui/PressableScale';
-
+import { unifiedVaultSosService } from '../../services/auth/unifiedVaultSosService';
+import { AnvayKoshIcon } from '../../components/brand/AnvayKoshIcon';
 
 type Step = 'account' | 'name' | 'email' | 'code';
 
@@ -66,6 +67,26 @@ export default function SignInScreen() {
     setBusy(false);
     if (res.ok) router.push('/(auth)/confirm-profile');
     else if (!res.cancelled) setAuthError(res.message);
+  };
+
+  const handleVaultSos = async () => {
+    if (busy) return;
+    setBusy(true);
+    setAuthError(null);
+    try {
+      const res = await unifiedVaultSosService.launchUnifiedVaultSos();
+      if (res.status === 'cloud_synced') {
+        router.replace('/');
+      } else if (res.status === 'not_installed') {
+        setAuthError('No ecosystem app or cloud vault available. Sign in with Google or explore as guest.');
+      } else if (res.status === 'failed') {
+        setAuthError('Could not connect to Unified Vault SOS.');
+      }
+    } catch {
+      setAuthError('Failed to initiate Unified Vault SOS.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   const guest = () => {
@@ -160,6 +181,33 @@ export default function SignInScreen() {
             stay on this phone either way.
           </Text>
         </View>
+        <PressableScale
+          onPress={handleVaultSos}
+          disabled={busy}
+          accessibilityRole="button"
+          accessibilityLabel="Anvay ID — AnvayKosh Unified Ecosystem Sign-In"
+          style={[
+            styles.google,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.primary,
+              borderWidth: 1.5,
+              opacity: busy ? 0.6 : 1,
+              marginBottom: spacing.xs,
+              paddingVertical: 12,
+            },
+          ]}
+        >
+          <AnvayKoshIcon size={24} />
+          <View style={{ marginLeft: 12, flex: 1 }}>
+            <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+              {busy ? 'Connecting Anvay ID…' : 'Anvay ID'}
+            </Text>
+            <Text style={[typography.caption, { color: colors.text.secondary }]}>
+              AnvayKosh Unified Ecosystem · 1-Tap Sign-In
+            </Text>
+          </View>
+        </PressableScale>
         {googleAvailable() ? (
           <PressableScale
             onPress={google}
