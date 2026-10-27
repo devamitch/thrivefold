@@ -225,3 +225,4 @@ blinkquest-*.json
 # Agent skills are shared, versioned instructions for every AI tool (see AGENTS.md).
 !.agents/
 !.claude/skills
+*.zip
