@@ -7,7 +7,6 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   useWindowDimensions,
   View,
@@ -185,7 +184,7 @@ export function AppDrawer({ blurTarget: _blurTarget }: { blurTarget?: RefObject<
   const { width } = useWindowDimensions();
   const { colors, typography, experience } = useTheme();
 
-  const { open, setOpen, socialOpen, user, level, currentStreak, betaMode, setBetaMode } =
+  const { open, setOpen, socialOpen, user, level, currentStreak } =
     useRootStore(
       useShallow((s) => ({
         open: s.drawerOpen,
@@ -194,8 +193,6 @@ export function AppDrawer({ blurTarget: _blurTarget }: { blurTarget?: RefObject<
         user: s.user,
         level: s.level,
         currentStreak: s.currentStreak,
-        betaMode: s.betaMode,
-        setBetaMode: s.setBetaMode,
       })),
     );
 
@@ -218,15 +215,13 @@ export function AppDrawer({ blurTarget: _blurTarget }: { blurTarget?: RefObject<
         ...sec,
         items: sec.items.filter((it) => {
           if (QUICK_ROUTES.has(it.route)) return false;
-          if (it.betaOnly) return betaMode;
-          if (sec.betaOnly && !betaMode) return false;
           if (it.only && !it.only.includes(experience)) return false;
           if (it.social && !socialOpen) return false;
           if (it.minLevel && level < it.minLevel) return false;
           return true;
         }),
       })).filter((sec) => sec.items.length > 0),
-    [experience, socialOpen, level, betaMode],
+    [experience, socialOpen, level],
   );
 
   const activeRoute = useMemo(() => {
@@ -263,14 +258,6 @@ export function AppDrawer({ blurTarget: _blurTarget }: { blurTarget?: RefObject<
       setTimeout(() => router.push(route as Href), 160);
     },
     [pathname, router, setOpen],
-  );
-
-  const onToggleBeta = useCallback(
-    (val: boolean) => {
-      tick();
-      setBetaMode(val);
-    },
-    [setBetaMode],
   );
 
   return (
@@ -429,65 +416,6 @@ export function AppDrawer({ blurTarget: _blurTarget }: { blurTarget?: RefObject<
                   </Reveal>
                 ),
               )}
-
-              {/* Beta Mode Toggle Row — perfectly integrated, minimal & sleek */}
-              <Reveal index={rows.length + 2} progress={progress} style={styles.betaRowWrap}>
-                <SquircleSurface
-                  radius={18}
-                  smoothing={1}
-                  fill={betaMode ? palette.accentWash : palette.wash}
-                  style={styles.betaCard}
-                >
-                  <View style={styles.betaCardLeft}>
-                    <SquircleSurface
-                      radius={12}
-                      fill={betaMode ? palette.accent : palette.washStrong}
-                      style={styles.betaIconSurface}
-                    >
-                      <Ionicons
-                        name={betaMode ? 'flask' : 'flask-outline'}
-                        size={17}
-                        color={betaMode ? palette.onAccent : palette.inkSoft}
-                      />
-                    </SquircleSurface>
-                    <View style={styles.betaTextCol}>
-                      <View style={styles.betaHeadingRow}>
-                        <Text style={[typography.bodyBold, { color: palette.ink }]}>
-                          Beta Mode
-                        </Text>
-                        {betaMode ? (
-                          <SquircleSurface radius={8} fill={palette.accent} style={styles.badge}>
-                            <Text
-                              style={[
-                                typography.captionBold,
-                                { color: palette.onAccent, fontSize: 10 },
-                              ]}
-                            >
-                              ON
-                            </Text>
-                          </SquircleSurface>
-                        ) : null}
-                      </View>
-                      <Text
-                        numberOfLines={1}
-                        style={[typography.caption, { color: palette.inkMuted, marginTop: 1 }]}
-                      >
-                        Experimental tech & Lab
-                      </Text>
-                    </View>
-                  </View>
-                  <Switch
-                    value={betaMode}
-                    onValueChange={onToggleBeta}
-                    thumbColor={betaMode ? palette.accent : palette.inkMuted}
-                    trackColor={{
-                      false: palette.washStrong,
-                      true: palette.accentWash,
-                    }}
-                    accessibilityLabel="Toggle Beta Mode"
-                  />
-                </SquircleSurface>
-              </Reveal>
             </ScrollView>
 
             {/* The list dissolves into the footer instead of being cut off */}
@@ -499,7 +427,7 @@ export function AppDrawer({ blurTarget: _blurTarget }: { blurTarget?: RefObject<
           </View>
 
           {/* Footer: Safety and Support */}
-          <Reveal index={rows.length + 3} progress={progress} style={styles.footer}>
+          <Reveal index={rows.length + 2} progress={progress} style={styles.footer}>
             <PressableScale
               onPress={() => go('/(app)/safety')}
               scaleTo={0.98}
@@ -604,42 +532,6 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     height: 18,
     width: 3,
-  },
-  betaRowWrap: {
-    marginTop: 18,
-    paddingHorizontal: 4,
-  },
-  betaCard: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  betaCardLeft: {
-    alignItems: 'center',
-    flex: 1,
-    flexDirection: 'row',
-    gap: 12,
-    marginRight: 8,
-  },
-  betaIconSurface: {
-    alignItems: 'center',
-    height: 32,
-    justifyContent: 'center',
-    width: 32,
-  },
-  betaTextCol: {
-    flex: 1,
-  },
-  betaHeadingRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 6,
-  },
-  badge: {
-    paddingHorizontal: 6,
-    paddingVertical: 1,
   },
   glow: {
     height: 420,

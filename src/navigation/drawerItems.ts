@@ -69,11 +69,4 @@ export const DRAWER_SECTIONS: DrawerSection[] = [
       { label: 'Organizations', icon: 'business-outline', route: '/(app)/organizations', minLevel: 6 },
     ],
   },
-  {
-    title: 'Lab & Beta',
-    betaOnly: true,
-    items: [
-      { label: 'Beta Lab', icon: 'flask-outline', route: '/(app)/beta-lab', betaOnly: true },
-    ],
-  },
 ];

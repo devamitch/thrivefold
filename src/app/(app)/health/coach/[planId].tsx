@@ -257,7 +257,7 @@ export default function CoachScreen() {
       player.current?.play();
       autoPaused.current = false;
     }
-  }, [poseTrack.rep.fault, videoPlaying]);
+  }, [poseTrack, poseTrack.rep.fault, videoPlaying]);
 
   // ── Voice command dispatcher ──────────────────────────────────────────────
   const executeVoiceCommand = useCallback(
@@ -350,9 +350,7 @@ export default function CoachScreen() {
     if (!item) return;
     const currentCount = progressOf(poseTrack.repRef.current);
     completeSet(
-      cameraOn && movement && poseTrack.repRef.current.validFrames > 0
-        ? currentCount
-        : item.target,
+      cameraOn && movement && poseTrack.repRef.current.validFrames > 0 ? currentCount : item.target,
     );
   }, [item, progressOf, poseTrack.repRef, completeSet, cameraOn, movement]);
 
