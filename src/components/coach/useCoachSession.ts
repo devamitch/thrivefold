@@ -119,15 +119,18 @@ export function useCoachSession({ planId, assignmentId }: UseCoachSessionOpts) {
     }
     if (resting.current) {
       resting.current = false;
-      setCountdown(3);
+      // 4 = GET READY beat, then 3-2-1-Go
+      setCountdown(4);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rest]);
 
-  // 3-2-1 countdown
+  // 4 (GET READY) → 3-2-1 → Go countdown
   useEffect(() => {
     if (countdown <= 0) return;
-    if (countdown === 3 && item && exercise) {
+
+    if (countdown === 4 && item && exercise) {
+      // GET READY beat: speak the full set intro, show the GET READY card, then drop to 3.
       const intro = setIntroLine(
         exercise.name,
         setIdx + 1,
@@ -137,7 +140,15 @@ export function useCoachSession({ planId, assignmentId }: UseCoachSessionOpts) {
         movement?.cue,
       );
       introMs.current = Math.min(7000, 900 + intro.length * 60);
-      say(`${intro} 3`, voiceRef.current);
+      say(intro, voiceRef.current);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
+      const t = setTimeout(() => setCountdown(3), introMs.current);
+      return () => clearTimeout(t);
+    }
+
+    if (countdown === 3) {
+      // Already said the intro above; now just speak "3" after the pause.
+      say('3', voiceRef.current);
     } else {
       say(String(countdown), voiceRef.current);
     }
@@ -149,7 +160,7 @@ export function useCoachSession({ planId, assignmentId }: UseCoachSessionOpts) {
           return c - 1;
         });
       },
-      countdown === 3 && introMs.current ? introMs.current : 900,
+      900,
     );
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps

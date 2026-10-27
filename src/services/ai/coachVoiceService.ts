@@ -82,6 +82,7 @@ export async function synthesizeSarvamSpeech(
 /**
  * Spoken cue for live coaching.
  * Non-blocking, never stacks cues, uses natural cadence.
+ * Guards stop() behind isSpeakingAsync so rapid calls don't stutter.
  */
 export async function speakCoach(
   text: string,
@@ -91,7 +92,10 @@ export async function speakCoach(
   if (!voiceOn || !text.trim()) return;
 
   try {
-    Speech.stop();
+    // Only stop if something is actively playing — avoids self-interruption stutter.
+    const speaking = await Speech.isSpeakingAsync().catch(() => false);
+    if (speaking) Speech.stop();
+
     const voice = await resolveBestVoice(opts?.language ?? 'en-IN');
     Speech.speak(text, {
       language: opts?.language ?? 'en-IN',

@@ -205,6 +205,14 @@ export default function CoachScreen() {
   );
 
   // ── Pose tracking ─────────────────────────────────────────────────────────
+  // gestureMode: 'off' while positioning/countdown/rest; 'set' only during an active set.
+  const gestureMode: 'off' | 'set' | 'rest' =
+    phase === 'live' && rest === 0 && countdown === 0
+      ? 'set'
+      : rest > 0
+        ? 'rest'
+        : 'off';
+
   const poseTrack = usePoseTracking({
     checking,
     movement,
@@ -214,6 +222,7 @@ export default function CoachScreen() {
     countdown,
     videoPlaying,
     rest,
+    gestureMode,
     onGesture,
     onCompleteSet: useCallback(
       (value: number) => {
@@ -372,23 +381,24 @@ export default function CoachScreen() {
     countdownArmed.current = true;
     if (!allowed) {
       countdownArmed.current = false;
-      setTimeout(() => setCountdown(3), 1600);
+      // Start at 4 so the GET READY card shows, then 3-2-1-Go
+      setTimeout(() => setCountdown(4), 1600);
     } else {
       setTimeout(() => {
         if (countdownArmed.current) {
           countdownArmed.current = false;
-          setCountdown(3);
+          setCountdown(4);
         }
       }, 8000);
     }
     InteractionManager.runAfterInteractions(() => setTimeout(() => setVideoMounted(true), 400));
   };
 
-  // Auto count-in when camera sees you
+  // Auto count-in when camera sees you — start at 4 (GET READY beat)
   useEffect(() => {
     if (countdownArmed.current && poseTrack.trackingReady && poseTrack.hasPerson) {
       countdownArmed.current = false;
-      setCountdown(3);
+      setCountdown(4);
     }
   }, [poseTrack.trackingReady, poseTrack.hasPerson]);
 
@@ -447,7 +457,14 @@ export default function CoachScreen() {
           }
         : null;
 
-  const nextItem = rest > 0 ? (setIdx === 0 ? plan.items[itemIdx] : item) : null;
+  // nextItem: the item that will run AFTER this rest.
+  // Within an exercise: same item (next set). After last set of an exercise: next plan item.
+  const nextItem =
+    rest > 0
+      ? setIdx + 1 < item.sets
+        ? item
+        : plan.items[itemIdx + 1] ?? null
+      : null;
 
   // Build banner data: most urgent first
   const { gestureProgress, framing } = poseTrack;
@@ -572,7 +589,7 @@ export default function CoachScreen() {
         videoTile
       )}
 
-      {/* Pose skeleton overlay */}
+      {/* Pose skeleton overlay — body+feet only per V5; face/hands/eyes locked off */}
       {cameraMain && stage.width > 0 ? (
         <PoseOverlay
           feed={poseTrack.feed}
@@ -582,6 +599,7 @@ export default function CoachScreen() {
           angleJoints={
             movement && !movement.metric && movement.kind === 'reps' ? movement.joints : null
           }
+          layers={{ body: true, feet: true, hands: false, head: false, eyes: false }}
         />
       ) : null}
       {/* Red border when form is wrong */}
