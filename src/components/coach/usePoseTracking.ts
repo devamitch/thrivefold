@@ -28,6 +28,9 @@ import {
 const FRAMING_ON_MS = 700;
 const FRAMING_OFF_MS = 500;
 const FRAMING_EVAL_MS = 100;
+const FAULT_QUIET_MS = 2500; // after a form-fault line, hold back other cues
+const SPEECH_GAP_MS = 700;   // never stack utterances
+const COUNT_GAP_MS = 1100;   // fast reps: skip counts instead of talking behind user
 
 const ARM_MOVES = new Set([
   'arm_raise',
@@ -94,6 +97,7 @@ export function usePoseTracking({
   const gestureCooldownUntil = useRef(0);
   const seqRef = useRef(0);
   const dimsRef = useRef({ w: 0, h: 0 });
+  const voice = useRef({ lastAny: 0, lastFault: 0, lastCount: 0 });
   const framingRef = useRef<{
     shown: FramingCue | null;
     pending: string | null;
@@ -106,11 +110,13 @@ export function usePoseTracking({
   const feedW = useSharedValue(0);
   const feedH = useSharedValue(0);
   const feedSeq = useSharedValue(0);
+  const feedCap = useSharedValue(0);
   const feed = useRef({
     points: feedPoints,
     frameW: feedW,
     frameH: feedH,
     seq: feedSeq,
+    capturedAt: feedCap,
   }).current;
 
   const counterPulse = useSharedValue(1);
@@ -122,7 +128,7 @@ export function usePoseTracking({
 
   const handlePose = useCallback(
     (e: { nativeEvent: PoseFrame }) => {
-      const { frameWidth, frameHeight, timestamp } = e.nativeEvent;
+      const { frameWidth, frameHeight, timestamp, capturedAt } = e.nativeEvent;
       const rawPts = e.nativeEvent.points;
       const n = (rawPts.length / 4) | 0;
 
@@ -135,6 +141,9 @@ export function usePoseTracking({
         feed.frameH.value = frameHeight;
       }
       feed.points.value = rawPts;
+      if (capturedAt != null) {
+        feed.capturedAt.value = capturedAt;
+      }
       seqRef.current += 1;
       feed.seq.value = seqRef.current;
 
@@ -151,6 +160,31 @@ export function usePoseTracking({
       const landmarks = landmarksOf(rawPts);
       const now = Date.now();
       if (!personSince.current) personSince.current = now;
+
+      // Smart voice arbitration: faults preempt, counts pace reps, never stack speech,
+      // and never talk over tutorial video. Set-completion lines are never dropped.
+      const speak = (
+        cue: Parameters<typeof cuesEngine.proposeCue>[0],
+        timeMs: number,
+        final = false,
+      ) => {
+        const decision = cuesEngine.proposeCue(cue, timeMs);
+        const text = decision.shouldSpeak ? decision.spokenTextToSpeak : undefined;
+        if (!text) return;
+        const v = voice.current;
+        if (cue.category === 'FORM_FAULT') {
+          v.lastFault = timeMs;
+        } else if (!final) {
+          if (videoPlaying) return;
+          if (timeMs - v.lastFault < FAULT_QUIET_MS) return;
+          if (timeMs - v.lastAny < SPEECH_GAP_MS) return;
+          if (cue.category === 'RHYTHM_COUNT' && timeMs - v.lastCount < COUNT_GAP_MS) return;
+          if (cue.category === 'FRAMING' && gestureProgressRef.current.g) return;
+        }
+        if (cue.category === 'RHYTHM_COUNT') v.lastCount = timeMs;
+        v.lastAny = timeMs;
+        sayFn(text);
+      };
 
       // Gestures. Locked unless: a set or rest is running, the person has been in frame and
       // framed correctly for 1.5 s, the 3.5 s cooldown after the last gesture is over, and the
@@ -180,7 +214,8 @@ export function usePoseTracking({
         const nextG = st.latched ? null : st.current;
         const nextP = st.latched ? 0 : Math.round(prog * 4) / 4;
         const gp = gestureProgressRef.current;
-        if (nextG !== gp.g || (nextG && Math.abs(nextP - gp.p) >= 0.25) || nextP === 1) {
+        // Progress is quantized to 0.25 steps; only setState when quantized value changes
+        if (nextG !== gp.g || nextP !== gp.p) {
           gestureProgressRef.current = { g: nextG, p: nextP };
           setGestureProgress({ g: nextG, p: nextP });
         }
@@ -205,7 +240,8 @@ export function usePoseTracking({
             fr.shown = f;
             setFraming(f);
             if (countdown === 0) {
-              const decision = cuesEngine.proposeCue(
+              fr.spokenAt[f.id] = now;
+              speak(
                 {
                   id: f.id,
                   category: 'FRAMING',
@@ -214,10 +250,6 @@ export function usePoseTracking({
                 },
                 now,
               );
-              if (decision.shouldSpeak && decision.spokenTextToSpeak) {
-                fr.spokenAt[f.id] = now;
-                sayFn(decision.spokenTextToSpeak);
-              }
             }
           }
         } else {
@@ -240,7 +272,7 @@ export function usePoseTracking({
 
       if (!before.fault && next.fault) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => undefined);
-        const decision = cuesEngine.proposeCue(
+        speak(
           {
             id: next.fault.id,
             category: 'FORM_FAULT',
@@ -249,7 +281,6 @@ export function usePoseTracking({
           },
           now,
         );
-        if (decision.shouldSpeak && decision.spokenTextToSpeak) sayFn(decision.spokenTextToSpeak);
       } else if (before.fault && !next.fault) {
         cuesEngine.resolveFault(before.fault.id, now);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
@@ -261,7 +292,7 @@ export function usePoseTracking({
         if (!inSeconds && !next.fault) {
           const line = repLine(next.reps, item.target, !before.repHadFault);
           if (line) {
-            const decision = cuesEngine.proposeCue(
+            speak(
               {
                 id: `rep_${next.reps}`,
                 category: 'RHYTHM_COUNT',
@@ -270,9 +301,8 @@ export function usePoseTracking({
                 durationMs: 1500,
               },
               now,
+              next.reps >= item.target,
             );
-            if (decision.shouldSpeak && decision.spokenTextToSpeak)
-              sayFn(decision.spokenTextToSpeak);
           }
         }
       }
@@ -286,7 +316,7 @@ export function usePoseTracking({
       if (inSeconds && value > 0 && value !== prevValue) {
         const line = secondsLine(value, item.target);
         if (line) {
-          const decision = cuesEngine.proposeCue(
+          speak(
             {
               id: `sec_${value}`,
               category: 'TRANSITION',
@@ -295,8 +325,8 @@ export function usePoseTracking({
               durationMs: 1800,
             },
             now,
+            value >= item.target,
           );
-          if (decision.shouldSpeak && decision.spokenTextToSpeak) sayFn(decision.spokenTextToSpeak);
         }
       }
 
@@ -308,7 +338,7 @@ export function usePoseTracking({
         !next.fault
       ) {
         idleNudged.current = true;
-        const decision = cuesEngine.proposeCue(
+        speak(
           {
             id: 'idle_nudge',
             category: 'ENCOURAGEMENT',
@@ -318,7 +348,6 @@ export function usePoseTracking({
           },
           now,
         );
-        if (decision.shouldSpeak && decision.spokenTextToSpeak) sayFn(decision.spokenTextToSpeak);
       }
 
       const doneNow = value >= item.target;

@@ -71,6 +71,7 @@ import { useTheme } from '../../../../theme/useTheme';
 /** Tutorial video re-renders only when its own props change, not on every rep update. */
 const TutorialVideo = memo(YouTubePlayer);
 const NO_JOINTS: number[] = [];
+const OVERLAY_LAYERS = { body: true, feet: true, hands: false, head: false, eyes: false };
 
 export default function CoachScreen() {
   const router = useRouter();
@@ -546,9 +547,10 @@ export default function CoachScreen() {
   return (
     <View
       style={[styles.flex, { backgroundColor: colors.callBackground }]}
-      onLayout={(e) =>
-        setStage({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })
-      }
+      onLayout={(e) => {
+        const { width, height } = e.nativeEvent.layout;
+        setStage((s) => (s.width === width && s.height === height ? s : { width, height }));
+      }}
     >
       {/* Full-screen immersive: status bar hidden */}
       <StatusBar hidden />
@@ -595,7 +597,7 @@ export default function CoachScreen() {
           angleJoints={
             movement && !movement.metric && movement.kind === 'reps' ? movement.joints : null
           }
-          layers={{ body: true, feet: true, hands: false, head: false, eyes: false }}
+          layers={OVERLAY_LAYERS}
         />
       ) : null}
       {/* Red border when form is wrong */}
@@ -631,7 +633,13 @@ export default function CoachScreen() {
           onPress={confirmEnd}
           size={44}
         />
-        <View style={[styles.flex, styles.titlePill, { justifyContent: 'center', gap: 6 }]}>
+        <View
+          style={[
+            styles.flex,
+            styles.titlePill,
+            { justifyContent: 'center', gap: 6, backgroundColor: 'transparent' },
+          ]}
+        >
           <Text style={[typography.bodyBold, { color: colors.callText }]} numberOfLines={1}>
             {exercise.name}
           </Text>

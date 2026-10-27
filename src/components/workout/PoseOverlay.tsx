@@ -77,11 +77,17 @@ const HANDS: [number, number][] = [
   [16, 22],
 ];
 
-const STALE_MS = 150;      // was 350 — drop ghost landmarks faster
-const TAU_STILL_MS = 35;   // was 70  — joints settle 2× faster when still
-const TAU_FAST_MS = 10;    // was 14  — snap even quicker on fast motion
-const FAST_PX = 18;        // was 40  — trigger fast path on small movements too
+const STALE_MS = 150;      // drop ghost landmarks faster
 const DOT_GAP = 9;
+
+const SNAP_DIST_SQ = 4;        // px²: above this, track target exactly
+const STILL_ALPHA = 0.6;       // micro-jitter damping only
+const PREDICT = true;          // latency-lead compensation
+const LEAD_GAIN = 0.7;
+const MAX_LEAD_MS = 90;
+const MAX_LEAD_PX = 28;
+const MIN_SPEED_PX_MS = 0.08;  // deadband (~2.6 px per 33 ms): no lead on jitter
+const MAX_SPEED_PX_MS = 3;
 
 export interface PoseFeed {
   points: SharedValue<number[]>; // flat [x, y, z, visibility] * 33; empty = nobody
@@ -107,7 +113,7 @@ interface Props {
  *  - Bones are rows of round dots (one DashPathEffect, no extra geometry).
  *  - Joints: a dot with a thin ring. Head: a ring + neck. Torso: a faint panel.
  *  - ONE pass over all 33 landmarks per frame builds every path (see `geo`).
- *  - Speed-adaptive smoothing on the UI thread; stale data fades; hidden joints vanish.
+ *  - Real-time predictive lead compensates for camera & inference latency.
  */
 export const PoseOverlay = memo(function PoseOverlay({
   feed,
@@ -131,6 +137,9 @@ export const PoseOverlay = memo(function PoseOverlay({
   const hot = useSharedValue<number[]>(highlight);
   const arcJoints = useSharedValue<number[]>([]);
   const layerBits = useSharedValue(bitsOf(layers ?? {}));
+  const vel = useSharedValue<number[]>(new Array(N * 2).fill(0));
+  const lastCap = useSharedValue(0);
+  const capNow = useSharedValue(0);
 
   useEffect(() => {
     stageW.value = width;
@@ -168,6 +177,43 @@ export const PoseOverlay = memo(function PoseOverlay({
         if (present.value < 0.05 || now - arrivedAt.value > 150) snapNext.value = 1;
         arrivedAt.value = now;
         hasBody.value = 1;
+
+        // Per-joint velocity (px/ms) from consecutive captures; zero on jitter or reappearance.
+        const cap = feed.capturedAt ? feed.capturedAt.value : 0;
+        const gap = cap - lastCap.value;
+        const fresh = PREDICT && cap > 0 && gap >= 8 && gap <= 120 && snapNext.value !== 1;
+        const prev = target.value;
+        vel.modify((v) => {
+          'worklet';
+          for (let i = 0; i < N; i++) {
+            const k = i * 3;
+            const j = i * 2;
+            if (!fresh || prev[k + 2] < MIN_VIS || p[i * STRIDE + 3] < MIN_VIS) {
+              v[j] = 0;
+              v[j + 1] = 0;
+              continue;
+            }
+            const nx = p[i * STRIDE] * fw * scale + dx;
+            const ny = p[i * STRIDE + 1] * fh * scale + dy;
+            let vx = (nx - prev[k]) / gap;
+            let vy = (ny - prev[k + 1]) / gap;
+            const sp = Math.hypot(vx, vy);
+            if (sp < MIN_SPEED_PX_MS) {
+              vx = 0;
+              vy = 0;
+            } else if (sp > MAX_SPEED_PX_MS) {
+              const q = MAX_SPEED_PX_MS / sp;
+              vx *= q;
+              vy *= q;
+            }
+            v[j] = vx * 0.6 + v[j] * 0.4; // smooth velocity, not position
+            v[j + 1] = vy * 0.6 + v[j + 1] * 0.4;
+          }
+          return v;
+        });
+        lastCap.value = cap;
+        capNow.value = cap;
+
         target.modify((t) => {
           'worklet';
           for (let i = 0; i < N; i++) {
@@ -189,22 +235,40 @@ export const PoseOverlay = memo(function PoseOverlay({
       return;
     }
 
+    // Age of the data being drawn = inference + bridge + time since arrival, capped.
+    const cap = capNow.value;
+    const lead =
+      PREDICT && cap > 0 ? Math.min(MAX_LEAD_MS, Math.max(0, Date.now() - cap)) * LEAD_GAIN : 0;
+
     const snap = snapNext.value === 1;
     const t = target.value;
+    const v = vel.value;
     shown.modify((s) => {
       'worklet';
       for (let i = 0; i < N; i++) {
         const k = i * 3;
+        let tx = t[k];
+        let ty = t[k + 1];
+        if (lead > 0) {
+          let px = v[i * 2] * lead;
+          let py = v[i * 2 + 1] * lead;
+          const m = Math.hypot(px, py);
+          if (m > MAX_LEAD_PX) {
+            const q = MAX_LEAD_PX / m;
+            px *= q;
+            py *= q;
+          }
+          tx += px;
+          ty += py;
+        }
         if (snap) {
-          s[k] = t[k];
-          s[k + 1] = t[k + 1];
+          s[k] = tx;
+          s[k + 1] = ty;
         } else {
-          const ex = t[k] - s[k];
-          const ey = t[k + 1] - s[k + 1];
-          const distSq = ex * ex + ey * ey;
-          // When moving (> 3 px), track at 95% speed for instant real-time feel
-          // When still (<= 3 px), gently dampen sensor noise
-          const a = distSq > 9 ? 0.95 : 0.60;
+          const ex = tx - s[k];
+          const ey = ty - s[k + 1];
+          // When moving: exact 1:1 match with lead. When still: damp jitter
+          const a = ex * ex + ey * ey > SNAP_DIST_SQ ? 1 : STILL_ALPHA;
           s[k] += ex * a;
           s[k + 1] += ey * a;
         }
