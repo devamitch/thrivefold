@@ -97,24 +97,40 @@ export function DashboardScreenContainer({
         nestedScrollEnabled
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: clearance },
           contentContainerStyle,
         ]}
       >
         {/* Full-width Vitality Hero with scroll-linked parallax */}
         {hero(scrollCtx)}
 
-        {/* Dashboard Content Container */}
+        {/* Layered Squircle Dashboard Surface (overlaps bottom of hero) */}
         <View
           style={[
-            styles.contentColumn,
+            styles.squircleSurface,
             {
-              maxWidth: layout.columnWidth,
-              paddingHorizontal: layout.gutter,
+              backgroundColor: colors.background,
+              borderTopColor: colors.border,
+              paddingBottom: clearance,
             },
           ]}
         >
-          {children}
+          {/* Subtle bottom-sheet style top handle */}
+          <View style={styles.handleContainer}>
+            <View style={[styles.handleBar, { backgroundColor: colors.surface2 }]} />
+          </View>
+
+          {/* Dashboard Content Container */}
+          <View
+            style={[
+              styles.contentColumn,
+              {
+                maxWidth: layout.columnWidth,
+                paddingHorizontal: layout.gutter,
+              },
+            ]}
+          >
+            {children}
+          </View>
         </View>
       </Animated.ScrollView>
     </View>
@@ -128,6 +144,30 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+  },
+  squircleSurface: {
+    width: '100%',
+    marginTop: -30,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
+    zIndex: 10,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+  },
+  handleContainer: {
+    alignItems: 'center',
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
+  handleBar: {
+    width: 38,
+    height: 4,
+    borderRadius: 2,
   },
   contentColumn: {
     alignSelf: 'center',
