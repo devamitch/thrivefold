@@ -633,7 +633,7 @@ export default function CoachScreen() {
           size={44}
         />
         <FrostedView
-          tone="dark"
+          tone={'surface'}
           tintOpacity={0.82}
           style={[
             styles.flex,
