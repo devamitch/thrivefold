@@ -111,6 +111,12 @@ export interface AppSlice {
   /** Opt-in experimental Beta Mode: unlocks Beta Lab, experimental pose, and motion blur. Off by default. */
   betaMode: boolean;
   setBetaMode: (on: boolean) => void;
+  /** Server-confirmed project owner (tf_is_owner): unlocks Beta Lab and developer tools. */
+  isOwner: boolean;
+  setIsOwner: (on: boolean) => void;
+  /** Daily active-calorie goal (estimated activity burn, not including resting energy). */
+  activeCalorieGoal: number;
+  setActiveCalorieGoal: (kcal: number) => void;
   setUsageAnalytics: (on: boolean) => void;
   setShareWeeklySummaries: (enabled: boolean) => void;
   setQuestRemindersEnabled: (enabled: boolean) => void;
@@ -201,6 +207,10 @@ export const createAppSlice: StateCreator<
   setAiDeliveryMode: (aiDeliveryMode) => set({ aiDeliveryMode }),
   betaMode: false,
   setBetaMode: (betaMode) => set({ betaMode }),
+  isOwner: false,
+  setIsOwner: (isOwner) => set({ isOwner }),
+  activeCalorieGoal: 300,
+  setActiveCalorieGoal: (kcal) => set({ activeCalorieGoal: Math.max(100, Math.min(2000, Math.round(kcal))) }),
   setUsageAnalytics: (usageAnalytics) => set({ usageAnalytics }),
   setShareWeeklySummaries: (shareWeeklySummaries) => set({ shareWeeklySummaries }),
   setQuestRemindersEnabled: (questRemindersEnabled) => set({ questRemindersEnabled }),

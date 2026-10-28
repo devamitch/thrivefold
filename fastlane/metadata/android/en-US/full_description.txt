@@ -11,6 +11,11 @@ Designed to help you build sustainable daily health without noisy social feeds o
 • Zero Cloud Video: All camera frames are processed exclusively in volatile device memory and never recorded, saved, or uploaded.
 • Guided Form Guides: Visual and gesture cues guide your movement pacing and rest transitions.
 
+🔗 HEALTH CONNECT & ON-DEVICE SENSORS
+• Strictly On-Device Sync: Thrivefold utilizes Health Connect and device sensor permissions strictly on-device to read user activity, step count, sleep, and fitness matrices.
+• Real-Time Motivation: This data is processed locally within gamified wellbeing routines to provide real-time self-care motivation.
+• Zero Cloud Health Database: No raw health metrics or personal health data are sold, shared, or persisted to remote backend databases.
+
 🌿 MINDFUL TRAINING & CALM SESSIONS
 • Bodyweight Basics: Core strength, mobility flows, and low-impact cardio routines designed for all fitness levels.
 • Personalized Movement: Choose between home routines, steady-pace mobility, and posture resets.

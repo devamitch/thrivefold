@@ -40,6 +40,7 @@ export default function SettingsScreen() {
 
   const user = useRootStore((s) => s.user);
   const setUser = useRootStore((s) => s.setUser);
+  const isOwner = useRootStore((s) => s.isOwner);
   const correspondenceOpen = useRootStore(canUseCorrespondence);
   // App metrics for profile overview
   const level = useRootStore((s) => s.level);
@@ -223,10 +224,15 @@ export default function SettingsScreen() {
         <Link href={'/(app)/you/account' as Href} asChild>
           <SettingsRow icon="person-circle-outline" title="Account" subtitle="Sign out, redo setup or erase" />
         </Link>
-        {__DEV__ ? (
-          <Link href={'/(app)/dev' as Href} asChild>
-            <SettingsRow icon="construct-outline" title="Developer tools" subtitle="Development builds only" />
-          </Link>
+        {__DEV__ || isOwner ? (
+          <>
+            <Link href={'/(app)/beta-lab' as Href} asChild>
+              <SettingsRow icon="flask-outline" title="Beta Lab" subtitle="Experimental features, owner access" />
+            </Link>
+            <Link href={'/(app)/dev' as Href} asChild>
+              <SettingsRow icon="construct-outline" title="Developer tools" subtitle="Owner access on this account" />
+            </Link>
+          </>
         ) : null}
       </View>
 

@@ -1,3 +1,5 @@
+import { refreshOwnerStatus } from '../../services/account/owner';
+import { supabase } from '../../services/supabase/supabaseClient';
 import React, { useEffect, useRef } from 'react';
 import { AppState, StyleSheet, View } from 'react-native';
 import { Redirect, Stack, usePathname, useRouter, type Href } from 'expo-router';
@@ -52,6 +54,15 @@ export default function AppLayout() {
   const remindersOn = useRootStore((s) => s.questRemindersEnabled);
 
   // Firebase collects only after an explicit opt-in (firebase.json keeps it off at install).
+  // Owner access follows the server and the sign-in state; never cached past a sign-out.
+  useEffect(() => {
+    void refreshOwnerStatus();
+    const sub = supabase?.auth.onAuthStateChange(() => {
+      void refreshOwnerStatus();
+    });
+    return () => sub?.data.subscription.unsubscribe();
+  }, []);
+
   const usageAnalytics = useRootStore((s) => s.usageAnalytics);
   useEffect(() => {
     firebaseAnalytics.setCollectionEnabled(usageAnalytics);

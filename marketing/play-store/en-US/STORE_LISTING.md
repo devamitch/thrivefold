@@ -17,7 +17,7 @@ Thrivefold: Mindful Fitness
 Mindful movement, offline pose tracking, wellness quests, and daily vitality.
 ```
 
-### Full Description (2485/4000 chars)
+### Full Description (2968/4000 chars)
 ```text
 Thrivefold is your calm personal companion for mindful movement, bodyweight biomechanics, daily habits, and vitality.
 
@@ -31,6 +31,11 @@ Designed to help you build sustainable daily health without noisy social feeds o
 • Real-Time Landmarks: Utilizes privacy-preserving on-device camera computer vision to observe posture alignment and movement flow.
 • Zero Cloud Video: All camera frames are processed exclusively in volatile device memory and never recorded, saved, or uploaded.
 • Guided Form Guides: Visual and gesture cues guide your movement pacing and rest transitions.
+
+🔗 HEALTH CONNECT & ON-DEVICE SENSORS
+• Strictly On-Device Sync: Thrivefold utilizes Health Connect and device sensor permissions strictly on-device to read user activity, step count, sleep, and fitness matrices.
+• Real-Time Motivation: This data is processed locally within gamified wellbeing routines to provide real-time self-care motivation.
+• Zero Cloud Health Database: No raw health metrics or personal health data are sold, shared, or persisted to remote backend databases.
 
 🌿 MINDFUL TRAINING & CALM SESSIONS
 • Bodyweight Basics: Core strength, mobility flows, and low-impact cardio routines designed for all fitness levels.
@@ -59,5 +64,5 @@ Thrivefold is a general fitness, ergonomic movement, and mindful wellbeing appli
 ### Assets Summary
 - **App Icon**: `fastlane/metadata/android/en-US/images/icon.png` (512x512 PNG, 32-bit with alpha)
 - **Feature Graphic**: `fastlane/metadata/android/en-US/images/featureGraphic.png` (1024x500 PNG, 24-bit without alpha)
-- **Phone Screenshots**: 6 authentic screenshots in `fastlane/metadata/android/en-US/images/phoneScreenshots/` (1080x1920 portrait)
+- **Phone Screenshots**: Authentic screenshots in `fastlane/metadata/android/en-US/images/phoneScreenshots/` (1080x1920 portrait)
 - **Contact Sheet**: `marketing/play-store/en-US/contact-sheet.jpg`

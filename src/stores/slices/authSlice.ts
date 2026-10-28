@@ -100,6 +100,7 @@ export const createAuthSlice: StateCreator<
       },
       signOut: () =>
         set({
+          isOwner: false,
           isAuthenticated: false,
           user: null,
           activeTrialStartDate: null,
