@@ -1,7 +1,7 @@
 # Thrivefold — Health OS Continuation Plan
 
-**Last Updated:** October 28, 2026  
-**Status:** Uploaded to Google Play Internal Track  
+**Last Updated:** October 29, 2026  
+**Status:** Uploaded to Google Play Internal Track & Global Beta Mode Implemented  
 **Target Release:** 1.0.3 (v4)
 
 ---
@@ -19,37 +19,38 @@ Thrivefold has evolved from an activity tracker into a local-first, privacy-resp
 - **Fastlane Deployment:** Successfully uploaded release bundle (`app-release.aab` v4) to the Google Play Internal testing track via Fastlane supply with clean production changelog `4.txt` (zero mentions of beta).
 - **Secret & Credential Protection:** All personal owner references configured via environment variables (`EXPO_PUBLIC_OWNER_EMAIL`) and server-side RPCs (`public.tf_is_owner` via Supabase RLS). No secrets, credentials, or private health data in source files.
 
-### P1 — Unified Health OS Foundation & Provenance
+### P1 — Unified Health OS Foundation, Metric Registry & Provenance
+- **Metric Registry:** `src/domain/health/metricRegistry.ts` establishes single source of truth for units, live/historical support, provenance, and aggregation rules across steps, calories, heart rate, sleep, hydration, and screen time.
+- **Beta Capabilities Registry:** Complete catalogue of 8 on-device vision, AI, sensor, and activity technologies with honest statuses (`working`, `beta`, `research_only`), required models, permissions, and data outputs.
 - **Calorie & Activity Model:** Documented MET-based active calorie calculation (`src/domain/activity/calories.ts`) distinguishing measured phone steps, treadmill, walking pad, home gym / dumbbell workouts, and logged sports.
 - **Deduplication:** Step-based activities (walking, running, hiking, treadmill) automatically deduplicated against active step counter so calories are never double-counted.
 
-### P2 — Live Steps & Analytical Dashboard
-- **Steps Tile & Detail Sheet:** Live step counts, hourly breakdown sparkline, yesterday comparison, quest goal indicators, and calories from steps integrated into `StepsDetailSheet.tsx` and `AnalyticalMetricGrid.tsx`.
-- **Calorie Detail Sheet:** `CalorieDetailSheet.tsx` presents daily calorie goal progress (500 kcal target default), breakdown by step movement, home workouts, and sports.
+### P2 — Live Steps, Calories & Analytical Dashboard
+- **Steps Tile & Detail Sheet:** Live step counts, hourly breakdown sparkline, yesterday comparison, quest goal indicators, walking insights (walking minutes, distance, peak active hour), and goal completion streaks.
+- **Calorie Detail Sheet:** `CalorieDetailSheet.tsx` presents daily calorie goal progress, yesterday comparison card (`X kcal more/fewer than yesterday`), week/month historical equalizer bars via `MetricBarChart`, and activity source percentage breakdown.
+- **Health Connect Auto-Population:** Check-in screen automatically detects and pre-populates measured sleep from Health Connect with an honest sync indicator badge.
 
 ### P3 — Activity Sessions & Workouts
 - Supported activities: Walking, Running, Treadmill / Walking Pad, Home Gym / Dumbbells, Cycling, Swimming (with provider import or manual fallback).
-- Every session produces coherent summaries feeding into history and daily analytics.
+- **Live Activity Timer:** `src/app/(app)/health/activity.tsx` features start/pause/resume/finish states with live duration and real-time MET calorie burn calculations based on body weight.
 
 ### P4 — Local Schedules & Screen Time
 - **Schedule Identification:** `src/domain/productivity/screenTime.ts` identifies local active session duration, detects working schedules (e.g. standard vs night shift vs heavy desk), and triggers 20-20-20 eye strain breaks and posture checks.
 
-### P5 — Beta Lab: Eye Metrics, Hand Gestures & Coach Voice
-- **Eye Tracking Studio:** Real-time eye aspect ratio (EAR) analysis, live blink counter, rolling blinks/min frequency distribution (BlinkQuest pattern), gaze position, and offline TTS voice guidance (`src/features/beta-lab/components/EyeTrackingStudio.tsx`).
-- **Hand Gesture Studio:** 21-point hand landmarker session tracking hand open/fist transitions, counting grip repetitions, measuring wrist mobility, and providing audible coach voice cues (`src/features/beta-lab/components/HandGestureStudio.tsx`).
-- **Feature Flags:** Centralized settings for experimental engines, coach voice, and treadmill auto-detection (`src/features/beta-lab/flags/betaFlags.ts`).
+### P5 — Global Beta Mode & Beta Lab
+- **Golden BETA Badge:** Polished theme-aligned badge in warm brass/amber tokens (`BetaBadge`) visible across home header, developer tools, activity timer, and beta catalogue.
+- **Global Beta Mode Switch:** Central toggle in Dev Tools and Beta Lab activating experimental features, surfacing the Beta Lab in Tools grid, and displaying the Health OS Beta Active banner on Home.
+- **Beta Lab Capabilities View:** Dedicated registry tab in `BetaLabScreen` exposing all experimental technologies with honest statuses, models required, and one-tap studio launches.
+- **Eye & Hand Studios:** Real-time eye aspect ratio (EAR) analysis, blink counter, rolling blinks/min frequency distribution, 21-point hand tracking with grip rep counting, and offline voice coach guidance.
+
+### P6 — Progress & Health Trends
+- **Health Trends Tab:** Added third tab to `src/app/(app)/(tabs)/progress.tsx` offering 7-day and 30-day equalizer bar charts for Daily Steps, Active Energy, Hydration, and Sleep duration.
 
 ---
 
-## 3. Next Actions & Prioritized Work
-
-1. **Physical Device Verification:** Once an Android physical device or emulator is connected, run `pnpm run android` to visually verify the camera overlays in Beta Lab.
-2. **Health Connect Permissions Polish:** Continue refining background sync backoff for long-running passive steps import.
-3. **Publishing Agent Coordination:** Stand by for the publishing agent's completion of Google Play store distribution.
-
----
-
-## 4. Verification Gates
+## 3. Verification Gates
 - **Type Checking:** `pnpm compile` (`tsc --noEmit`) -> **PASS (0 errors)**.
 - **Linting:** `pnpm lint` (`eslint src tests --quiet`) -> **PASS (0 errors)**.
+- **Gradle Release Build:** Previously verified -> **BUILD SUCCESSFUL**.
+
 
