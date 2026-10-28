@@ -39,7 +39,7 @@ async function q(sql) {
 await db.exec(`
   create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;
   create schema auth;
-  create table auth.users (id uuid primary key, raw_user_meta_data jsonb default '{}'::jsonb);
+  create table auth.users (id uuid primary key, raw_user_meta_data jsonb default '{}'::jsonb, email text, email_confirmed_at timestamptz);
   create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
   create function auth.role() returns text language sql stable as $$ select coalesce(nullif(current_setting('request.jwt.claim.role', true), ''), 'anon') $$;
   grant usage on schema auth to anon, authenticated, service_role;
@@ -565,6 +565,28 @@ check('other users cannot change an anvay profile', !r.error && r.rows?.length =
 await as('anon');
 r = await q(`select * from public.anvay_profiles`);
 check('anon cannot read anvay profiles', !!r.error || r.rows?.length === 0, r.error);
+
+// Owner access: the list is hidden; only the yes/no check is callable when signed in.
+await as('anon');
+r = await q(`select public.tf_is_owner()`);
+check('anon cannot ask the owner check', !!r.error, r.error);
+await as('A');
+r = await q(`select * from public.tf_owners`);
+check('signed-in users cannot read the owner list', !!r.error, r.error);
+r = await q(`insert into public.tf_owners (email) values ('a@example.com')`);
+check('signed-in users cannot add themselves as owner', !!r.error, r.error);
+r = await q(`select public.tf_is_owner() as o`);
+check('non-owner gets false', !r.error && r.rows?.[0]?.o === false, r.error ?? JSON.stringify(r.rows));
+await as('service');
+await db.exec(`update auth.users set email = 'Owner@Example.com', email_confirmed_at = now() where id = '${ids.B}'; insert into public.tf_owners (email) values ('owner@example.com')`);
+await as('B');
+r = await q(`select public.tf_is_owner() as o`);
+check('a listed, confirmed email is an owner', !r.error && r.rows?.[0]?.o === true, r.error ?? JSON.stringify(r.rows));
+await as('service');
+await db.exec(`update auth.users set email_confirmed_at = null where id = '${ids.B}'`);
+await as('B');
+r = await q(`select public.tf_is_owner() as o`);
+check('an unconfirmed email is not an owner', !r.error && r.rows?.[0]?.o === false, r.error ?? JSON.stringify(r.rows));
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
