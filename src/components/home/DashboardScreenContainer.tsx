@@ -26,9 +26,9 @@ import { useTabBarInset } from '../navigation/CustomTabBar';
 import { updateDockOnScroll, useShowChromeOnFocus } from '../navigation/useScrollAwareDock';
 import { COMPACT_HEADER_CONTENT_HEIGHT } from './DashboardHeader';
 
-export const DASHBOARD_COLLAPSE_DISTANCE = 140;
+export const DASHBOARD_COLLAPSE_DISTANCE = 160;
 /** How far the content surface overlaps the bottom of the hero. */
-export const SURFACE_OVERLAP = 28;
+export const SURFACE_OVERLAP = 10;
 
 export interface DashboardScrollContext {
   scrollY: SharedValue<number>;
@@ -111,15 +111,6 @@ export function DashboardScreenContainer({
     };
   });
 
-  // Handle bar smoothly fades out as inner cards scroll past the dock line
-  const handleAnimStyle = useAnimatedStyle(() => {
-    if (reduceMotion) return {};
-    const d = dockDistance.value;
-    return {
-      opacity: interpolate(scrollY.value, [d, d + 36], [1, 0], Extrapolation.CLAMP),
-    };
-  });
-
   const onScroll = useAnimatedScrollHandler({
     onScroll: (e) => {
       scrollY.value = e.contentOffset.y;
@@ -145,11 +136,10 @@ export function DashboardScreenContainer({
     dockDistance,
     scrollToTop,
   };
-  const statusBarStyle = colors.onPrimary === '#FFFFFF' ? 'light-content' : 'dark-content';
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle={statusBarStyle} translucent backgroundColor="transparent" />
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" animated />
 
       <Animated.ScrollView
         ref={scrollRef}
@@ -193,11 +183,6 @@ export function DashboardScreenContainer({
             sheetContainerAnimStyle,
           ]}
         >
-          {/* Subtle bottom-sheet style top handle */}
-          <Animated.View style={[styles.handleContainer, handleAnimStyle]}>
-            <View style={[styles.handleBar, { backgroundColor: colors.surface2 }]} />
-          </Animated.View>
-
           {/* Inner scrolling content driven by inner translateY */}
           <Animated.View
             style={[
@@ -233,23 +218,14 @@ const styles = StyleSheet.create({
   surface: {
     width: '100%',
     marginTop: -SURFACE_OVERLAP,
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
+    paddingTop: 16,
+    borderTopLeftRadius: 36,
+    borderTopRightRadius: 36,
     borderTopWidth: StyleSheet.hairlineWidth,
     overflow: 'hidden',
     zIndex: 2,
     elevation: 0,
     ...(Platform.OS === 'ios' ? { borderCurve: 'continuous' as const } : null),
-  },
-  handleContainer: {
-    alignItems: 'center',
-    paddingTop: 10,
-    paddingBottom: 6,
-  },
-  handleBar: {
-    width: 36,
-    height: 0,
-    borderRadius: 2,
   },
   column: { alignSelf: 'center', width: '100%' },
 });
