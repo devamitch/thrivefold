@@ -8,11 +8,11 @@ import { HandTrackerSession, type HandState } from '../../../domain/vision/handT
 import { PoseDetectionAdapter } from '../experiments/pose-detection/PoseDetectionAdapter';
 import { coachVoice } from '../../../services/ai/coachVoice';
 import { hapticLight, hapticSuccess } from '../../../services/haptics';
-import { useRootStore } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
 import type { NativeSyntheticEvent } from 'react-native';
 import type { PoseFrame } from '../../../../modules/pose-landmarker';
 import { ensureCameraPermission } from '../../../services/sensors/cameraPermission';
+import { recordBetaSession } from '../../../services/beta/recordSession';
 
 export function HandGestureStudio() {
   const { colors, typography, spacing } = useTheme();
@@ -30,12 +30,11 @@ export function HandGestureStudio() {
   const tracker = useRef(new HandTrackerSession());
   const prevRepsRef = useRef(0);
   const startedAt = useRef(0);
-  const addBetaSession = useRootStore((s) => s.addBetaSession);
 
   // Save a session with at least one counted rep; runs on stop and when leaving the screen.
   const finishSession = useCallback(() => {
     if (startedAt.current && prevRepsRef.current > 0) {
-      addBetaSession({
+      recordBetaSession({
         kind: 'hand_grip',
         startedAt: startedAt.current,
         endedAt: Date.now(),
@@ -43,7 +42,7 @@ export function HandGestureStudio() {
       });
     }
     startedAt.current = 0;
-  }, [addBetaSession]);
+  }, []);
   const finishRef = useRef(finishSession);
   finishRef.current = finishSession;
   useEffect(() => () => finishRef.current(), []);

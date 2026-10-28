@@ -8,6 +8,7 @@ const data = {
   workouts: [{ date: '2026-10-14', startedAt: '2026-10-14T07:00:00Z', finishedAt: '2026-10-14T07:30:00Z' }],
   activities: [{ date: '2026-10-16', minutes: 20 }],
   poseSessions: [{ date: '2026-10-14' }],
+  practice: [{ startedAt: Date.parse('2026-10-15T09:00:00'), endedAt: Date.parse('2026-10-15T09:03:00') }],
   ledger: [
     { kind: 'task_reward', xp: 15, gameDate: '2026-10-13' },
     { kind: 'workout_reward', xp: 50, gameDate: '2026-10-14' },
@@ -35,6 +36,8 @@ test('summary holds averages and counts only', () => {
     activeMinutes: 50,
     formCheckedSessions: 1,
     xpEarned: 65,
+    practiceSessions: 1,
+    practiceMinutes: 3,
   });
   expect(JSON.stringify(s)).not.toMatch(/private|symptom/);
 });

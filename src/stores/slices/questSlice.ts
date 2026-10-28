@@ -144,6 +144,11 @@ export interface QuestSlice {
   /** Completes today's open reflection quest from a journal reflection written. */
   completeReflectionQuest: (content: string) => { title: string; xp: number } | null;
   /**
+   * Completes today's open in-app guided exercise quest (e.g. grounding) from a finished,
+   * timed breathing session of at least a minute. Other beta sessions never complete quests.
+   */
+  completePracticeQuest: (practice: 'breathing', elapsedSeconds: number) => { title: string; xp: number } | null;
+  /**
    * Completes exactly the assignment a workout was started from, if that assignment's own
    * objective accepts the workout as evidence. Standalone workouts never complete quests.
    */
@@ -614,6 +619,23 @@ export const createQuestSlice: StateCreator<RootState, [['zustand/persist', unkn
         const result = get().submitQuestEvidence(asg.assignmentId, {
           answers,
           elapsedSeconds: 0,
+          completedStepIds: task.instructions.map((i) => i.id),
+          attested: true,
+        });
+        if (result.success) return { title: task.title, xp: result.earnedXp };
+      }
+      return null;
+    },
+
+    completePracticeQuest: (practice, elapsedSeconds) => {
+      if (practice !== 'breathing' || elapsedSeconds < 60) return null;
+      const date = today();
+      for (const asg of get().dailyAssignments.filter((a) => a.assignedDate === date && ACTIVE_STATUSES.includes(a.status))) {
+        const task = getTaskById(asg.taskId);
+        if (!task || task.objective?.type !== 'guided_exercise') continue;
+        const result = get().submitQuestEvidence(asg.assignmentId, {
+          answers: {},
+          elapsedSeconds,
           completedStepIds: task.instructions.map((i) => i.id),
           attested: true,
         });

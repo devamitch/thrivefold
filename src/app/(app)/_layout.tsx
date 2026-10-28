@@ -1,5 +1,6 @@
 import { refreshOwnerStatus } from '../../services/account/owner';
 import { supabase } from '../../services/supabase/supabaseClient';
+import { coachVoice } from '../../services/ai/coachVoice';
 import React, { useEffect, useRef } from 'react';
 import { AppState, StyleSheet, View } from 'react-native';
 import { Redirect, Stack, usePathname, useRouter, type Href } from 'expo-router';
@@ -62,6 +63,11 @@ export default function AppLayout() {
     });
     return () => sub?.data.subscription.unsubscribe();
   }, []);
+
+  const coachVoiceEnabled = useRootStore((s) => s.coachVoiceEnabled);
+  useEffect(() => {
+    coachVoice.setEnabled(coachVoiceEnabled);
+  }, [coachVoiceEnabled]);
 
   const usageAnalytics = useRootStore((s) => s.usageAnalytics);
   useEffect(() => {

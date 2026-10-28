@@ -16,6 +16,9 @@ export interface WeeklySummary {
   activeMinutes: number;
   formCheckedSessions: number;
   xpEarned: number;
+  /** Finished guided-practice sessions (breathing, eye, hand studios) and their minutes. */
+  practiceSessions: number;
+  practiceMinutes: number;
 }
 
 interface Inputs {
@@ -24,6 +27,7 @@ interface Inputs {
   activities: { date: string; minutes: number }[];
   poseSessions: { date: string }[];
   ledger: { kind: string; xp: number; gameDate: string }[];
+  practice?: { startedAt: number; endedAt: number }[];
 }
 
 const DAY = 86_400_000;
@@ -37,6 +41,12 @@ export function weekStartOf(date: string): string {
   return iso(ms - dow * DAY);
 }
 
+/** Local calendar date of a timestamp, matching how the app's other dates are recorded. */
+const localDate = (ms: number) => {
+  const d = new Date(ms);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
 const avg = (xs: number[]) => (xs.length ? Math.round((xs.reduce((a, b) => a + b, 0) / xs.length) * 10) / 10 : null);
 
 export function weeklySummary(weekStart: string, data: Inputs): WeeklySummary {
@@ -49,6 +59,7 @@ export function weeklySummary(weekStart: string, data: Inputs): WeeklySummary {
   const workouts = data.workouts.filter((w) => inWeek(w.date));
   const workoutMinutes = workouts.reduce((n, w) => n + Math.max(1, Math.round((Date.parse(w.finishedAt) - Date.parse(w.startedAt)) / 60000)), 0);
   const ledger = data.ledger.filter((e) => inWeek(e.gameDate));
+  const practice = (data.practice ?? []).filter((p) => inWeek(localDate(p.endedAt)));
   return {
     weekStart,
     checkIns: checks.length,
@@ -61,6 +72,8 @@ export function weeklySummary(weekStart: string, data: Inputs): WeeklySummary {
     activeMinutes: workoutMinutes + data.activities.filter((a) => inWeek(a.date)).reduce((n, a) => n + a.minutes, 0),
     formCheckedSessions: data.poseSessions.filter((p) => inWeek(p.date)).length,
     xpEarned: ledger.reduce((n, e) => n + Math.max(0, e.xp), 0),
+    practiceSessions: practice.length,
+    practiceMinutes: practice.reduce((n, p) => n + Math.max(0, Math.round((p.endedAt - p.startedAt) / 60000)), 0),
   };
 }
 
@@ -70,7 +83,7 @@ export function finishedWeeks(today: string, data: Inputs, limit = 8): WeeklySum
   const out: WeeklySummary[] = [];
   for (let i = 1; i <= limit; i++) {
     const s = weeklySummary(iso(current - i * 7 * DAY), data);
-    if (s.checkIns + s.workouts + s.questsDone + s.activeMinutes > 0) out.push(s);
+    if (s.checkIns + s.workouts + s.questsDone + s.activeMinutes + s.practiceSessions > 0) out.push(s);
   }
   return out;
 }

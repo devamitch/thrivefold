@@ -59,6 +59,7 @@ export function enqueueFinishedWeeks(): number {
     activities: s.activityLogs,
     poseSessions: s.poseSessions,
     ledger: s.rewardLedger,
+    practice: s.betaSessions,
   });
   let added = 0;
   const now = new Date().toISOString();
@@ -94,7 +95,7 @@ export async function flushSummaryOutbox(): Promise<number> {
     for (const row of rows) {
       if (row.next_try_at && new Date(row.next_try_at) > now) continue;
       const w = JSON.parse(row.payload) as WeeklySummary;
-      const { error } = await supabase.rpc('tf_upsert_weekly_summary', {
+      const { error } = await supabase.rpc('tf_upsert_weekly_summary_v2', {
         p_week_start: w.weekStart,
         p_check_ins: w.checkIns,
         p_avg_energy: w.avgEnergy,
@@ -106,6 +107,9 @@ export async function flushSummaryOutbox(): Promise<number> {
         p_active_minutes: w.activeMinutes,
         p_form_checked_sessions: w.formCheckedSessions,
         p_xp_earned: w.xpEarned,
+        // Weeks queued before practice counts existed carry none.
+        p_practice_sessions: w.practiceSessions ?? 0,
+        p_practice_minutes: w.practiceMinutes ?? 0,
       });
       if (!error) {
         d.runSync('UPDATE summary_outbox SET sent_at = ? WHERE week_start = ?', [new Date().toISOString(), row.week_start]);

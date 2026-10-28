@@ -550,6 +550,16 @@ check('summaries cannot be written directly', !!r.error, r.error);
 await as('anon');
 r = await q(`select public.tf_upsert_weekly_summary(date_trunc('week', current_date - 7)::date, 1, 5, 5, 5, 7, 0, 0, 0, 0, 0)`);
 check('anon cannot back up summaries', !!r.error, r.error);
+await as('B');
+r = await q(`select public.tf_upsert_weekly_summary_v2(date_trunc('week', current_date - 7)::date, 3, 6.5, 7, 4, 7.2, 5, 2, 90, 1, 120, 4, 18) as r`);
+check('weekly summary v2 saves practice counts', r.rows?.[0]?.r?.status === 'saved', r.error ?? JSON.stringify(r.rows));
+r = await q(`select practice_sessions, practice_minutes from public.thrivefold_weekly_summaries`);
+check('practice counts stored', r.rows?.[0]?.practice_sessions === 4 && r.rows?.[0]?.practice_minutes === 18, JSON.stringify(r.rows));
+r = await q(`select public.tf_upsert_weekly_summary_v2(date_trunc('week', current_date - 7)::date, 3, 6.5, 7, 4, 7.2, 5, 2, 90, 1, 120, 9000, 18) as r`);
+check('impossible practice counts are refused', !!r.error, r.error);
+await as('anon');
+r = await q(`select public.tf_upsert_weekly_summary_v2(date_trunc('week', current_date - 7)::date, 1, 5, 5, 5, 7, 0, 0, 0, 0, 0, 0, 0)`);
+check('anon cannot back up summaries v2', !!r.error, r.error);
 
 // Anvay Vault: owner-only shared profile.
 await as('A');

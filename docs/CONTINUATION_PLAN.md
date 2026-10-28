@@ -68,6 +68,13 @@ Thrivefold has evolved from an activity tracker into a local-first, privacy-resp
 - **Fake result removed:** `beta-lab/food-lens` showed a hard-coded "Dal Makhani 485 kcal" result on a "scan" button. Deleted; the Food Lens entry now opens the real meal scanner.
 - **Build fix:** removed `modules/setu-beta-scanner` (340 MB of duplicated models, unused by any screen) and `modules/blinkquest-vision` (unused copy that required `react-native-vision-camera`, which Thrivefold does not install). The face landmarker in `modules/pose-landmarker` serves the eye studio.
 
+### P9 — Beta practice connected to the rest of the app (2026-10-29)
+- **Quests:** a breathing session of 60 s or more completes today's open guided-exercise quest (e.g. grounding) through `completePracticeQuest` → `submitQuestEvidence`, so duplicates and stale days are refused. Camera studio results never change quests or stable metrics.
+- **One recorder:** `services/beta/recordSession.ts` saves every studio session and applies quest rules.
+- **Home:** the Beta card shows today's practice sessions and minutes. **Progress:** 7-day guided-practice minutes chart (`getPracticeMinuteBars`).
+- **Coach voice preference:** `coachVoiceEnabled` (persisted) is applied app-wide in `(app)/_layout.tsx`; the Spoken Coach screen's dead speech-rate chips were replaced by this switch.
+- **Cloud backup:** weekly summaries now carry `practiceSessions` / `practiceMinutes` (counts only). Migration 18 adds the columns and `tf_upsert_weekly_summary_v2`; pushed to the Thrivefold project on 2026-10-29 (old RPC kept for builds already installed). RLS tests: 160 pass.
+
 ### Route ↔ capability matrix (beta)
 | Route | Capability | Input | Saved |
 | --- | --- | --- | --- |

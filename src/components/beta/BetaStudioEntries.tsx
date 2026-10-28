@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { getPracticeMinuteBars } from '../../domain/analytics/dashboardAnalytics';
 import { useBetaEnabled } from '../../hooks/useBetaEnabled';
+import { useRootStore } from '../../stores/useRootStore';
+import { MetricBarChart } from '../home/MetricBarChart';
 import { useTheme } from '../../theme/useTheme';
 import { BetaEntryCard } from './BetaEntryCard';
 
@@ -30,10 +33,21 @@ const ENTRIES: Record<Section, { icon: React.ComponentProps<typeof BetaEntryCard
 export function BetaStudioEntries({ section, onBeforeNavigate }: { section: Section; onBeforeNavigate?: () => void }) {
   const enabled = useBetaEnabled();
   const { colors, typography, spacing } = useTheme();
+  const sessions = useRootStore((s) => s.betaSessions);
+  const bars = useMemo(() => (section === 'progress' ? getPracticeMinuteBars(sessions) : []), [section, sessions]);
   if (!enabled) return null;
+  const week = bars.reduce((n, b) => n + b.value, 0);
   return (
     <View style={[styles.wrap, { marginTop: spacing.lg }]}>
       <Text style={[typography.label, { color: colors.text.muted }]}>Beta</Text>
+      {section === 'progress' && week > 0 ? (
+        <MetricBarChart
+          bars={bars}
+          title="Guided practice"
+          subtitle="Breathing, eye and hand studio minutes, last 7 days"
+          totalDisplay={`${week} min`}
+        />
+      ) : null}
       {ENTRIES[section].map((e) => (
         <BetaEntryCard key={e.route + e.title} {...e} onBeforeNavigate={onBeforeNavigate} />
       ))}

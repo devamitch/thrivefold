@@ -122,6 +122,9 @@ export interface AppSlice {
   /** Opt-in experimental Beta Mode: unlocks Beta Lab, experimental pose, and motion blur. Off by default. */
   betaMode: boolean;
   setBetaMode: (on: boolean) => void;
+  /** Spoken coach cues in workouts and beta studios. On by default; off silences every line. */
+  coachVoiceEnabled: boolean;
+  setCoachVoiceEnabled: (on: boolean) => void;
   /** Finished beta studio sessions (derived numbers only, never frames), newest first. */
   betaSessions: BetaSession[];
   addBetaSession: (session: Omit<BetaSession, 'id'>) => void;
@@ -221,6 +224,8 @@ export const createAppSlice: StateCreator<
   setAiDeliveryMode: (aiDeliveryMode) => set({ aiDeliveryMode }),
   betaMode: false,
   setBetaMode: (betaMode) => set({ betaMode }),
+  coachVoiceEnabled: true,
+  setCoachVoiceEnabled: (coachVoiceEnabled) => set({ coachVoiceEnabled }),
   betaSessions: [],
   addBetaSession: (session) =>
     set((state) => ({

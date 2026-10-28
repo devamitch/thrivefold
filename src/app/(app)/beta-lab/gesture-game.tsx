@@ -23,8 +23,8 @@ import { coachVoice } from '../../../services/ai/coachVoice';
 import { hapticSuccess, hapticWarning } from '../../../services/haptics';
 import { ensureCameraPermission } from '../../../services/sensors/cameraPermission';
 import type { BetaSessionKind } from '../../../stores/slices/appSlice';
-import { useRootStore } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
+import { recordBetaSession } from '../../../services/beta/recordSession';
 
 const KINDS: BetaSessionKind[] = ['finger_game'];
 const WORDS = ['', 'one finger', 'two fingers', 'three fingers', 'four fingers', 'five fingers'];
@@ -37,7 +37,6 @@ export default function GestureGameScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, typography, spacing } = useTheme();
-  const addBetaSession = useRootStore((s) => s.addBetaSession);
 
   const [game, setGame] = useState<FingerGameState | null>(null);
   const [fingers, setFingers] = useState<number | null>(null);
@@ -61,7 +60,7 @@ export default function GestureGameScreen() {
 
   const finish = useCallback(
     (g: FingerGameState) => {
-      addBetaSession({
+      recordBetaSession({
         kind: 'finger_game',
         startedAt: startedAt.current,
         endedAt: Date.now(),
@@ -72,7 +71,7 @@ export default function GestureGameScreen() {
         },
       });
     },
-    [addBetaSession],
+    [],
   );
 
   const onPose = useCallback(

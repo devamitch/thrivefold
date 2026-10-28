@@ -383,3 +383,28 @@ export function getWeeklyCalorieBars(
   return bars;
 }
 
+
+/** Minutes of guided practice (beta studios) per local day, oldest first. Days with none are 0. */
+export function getPracticeMinuteBars(
+  sessions: { startedAt: number; endedAt: number }[],
+  referenceDate = new Date(),
+  days = 7,
+): EqualizerBar[] {
+  const perDay = new Map<string, number>();
+  for (const s of sessions) {
+    const key = formatLocalDate(new Date(s.endedAt));
+    perDay.set(key, (perDay.get(key) ?? 0) + Math.max(0, (s.endedAt - s.startedAt) / 60000));
+  }
+  const todayStr = formatLocalDate(referenceDate);
+  const out: EqualizerBar[] = [];
+  let max = 1;
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(referenceDate);
+    d.setDate(d.getDate() - i);
+    const date = formatLocalDate(d);
+    const value = Math.round(perDay.get(date) ?? 0);
+    max = Math.max(max, value);
+    out.push({ dayLabel: days <= 7 ? DAY_NAMES[d.getDay()] : String(d.getDate()), date, isToday: date === todayStr, value, displayValue: `${value}`, heightPct: 0 });
+  }
+  return out.map((b) => ({ ...b, heightPct: Math.min(1, Math.max(0.08, b.value / max)) }));
+}

@@ -102,6 +102,16 @@ export default function HomeScreen() {
   const { colors, typography, spacing, experience } = useTheme();
 
   const betaMode = useBetaEnabled();
+  const betaSessions = useRootStore((st) => st.betaSessions);
+  const practiceToday = useMemo(() => {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const todays = betaSessions.filter((b) => b.endedAt >= start.getTime());
+    return {
+      count: todays.length,
+      minutes: todays.reduce((n, b) => n + Math.max(0, Math.round((b.endedAt - b.startedAt) / 60000)), 0),
+    };
+  }, [betaSessions]);
   const s = useRootStore(
     useShallow((st) => ({
       user: st.user,
@@ -475,7 +485,9 @@ export default function HomeScreen() {
             <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
           </View>
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>
-            Eye, hand, pose and breathing studios are on. Camera work stays on this phone.
+            {practiceToday.count
+              ? `Today: ${practiceToday.count} practice session${practiceToday.count === 1 ? '' : 's'} · ${practiceToday.minutes} min. Camera work stays on this phone.`
+              : 'Eye, hand, pose and breathing studios are on. Camera work stays on this phone.'}
           </Text>
         </Card>
       ) : null}

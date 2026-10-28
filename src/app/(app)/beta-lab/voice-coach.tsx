@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Switch, Text, View } from 'react-native';
 
 import { AppHeader } from '../../../components/ui/AppHeader';
 import { BetaBadge } from '../../../components/ui/Badge';
@@ -11,13 +11,15 @@ import { ScreenScrollView } from '../../../components/ui/ScreenScrollView';
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import { coachVoice } from '../../../services/ai/coachVoice';
 import { hapticSelection, hapticSuccess } from '../../../services/haptics';
+import { useRootStore } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
 
 export default function VoiceCoachBetaScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
   const [lastSpoken, setLastSpoken] = useState<string>('Ready for voice coaching');
-  const [speechRate, setSpeechRate] = useState<number>(1.0);
+  const voiceOn = useRootStore((s) => s.coachVoiceEnabled);
+  const setVoiceOn = useRootStore((s) => s.setCoachVoiceEnabled);
 
   const tick = useCallback(() => {
     hapticSelection();
@@ -67,36 +69,22 @@ export default function VoiceCoachBetaScreen() {
             </Text>
           </SquircleSurface>
 
-          {/* Rate Controls */}
+          {/* Voice on/off: applies to workouts and every beta studio */}
           <View style={[styles.controlRow, { marginTop: spacing.md }]}>
-            <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Speech Rate</Text>
-            <View style={{ flexDirection: 'row', gap: 6 }}>
-              {[0.8, 1.0, 1.2, 1.4].map((rate) => (
-                <PressableScale
-                  key={rate}
-                  onPress={() => {
-                    tick();
-                    setSpeechRate(rate);
-                  }}
-                  scaleTo={0.92}
-                >
-                  <SquircleSurface
-                    radius={10}
-                    fill={speechRate === rate ? colors.primary : colors.surface2}
-                    style={{ paddingHorizontal: 12, paddingVertical: 6 }}
-                  >
-                    <Text
-                      style={[
-                        typography.captionBold,
-                        { color: speechRate === rate ? '#FFFFFF' : colors.text.secondary },
-                      ]}
-                    >
-                      {rate}x
-                    </Text>
-                  </SquircleSurface>
-                </PressableScale>
-              ))}
+            <View style={{ flex: 1 }}>
+              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Coach voice</Text>
+              <Text style={[typography.caption, { color: colors.text.muted }]}>
+                Spoken cues in workouts, eye, hand and breathing studios
+              </Text>
             </View>
+            <Switch
+              value={voiceOn}
+              onValueChange={(v) => {
+                tick();
+                setVoiceOn(v);
+              }}
+              accessibilityLabel="Coach voice"
+            />
           </View>
 
           {/* Test Phrasing Buttons */}

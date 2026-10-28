@@ -31,3 +31,22 @@ describe('finger count game', () => {
     expect(isFinished(s)).toBe(true);
   });
 });
+
+import { getPracticeMinuteBars } from '../../src/domain/analytics/dashboardAnalytics';
+
+test('practice minutes are summed per local day', () => {
+  const ref = new Date(2026, 9, 29, 12);
+  const at = (d: number, h: number) => new Date(2026, 9, d, h).getTime();
+  const bars = getPracticeMinuteBars(
+    [
+      { startedAt: at(29, 9), endedAt: at(29, 9) + 3 * 60000 },
+      { startedAt: at(29, 10), endedAt: at(29, 10) + 2 * 60000 },
+      { startedAt: at(27, 8), endedAt: at(27, 8) + 5 * 60000 },
+    ],
+    ref,
+  );
+  expect(bars).toHaveLength(7);
+  expect(bars[6]).toMatchObject({ isToday: true, value: 5 });
+  expect(bars[4].value).toBe(5);
+  expect(bars[5].value).toBe(0);
+});

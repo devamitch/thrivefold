@@ -21,13 +21,13 @@ import { EyeTrackerSession, type EyeState } from '../../../domain/vision/eyeTrac
 import { PoseDetectionAdapter } from '../experiments/pose-detection/PoseDetectionAdapter';
 import { coachVoice } from '../../../services/ai/coachVoice';
 import { hapticLight, hapticSuccess, hapticSelection } from '../../../services/haptics';
-import { useRootStore } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
 import { VisualAcuityChart } from './VisualAcuityChart';
 import { BlinkBloomExercise } from './BlinkBloomExercise';
 import { NearFarFocusExercise } from './NearFarFocusExercise';
 import type { PoseFrame } from '../../../../modules/pose-landmarker';
 import { ensureCameraPermission } from '../../../services/sensors/cameraPermission';
+import { recordBetaSession } from '../../../services/beta/recordSession';
 
 type StudioMode = 'scanner' | 'bloom' | 'nearfar' | 'acuity';
 
@@ -38,7 +38,6 @@ export function EyeTrackingStudio() {
   const [eyeState, setEyeState] = useState<EyeState>(() => new EyeTrackerSession().processFace(undefined));
   // Blinks/min sampled every 3 s while a face is tracked; starts empty, never seeded.
   const [rateHistory, setRateHistory] = useState<number[]>([]);
-  const addBetaSession = useRootStore((s) => s.addBetaSession);
   const session = useRef({ startedAt: 0, trackedFrames: 0, distanceSum: 0 });
 
   const tracker = useRef(new EyeTrackerSession());
@@ -92,7 +91,7 @@ export function EyeTrackingStudio() {
     const endedAt = Date.now();
     // Keep only sessions long enough to mean something: 20 s with a face in view.
     if (st.startedAt && endedAt - st.startedAt >= 20_000 && st.trackedFrames >= 60) {
-      addBetaSession({
+      recordBetaSession({
         kind: mode === 'bloom' ? 'blink_bloom' : 'eye_scan',
         startedAt: st.startedAt,
         endedAt,
@@ -104,7 +103,7 @@ export function EyeTrackingStudio() {
       });
     }
     session.current = { startedAt: 0, trackedFrames: 0, distanceSum: 0 };
-  }, [addBetaSession, mode]);
+  }, [mode]);
 
   // Leaving the screen ends the camera; save what was measured.
   const finishRef = useRef(finishSession);

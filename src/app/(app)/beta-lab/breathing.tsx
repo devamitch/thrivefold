@@ -17,6 +17,7 @@ import { hapticSelection } from '../../../services/haptics';
 import type { BetaSessionKind } from '../../../stores/slices/appSlice';
 import { useRootStore } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
+import { recordBetaSession } from '../../../services/beta/recordSession';
 
 const KINDS: BetaSessionKind[] = ['breathing'];
 const LENGTHS = [1, 3, 5];
@@ -27,13 +28,12 @@ export default function BreathingScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
   const reduce = useReducedMotion();
-  const addBetaSession = useRootStore((s) => s.addBetaSession);
 
   const [pattern, setPattern] = useState<BreathPattern>(PATTERNS[0]);
   const [minutes, setMinutes] = useState(3);
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [now, setNow] = useState(Date.now());
-  const [voice, setVoice] = useState(true);
+  const [voice, setVoice] = useState(() => useRootStore.getState().coachVoiceEnabled);
   const lastPhase = useRef<string>('');
 
   const elapsed = startedAt ? now - startedAt : 0;
@@ -67,13 +67,13 @@ export default function BreathingScreen() {
     if (!done || !startedAt || saved.current) return;
     saved.current = true;
     if (voice) void coachVoice.speak('Well done. Notice how you feel.', { priority: 3 });
-    addBetaSession({
+    recordBetaSession({
       kind: 'breathing',
       startedAt,
       endedAt: startedAt + minutes * 60_000,
       metrics: { minutes, cycles: breathAt(pattern, minutes * 60_000).cycle },
     });
-  }, [done, startedAt, minutes, pattern, voice, addBetaSession]);
+  }, [done, startedAt, minutes, pattern, voice]);
 
   useEffect(() => () => coachVoice.stop(), []);
 
