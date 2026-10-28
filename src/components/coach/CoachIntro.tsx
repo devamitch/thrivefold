@@ -107,10 +107,10 @@ export function CoachIntro({
                 </View>
                 <View style={[styles.flex, { marginHorizontal: 10 }]}>
                   <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                    Hands-Free Gestures & Voice
+                    Hands-Free Gestures
                   </Text>
                   <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 1 }]}>
-                    Wave to pause, 2 hands for next set, or speak commands
+                    Wave to pause, raise both hands for the next set
                   </Text>
                 </View>
                 <View style={[styles.guidePill, { backgroundColor: colors.primaryAlpha }]}>
