@@ -18,9 +18,10 @@ platform :android do
       release_status: options[:status] || "completed",
       timeout: 3600,
       skip_upload_apk: true,
-      skip_upload_metadata: true,
-      skip_upload_images: true,
-      skip_upload_screenshots: true
+      skip_upload_metadata: options.fetch(:skip_metadata, true),
+      skip_upload_images: options.fetch(:skip_images, true),
+      skip_upload_screenshots: options.fetch(:skip_screenshots, true),
+      skip_upload_changelogs: options.fetch(:skip_changelogs, false)
     )
   end
 
@@ -57,5 +58,20 @@ platform :android do
   desc "Deploy to Google Play (default: internal testing)"
   lane :deploy do
     internal
+  end
+
+  desc "Upload metadata, graphics, and screenshots to Google Play"
+  lane :metadata do |options|
+    upload_to_play_store(
+      version_code: 2,
+      skip_upload_apk: true,
+      skip_upload_aab: true,
+      skip_upload_metadata: false,
+      skip_upload_changelogs: true,
+      skip_upload_images: false,
+      skip_upload_screenshots: false,
+      validate_only: options[:validate_only] || false,
+      timeout: 3600
+    )
   end
 end
