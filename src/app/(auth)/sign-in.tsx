@@ -68,27 +68,6 @@ export default function SignInScreen() {
     else if (!res.cancelled) setAuthError(res.message);
   };
 
-  /*
-  const handleVaultSos = async () => {
-    if (busy) return;
-    setBusy(true);
-    setAuthError(null);
-    try {
-      const res = await unifiedVaultSosService.launchUnifiedVaultSos();
-      if (res.status === 'cloud_synced') {
-        router.replace('/');
-      } else if (res.status === 'not_installed') {
-        setAuthError('No ecosystem app or cloud vault available. Sign in with Google or explore as guest.');
-      } else if (res.status === 'failed') {
-        setAuthError('Could not connect to Anvay ID.');
-      }
-    } catch {
-      setAuthError('Failed to initiate Anvay ID.');
-    } finally {
-      setBusy(false);
-    }
-  };
-  */
 
   const guest = () => {
     continueAsGuest();
@@ -348,35 +327,6 @@ export default function SignInScreen() {
             </View>
           </SquircleSurface>
 
-          {/* Anvay ID 1-Tap Ecosystem Sign-In (Uncomment to activate once deep-linking screen is configured)
-        <PressableScale
-          onPress={handleVaultSos}
-          disabled={busy}
-          accessibilityRole="button"
-          accessibilityLabel="Anvay ID — AnvayKosh Unified Ecosystem Sign-In"
-          style={[
-            styles.google,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.primary,
-              borderWidth: 1.5,
-              opacity: busy ? 0.6 : 1,
-              marginBottom: spacing.xs,
-              paddingVertical: 12,
-            },
-          ]}
-        >
-          <AnvayKoshIcon size={24} />
-          <View style={{ marginLeft: 12, flex: 1 }}>
-            <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-              {busy ? 'Connecting Anvay ID…' : 'Anvay ID'}
-            </Text>
-            <Text style={[typography.caption, { color: colors.text.secondary }]}>
-              AnvayKosh Unified Ecosystem · 1-Tap Sign-In
-            </Text>
-          </View>
-        </PressableScale>
-        */}
 
           {googleAvailable() ? (
             <PressableScale

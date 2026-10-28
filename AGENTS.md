@@ -65,27 +65,26 @@ cd android && ./gradlew --no-daemon :app:assembleRelease -PreactNativeArchitectu
 Behaviour seen working on an emulator or device (release build for startup/splash), all
 commands above pass, traceability updated, and the summary separates verified from not.
 
-## 6. AnvayKosh (अन्वयकोश) Ecosystem Contract
+## 6. AnvayKosh (अन्वयकोश) ecosystem
 
-Thrivefold is a member of the **AnvayKosh** private multi-app ecosystem.
-All agents working on this codebase must adhere to the following ecosystem rules:
+Thrivefold belongs to **AnvayKosh** (Thrivefold, Neev, HarmonyBloom, BlinkQuest, Setu).
+Surfaces: **Anvay ID** (one sign-in), **Anvay Vault** (encrypted user-controlled profile),
+**Anvay Connect** (authorised app-to-app exchange), **Anvay Sync** (offline-first merge).
 
-1. **Brand Architecture**:
-   - **AnvayKosh**: The master unified ecosystem.
-   - **Anvay ID**: Federated 1-tap single sign-on across member apps (`thrivefold`, `neev`, `harmonybloom`, `blinkquest`, `setu`).
-   - **Anvay Vault**: Encrypted personal profile (identity, locations, preferences, routine, health, cycle, and arcade progression).
-   - **Anvay Connect**: Authorized cross-app peer-to-peer protocol via deep links (`thrivefold://unified-vault` and `thrivefold://auth/callback`).
-   - **Anvay Sync**: Offline-first, non-destructive synchronization with nullish coalescing.
-2. **Decentralized Peer-to-Peer Mesh**:
-   - Setu is NOT a mandatory installation requirement.
-   - If Setu is installed, it acts as the primary master vault.
-   - If Setu is NOT installed, any installed sibling app (`Thrivefold`, `HarmonyBloom`, `Neev`, or `BlinkQuest`) acts as the Anvay Vault Provider.
-   - If no sibling app is installed, sync falls back to the Supabase Cloud Vault when online.
-3. **Non-Destructive Coalescing**:
-   - Never wipe or overwrite populated user fields.
-   - When merging incoming data, use nullish coalescing (`coalesce`) to fill empty/null values while preserving existing user data.
-4. **Zero Secret Exposure**:
-   - Never hardcode secrets, tokens, or private keys in source code or `eas.json`.
-   - All credentials must reside in gitignored `.env` and be managed through `eas env:push`.
-5. **Android Queries Compliance**:
-   - Android 11+ `<queries>` in `AndroidManifest.xml` must declare peer packages: `com.amit.setu`, `com.amit.neev`, `com.amit.harmonybloom`, `com.amit.blinkquest`.
+**Current state:** none of them is live in Thrivefold. The old "Unified Vault SOS" deep-link handoff
+was removed because it put user data in URLs and trusted any caller. `src/app/+native-intent.tsx`
+sends old `unified-vault`, `auth/callback` and `sso` links to Home unread. Do not restore it.
+
+Rules for any new ecosystem code:
+1. OAuth 2.1 authorization code + PKCE via the system browser and verified App Links. Validate
+   issuer, audience, state, nonce, expiry. One-time codes only in URLs.
+2. Never put profile/health data, tokens or keys in a URL, QR, push, log or analytics event.
+3. Server-side app registry (package name + signing-cert SHA-256 per environment); fail closed.
+4. Per-category consent with expiry and revoke; authentication grants no data access.
+5. Merges are non-destructive: fill empty fields only, keep provenance, never overwrite.
+6. Setu is not required; each app works alone.
+7. Never bypass the device or app lock because a deep link arrived.
+8. No secrets in the client: service keys only in Supabase Edge Function secrets;
+   `EXPO_PUBLIC_*` is public. Never print `.env*` values.
+9. Android 11+ `<queries>` for peer packages only when a real feature needs them.
+10. Use the AnvayKosh icon from `assets/brand/anvaykosh-icon.svg` / `AnvayKoshIcon` (no background).

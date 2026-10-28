@@ -14,6 +14,8 @@ export interface AnvayKoshIconProps {
  * AnvayKosh (अन्वयकोश) Official Ecosystem Monogram Vector Icon.
  * Authentic terracotta shackle arch (#D06543) with pista sanctuary leaf (#7A8A6D)
  * forming the unified 'a' / 'A' lock monogram without any background.
+ * The viewBox is cropped to the mark (with a small margin), so `size` is the mark's real size;
+ * the source artwork sat in a 1024 canvas with ~40% empty padding and rendered tiny.
  */
 export function AnvayKoshIcon({
   size = 24,
@@ -26,7 +28,7 @@ export function AnvayKoshIcon({
     <Svg
       width={size}
       height={size}
-      viewBox="0 0 1024 1024"
+      viewBox="199 183 636 636"
       fill="none"
       style={style}
       testID={testID}
