@@ -348,3 +348,38 @@ export function getWeeklyHydrationBars(
   return bars;
 }
 
+/**
+ * Generates vertical equalizer distribution bars for estimated active calories.
+ */
+export function getWeeklyCalorieBars(
+  calorieInputsByDate: (dateStr: string) => number,
+  referenceDate = new Date(),
+  targetKcal = 500,
+  days = 7,
+): EqualizerBar[] {
+  const bars: EqualizerBar[] = [];
+  const todayStr = formatLocalDate(referenceDate);
+
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(referenceDate);
+    d.setDate(d.getDate() - i);
+    const dateStr = formatLocalDate(d);
+    const dayLabel = days <= 7 ? DAY_NAMES[d.getDay()] : String(d.getDate());
+    const isToday = dateStr === todayStr;
+    const value = Math.round(calorieInputsByDate(dateStr) ?? 0);
+    const displayValue = value > 0 ? `${value}` : '0';
+    const heightPct = Math.min(1, Math.max(0.08, value / Math.max(1, targetKcal)));
+
+    bars.push({
+      dayLabel,
+      date: dateStr,
+      isToday,
+      value,
+      displayValue,
+      heightPct,
+    });
+  }
+
+  return bars;
+}
+

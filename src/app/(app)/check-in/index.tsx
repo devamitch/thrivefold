@@ -42,23 +42,33 @@ const INTENSITIES = [
 export default function CheckInScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
-  const { experience, history, addCheckIn, updateTodayMetrics, showToast } = useRootStore(
+  const { experience, history, readings, addCheckIn, updateTodayMetrics, showToast } = useRootStore(
     useShallow((s) => ({
       experience: s.experience,
       history: s.checkInHistory,
+      readings: s.deviceReadings,
       addCheckIn: s.addCheckIn,
       updateTodayMetrics: s.updateTodayMetrics,
       showToast: s.showToast,
     })),
   );
   const date = formatLocalDate(new Date());
+  const yesterday = formatLocalDate(new Date(Date.now() - 86_400_000));
   const existing = history.find((c) => c.date === date);
 
-  // Start from today's saved values, otherwise a neutral middle; nothing is saved until "Save".
+  // Health Connect measured sleep (converted from minutes to hours)
+  const measuredSleep = useMemo(() => {
+    const sleepRecord = readings
+      .filter((r) => r.kind === 'sleep_minutes' && (r.date === date || r.date === yesterday))
+      .sort((a, b) => b.date.localeCompare(a.date))[0];
+    return sleepRecord ? Math.round((sleepRecord.value / 60) * 10) / 10 : null;
+  }, [readings, date, yesterday]);
+
+  // Start from today's saved values, or measured Health Connect sleep, otherwise neutral 7h
   const [energy, setEnergy] = useState(existing?.energy ?? 5);
   const [mood, setMood] = useState(existing?.mood ?? 5);
   const [stress, setStress] = useState(existing?.stress ?? 5);
-  const [sleep, setSleep] = useState(existing?.sleepHours ?? 7);
+  const [sleep, setSleep] = useState(existing?.sleepHours ?? measuredSleep ?? 7);
   const [symptoms, setSymptoms] = useState<string[]>(existing?.symptoms ?? []);
   const [note, setNote] = useState(existing?.notes ?? '');
   const [intensity, setIntensity] = useState<DailyCheckInRecord['intensity']>(existing?.intensity);
@@ -94,6 +104,14 @@ export default function CheckInScreen() {
           <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Sleep last night</Text>
           <Text style={[typography.subheading, { color: colors.primary }]}>{sleep}h</Text>
         </View>
+        {measuredSleep !== null ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
+            <Ionicons name="sync-outline" size={13} color={colors.primary} />
+            <Text style={[typography.caption, { color: colors.primary }]}>
+              {measuredSleep}h imported from Health Connect
+            </Text>
+          </View>
+        ) : null}
         <View style={[styles.chips, { marginTop: spacing.sm }]}>
           {SLEEP_PRESETS.map((h) => (
             <Chip key={h} label={`${h}h`} selected={sleep === h} onPress={() => setSleep(h)} />

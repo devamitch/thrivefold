@@ -1,19 +1,31 @@
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter, type Href } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { AppHeader } from '../../../components/ui/AppHeader';
 import { Badge } from '../../../components/ui/Badge';
 import { Card } from '../../../components/ui/Card';
+import { Chip } from '../../../components/ui/Chip';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { ProgressionPanel } from '../../../components/game/ProgressionPanel';
 import { SETUP_REWARDS } from '../../../domain/game/setupProfile';
 import { useTheme } from '../../../theme/useTheme';
 import { PressableScale } from '../../../components/ui/PressableScale';
+import { MetricBarChart } from '../../../components/home/MetricBarChart';
+import {
+  type EqualizerBar,
+  getEqualizerBars,
+  getWeeklyCalorieBars,
+  getWeeklyHydrationBars,
+  loggedActiveMinutes,
+} from '../../../domain/analytics/dashboardAnalytics';
+import { activeCalories } from '../../../domain/activity/calories';
+import { stepsByDate } from '../../../domain/interop/readings';
+import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngine';
 
 interface Stats {
   questsCompleted: number;
@@ -159,20 +171,81 @@ export default function ProgressScreen() {
   const router = useRouter();
   const { colors, typography, spacing, experience } = useTheme();
 
-  const [activeTab, setActiveTab] = useState<'roadmap' | 'badges'>('roadmap');
+  const [activeTab, setActiveTab] = useState<'roadmap' | 'badges' | 'trends'>('roadmap');
+  const [trendRange, setTrendRange] = useState<7 | 30>(7);
 
   const currentStreak = useRootStore((s) => s.currentStreak);
   const daysActive = useRootStore((s) => s.completedCheckInDaysCount);
   const journalCount = useRootStore((s) => s.journalEntries.length);
-  const { level: LEVEL, questsCompleted, setupDone, movementCount, connected } = useRootStore(
+  const {
+    level: LEVEL,
+    questsCompleted,
+    setupDone,
+    movementCount,
+    connected,
+    readings,
+    hydration,
+    activityLogs,
+    workoutSessions,
+    weightKg,
+  } = useRootStore(
     useShallow((s) => ({
       level: s.level,
       questsCompleted: s.questsCompleted,
       setupDone: s.rewardLedger.filter((e) => e.kind === 'setup_reward').length,
       movementCount: s.workoutSessions.length + s.activityLogs.length + s.poseSessions.length,
       connected: Boolean(s.healthConnect) || s.deviceReadings.length > 0,
+      readings: s.deviceReadings,
+      hydration: s.hydration,
+      activityLogs: s.activityLogs,
+      workoutSessions: s.workoutSessions,
+      weightKg: s.weightKg,
     })),
   );
+
+  // ── Health Trends Computation ──
+  const stepBars = useMemo(
+    () => getEqualizerBars(readings, 'steps', new Date(), trendRange),
+    [readings, trendRange],
+  );
+  const sleepBars = useMemo(
+    () => getEqualizerBars(readings, 'sleep_minutes', new Date(), trendRange),
+    [readings, trendRange],
+  );
+  const hydrationBars = useMemo(
+    () => getWeeklyHydrationBars(hydration, new Date(), 8, trendRange),
+    [hydration, trendRange],
+  );
+
+  const stepMap = useMemo(() => stepsByDate(readings), [readings]);
+  const calorieBars = useMemo(
+    () =>
+      getWeeklyCalorieBars(
+        (d) => {
+          const s = stepMap.get(d);
+          return activeCalories({
+            date: d,
+            weightKg: weightKg ?? null,
+            steps: s ? s.value : null,
+            workoutSessions,
+            activityLogs,
+          }).total;
+        },
+        new Date(),
+        500,
+        trendRange,
+      ),
+    [stepMap, weightKg, workoutSessions, activityLogs, trendRange],
+  );
+
+  const activeDaysLogged = stepBars.filter((b: EqualizerBar) => b.value > 0);
+  const stepAvg = activeDaysLogged.length
+    ? Math.round(activeDaysLogged.reduce((a: number, b: EqualizerBar) => a + b.value, 0) / activeDaysLogged.length)
+    : null;
+  const calDaysLogged = calorieBars.filter((b: EqualizerBar) => b.value > 0);
+  const calAvg = calDaysLogged.length
+    ? Math.round(calDaysLogged.reduce((a: number, b: EqualizerBar) => a + b.value, 0) / calDaysLogged.length)
+    : null;
 
   const stats: Stats = {
     questsCompleted,
@@ -269,6 +342,31 @@ export default function ProgressScreen() {
               ]}
             >
               Stats
+            </Text>
+          </PressableScale>
+
+          <PressableScale
+            onPress={() => setActiveTab('trends')}
+            style={[
+              styles.tabBtn,
+              { backgroundColor: activeTab === 'trends' ? colors.surface : 'transparent' },
+            ]}
+          >
+            <Ionicons
+              name="analytics-outline"
+              size={16}
+              color={activeTab === 'trends' ? colors.primary : colors.text.secondary}
+            />
+            <Text
+              style={[
+                typography.captionBold,
+                {
+                  color: activeTab === 'trends' ? colors.primary : colors.text.secondary,
+                  marginLeft: 6,
+                },
+              ]}
+            >
+              Trends
             </Text>
           </PressableScale>
         </View>
@@ -490,6 +588,51 @@ export default function ProgressScreen() {
                 </Card>
               ))
             )}
+          </Animated.View>
+        )}
+
+        {/* Health Trends View */}
+        {activeTab === 'trends' && (
+          <Animated.View entering={FadeIn.duration(180)}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.md }}>
+              <Text style={[typography.subheading, { color: colors.text.primary }]}>
+                Health Trends
+              </Text>
+              <View style={{ flexDirection: 'row', gap: 6 }}>
+                <Chip label="7 Days" selected={trendRange === 7} onPress={() => setTrendRange(7)} />
+                <Chip label="30 Days" selected={trendRange === 30} onPress={() => setTrendRange(30)} />
+              </View>
+            </View>
+
+            <MetricBarChart
+              bars={stepBars}
+              title="Daily Steps"
+              subtitle={`${trendRange === 7 ? 'Last 7 days' : 'Last 30 days'} · phone & Health Connect`}
+              totalDisplay={stepAvg !== null ? `avg ${stepAvg >= 1000 ? `${(stepAvg / 1000).toFixed(1)}k` : stepAvg}/day` : 'No data'}
+            />
+
+            <MetricBarChart
+              bars={calorieBars}
+              title="Active Energy"
+              subtitle={`${trendRange === 7 ? 'Last 7 days' : 'Last 30 days'} · steps & workouts`}
+              totalDisplay={calAvg !== null ? `avg ${calAvg} kcal/day` : 'No data'}
+            />
+
+            <MetricBarChart
+              bars={hydrationBars}
+              title="Hydration"
+              subtitle={`${trendRange === 7 ? 'Last 7 days' : 'Last 30 days'} · glasses, target 8`}
+              totalDisplay={`${hydrationBars.filter((b: EqualizerBar) => b.value > 0).length} days logged`}
+            />
+
+            {sleepBars.some((b: EqualizerBar) => b.value > 0) ? (
+              <MetricBarChart
+                bars={sleepBars}
+                title="Sleep Duration"
+                subtitle={`${trendRange === 7 ? 'Last 7 days' : 'Last 30 days'} · Health Connect`}
+                totalDisplay={`${sleepBars.filter((b: EqualizerBar) => b.value > 0).length} nights`}
+              />
+            ) : null}
           </Animated.View>
         )}
       </View>

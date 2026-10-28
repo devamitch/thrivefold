@@ -772,6 +772,10 @@ export default function HomeScreen() {
         breakdown={todayCalorieBreakdown}
         goal={500}
         weightKg={s.weightKg}
+        workoutSessions={s.workoutSessions}
+        activityLogs={s.activityLogs}
+        readings={s.readings}
+        todayDate={today()}
       />
       <AnalyticsDetailSheet
         visible={analyticsSheetOpen}

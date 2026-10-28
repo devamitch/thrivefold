@@ -204,3 +204,4 @@ export const BETA_CAPABILITIES: BetaCapability[] = [
     dataOutputs: ['normalizedX', 'normalizedY', 'pinchGesture'],
   },
 ];
+
