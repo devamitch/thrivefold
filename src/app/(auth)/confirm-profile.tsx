@@ -133,7 +133,7 @@ export default function ConfirmProfileScreen() {
                   ? `${age} years${fromGoogle && birthDate === fromGoogle ? ' · from your Google account' : ''}`
                   : profile.birthYear
                     ? `Google shared only your birth year (${profile.birthYear}). Add the full date.`
-                    : 'Google did not share it. It stays on this phone.'}
+                    : 'Google did not share it. Asked once, then saved to your account.'}
               </Text>
             </View>
             <Text style={[typography.subbodyBold, { color: colors.primary }]}>{birthDate ? 'Change' : 'Add'}</Text>
@@ -166,8 +166,8 @@ export default function ConfirmProfileScreen() {
         })}
 
         <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.lg }]}>
-          Your birthday and space stay on this phone and shape your home screen. They never decide what you can see in
-          your health records.
+          Your birthday and space are saved privately to your account, so you are not asked again on another phone.
+          They shape your home screen and never decide what you can see in your health records.
         </Text>
       </ScrollView>
 
