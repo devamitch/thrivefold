@@ -13,6 +13,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import type { NativeSyntheticEvent } from 'react-native';
 
 import { PressableScale } from '../../../components/ui/PressableScale';
@@ -229,12 +230,22 @@ export function EyeTrackingStudio() {
             style={StyleSheet.absoluteFill}
           />
         ) : (
-          <View style={styles.placeholder}>
-            <Ionicons name="eye-off-outline" size={38} color="#666" />
-            <Text style={[typography.body, { color: '#AAA', marginTop: 6 }]}>Camera Scanner Inactive</Text>
-            <Text style={[typography.caption, { color: '#777', marginTop: 2, textAlign: 'center' }]}>
-              Tracks viewing distance, gaze inclination, and EAR on-device
-            </Text>
+          <View style={[StyleSheet.absoluteFill, styles.placeholderWrap]}>
+            <Image
+              source={require('../../../../assets/illustrations/wellness-eye-vision.jpg')}
+              style={StyleSheet.absoluteFill}
+              contentFit="cover"
+            />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.55)' }]} />
+            <View style={styles.placeholder}>
+              <Ionicons name="eye-outline" size={32} color="#FFF" />
+              <Text style={[typography.bodyBold, { color: '#FFF', marginTop: 6 }]}>
+                Vision & Ergonomics Studio
+              </Text>
+              <Text style={[typography.caption, { color: 'rgba(255,255,255,0.85)', marginTop: 2, textAlign: 'center' }]}>
+                Harmon distance, downward gaze angle & real-time EAR tracking
+              </Text>
+            </View>
           </View>
         )}
 
@@ -476,6 +487,10 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  placeholderWrap: {
     justifyContent: 'center',
     alignItems: 'center',
   },

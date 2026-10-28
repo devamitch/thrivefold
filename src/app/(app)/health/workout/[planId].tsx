@@ -1,6 +1,7 @@
 import { SquircleSurface } from '../../../../components/ui/SquircleSurface';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Text, StyleSheet, TextInput, View } from 'react-native';
+import { Image } from 'expo-image';
 import { watchHref } from '../../../../content/exerciseVideos';
 import { Link, useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -59,6 +60,13 @@ export default function WorkoutSessionScreen() {
     () => Object.fromEntries((plan?.items ?? []).map((i) => [i.exerciseId, suggestNext(i.exerciseId, i, sessions)])),
     [plan, sessions],
   );
+
+  const workoutHeroImage = useMemo(() => {
+    if (plan?.setting === 'yoga') return require('../../../../assets/illustrations/workout-yoga-flow.jpg');
+    if (plan?.setting === 'desk' || plan?.setting === 'seated') return require('../../../../assets/illustrations/workout-desk-reset.jpg');
+    if (plan?.setting === 'recovery') return require('../../../../assets/illustrations/wellness-deep-sleep.jpg');
+    return require('../../../../assets/illustrations/workout-hiit-strength.jpg');
+  }, [plan?.setting]);
 
   if (!plan) {
     return (
@@ -156,6 +164,16 @@ export default function WorkoutSessionScreen() {
     <ScreenWrapper scrollable>
       <Header title={plan.title} subtitle={`${plan.minutes} min · ${plan.items.length} exercises`} showBack />
       <View style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
+        <Card style={styles.heroCard}>
+          <Image source={workoutHeroImage} style={styles.heroImage} contentFit="cover" />
+          <View style={styles.heroContent}>
+            <Text style={[typography.subheading, { color: colors.text.primary }]}>{plan.title}</Text>
+            <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+              {plan.summary}
+            </Text>
+          </View>
+        </Card>
+
         {rest > 0 ? (
           <Card variant="tinted" style={{ padding: spacing.base, marginBottom: spacing.sm }}>
             <View style={styles.row}>
@@ -294,6 +312,9 @@ export default function WorkoutSessionScreen() {
 }
 
 const styles = StyleSheet.create({
+  heroCard: { padding: 0, overflow: 'hidden', marginBottom: 12 },
+  heroImage: { width: '100%', height: 160 },
+  heroContent: { padding: 14 },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   link: { flexDirection: 'row', alignItems: 'center', minHeight: 44, marginTop: 4 },
   setRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6 },

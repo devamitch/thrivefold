@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, type Href } from 'expo-router';
 
@@ -48,6 +49,7 @@ export function ScreenTimeCard() {
       action: 'Eye Studio',
       route: '/(app)/beta-lab' as Href,
       icon: 'eye-outline' as const,
+      image: require('../../../assets/illustrations/wellness-eye-vision.jpg'),
     },
     posture_reset: {
       title: 'Posture & Neck Reset',
@@ -55,6 +57,7 @@ export function ScreenTimeCard() {
       action: 'Desk Reset',
       route: '/(app)/health/workout/desk_reset' as Href,
       icon: 'body-outline' as const,
+      image: require('../../../assets/illustrations/workout-desk-reset.jpg'),
     },
     water_hydrate: {
       title: 'Hydration Pause',
@@ -62,11 +65,16 @@ export function ScreenTimeCard() {
       action: 'Check Water',
       route: '/(app)/(tabs)' as Href,
       icon: 'water-outline' as const,
+      image: require('../../../assets/illustrations/wellness-meditation-mind.jpg'),
     },
   }[schedule.recommendedBreakKind];
 
   return (
     <Card style={[styles.card, { marginTop: spacing.md }]}>
+      <View style={styles.imageWrap}>
+        <Image source={breakKindMeta.image} style={styles.bannerImage} contentFit="cover" />
+      </View>
+
       <View style={styles.head}>
         <View style={styles.titleRow}>
           <Ionicons name="desktop-outline" size={18} color={colors.primary} />
@@ -110,6 +118,17 @@ export function ScreenTimeCard() {
 const styles = StyleSheet.create({
   card: {
     padding: 14,
+  },
+  imageWrap: {
+    width: '100%',
+    height: 120,
+    borderRadius: 14,
+    overflow: 'hidden',
+    marginBottom: 12,
+  },
+  bannerImage: {
+    width: '100%',
+    height: '100%',
   },
   head: {
     flexDirection: 'row',

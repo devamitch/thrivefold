@@ -135,6 +135,14 @@ export default function CycleScreen() {
     [effectiveLastPeriod, cycleData, currentContext],
   );
 
+  const cycleHeroImage = useMemo(() => {
+    const phase = predictions?.currentPhase?.phase;
+    if (phase === 'menstrual') return require('../../../../assets/illustrations/cycle-rest-restore.jpg');
+    if (phase === 'follicular' || phase === 'ovulation') return require('../../../../assets/illustrations/cycle-radiant-vitality.jpg');
+    if (phase === 'luteal') return require('../../../../assets/illustrations/wellness-meditation-mind.jpg');
+    return require('../../../../assets/illustrations/intro-cycle.jpg');
+  }, [predictions?.currentPhase?.phase]);
+
   const pregnancyProgress = useMemo(() => {
     if (currentContext !== 'pregnant') return null;
     const reference = cycleData?.pregnancyDetails?.conceptionDate ?? effectiveLastPeriod;
@@ -231,7 +239,7 @@ export default function CycleScreen() {
         <Card style={{ marginBottom: spacing.md, padding: 14, backgroundColor: colors.surface }}>
           <View style={styles.heroWrap}>
             <Image
-              source={require('../../../../assets/illustrations/intro-cycle.jpg')}
+              source={cycleHeroImage}
               style={styles.heroImage}
               contentFit="cover"
             />

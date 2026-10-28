@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Text, StyleSheet, View } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter, type Href , Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ActivityRow } from '../../../components/game/ActivityRow';
@@ -42,7 +43,7 @@ const TRAIN_TOOLS: { icon: keyof typeof Ionicons.glyphMap; label: string; route:
 ];
 
 export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
-  const { colors, typography, spacing } = useTheme();
+  const { colors, typography, spacing, experience } = useTheme();
   const { sessions, activities, deleteWorkoutSession, showAlert, onboarding, checkIns, todayQuests } = useRootStore(
     useShallow((s) => ({
       sessions: s.workoutSessions,
@@ -72,10 +73,27 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
     });
   }, [checkIns, onboarding, sessions, today]);
 
+  const heroImage =
+    experience === 'women_health'
+      ? require('../../../../assets/illustrations/workout-yoga-flow.jpg')
+      : require('../../../../assets/illustrations/workout-hiit-strength.jpg');
+
   return (
     <ScreenWrapper scrollable>
       <Header title="Train" subtitle="Camera coach, plans and your progress" showBack={!asTab} />
       <View style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
+        <Card style={styles.trainHeroCard}>
+          <Image source={heroImage} style={styles.trainHeroImage} contentFit="cover" />
+          <View style={styles.trainHeroContent}>
+            <Text style={[typography.subheading, { color: colors.text.primary }]}>
+              {minutes} active minutes this week
+            </Text>
+            <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+              {week} plan workout{week === 1 ? '' : 's'} · {activitiesThisWeek(activities, today)} other activities.
+            </Text>
+          </View>
+        </Card>
+
         <Card variant="surface1" style={{ padding: spacing.base }}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>
             {minutes} active minutes in the last 7 days
@@ -218,6 +236,9 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
 }
 
 const styles = StyleSheet.create({
+  trainHeroCard: { padding: 0, overflow: 'hidden', marginBottom: 12 },
+  trainHeroImage: { width: '100%', height: 160 },
+  trainHeroContent: { padding: 14 },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   week: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
   weekDay: { alignItems: 'center', gap: 4 },

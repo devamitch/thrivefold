@@ -13,6 +13,14 @@ export const AssetIllustrations = {
   network: require('@assets/illustrations/setu-network.webp'),
   share: require('@assets/illustrations/share.webp'),
   vaultLocked: require('@assets/illustrations/vault-locked.webp'),
+  workoutYogaFlow: require('@assets/illustrations/workout-yoga-flow.jpg'),
+  workoutHiitStrength: require('@assets/illustrations/workout-hiit-strength.jpg'),
+  workoutDeskReset: require('@assets/illustrations/workout-desk-reset.jpg'),
+  cycleRestRestore: require('@assets/illustrations/cycle-rest-restore.jpg'),
+  cycleRadiantVitality: require('@assets/illustrations/cycle-radiant-vitality.jpg'),
+  wellnessMeditationMind: require('@assets/illustrations/wellness-meditation-mind.jpg'),
+  wellnessDeepSleep: require('@assets/illustrations/wellness-deep-sleep.jpg'),
+  wellnessEyeVision: require('@assets/illustrations/wellness-eye-vision.jpg'),
 } as const;
 
 export type AssetIllustrationsName = keyof typeof AssetIllustrations;

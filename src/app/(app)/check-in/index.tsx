@@ -2,6 +2,7 @@ import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import React, { useMemo, useRef, useState } from 'react';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { StyleSheet, Text, TextInput, type AccessibilityActionEvent, View } from 'react-native';
+import { Image } from 'expo-image';
 import { Link, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { hapticSuccess, hapticSelection } from '../../../services/haptics';
@@ -89,6 +90,22 @@ export default function CheckInScreen() {
       scrollMode="shell-scroll-view"
       footer={<Button label={existing ? 'Update check-in' : 'Save check-in'} size="lg" onPress={save} />}
     >
+      <Card style={styles.heroCard}>
+        <Image
+          source={require('../../../assets/illustrations/wellness-meditation-mind.jpg')}
+          style={styles.heroImage}
+          contentFit="cover"
+        />
+        <View style={styles.heroContent}>
+          <Text style={[typography.subheading, { color: colors.text.primary }]}>
+            {existing ? 'Reflect on today' : 'Daily Sanctuary Pause'}
+          </Text>
+          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+            Tune into your energy, sleep and emotional balance. Kept strictly on-device.
+          </Text>
+        </View>
+      </Card>
+
       <Card style={styles.card}>
         <Scale kind="energy" {...SCALES.energy} value={energy} onChange={setEnergy} />
       </Card>
@@ -349,6 +366,9 @@ function StepButton({ icon, label, onPress }: { icon: 'add' | 'remove'; label: s
 }
 
 const styles = StyleSheet.create({
+  heroCard: { padding: 0, overflow: 'hidden', marginBottom: 12 },
+  heroImage: { width: '100%', height: 140 },
+  heroContent: { padding: 14 },
   card: { padding: 16, marginBottom: 12 },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   scaleTrackContainer: { paddingVertical: 6, justifyContent: 'center' },

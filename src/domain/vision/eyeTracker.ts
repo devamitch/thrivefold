@@ -7,14 +7,13 @@
  * Local-first, deterministic, zero network data transmission.
  */
 
-import { eyeBatteryManager, type StoredBatteryState } from './eyeBattery';
+import { EyeAlertEngine, type EyeAlert } from './eyeAlerts';
+import { eyeBatteryManager } from './eyeBattery';
 import {
   estimateDistanceCm,
   estimateDownwardGazeAngle,
   evaluateErgonomics,
-  type ErgonomicsMetrics,
 } from './readingErgonomics';
-import { EyeAlertEngine, type EyeAlert } from './eyeAlerts';
 
 export interface EyePoint {
   x: number;
@@ -22,7 +21,6 @@ export interface EyePoint {
 }
 
 export interface EyeState {
-  /** False when no face was found in this frame; the distance/gaze values are then placeholders and must not be shown. */
   tracked: boolean;
   earLeft: number;
   earRight: number;
