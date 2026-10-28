@@ -1,6 +1,11 @@
 {
-  "platforms": ["android"],
+  "platforms": [
+    "android"
+  ],
   "android": {
-    "modules": ["expo.modules.poselandmarker.PoseLandmarkerModule"]
+    "modules": [
+      "expo.modules.poselandmarker.PoseLandmarkerModule",
+      "expo.modules.poselandmarker.FoodVisionModule"
+    ]
   }
 }

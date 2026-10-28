@@ -70,6 +70,18 @@ export const foodById = (id: string) => FOODS.find((f) => f.id === id);
 export interface MealItem {
   foodId: string;
   servings: number;
+  /**
+   * A food that is not in the table, with its own per-serving values. `ai_estimate` means a
+   * model estimated it from a photo and the person accepted it: shown as an estimate.
+   */
+  custom?: Omit<Food, 'id' | 'group'> & { source: 'ai_estimate' };
+}
+
+/** The food facts behind an item: the table entry, or the item's own (estimated) values. */
+export function itemFood(item: MealItem): (Omit<Food, 'group'> & { estimated: boolean }) | null {
+  if (item.custom) return { id: item.foodId, ...item.custom, estimated: true };
+  const f = foodById(item.foodId);
+  return f ? { ...f, estimated: false } : null;
 }
 
 export interface Macros {
@@ -84,7 +96,7 @@ const round = (n: number) => Math.round(n * 10) / 10;
 export function totals(items: MealItem[]): Macros {
   const t = items.reduce(
     (acc, it) => {
-      const f = foodById(it.foodId);
+      const f = itemFood(it);
       if (!f) return acc;
       return {
         kcal: acc.kcal + f.kcal * it.servings,

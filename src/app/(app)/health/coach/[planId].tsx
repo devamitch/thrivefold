@@ -40,6 +40,7 @@ import {
   CoachVideoStage,
   CountdownOverlay,
   GestureRemoteGuideModal,
+  PositioningCard,
   RestOverlay,
   SessionComplete,
   useCoachSession,
@@ -125,7 +126,6 @@ export default function CoachScreen() {
   const [videoMounted, setVideoMounted] = useState(false);
   const [showGestureModal, setShowGestureModal] = useState(false);
   const [stage, setStage] = useState({ width: 0, height: 0 });
-  const countdownArmed = useRef(false);
   const autoPaused = useRef(false);
   const player = useRef<YouTubePlayerHandle>(null);
   const hasWatched = useRootStore((s) =>
@@ -135,8 +135,10 @@ export default function CoachScreen() {
   const betaMode = useRootStore((s) => s.betaMode);
 
   // ── Checking active ───────────────────────────────────────────────────────
+  // `armed` flips only when the person taps Start: positioning never counts reps or obeys gestures.
+  const [armed, setArmed] = useState(false);
   const checking =
-    phase === 'live' && cameraOn && Boolean(movement) && rest === 0 && countdown === 0;
+    phase === 'live' && armed && cameraOn && Boolean(movement) && rest === 0 && countdown === 0;
   const cameraMain = cameraOn && Boolean(PoseCameraView);
   const video = item ? videoFor(item.exerciseId) : undefined;
 
@@ -206,9 +208,15 @@ export default function CoachScreen() {
   );
 
   // ── Pose tracking ─────────────────────────────────────────────────────────
-  // gestureMode: 'off' while positioning/countdown/rest; 'set' only during an active set.
+  // gestureMode: 'off' while positioning and counting down; 'set' during a set; 'rest' between.
   const gestureMode: 'off' | 'set' | 'rest' =
-    phase === 'live' && rest === 0 && countdown === 0 ? 'set' : rest > 0 ? 'rest' : 'off';
+    phase !== 'live' || !armed
+      ? 'off'
+      : rest > 0
+        ? 'rest'
+        : countdown === 0
+          ? 'set'
+          : 'off';
 
   const poseTrack = usePoseTracking({
     checking,
@@ -400,32 +408,34 @@ export default function CoachScreen() {
     setPhase('live');
     say(
       allowed
-        ? 'Hi! Prop your phone up about two metres back so I can see you. You can control me hands-free with gestures.'
+        ? 'Prop your phone up about two metres back so I can see all of you. Tap Start when you are ready.'
         : "Let's begin. Stay strong and focus on your form.",
     );
-    countdownArmed.current = true;
     if (!allowed) {
-      countdownArmed.current = false;
-      // Start at 4 so the GET READY card shows, then 3-2-1-Go
+      // No camera: the tap on Start was the intent, so go straight to the GET READY beat.
+      setArmed(true);
       setTimeout(() => setCountdown(4), 1600);
-    } else {
-      setTimeout(() => {
-        if (countdownArmed.current) {
-          countdownArmed.current = false;
-          setCountdown(4);
-        }
-      }, 8000);
     }
     InteractionManager.runAfterInteractions(() => setTimeout(() => setVideoMounted(true), 400));
   };
 
-  // Auto count-in when camera sees you — start at 4 (GET READY beat)
+  const beginSet = useCallback(() => {
+    setArmed(true);
+    setCountdown(4);
+  }, [setCountdown]);
+
+  // The camera failed to start (no camera, in use by another app, blocked): continue the
+  // workout without tracking instead of leaving a black stage.
+  const cameraFailed = poseTrack.cameraError;
   useEffect(() => {
-    if (countdownArmed.current && poseTrack.trackingReady && poseTrack.hasPerson) {
-      countdownArmed.current = false;
-      setCountdown(4);
-    }
-  }, [poseTrack.trackingReady, poseTrack.hasPerson, setCountdown]);
+    if (!cameraFailed || !cameraOn) return;
+    useRootStore.getState().showToast({
+      type: 'info',
+      title: 'Camera not available',
+      message: 'Continuing without tracking. Tap Done after each set.',
+    });
+    setCameraOn(false);
+  }, [cameraFailed, cameraOn]);
 
   // ── Early returns ─────────────────────────────────────────────────────────
   if (!plan || !item || !exercise) {
@@ -734,7 +744,7 @@ export default function CoachScreen() {
       ) : null}
 
       {/* Coaching banner — one message at a time */}
-      {banner && rest === 0 && countdown === 0 ? (
+      {banner && armed && rest === 0 && countdown === 0 ? (
         <CoachBanner
           key={banner.tone + banner.title}
           icon={banner.icon}
@@ -745,21 +755,19 @@ export default function CoachScreen() {
         />
       ) : null}
 
-      {/* Camera error */}
-      {poseTrack.cameraError ? (
-        <Text
-          style={[
-            typography.caption,
-            styles.cameraError,
-            { color: colors.callText, backgroundColor: colors.error, top: insets.top + 72 },
-          ]}
-        >
-          {poseTrack.cameraError}
-        </Text>
+      {/* Positioning: passive until the person taps Start. */}
+      {cameraMain && !armed && phase === 'live' ? (
+        <PositioningCard
+          trackingReady={poseTrack.trackingReady}
+          hasPerson={poseTrack.hasPerson}
+          framing={framing}
+          canStartAnyway
+          onStartAnyway={beginSet}
+        />
       ) : null}
 
       {/* Bottom HUD: rep count, next up, set done */}
-      {rest === 0 ? (
+      {rest === 0 && (armed || !cameraMain) ? (
         <CoachHUD
           counted={counted}
           remaining={remaining}

@@ -200,3 +200,20 @@
 - **Note**: one "Unable to load script" crash on the emulator right after an install; the APK contained the bundle, and a clean reinstall launched normally with no crash; not reproduced since.
 - **Not verified**: step counting on the Moto G71 (needs the phone unlocked: tap Steps → Allow → walk); vitals with a real wearable; iOS.
 - **Note on tooling**: the project's `Edit(./android/**)` deny rule (meant for the generated `android/`) also matched the new module's Kotlin sources under `modules/step-counter/android/`; those were written with the shell.
+
+---
+
+## Milestone 11: Meal Log, On-Device Food Vision, Nutrition Screen & Coach Positioning
+- **Status**: IMPLEMENTED, AUTOMATED TESTED, RELEASE-BUILD VERIFIED ON DEVICE (Moto G71 `ZD2225KYKD`)
+- **Root causes**:
+  - Gallery never opened: `requestMediaLibraryPermissionsAsync()` asks for READ/WRITE_EXTERNAL_STORAGE, which `app.json` blocks, so Android denied instantly and the old code returned silently. The system photo picker needs no permission; the request was removed.
+  - Saving a meal awaited a cloud AI call with no timeout ("Analyzing & saving…" hung offline) and appended AI text to the note.
+  - "Detected from photo" was fabricated: it matched words in the file name (a timestamp) and fell back to a fixed time-of-day list. Removed with `foodVision.ts` and its tests.
+  - Coach: `gestureMode` was 'set' before the countdown had ever started, so "both hands up" while positioning completed a set; the workout also auto-started 8 s after the camera opened, or as soon as a person was seen. Camera failures showed the raw native message over a black stage.
+- **Changes**:
+  - Meal log: live scanner (`FoodVision` module: CameraX preview + MediaPipe EfficientNet-Lite0 int8 classifier ~2.5/s + capture at ~1600 px, double-tap safe) and gallery; on-device suggestions mapped to the food table (`foodLabels.ts`); optional "Estimate macros with AI" (Gemini vision, explicit tap, key + cloud permission, 25 s timeout) whose items the person ticks before adding; AI items stored as `custom` with `source: 'ai_estimate'` and labelled; instant offline save; photo-only or note-only meals allowed; quick picks per meal; clear notices for denied camera, failures and unavailable AI.
+  - Nutrition: Today's food (macros, energy split bar, tappable meals), the shared journaled water card, compact meal ideas without pseudo-tags.
+  - Coach: explicit `armed` state; gestures and rep counting off until Start; passive positioning card with Start; no auto-start; camera failure → toast and manual counting instead of a black stage.
+- **Verification**: `pnpm compile` PASS, `pnpm lint` PASS, `pnpm test` PASS (49 suites, 332 tests). `assembleRelease` PASS (APK contains `food_classifier.tflite` and the JS bundle). On the Moto G71: gallery opens the system photo picker (closed without choosing a personal photo); live scanner runs ("Point at your plate"); double-tapped shutter → one photo, no error; non-food photo → "No food recognised"; manual add + save → instant toast and Home; Nutrition shows the meal; phone step counting enabled ("0 · Phone · since 9:42 am", JobScheduler job waiting); Coach: positioning card, no auto-start after 32 s, Start → Get ready → countdown → rep HUD. Emulator: camera-less Coach falls back to manual mode.
+- **Not verified**: AI photo estimate end to end (this phone's AI mode is on-device only and no key was used); classifier output on a real plate of food; reps counted on a person.
+- **Known limits**: the on-device model knows ImageNet foods (pizza, banana, broccoli…), not most Indian dishes; those go through search or the AI estimate. `.tflite` is loaded into memory (`setModelAssetBuffer`) because the module's `noCompress` was not changed.

@@ -1,6 +1,6 @@
 /**
- * PositioningCard — shown from tap-Start until you are in frame and steady.
- * Tells you what the camera needs; after ~15 s offers "Start anyway".
+ * PositioningCard — shown while the camera is on and the workout has not begun. Passive: it says
+ * what the camera needs and nothing starts until the person taps Start.
  */
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -34,7 +34,7 @@ export function PositioningCard({
       ? 'Step into view'
       : framing
         ? framing.text
-        : 'Hold steady';
+        : 'You’re in view';
 
   return (
     <View
@@ -52,14 +52,14 @@ export function PositioningCard({
             {title}
           </Text>
           <Text style={[typography.caption, { color: colors.callMuted, marginTop: 2 }]}>
-            Whole body in view, about two metres back. I start when you are steady.
+            Whole body in view, about two metres back. Tap Start when you’re ready.
           </Text>
         </View>
         {canStartAnyway ? (
           <PressableScale
             onPress={onStartAnyway}
             accessibilityRole="button"
-            accessibilityLabel="Start anyway"
+            accessibilityLabel="Start the workout"
             style={[styles.btn, { backgroundColor: colors.callText }]}
           >
             <Text style={[typography.subbodyBold, { color: colors.callBackground }]}>Start</Text>

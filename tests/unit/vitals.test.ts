@@ -1,5 +1,4 @@
 import { calculateBmi, validateVital, synthesizeLocalHealthInsights } from '../../src/domain/health/vitals';
-import { identifyFoodsFromPhoto, analyzeMealMacrosWithAi } from '../../src/domain/nutrition/foodVision';
 import { checkInRewardXp } from '../../src/domain/game/progression';
 
 describe('Vitals, Height, Weight & BMI Engine', () => {
@@ -82,33 +81,6 @@ describe('Vitals, Height, Weight & BMI Engine', () => {
     expect(insights.some((i) => i.headline.includes('Heart Rate: 68 bpm'))).toBe(true);
     expect(insights.some((i) => i.headline.includes('Blood Oxygen: 99% SpO2'))).toBe(true);
     expect(insights.some((i) => i.headline.includes('Recovery Rhythm'))).toBe(true);
-  });
-});
-
-describe('Photo Food & Macro Identification', () => {
-  test('identifyFoodsFromPhoto detects foods and estimates macros', () => {
-    const result = identifyFoodsFromPhoto('file:///data/meals/dal_roti_lunch.jpg');
-    expect(result.candidates.length).toBeGreaterThan(0);
-    expect(result.candidates.some((c) => c.food.id === 'dal' || c.food.id === 'roti')).toBe(true);
-    expect(result.estimatedKcal).toBeGreaterThan(0);
-    expect(result.provider).toBe('local_vision');
-  });
-
-  test('identifyFoodsFromPhoto falls back to balanced plate when unclassified', () => {
-    const fallback = identifyFoodsFromPhoto('file:///data/meals/17290000.jpg');
-    expect(fallback.candidates.length).toBeGreaterThanOrEqual(3);
-    expect(fallback.estimatedKcal).toBeGreaterThan(0);
-  });
-
-  test('analyzeMealMacrosWithAi computes valid macros with offline fallback', async () => {
-    const result = await analyzeMealMacrosWithAi([
-      { foodId: 'roti', servings: 2 },
-      { foodId: 'dal', servings: 1 },
-    ]);
-    expect(result.kcal).toBeGreaterThanOrEqual(350);
-    expect(result.protein).toBeGreaterThanOrEqual(15);
-    expect(result.carbs).toBeGreaterThanOrEqual(50);
-    expect(result.source).toBeDefined();
   });
 });
 

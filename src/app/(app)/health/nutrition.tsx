@@ -1,4 +1,3 @@
-import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import React from 'react';
 import { Text, StyleSheet, ScrollView, View } from 'react-native';
 import { Link, type Href } from 'expo-router';
@@ -6,10 +5,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
 import { Header } from '../../../components/ui/Header';
-import { Button } from '../../../components/ui/Button';
-import { Badge } from '../../../components/ui/Badge';
+import { PressableScale } from '../../../components/ui/PressableScale';
+import { HydrationTrackerCard } from '../../../components/home/HydrationTrackerCard';
 import { useTheme } from '../../../theme/useTheme';
-import { useRootStore } from '../../../stores/useRootStore';
+import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngine';
 import { TodayMeals } from '../../../components/home/TodayMeals';
 
@@ -67,147 +66,98 @@ const DEFAULT_MEALS: MealRecommendation[] = [
   { id: 'm4', type: 'Snack', title: 'Raw Almonds & Calming Chamomile Infusion', time: '04:45 PM', tags: ['Magnesium', 'Nervous Reset'] },
 ];
 
+const GOALS = [6, 8, 10, 12];
+
+/** Today's food and water in one place, plus meal ideas that follow the person's food preference. */
 export default function NutritionScreen() {
   const { colors, typography, spacing } = useTheme();
-  const onboarding = useRootStore((s) => s.onboarding);
   const date = formatLocalDate(new Date());
-  const waterGlasses = useRootStore((st) => st.hydration[date] ?? 0);
-  const setHydration = useRootStore((st) => st.setHydration);
-  const setWaterGlasses = (update: (v: number) => number) => setHydration(date, update(waterGlasses));
+  const s = useRootStore(
+    useShallow((st) => ({
+      diet: st.onboarding.diet,
+      glasses: st.hydration[date] ?? 0,
+      target: st.hydrationTargetGlasses ?? 8,
+      waterLogs: st.waterLogs,
+      addWaterLog: st.addWaterLog,
+      undoWaterLog: st.undoWaterLog,
+      setTarget: st.setHydrationTargetGlasses,
+    })),
+  );
+  const entries = s.waterLogs.filter((w) => w.date === date);
 
-  const activeDiet = onboarding.diet && onboarding.diet !== 'No preference' ? onboarding.diet : null;
+  const activeDiet = s.diet && s.diet !== 'No preference' ? s.diet : null;
   const meals = activeDiet ? (MEALS_BY_DIET[activeDiet] ?? DEFAULT_MEALS) : DEFAULT_MEALS;
 
   return (
     <ScreenWrapper scrollable>
-      <Header title="Nutrition" subtitle="Water today and meal ideas for your preferences" showBack />
+      <Header title="Nutrition" subtitle="Today's food, water and ideas" showBack />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}
       >
-        {/* Active Dietary Preference Banner */}
-        <Card variant="tinted" style={{ marginBottom: spacing.md, padding: spacing.lg }}>
-          <View style={styles.headerRow}>
-            <View>
-              <Text style={[typography.captionBold, { color: colors.text.muted }]}>DIETARY RHYTHM</Text>
-              <Text style={[typography.heading, { color: colors.primary, marginTop: 2 }]}>
-                {activeDiet ? `${activeDiet} Focus` : 'Balanced Whole Foods'}
-              </Text>
-            </View>
-            <Badge label={activeDiet ? 'Personalized' : 'Flexible'} variant="primary" />
-          </View>
-          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 6 }]}>
-            {activeDiet
-              ? `Meal ideas below follow your ${activeDiet} preference.`
-              : 'Balanced meal ideas. Set a food preference to tailor them.'}
-          </Text>
-          <Link href={'/(onboarding)/lifestyle-preferences' as Href} asChild>
-            <Button
-              label="Edit food preferences"
-              size="sm"
-              variant="outline"
-              style={{ marginTop: 12, alignSelf: 'flex-start' }}
-            />
-          </Link>
-        </Card>
-
         <TodayMeals />
 
-        {/* Hydration Tracker */}
-        <Card style={{ marginBottom: spacing.md, padding: spacing.lg }}>
-          <View style={styles.headerRow}>
-            <View>
-              <Text style={[typography.captionBold, { color: colors.text.muted }]}>DAILY HYDRATION</Text>
-              <Text style={[typography.heading, { color: colors.primary, marginTop: 2 }]}>
-                {waterGlasses * 250} ml / 2000 ml
-              </Text>
-            </View>
-            <Badge label={`${waterGlasses}/8 Glasses`} variant="primary" />
-          </View>
-
-          <View style={styles.glassRow}>
-            {Array.from({ length: 8 }).map((_, i) => (
-              <Ionicons
-                key={i}
-                name={i < waterGlasses ? 'water' : 'water-outline'}
-                size={28}
-                color={i < waterGlasses ? colors.primary : colors.text.muted}
-                style={{ marginHorizontal: 4 }}
-              />
-            ))}
-          </View>
-
-          <View style={styles.stepperRow}>
-            <Button
-              label="Remove glass"
-              variant="outline"
-              size="sm"
-              onPress={() => setWaterGlasses((v) => Math.max(0, v - 1))}
-            />
-            <Button
-              label="Add glass (250 ml)"
-              variant="primary"
-              size="sm"
-              onPress={() => setWaterGlasses((v) => Math.min(12, v + 1))}
-              style={{ marginLeft: 12 }}
-            />
-          </View>
-        </Card>
-
-        {/* Meal Logs */}
-        <View style={styles.headerRow}>
-          <Text style={[typography.subheading, { color: colors.text.primary }]}>
-            {activeDiet ? `${activeDiet} meal ideas` : 'Meal ideas'}
-          </Text>
+        <View style={{ marginTop: spacing.md }}>
+          <HydrationTrackerCard
+            glasses={s.glasses}
+            targetGlasses={s.target}
+            entries={entries}
+            onAddMl={(ml) => s.addWaterLog(ml, date)}
+            onUndo={() => s.undoWaterLog(date)}
+            onEditGoal={() => s.setTarget(GOALS[(GOALS.indexOf(s.target) + 1) % GOALS.length] ?? 8)}
+          />
         </View>
 
-        {meals.map((meal) => (
-          <Card key={meal.id} style={{ marginTop: spacing.sm, padding: spacing.md }}>
-            <View style={styles.headerRow}>
-              <Badge label={meal.type} variant="neutral" />
-              <Text style={[typography.caption, { color: colors.text.muted }]}>Idea</Text>
-            </View>
-            <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 8 }]}>
-              {meal.title}
+        <View style={[styles.headerRow, { marginTop: spacing.lg, marginBottom: spacing.sm }]}>
+          <View style={styles.flex}>
+            <Text style={[typography.subheading, { color: colors.text.primary }]}>Meal ideas</Text>
+            <Text style={[typography.caption, { color: colors.text.secondary }]}>
+              {activeDiet ? `Following your ${activeDiet} preference` : 'Balanced, no preference set'}
             </Text>
-            <View style={[styles.tagRow, { marginTop: 6 }]}>
-              {meal.tags.map((t) => (
-                <Text key={t} style={[typography.caption, { color: colors.primary, marginRight: 8, marginTop: 4 }]}>
-                  #{t}
-                </Text>
-              ))}
+          </View>
+          <Link href={'/(onboarding)/lifestyle-preferences' as Href} asChild>
+            <PressableScale hitSlop={8} accessibilityRole="button" accessibilityLabel="Edit food preference">
+              <Text style={[typography.subbodyBold, { color: colors.primary }]}>Edit</Text>
+            </PressableScale>
+          </Link>
+        </View>
+
+        <Card style={{ paddingVertical: spacing.xs }}>
+          {meals.map((meal, i) => (
+            <View
+              key={meal.id}
+              style={[styles.idea, i > 0 ? { borderTopColor: colors.surface1, borderTopWidth: StyleSheet.hairlineWidth } : null]}
+            >
+              <View style={[styles.ideaIcon, { backgroundColor: colors.primaryAlpha }]}>
+                <Ionicons name={ICON_FOR[meal.type] ?? 'restaurant-outline'} size={16} color={colors.primary} />
+              </View>
+              <View style={styles.flex}>
+                <Text style={[typography.caption, { color: colors.text.muted }]}>{meal.type}</Text>
+                <Text style={[typography.subbodyBold, { color: colors.text.primary }]}>{meal.title}</Text>
+              </View>
             </View>
-          </Card>
-        ))}
+          ))}
+        </Card>
+        <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.sm }]}>
+          Ideas only, not a meal plan or dietary advice.
+        </Text>
       </ScrollView>
     </ScreenWrapper>
   );
 }
 
+const ICON_FOR: Record<string, keyof typeof Ionicons.glyphMap> = {
+  Breakfast: 'sunny-outline',
+  Lunch: 'restaurant-outline',
+  Dinner: 'moon-outline',
+  Snack: 'cafe-outline',
+};
+
 const styles = StyleSheet.create({
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    flexGrow: 1,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  glassRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginVertical: 16,
-  },
-  stepperRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 8,
-  },
-  tagRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
+  scroll: { flex: 1 },
+  content: { flexGrow: 1 },
+  flex: { flex: 1 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  idea: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
+  ideaIcon: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
 });

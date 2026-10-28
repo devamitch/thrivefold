@@ -8,7 +8,7 @@ import { AppHeader } from '../../../../components/ui/AppHeader';
 import { Button } from '../../../../components/ui/Button';
 import { Card } from '../../../../components/ui/Card';
 import { ScreenContainer } from '../../../../components/ui/ScreenContainer';
-import { foodById, totals } from '../../../../domain/nutrition/foods';
+import { itemFood, totals } from '../../../../domain/nutrition/foods';
 import { useRootStore, useShallow } from '../../../../stores/useRootStore';
 import { useTheme } from '../../../../theme/useTheme';
 
@@ -51,15 +51,15 @@ export default function MealScreen() {
           ))}
         </View>
         {meal.items.map((i) => {
-          const f = foodById(i.foodId);
+          const f = itemFood(i);
           return (
             <Text key={i.foodId} style={[typography.subbody, { color: colors.text.secondary, marginTop: spacing.sm }]}>
-              {i.servings} x {f?.name ?? i.foodId} ({f?.serving})
+              {i.servings} x {f?.name ?? i.foodId} ({f?.serving}){f?.estimated ? ' · AI estimate' : ''}
             </Text>
           );
         })}
         {meal.note ? <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: spacing.sm }]}>{meal.note}</Text> : null}
-        <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.md }]}>Estimated from typical values per serving.</Text>
+        <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.md }]}>Typical values per serving from food tables; items marked AI estimate came from a photo analysis you accepted.</Text>
       </Card>
       <Button
         label="Delete this meal"

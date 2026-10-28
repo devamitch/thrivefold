@@ -24,6 +24,7 @@ export { RestOverlay } from './RestOverlay';
 export { GlassButton } from './GlassButton';
 export { CoachVideoStage, type VideoDisplayMode } from './CoachVideoStage';
 export { GestureRemoteGuideModal } from './GestureRemoteGuideModal';
+export { PositioningCard } from './PositioningCard';
 
 export { useCoachSession, clock, say, type Phase, type DoneSummary, type ExerciseResult } from './useCoachSession';
 export { usePoseTracking } from './usePoseTracking';
