@@ -14,6 +14,7 @@ import { DashboardScreenContainer } from '../../../components/home/DashboardScre
 import { HomeGuide } from '../../../components/home/HomeGuide';
 import { HydrationTrackerCard } from '../../../components/home/HydrationTrackerCard';
 import { MetricBarChart } from '../../../components/home/MetricBarChart';
+import { ScreenTimeCard } from '../../../components/home/ScreenTimeCard';
 import { SocialInvite } from '../../../components/home/SocialInvite';
 import { StepsDetailSheet } from '../../../components/home/StepsDetailSheet';
 import { ToolsGrid } from '../../../components/home/ToolsGrid';
@@ -477,6 +478,8 @@ export default function HomeScreen() {
           </Text>
         </Card>
       ) : null}
+
+      <ScreenTimeCard />
 
       <View style={{ marginTop: spacing.md }}>
         <HydrationTrackerCard

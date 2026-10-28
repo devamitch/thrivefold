@@ -19,6 +19,13 @@ import {
 } from '../../src/stores/useRootStore';
 
 describe('Comprehensive Cycle & Universal Calendar Engine', () => {
+  beforeAll(() => {
+    jest.useFakeTimers({ now: new Date('2026-10-10T12:00:00Z') });
+  });
+
+  afterAll(() => {
+    jest.useRealTimers();
+  });
   const mockCycleData: CycleData = {
     lastPeriodDate: '2026-10-01',
     cycleLengthDays: 28,

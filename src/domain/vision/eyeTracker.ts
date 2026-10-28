@@ -1,9 +1,20 @@
 /**
- * eyeTracker.ts — Real-time eye tracking, blink rate, and gaze fatigue estimation.
+ * eyeTracker.ts — Real-time eye tracking, blink rate, distance, and gaze fatigue estimation.
  *
- * Uses MediaPipe Face Landmarker indices from PoseCameraView.
+ * Integrates BlinkQuest's iris distance estimation, downward gaze ergonomics,
+ * Eye Battery indicator, and non-nagging alert engine.
+ *
  * Local-first, deterministic, zero network data transmission.
  */
+
+import { eyeBatteryManager, type StoredBatteryState } from './eyeBattery';
+import {
+  estimateDistanceCm,
+  estimateDownwardGazeAngle,
+  evaluateErgonomics,
+  type ErgonomicsMetrics,
+} from './readingErgonomics';
+import { EyeAlertEngine, type EyeAlert } from './eyeAlerts';
 
 export interface EyePoint {
   x: number;
@@ -20,12 +31,15 @@ export interface EyeState {
   gaze: 'center' | 'left' | 'right' | 'unknown';
   strainLevel: 'low' | 'moderate' | 'high';
   lastBlinkAt: number;
+  distanceCm: number;
+  gazeAngleDeg: number;
+  isTooClose: boolean;
+  harmonZone: 'too_close' | 'optimal' | 'far';
+  fatigueScore: number;
+  recommendation: string;
+  batteryLevel: number;
+  activeAlert: EyeAlert | null;
 }
-
-// Face landmark offsets relative to FACE_GROUPS:
-// Left eye: 16 points (indices 0..31 in flat array)
-// Right eye: 16 points (indices 32..63 in flat array)
-// Irises: 10 points (indices 64..83 in flat array)
 
 const EAR_CLOSED_THRESHOLD = 0.16;
 const EAR_OPEN_THRESHOLD = 0.22;
@@ -44,9 +58,6 @@ function getPoint(flat: number[], idx: number): EyePoint | null {
 
 /**
  * Calculates Eye Aspect Ratio (EAR) for a 16-point eye contour.
- * Point 0: outer corner, Point 8: inner corner.
- * Upper eyelid top: Point 12.
- * Lower eyelid bottom: Point 4.
  */
 function calculateEAR(flat: number[], offset: number): number {
   const corner1 = getPoint(flat, offset + 0);
@@ -66,7 +77,6 @@ function calculateEAR(flat: number[], offset: number): number {
  * Calculates horizontal gaze ratio: iris center relative to inner and outer eye corners.
  */
 function calculateGaze(flat: number[]): 'center' | 'left' | 'right' | 'unknown' {
-  // Left eye corners: 0 (outer) and 8 (inner). Left iris center: 32.
   const cornerOuter = getPoint(flat, 0);
   const cornerInner = getPoint(flat, 8);
   const iris = getPoint(flat, 32);
@@ -76,7 +86,6 @@ function calculateGaze(flat: number[]): 'center' | 'left' | 'right' | 'unknown' 
   const eyeWidth = Math.abs(cornerInner.x - cornerOuter.x);
   if (eyeWidth < 0.001) return 'unknown';
 
-  // Front camera is mirrored horizontally
   const irisRel = (iris.x - Math.min(cornerOuter.x, cornerInner.x)) / eyeWidth;
   if (irisRel < 0.38) return 'right';
   if (irisRel > 0.62) return 'left';
@@ -88,26 +97,57 @@ export class EyeTrackerSession {
   private isEyeClosed = false;
   private blinkTimestamps: number[] = [];
   private lastBlinkAt = Date.now();
+  private sessionStartedAt = Date.now();
+  private lastFrameAt = Date.now();
+  private currentAlert: EyeAlert | null = null;
+  private alertEngine: EyeAlertEngine;
+
+  constructor() {
+    this.alertEngine = new EyeAlertEngine((alert) => {
+      this.currentAlert = alert;
+    });
+  }
 
   reset(): void {
     this.blinkCount = 0;
     this.isEyeClosed = false;
     this.blinkTimestamps = [];
     this.lastBlinkAt = Date.now();
+    this.sessionStartedAt = Date.now();
+    this.lastFrameAt = Date.now();
+    this.currentAlert = null;
+    this.alertEngine.reset();
+  }
+
+  dismissAlert(): void {
+    this.currentAlert = null;
   }
 
   processFace(facePoints: number[] | undefined, now: number = Date.now()): EyeState {
+    const dtMs = Math.max(16, Math.min(1000, now - this.lastFrameAt));
+    this.lastFrameAt = now;
+
     if (!facePoints || facePoints.length < 84) {
+      const blinksPerMin = this.computeBlinkRate(now);
+      const battery = eyeBatteryManager.getState();
       return {
         earLeft: 0.25,
         earRight: 0.25,
         earAvg: 0.25,
         isOpen: true,
         blinkCount: this.blinkCount,
-        blinksPerMin: this.computeBlinkRate(now),
+        blinksPerMin,
         gaze: 'unknown',
         strainLevel: 'low',
         lastBlinkAt: this.lastBlinkAt,
+        distanceCm: 42,
+        gazeAngleDeg: 18,
+        isTooClose: false,
+        harmonZone: 'optimal',
+        fatigueScore: 90,
+        recommendation: 'Position device to face to start tracking reading distance and blinks.',
+        batteryLevel: battery.level,
+        activeAlert: this.currentAlert,
       };
     }
 
@@ -132,13 +172,52 @@ export class EyeTrackerSession {
     const blinksPerMin = this.computeBlinkRate(now);
     const gaze = calculateGaze(facePoints);
 
-    // Strain: <10 blinks/min while awake indicates screen stare fatigue
+    // Compute Reading Distance from left iris (idx 32) & right iris (idx 37)
+    const leftIris = getPoint(facePoints, 32);
+    const rightIris = getPoint(facePoints, 37);
+    let distanceCm = 40;
+    if (leftIris && rightIris) {
+      distanceCm = estimateDistanceCm(leftIris.x, leftIris.y, rightIris.x, rightIris.y);
+    }
+
+    // Downward gaze angle
+    const leftTop = getPoint(facePoints, 12);
+    const leftBottom = getPoint(facePoints, 4);
+    let gazeAngleDeg = 18;
+    if (leftTop && leftBottom && leftIris) {
+      const eyeCenterY = (leftTop.y + leftBottom.y) / 2;
+      const eyeHeight = Math.abs(leftTop.y - leftBottom.y);
+      gazeAngleDeg = estimateDownwardGazeAngle(eyeCenterY, leftIris.y, eyeHeight);
+    }
+
+    // Ergonomics analysis
+    const ergo = evaluateErgonomics(distanceCm, gazeAngleDeg, blinksPerMin);
+
+    // Strain level
     let strainLevel: 'low' | 'moderate' | 'high' = 'low';
     if (this.blinkTimestamps.length > 5 && blinksPerMin < 9) {
       strainLevel = 'high';
     } else if (this.blinkTimestamps.length > 5 && blinksPerMin < 13) {
       strainLevel = 'moderate';
     }
+
+    // Eye Battery tick
+    const batteryState = eyeBatteryManager.tickScan({
+      dtMs,
+      blinkRatePerMin: blinksPerMin,
+      distanceCm,
+      isClosed: this.isEyeClosed,
+    });
+
+    // Alert engine evaluation
+    this.alertEngine.evaluate({
+      now,
+      tracked: true,
+      distanceCm,
+      blinksPerMin,
+      continuousMs: now - this.sessionStartedAt,
+      batteryLevel: batteryState.level,
+    });
 
     return {
       earLeft,
@@ -150,12 +229,20 @@ export class EyeTrackerSession {
       gaze,
       strainLevel,
       lastBlinkAt: this.lastBlinkAt,
+      distanceCm,
+      gazeAngleDeg,
+      isTooClose: ergo.isTooClose,
+      harmonZone: ergo.harmonZone,
+      fatigueScore: ergo.fatigueScore,
+      recommendation: ergo.recommendation,
+      batteryLevel: batteryState.level,
+      activeAlert: this.currentAlert,
     };
   }
 
   private computeBlinkRate(now: number): number {
     if (this.blinkTimestamps.length < 2) return this.blinkTimestamps.length;
     const windowMs = Math.max(10_000, now - this.blinkTimestamps[0]);
-    return Math.round((this.blinkTimestamps.length / (windowMs / 60_000)));
+    return Math.round(this.blinkTimestamps.length / (windowMs / 60_000));
   }
 }
