@@ -1,25 +1,25 @@
-import { SquircleSurface } from '../../components/ui/SquircleSurface';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter , Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, {
-  FadeIn,
-  useReducedMotion,
-} from 'react-native-reanimated';
+import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SquircleSurface } from '../../components/ui/SquircleSurface';
 
+import { AnimatedThrivefoldMark } from '../../components/brand/AnimatedThrivefoldMark';
+import { IntroSlider } from '../../components/onboarding/IntroSlider';
 import { Button } from '../../components/ui/Button';
+import { PressableScale } from '../../components/ui/PressableScale';
 import { TextField } from '../../components/ui/TextField';
+import {
+  accountsAvailable,
+  requestEmailCode,
+  verifyEmailCode,
+} from '../../services/account/accountService';
+import { googleAvailable, signInWithGoogle } from '../../services/account/googleAccount';
 import { newLocalId } from '../../stores/slices/authSlice';
 import { useRootStore } from '../../stores/useRootStore';
-import { accountsAvailable, requestEmailCode, verifyEmailCode } from '../../services/account/accountService';
-import { googleAvailable, signInWithGoogle } from '../../services/account/googleAccount';
-import { IntroSlider } from '../../components/onboarding/IntroSlider';
-import { AnimatedThrivefoldMark } from '../../components/brand/AnimatedThrivefoldMark';
 import { useTheme } from '../../theme/useTheme';
-import { PressableScale } from '../../components/ui/PressableScale';
-import { unifiedVaultSosService } from '../../services/auth/unifiedVaultSosService';
 
 type Step = 'account' | 'name' | 'email' | 'code';
 
@@ -119,7 +119,10 @@ export default function SignInScreen() {
     const existing = useRootStore.getState().user;
     setUser({
       id: res.userId,
-      pseudonym: existing?.pseudonym && existing.pseudonym !== 'Guest' ? existing.pseudonym : name || 'Friend',
+      pseudonym:
+        existing?.pseudonym && existing.pseudonym !== 'Guest'
+          ? existing.pseudonym
+          : name || 'Friend',
       avatarSeed: existing?.avatarSeed ?? newLocalId('seed'),
       age: existing?.age ?? null,
       isAgeVerified: false,
@@ -141,14 +144,14 @@ export default function SignInScreen() {
         ] as const
       ).map(([label, href], i) => (
         <React.Fragment key={href}>
-          {i > 0 ? <Text style={[typography.caption, { color: colors.text.muted }]}> · </Text> : null}
+          {i > 0 ? (
+            <Text style={[typography.caption, { color: colors.text.muted }]}> · </Text>
+          ) : null}
           <Link href={href} asChild>
-  <PressableScale  hitSlop={10} accessibilityRole="link">
-
-            <Text style={[typography.caption, { color: colors.text.muted }]}>{label}</Text>
-          
-  </PressableScale>
-</Link>
+            <PressableScale hitSlop={10} accessibilityRole="link">
+              <Text style={[typography.caption, { color: colors.text.muted }]}>{label}</Text>
+            </PressableScale>
+          </Link>
         </React.Fragment>
       ))}
     </View>
@@ -182,11 +185,25 @@ export default function SignInScreen() {
           </PressableScale>
           <View style={[styles.hero, { marginTop: spacing.sm }]}>
             <AnimatedThrivefoldMark size={112} />
-            <Text style={[typography.display, styles.center, { color: colors.text.primary, marginTop: spacing.md }]} accessibilityRole="header">
+            <Text
+              style={[
+                typography.display,
+                styles.center,
+                { color: colors.text.primary, marginTop: spacing.md },
+              ]}
+              accessibilityRole="header"
+            >
               Welcome to Thrivefold
             </Text>
-            <Text style={[typography.body, styles.center, { color: colors.text.secondary, marginTop: spacing.xs }]}>
-              A calm, local-first sanctuary for your biological rhythm, daily check-ins, and holistic health.
+            <Text
+              style={[
+                typography.body,
+                styles.center,
+                { color: colors.text.secondary, marginTop: spacing.xs },
+              ]}
+            >
+              A calm, local-first sanctuary for your biological rhythm, daily check-ins, and
+              holistic health.
             </Text>
           </View>
 
@@ -230,7 +247,12 @@ export default function SignInScreen() {
                   <Text style={[typography.bodyBold, { color: colors.text.primary, fontSize: 13 }]}>
                     Local-First & Encrypted
                   </Text>
-                  <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 1, lineHeight: 17 }]}>
+                  <Text
+                    style={[
+                      typography.caption,
+                      { color: colors.text.secondary, marginTop: 1, lineHeight: 17 },
+                    ]}
+                  >
                     Sensitive check-ins, cycles, and journal notes stay stored on your device only.
                   </Text>
                 </View>
@@ -254,8 +276,14 @@ export default function SignInScreen() {
                   <Text style={[typography.bodyBold, { color: colors.text.primary, fontSize: 13 }]}>
                     Seamless Device Restore
                   </Text>
-                  <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 1, lineHeight: 17 }]}>
-                    Switch phones anytime without losing streaks, achievements, or customized routines.
+                  <Text
+                    style={[
+                      typography.caption,
+                      { color: colors.text.secondary, marginTop: 1, lineHeight: 17 },
+                    ]}
+                  >
+                    Switch phones anytime without losing streaks, achievements, or customized
+                    routines.
                   </Text>
                 </View>
               </View>
@@ -278,7 +306,12 @@ export default function SignInScreen() {
                   <Text style={[typography.bodyBold, { color: colors.text.primary, fontSize: 13 }]}>
                     Zero Ads or Data Broking
                   </Text>
-                  <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 1, lineHeight: 17 }]}>
+                  <Text
+                    style={[
+                      typography.caption,
+                      { color: colors.text.secondary, marginTop: 1, lineHeight: 17 },
+                    ]}
+                  >
                     No hidden trackers, third-party profiling, or monetization of personal health.
                   </Text>
                 </View>
@@ -302,7 +335,12 @@ export default function SignInScreen() {
                   <Text style={[typography.bodyBold, { color: colors.text.primary, fontSize: 13 }]}>
                     1-Tap Guest Access Anytime
                   </Text>
-                  <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 1, lineHeight: 17 }]}>
+                  <Text
+                    style={[
+                      typography.caption,
+                      { color: colors.text.secondary, marginTop: 1, lineHeight: 17 },
+                    ]}
+                  >
                     Every core wellness tool is always 100% accessible offline without an account.
                   </Text>
                 </View>
@@ -310,7 +348,7 @@ export default function SignInScreen() {
             </View>
           </SquircleSurface>
 
-        {/* Anvay ID 1-Tap Ecosystem Sign-In (Uncomment to activate once deep-linking screen is configured)
+          {/* Anvay ID 1-Tap Ecosystem Sign-In (Uncomment to activate once deep-linking screen is configured)
         <PressableScale
           onPress={handleVaultSos}
           disabled={busy}
@@ -340,28 +378,47 @@ export default function SignInScreen() {
         </PressableScale>
         */}
 
-        {googleAvailable() ? (
-          <PressableScale
-            onPress={google}
-            disabled={busy}
-            accessibilityRole="button"
-            accessibilityLabel="Continue with Google"
-            style={[styles.google, { backgroundColor: colors.surface, borderColor: colors.borderStrong, opacity: busy ? 0.6 : 1 }]}
-          >
-            <Ionicons name="logo-google" size={20} color={colors.text.primary} />
-            <Text style={[typography.bodyBold, { color: colors.text.primary, marginLeft: 12 }]}>
-              {busy ? 'Opening Google…' : 'Continue with Google'}
+          {googleAvailable() ? (
+            <PressableScale
+              onPress={google}
+              disabled={busy}
+              accessibilityRole="button"
+              accessibilityLabel="Continue with Google"
+              style={[
+                styles.google,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.borderStrong,
+                  opacity: busy ? 0.6 : 1,
+                },
+              ]}
+            >
+              <Ionicons name="logo-google" size={20} color={colors.text.primary} />
+              <Text style={[typography.bodyBold, { color: colors.text.primary, marginLeft: 12 }]}>
+                {busy ? 'Opening Google…' : 'Continue with Google'}
+              </Text>
+            </PressableScale>
+          ) : null}
+          {authError ? (
+            <Text
+              style={[
+                typography.caption,
+                { color: colors.error, marginTop: spacing.sm, textAlign: 'center' },
+              ]}
+            >
+              {authError}
             </Text>
-          </PressableScale>
-        ) : null}
-        {authError ? (
-          <Text style={[typography.caption, { color: colors.error, marginTop: spacing.sm, textAlign: 'center' }]}>{authError}</Text>
-        ) : null}
-        {accountsAvailable() ? (
-          <Button label="Sign in with email" variant="outline" onPress={() => setStep('email')} style={{ marginTop: spacing.sm }} />
-        ) : null}
-        <Button label="Continue without an account" variant="ghost" onPress={() => setStep('name')} style={{ marginTop: spacing.xs }} />
-        <Button label="Explore as guest" variant="ghost" onPress={guest} />
+          ) : null}
+          {accountsAvailable() ? (
+            <Button
+              label="Sign in with email"
+              variant="outline"
+              onPress={() => setStep('email')}
+              style={{ marginTop: spacing.sm }}
+            />
+          ) : null}
+          {/* <Button label="Continue without an account" variant="ghost" onPress={() => setStep('name')} style={{ marginTop: spacing.xs }} /> */}
+          <Button label="Explore as guest" variant="ghost" onPress={guest} />
           <View style={{ paddingBottom: spacing.md }}>{legal}</View>
         </ScrollView>
       </View>
@@ -369,7 +426,10 @@ export default function SignInScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={[styles.root, { backgroundColor: colors.background }]} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    <KeyboardAvoidingView
+      style={[styles.root, { backgroundColor: colors.background }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
       <ScrollView
         contentContainerStyle={{
           paddingTop: insets.top + spacing.md,
@@ -391,9 +451,19 @@ export default function SignInScreen() {
           <Ionicons name="chevron-back" size={20} color={colors.text.primary} />
         </PressableScale>
 
-        <Animated.View entering={reduceMotion ? undefined : FadeIn.duration(250)} style={{ marginTop: spacing.xl }}>
-          <Text style={[typography.display, { color: colors.text.primary }]} accessibilityRole="header">
-            {step === 'name' ? 'What should we call you?' : step === 'email' ? 'Sign in with email' : 'Enter your code'}
+        <Animated.View
+          entering={reduceMotion ? undefined : FadeIn.duration(250)}
+          style={{ marginTop: spacing.xl }}
+        >
+          <Text
+            style={[typography.display, { color: colors.text.primary }]}
+            accessibilityRole="header"
+          >
+            {step === 'name'
+              ? 'What should we call you?'
+              : step === 'email'
+                ? 'Sign in with email'
+                : 'Enter your code'}
           </Text>
           <Text style={[typography.body, { color: colors.text.secondary, marginTop: spacing.xs }]}>
             {step === 'name'
@@ -461,7 +531,13 @@ export default function SignInScreen() {
           style={{ marginTop: spacing.lg }}
         />
         {step === 'code' ? (
-          <Button label="Send a new code" variant="ghost" onPress={sendCode} disabled={busy} style={{ marginTop: spacing.xs }} />
+          <Button
+            label="Send a new code"
+            variant="ghost"
+            onPress={sendCode}
+            disabled={busy}
+            style={{ marginTop: spacing.xs }}
+          />
         ) : null}
         {legal}
       </ScrollView>
@@ -477,10 +553,28 @@ const styles = StyleSheet.create({
   brandRow: { flexDirection: 'row', alignItems: 'center', height: 56 },
   brandMark: { width: 32, height: 32 },
   slides: { flexGrow: 0 },
-  imageWrap: { width: '100%', aspectRatio: 1.3, borderRadius: 24, borderCurve: 'continuous', overflow: 'hidden' },
+  imageWrap: {
+    width: '100%',
+    aspectRatio: 1.3,
+    borderRadius: 24,
+    borderCurve: 'continuous',
+    overflow: 'hidden',
+  },
   image: { width: '100%', height: '100%' },
-  slideIcon: { width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  dotsRow: { flexDirection: 'row', justifyContent: 'center', gap: 6, alignItems: 'center', height: 20 },
+  slideIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dotsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
+    alignItems: 'center',
+    height: 20,
+  },
   dot: { height: 8, borderRadius: 4 },
   secondaryRow: { flexDirection: 'row', gap: 8 },
   links: { alignItems: 'center', flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap' },

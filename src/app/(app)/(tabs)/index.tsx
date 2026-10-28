@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { Link, useFocusEffect, useRouter, type Href } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { ScrollReveal } from '../../../components/home/ScrollReveal';
 
 import { ActivityRow } from '../../../components/game/ActivityRow';
 import { QuestSheet } from '../../../components/game/QuestSheet';
@@ -187,6 +186,11 @@ export default function HomeScreen() {
   const steps = latest('steps');
   const sleep = latest('sleep_minutes');
   const heart = latest('heart_rate_avg');
+  const sleepMinutesValue = sleep
+    ? Math.round(sleep.value)
+    : todaysCheckIn?.sleepHours
+      ? Math.round(todaysCheckIn.sleepHours * 60)
+      : null;
 
   const todayHydration = s.hydration[today()] ?? 0;
   const handleIncrementHydration = useCallback(() => {
@@ -273,26 +277,26 @@ export default function HomeScreen() {
 
   return (
     <DashboardScreenContainer
-      header={({ scrollY, collapseProgress, pageProgress, scrollToTop }) => (
+      header={({ scrollY, collapseProgress, scrollToTop }) => (
         <DashboardHeader
-          title="Thrivefold"
           userName={name ? name : undefined}
-          badgeText={`Lvl ${progress.level} · ${s.dailyPoints} pts`}
-          onMenuPress={() => useRootStore.getState().setDrawerOpen(true)}
-          scrollY={scrollY}
-          collapseProgress={collapseProgress}
-          pageProgress={pageProgress}
-          progress={s.dailyPoints / Math.max(1, s.dailyPointsTarget)}
           statusLabel={
             vitality.hasCheckInToday
               ? `Vitality ${vitality.score}`
               : `${s.dailyPoints}/${s.dailyPointsTarget} pts`
           }
+          badgeText={`Lvl ${progress.level}`}
+          onMenuPress={() => useRootStore.getState().setDrawerOpen(true)}
+          scrollY={scrollY}
+          collapseProgress={collapseProgress}
+          progress={s.dailyPoints / Math.max(1, s.dailyPointsTarget)}
           onCompactPress={scrollToTop}
         />
       )}
       hero={({ scrollY, collapseProgress }) => (
         <VitalityHero
+          scrollY={scrollY}
+          collapseProgress={collapseProgress}
           eyebrow={new Date().toLocaleDateString(undefined, {
             weekday: 'long',
             day: 'numeric',
@@ -300,7 +304,6 @@ export default function HomeScreen() {
           })}
           greeting={name ? `${greeting()}, ${name}` : greeting()}
           subtitle={subtitle}
-          onMenuPress={() => useRootStore.getState().setDrawerOpen(true)}
           score={vitality.score}
           tier={vitality.tier}
           label={vitality.label}
@@ -321,20 +324,18 @@ export default function HomeScreen() {
           xpToNext={progress.next ? Math.max(0, progress.xpForNext - progress.xpIntoLevel) : null}
           onCheckIn={() => router.push('/(app)/check-in')}
           onRoadmap={() => router.push('/(app)/roadmap' as Href)}
-          scrollY={scrollY}
-          collapseProgress={collapseProgress}
         />
       )}
     >
       {/* Analytical Controls & Responsive Charts */}
-      <ScrollReveal index={0}>
+      <View>
         <TimeRangeFilter selected={timeRange} onChange={setTimeRange} />
 
         {timeRange === 'today' ? (
           <>
             <AnalyticalMetricGrid
               stepsCount={steps ? Math.round(steps.value) : null}
-              sleepMinutes={sleep ? Math.round(sleep.value) : null}
+              sleepMinutes={sleepMinutesValue}
               heartRateAvg={heart ? Math.round(heart.value) : null}
               hydrationCount={todayHydration}
               hydrationTarget={s.hydrationTargetGlasses ?? 8}
@@ -405,17 +406,17 @@ export default function HomeScreen() {
             />
           </>
         )}
-      </ScrollReveal>
+      </View>
 
-      <ScrollReveal index={1}>
+      <View>
         <HomeGuide />
-      </ScrollReveal>
-      <ScrollReveal index={1}>
+      </View>
+      <View>
         <SocialInvite />
-      </ScrollReveal>
+      </View>
 
       {setupOpen > 0 ? (
-        <ScrollReveal index={2}>
+        <View>
           <Link href={'/(app)/personalize' as Href} asChild>
             <Card variant="surface" style={{ padding: spacing.base, marginTop: spacing.md }}>
               <View style={styles.rowBetween}>
@@ -437,11 +438,11 @@ export default function HomeScreen() {
               </View>
             </Card>
           </Link>
-        </ScrollReveal>
+        </View>
       ) : null}
 
       {recovery ? (
-        <ScrollReveal index={2}>
+        <View>
           <Card variant="surface" style={{ padding: spacing.base, marginTop: spacing.md }}>
             <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
               {recovery.title}
@@ -450,11 +451,11 @@ export default function HomeScreen() {
               {recovery.aiExplanation.text}
             </Text>
           </Card>
-        </ScrollReveal>
+        </View>
       ) : null}
 
       {/* Quests */}
-      <ScrollReveal index={2}>
+      <View>
         <View style={[styles.sectionHeader, { marginTop: spacing.lg }]}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>
             Today&apos;s plan
@@ -542,10 +543,10 @@ export default function HomeScreen() {
             ))}
           </>
         ) : null}
-      </ScrollReveal>
+      </View>
 
       {/* Experience focus */}
-      <ScrollReveal index={3}>
+      <View>
         {experience === 'women_health' ? (
           <Link href={'/(app)/health/cycle' as Href} asChild>
             <FocusCard
@@ -582,9 +583,9 @@ export default function HomeScreen() {
             />
           </Link>
         )}
-      </ScrollReveal>
+      </View>
 
-      <ScrollReveal index={3}>
+      <View>
         <View style={[styles.sectionHeader, { marginTop: spacing.lg }]}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>This week</Text>
         </View>
@@ -598,9 +599,9 @@ export default function HomeScreen() {
             />
           </Link>
         ) : null}
-      </ScrollReveal>
+      </View>
 
-      <ScrollReveal index={4}>
+      <View>
         {deviceTiles.length > 0 ? (
           <Link href={'/(app)/health/integrations' as Href} asChild>
             <Card style={{ padding: spacing.base, marginTop: spacing.md }}>
@@ -633,18 +634,15 @@ export default function HomeScreen() {
             </Link>
           </View>
         )}
-      </ScrollReveal>
+      </View>
 
       {/* Wellness Tools */}
-      <ScrollReveal
-        index={4}
-        style={{ marginTop: spacing.xl, marginBottom: spacing.xl }}
-      >
+      <View style={{ marginTop: spacing.xl, marginBottom: spacing.xl }}>
         <View style={styles.sectionHeader}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>Tools</Text>
         </View>
         <ToolsGrid todayCount={alsoToday.length + active} />
-      </ScrollReveal>
+      </View>
 
       <QuestSheet assignmentId={openQuest} onClose={() => setOpenQuest(null)} />
       <AnalyticsDetailSheet

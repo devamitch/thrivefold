@@ -1,17 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Canvas, Path, Skia } from '@shopify/react-native-skia';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, {
-  Easing,
   Extrapolation,
   interpolate,
-  runOnJS,
-  useAnimatedReaction,
   useAnimatedStyle,
-  useDerivedValue,
-  useSharedValue,
-  withTiming,
+  useReducedMotion,
   type SharedValue,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -22,184 +17,166 @@ import { PressableScale } from '../ui/PressableScale';
 
 export const COMPACT_HEADER_CONTENT_HEIGHT = 52;
 
-const RING = 28;
-const STROKE = 3.5;
+const RING = 22;
+const STROKE = 3;
 const PAD = STROKE / 2 + 0.5;
 const ARC = RING - PAD * 2;
 
 export interface DashboardHeaderProps {
-  title: string;
+  title?: string;
   userName?: string;
+  /** Shown in place of the title once scrolled, e.g. "Vitality 44". */
+  statusLabel?: string;
   badgeText?: string;
   onMenuPress: () => void;
   scrollY: SharedValue<number>;
   collapseProgress: SharedValue<number>;
-  /** 0–1 live progress (e.g. daily points). Omit when unknown; no ring is drawn. */
   progress?: number;
-  /** Compact-state label, e.g. "Vitality 72". Falls back to user name / title. */
-  statusLabel?: string;
-  /** 0–1 whole-page progress for the hairline. */
-  pageProgress?: SharedValue<number>;
-  /** Tapping the compact chip. Usually scrollToTop. */
   onCompactPress?: () => void;
 }
 
 /**
- * Header: one stable bar, two non-overlapping layers.
- * Expanded: brand title. Compact: live progress ring + status, tap to jump to top.
- * Layers never cross-fade at the same time (0→0.45 out, 0.55→1 in), so no title collision.
- * Header height never changes, so the scroll content never reflows.
+ * Pinned Compact Dashboard Header:
+ * - Transparent at top (scrollY = 0), allowing hero to breathe edge-to-edge.
+ * - On scroll (scrollY > 70), smoothly fades in solid primary background.
+ * - Compact title ("Vitality 44", mini progress ring, level badge) smoothly slides up into view.
+ * - Tap on compact title triggers haptic feedback and smoothly scrolls to top.
+ * - Menu button is always accessible and rock-solid at top right.
+ * - No distracting progress hairline at the bottom.
  */
 export function DashboardHeader({
-  title,
   userName,
+  statusLabel,
   badgeText,
   onMenuPress,
   scrollY,
-  collapseProgress,
   progress,
-  statusLabel,
-  pageProgress,
   onCompactPress,
 }: DashboardHeaderProps) {
   const { colors, typography } = useTheme();
   const insets = useSafeAreaInsets();
-  const headerHeight = insets.top + COMPACT_HEADER_CONTENT_HEIGHT;
-  const compactText = statusLabel ?? (userName && userName !== title ? userName : title);
+  const compactText = statusLabel ?? userName ?? 'Vitality';
+  const reduceMotion = useReducedMotion();
 
-  // Screen-reader exposure follows the visible layer; flips only on threshold crossing.
-  const [compact, setCompact] = useState(false);
-  useAnimatedReaction(
-    () => collapseProgress.value > 0.5,
-    (now, prev) => {
-      if (now !== prev) runOnJS(setCompact)(now);
-    },
-  );
-
-  // Mini ring (UI-thread path from a shared value)
-  const frac = useSharedValue(0);
-  useEffect(() => {
-    frac.value = withTiming(Math.min(1, Math.max(0, progress ?? 0)), {
-      duration: 700,
-      easing: Easing.out(Easing.cubic),
-    });
-  }, [progress, frac]);
-
-  const track = useMemo(() => {
+  const trackPath = useMemo(() => {
     const p = Skia.Path.Make();
     p.addArc({ x: PAD, y: PAD, width: ARC, height: ARC }, -90, 359.9);
     return p;
   }, []);
-  const arc = useDerivedValue(() => {
-    const p = Skia.Path.Make();
-    p.addArc({ x: PAD, y: PAD, width: ARC, height: ARC }, -90, Math.max(0.1, 360 * frac.value));
-    return p;
+
+  const progressRatio = progress !== undefined ? Math.min(1, Math.max(0, progress)) : 0;
+
+  // Solid background smoothly transitions in as hero scrolls up
+  const bgAnimStyle = useAnimatedStyle(() => {
+    if (reduceMotion) {
+      return { opacity: scrollY.value > 80 ? 1 : 0 };
+    }
+    return {
+      opacity: interpolate(scrollY.value, [60, 130], [0, 1], Extrapolation.CLAMP),
+    };
   });
 
-  const brandStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(collapseProgress.value, [0, 0.45], [1, 0], Extrapolation.CLAMP),
-    transform: [
-      { translateY: interpolate(collapseProgress.value, [0, 0.45], [0, -8], Extrapolation.CLAMP) },
-    ],
-  }));
+  // Compact title & ring slide in with subtle translation and fade
+  const compactAnimStyle = useAnimatedStyle(() => {
+    if (reduceMotion) {
+      return { opacity: scrollY.value > 80 ? 1 : 0 };
+    }
+    return {
+      opacity: interpolate(scrollY.value, [70, 130], [0, 1], Extrapolation.CLAMP),
+      transform: [
+        {
+          translateY: interpolate(scrollY.value, [70, 130], [8, 0], Extrapolation.CLAMP),
+        },
+        {
+          scale: interpolate(scrollY.value, [70, 130], [0.94, 1], Extrapolation.CLAMP),
+        },
+      ],
+    };
+  });
 
-  const compactStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(collapseProgress.value, [0.55, 1], [0, 1], Extrapolation.CLAMP),
-    transform: [
-      { translateY: interpolate(collapseProgress.value, [0.55, 1], [8, 0], Extrapolation.CLAMP) },
-      { scale: interpolate(collapseProgress.value, [0.55, 1], [0.94, 1], Extrapolation.CLAMP) },
-    ],
-  }));
-
-  const hairlineStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(scrollY.value, [0, 24], [0, 1], Extrapolation.CLAMP),
-  }));
-
-  const pageBarStyle = useAnimatedStyle(() => ({
-    width: `${(pageProgress ? pageProgress.value : 0) * 100}%`,
-  }));
+  // Soft border line below header once fully scrolled
+  const borderAnimStyle = useAnimatedStyle(() => {
+    if (reduceMotion) {
+      return { opacity: scrollY.value > 120 ? 1 : 0 };
+    }
+    return {
+      opacity: interpolate(scrollY.value, [100, 150], [0, 1], Extrapolation.CLAMP),
+    };
+  });
 
   return (
     <View
       pointerEvents="box-none"
       style={[
         styles.container,
-        { height: headerHeight, paddingTop: insets.top, backgroundColor: colors.primary },
+        {
+          height: insets.top + COMPACT_HEADER_CONTENT_HEIGHT,
+          paddingTop: insets.top,
+        },
       ]}
     >
+      {/* Dynamic solid background layer */}
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          StyleSheet.absoluteFillObject,
+          { backgroundColor: colors.primary },
+          bgAnimStyle,
+        ]}
+      />
+
       <View style={styles.content}>
-        <View style={styles.slot}>
-          {/* Expanded layer */}
-          <Animated.View
-            pointerEvents="none"
-            accessibilityElementsHidden={compact}
-            importantForAccessibility={compact ? 'no-hide-descendants' : 'auto'}
-            style={[styles.layer, brandStyle]}
+        {/* Compact Title Row (fades in on scroll) */}
+        <Animated.View pointerEvents="box-none" style={[styles.compactSlot, compactAnimStyle]}>
+          <PressableScale
+            onPress={() => {
+              hapticLight();
+              onCompactPress?.();
+            }}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={`${compactText}. Tap to scroll to top`}
+            style={styles.compactRow}
           >
+            {progress !== undefined ? (
+              <Canvas style={styles.ring}>
+                <Path
+                  path={trackPath}
+                  style="stroke"
+                  strokeWidth={STROKE}
+                  color={colors.onPrimarySurface}
+                />
+                <Path
+                  path={trackPath}
+                  style="stroke"
+                  strokeWidth={STROKE}
+                  strokeCap="round"
+                  color={colors.onPrimary}
+                  start={0}
+                  end={progressRatio}
+                />
+              </Canvas>
+            ) : null}
             <Text
+              numberOfLines={1}
               style={[typography.bodyBold, styles.title, { color: colors.onPrimary }]}
-              numberOfLines={1}
             >
-              {title}
+              {compactText}
             </Text>
-          </Animated.View>
+            {badgeText ? (
+              <View style={[styles.badge, { backgroundColor: colors.onPrimarySurface }]}>
+                <Text
+                  numberOfLines={1}
+                  style={[typography.captionBold, { color: colors.onPrimary, fontSize: 11 }]}
+                >
+                  {badgeText}
+                </Text>
+              </View>
+            ) : null}
+          </PressableScale>
+        </Animated.View>
 
-          {/* Compact layer */}
-          <Animated.View
-            pointerEvents={compact ? 'auto' : 'none'}
-            accessibilityElementsHidden={!compact}
-            importantForAccessibility={!compact ? 'no-hide-descendants' : 'auto'}
-            style={[styles.layer, compactStyle]}
-          >
-            <PressableScale
-              disabled={!compact || !onCompactPress}
-              onPress={() => {
-                hapticLight();
-                onCompactPress?.();
-              }}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel={`${compactText}. Scroll to top`}
-              style={styles.chip}
-            >
-              {progress !== undefined ? (
-                <Canvas style={styles.ring}>
-                  <Path
-                    path={track}
-                    style="stroke"
-                    strokeWidth={STROKE}
-                    color={colors.onPrimarySurface}
-                  />
-                  <Path
-                    path={arc}
-                    style="stroke"
-                    strokeWidth={STROKE}
-                    strokeCap="round"
-                    color={colors.onPrimary}
-                  />
-                </Canvas>
-              ) : null}
-              <Text
-                style={[typography.bodyBold, styles.title, { color: colors.onPrimary }]}
-                numberOfLines={1}
-              >
-                {compactText}
-              </Text>
-            </PressableScale>
-          </Animated.View>
-        </View>
-
-        {badgeText ? (
-          <View style={[styles.badge, { backgroundColor: colors.onPrimarySurface }]}>
-            <Text
-              numberOfLines={1}
-              style={{ color: colors.onPrimary, fontSize: 11, fontWeight: '700' }}
-            >
-              {badgeText}
-            </Text>
-          </View>
-        ) : null}
-
+        {/* Rock-solid navigation menu button */}
         <PressableScale
           onPress={() => {
             hapticLight();
@@ -208,25 +185,34 @@ export function DashboardHeader({
           hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel="Open navigation menu"
-          style={[styles.menuBtn, { backgroundColor: colors.onPrimarySurface }]}
+          style={[styles.menu, { backgroundColor: colors.onPrimarySurface }]}
         >
           <Ionicons name="menu-outline" size={20} color={colors.onPrimary} />
         </PressableScale>
       </View>
 
-      {/* Hairline fades in once content moves; page progress rides on it. */}
+      {/* Subtle border line on scroll — NO progress line */}
       <Animated.View
         pointerEvents="none"
-        style={[styles.hairline, { backgroundColor: colors.onPrimarySurface }, hairlineStyle]}
-      >
-        <Animated.View style={[styles.pageBar, { backgroundColor: colors.accent }, pageBarStyle]} />
-      </Animated.View>
+        style={[
+          styles.borderLine,
+          { backgroundColor: colors.onPrimarySurface },
+          borderAnimStyle,
+        ]}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100, elevation: 6 },
+  container: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
+    elevation: 4,
+  },
   content: {
     height: COMPACT_HEADER_CONTENT_HEIGHT,
     flexDirection: 'row',
@@ -234,19 +220,43 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     gap: 8,
   },
-  slot: { flex: 1, height: COMPACT_HEADER_CONTENT_HEIGHT },
-  layer: { ...StyleSheet.absoluteFillObject, justifyContent: 'center' },
-  title: { fontSize: 17, letterSpacing: -0.3, flexShrink: 1 },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'flex-start' },
-  ring: { width: RING, height: RING },
-  badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, flexShrink: 1 },
-  menuBtn: {
+  compactSlot: {
+    flex: 1,
+    height: COMPACT_HEADER_CONTENT_HEIGHT,
+    justifyContent: 'center',
+  },
+  compactRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    alignSelf: 'flex-start',
+  },
+  title: {
+    fontSize: 17,
+    letterSpacing: -0.3,
+  },
+  ring: {
+    width: RING,
+    height: RING,
+  },
+  badge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    flexShrink: 1,
+  },
+  menu: {
     width: 36,
     height: 36,
-    borderRadius: 10,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  hairline: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 2 },
-  pageBar: { height: 2 },
+  borderLine: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: StyleSheet.hairlineWidth,
+  },
 });

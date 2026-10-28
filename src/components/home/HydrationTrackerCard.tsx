@@ -2,10 +2,12 @@ import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { useTheme } from '../../theme/useTheme';
 import { hapticLight, hapticSuccess } from '../../services/haptics';
+import { useTheme } from '../../theme/useTheme';
 import { Card } from '../ui/Card';
 import { PressableScale } from '../ui/PressableScale';
+
+const GLASS_ML = 250;
 
 interface Props {
   glasses: number;
@@ -24,12 +26,23 @@ export function HydrationTrackerCard({
 }: Props) {
   const { colors, typography, spacing } = useTheme();
 
+  const volumeMl = Math.round(glasses * GLASS_ML);
+  const targetMl = Math.round(targetGlasses * GLASS_ML);
+  const pct = Math.min(100, Math.round((glasses / Math.max(1, targetGlasses)) * 100));
+  const reached = volumeMl >= targetMl;
+  const remainingGlasses = Math.max(0, targetGlasses - Math.floor(glasses));
+  const remainingMl = Math.max(0, targetMl - volumeMl);
+
   const handleAdd = (ml: number) => {
     if (onAddMl) {
-      hapticLight();
+      if (volumeMl + ml >= targetMl && !reached) {
+        hapticSuccess();
+      } else {
+        hapticLight();
+      }
       onAddMl(ml);
     } else {
-      const addedGlasses = Math.round((ml / 250) * 10) / 10;
+      const addedGlasses = Math.round((ml / GLASS_ML) * 10) / 10;
       const next = Math.max(0, Math.min(24, Math.round((glasses + addedGlasses) * 10) / 10));
       if (next >= targetGlasses && glasses < targetGlasses) {
         hapticSuccess();
@@ -48,11 +61,6 @@ export function HydrationTrackerCard({
       onSetGlasses(Math.max(0, Math.round((glasses - 1) * 10) / 10));
     }
   };
-
-  const volumeMl = glasses * 250;
-  const targetMl = targetGlasses * 250;
-  const pct = Math.min(100, Math.round((glasses / Math.max(1, targetGlasses)) * 100));
-  const remaining = Math.max(0, targetGlasses - glasses);
 
   return (
     <Card style={[styles.card, { padding: spacing.base, marginTop: spacing.md }]}>
@@ -76,7 +84,7 @@ export function HydrationTrackerCard({
           style={[
             styles.badge,
             {
-              backgroundColor: glasses >= targetGlasses ? colors.successSurface : colors.infoSurface,
+              backgroundColor: reached ? colors.successSurface : colors.infoSurface,
             },
           ]}
         >
@@ -84,11 +92,11 @@ export function HydrationTrackerCard({
             style={[
               typography.label,
               {
-                color: glasses >= targetGlasses ? colors.success : colors.info,
+                color: reached ? colors.success : colors.info,
               },
             ]}
           >
-            {glasses >= targetGlasses ? 'Goal Reached' : `${pct}%`}
+            {reached ? 'Goal Reached' : `${pct}%`}
           </Text>
         </View>
       </View>
@@ -120,11 +128,11 @@ export function HydrationTrackerCard({
 
       {/* Guidance Text */}
       <Text style={[typography.caption, { color: colors.text.muted, marginTop: 8 }]}>
-        {glasses >= targetGlasses
+        {reached
           ? 'Optimal daily hydration reached! Supporting metabolism, alertness and recovery.'
-          : remaining === 1
-            ? `Just 1 glass remaining to reach today’s ${targetMl.toLocaleString()} ml target.`
-            : `${remaining} glasses (${remaining * 250} ml) to reach your daily hydration baseline.`}
+          : remainingGlasses <= 1
+            ? `Just ${remainingMl} ml remaining to reach today's ${targetMl.toLocaleString()} ml target.`
+            : `${remainingGlasses} glasses (${remainingMl.toLocaleString()} ml) to reach your daily hydration baseline.`}
       </Text>
 
       {/* Action Quick-Buttons: Undo, +150 ml, +250 ml, +500 ml */}

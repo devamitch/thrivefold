@@ -1,19 +1,19 @@
-import { Canvas, LinearGradient, Path, Skia, vec } from '@shopify/react-native-skia';
 import { Ionicons } from '@expo/vector-icons';
+import { Canvas, LinearGradient, Path, Skia, vec } from '@shopify/react-native-skia';
 import React, { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import Animated, {
+import {
   Easing,
-  useDerivedValue,
+  useReducedMotion,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
 
 import type { VitalityTier } from '../../domain/analytics/dashboardAnalytics';
+import { hapticLight } from '../../services/haptics';
 import { useTheme } from '../../theme/useTheme';
 import { PressableScale } from '../ui/PressableScale';
 import { SquircleSurface } from '../ui/SquircleSurface';
-import { hapticLight } from '../../services/haptics';
 
 const GAUGE_SIZE = 196;
 const START_ANGLE = 140; // Degrees
@@ -32,7 +32,7 @@ const W_WATER = 4.5;
 
 interface Props {
   score: number;
-  tier: VitalityTier;
+  tier?: VitalityTier;
   label: string;
   subtext: string;
   hasCheckInToday: boolean;
@@ -57,15 +57,21 @@ interface Props {
   topInset?: number;
 }
 
+const clamp01 = (n: number) => Math.min(1, Math.max(0, Number.isFinite(n) ? n : 0));
+
 /**
  * Concentric Gear & Goal Gauge
  *
- * Implements a high-precision, luxury radial dial using React Native Skia & Reanimated:
+ * Implements a high-precision, luxury radial dial using React Native Skia:
  * - Outer Perimeter: 24 radial gear teeth / tick marks that illuminate with level & points.
  * - Outer Ring: Daily Points & Level Goal progress (luminous champagne gradient).
  * - Middle Ring: Today's Quests Goal progress (warm terracotta/amber gradient).
  * - Inner Ring: Water Hydration Goal progress (serene cyan/ocean gradient).
  * - Interactive: Tap to switch center readout between Today's Goals and Vitality Readiness.
+ * - Micro-metrics row: 5 squircle tiles (Energy, Mood, Quests, Sleep, Water) or Check-in CTA.
+ * - Level & Roadmap row.
+ * - Performance: Paths are static and memoized; progress uses Skia's native path trimming engine
+ *   so zero paths are created during scroll.
  */
 export function VitalityRingGauge({
   score,
@@ -93,43 +99,37 @@ export function VitalityRingGauge({
   topInset = 0,
 }: Props) {
   const { colors, typography, spacing } = useTheme();
+  const reduce = useReducedMotion();
   const [displayMode, setDisplayMode] = useState<'goals' | 'vitality'>('goals');
 
   const cx = GAUGE_SIZE / 2;
   const cy = GAUGE_SIZE / 2;
   const tickStep = TOTAL_SWEEP / (NUM_TICKS - 1);
 
-  // Animated shared values
+  // Animated shared values for ring trims
   const progressPoints = useSharedValue(0);
   const progressQuests = useSharedValue(0);
   const progressWater = useSharedValue(0);
-  const progressVitality = useSharedValue(0);
+
+  const waterCount = hydrationGlasses ?? 0;
+  const showVitality = displayMode === 'vitality' && hasCheckInToday;
+
+  const pOuter = showVitality ? clamp01(score / 100) : clamp01(points / Math.max(1, target));
+  const pMiddle = questsTotal > 0 ? clamp01(questsDone / questsTotal) : 0;
+  const pInner = clamp01(waterCount / Math.max(1, hydrationTargetGlasses));
 
   useEffect(() => {
-    const pPts = Math.min(1, Math.max(0, points / Math.max(1, target)));
-    const pQst = questsTotal > 0 ? Math.min(1, Math.max(0, questsDone / questsTotal)) : 0;
-    const pWat = Math.min(1, Math.max(0, (hydrationGlasses ?? 0) / Math.max(1, hydrationTargetGlasses)));
-    const pVit = Math.min(1, Math.max(0, score / 100));
+    const go = (v: typeof progressPoints, to: number, duration: number) => {
+      v.value = reduce
+        ? to
+        : withTiming(to, { duration, easing: Easing.out(Easing.cubic) });
+    };
+    go(progressPoints, pOuter, 1100);
+    go(progressQuests, pMiddle, 1000);
+    go(progressWater, pInner, 900);
+  }, [pOuter, pMiddle, pInner, reduce, progressPoints, progressQuests, progressWater]);
 
-    progressPoints.value = withTiming(pPts, {
-      duration: 1100,
-      easing: Easing.out(Easing.cubic),
-    });
-    progressQuests.value = withTiming(pQst, {
-      duration: 1000,
-      easing: Easing.out(Easing.cubic),
-    });
-    progressWater.value = withTiming(pWat, {
-      duration: 900,
-      easing: Easing.out(Easing.cubic),
-    });
-    progressVitality.value = withTiming(pVit, {
-      duration: 1200,
-      easing: Easing.out(Easing.cubic),
-    });
-  }, [points, target, questsDone, questsTotal, hydrationGlasses, hydrationTargetGlasses, score, progressPoints, progressQuests, progressWater, progressVitality]);
-
-  // 1. Static background gear ticks path
+  // 1. Static background gear ticks path (24 notches)
   const bgTicksPath = useMemo(() => {
     const p = Skia.Path.Make();
     for (let i = 0; i < NUM_TICKS; i++) {
@@ -145,10 +145,10 @@ export function VitalityRingGauge({
     return p;
   }, [cx, cy, tickStep]);
 
-  // 2. Active illuminated gear ticks
-  const activeTicksPath = useDerivedValue(() => {
+  // 2. Active illuminated gear ticks (recalculated only on data change)
+  const activeTicksPath = useMemo(() => {
     const p = Skia.Path.Make();
-    const activeFrac = displayMode === 'goals' ? progressPoints.value : progressVitality.value;
+    const activeFrac = showVitality ? clamp01(score / 100) : clamp01(points / Math.max(1, target));
     const activeCount = Math.round(NUM_TICKS * activeFrac);
     for (let i = 0; i < activeCount; i++) {
       const angleDeg = START_ANGLE + i * tickStep;
@@ -161,9 +161,9 @@ export function VitalityRingGauge({
       p.lineTo(x2, y2);
     }
     return p;
-  }, [displayMode]);
+  }, [showVitality, score, points, target, cx, cy, tickStep]);
 
-  // 3. Static background tracks for the 3 concentric rings
+  // 3. Static background ring track paths (full 260° sweep)
   const trackPointsPath = useMemo(() => {
     const p = Skia.Path.Make();
     p.addArc(
@@ -194,47 +194,11 @@ export function VitalityRingGauge({
     return p;
   }, [cx, cy]);
 
-  // 4. Animated foreground concentric arcs
-  const activePointsArc = useDerivedValue(() => {
-    const p = Skia.Path.Make();
-    const frac = displayMode === 'goals' ? progressPoints.value : progressVitality.value;
-    const sweep = Math.max(0.1, TOTAL_SWEEP * frac);
-    p.addArc(
-      { x: cx - R_POINTS, y: cy - R_POINTS, width: R_POINTS * 2, height: R_POINTS * 2 },
-      START_ANGLE,
-      sweep,
-    );
-    return p;
-  }, [displayMode]);
-
-  const activeQuestsArc = useDerivedValue(() => {
-    const p = Skia.Path.Make();
-    const sweep = Math.max(0.1, TOTAL_SWEEP * progressQuests.value);
-    p.addArc(
-      { x: cx - R_QUESTS, y: cy - R_QUESTS, width: R_QUESTS * 2, height: R_QUESTS * 2 },
-      START_ANGLE,
-      sweep,
-    );
-    return p;
-  });
-
-  const activeWaterArc = useDerivedValue(() => {
-    const p = Skia.Path.Make();
-    const sweep = Math.max(0.1, TOTAL_SWEEP * progressWater.value);
-    p.addArc(
-      { x: cx - R_WATER, y: cy - R_WATER, width: R_WATER * 2, height: R_WATER * 2 },
-      START_ANGLE,
-      sweep,
-    );
-    return p;
-  });
-
   const toggleDisplayMode = () => {
+    if (!hasCheckInToday) return;
     hapticLight();
     setDisplayMode((m) => (m === 'goals' ? 'vitality' : 'goals'));
   };
-
-  const waterCount = hydrationGlasses ?? 0;
 
   const ContainerComp = fullWidth ? View : SquircleSurface;
   const containerProps = fullWidth
@@ -260,13 +224,19 @@ export function VitalityRingGauge({
 
   return (
     <ContainerComp {...containerProps}>
+      {/* Eyebrow & Hero Header */}
       {eyebrow || (onMenuPress && !fullWidth) ? (
         <View style={styles.heroTopBar}>
           {eyebrow ? (
             <Text
               style={[
                 typography.captionBold,
-                { color: colors.onPrimaryMuted, textTransform: 'uppercase', letterSpacing: 0.8, fontSize: 11 },
+                {
+                  color: colors.onPrimaryMuted,
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.8,
+                  fontSize: 11,
+                },
               ]}
             >
               {eyebrow}
@@ -310,12 +280,14 @@ export function VitalityRingGauge({
         </View>
       ) : null}
 
+      {/* Hero Dial & Info Row */}
       <View style={styles.topRow}>
         <View style={styles.headerText}>
           {/* Header Title & Switcher Pill */}
           <View style={styles.modeSwitchRow}>
             <PressableScale
               onPress={toggleDisplayMode}
+              disabled={!hasCheckInToday}
               hitSlop={6}
               accessibilityRole="button"
               accessibilityLabel={`Switch mode. Current: ${displayMode === 'goals' ? 'Daily Goals' : 'Vitality Readiness'}`}
@@ -379,7 +351,7 @@ export function VitalityRingGauge({
             <View style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: colors.info }]} />
               <Text style={[typography.caption, { color: colors.onPrimaryMuted, fontSize: 11 }]}>
-                {waterCount}/${hydrationTargetGlasses} c
+                {waterCount}/{hydrationTargetGlasses} c
               </Text>
             </View>
           </View>
@@ -388,6 +360,7 @@ export function VitalityRingGauge({
         {/* Concentric Gear & Goal Gauge Canvas */}
         <PressableScale
           onPress={toggleDisplayMode}
+          disabled={!hasCheckInToday}
           scaleTo={0.97}
           style={styles.gaugeContainer}
           accessible
@@ -421,15 +394,17 @@ export function VitalityRingGauge({
               color={colors.onPrimarySurface}
             />
             <Path
-              path={activePointsArc}
+              path={trackPointsPath}
               style="stroke"
               strokeWidth={W_POINTS}
               strokeCap="round"
+              start={0}
+              end={progressPoints}
             >
               <LinearGradient
                 start={vec(cx - R_POINTS, cy - R_POINTS)}
                 end={vec(cx + R_POINTS, cy + R_POINTS)}
-                colors={['#FFFFFF', '#FEF3C7']}
+                colors={[colors.onPrimary, colors.accent]}
               />
             </Path>
 
@@ -442,15 +417,17 @@ export function VitalityRingGauge({
               color={colors.onPrimarySurface}
             />
             <Path
-              path={activeQuestsArc}
+              path={trackQuestsPath}
               style="stroke"
               strokeWidth={W_QUESTS}
               strokeCap="round"
+              start={0}
+              end={progressQuests}
             >
               <LinearGradient
                 start={vec(cx - R_QUESTS, cy - R_QUESTS)}
                 end={vec(cx + R_QUESTS, cy + R_QUESTS)}
-                colors={['#FBBF24', '#F97316']}
+                colors={[colors.accent, colors.warning]}
               />
             </Path>
 
@@ -463,28 +440,45 @@ export function VitalityRingGauge({
               color={colors.onPrimarySurface}
             />
             <Path
-              path={activeWaterArc}
+              path={trackWaterPath}
               style="stroke"
               strokeWidth={W_WATER}
               strokeCap="round"
+              start={0}
+              end={progressWater}
             >
               <LinearGradient
                 start={vec(cx - R_WATER, cy - R_WATER)}
                 end={vec(cx + R_WATER, cy + R_WATER)}
-                colors={['#38BDF8', '#0284C7']}
+                colors={[colors.info, colors.onPrimary]}
               />
             </Path>
           </Canvas>
 
           {/* Center Readout */}
           <View style={[StyleSheet.absoluteFill, styles.gaugeCenter]}>
-            <Text style={[typography.heading, { color: colors.onPrimary, fontSize: 26, lineHeight: 28 }]}>
+            <Text
+              style={[
+                typography.heading,
+                { color: colors.onPrimary, fontSize: 26, lineHeight: 28 },
+              ]}
+            >
               {displayMode === 'goals' ? points : score}
             </Text>
-            <Text style={[typography.caption, { color: colors.onPrimaryMuted, fontSize: 10, marginTop: 1 }]}>
+            <Text
+              style={[
+                typography.caption,
+                { color: colors.onPrimaryMuted, fontSize: 10, marginTop: 1 },
+              ]}
+            >
               {displayMode === 'goals' ? `of ${target} pts` : 'Vitality / 100'}
             </Text>
-            <View style={[styles.centerMiniBadge, { backgroundColor: colors.onPrimarySurface, marginTop: 4 }]}>
+            <View
+              style={[
+                styles.centerMiniBadge,
+                { backgroundColor: colors.onPrimarySurface, marginTop: 4 },
+              ]}
+            >
               <Text style={{ color: colors.onPrimary, fontSize: 9, fontWeight: '700' }}>
                 LVL {level}
               </Text>

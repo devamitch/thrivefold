@@ -1,33 +1,13 @@
-import { Ionicons } from '@expo/vector-icons';
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-  type ReactNode,
-} from 'react';
-import {
-  StatusBar,
-  StyleSheet,
-  View,
-  type LayoutChangeEvent,
-  type ScrollView,
-  type StyleProp,
-  type ViewStyle,
-} from 'react-native';
+import React, { type ReactNode } from 'react';
+import { Platform, StatusBar, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, {
   Extrapolation,
   interpolate,
-  runOnJS,
-  useAnimatedReaction,
   useAnimatedRef,
   useAnimatedScrollHandler,
   useDerivedValue,
   useReducedMotion,
   useSharedValue,
-  ZoomIn,
-  ZoomOut,
   type SharedValue,
 } from 'react-native-reanimated';
 
@@ -35,35 +15,16 @@ import { useLayout } from '../../theme/layout';
 import { useTheme } from '../../theme/useTheme';
 import { useTabBarInset } from '../navigation/CustomTabBar';
 import { updateDockOnScroll, useShowChromeOnFocus } from '../navigation/useScrollAwareDock';
-import { PressableScale } from '../ui/PressableScale';
-import { SquircleSurface } from '../ui';
 
 export const DASHBOARD_COLLAPSE_DISTANCE = 130;
-/** Squircle overlaps the hero by this much; its inner top padding is SURFACE_PAD_TOP. */
+/** How far the content surface overlaps the bottom of the hero. */
 export const SURFACE_OVERLAP = 28;
-export const SURFACE_PAD_TOP = 18;
-const BACK_TO_TOP_AFTER = 720;
 
 export interface DashboardScrollContext {
-  /** Raw vertical offset (negative while pulling down on iOS). */
   scrollY: SharedValue<number>;
-  /** 0 → 1 across DASHBOARD_COLLAPSE_DISTANCE. The only collapse value; header + hero share it. */
   collapseProgress: SharedValue<number>;
-  /** 0 → 1 across the whole page. */
   pageProgress: SharedValue<number>;
-  viewportHeight: SharedValue<number>;
-  /** Y (in scroll content) where the first child of the squircle column starts. */
-  contentTop: SharedValue<number>;
   scrollToTop: () => void;
-  reduceMotion: boolean;
-}
-
-const ScrollCtx = createContext<DashboardScrollContext | null>(null);
-
-export function useDashboardScroll(): DashboardScrollContext {
-  const ctx = useContext(ScrollCtx);
-  if (!ctx) throw new Error('useDashboardScroll must be used inside DashboardScreenContainer');
-  return ctx;
 }
 
 export interface DashboardScreenContainerProps {
@@ -74,12 +35,13 @@ export interface DashboardScreenContainerProps {
 }
 
 /**
- * One vertical scroll owner. Everything animated reads the same `scrollY`:
- * - header collapse (DashboardHeader)
- * - hero depth / pull-to-stretch (VitalityHero)
- * - section reveals (ScrollReveal)
- * - page progress hairline + back-to-top
- * All on the UI thread; React state only changes on rare threshold crossings.
+ * Pinned header + ONE vertical scroll (hero + content surface).
+ *
+ * Crash-safety rules this file follows:
+ * - The scroll handler only writes one shared value and forwards to the dock. No React state,
+ *   no runOnJS, no per-frame layout work.
+ * - The content surface is a visual squircle container: no nested vertical scroll views.
+ * - Parallax and header collapse run strictly on UI thread via Reanimated worklets.
  */
 export function DashboardScreenContainer({
   children,
@@ -98,8 +60,6 @@ export function DashboardScreenContainer({
   const lastY = useSharedValue(0);
   const viewportHeight = useSharedValue(0);
   const contentHeight = useSharedValue(0);
-  const contentTop = useSharedValue(0);
-  const [showTop, setShowTop] = useState(false);
 
   const collapseProgress = useDerivedValue(() =>
     interpolate(scrollY.value, [0, DASHBOARD_COLLAPSE_DISTANCE], [0, 1], Extrapolation.CLAMP),
@@ -117,145 +77,91 @@ export function DashboardScreenContainer({
     },
   });
 
-  useAnimatedReaction(
-    () => scrollY.value > BACK_TO_TOP_AFTER,
-    (now, prev) => {
-      if (now !== prev) runOnJS(setShowTop)(now);
-    },
-  );
-
-  const scrollToTop = useCallback(() => {
-    (scrollRef.current as unknown as ScrollView | null)?.scrollTo({ y: 0, animated: true });
+  const scrollToTop = React.useCallback(() => {
+    (scrollRef.current as unknown as { scrollTo?: (opts: { y: number; animated: boolean }) => void } | null)?.scrollTo?.({
+      y: 0,
+      animated: true,
+    });
   }, [scrollRef]);
 
-  const onHeroLayout = useCallback(
-    (e: LayoutChangeEvent) => {
-      contentTop.value = e.nativeEvent.layout.height - SURFACE_OVERLAP + SURFACE_PAD_TOP;
-    },
-    [contentTop],
-  );
-
-  const ctx = useMemo<DashboardScrollContext>(
-    () => ({
-      scrollY,
-      collapseProgress,
-      pageProgress,
-      viewportHeight,
-      contentTop,
-      scrollToTop,
-      reduceMotion,
-    }),
-    [scrollY, collapseProgress, pageProgress, viewportHeight, contentTop, scrollToTop, reduceMotion],
-  );
-
-  const clearance = dockInset + 24;
+  const ctx: DashboardScrollContext = { scrollY, collapseProgress, pageProgress, scrollToTop };
   const statusBarStyle = colors.onPrimary === '#FFFFFF' ? 'light-content' : 'dark-content';
 
   return (
-    <ScrollCtx.Provider value={ctx}>
-      <View style={[styles.root, { backgroundColor: colors.background }]}>
-        <StatusBar barStyle={statusBarStyle} translucent backgroundColor="transparent" />
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={statusBarStyle} translucent backgroundColor="transparent" />
 
-        <Animated.ScrollView
-          ref={scrollRef}
-          onScroll={onScroll}
-          scrollEventThrottle={16}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-          nestedScrollEnabled
-          style={{ backgroundColor: colors.background }}
-          onLayout={(e) => {
-            viewportHeight.value = e.nativeEvent.layout.height;
-          }}
-          onContentSizeChange={(_, h) => {
-            contentHeight.value = h;
-          }}
-          contentContainerStyle={[styles.scrollContent, contentContainerStyle]}
+      <Animated.ScrollView
+        ref={scrollRef}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        showsVerticalScrollIndicator={false}
+        overScrollMode="never"
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        style={{ backgroundColor: colors.background }}
+        onLayout={(e) => {
+          viewportHeight.value = e.nativeEvent.layout.height;
+        }}
+        onContentSizeChange={(_, h) => {
+          contentHeight.value = h;
+        }}
+        contentContainerStyle={[styles.scrollContent, contentContainerStyle]}
+      >
+        {/* Hero sits on a primary block that also extends above it, so pulling down on iOS
+            keeps showing hero colour instead of the page. */}
+        <View style={[styles.heroWrap, { backgroundColor: colors.primary }]}>
+          <View pointerEvents="none" style={[styles.heroCap, { backgroundColor: colors.primary }]} />
+          {hero(ctx)}
+        </View>
+
+        {/* Visual-only surface. Plain View, no clipping, no shadow. */}
+        <View
+          style={[
+            styles.surface,
+            {
+              backgroundColor: colors.background,
+              borderTopColor: colors.border,
+              paddingBottom: dockInset + 24,
+            },
+          ]}
         >
-          {/* Hero + navy cap: pulling down past the top keeps showing hero colour, never the page. */}
           <View
-            onLayout={onHeroLayout}
-            style={[styles.heroWrap, { backgroundColor: colors.primary }]}
-          >
-            <View pointerEvents="none" style={[styles.heroCap, { backgroundColor: colors.primary }]} />
-            {hero(ctx)}
-          </View>
-
-          {/* Visual-only squircle. No inner scroll. */}
-          <SquircleSurface
             style={[
-              styles.squircleSurface,
-              { borderTopColor: colors.borderStrong, paddingBottom: clearance },
+              styles.column,
+              { maxWidth: layout.columnWidth, paddingHorizontal: layout.gutter },
             ]}
-            fill={colors.background}
           >
-            <View
-              style={[
-                styles.contentColumn,
-                { maxWidth: layout.columnWidth, paddingHorizontal: layout.gutter },
-              ]}
-            >
-              {children}
-            </View>
-          </SquircleSurface>
-        </Animated.ScrollView>
+            {children}
+          </View>
+        </View>
+      </Animated.ScrollView>
 
-        {/* Pinned, full-width header (rendered after ScrollView so Android touches are dispatched on top) */}
-        {header(ctx)}
-
-        {showTop ? (
-          <Animated.View
-            entering={reduceMotion ? undefined : ZoomIn.springify().damping(16)}
-            exiting={reduceMotion ? undefined : ZoomOut.duration(140)}
-            style={[styles.topPill, { bottom: dockInset + 12 }]}
-          >
-            <PressableScale
-              onPress={scrollToTop}
-              accessibilityRole="button"
-              accessibilityLabel="Back to top"
-              style={[styles.topBtn, { backgroundColor: colors.primary }]}
-            >
-              <Ionicons name="arrow-up" size={18} color={colors.onPrimary} />
-            </PressableScale>
-          </Animated.View>
-        ) : null}
-      </View>
-    </ScrollCtx.Provider>
+      {/* Render header after scrollview so Android touches reliably dispatch to header buttons */}
+      {header(ctx)}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, overflow: 'hidden' },
+  root: { flex: 1 },
   scrollContent: { flexGrow: 1 },
-  heroWrap: { width: '100%', zIndex: 0 },
-  heroCap: { position: 'absolute', left: 0, right: 0, top: -1200, height: 1200 },
-  squircleSurface: {
+  heroWrap: {
+    width: '100%',
+    overflow: 'hidden',
+    zIndex: 1,
+  },
+  heroCap: { position: 'absolute', left: 0, right: 0, top: -1000, height: 1000 },
+  surface: {
     width: '100%',
     marginTop: -SURFACE_OVERLAP,
-    borderTopLeftRadius: 36,
-    borderTopRightRadius: 36,
+    paddingTop: 20,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
     borderTopWidth: StyleSheet.hairlineWidth,
-    paddingTop: SURFACE_PAD_TOP,
-    zIndex: 10,
+    zIndex: 2,
     elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
+    ...(Platform.OS === 'ios' ? { borderCurve: 'continuous' as const } : null),
   },
-  contentColumn: { alignSelf: 'center', width: '100%' },
-  topPill: { position: 'absolute', right: 16, zIndex: 50 },
-  topBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.18,
-    shadowRadius: 8,
-  },
+  column: { alignSelf: 'center', width: '100%' },
 });

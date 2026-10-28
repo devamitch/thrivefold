@@ -12,6 +12,7 @@ export interface CardProps {
   radius?: number;
   padding?: number;
   stroke?: string;
+  accessibilityLabel?: string;
   /** @deprecated No effect; SquircleSurface picks the cheapest renderer itself. */
   nativeSurface?: boolean;
 }
@@ -24,6 +25,7 @@ export const Card: React.FC<CardProps> = ({
   radius = 20,
   padding,
   stroke,
+  accessibilityLabel,
 }) => {
   const { colors, spacing } = useTheme();
 
@@ -46,6 +48,7 @@ export const Card: React.FC<CardProps> = ({
       radius={radius}
       fill={bg}
       stroke={stroke}
+      accessibilityLabel={!onPress ? accessibilityLabel : undefined}
       style={[{ padding: padding ?? spacing.base }, style]}
     >
       {children}
@@ -54,7 +57,7 @@ export const Card: React.FC<CardProps> = ({
 
   if (onPress) {
     return (
-      <PressableScale onPress={onPress} scaleTo={0.98}>
+      <PressableScale onPress={onPress} scaleTo={0.98} accessibilityLabel={accessibilityLabel}>
         {surface}
       </PressableScale>
     );

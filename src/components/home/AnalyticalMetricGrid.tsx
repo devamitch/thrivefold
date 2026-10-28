@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Canvas, LinearGradient, Path, Skia, vec } from '@shopify/react-native-skia';
+import { Canvas, Path, Skia } from '@shopify/react-native-skia';
 import { useRouter, type Href } from 'expo-router';
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -43,7 +43,7 @@ export function AnalyticalMetricGrid({
     track.addArc(
       { x: MINI_PAD, y: MINI_PAD, width: MINI_RADIUS * 2, height: MINI_RADIUS * 2 },
       -90,
-      360,
+      359.9,
     );
 
     const active = Skia.Path.Make();
@@ -228,7 +228,7 @@ export function AnalyticalMetricGrid({
               accessibilityRole="button"
               accessibilityLabel="Add one glass of water"
             >
-              <Ionicons name="add" size={16} color="#FFFFFF" />
+              <Ionicons name="add" size={16} color={colors.onPrimary} />
             </PressableScale>
           </View>
 

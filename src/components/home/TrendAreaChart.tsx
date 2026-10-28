@@ -1,5 +1,5 @@
-import { Canvas, Circle, LinearGradient, Path, Skia, vec } from '@shopify/react-native-skia';
 import { Ionicons } from '@expo/vector-icons';
+import { Canvas, Circle, LinearGradient, Path, Skia, vec } from '@shopify/react-native-skia';
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 
@@ -13,203 +13,165 @@ interface Props {
   onCheckIn?: () => void;
 }
 
-const CHART_HEIGHT = 130;
-const PADDING_X = 20;
-const PADDING_Y = 16;
+const H = 130;
+const PX = 20;
+const PY = 16;
+
+interface Pt {
+  x: number;
+  y: number;
+  isToday: boolean;
+}
 
 export function TrendAreaChart({ points, onCheckIn }: Props) {
   const { colors, typography, spacing } = useTheme();
-  const [containerWidth, setContainerWidth] = useState(320);
+  const [width, setWidth] = useState(320);
 
   const onLayout = (e: LayoutChangeEvent) => {
     const w = e.nativeEvent.layout.width;
-    if (w > 0 && Math.abs(w - containerWidth) > 2) {
-      setContainerWidth(w);
-    }
+    if (w > 0 && Math.abs(w - width) > 2) setWidth(w);
   };
 
-  const hasAnyData = useMemo(() => points.some((p) => p.hasData), [points]);
+  const logged = useMemo(() => points.filter((p) => p.hasData), [points]);
+  const avg = logged.length
+    ? Math.round(logged.reduce((a, p) => a + p.vitality, 0) / logged.length)
+    : 0;
 
-  const activePointsWithData = useMemo(() => points.filter((p) => p.hasData), [points]);
-  const avgVitality = useMemo(() => {
-    if (activePointsWithData.length === 0) return 0;
-    const sum = activePointsWithData.reduce((acc, p) => acc + p.vitality, 0);
-    return Math.round(sum / activePointsWithData.length);
-  }, [activePointsWithData]);
+  // Only days with real data are drawn. A missing day breaks the line; it is never filled in.
+  const { runs, dots } = useMemo(() => {
+    const stepX = (width - PX * 2) / Math.max(1, points.length - 1);
+    const inner = H - PY * 2;
+    const all: (Pt | null)[] = points.map((p, i) =>
+      p.hasData
+        ? {
+            x: PX + i * stepX,
+            y: PY + inner * (1 - Math.max(0, Math.min(100, p.vitality)) / 100),
+            isToday: p.isToday,
+          }
+        : null,
+    );
 
-  // Coordinates calculation for smooth Bezier curve
-  const { linePath, areaPath, coords, activeCoord } = useMemo(() => {
-    if (!hasAnyData || points.length === 0 || containerWidth <= 0) {
-      return { linePath: null, areaPath: null, coords: [], activeCoord: null };
-    }
-
-    const availableWidth = containerWidth - PADDING_X * 2;
-    const availableHeight = CHART_HEIGHT - PADDING_Y * 2;
-    const stepX = availableWidth / Math.max(1, points.length - 1);
-
-    // Map each point with data to (x, y); do not invent data for missing days
-    const pts = points.map((p, idx) => {
-      const x = PADDING_X + idx * stepX;
-      const effectiveVal = p.vitality;
-      // Invert Y: 100 at top (PADDING_Y), 0 at bottom (CHART_HEIGHT - PADDING_Y)
-      const norm = Math.max(0, Math.min(100, effectiveVal)) / 100;
-      const y = PADDING_Y + availableHeight * (1 - norm);
-      return { x, y, hasData: p.hasData, isToday: p.isToday, vitality: p.vitality };
-    });
-
-    const line = Skia.Path.Make();
-    const area = Skia.Path.Make();
-
-    // Group contiguous days with real data to break the curve at gaps
-    const segments: (typeof pts)[] = [];
-    let currentSegment: typeof pts = [];
-
-    pts.forEach((pt) => {
-      if (pt.hasData) {
-        currentSegment.push(pt);
-      } else {
-        if (currentSegment.length > 0) {
-          segments.push(currentSegment);
-          currentSegment = [];
-        }
+    const groups: Pt[][] = [];
+    let cur: Pt[] = [];
+    for (const p of all) {
+      if (p) cur.push(p);
+      else if (cur.length) {
+        groups.push(cur);
+        cur = [];
       }
-    });
-    if (currentSegment.length > 0) {
-      segments.push(currentSegment);
     }
+    if (cur.length) groups.push(cur);
 
-    segments.forEach((segment) => {
-      if (segment.length > 1) {
-        line.moveTo(segment[0].x, segment[0].y);
-        area.moveTo(segment[0].x, CHART_HEIGHT);
-        area.lineTo(segment[0].x, segment[0].y);
-
-        for (let i = 0; i < segment.length - 1; i++) {
-          const curr = segment[i];
-          const next = segment[i + 1];
-          const cpX = (curr.x + next.x) / 2;
-
-          line.cubicTo(cpX, curr.y, cpX, next.y, next.x, next.y);
-          area.cubicTo(cpX, curr.y, cpX, next.y, next.x, next.y);
+    const built = groups
+      .filter((g) => g.length > 1)
+      .map((g) => {
+        const line = Skia.Path.Make();
+        const area = Skia.Path.Make();
+        line.moveTo(g[0].x, g[0].y);
+        area.moveTo(g[0].x, H);
+        area.lineTo(g[0].x, g[0].y);
+        for (let i = 0; i < g.length - 1; i++) {
+          const cx = (g[i].x + g[i + 1].x) / 2;
+          line.cubicTo(cx, g[i].y, cx, g[i + 1].y, g[i + 1].x, g[i + 1].y);
+          area.cubicTo(cx, g[i].y, cx, g[i + 1].y, g[i + 1].x, g[i + 1].y);
         }
-
-        const lastPt = segment[segment.length - 1];
-        area.lineTo(lastPt.x, CHART_HEIGHT);
+        area.lineTo(g[g.length - 1].x, H);
         area.close();
-      }
-    });
+        return { line, area };
+      });
 
-    const ptsWithData = pts.filter((p) => p.hasData);
-    const active = pts.find((p) => p.isToday && p.hasData) ?? ptsWithData[ptsWithData.length - 1] ?? null;
+    return { runs: built, dots: all.filter((p): p is Pt => p !== null) };
+  }, [points, width]);
 
-    return { linePath: line, areaPath: area, coords: pts, activeCoord: active };
-  }, [hasAnyData, points, containerWidth]);
+  const hasData = logged.length > 0;
 
   return (
-    <Card style={[styles.card, { padding: spacing.base, marginTop: spacing.md }]}>
-      {/* Header */}
+    <Card style={{ padding: spacing.base, marginTop: spacing.md }}>
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Text style={[typography.subheading, { color: colors.text.primary }]}>
-            Vitality Curve
-          </Text>
+        <View style={styles.flex}>
+          <Text style={[typography.subheading, { color: colors.text.primary }]}>Vitality</Text>
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-            {hasAnyData
-              ? `${activePointsWithData.length} of ${points.length} days logged this week`
-              : '7-day trend from daily check-ins'}
+            {hasData
+              ? `${logged.length} of ${points.length} days checked in`
+              : 'Built from your daily check-ins'}
           </Text>
         </View>
-
-        {hasAnyData ? (
-          <View style={[styles.avgBadge, { backgroundColor: colors.surface1 }]}>
-            <Text style={[typography.label, { color: colors.primary }]}>Avg {avgVitality}</Text>
+        {hasData ? (
+          <View style={[styles.badge, { backgroundColor: colors.surface1 }]}>
+            <Text style={[typography.label, { color: colors.primary }]}>Avg {avg}</Text>
           </View>
         ) : null}
       </View>
 
-      {/* Chart Canvas or Honest Empty State */}
-      <View onLayout={onLayout} style={styles.chartContainer}>
-        {hasAnyData && linePath && areaPath ? (
+      <View onLayout={onLayout}>
+        {hasData ? (
           <>
-            <Canvas style={styles.canvas}>
-              {/* Gradient Area Fill */}
-              <Path path={areaPath} style="fill">
-                <LinearGradient
-                  start={vec(0, PADDING_Y)}
-                  end={vec(0, CHART_HEIGHT)}
-                  colors={[colors.primaryAlpha, 'transparent']}
-                />
-              </Path>
-
-              {/* Curve Stroke */}
-              <Path
-                path={linePath}
-                style="stroke"
-                strokeWidth={3}
-                strokeCap="round"
-                strokeJoin="round"
-                color={colors.primary}
-              />
-
-              {/* Data points */}
-              {coords.map((c, i) =>
-                c.hasData ? (
-                  <Circle
-                    key={i}
-                    cx={c.x}
-                    cy={c.y}
-                    r={c.isToday ? 5 : 3.5}
-                    color={c.isToday ? colors.primary : colors.accent}
+            <Canvas style={{ width: '100%', height: H }}>
+              {runs.map((r, i) => (
+                <React.Fragment key={i}>
+                  <Path path={r.area} style="fill">
+                    <LinearGradient
+                      start={vec(0, PY)}
+                      end={vec(0, H)}
+                      colors={[colors.primaryAlpha, 'transparent']}
+                    />
+                  </Path>
+                  <Path
+                    path={r.line}
+                    style="stroke"
+                    strokeWidth={3}
+                    strokeCap="round"
+                    strokeJoin="round"
+                    color={colors.primary}
                   />
-                ) : null,
-              )}
-
-              {/* Active / Today Point Halo */}
-              {activeCoord && activeCoord.hasData ? (
-                <Circle
-                  cx={activeCoord.x}
-                  cy={activeCoord.y}
-                  r={8}
-                  style="stroke"
-                  strokeWidth={2}
-                  color={colors.primary}
-                />
-              ) : null}
-            </Canvas>
-
-            {/* X-Axis Day Labels */}
-            <View style={styles.labelsRow}>
-              {points.map((p, idx) => (
-                <View key={idx} style={styles.labelCol}>
-                  <Text
-                    style={[
-                      typography.caption,
-                      {
-                        color: p.isToday
-                          ? colors.primary
-                          : p.hasData
-                            ? colors.text.primary
-                            : colors.text.muted,
-                        fontWeight: p.isToday ? '700' : '500',
-                      },
-                    ]}
-                  >
-                    {p.dayLabel}
-                  </Text>
-                  {p.isToday ? (
-                    <View style={[styles.todayIndicator, { backgroundColor: colors.primary }]} />
+                </React.Fragment>
+              ))}
+              {dots.map((d, i) => (
+                <React.Fragment key={i}>
+                  <Circle cx={d.x} cy={d.y} r={d.isToday ? 5 : 3.5} color={colors.primary} />
+                  {d.isToday ? (
+                    <Circle
+                      cx={d.x}
+                      cy={d.y}
+                      r={8}
+                      style="stroke"
+                      strokeWidth={2}
+                      color={colors.primary}
+                    />
                   ) : null}
-                </View>
+                </React.Fragment>
+              ))}
+            </Canvas>
+            <View style={styles.labels}>
+              {points.map((p, i) => (
+                <Text
+                  key={i}
+                  style={[
+                    typography.caption,
+                    {
+                      minWidth: 24,
+                      textAlign: 'center',
+                      fontWeight: p.isToday ? '700' : '500',
+                      color: p.isToday
+                        ? colors.primary
+                        : p.hasData
+                          ? colors.text.primary
+                          : colors.text.muted,
+                    },
+                  ]}
+                >
+                  {p.dayLabel}
+                </Text>
               ))}
             </View>
           </>
         ) : (
-          <View style={styles.emptyContainer}>
-            <View style={[styles.emptyIconCircle, { backgroundColor: colors.surface1 }]}>
-              <Ionicons name="pulse-outline" size={26} color={colors.primary} />
+          <View style={styles.empty}>
+            <View style={[styles.emptyIcon, { backgroundColor: colors.surface1 }]}>
+              <Ionicons name="pulse-outline" size={24} color={colors.primary} />
             </View>
             <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 8 }]}>
-              No check-ins logged yet
+              No check-ins yet
             </Text>
             <Text
               style={[
@@ -217,12 +179,13 @@ export function TrendAreaChart({ points, onCheckIn }: Props) {
                 { color: colors.text.secondary, textAlign: 'center', marginTop: 4, maxWidth: 260 },
               ]}
             >
-              Start checking in daily to visualize your natural energy, mood, and recovery curve.
+              Check in on a few days and your energy, mood and recovery curve shows up here.
             </Text>
             {onCheckIn ? (
               <PressableScale
                 onPress={onCheckIn}
-                style={[styles.emptyButton, { backgroundColor: colors.primary, marginTop: 12 }]}
+                accessibilityRole="button"
+                style={[styles.btn, { backgroundColor: colors.primary }]}
               >
                 <Text style={[typography.subbodyBold, { color: colors.onPrimary }]}>
                   Log first check-in
@@ -237,62 +200,11 @@ export function TrendAreaChart({ points, onCheckIn }: Props) {
 }
 
 const styles = StyleSheet.create({
-  card: {
-    overflow: 'hidden',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  headerLeft: {
-    flex: 1,
-  },
-  avgBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  chartContainer: {
-    width: '100%',
-    minHeight: CHART_HEIGHT,
-  },
-  canvas: {
-    width: '100%',
-    height: CHART_HEIGHT,
-  },
-  labelsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: PADDING_X - 10,
-    marginTop: 4,
-  },
-  labelCol: {
-    alignItems: 'center',
-    minWidth: 24,
-  },
-  todayIndicator: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    marginTop: 2,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 20,
-  },
-  emptyIconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 12,
-  },
+  flex: { flex: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  labels: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: PX - 12 },
+  empty: { alignItems: 'center', paddingVertical: 20 },
+  emptyIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  btn: { marginTop: 12, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12 },
 });
