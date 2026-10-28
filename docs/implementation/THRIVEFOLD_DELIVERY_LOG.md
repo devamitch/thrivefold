@@ -185,3 +185,18 @@
   - `./gradlew :app:assembleRelease -PreactNativeArchitectures=arm64-v8a` → BUILD SUCCESSFUL; `adb -s ZD2225KYKD install -r` → Success.
   - Device (release build): initial view without header (`10_*`), surface rising over the hero mid-scroll (`11_*`), header pinned and held through a small reverse drag (`12_*`), pinned deep in the page (`13_*`), last section clears the safe area (`14_*`), return to top restores the initial state; water +250/+150 → 400 ml, persisted across force-stop, undo removed exactly +150 ml (`20_*`–`22_*`); drawer neutral avatar for "Guest" (`30_*`); font scale 1.3 (`40_*`).
 - **Not verified / not done in this milestone**: TalkBack pass, reduced-motion on device, iOS, emulator run, a profile with a photo or real name, Health Connect data on device (none connected). Phone step counter (Android `TYPE_STEP_COUNTER` / iOS Core Motion) is NOT STARTED: it needs a sensor module and the `ACTIVITY_RECOGNITION` permission flow; steps currently come only from Health Connect.
+
+---
+
+## Milestone 10: Docked Sheet, Theme-Matched Colours, Real Analytics, Phone Steps & Device Vitals
+- **Status**: IMPLEMENTED, AUTOMATED TESTED, RELEASE-BUILD VERIFIED ON EMULATOR; phone step counter build-verified, device run BLOCKED (Moto G71 PIN-locked during the session)
+- **Dashboard scroll**: the sheet now docks under the header and never scrolls out of bounds. One native scroll; every effect is tied to scroll position (no timers): hero drifts and fades, header title fades in over the last stretch, and at the dock point a fixed header band + squircle corner mask take over, so cards scroll inside the sheet clipped by its rounded corners. Hysteresis no longer needed (continuous, reversible).
+- **Colours**: water and metric tiles moved from the blue status colour and five icon tints to the theme's primary family (verified on the Women's terracotta palette).
+- **Analytics on Home**: Week / Month (real 7 / 30-day series) for check-in vitality, steps, water and sleep (sleep only when recorded); compact empty state instead of grey bars; month bars thin with weekly date labels.
+- **Phone steps**: `modules/step-counter` (Kotlin, Expo Modules API, `JobScheduler`, no new dependency) + `services/sensors/phoneSteps.ts`; readings `phone_sensor:steps:date`; `stepsByDate` takes the larger of phone and Health Connect per day. Steps tile asks for `ACTIVITY_RECOGNITION` in context.
+- **Device vitals**: Health Connect SpO₂, resting HR, HRV, breathing rate, blood pressure, glucose (opt-in per type; prebuild for manifest permissions); `dailyVitals` keeps latest per day with min/max and drops implausible values; Vitals card on Home only when such readings exist.
+- **Docs**: `docs/implementation/HEALTH_DATA_SOURCES_AND_PERMISSIONS.md`.
+- **Verification**: `pnpm compile` PASS; `pnpm lint` PASS; `pnpm test` PASS (48 suites, 332 tests; new phone-step, dedupe and vitals tests). `expo prebuild --platform android --no-install` PASS. `assembleRelease` PASS; installed on emulator-5554 and ZD2225KYKD. Emulator: onboarding as a new guest (Women's health), docked sheet while scrolling, water +250/+500 → 750 ml, Week/Month analytics.
+- **Note**: one "Unable to load script" crash on the emulator right after an install; the APK contained the bundle, and a clean reinstall launched normally with no crash; not reproduced since.
+- **Not verified**: step counting on the Moto G71 (needs the phone unlocked: tap Steps → Allow → walk); vitals with a real wearable; iOS.
+- **Note on tooling**: the project's `Edit(./android/**)` deny rule (meant for the generated `android/`) also matched the new module's Kotlin sources under `modules/step-counter/android/`; those were written with the shell.

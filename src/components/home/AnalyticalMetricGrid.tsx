@@ -8,8 +8,18 @@ import { useTheme } from '../../theme/useTheme';
 import { Card } from '../ui/Card';
 
 export interface MetricGridProps {
-  /** Latest daily step total from a connected source. */
-  steps: { value: number; date: string; isToday: boolean } | null;
+  /** Latest daily step total (larger of phone sensor and Health Connect for that day). */
+  steps: {
+    value: number;
+    date: string;
+    isToday: boolean;
+    source: 'phone_sensor' | 'health_connect' | 'ble_heart_rate';
+    estimated?: number;
+    since?: number;
+  } | null;
+  /** Phone step counter state; `off` makes the tile an in-context request to turn it on. */
+  phoneSteps: 'unsupported' | 'off' | 'on';
+  onEnablePhoneSteps: () => void;
   stepsGoal?: number;
   sleep: { minutes: number; source: 'health_connect' | 'check_in' } | null;
   heart: { bpm: number; isToday: boolean } | null;
@@ -37,10 +47,28 @@ export function AnalyticalMetricGrid({
   heart,
   activeMinutes,
   connected,
+  phoneSteps,
+  onEnablePhoneSteps,
 }: MetricGridProps) {
   const router = useRouter();
   const { colors } = useTheme();
   const notConnected = connected ? 'No reading yet' : 'Not connected';
+
+  const stepsContext = steps
+    ? [
+        steps.source === 'phone_sensor' ? 'Phone' : 'Health Connect',
+        steps.since && steps.isToday
+          ? `since ${new Date(steps.since).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`
+          : `goal ${stepsGoal.toLocaleString()}`,
+        steps.estimated ? 'partly estimated' : null,
+      ]
+        .filter(Boolean)
+        .join(' · ')
+    : phoneSteps === 'off'
+      ? 'Tap to count steps'
+      : phoneSteps === 'on'
+        ? 'Counting · walk to start'
+        : notConnected;
 
   const sleepValue = sleep
     ? `${Math.floor(sleep.minutes / 60)}h ${Math.round(sleep.minutes % 60)}m`
@@ -53,18 +81,20 @@ export function AnalyticalMetricGrid({
         tint={colors.primary}
         label={steps && !steps.isToday ? `Steps · ${shortDate(steps.date)}` : 'Steps'}
         value={steps ? steps.value.toLocaleString() : null}
-        context={
-          steps
-            ? `of ${stepsGoal.toLocaleString()} · Health Connect`
-            : notConnected
-        }
+        context={stepsContext}
         dial={steps ? Math.min(1, steps.value / stepsGoal) : null}
-        onPress={() => router.push('/(app)/health/integrations' as Href)}
-        accessibilityHint="Opens connected health sources"
+        onPress={
+          phoneSteps === 'off' && !steps
+            ? onEnablePhoneSteps
+            : () => router.push('/(app)/health/activity' as Href)
+        }
+        accessibilityHint={
+          phoneSteps === 'off' && !steps ? 'Asks to turn on step counting' : 'Opens activity'
+        }
       />
       <Tile
         icon="moon-outline"
-        tint={colors.accent}
+        tint={colors.primary}
         label="Sleep"
         value={sleepValue}
         context={
@@ -79,7 +109,7 @@ export function AnalyticalMetricGrid({
       />
       <Tile
         icon="heart-outline"
-        tint={colors.error}
+        tint={colors.primary}
         label="Heart rate"
         value={heart ? `${Math.round(heart.bpm)} bpm` : null}
         context={heart ? (heart.isToday ? 'Day average' : 'Latest day average') : notConnected}
@@ -88,7 +118,7 @@ export function AnalyticalMetricGrid({
       />
       <Tile
         icon="walk-outline"
-        tint={colors.success}
+        tint={colors.primary}
         label="Movement"
         value={activeMinutes !== null ? `${activeMinutes} min` : null}
         context={activeMinutes !== null ? 'Logged today' : 'Nothing logged today'}
@@ -133,7 +163,7 @@ function Tile({
         style={[styles.card, { padding: spacing.md }]}
       >
         <View style={styles.head}>
-          <View style={[styles.iconBox, { backgroundColor: colors.surface1 }]}>
+          <View style={[styles.iconBox, { backgroundColor: colors.primaryAlpha }]}>
             <Ionicons name={icon} size={17} color={tint} />
           </View>
           {dial !== null ? (

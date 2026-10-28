@@ -10,7 +10,7 @@
 
 import { formatLocalDate } from '../calendar/universalCalendarEngine';
 import type { DailyCheckInRecord } from '../../stores/slices/healthSlice';
-import type { DeviceReading } from '../interop/readings';
+import { stepsByDate, type DeviceReading } from '../interop/readings';
 
 export type TimeRange = 'today' | 'week' | 'month';
 
@@ -193,6 +193,7 @@ export function getWeeklyTrendPoints(
   checkIns: DailyCheckInRecord[],
   readings: DeviceReading[],
   referenceDate = new Date(),
+  days = 7,
 ): DayTrendPoint[] {
   const points: DayTrendPoint[] = [];
   const todayStr = formatLocalDate(referenceDate);
@@ -202,19 +203,14 @@ export function getWeeklyTrendPoints(
     checkInMap.set(c.date, c);
   }
 
-  const stepsMap = new Map<string, number>();
-  for (const r of readings) {
-    if (r.kind === 'steps') {
-      stepsMap.set(r.date, r.value);
-    }
-  }
+  const stepsMap = new Map([...stepsByDate(readings)].map(([d, v]) => [d, v.value]));
 
   // Generate 7 days ending at referenceDate
-  for (let i = 6; i >= 0; i--) {
+  for (let i = days - 1; i >= 0; i--) {
     const d = new Date(referenceDate);
     d.setDate(d.getDate() - i);
     const dateStr = formatLocalDate(d);
-    const dayLabel = DAY_NAMES[d.getDay()];
+    const dayLabel = days <= 7 ? DAY_NAMES[d.getDay()] : String(d.getDate());
     const isToday = dateStr === todayStr;
 
     const checkIn = checkInMap.get(dateStr);
@@ -261,20 +257,21 @@ export function getEqualizerBars(
   readings: DeviceReading[],
   kind: 'steps' | 'sleep_minutes' = 'steps',
   referenceDate = new Date(),
+  days = 7,
 ): EqualizerBar[] {
   const bars: EqualizerBar[] = [];
   const todayStr = formatLocalDate(referenceDate);
 
   const map = new Map<string, number>();
-  for (const r of readings) {
-    if (r.kind === kind) {
-      map.set(r.date, r.value);
-    }
+  if (kind === 'steps') {
+    for (const [d, v] of stepsByDate(readings)) map.set(d, v.value);
+  } else {
+    for (const r of readings) if (r.kind === kind) map.set(r.date, r.value);
   }
 
   const dailyValues: number[] = [];
 
-  for (let i = 6; i >= 0; i--) {
+  for (let i = days - 1; i >= 0; i--) {
     const d = new Date(referenceDate);
     d.setDate(d.getDate() - i);
     const dateStr = formatLocalDate(d);
@@ -284,11 +281,11 @@ export function getEqualizerBars(
 
   const maxVal = Math.max(1, ...dailyValues, kind === 'steps' ? 8000 : 480);
 
-  for (let i = 6; i >= 0; i--) {
+  for (let i = days - 1; i >= 0; i--) {
     const d = new Date(referenceDate);
     d.setDate(d.getDate() - i);
     const dateStr = formatLocalDate(d);
-    const dayLabel = DAY_NAMES[d.getDay()];
+    const dayLabel = days <= 7 ? DAY_NAMES[d.getDay()] : String(d.getDate());
     const isToday = dateStr === todayStr;
     const value = map.get(dateStr) ?? 0;
 
@@ -323,15 +320,16 @@ export function getWeeklyHydrationBars(
   hydration: Record<string, number>,
   referenceDate = new Date(),
   targetGlasses = 8,
+  days = 7,
 ): EqualizerBar[] {
   const bars: EqualizerBar[] = [];
   const todayStr = formatLocalDate(referenceDate);
 
-  for (let i = 6; i >= 0; i--) {
+  for (let i = days - 1; i >= 0; i--) {
     const d = new Date(referenceDate);
     d.setDate(d.getDate() - i);
     const dateStr = formatLocalDate(d);
-    const dayLabel = DAY_NAMES[d.getDay()];
+    const dayLabel = days <= 7 ? DAY_NAMES[d.getDay()] : String(d.getDate());
     const isToday = dateStr === todayStr;
     const value = hydration[dateStr] ?? 0;
     const displayValue = value > 0 ? `${value}` : '0';

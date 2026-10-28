@@ -1,0 +1,13 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <!-- Required (Android 10+) to read the hardware step counter. Asked for in context. -->
+  <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+  <!-- Keeps the 15-minute sampling job scheduled across reboots. -->
+  <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+  <application>
+    <service
+      android:name="expo.modules.stepcounter.StepSampleJob"
+      android:exported="false"
+      android:permission="android.permission.BIND_JOB_SERVICE" />
+  </application>
+</manifest>

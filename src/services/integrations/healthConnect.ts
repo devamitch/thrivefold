@@ -19,6 +19,7 @@ import {
 
 import {
   dailyExercise,
+  dailyVitals,
   dailyHeartRate,
   dailySteps,
   latestWeights,
@@ -26,7 +27,20 @@ import {
   type DeviceReading,
 } from '../../domain/interop/readings';
 
-export type HcDataType = 'Steps' | 'SleepSession' | 'HeartRate' | 'Weight' | 'ExerciseSession';
+export type HcDataType =
+  | 'Steps'
+  | 'SleepSession'
+  | 'HeartRate'
+  | 'Weight'
+  | 'ExerciseSession'
+  | 'OxygenSaturation'
+  | 'RestingHeartRate'
+  | 'HeartRateVariabilityRmssd'
+  | 'RespiratoryRate'
+  | 'BloodPressure'
+  | 'BloodGlucose';
+
+const DEVICE_ONLY = 'Needs a watch, ring or medical device that shares with Health Connect; a phone can’t measure this.';
 
 export const HC_DATA_TYPES: { type: HcDataType; label: string; why: string }[] = [
   { type: 'Steps', label: 'Steps', why: 'Daily step totals next to your check-ins.' },
@@ -34,6 +48,12 @@ export const HC_DATA_TYPES: { type: HcDataType; label: string; why: string }[] =
   { type: 'HeartRate', label: 'Heart rate', why: 'Daily average, lowest and highest.' },
   { type: 'Weight', label: 'Weight', why: 'Only if you track it elsewhere.' },
   { type: 'ExerciseSession', label: 'Workouts', why: 'Workouts from other apps count toward active minutes.' },
+  { type: 'OxygenSaturation', label: 'Blood oxygen (SpO₂)', why: DEVICE_ONLY },
+  { type: 'RestingHeartRate', label: 'Resting heart rate', why: DEVICE_ONLY },
+  { type: 'HeartRateVariabilityRmssd', label: 'Heart rate variability', why: DEVICE_ONLY },
+  { type: 'RespiratoryRate', label: 'Breathing rate', why: DEVICE_ONLY },
+  { type: 'BloodPressure', label: 'Blood pressure', why: 'From a connected cuff or values you enter in another app.' },
+  { type: 'BloodGlucose', label: 'Blood glucose', why: 'From a connected meter or CGM app.' },
 ];
 
 export type HcStatus = 'available' | 'update_required' | 'unavailable';
@@ -102,6 +122,33 @@ export async function syncHealthConnect(types: HcDataType[], days = 30): Promise
   if (types.includes('ExerciseSession')) {
     const { records } = await readRecords('ExerciseSession', { timeRangeFilter });
     out.push(...dailyExercise(records.map((r) => ({ startTime: r.startTime, endTime: r.endTime }))));
+  }
+  if (types.includes('OxygenSaturation')) {
+    const { records } = await readRecords('OxygenSaturation', { timeRangeFilter });
+    out.push(...dailyVitals('spo2_pct', records.map((r) => ({ time: r.time, value: r.percentage }))));
+  }
+  if (types.includes('RestingHeartRate')) {
+    const { records } = await readRecords('RestingHeartRate', { timeRangeFilter });
+    out.push(...dailyVitals('resting_hr', records.map((r) => ({ time: r.time, value: r.beatsPerMinute }))));
+  }
+  if (types.includes('HeartRateVariabilityRmssd')) {
+    const { records } = await readRecords('HeartRateVariabilityRmssd', { timeRangeFilter });
+    out.push(...dailyVitals('hrv_ms', records.map((r) => ({ time: r.time, value: r.heartRateVariabilityMillis }))));
+  }
+  if (types.includes('RespiratoryRate')) {
+    const { records } = await readRecords('RespiratoryRate', { timeRangeFilter });
+    out.push(...dailyVitals('respiratory_rate', records.map((r) => ({ time: r.time, value: r.rate }))));
+  }
+  if (types.includes('BloodPressure')) {
+    const { records } = await readRecords('BloodPressure', { timeRangeFilter });
+    out.push(
+      ...dailyVitals('bp_systolic', records.map((r) => ({ time: r.time, value: r.systolic.inMillimetersOfMercury }))),
+      ...dailyVitals('bp_diastolic', records.map((r) => ({ time: r.time, value: r.diastolic.inMillimetersOfMercury }))),
+    );
+  }
+  if (types.includes('BloodGlucose')) {
+    const { records } = await readRecords('BloodGlucose', { timeRangeFilter });
+    out.push(...dailyVitals('glucose_mmol', records.map((r) => ({ time: r.time, value: r.level.inMillimolesPerLiter }))));
   }
   return out;
 }

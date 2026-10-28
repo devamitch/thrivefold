@@ -12,15 +12,17 @@ import { DashboardHeader } from '../../../components/home/DashboardHeader';
 import { DashboardScreenContainer } from '../../../components/home/DashboardScreenContainer';
 import { HomeGuide } from '../../../components/home/HomeGuide';
 import { HydrationTrackerCard } from '../../../components/home/HydrationTrackerCard';
+import { MetricBarChart } from '../../../components/home/MetricBarChart';
 import { SocialInvite } from '../../../components/home/SocialInvite';
 import { ToolsGrid } from '../../../components/home/ToolsGrid';
+import { TrendAreaChart } from '../../../components/home/TrendAreaChart';
+import { VitalsCard } from '../../../components/home/VitalsCard';
 import { VitalityHero, VitalityHeroDecor, type HeroAction } from '../../../components/home/VitalityHero';
 import { WeekGlance } from '../../../components/home/WeekGlance';
 import { Card } from '../../../components/ui/Card';
 import { Chip } from '../../../components/ui/Chip';
 import { PressableScale } from '../../../components/ui/PressableScale';
 import { SettingsRow } from '../../../components/ui/SettingsRow';
-import { TrendBars } from '../../../components/ui/TrendBars';
 import { evaluateDeterministicRoutine } from '../../../domain/ai/deterministicRules';
 import { computeInsights, recentLoad } from '../../../domain/ai/insights';
 import {
@@ -29,7 +31,6 @@ import {
   getWeeklyHydrationBars,
   getWeeklyTrendPoints,
   loggedActiveMinutes,
-  trendDaysWithData,
 } from '../../../domain/analytics/dashboardAnalytics';
 import {
   formatLocalDate,
@@ -46,9 +47,11 @@ import {
 } from '../../../domain/game/setupProfile';
 import { DAY_PART_LABEL, dayPartAt, splitByTime } from '../../../domain/game/timeOfDay';
 import { getCyclePredictions } from '../../../domain/health/cycleCalculations';
+import { stepsByDate, type DailySteps } from '../../../domain/interop/readings';
 import { useAgendaSources } from '../../../hooks/useAgendaSources';
 import { routeForEvent } from '../../../navigation/eventRoutes';
 import { hapticLight } from '../../../services/haptics';
+import { usePhoneSteps } from '../../../services/sensors/phoneSteps';
 import type { Quest } from '../../../stores/slices/questSlice';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
@@ -121,6 +124,7 @@ export default function HomeScreen() {
     useRootStore.getState().setDrawerOpen(true);
   }, []);
   const agendaSources = useAgendaSources();
+  const phoneSteps = usePhoneSteps();
   const [filter, setFilter] = useState<'all' | QuestFamily>('all');
   const [openQuest, setOpenQuest] = useState<string | null>(null);
   const [analyticsSheetOpen, setAnalyticsSheetOpen] = useState(false);
@@ -190,7 +194,10 @@ export default function HomeScreen() {
     s.readings
       .filter((r) => r.kind === kind)
       .reduce<(typeof s.readings)[number] | null>((a, r) => (!a || r.date > a.date ? r : a), null);
-  const steps = latest('steps');
+  const stepDays = useMemo(() => stepsByDate(s.readings), [s.readings]);
+  const steps =
+    stepDays.get(today()) ??
+    [...stepDays.values()].reduce<DailySteps | null>((a, d) => (!a || d.date > a.date ? d : a), null);
   // A sleep reading only describes "last night" if it is dated today or yesterday.
   const latestSleep = latest('sleep_minutes');
   const yesterday = formatLocalDate(new Date(Date.now() - 86_400_000));
@@ -228,18 +235,37 @@ export default function HomeScreen() {
     [todaysCheckIn, done, active, sleep, todayHydration],
   );
 
+  const [range, setRange] = useState<7 | 30>(7);
   const trendPoints = useMemo(
+    () => getWeeklyTrendPoints(s.checkInHistory, s.readings, new Date(), range),
+    [s.checkInHistory, s.readings, range],
+  );
+  const weekTrend = useMemo(
     () => getWeeklyTrendPoints(s.checkInHistory, s.readings),
     [s.checkInHistory, s.readings],
   );
-  const trendDays = trendDaysWithData(trendPoints);
-
-  const stepBars = useMemo(() => getEqualizerBars(s.readings, 'steps'), [s.readings]);
-
-  const hydrationBars = useMemo(
-    () => getWeeklyHydrationBars(s.hydration, new Date(), hydrationTarget),
-    [s.hydration, hydrationTarget],
+  const stepBars = useMemo(
+    () => getEqualizerBars(s.readings, 'steps', new Date(), range),
+    [s.readings, range],
   );
+  const sleepBars = useMemo(
+    () => getEqualizerBars(s.readings, 'sleep_minutes', new Date(), range),
+    [s.readings, range],
+  );
+  const hydrationBars = useMemo(
+    () => getWeeklyHydrationBars(s.hydration, new Date(), hydrationTarget, range),
+    [s.hydration, hydrationTarget, range],
+  );
+  const stepDaysLogged = stepBars.filter((b) => b.value > 0);
+  const stepAvg = stepDaysLogged.length
+    ? Math.round(stepDaysLogged.reduce((a, b) => a + b.value, 0) / stepDaysLogged.length)
+    : null;
+  const waterDaysLogged = hydrationBars.filter((b) => b.value > 0);
+  const waterAvg = waterDaysLogged.length
+    ? Math.round((waterDaysLogged.reduce((a, b) => a + b.value, 0) / waterDaysLogged.length) * 10) / 10
+    : null;
+  const sleepDaysLogged = sleepBars.filter((b) => b.value > 0);
+  const rangeLabel = range === 7 ? 'Last 7 days' : 'Last 30 days';
 
   // Gentle restart (spec §4.4): only a gap earns a line under the greeting.
   const heroNote =
@@ -271,7 +297,7 @@ export default function HomeScreen() {
           onPress: () => router.push('/(app)/roadmap' as Href),
         };
 
-  const connected = s.readings.length > 0;
+  const connected = s.readings.some((r) => r.source !== 'phone_sensor');
   useFocusEffect(
     useCallback(() => {
       useRootStore.getState().autoClaimAnsweredSetupRewards();
@@ -305,14 +331,14 @@ export default function HomeScreen() {
   return (
     <DashboardScreenContainer
       heroDecor={<VitalityHeroDecor />}
-      header={({ headerProgress, headerVisible, scrollToTop }) => (
+      header={({ titleProgress, headerVisible, scrollToTop }) => (
         <DashboardHeader
           subtitle={`${s.dailyPoints} of ${s.dailyPointsTarget} pts · Level ${progress.level}`}
           userName={name}
           userPhotoUrl={s.user?.photoUrl}
           onMenuPress={openDrawer}
           onTitlePress={scrollToTop}
-          headerProgress={headerProgress}
+          titleProgress={titleProgress}
           visible={headerVisible}
         />
       )}
@@ -348,9 +374,21 @@ export default function HomeScreen() {
       <AnalyticalMetricGrid
         steps={
           steps
-            ? { value: Math.round(steps.value), date: steps.date, isToday: steps.date === today() }
+            ? {
+                value: Math.round(steps.value),
+                date: steps.date,
+                isToday: steps.date === today(),
+                source: steps.source,
+                estimated: steps.estimated,
+                since: steps.since,
+              }
             : null
         }
+        phoneSteps={phoneSteps.status}
+        onEnablePhoneSteps={() => {
+          hapticLight();
+          void phoneSteps.enable();
+        }}
         sleep={
           sleep
             ? { minutes: Math.round(sleep.value), source: 'health_connect' }
@@ -374,41 +412,45 @@ export default function HomeScreen() {
         />
       </View>
 
-      <View style={{ marginTop: spacing.md }}>
-        <Card
-          onPress={() => {
-            hapticLight();
-            setAnalyticsSheetOpen(true);
-          }}
-          accessibilityLabel={
-            trendDays >= 2
-              ? `Check-in trend, ${trendDays} of the last 7 days. Open trends`
-              : 'Trends appear after two check-ins this week. Open trends'
+      <VitalsCard readings={s.readings} today={today()} />
+
+      {/* Analytics: real records only, over a week or a month. */}
+      <View style={{ marginTop: spacing.lg }}>
+        <View style={styles.sectionHeader}>
+          <Text style={[typography.subheading, { color: colors.text.primary }]}>Analytics</Text>
+          <View style={styles.rangeRow}>
+            <Chip label="Week" selected={range === 7} onPress={() => setRange(7)} />
+            <Chip label="Month" selected={range === 30} onPress={() => setRange(30)} />
+          </View>
+        </View>
+        <TrendAreaChart points={trendPoints} onCheckIn={() => router.push('/(app)/check-in')} />
+        <MetricBarChart
+          bars={stepBars}
+          title="Steps"
+          subtitle={`${rangeLabel} · phone or Health Connect`}
+          totalDisplay={
+            stepAvg !== null
+              ? `avg ${stepAvg >= 1000 ? `${(stepAvg / 1000).toFixed(1)}k` : stepAvg}/day`
+              : 'No steps yet'
           }
-        >
-          {trendDays >= 2 ? (
-            <TrendBars
-              label="Check-in trend"
-              max={100}
-              points={trendPoints.map((p) => ({
-                date: p.date,
-                value: p.hasData ? p.vitality : null,
-              }))}
-            />
-          ) : (
-            <View style={styles.rowBetween}>
-              <View style={styles.flex}>
-                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Trends</Text>
-                <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                  {trendDays === 1
-                    ? 'One check-in this week. A trend appears after the second.'
-                    : 'A trend appears after two check-ins this week.'}
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
-            </View>
-          )}
-        </Card>
+          onPress={() => router.push('/(app)/health/activity' as Href)}
+        />
+        <MetricBarChart
+          bars={hydrationBars}
+          title="Water"
+          subtitle={`${rangeLabel} · glasses, goal ${hydrationTarget}`}
+          totalDisplay={waterAvg !== null ? `avg ${waterAvg}/day` : 'Nothing logged'}
+          onPress={() => setAnalyticsSheetOpen(true)}
+        />
+        {sleepDaysLogged.length > 0 ? (
+          <MetricBarChart
+            bars={sleepBars}
+            title="Sleep"
+            subtitle={`${rangeLabel} · Health Connect`}
+            totalDisplay={`${sleepDaysLogged.length} night${sleepDaysLogged.length === 1 ? '' : 's'}`}
+            onPress={() => router.push('/(app)/health/sleep' as Href)}
+          />
+        ) : null}
       </View>
 
       {/* Quests */}
@@ -641,9 +683,9 @@ export default function HomeScreen() {
       <AnalyticsDetailSheet
         visible={analyticsSheetOpen}
         onClose={() => setAnalyticsSheetOpen(false)}
-        trendPoints={trendPoints}
-        stepBars={stepBars}
-        hydrationBars={hydrationBars}
+        trendPoints={weekTrend}
+        stepBars={stepBars.slice(-7)}
+        hydrationBars={hydrationBars.slice(-7)}
         targetGlasses={hydrationTarget}
         onSetTargetGlasses={(t) => s.setHydrationTargetGlasses(t)}
         totalHydrationGlasses={todayHydration}
@@ -731,6 +773,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  rangeRow: { flexDirection: 'row', gap: 6 },
   rowCenter: {
     flexDirection: 'row',
     alignItems: 'center',

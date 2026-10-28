@@ -17,14 +17,14 @@ export interface DashboardHeaderProps {
   userPhotoUrl?: string | null;
   onMenuPress: () => void;
   onTitlePress?: () => void;
-  headerProgress: SharedValue<number>;
+  /** 0 → 1 as the sheet approaches its dock point; tied to the scroll, so it never lags. */
+  titleProgress: SharedValue<number>;
   visible: boolean;
 }
 
 /**
- * The compact Home header. Absent at the top of the page; once the content surface reaches the
- * header line it slides down from under the status-bar scrim as one solid, full-width bar and
- * stays pinned for the rest of the page. Only a transform animates; no opacity layering.
+ * The compact Home header's content. Its band and the sheet's docked corners are drawn by the
+ * container; this only brings the title and avatar in, following the scroll position exactly.
  */
 export function DashboardHeader({
   title = 'Today',
@@ -33,14 +33,15 @@ export function DashboardHeader({
   userPhotoUrl,
   onMenuPress,
   onTitlePress,
-  headerProgress,
+  titleProgress,
   visible,
 }: DashboardHeaderProps) {
   const { colors, typography } = useTheme();
   const insets = useSafeAreaInsets();
 
-  const slide = useAnimatedStyle(() => ({
-    transform: [{ translateY: (headerProgress.value - 1) * COMPACT_HEADER_CONTENT_HEIGHT }],
+  const reveal = useAnimatedStyle(() => ({
+    opacity: titleProgress.value,
+    transform: [{ translateY: (1 - titleProgress.value) * 8 }],
   }));
 
   return (
@@ -48,11 +49,7 @@ export function DashboardHeader({
       pointerEvents={visible ? 'box-none' : 'none'}
       accessibilityElementsHidden={!visible}
       importantForAccessibility={visible ? 'auto' : 'no-hide-descendants'}
-      style={[
-        styles.container,
-        { top: insets.top, backgroundColor: colors.primary },
-        slide,
-      ]}
+      style={[styles.container, { top: insets.top }, reveal]}
     >
       <PressableScale
         onPress={onTitlePress}

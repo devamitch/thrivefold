@@ -18,12 +18,11 @@ const BAR_WIDTH = 12;
 
 export function MetricBarChart({ bars, title, subtitle, totalDisplay, onPress }: Props) {
   const { colors, typography, spacing } = useTheme();
+  const dense = bars.length > 10;
+  const empty = bars.every((b) => b.value <= 0);
 
   return (
-    <Card
-      onPress={onPress}
-      style={[styles.card, { padding: spacing.base, marginTop: spacing.md }]}
-    >
+    <Card onPress={onPress} style={[styles.card, { padding: spacing.base, marginTop: spacing.md }]}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>{title}</Text>
@@ -39,75 +38,90 @@ export function MetricBarChart({ bars, title, subtitle, totalDisplay, onPress }:
         ) : null}
       </View>
 
-      <View style={styles.barsContainer}>
-        {bars.map((b, idx) => {
-          const filledHeight = Math.max(6, Math.round(b.heightPct * BAR_TRACK_HEIGHT));
-          return (
-            <View key={idx} style={styles.barColumn}>
-              {/* Value label */}
-              <Text
-                style={[
-                  typography.caption,
-                  styles.valueLabel,
-                  {
-                    color: b.isToday ? colors.primary : colors.text.muted,
-                    fontWeight: b.isToday ? '700' : '500',
-                  },
-                ]}
-                numberOfLines={1}
-              >
-                {b.value > 0 ? b.displayValue : '—'}
-              </Text>
+      {empty ? (
+        <Text style={[typography.caption, { color: colors.text.muted }]}>
+          Nothing recorded in this period yet.
+        </Text>
+      ) : (
+        <View style={styles.barsContainer}>
+          {bars.map((b, idx) => {
+            const filledHeight = Math.max(
+              dense ? 3 : 6,
+              Math.round(b.heightPct * BAR_TRACK_HEIGHT),
+            );
+            // Month view: no per-bar numbers, and a date label only once a week and on today.
+            const showLabel = !dense || b.isToday || (bars.length - 1 - idx) % 7 === 0;
+            return (
+              <View key={idx} style={styles.barColumn}>
+                {/* Value label */}
+                {dense ? null : (
+                  <Text
+                    style={[
+                      typography.caption,
+                      styles.valueLabel,
+                      {
+                        color: b.isToday ? colors.primary : colors.text.muted,
+                        fontWeight: b.isToday ? '700' : '500',
+                      },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {b.value > 0 ? b.displayValue : '—'}
+                  </Text>
+                )}
 
-              {/* Capsule track */}
-              <View
-                style={[
-                  styles.track,
-                  {
-                    height: BAR_TRACK_HEIGHT,
-                    backgroundColor: colors.surface1,
-                  },
-                ]}
-              >
-                {/* Filled Bar */}
+                {/* Capsule track */}
                 <View
                   style={[
-                    styles.fill,
+                    styles.track,
+                    dense ? styles.trackDense : null,
                     {
-                      height: filledHeight,
-                      backgroundColor: b.isToday ? colors.primary : colors.surface3,
+                      height: BAR_TRACK_HEIGHT,
+                      backgroundColor: colors.surface1,
+                    },
+                  ]}
+                >
+                  {/* Filled Bar */}
+                  <View
+                    style={[
+                      styles.fill,
+                      {
+                        height: filledHeight,
+                        backgroundColor: b.isToday ? colors.primary : colors.surface3,
+                      },
+                    ]}
+                  />
+                </View>
+
+                {/* Day Name */}
+                <Text
+                  style={[
+                    typography.caption,
+                    styles.dayLabel,
+                    dense ? styles.dayLabelDense : null,
+                    {
+                      color: b.isToday ? colors.primary : colors.text.secondary,
+                      fontWeight: b.isToday ? '700' : '500',
+                    },
+                  ]}
+                >
+                  {showLabel ? b.dayLabel : ' '}
+                </Text>
+
+                {/* Today dot indicator */}
+                <View
+                  style={[
+                    styles.dot,
+                    {
+                      backgroundColor: b.isToday ? colors.primary : 'transparent',
                     },
                   ]}
                 />
               </View>
-
-              {/* Day Name */}
-              <Text
-                style={[
-                  typography.caption,
-                  styles.dayLabel,
-                  {
-                    color: b.isToday ? colors.primary : colors.text.secondary,
-                    fontWeight: b.isToday ? '700' : '500',
-                  },
-                ]}
-              >
-                {b.dayLabel}
-              </Text>
-
-              {/* Today dot indicator */}
-              <View
-                style={[
-                  styles.dot,
-                  {
-                    backgroundColor: b.isToday ? colors.primary : 'transparent',
-                  },
-                ]}
-              />
-            </View>
-          );
-        })}
-      </View>
+            );
+          })}
+        </View>
+      )}
     </Card>
   );
 }
@@ -150,6 +164,9 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     overflow: 'hidden',
   },
+  // Wider than its thin month column; overflow is visible so two-digit dates never wrap.
+  dayLabelDense: { width: 28, textAlign: 'center' },
+  trackDense: { width: 5, borderRadius: 2.5 },
   fill: {
     width: '100%',
     borderRadius: BAR_WIDTH / 2,

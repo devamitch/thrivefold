@@ -149,7 +149,7 @@ export function TrendAreaChart({ points, onCheckIn }: Props) {
                   style={[
                     typography.caption,
                     {
-                      minWidth: 24,
+                      minWidth: points.length > 10 ? 0 : 24,
                       textAlign: 'center',
                       fontWeight: p.isToday ? '700' : '500',
                       color: p.isToday
@@ -160,7 +160,9 @@ export function TrendAreaChart({ points, onCheckIn }: Props) {
                     },
                   ]}
                 >
-                  {p.dayLabel}
+                  {points.length <= 10 || p.isToday || (points.length - 1 - i) % 7 === 0
+                    ? p.dayLabel
+                    : ''}
                 </Text>
               ))}
             </View>

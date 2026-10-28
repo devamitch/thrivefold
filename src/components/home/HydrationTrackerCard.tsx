@@ -50,8 +50,8 @@ export function HydrationTrackerCard({
   return (
     <Card style={{ padding: spacing.base }}>
       <View style={styles.headerRow}>
-        <View style={[styles.iconBox, { backgroundColor: colors.infoSurface }]}>
-          <Ionicons name="water-outline" size={18} color={colors.info} />
+        <View style={[styles.iconBox, { backgroundColor: colors.primaryAlpha }]}>
+          <Ionicons name="water-outline" size={18} color={colors.primary} />
         </View>
         <View style={styles.flex}>
           <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Water</Text>
@@ -86,7 +86,7 @@ export function HydrationTrackerCard({
             <View key={i} style={[styles.capsule, { backgroundColor: colors.surface1 }]}>
               {fill > 0 ? (
                 <View
-                  style={[styles.capsuleFill, { width: `${fill * 100}%`, backgroundColor: colors.info }]}
+                  style={[styles.capsuleFill, { width: `${fill * 100}%`, backgroundColor: colors.primary }]}
                 />
               ) : null}
             </View>
@@ -99,14 +99,14 @@ export function HydrationTrackerCard({
           <PressableScale
             key={ml}
             onPress={() => handleAdd(ml)}
-            style={[styles.addBtn, { backgroundColor: ml === GLASS_ML ? colors.info : colors.infoSurface }]}
+            style={[styles.addBtn, { backgroundColor: ml === GLASS_ML ? colors.primary : colors.surface1 }]}
             accessibilityRole="button"
             accessibilityLabel={`Add ${ml} millilitres of water`}
           >
             <Text
               style={[
                 typography.captionBold,
-                { color: ml === GLASS_ML ? colors.onPrimary : colors.info },
+                { color: ml === GLASS_ML ? colors.onPrimary : colors.text.primary },
               ]}
             >
               +{ml} ml
