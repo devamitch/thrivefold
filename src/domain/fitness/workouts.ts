@@ -552,8 +552,12 @@ export function weightHistory(exerciseId: string, sessions: WorkoutSession[]): {
 export const ACTIVITY_TYPES = [
   'Walking',
   'Running',
+  'Treadmill',
+  'Walking pad',
   'Cycling',
   'Swimming',
+  'Home workout',
+  'Dumbbell gym',
   'Rowing',
   'Hiking',
   'Yoga class',

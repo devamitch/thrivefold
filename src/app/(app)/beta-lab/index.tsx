@@ -28,10 +28,12 @@ import {
 import { PoseDetectionAdapter } from '../../../features/beta-lab/experiments/pose-detection/PoseDetectionAdapter';
 import { useBetaSettings, type PoseEngineOption } from '../../../features/beta-lab/flags/betaFlags';
 import { useBetaPoseLab } from '../../../features/beta-lab/hooks/useBetaPoseLab';
+import { BETA_CAPABILITIES, type BetaCapability } from '../../../domain/health/metricRegistry';
+import { BetaBadge, Badge } from '../../../components/ui/Badge';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
 
-type Tab = 'eye-tracking' | 'hand-gestures' | 'pose-lab' | 'motion-blur' | 'settings';
+type Tab = 'eye-tracking' | 'hand-gestures' | 'capabilities' | 'pose-lab' | 'motion-blur' | 'settings';
 
 export default function BetaLabScreen() {
   const router = useRouter();
@@ -181,6 +183,28 @@ export default function BetaLabScreen() {
             </SquircleSurface>
           </PressableScale>
 
+          <PressableScale onPress={() => selectTab('capabilities')} scaleTo={0.96}>
+            <SquircleSurface
+              radius={14}
+              fill={activeTab === 'capabilities' ? colors.dockActive : colors.surface2}
+              style={styles.tabBtn}
+            >
+              <Ionicons
+                name="grid-outline"
+                size={16}
+                color={activeTab === 'capabilities' ? colors.dock : colors.text.primary}
+              />
+              <Text
+                style={[
+                  typography.captionBold,
+                  { color: activeTab === 'capabilities' ? colors.dock : colors.text.primary },
+                ]}
+              >
+                Capabilities
+              </Text>
+            </SquircleSurface>
+          </PressableScale>
+
           <PressableScale onPress={() => selectTab('pose-lab')} scaleTo={0.96}>
             <SquircleSurface
               radius={14}
@@ -261,6 +285,83 @@ export default function BetaLabScreen() {
         {activeTab === 'hand-gestures' ? (
           <View style={styles.sectionWrap}>
             <HandGestureStudio />
+          </View>
+        ) : null}
+
+        {/* ======================= TAB 2.5: CAPABILITIES REGISTRY ======================= */}
+        {activeTab === 'capabilities' ? (
+          <View style={styles.sectionWrap}>
+            <View style={{ marginBottom: spacing.md }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <BetaBadge />
+                <Text style={[typography.subheading, { color: colors.text.primary }]}>
+                  Health OS Beta Capabilities
+                </Text>
+              </View>
+              <Text style={[typography.caption, { color: colors.text.secondary }]}>
+                Central registry of on-device vision, sensor & activity technology with real data outputs.
+              </Text>
+            </View>
+
+            {BETA_CAPABILITIES.map((cap) => (
+              <SquircleSurface
+                key={cap.id}
+                radius={20}
+                fill={colors.surface}
+                style={[styles.card, { marginBottom: spacing.sm, padding: spacing.md }]}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Text style={[typography.bodyBold, { color: colors.text.primary, flex: 1 }]}>
+                    {cap.title}
+                  </Text>
+                  <Badge
+                    label={cap.status.toUpperCase()}
+                    variant={
+                      cap.status === 'working'
+                        ? 'success'
+                        : cap.status === 'beta'
+                          ? 'beta'
+                          : cap.status === 'research_only'
+                            ? 'warning'
+                            : 'neutral'
+                    }
+                  />
+                </View>
+
+                <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>
+                  {cap.subtitle}
+                </Text>
+
+                <View style={{ marginTop: 8, backgroundColor: colors.surface2, padding: 8, borderRadius: 10 }}>
+                  <Text style={[typography.captionBold, { color: colors.primary, fontSize: 11 }]}>
+                    STATUS: {cap.statusNote}
+                  </Text>
+                  {cap.modelsRequired ? (
+                    <Text style={[typography.caption, { color: colors.text.muted, fontSize: 10, marginTop: 2 }]}>
+                      Models: {cap.modelsRequired.join(', ')}
+                    </Text>
+                  ) : null}
+                  <Text style={[typography.caption, { color: colors.text.muted, fontSize: 10, marginTop: 2 }]}>
+                    Data Outputs: {cap.dataOutputs.join(' · ')}
+                  </Text>
+                </View>
+
+                <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 10 }}>
+                  <PressableScale
+                    onPress={() => router.push(cap.route as any)}
+                    scaleTo={0.96}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open ${cap.title}`}
+                  >
+                    <SquircleSurface radius={10} fill={colors.dockActive} style={{ paddingHorizontal: 14, paddingVertical: 6 }}>
+                      <Text style={[typography.captionBold, { color: colors.dock }]}>
+                        Open Studio
+                      </Text>
+                    </SquircleSurface>
+                  </PressableScale>
+                </View>
+              </SquircleSurface>
+            ))}
           </View>
         ) : null}
 

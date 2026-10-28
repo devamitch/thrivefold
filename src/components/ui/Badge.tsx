@@ -5,13 +5,13 @@ import { SquircleSurface } from './SquircleSurface';
 
 export interface BadgeProps {
   label: string;
-  variant?: 'primary' | 'success' | 'warning' | 'info' | 'neutral' | 'danger' | 'error';
+  variant?: 'primary' | 'success' | 'warning' | 'info' | 'neutral' | 'danger' | 'error' | 'beta' | 'gold';
   style?: StyleProp<ViewStyle>;
   icon?: React.ReactNode;
 }
 
 export const Badge: React.FC<BadgeProps> = ({ label, variant = 'primary', style, icon }) => {
-  const { colors, typography, spacing } = useTheme();
+  const { colors, typography, spacing, isDark } = useTheme();
 
   let bg = colors.badgeBg;
   let textCol = colors.badgeText;
@@ -31,6 +31,9 @@ export const Badge: React.FC<BadgeProps> = ({ label, variant = 'primary', style,
   } else if (variant === 'neutral') {
     bg = colors.surface1;
     textCol = colors.text.secondary;
+  } else if (variant === 'beta' || variant === 'gold') {
+    bg = isDark ? 'rgba(201, 164, 106, 0.28)' : 'rgba(201, 164, 106, 0.18)';
+    textCol = isDark ? '#DEB05C' : '#8A622A';
   } else {
     bg = colors.primaryAlpha;
     textCol = colors.primary;
@@ -39,6 +42,8 @@ export const Badge: React.FC<BadgeProps> = ({ label, variant = 'primary', style,
   const textStyle: TextStyle = {
     color: textCol,
     ...typography.label,
+    fontWeight: variant === 'beta' || variant === 'gold' ? '700' : '600',
+    letterSpacing: variant === 'beta' ? 0.8 : 0.2,
   };
 
   return (
@@ -60,6 +65,11 @@ export const Badge: React.FC<BadgeProps> = ({ label, variant = 'primary', style,
     </SquircleSurface>
   );
 };
+
+/** Distinctive golden badge labelled BETA for unified Global Beta Mode across Thrivefold. */
+export function BetaBadge({ style }: { style?: StyleProp<ViewStyle> }) {
+  return <Badge label="BETA" variant="beta" style={style} />;
+}
 
 const styles = StyleSheet.create({
   badge: {

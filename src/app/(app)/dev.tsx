@@ -15,7 +15,7 @@ import { ScreenWrapper } from '../../components/ui/ScreenWrapper';
 import { Header } from '../../components/ui/Header';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { Badge } from '../../components/ui/Badge';
+import { Badge, BetaBadge } from '../../components/ui/Badge';
 import { Chip } from '../../components/ui/Chip';
 import { PressableScale } from '../../components/ui/PressableScale';
 
@@ -50,6 +50,10 @@ export default function DevToolsScreen() {
       currentStreak: st.currentStreak,
       level: st.level,
       xp: st.xp,
+      betaMode: st.betaMode,
+      setBetaMode: st.setBetaMode,
+      isOwner: st.isOwner,
+      setIsOwner: st.setIsOwner,
       isSocialPathRevealed: st.isSocialPathRevealed,
       quietHoursEnabled: st.quietHoursEnabled,
       offlineModeForced: st.offlineModeForced,
@@ -254,6 +258,56 @@ export default function DevToolsScreen() {
                 <Text style={[typography.subbodyBold, { color: colors.text.primary, flex: 1 }]}>{v}</Text>
               </View>
             ))}
+          </View>
+        </Card>
+
+        {/* ── Global Beta Mode Controls ── */}
+        <Text style={[typography.label, { color: colors.primary, marginTop: spacing.lg, marginBottom: spacing.sm }]}>
+          GLOBAL BETA MODE
+        </Text>
+        <Card style={styles.card}>
+          <View style={styles.rowBetween}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <BetaBadge />
+              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                {store.betaMode ? 'Beta Mode is ON' : 'Beta Mode is OFF'}
+              </Text>
+            </View>
+            <Button
+              variant={store.betaMode ? 'primary' : 'secondary'}
+              size="sm"
+              label={store.betaMode ? 'Disable Beta' : 'Activate Beta'}
+              onPress={() => {
+                hapticLight();
+                store.setBetaMode(!store.betaMode);
+                store.showToast({
+                  type: 'info',
+                  title: store.betaMode ? 'Beta Mode Off' : 'Beta Mode Activated',
+                  message: store.betaMode
+                    ? 'Returned to stable production experience.'
+                    : 'Global Beta Mode enabled across home, activity & vision labs.',
+                });
+              }}
+            />
+          </View>
+          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: spacing.sm }]}>
+            Enables golden BETA badge, eye tracking & hand gesture studios, live pose coaching, and experimental health features across the app.
+          </Text>
+          <View style={{ marginTop: spacing.md, flexDirection: 'row', gap: 8 }}>
+            <Button
+              variant="secondary"
+              size="sm"
+              label="Open Beta Lab"
+              icon={<Ionicons name="flask-outline" size={16} color={colors.primary} />}
+              onPress={() => router.push('/(app)/beta-lab' as Href)}
+            />
+            <Button
+              variant="secondary"
+              size="sm"
+              label="Pose Check"
+              icon={<Ionicons name="camera-outline" size={16} color={colors.primary} />}
+              onPress={() => router.push('/(app)/health/pose-check' as Href)}
+            />
           </View>
         </Card>
 

@@ -10,6 +10,7 @@ import type { ProductExperience } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
 import { PressableScale } from '../ui/PressableScale';
 import { SquircleSurface } from '../ui/SquircleSurface';
+import { BetaBadge } from '../ui/Badge';
 
 interface Tile {
   icon: keyof typeof Ionicons.glyphMap;
@@ -18,6 +19,7 @@ interface Tile {
   meta: string;
   route: Href;
   hasActivity: boolean;
+  isBeta?: boolean;
 }
 
 const SPACE_TILE: Record<ProductExperience, Omit<Tile, 'meta' | 'hasActivity'> & { meta: string }> = {
@@ -33,12 +35,13 @@ const SPACE_TILE: Record<ProductExperience, Omit<Tile, 'meta' | 'hasActivity'> &
 export function ToolsGrid({ todayCount }: { todayCount: number }) {
   const { colors, typography, spacing, experience } = useTheme();
   const today = formatLocalDate(new Date());
-  const { sessions, meals, journal, checkIns } = useRootStore(
+  const { sessions, meals, journal, checkIns, betaMode } = useRootStore(
     useShallow((s) => ({
       sessions: s.workoutSessions,
       meals: s.mealLogs,
       journal: s.journalEntries,
       checkIns: s.checkInHistory,
+      betaMode: s.betaMode,
     })),
   );
 
@@ -92,8 +95,20 @@ export function ToolsGrid({ todayCount }: { todayCount: number }) {
         ...spaceTile,
         hasActivity: false,
       },
+      ...(betaMode
+        ? [
+            {
+              icon: 'flask-outline' as const,
+              label: 'Beta Lab',
+              meta: 'Eye, hand & pose studios',
+              route: '/(app)/beta-lab' as Href,
+              hasActivity: true,
+              isBeta: true,
+            },
+          ]
+        : []),
     ];
-  }, [today, sessions, meals, checkIns, journal, todayCount, experience]);
+  }, [today, sessions, meals, checkIns, journal, todayCount, experience, betaMode]);
 
   return (
     <View style={[styles.grid, { gap: spacing.sm }]}>
@@ -106,9 +121,11 @@ export function ToolsGrid({ todayCount }: { todayCount: number }) {
                   <Ionicons name={tile.icon} size={18} color={tile.hasActivity ? colors.primary : colors.text.secondary} />
                 </SquircleSurface>
                 <View style={styles.badgeRow}>
-                  {tile.hasActivity && (
+                  {tile.isBeta ? (
+                    <BetaBadge />
+                  ) : tile.hasActivity ? (
                     <View style={[styles.activeDot, { backgroundColor: colors.primary }]} />
-                  )}
+                  ) : null}
                   <Ionicons name="chevron-forward" size={14} color={colors.text.muted} />
                 </View>
               </View>

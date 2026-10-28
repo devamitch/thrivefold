@@ -13,18 +13,25 @@ import { DashboardHeader } from '../../../components/home/DashboardHeader';
 import { DashboardScreenContainer } from '../../../components/home/DashboardScreenContainer';
 import { HomeGuide } from '../../../components/home/HomeGuide';
 import { HydrationTrackerCard } from '../../../components/home/HydrationTrackerCard';
-import { StepsDetailSheet } from '../../../components/home/StepsDetailSheet';
 import { MetricBarChart } from '../../../components/home/MetricBarChart';
 import { SocialInvite } from '../../../components/home/SocialInvite';
+import { StepsDetailSheet } from '../../../components/home/StepsDetailSheet';
 import { ToolsGrid } from '../../../components/home/ToolsGrid';
 import { TrendAreaChart } from '../../../components/home/TrendAreaChart';
+import {
+  VitalityHero,
+  VitalityHeroDecor,
+  type HeroAction,
+} from '../../../components/home/VitalityHero';
 import { VitalsCard } from '../../../components/home/VitalsCard';
-import { VitalityHero, VitalityHeroDecor, type HeroAction } from '../../../components/home/VitalityHero';
 import { WeekGlance } from '../../../components/home/WeekGlance';
 import { Card } from '../../../components/ui/Card';
 import { Chip } from '../../../components/ui/Chip';
+import { BetaBadge } from '../../../components/ui/Badge';
 import { PressableScale } from '../../../components/ui/PressableScale';
 import { SettingsRow } from '../../../components/ui/SettingsRow';
+import { activeCalories } from '../../../domain/activity/calories';
+import { stepInsights } from '../../../domain/activity/stepInsights';
 import { evaluateDeterministicRoutine } from '../../../domain/ai/deterministicRules';
 import { computeInsights, recentLoad } from '../../../domain/ai/insights';
 import {
@@ -49,8 +56,6 @@ import {
 } from '../../../domain/game/setupProfile';
 import { DAY_PART_LABEL, dayPartAt, splitByTime } from '../../../domain/game/timeOfDay';
 import { getCyclePredictions } from '../../../domain/health/cycleCalculations';
-import { activeCalories } from '../../../domain/activity/calories';
-import { stepInsights } from '../../../domain/activity/stepInsights';
 import { stepsByDate, type DailySteps } from '../../../domain/interop/readings';
 import { useAgendaSources } from '../../../hooks/useAgendaSources';
 import { routeForEvent } from '../../../navigation/eventRoutes';
@@ -110,6 +115,7 @@ export default function HomeScreen() {
       dailyPointsTarget: st.dailyPointsTarget,
       dailyGoalReached: st.dailyGoalReached,
       weightKg: st.weightKg,
+      betaMode: st.betaMode,
       readings: st.deviceReadings,
       hydration: st.hydration,
       waterLogs: st.waterLogs,
@@ -216,7 +222,10 @@ export default function HomeScreen() {
   const stepDays = useMemo(() => stepsByDate(s.readings), [s.readings]);
   const steps =
     stepDays.get(today()) ??
-    [...stepDays.values()].reduce<DailySteps | null>((a, d) => (!a || d.date > a.date ? d : a), null);
+    [...stepDays.values()].reduce<DailySteps | null>(
+      (a, d) => (!a || d.date > a.date ? d : a),
+      null,
+    );
   // A sleep reading only describes "last night" if it is dated today or yesterday.
   const latestSleep = latest('sleep_minutes');
   const yesterday = formatLocalDate(new Date(Date.now() - 86_400_000));
@@ -293,14 +302,17 @@ export default function HomeScreen() {
     : null;
   const waterDaysLogged = hydrationBars.filter((b) => b.value > 0);
   const waterAvg = waterDaysLogged.length
-    ? Math.round((waterDaysLogged.reduce((a, b) => a + b.value, 0) / waterDaysLogged.length) * 10) / 10
+    ? Math.round((waterDaysLogged.reduce((a, b) => a + b.value, 0) / waterDaysLogged.length) * 10) /
+      10
     : null;
   const sleepDaysLogged = sleepBars.filter((b) => b.value > 0);
   const rangeLabel = range === 7 ? 'Last 7 days' : 'Last 30 days';
 
   // Gentle restart (spec §4.4): only a gap earns a line under the greeting.
   const heroNote =
-    !todaysCheckIn && daysAway >= 2 ? 'Welcome back. Nothing to catch up on; start with today.' : null;
+    !todaysCheckIn && daysAway >= 2
+      ? 'Welcome back. Nothing to catch up on; start with today.'
+      : null;
 
   // One next action, in order: check in, the next open quest, else the roadmap.
   const nextQuest = useMemo(() => {
@@ -439,6 +451,32 @@ export default function HomeScreen() {
         }
         connected={connected}
       />
+
+      {s.betaMode ? (
+        <Card
+          onPress={() => router.push('/(app)/beta-lab' as Href)}
+          style={{
+            marginTop: spacing.md,
+            padding: spacing.base,
+            backgroundColor: colors.surface,
+            borderColor: 'rgba(201, 164, 106, 0.4)',
+            borderWidth: 1,
+          }}
+        >
+          <View style={styles.rowBetween}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
+              <BetaBadge />
+              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                Health OS Beta Active
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
+          </View>
+          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>
+            Eye tracking, hand gestures & pose recognition studios are running locally on your device.
+          </Text>
+        </Card>
+      ) : null}
 
       <View style={{ marginTop: spacing.md }}>
         <HydrationTrackerCard
