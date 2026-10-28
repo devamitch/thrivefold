@@ -12,7 +12,6 @@ import Animated, {
   interpolate,
   useAnimatedRef,
   useAnimatedScrollHandler,
-  useAnimatedStyle,
   useDerivedValue,
   useReducedMotion,
   useSharedValue,
@@ -26,9 +25,9 @@ import { useTabBarInset } from '../navigation/CustomTabBar';
 import { updateDockOnScroll, useShowChromeOnFocus } from '../navigation/useScrollAwareDock';
 import { COMPACT_HEADER_CONTENT_HEIGHT } from './DashboardHeader';
 
-export const DASHBOARD_COLLAPSE_DISTANCE = 160;
+export const DASHBOARD_COLLAPSE_DISTANCE = 140;
 /** How far the content surface overlaps the bottom of the hero. */
-export const SURFACE_OVERLAP = 10;
+export const SURFACE_OVERLAP = 28;
 
 export interface DashboardScrollContext {
   scrollY: SharedValue<number>;

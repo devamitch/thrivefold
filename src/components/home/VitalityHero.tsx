@@ -9,7 +9,6 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { VitalityTier } from '../../domain/analytics/dashboardAnalytics';
-import { COMPACT_HEADER_CONTENT_HEIGHT } from './DashboardHeader';
 import { VitalityRingGauge } from './VitalityRingGauge';
 
 export interface VitalityHeroProps {
@@ -55,14 +54,12 @@ export function VitalityHero(props: VitalityHeroProps) {
     const y = props.scrollY.value;
     const pull = Math.min(Math.max(0, -y), 160);
     return {
+      paddingBottom: 20,
       opacity: interpolate(y, [0, 280], [1, 0.9], Extrapolation.CLAMP),
       transform: [
         { translateY: y > 0 ? y * 0.46 : y * 0.5 },
         {
-          scale:
-            y < 0
-              ? 1 + pull / 850
-              : interpolate(y, [0, 280], [1, 0.98], Extrapolation.CLAMP),
+          scale: y < 0 ? 1 + pull / 850 : interpolate(y, [0, 280], [1, 0.98], Extrapolation.CLAMP),
         },
       ],
     };
@@ -70,11 +67,7 @@ export function VitalityHero(props: VitalityHeroProps) {
 
   return (
     <Animated.View style={animStyle}>
-      <VitalityRingGauge
-        {...props}
-        fullWidth
-        topInset={insets.top + 10}
-      />
+      <VitalityRingGauge {...props} fullWidth topInset={insets.top + 10} />
     </Animated.View>
   );
 }
