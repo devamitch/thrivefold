@@ -8,6 +8,7 @@ import { ActivityRow } from '../../../components/game/ActivityRow';
 import { QuestSheet } from '../../../components/game/QuestSheet';
 import { AnalyticalMetricGrid } from '../../../components/home/AnalyticalMetricGrid';
 import { AnalyticsDetailSheet } from '../../../components/home/AnalyticsDetailSheet';
+import { CalorieDetailSheet } from '../../../components/home/CalorieDetailSheet';
 import { DashboardHeader } from '../../../components/home/DashboardHeader';
 import { DashboardScreenContainer } from '../../../components/home/DashboardScreenContainer';
 import { HomeGuide } from '../../../components/home/HomeGuide';
@@ -48,6 +49,7 @@ import {
 } from '../../../domain/game/setupProfile';
 import { DAY_PART_LABEL, dayPartAt, splitByTime } from '../../../domain/game/timeOfDay';
 import { getCyclePredictions } from '../../../domain/health/cycleCalculations';
+import { activeCalories } from '../../../domain/activity/calories';
 import { stepInsights } from '../../../domain/activity/stepInsights';
 import { stepsByDate, type DailySteps } from '../../../domain/interop/readings';
 import { useAgendaSources } from '../../../hooks/useAgendaSources';
@@ -107,6 +109,7 @@ export default function HomeScreen() {
       dailyPoints: st.dailyPoints,
       dailyPointsTarget: st.dailyPointsTarget,
       dailyGoalReached: st.dailyGoalReached,
+      weightKg: st.weightKg,
       readings: st.deviceReadings,
       hydration: st.hydration,
       waterLogs: st.waterLogs,
@@ -131,6 +134,19 @@ export default function HomeScreen() {
   const [openQuest, setOpenQuest] = useState<string | null>(null);
   const [analyticsSheetOpen, setAnalyticsSheetOpen] = useState(false);
   const [stepsSheetOpen, setStepsSheetOpen] = useState(false);
+  const [calorieSheetOpen, setCalorieSheetOpen] = useState(false);
+
+  const isStepsQuestAssigned = useMemo(
+    () =>
+      s.quests.some(
+        (q) =>
+          !q.isCompleted &&
+          (q.category === 'movement' ||
+            q.title.toLowerCase().includes('step') ||
+            q.title.toLowerCase().includes('walk')),
+      ),
+    [s.quests],
+  );
 
   const todaysCheckIn = s.checkInHistory.find((c) => c.date === today());
   const progress = useMemo(
@@ -224,6 +240,18 @@ export default function HomeScreen() {
   const activeMinutes = useMemo(
     () => loggedActiveMinutes(today(), s.activityLogs, s.workoutSessions),
     [s.activityLogs, s.workoutSessions],
+  );
+
+  const todayCalorieBreakdown = useMemo(
+    () =>
+      activeCalories({
+        date: today(),
+        weightKg: s.weightKg,
+        steps: steps && steps.date === today() ? steps.value : null,
+        workoutSessions: s.workoutSessions,
+        activityLogs: s.activityLogs,
+      }),
+    [s.weightKg, steps, s.workoutSessions, s.activityLogs],
   );
 
   const vitality = useMemo(
@@ -394,6 +422,9 @@ export default function HomeScreen() {
           hapticLight();
           void phoneSteps.enable();
         }}
+        isStepsQuestAssigned={isStepsQuestAssigned}
+        calories={{ total: todayCalorieBreakdown.total, goal: 500 }}
+        onCaloriesPress={() => setCalorieSheetOpen(true)}
         sleep={
           sleep
             ? { minutes: Math.round(sleep.value), source: 'health_connect' }
@@ -694,6 +725,15 @@ export default function HomeScreen() {
         today={phoneSteps.status === 'on' ? phoneSteps.today : null}
         readings={s.readings}
         todayDate={today()}
+        isQuestAssigned={isStepsQuestAssigned}
+        caloriesFromSteps={todayCalorieBreakdown.fromSteps}
+      />
+      <CalorieDetailSheet
+        visible={calorieSheetOpen}
+        onClose={() => setCalorieSheetOpen(false)}
+        breakdown={todayCalorieBreakdown}
+        goal={500}
+        weightKg={s.weightKg}
       />
       <AnalyticsDetailSheet
         visible={analyticsSheetOpen}

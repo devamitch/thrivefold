@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { hapticSelection } from '../../../services/haptics';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, Switch, Text, useWindowDimensions, View } from 'react-native';
+import { ScrollView, StyleSheet, Switch, Text, useWindowDimensions, View } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -19,6 +19,8 @@ import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { ScreenScrollView } from '../../../components/ui/ScreenScrollView';
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import { PoseOverlay } from '../../../components/workout/PoseOverlay';
+import { EyeTrackingStudio } from '../../../features/beta-lab/components/EyeTrackingStudio';
+import { HandGestureStudio } from '../../../features/beta-lab/components/HandGestureStudio';
 import {
   isMotionBlurSupported,
   MotionBlurAdapter,
@@ -29,7 +31,7 @@ import { useBetaPoseLab } from '../../../features/beta-lab/hooks/useBetaPoseLab'
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
 
-type Tab = 'motion-blur' | 'pose-lab' | 'settings';
+type Tab = 'eye-tracking' | 'hand-gestures' | 'pose-lab' | 'motion-blur' | 'settings';
 
 export default function BetaLabScreen() {
   const router = useRouter();
@@ -45,7 +47,7 @@ export default function BetaLabScreen() {
   );
 
   const { settings, updateSetting, resetSettings } = useBetaSettings();
-  const [activeTab, setActiveTab] = useState<Tab>('motion-blur');
+  const [activeTab, setActiveTab] = useState<Tab>('eye-tracking');
 
   // Motion blur demo animation — strictly zero spring physics, only smooth timing
   const motionProgress = useSharedValue(0);
@@ -129,80 +131,140 @@ export default function BetaLabScreen() {
       />
 
       {/* Tab Segment Selector */}
-      <View style={[styles.tabRow, { paddingHorizontal: spacing.md }]}>
-        <PressableScale
-          onPress={() => selectTab('motion-blur')}
-          style={styles.tabFlex}
-          scaleTo={0.96}
+      <View style={{ marginBottom: 10, marginTop: 4 }}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={[styles.tabRow, { paddingHorizontal: spacing.md }]}
         >
-          <SquircleSurface
-            radius={14}
-            fill={activeTab === 'motion-blur' ? colors.dockActive : colors.surface2}
-            style={styles.tabBtn}
-          >
-            <Ionicons
-              name="water-outline"
-              size={16}
-              color={activeTab === 'motion-blur' ? colors.dock : colors.text.primary}
-            />
-            <Text
-              style={[
-                typography.captionBold,
-                { color: activeTab === 'motion-blur' ? colors.dock : colors.text.primary },
-              ]}
+          <PressableScale onPress={() => selectTab('eye-tracking')} scaleTo={0.96}>
+            <SquircleSurface
+              radius={14}
+              fill={activeTab === 'eye-tracking' ? colors.dockActive : colors.surface2}
+              style={styles.tabBtn}
             >
-              Motion Blur
-            </Text>
-          </SquircleSurface>
-        </PressableScale>
+              <Ionicons
+                name="eye-outline"
+                size={16}
+                color={activeTab === 'eye-tracking' ? colors.dock : colors.text.primary}
+              />
+              <Text
+                style={[
+                  typography.captionBold,
+                  { color: activeTab === 'eye-tracking' ? colors.dock : colors.text.primary },
+                ]}
+              >
+                Eye Tracking
+              </Text>
+            </SquircleSurface>
+          </PressableScale>
 
-        <PressableScale onPress={() => selectTab('pose-lab')} style={styles.tabFlex} scaleTo={0.96}>
-          <SquircleSurface
-            radius={14}
-            fill={activeTab === 'pose-lab' ? colors.dockActive : colors.surface2}
-            style={styles.tabBtn}
-          >
-            <Ionicons
-              name="body-outline"
-              size={16}
-              color={activeTab === 'pose-lab' ? colors.dock : colors.text.primary}
-            />
-            <Text
-              style={[
-                typography.captionBold,
-                { color: activeTab === 'pose-lab' ? colors.dock : colors.text.primary },
-              ]}
+          <PressableScale onPress={() => selectTab('hand-gestures')} scaleTo={0.96}>
+            <SquircleSurface
+              radius={14}
+              fill={activeTab === 'hand-gestures' ? colors.dockActive : colors.surface2}
+              style={styles.tabBtn}
             >
-              Pose Lab
-            </Text>
-          </SquircleSurface>
-        </PressableScale>
+              <Ionicons
+                name="hand-right-outline"
+                size={16}
+                color={activeTab === 'hand-gestures' ? colors.dock : colors.text.primary}
+              />
+              <Text
+                style={[
+                  typography.captionBold,
+                  { color: activeTab === 'hand-gestures' ? colors.dock : colors.text.primary },
+                ]}
+              >
+                Hand Gestures
+              </Text>
+            </SquircleSurface>
+          </PressableScale>
 
-        <PressableScale onPress={() => selectTab('settings')} style={styles.tabFlex} scaleTo={0.96}>
-          <SquircleSurface
-            radius={14}
-            fill={activeTab === 'settings' ? colors.dockActive : colors.surface2}
-            style={styles.tabBtn}
-          >
-            <Ionicons
-              name="options-outline"
-              size={16}
-              color={activeTab === 'settings' ? colors.dock : colors.text.primary}
-            />
-            <Text
-              style={[
-                typography.captionBold,
-                { color: activeTab === 'settings' ? colors.dock : colors.text.primary },
-              ]}
+          <PressableScale onPress={() => selectTab('pose-lab')} scaleTo={0.96}>
+            <SquircleSurface
+              radius={14}
+              fill={activeTab === 'pose-lab' ? colors.dockActive : colors.surface2}
+              style={styles.tabBtn}
             >
-              Engines
-            </Text>
-          </SquircleSurface>
-        </PressableScale>
+              <Ionicons
+                name="body-outline"
+                size={16}
+                color={activeTab === 'pose-lab' ? colors.dock : colors.text.primary}
+              />
+              <Text
+                style={[
+                  typography.captionBold,
+                  { color: activeTab === 'pose-lab' ? colors.dock : colors.text.primary },
+                ]}
+              >
+                Pose Lab
+              </Text>
+            </SquircleSurface>
+          </PressableScale>
+
+          <PressableScale onPress={() => selectTab('motion-blur')} scaleTo={0.96}>
+            <SquircleSurface
+              radius={14}
+              fill={activeTab === 'motion-blur' ? colors.dockActive : colors.surface2}
+              style={styles.tabBtn}
+            >
+              <Ionicons
+                name="water-outline"
+                size={16}
+                color={activeTab === 'motion-blur' ? colors.dock : colors.text.primary}
+              />
+              <Text
+                style={[
+                  typography.captionBold,
+                  { color: activeTab === 'motion-blur' ? colors.dock : colors.text.primary },
+                ]}
+              >
+                Motion Blur
+              </Text>
+            </SquircleSurface>
+          </PressableScale>
+
+          <PressableScale onPress={() => selectTab('settings')} scaleTo={0.96}>
+            <SquircleSurface
+              radius={14}
+              fill={activeTab === 'settings' ? colors.dockActive : colors.surface2}
+              style={styles.tabBtn}
+            >
+              <Ionicons
+                name="options-outline"
+                size={16}
+                color={activeTab === 'settings' ? colors.dock : colors.text.primary}
+              />
+              <Text
+                style={[
+                  typography.captionBold,
+                  { color: activeTab === 'settings' ? colors.dock : colors.text.primary },
+                ]}
+              >
+                Flags & Engines
+              </Text>
+            </SquircleSurface>
+          </PressableScale>
+        </ScrollView>
       </View>
 
       <ScreenScrollView contentContainerStyle={styles.scrollContent}>
-        {/* ======================= TAB 1: MOTION BLUR ======================= */}
+        {/* ======================= TAB 1: EYE TRACKING ======================= */}
+        {activeTab === 'eye-tracking' ? (
+          <View style={styles.sectionWrap}>
+            <EyeTrackingStudio />
+          </View>
+        ) : null}
+
+        {/* ======================= TAB 2: HAND GESTURES ======================= */}
+        {activeTab === 'hand-gestures' ? (
+          <View style={styles.sectionWrap}>
+            <HandGestureStudio />
+          </View>
+        ) : null}
+
+        {/* ======================= TAB 3: MOTION BLUR ======================= */}
         {activeTab === 'motion-blur' ? (
           <View style={styles.sectionWrap}>
             <SquircleSurface radius={24} fill={colors.surface} style={styles.card}>
@@ -570,6 +632,7 @@ const styles = StyleSheet.create({
     gap: 6,
     justifyContent: 'center',
     paddingVertical: 10,
+    paddingHorizontal: 14,
   },
   scrollContent: {
     paddingBottom: 36,

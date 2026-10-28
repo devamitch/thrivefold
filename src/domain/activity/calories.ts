@@ -18,6 +18,10 @@ export const MET_BY_ACTIVITY: Record<string, number> = {
   cycling: 7.5,
   swimming: 7,
   rowing: 7,
+  treadmill: 8.5,
+  'walking pad': 3.8,
+  'dumbbell gym': 5.5,
+  'home workout': 5.0,
   'yoga class': 2.5,
   yoga: 2.5,
   'pilates class': 3,
@@ -35,7 +39,7 @@ export const MET_BY_ACTIVITY: Record<string, number> = {
 };
 /** Home strength / dumbbell workouts (moderate effort). */
 export const STRENGTH_MET = 5;
-const STEP_BASED = new Set(['walking', 'running', 'hiking']);
+const STEP_BASED = new Set(['walking', 'running', 'hiking', 'treadmill', 'walking pad']);
 
 export interface CalorieInputs {
   date: string;

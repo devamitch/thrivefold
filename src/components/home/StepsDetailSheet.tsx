@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -19,6 +20,8 @@ interface Props {
   readings: DeviceReading[];
   todayDate: string;
   goal?: number;
+  isQuestAssigned?: boolean;
+  caloriesFromSteps?: number;
 }
 
 const SOURCE_LABEL: Record<string, string> = {
@@ -31,7 +34,16 @@ const SOURCE_LABEL: Record<string, string> = {
  * Everything about steps in one place: today live (hourly), week or month by day, and where each
  * number came from. Phone and Health Connect are unified per day by taking the larger total.
  */
-export function StepsDetailSheet({ visible, onClose, today, readings, todayDate, goal = 8000 }: Props) {
+export function StepsDetailSheet({
+  visible,
+  onClose,
+  today,
+  readings,
+  todayDate,
+  goal = 8000,
+  isQuestAssigned = false,
+  caloriesFromSteps,
+}: Props) {
   const { colors, typography, spacing } = useTheme();
   const [range, setRange] = useState<7 | 30>(7);
 
@@ -43,6 +55,8 @@ export function StepsDetailSheet({ visible, onClose, today, readings, todayDate,
   const avg = logged.length ? Math.round(logged.reduce((a, b) => a + b.value, 0) / logged.length) : null;
   const best = logged.reduce<(typeof logged)[number] | null>((a, b) => (!a || b.value > a.value ? b : a), null);
   const goalDays = logged.filter((b) => b.value >= goal).length;
+  const currentSteps = today ? Math.round(today.steps) : 0;
+  const questCompleted = currentSteps >= goal;
 
   // Today's value per source, so the person can see how they were unified.
   const todaySources = readings.filter((r) => r.kind === 'steps' && r.date === todayDate);
@@ -57,6 +71,28 @@ export function StepsDetailSheet({ visible, onClose, today, readings, todayDate,
       maxHeight="92%"
       contentContainerStyle={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xl }}
     >
+      {isQuestAssigned ? (
+        <Card style={{ marginBottom: spacing.sm, backgroundColor: questCompleted ? colors.successSurface : colors.badgeBg }}>
+          <View style={styles.questRow}>
+            <Ionicons
+              name={questCompleted ? 'checkmark-circle' : 'trophy-outline'}
+              size={20}
+              color={questCompleted ? colors.success : colors.primary}
+            />
+            <View style={styles.flex}>
+              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                {questCompleted ? 'Daily Quest Complete!' : "Today's Step Quest"}
+              </Text>
+              <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                {questCompleted
+                  ? `Goal of ${goal.toLocaleString()} steps reached today.`
+                  : `${Math.max(0, goal - currentSteps).toLocaleString()} steps to complete today's movement quest.`}
+              </Text>
+            </View>
+          </View>
+        </Card>
+      ) : null}
+
       {today ? (
         <LiveStepsCard steps={Math.round(today.steps)} hours={today.hours} since={today.since} goal={goal} />
       ) : (
@@ -67,6 +103,22 @@ export function StepsDetailSheet({ visible, onClose, today, readings, todayDate,
           </Text>
         </Card>
       )}
+
+      {caloriesFromSteps !== undefined && caloriesFromSteps > 0 ? (
+        <Card style={{ marginTop: spacing.sm }}>
+          <View style={styles.questRow}>
+            <Ionicons name="flame-outline" size={20} color={colors.primary} />
+            <View style={styles.flex}>
+              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                {caloriesFromSteps} kcal burned
+              </Text>
+              <Text style={[typography.caption, { color: colors.text.secondary }]}>
+                Active burn from walking pad, treadmill & outdoor steps
+              </Text>
+            </View>
+          </View>
+        </Card>
+      ) : null}
 
       <View style={[styles.rangeRow, { marginTop: spacing.lg }]}>
         <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>By day</Text>
@@ -123,6 +175,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  questRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   rangeRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   statRow: { flexDirection: 'row', gap: 8 },
   stat: { flex: 1, borderRadius: 16, padding: 12, alignItems: 'center' },

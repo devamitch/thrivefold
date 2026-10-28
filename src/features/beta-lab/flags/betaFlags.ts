@@ -24,6 +24,11 @@ export interface BetaSettings {
   motionBlurLive: boolean;
   poseOverlaySmoothing: number; // 0.2 to 0.9
   showDiagnostics: boolean;
+  eyeTrackingEnabled: boolean;
+  handGesturesEnabled: boolean;
+  activityAiEnabled: boolean;
+  voiceGuidanceEnabled: boolean;
+  treadmillAutoDetect: boolean;
 }
 
 export const DEFAULT_BETA_SETTINGS: BetaSettings = {
@@ -34,6 +39,11 @@ export const DEFAULT_BETA_SETTINGS: BetaSettings = {
   motionBlurLive: false,
   poseOverlaySmoothing: 0.42,
   showDiagnostics: false,
+  eyeTrackingEnabled: true,
+  handGesturesEnabled: true,
+  activityAiEnabled: true,
+  voiceGuidanceEnabled: true,
+  treadmillAutoDetect: true,
 };
 
 const STORAGE_KEY = 'beta_lab_settings_v1';

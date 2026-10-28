@@ -31,6 +31,12 @@ export interface MetricGridProps {
   activeMinutes: number | null;
   /** Walking minutes estimated from today's measured steps; used when nothing was logged. */
   walkingMinutesFromSteps?: number | null;
+  /** Whether a movement or steps quest is assigned today. */
+  isStepsQuestAssigned?: boolean;
+  /** Active calories burned and daily target. */
+  calories?: { total: number; goal: number } | null;
+  /** Opens the full calorie & workout detail sheet. */
+  onCaloriesPress?: () => void;
   /** Whether any connected source has delivered readings. Drives the empty-state wording. */
   connected: boolean;
 }
@@ -53,6 +59,9 @@ export function AnalyticalMetricGrid({
   heart,
   activeMinutes,
   walkingMinutesFromSteps = null,
+  isStepsQuestAssigned,
+  calories,
+  onCaloriesPress,
   connected,
   phoneSteps,
   onEnablePhoneSteps,
@@ -65,6 +74,7 @@ export function AnalyticalMetricGrid({
 
   const stepsContext = steps
     ? [
+        isStepsQuestAssigned ? '🎯 Quest' : null,
         steps.source === 'phone_sensor' ? 'Phone' : 'Health Connect',
         steps.since && steps.isToday
           ? `since ${new Date(steps.since).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`
@@ -76,7 +86,9 @@ export function AnalyticalMetricGrid({
     : phoneSteps === 'off'
       ? 'Tap to count steps'
       : phoneSteps === 'on'
-        ? 'Counting · walk to start'
+        ? isStepsQuestAssigned
+          ? '🎯 Quest · walk to start'
+          : 'Counting · walk to start'
         : notConnected;
 
   const sleepValue = sleep
@@ -127,27 +139,32 @@ export function AnalyticalMetricGrid({
         accessibilityHint="Opens connected health sources"
       />
       <Tile
-        icon="walk-outline"
+        icon={calories && calories.total > 0 ? 'flame-outline' : 'walk-outline'}
         tint={colors.primary}
-        label="Movement"
+        label={calories && calories.total > 0 ? 'Burned' : 'Movement'}
         value={
-          activeMinutes !== null
-            ? `${Math.max(activeMinutes, walkingMinutesFromSteps ?? 0)} min`
-            : walkingMinutesFromSteps
-              ? `≈ ${walkingMinutesFromSteps} min`
-              : null
+          calories && calories.total > 0
+            ? `${calories.total} kcal`
+            : activeMinutes !== null
+              ? `${Math.max(activeMinutes, walkingMinutesFromSteps ?? 0)} min`
+              : walkingMinutesFromSteps
+                ? `≈ ${walkingMinutesFromSteps} min`
+                : null
         }
         context={
-          activeMinutes !== null && walkingMinutesFromSteps
-            ? 'Larger of logged and step-measured'
-            : activeMinutes !== null
-              ? 'Logged today'
-              : walkingMinutesFromSteps
-                ? 'Walking, measured by steps'
-                : 'Nothing yet today'
+          calories && calories.total > 0
+            ? `${Math.max(activeMinutes ?? 0, walkingMinutesFromSteps ?? 0)} min active · goal ${calories.goal}`
+            : activeMinutes !== null && walkingMinutesFromSteps
+              ? 'Larger of logged and step-measured'
+              : activeMinutes !== null
+                ? 'Logged today'
+                : walkingMinutesFromSteps
+                  ? 'Walking, measured by steps'
+                  : 'Nothing yet today'
         }
-        onPress={() => router.push('/(app)/health/activity' as Href)}
-        accessibilityHint="Opens activity log"
+        dial={calories && calories.total > 0 ? Math.min(1, calories.total / calories.goal) : null}
+        onPress={onCaloriesPress ?? (() => router.push('/(app)/health/activity' as Href))}
+        accessibilityHint="Opens calorie and activity breakdown"
       />
     </View>
   );
