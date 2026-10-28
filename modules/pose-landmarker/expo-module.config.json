@@ -5,7 +5,8 @@
   "android": {
     "modules": [
       "expo.modules.poselandmarker.PoseLandmarkerModule",
-      "expo.modules.poselandmarker.FoodVisionModule"
+      "expo.modules.poselandmarker.FoodVisionModule",
+      "expo.modules.poselandmarker.PortraitVisionModule"
     ]
   }
 }

@@ -65,7 +65,17 @@ export async function runCommand(cmd: Command): Promise<AssistantReply> {
         };
       }
       try {
-        const out = await LocalAI.generateText({ prompt: cmd.text, system: SYSTEM });
+        // Today's own numbers as context, so answers can be personal; it never leaves the phone.
+        const steps = stepsByDate(s.deviceReadings).get(today)?.value;
+        const context = [
+          steps ? `Steps today: ${Math.round(steps)}` : null,
+          `Water today: ${s.hydration[today] ?? 0} glasses`,
+          s.weightKg ? `Weight: ${s.weightKg} kg` : null,
+          s.heightCm ? `Height: ${s.heightCm} cm` : null,
+        ]
+          .filter(Boolean)
+          .join('. ');
+        const out = await LocalAI.generateText({ prompt: cmd.text, context, system: SYSTEM });
         return { text: out.trim() || "I don't have a good answer for that.", fromModel: true };
       } catch {
         return { text: 'The on-device model could not answer just now.', needsModel: true };

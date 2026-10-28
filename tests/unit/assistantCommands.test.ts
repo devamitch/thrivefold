@@ -7,6 +7,9 @@ describe('assistant commands', () => {
     ['face exercises', '/(app)/beta-lab/face-exercises'],
     ['I want to log my lunch', '/(app)/health/meal-log'],
     ['take me to my treadmill session', '/(app)/health/activity'],
+    ['what glasses suit my face shape', '/(app)/beta-lab/body-style'],
+    ['open face shape', '/(app)/beta-lab/body-style'],
+    ['show my bmi', '/(app)/beta-lab/body-style'],
   ])('%s opens the right screen', (input, route) => {
     expect(parseCommand(input)).toMatchObject({ kind: 'open', route });
   });

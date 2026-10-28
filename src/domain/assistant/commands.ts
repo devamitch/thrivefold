@@ -12,7 +12,9 @@ export type Command =
 
 const OPEN: { words: RegExp; route: string; label: string }[] = [
   { words: /\bbreath(e|ing)?\b|\bcalm\b|\brelax\b/, route: '/(app)/beta-lab/breathing', label: 'the breathing coach' },
-  { words: /\bface\b|\bjaw\b|\bsmile\b|\bbrow/, route: '/(app)/beta-lab/face-exercises', label: 'face exercises' },
+  { words: /\bface\b(?! shape)|\bjaw\b|\bsmile\b|\bbrow/, route: '/(app)/beta-lab/face-exercises', label: 'face exercises' },
+  { words: /\bglasses\b|\bframes?\b|\bstyle\b|\boutfit\b|\bdress\b|\bbmi\b|\bbody shape\b|\bface shape\b|\bmeal plan/, route: '/(app)/beta-lab/body-style', label: 'the body and style companion' },
+  { words: /\bpursuit\b|\bfollow the dot\b|\bdot\b/, route: '/(app)/beta-lab/eye-pursuit', label: 'eye pursuit' },
   { words: /\beye\b|\beyes\b|\bblink/, route: '/(app)/beta-lab/eye-tracking', label: 'the eye studio' },
   { words: /\bfinger|\bhand\b|\bhands\b|\bgrip\b|\bgame\b/, route: '/(app)/beta-lab/gesture-game', label: 'the finger game' },
   { words: /\bpose\b|\bposture\b|\bsquat|\bform\b/, route: '/(app)/beta-lab/pose-coach', label: 'the pose coach' },
@@ -47,6 +49,10 @@ export function parseCommand(input: string): Command {
     if (/\bcalor|\bburn/.test(text)) return { kind: 'ask', metric: 'calories' };
     if (/\bquests?\b|\btasks?\b|\bleft\b/.test(text)) return { kind: 'ask', metric: 'quests' };
   }
+
+  // Style and body questions ("which glasses suit me?") are best answered by the companion screen.
+  const style = OPEN.find((o) => o.route.endsWith('/body-style'));
+  if (style && style.words.test(text)) return { kind: 'open', route: style.route, label: style.label };
 
   if (/\b(open|start|go to|show|take me|begin|let's|lets|i want)\b/.test(text) || text.split(' ').length <= 3) {
     for (const o of OPEN) if (o.words.test(text)) return { kind: 'open', route: o.route, label: o.label };

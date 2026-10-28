@@ -22,7 +22,11 @@ export interface PoseFrame {
   face?: number[];
   /** Up to two hands, each flat [x, y] * 21 (MediaPipe hand order); empty when off. */
   hands?: number[][];
+  /** Top canned gesture for each hand in `hands`, same order (MediaPipe gesture recognizer). */
+  gestures?: { name: HandGestureName; score: number }[];
 }
+
+export type HandGestureName = 'None' | 'Closed_Fist' | 'Open_Palm' | 'Pointing_Up' | 'Thumb_Down' | 'Thumb_Up' | 'Victory' | 'ILoveYou';
 
 /** The flat `points` array as landmark objects (for rep counting). */
 export function landmarksOf(points: number[] | undefined): PoseLandmark[] {

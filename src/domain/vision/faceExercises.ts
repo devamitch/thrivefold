@@ -132,3 +132,23 @@ export function stepRep(s: RepState, ex: FaceExercise, value: number, now: numbe
   }
   return s.inSince === null ? s : { ...s, inSince: null };
 }
+
+/**
+ * Smooth-pursuit score: how closely the eyes' horizontal position followed a moving target,
+ * as the absolute correlation (0–100) between target x and measured gaze. Needs at least 60
+ * samples; the sign is ignored because camera mirroring differs between phones.
+ */
+export function pursuitScore(samples: { target: number; gaze: number }[]): number | null {
+  if (samples.length < 60) return null;
+  const n = samples.length;
+  const mt = samples.reduce((a, s) => a + s.target, 0) / n;
+  const mg = samples.reduce((a, s) => a + s.gaze, 0) / n;
+  let cov = 0, vt = 0, vg = 0;
+  for (const s of samples) {
+    cov += (s.target - mt) * (s.gaze - mg);
+    vt += (s.target - mt) ** 2;
+    vg += (s.gaze - mg) ** 2;
+  }
+  if (vt < 1e-9 || vg < 1e-9) return 0;
+  return Math.round(Math.abs(cov / Math.sqrt(vt * vg)) * 100);
+}

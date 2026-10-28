@@ -54,15 +54,15 @@ export const PoseDetectionAdapter = memo(function PoseDetectionAdapter({
     );
   }
 
-  // Both default and experimental paths utilize isolated props and hooks
+  // Face and hand tracking follow the caller on every engine; the eye, face and hand studios rely on them.
   return (
     <PoseCameraView
       style={style}
       active={active}
       facing={facing}
-      face={engine === 'experimental' ? face : false}
-      hands={engine === 'experimental' ? hands : false}
-      minIntervalMs={engine === 'experimental' ? Math.max(0, minIntervalMs) : 0}
+      face={face}
+      hands={hands}
+      minIntervalMs={Math.max(0, minIntervalMs)}
       onPose={onPose}
       onPoseError={handleError}
       onPoseReady={onPoseReady}

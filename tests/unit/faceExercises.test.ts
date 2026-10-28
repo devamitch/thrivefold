@@ -59,3 +59,13 @@ describe('face exercises', () => {
     expect(averageMeasures([neutral, neutral])!.smile).toBeCloseTo(neutral.smile);
   });
 });
+
+import { pursuitScore } from '../../src/domain/vision/faceExercises';
+
+test('pursuit score is high when gaze follows the target and low when it does not', () => {
+  const follow = Array.from({ length: 120 }, (_, i) => ({ target: Math.sin(i / 10), gaze: 0.5 + 0.1 * Math.sin(i / 10) }));
+  expect(pursuitScore(follow)).toBeGreaterThan(95);
+  const still = Array.from({ length: 120 }, (_, i) => ({ target: Math.sin(i / 10), gaze: 0.5 + 0.01 * Math.cos(i / 3) }));
+  expect(pursuitScore(still)!).toBeLessThan(40);
+  expect(pursuitScore(follow.slice(0, 10))).toBeNull();
+});

@@ -80,6 +80,15 @@ Thrivefold has evolved from an activity tracker into a local-first, privacy-resp
 - **`beta-lab/assistant` (Thrive Coach):** typed requests → rule-based commands (`domain/assistant/commands.ts`, 8 tests) → actions on the phone (`services/assistant/runCommand.ts`): open any studio or screen, log water, today's steps / water / calories / quests. Open questions go to the on-device LLM (`modules/local-ai`) when a model is loaded; otherwise the coach says so and links model setup or cloud Ask Thrive. Replies are spoken. On Home's tools grid when Beta is on.
 - **Blocked — voice input and voice practice:** both need the microphone. `RECORD_AUDIO` is in `app.json` `blockedPermissions` and agents may not edit `app.json`; the owner must decide (it changes the Play permission list). Plan once approved: `expo-speech-recognition@3.1.3` (SDK 54/55 line), on-device recogniser, volume events for sustained-vowel and loudness drills, transcript match for word repetition, mic button in Thrive Coach using the same command router.
 
+### P11 — BlinkQuest/Setu models integrated into the existing camera module (2026-10-29)
+The copied `setu-beta-scanner` / `blinkquest-vision` modules needed VisionCamera; their models now run in `modules/pose-landmarker` (CameraX) instead.
+- **Fix:** `PoseDetectionAdapter` dropped `face`/`hands` for the default engine, so the eye, face and hand studios got no face or hand data. It now passes them through.
+- **Gesture recognizer:** live hands now use `gesture_recognizer.task` (hand landmarks + canned gestures), emitted as `PoseFrame.gestures`. Hand Games gain a Gesture match mode. `hand_landmarker.task` is now unused (agent could not delete it; remove to save 7.8 MB).
+- **PortraitVision module** (`PortraitVisionModule.kt`, `modules/pose-landmarker/portrait.ts`): one-shot photo analysis with the full 478-point face mesh, pose, and `selfie_multiclass_256x256.tflite` segmentation reduced to numbers.
+- **`beta-lab/body-style`:** face shape + frame ideas + PD estimate, front posture score, body proportions for fit, outfit colour pairing score, BMI / energy / protein / water, and an on-device-LLM day of meals (`domain/vision/portrait.ts`, 7 tests). No attractiveness, ethnicity, age, gender or identity inference.
+- **`beta-lab/eye-pursuit`:** smooth-pursuit exercise scored by gaze–target correlation (`pursuitScore`).
+- **Assistant:** routes style/glasses/BMI questions to the companion; on-device LLM answers get today's steps, water, height and weight as context.
+
 ### Route ↔ capability matrix (beta)
 | Route | Capability | Input | Saved |
 | --- | --- | --- | --- |
@@ -88,6 +97,8 @@ Thrivefold has evolved from an activity tracker into a local-first, privacy-resp
 | `beta-lab/gesture-game` | Finger Count Challenge with coach voice | Hand landmarker | `finger_game` |
 | `beta-lab/breathing` | Paced breathing with coach voice | Timer | `breathing` |
 | `beta-lab/face-exercises` | Face & eye exercises with coach voice | Face landmarker | `face_exercise` |
+| `beta-lab/body-style` | Face shape, glasses, PD, posture, fit, outfit colours, BMI, meal plan | Photo: face mesh + pose + segmentation | `portrait_scan` |
+| `beta-lab/eye-pursuit` | Follow-the-dot eye exercise | Face landmarker (iris) | `eye_pursuit` |
 | `beta-lab/assistant` | Thrive Coach: commands, today's numbers, on-device LLM answers | Text (voice blocked) | water log |
 | `beta-lab/pose-coach` | Skeleton, joint angles, reps | Pose landmarker | — |
 | `health/meal-log` (Beta Lab "Food Lens" opens it) | Meal photo labels → server macros | Food classifier + meal-vision function | meal log |

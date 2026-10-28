@@ -27,8 +27,8 @@ import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarker
 import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarkerResult
 import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarker
 import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarkerResult
-import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarker
-import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarkerResult
+import com.google.mediapipe.tasks.vision.gesturerecognizer.GestureRecognizer
+import com.google.mediapipe.tasks.vision.gesturerecognizer.GestureRecognizerResult
 import expo.modules.kotlin.AppContext
 import expo.modules.kotlin.viewevent.EventDispatcher
 import expo.modules.kotlin.views.ExpoView
@@ -49,7 +49,8 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
     const val MODEL_ASSET = "pose_landmarker_lite.task"
     const val MODEL_VERSION = "mediapipe-pose_landmarker_lite-float16-v1"
     const val FACE_ASSET = "face_landmarker.task"
-    const val HAND_ASSET = "hand_landmarker.task"
+    /** Gesture recognizer bundle: MediaPipe hand landmarker plus the canned gesture classifier. */
+    const val HAND_ASSET = "gesture_recognizer.task"
     private const val MIN_EMIT_INTERVAL_MS = 16L
     private const val TAG = "PoseCamera"
     private const val STALE_MS = 500L
@@ -91,12 +92,13 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
   private var faceOn = false
   private var handsOn = false
   @Volatile private var faceLandmarker: FaceLandmarker? = null
-  @Volatile private var handLandmarker: HandLandmarker? = null
+  @Volatile private var handLandmarker: GestureRecognizer? = null
   private var frameCount = 0L
   @Volatile private var latestFace: List<Double> = emptyList()
   @Volatile private var latestFaceAt = 0L
   @Volatile private var latestHands: List<List<Double>> = emptyList()
   @Volatile private var latestHandsAt = 0L
+  @Volatile private var latestGestures: List<Map<String, Any>> = emptyList()
   @Volatile private var frameW = 0
   @Volatile private var frameH = 0
 
@@ -163,14 +165,14 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
     null
   }
 
-  private fun createHands(): HandLandmarker? = try {
-    HandLandmarker.createFromOptions(
+  private fun createHands(): GestureRecognizer? = try {
+    GestureRecognizer.createFromOptions(
       context,
-      HandLandmarker.HandLandmarkerOptions.builder()
+      GestureRecognizer.GestureRecognizerOptions.builder()
         .setBaseOptions(BaseOptions.builder().setModelAssetPath(HAND_ASSET).setDelegate(delegateFor()).build())
         .setRunningMode(RunningMode.LIVE_STREAM)
         .setNumHands(2)
-        .setResultListener { result: HandLandmarkerResult, _: MPImage -> onHands(result) }
+        .setResultListener { result: GestureRecognizerResult, _: MPImage -> onHands(result) }
         .setErrorListener { _ -> }
         .build(),
     )
@@ -191,7 +193,12 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
     latestFaceAt = SystemClock.uptimeMillis()
   }
 
-  private fun onHands(result: HandLandmarkerResult) {
+  private fun onHands(result: GestureRecognizerResult) {
+    // Top canned gesture per hand (Thumb_Up, Victory, Open_Palm, Closed_Fist, Pointing_Up, ILoveYou, None).
+    latestGestures = result.gestures().map { cats ->
+      val top = cats.firstOrNull()
+      mapOf("name" to (top?.categoryName() ?: "None"), "score" to (top?.score()?.toDouble() ?: 0.0))
+    }
     latestHands = result.landmarks().map { hand ->
       val out = ArrayList<Double>(hand.size * 2)
       for (lm in hand) {
@@ -401,7 +408,7 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
       val face = faceLandmarker
       val hands = handLandmarker
       if (face != null && (hands == null || frameCount % 2L == 0L)) face.detectAsync(mp, ts)
-      if (hands != null && (face == null || frameCount % 2L == 1L)) hands.detectAsync(mp, ts)
+      if (hands != null && (face == null || frameCount % 2L == 1L)) hands.recognizeAsync(mp, ts)
     } catch (_: Exception) {
       inFlight = false
     } finally {
@@ -433,7 +440,9 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
     }
     val capturedAt = System.currentTimeMillis() - (now - result.timestampMs())
     val face = if (faceOn && now - latestFaceAt < STALE_MS) latestFace else emptyList()
-    val hands = if (handsOn && now - latestHandsAt < STALE_MS) latestHands else emptyList()
+    val handsFresh = handsOn && now - latestHandsAt < STALE_MS
+    val hands = if (handsFresh) latestHands else emptyList()
+    val gestures = if (handsFresh) latestGestures else emptyList()
     val w = frameW
     val h = frameH
     post {
@@ -446,6 +455,7 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
           "frameHeight" to h,
           "face" to face,
           "hands" to hands,
+          "gestures" to gestures,
         ),
       )
     }

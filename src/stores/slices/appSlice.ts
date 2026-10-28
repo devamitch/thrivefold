@@ -8,7 +8,7 @@ import { normaliseWorldviewProfile, type WorldviewProfile } from '../../domain/i
 
 export type ThemeMode = 'system' | 'light' | 'dark';
 
-export type BetaSessionKind = 'eye_scan' | 'blink_bloom' | 'hand_grip' | 'finger_game' | 'breathing' | 'face_exercise' | 'voice_practice';
+export type BetaSessionKind = 'eye_scan' | 'blink_bloom' | 'hand_grip' | 'finger_game' | 'breathing' | 'face_exercise' | 'voice_practice' | 'portrait_scan' | 'eye_pursuit';
 
 export interface BetaSession {
   id: string;

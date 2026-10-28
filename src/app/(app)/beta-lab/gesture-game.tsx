@@ -4,9 +4,10 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View, type NativeSyntheticEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import type { PoseFrame } from '../../../../modules/pose-landmarker';
+import type { HandGestureName, PoseFrame } from '../../../../modules/pose-landmarker';
 import { BetaSessionHistory } from '../../../components/beta/BetaSessionHistory';
 import { BetaBadge } from '../../../components/ui/Badge';
+import { Chip } from '../../../components/ui/Chip';
 import { PressableScale } from '../../../components/ui/PressableScale';
 import { HandTrackerSession } from '../../../domain/vision/handTracker';
 import {
@@ -27,7 +28,17 @@ import { useTheme } from '../../../theme/useTheme';
 import { recordBetaSession } from '../../../services/beta/recordSession';
 
 const KINDS: BetaSessionKind[] = ['finger_game'];
-const WORDS = ['', 'one finger', 'two fingers', 'three fingers', 'four fingers', 'five fingers'];
+type Mode = 'fingers' | 'gestures';
+const WORDS: Record<Mode, string[]> = {
+  fingers: ['', 'one finger', 'two fingers', 'three fingers', 'four fingers', 'five fingers'],
+  gestures: ['', 'a thumbs up', 'a peace sign', 'an open palm', 'a closed fist', 'one finger pointing up'],
+};
+const TARGET_LABEL: Record<Mode, string[]> = {
+  fingers: ['', '1', '2', '3', '4', '5'],
+  gestures: ['', 'Thumbs up', 'Peace', 'Open palm', 'Fist', 'Point up'],
+};
+/** Gesture recognizer names in the same order as the targets 1–5. */
+const GESTURES: HandGestureName[] = ['None', 'Thumb_Up', 'Victory', 'Open_Palm', 'Closed_Fist', 'Pointing_Up'];
 
 /**
  * Finger Count Challenge: a full-screen, coach-voiced hand game. The coach calls a number, the
@@ -39,6 +50,9 @@ export default function GestureGameScreen() {
   const { colors, typography, spacing } = useTheme();
 
   const [game, setGame] = useState<FingerGameState | null>(null);
+  const [mode, setMode] = useState<Mode>('fingers');
+  const modeRef = useRef<Mode>('fingers');
+  modeRef.current = mode;
   const [fingers, setFingers] = useState<number | null>(null);
   const [denied, setDenied] = useState(false);
   const [now, setNow] = useState(Date.now());
@@ -52,7 +66,7 @@ export default function GestureGameScreen() {
     if (isFinished(g)) {
       void coachVoice.speak(`Game over. You scored ${g.score} out of ${ROUNDS}.`, { priority: 3 });
     } else {
-      void coachVoice.speak(`${g.last === 'hit' ? 'Nice. ' : g.last === 'miss' ? 'Next one. ' : ''}Show ${WORDS[g.target]}.`, {
+      void coachVoice.speak(`${g.last === 'hit' ? 'Nice. ' : g.last === 'miss' ? 'Next one. ' : ''}Show ${WORDS[modeRef.current][g.target]}.`, {
         priority: 3,
       });
     }
@@ -65,6 +79,7 @@ export default function GestureGameScreen() {
         startedAt: startedAt.current,
         endedAt: Date.now(),
         metrics: {
+          gestureMode: modeRef.current === 'gestures' ? 1 : 0,
           score: g.score,
           rounds: ROUNDS,
           reactionMs: g.reactions.length ? Math.round(g.reactions.reduce((a, b) => a + b, 0) / g.reactions.length) : 0,
@@ -78,7 +93,17 @@ export default function GestureGameScreen() {
     (e: NativeSyntheticEvent<PoseFrame>) => {
       const hand = e.nativeEvent.hands?.[0];
       const st = tracker.current.processHand(hand);
-      const count = st.confidence > 0 ? st.extendedFingers : null;
+      const gesture = e.nativeEvent.gestures?.[0];
+      const count =
+        modeRef.current === 'gestures'
+          ? gesture && gesture.score >= 0.6 && GESTURES.indexOf(gesture.name) > 0
+            ? GESTURES.indexOf(gesture.name)
+            : hand
+              ? 0
+              : null
+          : st.confidence > 0
+            ? st.extendedFingers
+            : null;
       setFingers(count);
       const g = gameRef.current;
       if (!g || isFinished(g)) return;
@@ -145,14 +170,19 @@ export default function GestureGameScreen() {
           <PressableScale onPress={() => router.back()} accessibilityLabel="Back" style={styles.iconBtn}>
             <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
           </PressableScale>
-          <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>Finger Count Challenge</Text>
+          <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>Hand Games</Text>
           <BetaBadge />
         </View>
         <View style={{ paddingHorizontal: spacing.base, paddingTop: spacing.md }}>
-          <Text style={[typography.body, { color: colors.text.secondary }]}>
-            The coach calls a number from one to five. Hold up that many fingers to the front camera until the ring
-            fills. {ROUNDS} rounds, {ROUND_MS / 1000} seconds each. Good for finger dexterity and a quick break from
-            the screen.
+          <View style={styles.modes}>
+            <Chip label="Finger count" selected={mode === 'fingers'} onPress={() => setMode('fingers')} />
+            <Chip label="Gesture match" selected={mode === 'gestures'} onPress={() => setMode('gestures')} />
+          </View>
+          <Text style={[typography.body, { color: colors.text.secondary, marginTop: 10 }]}>
+            {mode === 'fingers'
+              ? 'The coach calls a number from one to five. Hold up that many fingers to the front camera until the ring fills.'
+              : 'The coach calls a hand sign: thumbs up, peace, open palm, fist or pointing up. Show it to the front camera until the ring fills.'}{' '}
+            {ROUNDS} rounds, {ROUND_MS / 1000} seconds each. Good for finger dexterity and a quick break from the screen.
           </Text>
           <Text style={[typography.caption, { color: colors.text.muted, marginTop: 8 }]}>
             Hand landmarks are processed on this phone; no video is saved. Hold your palm toward the camera in good light.
@@ -196,11 +226,11 @@ export default function GestureGameScreen() {
       {playing ? (
         <View style={styles.center} pointerEvents="none">
           <View style={[styles.targetRing, { borderColor: holding > 0 ? colors.success : 'rgba(255,255,255,0.5)' }]}>
-            <Text style={[styles.target, styles.light]}>{game.target}</Text>
+            <Text style={[mode === 'fingers' ? styles.target : styles.targetWord, styles.light]}>{TARGET_LABEL[mode][game.target]}</Text>
           </View>
-          <Text style={[typography.bodyBold, styles.light, { marginTop: 12 }]}>Show {WORDS[game.target]}</Text>
+          <Text style={[typography.bodyBold, styles.light, { marginTop: 12 }]}>Show {WORDS[mode][game.target]}</Text>
           <Text style={[typography.caption, styles.dim, { marginTop: 4 }]}>
-            {fingers === null ? 'No hand in view' : `I see ${fingers}`} · {remaining}s
+            {fingers === null ? 'No hand in view' : mode === 'fingers' ? `I see ${fingers}` : `I see ${fingers ? TARGET_LABEL.gestures[fingers] : 'no sign yet'}`} · {remaining}s
           </Text>
         </View>
       ) : (
@@ -242,6 +272,8 @@ const styles = StyleSheet.create({
   center: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
   targetRing: { width: 132, height: 132, borderRadius: 66, borderWidth: 6, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.35)' },
   target: { fontSize: 72, lineHeight: 80, fontWeight: '800' },
+  targetWord: { fontSize: 20, lineHeight: 26, fontWeight: '800', textAlign: 'center' },
+  modes: { flexDirection: 'row', gap: 8 },
   endRow: { flexDirection: 'row', gap: 12, marginTop: 8 },
   endBtn: { paddingHorizontal: 28 },
 });
