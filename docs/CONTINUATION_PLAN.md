@@ -75,6 +75,11 @@ Thrivefold has evolved from an activity tracker into a local-first, privacy-resp
 - **Coach voice preference:** `coachVoiceEnabled` (persisted) is applied app-wide in `(app)/_layout.tsx`; the Spoken Coach screen's dead speech-rate chips were replaced by this switch.
 - **Cloud backup:** weekly summaries now carry `practiceSessions` / `practiceMinutes` (counts only). Migration 18 adds the columns and `tf_upsert_weekly_summary_v2`; pushed to the Thrivefold project on 2026-10-29 (old RPC kept for builds already installed). RLS tests: 160 pass.
 
+### P10 — Face exercises and Thrive Coach assistant (2026-10-29)
+- **`beta-lab/face-exercises`:** full-screen, coach-voiced routine (brow lifts, wide smile, jaw opener, eye squeeze, look left, look right). Calibrates on the person's relaxed face, then counts reps from face-landmark ratios normalised by eye distance (`domain/vision/faceExercises.ts`, 6 tests). Left/right gaze only; up/down is not reliable from 2D iris points. Not therapy for facial palsy.
+- **`beta-lab/assistant` (Thrive Coach):** typed requests → rule-based commands (`domain/assistant/commands.ts`, 8 tests) → actions on the phone (`services/assistant/runCommand.ts`): open any studio or screen, log water, today's steps / water / calories / quests. Open questions go to the on-device LLM (`modules/local-ai`) when a model is loaded; otherwise the coach says so and links model setup or cloud Ask Thrive. Replies are spoken. On Home's tools grid when Beta is on.
+- **Blocked — voice input and voice practice:** both need the microphone. `RECORD_AUDIO` is in `app.json` `blockedPermissions` and agents may not edit `app.json`; the owner must decide (it changes the Play permission list). Plan once approved: `expo-speech-recognition@3.1.3` (SDK 54/55 line), on-device recogniser, volume events for sustained-vowel and loudness drills, transcript match for word repetition, mic button in Thrive Coach using the same command router.
+
 ### Route ↔ capability matrix (beta)
 | Route | Capability | Input | Saved |
 | --- | --- | --- | --- |
@@ -82,6 +87,8 @@ Thrivefold has evolved from an activity tracker into a local-first, privacy-resp
 | `beta-lab/hand-gestures` | Grip reps, finger count, wrist mobility | Hand landmarker | `hand_grip` |
 | `beta-lab/gesture-game` | Finger Count Challenge with coach voice | Hand landmarker | `finger_game` |
 | `beta-lab/breathing` | Paced breathing with coach voice | Timer | `breathing` |
+| `beta-lab/face-exercises` | Face & eye exercises with coach voice | Face landmarker | `face_exercise` |
+| `beta-lab/assistant` | Thrive Coach: commands, today's numbers, on-device LLM answers | Text (voice blocked) | water log |
 | `beta-lab/pose-coach` | Skeleton, joint angles, reps | Pose landmarker | — |
 | `health/meal-log` (Beta Lab "Food Lens" opens it) | Meal photo labels → server macros | Food classifier + meal-vision function | meal log |
 | `beta-lab/voice-coach` | Coach voice test bench | expo-speech | — |

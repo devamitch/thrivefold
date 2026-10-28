@@ -20,6 +20,8 @@ export default function BetaLabLayout() {
       <Stack.Screen name="hand-gestures" />
       <Stack.Screen name="gesture-game" options={{ animation: 'fade' }} />
       <Stack.Screen name="breathing" />
+      <Stack.Screen name="face-exercises" options={{ animation: 'fade' }} />
+      <Stack.Screen name="assistant" />
       <Stack.Screen name="pose-coach" />
       <Stack.Screen name="voice-coach" />
       <Stack.Screen name="motion-blur" />

@@ -14,6 +14,7 @@ const ENTRIES: Record<Section, { icon: React.ComponentProps<typeof BetaEntryCard
   wellbeing: [
     { icon: 'eye-outline', title: 'Eye comfort studio', subtitle: 'Blink rate, screen distance and guided eye exercises with the coach', route: '/(app)/beta-lab/eye-tracking' },
     { icon: 'leaf-outline', title: 'Breathing coach', subtitle: 'Paced breathing with spoken cues', route: '/(app)/beta-lab/breathing' },
+    { icon: 'happy-outline', title: 'Face & eye exercises', subtitle: 'Brows, smile, jaw, eye squeeze and gaze drills with the coach', route: '/(app)/beta-lab/face-exercises' },
   ],
   movement: [
     { icon: 'body-outline', title: 'Live pose coach', subtitle: 'Skeleton tracking, joint angles and rep counting on this phone', route: '/(app)/beta-lab/pose-coach' },

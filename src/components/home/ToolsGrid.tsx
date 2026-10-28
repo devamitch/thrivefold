@@ -106,6 +106,14 @@ export function ToolsGrid({ todayCount }: { todayCount: number }) {
               hasActivity: true,
               isBeta: true,
             },
+            {
+              icon: 'chatbubble-ellipses-outline' as const,
+              label: 'Thrive Coach',
+              meta: 'Ask, log or open anything',
+              route: '/(app)/beta-lab/assistant' as Href,
+              hasActivity: false,
+              isBeta: true,
+            },
           ]
         : []),
     ];
