@@ -149,6 +149,7 @@ export default function AppLayout() {
           <Stack.Screen name="organizations" />
           <Stack.Screen name="safety" />
           <Stack.Screen name="check-in" />
+          <Stack.Screen name="beta-lab" />
           <Stack.Screen name="calendar" />
           <Stack.Screen name="settings" />
           <Stack.Screen name="personalize" />

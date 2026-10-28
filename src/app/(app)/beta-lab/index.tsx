@@ -1,44 +1,97 @@
 import { Ionicons } from '@expo/vector-icons';
-import { hapticSelection } from '../../../services/haptics';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Switch, Text, useWindowDimensions, View } from 'react-native';
-import Animated, {
-  Easing,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withSequence,
-  withTiming,
-} from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import React, { useCallback } from 'react';
+import { StyleSheet, Switch, Text, View } from 'react-native';
 
 import { AppHeader } from '../../../components/ui/AppHeader';
+import { Badge, BetaBadge } from '../../../components/ui/Badge';
 import { PressableScale } from '../../../components/ui/PressableScale';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { ScreenScrollView } from '../../../components/ui/ScreenScrollView';
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
-import { PoseOverlay } from '../../../components/workout/PoseOverlay';
-import { EyeTrackingStudio } from '../../../features/beta-lab/components/EyeTrackingStudio';
-import { HandGestureStudio } from '../../../features/beta-lab/components/HandGestureStudio';
-import {
-  isMotionBlurSupported,
-  MotionBlurAdapter,
-} from '../../../features/beta-lab/experiments/motion-blur/MotionBlurAdapter';
-import { PoseDetectionAdapter } from '../../../features/beta-lab/experiments/pose-detection/PoseDetectionAdapter';
-import { useBetaSettings, type PoseEngineOption } from '../../../features/beta-lab/flags/betaFlags';
-import { useBetaPoseLab } from '../../../features/beta-lab/hooks/useBetaPoseLab';
 import { BETA_CAPABILITIES, type BetaCapability } from '../../../domain/health/metricRegistry';
-import { BetaBadge, Badge } from '../../../components/ui/Badge';
+import { hapticSelection } from '../../../services/haptics';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
 
-type Tab = 'eye-tracking' | 'hand-gestures' | 'capabilities' | 'pose-lab' | 'motion-blur' | 'settings';
+interface StudioProduct {
+  id: string;
+  title: string;
+  subtitle: string;
+  tag: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  route: string;
+  badgeVariant?: 'gold' | 'beta' | 'success' | 'neutral';
+}
+
+const STUDIOS: StudioProduct[] = [
+  {
+    id: 'eye',
+    title: 'Eye Tracking Studio',
+    subtitle: 'Blink rate, EAR ratio, Harmon reading distance & Eye Battery',
+    tag: 'BlinkQuest Tech',
+    icon: 'eye-outline',
+    route: '/(app)/beta-lab/eye-tracking',
+    badgeVariant: 'gold',
+  },
+  {
+    id: 'hand',
+    title: 'Hand Gesture Studio',
+    subtitle: '21-point tracking, grip rep counter & wrist mobility score',
+    tag: 'Hand Mesh',
+    icon: 'hand-left-outline',
+    route: '/(app)/beta-lab/hand-gestures',
+    badgeVariant: 'beta',
+  },
+  {
+    id: 'pose',
+    title: 'Live Pose Coach',
+    subtitle: '33-joint skeleton tracking, joint angle telemetry & form score',
+    tag: 'Full Body',
+    icon: 'body-outline',
+    route: '/(app)/beta-lab/pose-coach',
+    badgeVariant: 'beta',
+  },
+  {
+    id: 'food',
+    title: 'Food Lens AI Vision',
+    subtitle: 'Live plate capture, culinary item classification & macro estimation',
+    tag: 'Multimodal AI',
+    icon: 'restaurant-outline',
+    route: '/(app)/beta-lab/food-lens',
+    badgeVariant: 'gold',
+  },
+  {
+    id: 'voice',
+    title: 'Spoken Coach Studio',
+    subtitle: 'Priority audio cues, rep guidance & spoken exercise pacing',
+    tag: 'expo-speech',
+    icon: 'volume-high-outline',
+    route: '/(app)/beta-lab/voice-coach',
+    badgeVariant: 'success',
+  },
+  {
+    id: 'blur',
+    title: 'Native Motion Blur',
+    subtitle: 'Velocity-driven AGSL runtime shaders & 60fps card animation',
+    tag: 'AGSL Shaders',
+    icon: 'sparkles-outline',
+    route: '/(app)/beta-lab/motion-blur',
+    badgeVariant: 'neutral',
+  },
+  {
+    id: 'settings',
+    title: 'Beta Flags & Engines',
+    subtitle: 'Engine toggles, inference HUD overlay & global configuration',
+    tag: 'Config',
+    icon: 'options-outline',
+    route: '/(app)/beta-lab/settings',
+    badgeVariant: 'neutral',
+  },
+];
 
 export default function BetaLabScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
   const { colors, typography, spacing } = useTheme();
 
   const { betaMode, setBetaMode } = useRootStore(
@@ -48,795 +101,201 @@ export default function BetaLabScreen() {
     })),
   );
 
-  const { settings, updateSetting, resetSettings } = useBetaSettings();
-  const [activeTab, setActiveTab] = useState<Tab>('eye-tracking');
-
-  // Motion blur demo animation — strictly zero spring physics, only smooth timing
-  const motionProgress = useSharedValue(0);
-  const [motionRunning, setMotionRunning] = useState(false);
-
-  useEffect(() => {
-    if (motionRunning) {
-      motionProgress.value = withRepeat(
-        withSequence(
-          withTiming(1, { duration: 750, easing: Easing.inOut(Easing.cubic) }),
-          withTiming(-1, { duration: 750, easing: Easing.inOut(Easing.cubic) }),
-        ),
-        -1,
-        true,
-      );
-    } else {
-      motionProgress.value = withTiming(0, { duration: 300, easing: Easing.out(Easing.quad) });
-    }
-  }, [motionRunning, motionProgress]);
-
-  const movingCardStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: motionProgress.value * (width * 0.28) }],
-  }));
-
-  // Pose Lab hook & camera state
-  const poseLab = useBetaPoseLab();
-
   const tick = useCallback(() => {
     hapticSelection();
   }, []);
 
-  const selectTab = useCallback(
-    (t: Tab) => {
-      tick();
-      setActiveTab(t);
-    },
-    [tick],
-  );
-
-  const toggleEngine = useCallback(
-    (eng: PoseEngineOption) => {
-      tick();
-      updateSetting('poseEngine', eng);
-    },
-    [tick, updateSetting],
-  );
-
   return (
     <ScreenContainer>
       <AppHeader
+        eyebrow="HEALTH OS · EXPERIMENTAL"
         title="Beta Lab"
-        subtitle="Experimental Motion & Pose Tech"
+        subtitle="On-Device Vision, Gesture & Audio Studios"
         showBack
         onBack={() => router.back()}
-        rightAction={
-          <PressableScale
-            onPress={() => {
-              tick();
-              setBetaMode(!betaMode);
-            }}
-            scaleTo={0.92}
-            accessibilityRole="button"
-            accessibilityLabel="Toggle Beta Mode"
-          >
-            <SquircleSurface
-              radius={12}
-              fill={betaMode ? colors.dockActive : colors.surface2}
-              style={styles.headerBadge}
-            >
-              <Text
-                style={[
-                  typography.captionBold,
-                  { color: betaMode ? colors.dock : colors.text.muted, fontSize: 11 },
-                ]}
-              >
-                {betaMode ? 'BETA ON' : 'BETA OFF'}
-              </Text>
-            </SquircleSurface>
-          </PressableScale>
-        }
+        rightAction={<BetaBadge />}
       />
 
-      {/* Tab Segment Selector */}
-      <View style={{ marginBottom: 10, marginTop: 4 }}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={[styles.tabRow, { paddingHorizontal: spacing.md }]}
-        >
-          <PressableScale onPress={() => selectTab('eye-tracking')} scaleTo={0.96}>
-            <SquircleSurface
-              radius={14}
-              fill={activeTab === 'eye-tracking' ? colors.dockActive : colors.surface2}
-              style={styles.tabBtn}
-            >
-              <Ionicons
-                name="eye-outline"
-                size={16}
-                color={activeTab === 'eye-tracking' ? colors.dock : colors.text.primary}
-              />
-              <Text
-                style={[
-                  typography.captionBold,
-                  { color: activeTab === 'eye-tracking' ? colors.dock : colors.text.primary },
-                ]}
-              >
-                Eye Tracking
-              </Text>
-            </SquircleSurface>
-          </PressableScale>
-
-          <PressableScale onPress={() => selectTab('hand-gestures')} scaleTo={0.96}>
-            <SquircleSurface
-              radius={14}
-              fill={activeTab === 'hand-gestures' ? colors.dockActive : colors.surface2}
-              style={styles.tabBtn}
-            >
-              <Ionicons
-                name="hand-right-outline"
-                size={16}
-                color={activeTab === 'hand-gestures' ? colors.dock : colors.text.primary}
-              />
-              <Text
-                style={[
-                  typography.captionBold,
-                  { color: activeTab === 'hand-gestures' ? colors.dock : colors.text.primary },
-                ]}
-              >
-                Hand Gestures
-              </Text>
-            </SquircleSurface>
-          </PressableScale>
-
-          <PressableScale onPress={() => selectTab('capabilities')} scaleTo={0.96}>
-            <SquircleSurface
-              radius={14}
-              fill={activeTab === 'capabilities' ? colors.dockActive : colors.surface2}
-              style={styles.tabBtn}
-            >
-              <Ionicons
-                name="grid-outline"
-                size={16}
-                color={activeTab === 'capabilities' ? colors.dock : colors.text.primary}
-              />
-              <Text
-                style={[
-                  typography.captionBold,
-                  { color: activeTab === 'capabilities' ? colors.dock : colors.text.primary },
-                ]}
-              >
-                Capabilities
-              </Text>
-            </SquircleSurface>
-          </PressableScale>
-
-          <PressableScale onPress={() => selectTab('pose-lab')} scaleTo={0.96}>
-            <SquircleSurface
-              radius={14}
-              fill={activeTab === 'pose-lab' ? colors.dockActive : colors.surface2}
-              style={styles.tabBtn}
-            >
-              <Ionicons
-                name="body-outline"
-                size={16}
-                color={activeTab === 'pose-lab' ? colors.dock : colors.text.primary}
-              />
-              <Text
-                style={[
-                  typography.captionBold,
-                  { color: activeTab === 'pose-lab' ? colors.dock : colors.text.primary },
-                ]}
-              >
-                Pose Lab
-              </Text>
-            </SquircleSurface>
-          </PressableScale>
-
-          <PressableScale onPress={() => selectTab('motion-blur')} scaleTo={0.96}>
-            <SquircleSurface
-              radius={14}
-              fill={activeTab === 'motion-blur' ? colors.dockActive : colors.surface2}
-              style={styles.tabBtn}
-            >
-              <Ionicons
-                name="water-outline"
-                size={16}
-                color={activeTab === 'motion-blur' ? colors.dock : colors.text.primary}
-              />
-              <Text
-                style={[
-                  typography.captionBold,
-                  { color: activeTab === 'motion-blur' ? colors.dock : colors.text.primary },
-                ]}
-              >
-                Motion Blur
-              </Text>
-            </SquircleSurface>
-          </PressableScale>
-
-          <PressableScale onPress={() => selectTab('settings')} scaleTo={0.96}>
-            <SquircleSurface
-              radius={14}
-              fill={activeTab === 'settings' ? colors.dockActive : colors.surface2}
-              style={styles.tabBtn}
-            >
-              <Ionicons
-                name="options-outline"
-                size={16}
-                color={activeTab === 'settings' ? colors.dock : colors.text.primary}
-              />
-              <Text
-                style={[
-                  typography.captionBold,
-                  { color: activeTab === 'settings' ? colors.dock : colors.text.primary },
-                ]}
-              >
-                Flags & Engines
-              </Text>
-            </SquircleSurface>
-          </PressableScale>
-        </ScrollView>
-      </View>
-
-      <ScreenScrollView contentContainerStyle={styles.scrollContent}>
-        {/* ======================= TAB 1: EYE TRACKING ======================= */}
-        {activeTab === 'eye-tracking' ? (
-          <View style={styles.sectionWrap}>
-            <EyeTrackingStudio />
-          </View>
-        ) : null}
-
-        {/* ======================= TAB 2: HAND GESTURES ======================= */}
-        {activeTab === 'hand-gestures' ? (
-          <View style={styles.sectionWrap}>
-            <HandGestureStudio />
-          </View>
-        ) : null}
-
-        {/* ======================= TAB 2.5: CAPABILITIES REGISTRY ======================= */}
-        {activeTab === 'capabilities' ? (
-          <View style={styles.sectionWrap}>
-            <View style={{ marginBottom: spacing.md }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <BetaBadge />
+      <ScreenScrollView contentContainerStyle={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xl * 2 }}>
+        {/* Global Beta Mode Master Banner */}
+        <SquircleSurface radius={24} fill={colors.surface} style={[styles.masterCard, { marginTop: spacing.sm }]}>
+          <View style={styles.bannerHeader}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+              <BetaBadge />
+              <View style={{ flex: 1 }}>
                 <Text style={[typography.subheading, { color: colors.text.primary }]}>
-                  Health OS Beta Capabilities
+                  Global Beta Mode
+                </Text>
+                <Text style={[typography.caption, { color: colors.text.secondary }]}>
+                  {betaMode ? 'Active across Home, Health & Tools' : 'Off · Only stable flows exposed'}
                 </Text>
               </View>
-              <Text style={[typography.caption, { color: colors.text.secondary }]}>
-                Central registry of on-device vision, sensor & activity technology with real data outputs.
-              </Text>
             </View>
-
-            {BETA_CAPABILITIES.map((cap) => (
-              <SquircleSurface
-                key={cap.id}
-                radius={20}
-                fill={colors.surface}
-                style={[styles.card, { marginBottom: spacing.sm, padding: spacing.md }]}
-              >
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Text style={[typography.bodyBold, { color: colors.text.primary, flex: 1 }]}>
-                    {cap.title}
-                  </Text>
-                  <Badge
-                    label={cap.status.toUpperCase()}
-                    variant={
-                      cap.status === 'working'
-                        ? 'success'
-                        : cap.status === 'beta'
-                          ? 'beta'
-                          : cap.status === 'research_only'
-                            ? 'warning'
-                            : 'neutral'
-                    }
-                  />
-                </View>
-
-                <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>
-                  {cap.subtitle}
-                </Text>
-
-                <View style={{ marginTop: 8, backgroundColor: colors.surface2, padding: 8, borderRadius: 10 }}>
-                  <Text style={[typography.captionBold, { color: colors.primary, fontSize: 11 }]}>
-                    STATUS: {cap.statusNote}
-                  </Text>
-                  {cap.modelsRequired ? (
-                    <Text style={[typography.caption, { color: colors.text.muted, fontSize: 10, marginTop: 2 }]}>
-                      Models: {cap.modelsRequired.join(', ')}
-                    </Text>
-                  ) : null}
-                  <Text style={[typography.caption, { color: colors.text.muted, fontSize: 10, marginTop: 2 }]}>
-                    Data Outputs: {cap.dataOutputs.join(' · ')}
-                  </Text>
-                </View>
-
-                <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 10 }}>
-                  <PressableScale
-                    onPress={() => router.push(cap.route as any)}
-                    scaleTo={0.96}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Open ${cap.title}`}
-                  >
-                    <SquircleSurface radius={10} fill={colors.dockActive} style={{ paddingHorizontal: 14, paddingVertical: 6 }}>
-                      <Text style={[typography.captionBold, { color: colors.dock }]}>
-                        Open Studio
-                      </Text>
-                    </SquircleSurface>
-                  </PressableScale>
-                </View>
-              </SquircleSurface>
-            ))}
+            <Switch
+              value={betaMode}
+              onValueChange={(val) => {
+                tick();
+                setBetaMode(val);
+              }}
+              thumbColor={betaMode ? colors.dockActive : colors.text.muted}
+            />
           </View>
-        ) : null}
+          <Text style={[typography.caption, { color: colors.text.muted, marginTop: 8 }]}>
+            Enabling Global Beta Mode unlocks all 7 dedicated studios below and surfaces experimental telemetry throughout Thrivefold.
+          </Text>
+        </SquircleSurface>
 
-        {/* ======================= TAB 3: MOTION BLUR ======================= */}
-        {activeTab === 'motion-blur' ? (
-          <View style={styles.sectionWrap}>
-            <SquircleSurface radius={24} fill={colors.surface} style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Ionicons name="sparkles-outline" size={20} color={colors.primary} />
-                <Text style={[typography.subheading, { color: colors.callText, flex: 1 }]}>
-                  Native Motion Blur Studio
-                </Text>
-                <SquircleSurface
-                  radius={8}
-                  fill={isMotionBlurSupported() ? colors.primaryAlpha : colors.surface2}
-                  style={styles.pill}
-                >
-                  <Text
-                    style={[
-                      typography.captionBold,
-                      { color: isMotionBlurSupported() ? colors.primary : colors.text.muted },
-                    ]}
-                  >
-                    {isMotionBlurSupported() ? 'Supported' : 'Safe View Fallback'}
+        {/* Section Heading: Dedicated Product Studios */}
+        <View style={[styles.sectionHeader, { marginTop: spacing.lg, marginBottom: spacing.sm }]}>
+          <Text style={[typography.captionBold, { color: colors.text.muted, letterSpacing: 1.2 }]}>
+            DEDICATED BETA STUDIOS
+          </Text>
+          <Text style={[typography.caption, { color: colors.primary }]}>
+            {STUDIOS.length} Separate Flows
+          </Text>
+        </View>
+
+        {/* Studios Grid */}
+        <View style={{ gap: 10 }}>
+          {STUDIOS.map((studio) => (
+            <PressableScale
+              key={studio.id}
+              onPress={() => {
+                tick();
+                router.push(studio.route as any);
+              }}
+              scaleTo={0.98}
+              accessibilityRole="button"
+              accessibilityLabel={`Open ${studio.title}`}
+            >
+              <SquircleSurface radius={20} fill={colors.surface} style={styles.studioCard}>
+                <View style={[styles.iconCircle, { backgroundColor: colors.surface2 }]}>
+                  <Ionicons name={studio.icon} size={22} color={colors.primary} />
+                </View>
+
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                    <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                      {studio.title}
+                    </Text>
+                    <Badge label={studio.tag} variant={studio.badgeVariant ?? 'beta'} />
+                  </View>
+                  <Text style={[typography.caption, { color: colors.text.secondary }]} numberOfLines={2}>
+                    {studio.subtitle}
                   </Text>
-                </SquircleSurface>
-              </View>
+                </View>
 
-              <Text style={[typography.body, { color: colors.text.muted, marginTop: 6 }]}>
-                Motion blur dynamically softens fast-moving UI elements based on on-screen velocity.
-                It is completely isolated from frosted backdrops and sheet blurs.
-              </Text>
+                <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
+              </SquircleSurface>
+            </PressableScale>
+          ))}
+        </View>
 
-              {/* Interactive Demo Stage */}
-              <View style={[styles.stage, { backgroundColor: colors.surface2 }]}>
-                <Animated.View style={movingCardStyle}>
-                  <MotionBlurAdapter
-                    enabled={settings.motionBlurEnabled}
-                    intensity={settings.motionBlurIntensity}
-                    samples={settings.motionBlurSamples}
-                    live={settings.motionBlurLive}
-                  >
-                    <SquircleSurface
-                      radius={18}
-                      fill={colors.dockActive}
-                      style={styles.movingDemoCard}
-                    >
-                      <Ionicons name="rocket-outline" size={28} color={colors.dock} />
-                      <Text style={[typography.captionBold, { color: colors.dock, marginTop: 4 }]}>
-                        {settings.motionBlurEnabled ? 'Blur Active' : 'Plain View'}
-                      </Text>
-                    </SquircleSurface>
-                  </MotionBlurAdapter>
-                </Animated.View>
-              </View>
+        {/* Capabilities Registry Section */}
+        <View style={[styles.sectionHeader, { marginTop: spacing.xl, marginBottom: spacing.sm }]}>
+          <Text style={[typography.captionBold, { color: colors.text.muted, letterSpacing: 1.2 }]}>
+            HEALTH OS CAPABILITY REGISTRY
+          </Text>
+          <BetaBadge />
+        </View>
 
-              {/* Controls */}
-              <View style={styles.controlsRow}>
-                <PressableScale
-                  onPress={() => {
-                    tick();
-                    setMotionRunning((r) => !r);
-                  }}
-                  scaleTo={0.95}
-                  style={styles.actionBtn}
-                >
-                  <SquircleSurface
-                    radius={16}
-                    fill={motionRunning ? colors.error : colors.primary}
-                    style={styles.btnSurface}
-                  >
-                    <Ionicons name={motionRunning ? 'pause' : 'play'} size={18} color="#FFFFFF" />
-                    <Text style={[typography.bodyBold, { color: '#FFFFFF' }]}>
-                      {motionRunning ? 'Stop Motion' : 'Start Motion'}
-                    </Text>
-                  </SquircleSurface>
-                </PressableScale>
-
-                <PressableScale
-                  onPress={() => {
-                    tick();
-                    updateSetting('motionBlurEnabled', !settings.motionBlurEnabled);
-                  }}
-                  scaleTo={0.95}
-                  style={styles.actionBtn}
-                >
-                  <SquircleSurface
-                    radius={16}
-                    fill={settings.motionBlurEnabled ? colors.dockActive : colors.surface2}
-                    style={styles.btnSurface}
-                  >
-                    <Ionicons
-                      name={settings.motionBlurEnabled ? 'eye' : 'eye-off-outline'}
-                      size={18}
-                      color={settings.motionBlurEnabled ? colors.dock : colors.text.primary}
-                    />
-                    <Text
-                      style={[
-                        typography.bodyBold,
-                        { color: settings.motionBlurEnabled ? colors.dock : colors.text.primary },
-                      ]}
-                    >
-                      {settings.motionBlurEnabled ? 'Blur On' : 'Blur Off'}
-                    </Text>
-                  </SquircleSurface>
-                </PressableScale>
-              </View>
-
-              {/* Parameter Adjusters */}
-              <View style={styles.settingRow}>
-                <Text style={[typography.body, { color: colors.text.primary }]}>
-                  Live Recapture
+        <View style={{ gap: 8 }}>
+          {BETA_CAPABILITIES.map((cap) => (
+            <SquircleSurface
+              key={cap.id}
+              radius={20}
+              fill={colors.surface}
+              style={[styles.capCard, { padding: spacing.md }]}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Text style={[typography.bodyBold, { color: colors.text.primary, flex: 1 }]}>
+                  {cap.title}
                 </Text>
-                <Switch
-                  value={settings.motionBlurLive}
-                  onValueChange={(val) => {
-                    tick();
-                    updateSetting('motionBlurLive', val);
-                  }}
-                  thumbColor={settings.motionBlurLive ? colors.dockActive : colors.text.muted}
+                <Badge
+                  label={cap.status.toUpperCase()}
+                  variant={
+                    cap.status === 'working'
+                      ? 'success'
+                      : cap.status === 'beta'
+                        ? 'beta'
+                        : cap.status === 'research_only'
+                          ? 'warning'
+                          : 'neutral'
+                  }
                 />
               </View>
 
-              <View style={styles.compatNotice}>
-                <Ionicons name="information-circle-outline" size={16} color={colors.text.muted} />
-                <Text style={[typography.caption, { color: colors.text.muted, flex: 1 }]}>
-                  Android 13+ runs per-pixel runtime shaders; Android 12 applies directional blur;
-                  Android 11 and web fall back cleanly to smooth 60fps rendering without blur.
+              <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>
+                {cap.subtitle}
+              </Text>
+
+              <View style={{ marginTop: 8, backgroundColor: colors.surface2, padding: 8, borderRadius: 10 }}>
+                <Text style={[typography.captionBold, { color: colors.primary, fontSize: 11 }]}>
+                  STATUS: {cap.statusNote}
+                </Text>
+                {cap.modelsRequired ? (
+                  <Text style={[typography.caption, { color: colors.text.muted, fontSize: 10, marginTop: 2 }]}>
+                    Models: {cap.modelsRequired.join(', ')}
+                  </Text>
+                ) : null}
+                <Text style={[typography.caption, { color: colors.text.muted, fontSize: 10, marginTop: 2 }]}>
+                  Data Outputs: {cap.dataOutputs.join(' · ')}
                 </Text>
               </View>
-            </SquircleSurface>
-          </View>
-        ) : null}
 
-        {/* ======================= TAB 2: POSE LAB ======================= */}
-        {activeTab === 'pose-lab' ? (
-          <View style={styles.sectionWrap}>
-            <SquircleSurface radius={24} fill={colors.surface} style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Ionicons name="body-outline" size={20} color={colors.primary} />
-                <Text style={[typography.subheading, { color: colors.text.primary, flex: 1 }]}>
-                  Pose Detection Sandbox
-                </Text>
-                <SquircleSurface radius={8} fill={colors.primaryAlpha} style={styles.pill}>
-                  <Text style={[typography.captionBold, { color: colors.primary }]}>
-                    {settings.poseEngine === 'default' ? 'Default MediaPipe' : 'Experimental'}
-                  </Text>
-                </SquircleSurface>
-              </View>
-
-              {/* Camera Preview Box */}
-              <View style={[styles.cameraContainer, { backgroundColor: '#121212' }]}>
-                {poseLab.active ? (
-                  <>
-                    <PoseDetectionAdapter
-                      engine={settings.poseEngine}
-                      active={poseLab.active}
-                      facing={poseLab.facing}
-                      face={false}
-                      hands={false}
-                      onPose={poseLab.onPose}
-                      onPoseReady={poseLab.onPoseReady}
-                      onPoseError={poseLab.onPoseError}
-                      style={StyleSheet.absoluteFill}
-                    />
-                    <PoseOverlay
-                      feed={poseLab.feed}
-                      width={width - 48}
-                      height={260}
-                      highlight={[]}
-                    />
-                  </>
-                ) : (
-                  <View style={styles.cameraPlaceholder}>
-                    <Ionicons name="videocam-off-outline" size={42} color="#666666" />
-                    <Text style={[typography.body, { color: '#AAAAAA', marginTop: 8 }]}>
-                      Camera Inactive
-                    </Text>
-                    <Text style={[typography.caption, { color: '#777777', marginTop: 2 }]}>
-                      Tap Start Camera below to evaluate live skeleton tracking
-                    </Text>
-                  </View>
-                )}
-              </View>
-
-              {/* Live Telemetry Panel */}
-              <View style={[styles.telemetryGrid, { backgroundColor: colors.surface2 }]}>
-                <View style={styles.telemetryItem}>
-                  <Text style={[typography.caption, { color: colors.text.muted }]}>FPS</Text>
-                  <Text style={[typography.heading, { color: colors.text.primary, fontSize: 18 }]}>
-                    {poseLab.telemetry.fps}
-                  </Text>
-                </View>
-                <View style={styles.telemetryItem}>
-                  <Text style={[typography.caption, { color: colors.text.muted }]}>Latency</Text>
-                  <Text style={[typography.heading, { color: colors.text.primary, fontSize: 18 }]}>
-                    {poseLab.telemetry.latencyMs} ms
-                  </Text>
-                </View>
-                <View style={styles.telemetryItem}>
-                  <Text style={[typography.caption, { color: colors.text.muted }]}>Points</Text>
-                  <Text style={[typography.heading, { color: colors.text.primary, fontSize: 18 }]}>
-                    {poseLab.telemetry.pointsCount}
-                  </Text>
-                </View>
-                <View style={styles.telemetryItem}>
-                  <Text style={[typography.caption, { color: colors.text.muted }]}>Delegate</Text>
-                  <Text style={[typography.heading, { color: colors.text.primary, fontSize: 18 }]}>
-                    {poseLab.telemetry.delegate.toUpperCase()}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Camera Actions */}
-              <View style={styles.controlsRow}>
+              <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 10 }}>
                 <PressableScale
                   onPress={() => {
                     tick();
-                    poseLab.toggleCamera();
+                    router.push(cap.route as any);
                   }}
-                  scaleTo={0.95}
-                  style={styles.actionBtn}
+                  scaleTo={0.96}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open ${cap.title}`}
                 >
-                  <SquircleSurface
-                    radius={16}
-                    fill={poseLab.active ? colors.error : colors.primary}
-                    style={styles.btnSurface}
-                  >
-                    <Ionicons name={poseLab.active ? 'stop' : 'camera'} size={18} color="#FFFFFF" />
-                    <Text style={[typography.bodyBold, { color: '#FFFFFF' }]}>
-                      {poseLab.active ? 'Stop Camera' : 'Start Camera'}
+                  <SquircleSurface radius={10} fill={colors.dockActive} style={{ paddingHorizontal: 14, paddingVertical: 6 }}>
+                    <Text style={[typography.captionBold, { color: colors.dock }]}>
+                      Open Dedicated Route
                     </Text>
                   </SquircleSurface>
                 </PressableScale>
-
-                {poseLab.active ? (
-                  <PressableScale
-                    onPress={() => {
-                      tick();
-                      poseLab.flipCamera();
-                    }}
-                    scaleTo={0.95}
-                    style={styles.actionBtn}
-                  >
-                    <SquircleSurface radius={16} fill={colors.surface2} style={styles.btnSurface}>
-                      <Ionicons name="camera-reverse" size={18} color={colors.text.primary} />
-                      <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                        {poseLab.facing === 'front' ? 'Front' : 'Back'}
-                      </Text>
-                    </SquircleSurface>
-                  </PressableScale>
-                ) : null}
               </View>
             </SquircleSurface>
-          </View>
-        ) : null}
-
-        {/* ======================= TAB 3: ENGINES & SETTINGS ======================= */}
-        {activeTab === 'settings' ? (
-          <View style={styles.sectionWrap}>
-            <SquircleSurface radius={24} fill={colors.surface} style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Ionicons name="options" size={20} color={colors.primary} />
-                <Text style={[typography.subheading, { color: colors.text.primary, flex: 1 }]}>
-                  Dual Engine & Fallback Architecture
-                </Text>
-              </View>
-
-              <Text style={[typography.body, { color: colors.text.muted, marginTop: 4 }]}>
-                Choose which pose engine to evaluate. The production app always defaults to the
-                proven Native MediaPipe engine if experimental modules are disabled or fail.
-              </Text>
-
-              {/* Engine Option: Default MediaPipe */}
-              <PressableScale
-                onPress={() => toggleEngine('default')}
-                scaleTo={0.98}
-                style={styles.engineCard}
-              >
-                <SquircleSurface
-                  radius={18}
-                  fill={settings.poseEngine === 'default' ? colors.primaryAlpha : colors.surface2}
-                  style={styles.engineInner}
-                >
-                  <View style={styles.engineHeaderRow}>
-                    <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                      Default Engine (MediaPipe Native)
-                    </Text>
-                    {settings.poseEngine === 'default' ? (
-                      <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
-                    ) : null}
-                  </View>
-                  <Text style={[typography.caption, { color: colors.text.muted, marginTop: 2 }]}>
-                    33-point body tracking with 60fps UI-thread Skia interpolation. Proven, stable,
-                    and battery-optimized.
-                  </Text>
-                </SquircleSurface>
-              </PressableScale>
-
-              {/* Engine Option: Experimental Module */}
-              <PressableScale
-                onPress={() => toggleEngine('experimental')}
-                scaleTo={0.98}
-                style={styles.engineCard}
-              >
-                <SquircleSurface
-                  radius={18}
-                  fill={
-                    settings.poseEngine === 'experimental' ? colors.primaryAlpha : colors.surface2
-                  }
-                  style={styles.engineInner}
-                >
-                  <View style={styles.engineHeaderRow}>
-                    <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                      Experimental Engine (Beta Lab)
-                    </Text>
-                    {settings.poseEngine === 'experimental' ? (
-                      <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
-                    ) : null}
-                  </View>
-                  <Text style={[typography.caption, { color: colors.text.muted, marginTop: 2 }]}>
-                    Experimental pose and frame processing pipeline with adaptive throttling and
-                    extended telemetry.
-                  </Text>
-                </SquircleSurface>
-              </PressableScale>
-
-              {/* Reset Beta Settings */}
-              <PressableScale
-                onPress={() => {
-                  tick();
-                  resetSettings();
-                }}
-                scaleTo={0.98}
-                style={styles.resetBtn}
-              >
-                <SquircleSurface radius={16} fill={colors.surface2} style={styles.resetInner}>
-                  <Ionicons name="refresh-outline" size={18} color={colors.error} />
-                  <Text style={[typography.bodyBold, { color: colors.error }]}>
-                    Restore Safe Defaults
-                  </Text>
-                </SquircleSurface>
-              </PressableScale>
-            </SquircleSurface>
-          </View>
-        ) : null}
+          ))}
+        </View>
       </ScreenScrollView>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  headerBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+  masterCard: {
+    padding: 18,
   },
-  tabRow: {
+  bannerHeader: {
     flexDirection: 'row',
-    gap: 8,
-    marginBottom: 12,
-    marginTop: 4,
-  },
-  tabFlex: {
-    flex: 1,
-  },
-  tabBtn: {
     alignItems: 'center',
-    flexDirection: 'row',
-    gap: 6,
-    justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-  },
-  scrollContent: {
-    paddingBottom: 36,
-  },
-  sectionWrap: {
-    paddingHorizontal: 16,
-  },
-  card: {
-    padding: 16,
-  },
-  cardHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  pill: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  stage: {
-    alignItems: 'center',
-    borderRadius: 20,
-    height: 140,
-    justifyContent: 'center',
-    marginTop: 16,
-    overflow: 'hidden',
-  },
-  movingDemoCard: {
-    alignItems: 'center',
-    height: 90,
-    justifyContent: 'center',
-    width: 100,
-  },
-  controlsRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 16,
-  },
-  actionBtn: {
-    flex: 1,
-  },
-  btnSurface: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-    justifyContent: 'center',
-    paddingVertical: 12,
-  },
-  settingRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 14,
-    paddingHorizontal: 4,
-  },
-  compatNotice: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 16,
-    paddingHorizontal: 4,
-  },
-  cameraContainer: {
-    borderRadius: 20,
-    height: 260,
-    marginTop: 14,
-    overflow: 'hidden',
-  },
-  cameraPlaceholder: {
-    alignItems: 'center',
-    flex: 1,
-    justifyContent: 'center',
-    padding: 16,
-  },
-  telemetryGrid: {
-    borderRadius: 16,
-    flexDirection: 'row',
-    marginTop: 12,
-    padding: 12,
-  },
-  telemetryItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  engineCard: {
-    marginTop: 12,
-  },
-  engineInner: {
-    padding: 14,
-  },
-  engineHeaderRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  resetBtn: {
-    marginTop: 20,
-  },
-  resetInner: {
-    alignItems: 'center',
+  sectionHeader: {
     flexDirection: 'row',
-    gap: 8,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  studioCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 16,
+  },
+  iconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     justifyContent: 'center',
-    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  capCard: {
+    padding: 16,
   },
 });

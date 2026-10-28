@@ -1,0 +1,11 @@
+{
+  "name": "setu-beta-scanner",
+  "version": "1.0.0",
+  "description": "MediaPipe-powered beta features for BlinkQuest",
+  "main": "index.ts",
+  "types": "index.d.ts",
+  "license": "MIT",
+  "peerDependencies": {
+    "expo": "*"
+  }
+}
