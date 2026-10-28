@@ -277,9 +277,10 @@ export default function HomeScreen() {
 
   return (
     <DashboardScreenContainer
-      header={({ scrollY, collapseProgress, scrollToTop }) => (
+      header={({ scrollY, collapseProgress, dockDistance, scrollToTop }) => (
         <DashboardHeader
           userName={name ? name : undefined}
+          userPhotoUrl={s.user?.photoUrl}
           statusLabel={
             vitality.hasCheckInToday
               ? `Vitality ${vitality.score}`
@@ -289,6 +290,7 @@ export default function HomeScreen() {
           onMenuPress={() => useRootStore.getState().setDrawerOpen(true)}
           scrollY={scrollY}
           collapseProgress={collapseProgress}
+          dockDistance={dockDistance}
           progress={s.dailyPoints / Math.max(1, s.dailyPointsTarget)}
           onCompactPress={scrollToTop}
         />

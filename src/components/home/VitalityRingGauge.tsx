@@ -15,20 +15,20 @@ import { useTheme } from '../../theme/useTheme';
 import { PressableScale } from '../ui/PressableScale';
 import { SquircleSurface } from '../ui/SquircleSurface';
 
-const GAUGE_SIZE = 196;
+const GAUGE_SIZE = 168;
 const START_ANGLE = 140; // Degrees
 const TOTAL_SWEEP = 260; // Degrees
 const NUM_TICKS = 24;
 
 // Concentric ring radii & stroke widths
-const R_POINTS = 73;
-const W_POINTS = 6.5;
+const R_POINTS = 62;
+const W_POINTS = 5.5;
 
-const R_QUESTS = 59;
-const W_QUESTS = 5.5;
+const R_QUESTS = 50;
+const W_QUESTS = 4.5;
 
-const R_WATER = 46;
-const W_WATER = 4.5;
+const R_WATER = 39;
+const W_WATER = 3.5;
 
 interface Props {
   score: number;
@@ -135,10 +135,10 @@ export function VitalityRingGauge({
     for (let i = 0; i < NUM_TICKS; i++) {
       const angleDeg = START_ANGLE + i * tickStep;
       const rad = (angleDeg * Math.PI) / 180;
-      const x1 = cx + 84 * Math.cos(rad);
-      const y1 = cy + 84 * Math.sin(rad);
-      const x2 = cx + 92 * Math.cos(rad);
-      const y2 = cy + 92 * Math.sin(rad);
+      const x1 = cx + 72 * Math.cos(rad);
+      const y1 = cy + 72 * Math.sin(rad);
+      const x2 = cx + 80 * Math.cos(rad);
+      const y2 = cy + 80 * Math.sin(rad);
       p.moveTo(x1, y1);
       p.lineTo(x2, y2);
     }
@@ -153,10 +153,10 @@ export function VitalityRingGauge({
     for (let i = 0; i < activeCount; i++) {
       const angleDeg = START_ANGLE + i * tickStep;
       const rad = (angleDeg * Math.PI) / 180;
-      const x1 = cx + 84 * Math.cos(rad);
-      const y1 = cy + 84 * Math.sin(rad);
-      const x2 = cx + 92 * Math.cos(rad);
-      const y2 = cy + 92 * Math.sin(rad);
+      const x1 = cx + 72 * Math.cos(rad);
+      const y1 = cy + 72 * Math.sin(rad);
+      const x2 = cx + 80 * Math.cos(rad);
+      const y2 = cy + 80 * Math.sin(rad);
       p.moveTo(x1, y1);
       p.lineTo(x2, y2);
     }
@@ -209,9 +209,9 @@ export function VitalityRingGauge({
             backgroundColor: colors.primary,
             borderBottomLeftRadius: 0,
             borderBottomRightRadius: 0,
-            paddingTop: topInset + 10,
+            paddingTop: topInset,
             paddingHorizontal: spacing.lg,
-            paddingBottom: spacing.lg + 34,
+            paddingBottom: 22,
             width: '100%' as const,
           },
         ],
@@ -261,7 +261,7 @@ export function VitalityRingGauge({
           <Text
             style={[
               typography.heading,
-              { color: colors.onPrimary, fontSize: 26, lineHeight: 30, letterSpacing: -0.5 },
+              { color: colors.onPrimary, fontSize: 23, lineHeight: 27, letterSpacing: -0.4 },
             ]}
           >
             {greeting}
@@ -270,7 +270,7 @@ export function VitalityRingGauge({
             <Text
               style={[
                 typography.caption,
-                { color: colors.onPrimaryMuted, marginTop: 4, fontSize: 13, lineHeight: 18 },
+                { color: colors.onPrimaryMuted, marginTop: 2, fontSize: 12, lineHeight: 16 },
               ]}
               numberOfLines={2}
             >
@@ -325,14 +325,14 @@ export function VitalityRingGauge({
             </View>
           </View>
 
-          <Text
-            style={[typography.caption, { color: colors.onPrimaryMuted, marginTop: 6 }]}
-            numberOfLines={2}
-          >
-            {displayMode === 'goals'
-              ? `${questsDone} of ${questsTotal} quests · ${waterCount}/${hydrationTargetGlasses} cups water`
-              : subtext}
-          </Text>
+          {displayMode === 'vitality' && subtext ? (
+            <Text
+              style={[typography.caption, { color: colors.onPrimaryMuted, marginTop: 4 }]}
+              numberOfLines={2}
+            >
+              {subtext}
+            </Text>
+          ) : null}
 
           {/* Concentric Legend Chips */}
           <View style={styles.legendRow}>
@@ -494,7 +494,7 @@ export function VitalityRingGauge({
           accessibilityRole="button"
           accessibilityLabel="Update today's check-in metrics"
         >
-          <View style={[styles.metricsRow, { marginTop: spacing.md }]}>
+          <View style={[styles.metricsRow, { marginTop: 10 }]}>
             <SquircleSurface
               radius={14}
               fill={colors.onPrimarySurface}
@@ -560,7 +560,7 @@ export function VitalityRingGauge({
           <SquircleSurface
             radius={16}
             fill={colors.onPrimary}
-            style={[styles.cta, { marginTop: spacing.md }]}
+            style={[styles.cta, { marginTop: 10 }]}
           >
             <Ionicons name="sunny-outline" size={18} color={colors.primary} />
             <Text style={[typography.bodyBold, { color: colors.primary }]}>
@@ -576,7 +576,7 @@ export function VitalityRingGauge({
         accessibilityRole="button"
         accessibilityLabel={`Level ${level}. Open roadmap`}
       >
-        <View style={[styles.levelRow, { marginTop: spacing.md }]}>
+        <View style={[styles.levelRow, { marginTop: 8 }]}>
           <Text style={[typography.subbodyBold, { color: colors.onPrimary }]}>Level {level}</Text>
           <Text
             style={[typography.caption, styles.flex, { color: colors.onPrimaryMuted }]}
@@ -601,8 +601,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    minHeight: 40,
-    marginBottom: 4,
+    minHeight: 28,
+    marginBottom: 2,
   },
   menuButton: {
     width: 38,
@@ -612,7 +612,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   greetingBlock: {
-    marginBottom: 12,
+    marginBottom: 6,
   },
   topRow: {
     flexDirection: 'row',
@@ -693,7 +693,7 @@ const styles = StyleSheet.create({
   metricItem: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 6,
   },
   cta: {
     alignItems: 'center',

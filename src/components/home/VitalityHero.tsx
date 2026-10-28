@@ -45,23 +45,24 @@ export function VitalityHero(props: VitalityHeroProps) {
   const insets = useSafeAreaInsets();
   const reduceMotion = useReducedMotion();
 
-  // Full parallax depth translation:
-  // - Scrolling down: content drifts at ~0.58x of scroll speed (translateY = y * 0.42)
-  //   and fades gracefully to 0.15 as the squircle surface smoothly slides over it.
+  // Full physical parallax depth translation:
+  // - Scrolling down: content drifts at ~0.54x of scroll speed (translateY = y * 0.46)
+  //   retaining rich, solid aesthetic colors without muddy opacity fading, while
+  //   the squircle surface smoothly slides and rolls over it.
   // - Pulling down (iOS/Android): elastic translation & gentle scale (up to +15%) with solid cap fill.
   const animStyle = useAnimatedStyle(() => {
     if (reduceMotion || !props.scrollY) return {};
     const y = props.scrollY.value;
     const pull = Math.min(Math.max(0, -y), 160);
     return {
-      opacity: interpolate(y, [0, FADE_DISTANCE], [1, 0.15], Extrapolation.CLAMP),
+      opacity: interpolate(y, [0, 280], [1, 0.9], Extrapolation.CLAMP),
       transform: [
-        { translateY: y > 0 ? y * 0.42 : y * 0.5 },
+        { translateY: y > 0 ? y * 0.46 : y * 0.5 },
         {
           scale:
             y < 0
               ? 1 + pull / 850
-              : interpolate(y, [0, FADE_DISTANCE], [1, 0.96], Extrapolation.CLAMP),
+              : interpolate(y, [0, 280], [1, 0.98], Extrapolation.CLAMP),
         },
       ],
     };
