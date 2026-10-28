@@ -20,6 +20,10 @@ export interface MetricGridProps {
   /** Phone step counter state; `off` makes the tile an in-context request to turn it on. */
   phoneSteps: 'unsupported' | 'off' | 'on';
   onEnablePhoneSteps: () => void;
+  /** Today's hourly phone steps, drawn as a live sparkline on the Steps tile. */
+  stepsHours?: number[];
+  /** Opens the full steps view. */
+  onStepsPress?: () => void;
   stepsGoal?: number;
   sleep: { minutes: number; source: 'health_connect' | 'check_in' } | null;
   heart: { bpm: number; isToday: boolean } | null;
@@ -52,6 +56,8 @@ export function AnalyticalMetricGrid({
   connected,
   phoneSteps,
   onEnablePhoneSteps,
+  stepsHours,
+  onStepsPress,
 }: MetricGridProps) {
   const router = useRouter();
   const { colors } = useTheme();
@@ -85,11 +91,12 @@ export function AnalyticalMetricGrid({
         label={steps && !steps.isToday ? `Steps · ${shortDate(steps.date)}` : 'Steps'}
         value={steps ? steps.value.toLocaleString() : null}
         context={stepsContext}
-        dial={steps ? Math.min(1, steps.value / stepsGoal) : null}
+        dial={steps && !stepsHours ? Math.min(1, steps.value / stepsGoal) : null}
+        spark={stepsHours}
         onPress={
           phoneSteps === 'off' && !steps
             ? onEnablePhoneSteps
-            : () => router.push('/(app)/health/activity' as Href)
+            : (onStepsPress ?? (() => router.push('/(app)/health/activity' as Href)))
         }
         accessibilityHint={
           phoneSteps === 'off' && !steps ? 'Asks to turn on step counting' : 'Opens activity'
@@ -153,6 +160,7 @@ function Tile({
   value,
   context,
   dial = null,
+  spark,
   onPress,
   accessibilityHint,
 }: {
@@ -162,6 +170,8 @@ function Tile({
   value: string | null;
   context: string;
   dial?: number | null;
+  /** Tiny bar sparkline (e.g. steps per hour today). */
+  spark?: number[];
   onPress: () => void;
   accessibilityHint: string;
 }) {
@@ -183,6 +193,22 @@ function Tile({
           <View style={[styles.iconBox, { backgroundColor: colors.primaryAlpha }]}>
             <Ionicons name={icon} size={17} color={tint} />
           </View>
+          {spark ? (
+            <View style={styles.spark}>
+              {spark.map((n, i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.sparkBar,
+                    {
+                      height: n > 0 ? Math.max(2, (n / Math.max(1, ...spark)) * 26) : 1,
+                      backgroundColor: i === new Date().getHours() ? tint : colors.surface3,
+                    },
+                  ]}
+                />
+              ))}
+            </View>
+          ) : null}
           {dial !== null ? (
             <Canvas style={styles.dial}>
               <Path path={track} style="stroke" strokeWidth={DIAL_STROKE} color={colors.surface2} />
@@ -228,4 +254,6 @@ const styles = StyleSheet.create({
   },
   iconBox: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   dial: { width: DIAL, height: DIAL },
+  spark: { flexDirection: 'row', alignItems: 'flex-end', height: 28, width: 76, gap: 1 },
+  sparkBar: { flex: 1, borderRadius: 1 },
 });

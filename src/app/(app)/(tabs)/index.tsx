@@ -12,7 +12,7 @@ import { DashboardHeader } from '../../../components/home/DashboardHeader';
 import { DashboardScreenContainer } from '../../../components/home/DashboardScreenContainer';
 import { HomeGuide } from '../../../components/home/HomeGuide';
 import { HydrationTrackerCard } from '../../../components/home/HydrationTrackerCard';
-import { LiveStepsCard } from '../../../components/home/LiveStepsCard';
+import { StepsDetailSheet } from '../../../components/home/StepsDetailSheet';
 import { MetricBarChart } from '../../../components/home/MetricBarChart';
 import { SocialInvite } from '../../../components/home/SocialInvite';
 import { ToolsGrid } from '../../../components/home/ToolsGrid';
@@ -130,6 +130,7 @@ export default function HomeScreen() {
   const [filter, setFilter] = useState<'all' | QuestFamily>('all');
   const [openQuest, setOpenQuest] = useState<string | null>(null);
   const [analyticsSheetOpen, setAnalyticsSheetOpen] = useState(false);
+  const [stepsSheetOpen, setStepsSheetOpen] = useState(false);
 
   const todaysCheckIn = s.checkInHistory.find((c) => c.date === today());
   const progress = useMemo(
@@ -373,16 +374,6 @@ export default function HomeScreen() {
         />
       )}
     >
-      {phoneSteps.status === 'on' && phoneSteps.today ? (
-        <View style={{ marginBottom: spacing.md }}>
-          <LiveStepsCard
-            steps={Math.round(phoneSteps.today.steps)}
-            hours={phoneSteps.today.hours}
-            since={phoneSteps.today.since}
-            onPress={() => router.push('/(app)/health/activity' as Href)}
-          />
-        </View>
-      ) : null}
       <AnalyticalMetricGrid
         steps={
           steps
@@ -397,6 +388,8 @@ export default function HomeScreen() {
             : null
         }
         phoneSteps={phoneSteps.status}
+        stepsHours={phoneSteps.status === 'on' ? phoneSteps.today?.hours : undefined}
+        onStepsPress={() => setStepsSheetOpen(true)}
         onEnablePhoneSteps={() => {
           hapticLight();
           void phoneSteps.enable();
@@ -695,6 +688,13 @@ export default function HomeScreen() {
       </View>
 
       <QuestSheet assignmentId={openQuest} onClose={() => setOpenQuest(null)} />
+      <StepsDetailSheet
+        visible={stepsSheetOpen}
+        onClose={() => setStepsSheetOpen(false)}
+        today={phoneSteps.status === 'on' ? phoneSteps.today : null}
+        readings={s.readings}
+        todayDate={today()}
+      />
       <AnalyticsDetailSheet
         visible={analyticsSheetOpen}
         onClose={() => setAnalyticsSheetOpen(false)}
