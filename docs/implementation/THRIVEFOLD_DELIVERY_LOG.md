@@ -159,3 +159,29 @@
      - Hands-Free Remote Gestures card presented full CV gesture controls and guide.
      - Camera permissions requested and granted through native Android system dialog.
      - Workout session completed and verified in "Also Today" logged activities.
+
+---
+
+## Milestone 9: Dashboard Hierarchy, Header Reveal, Squircle Surface & Hydration Integrity
+- **Status**: IMPLEMENTED, AUTOMATED TESTED, RELEASE-BUILD VERIFIED ON DEVICE (Moto G71 `ZD2225KYKD`)
+- **Root causes found (baseline screenshots `evidence/dashboard-2026-10-28/00_*`, `01_*`)**:
+  - Compact header faded in by opacity while the hero text was still behind it: semi-transparent title collision mid-scroll.
+  - Hero ring showed points while the header showed "Vitality 44": two unrelated numbers. `computeVitalityScore` filled missing inputs with invented neutral values (70/75), used an *older* check-in for today, and scored water against a fixed 8.
+  - Heart-rate tile drew a hard-coded "pulse" bar pattern; steps tile showed a "0%" ring with no data; "Month" filter rendered the same 7-day data as "Week"; Health Connect tiles duplicated the metric grid; hydration appeared twice.
+  - `setHydration` changed the daily total without a journal entry, and `undoWaterLog` with no entry silently removed a glass. Capsules showed a full glass for 0.6 glasses.
+  - Status bar was forced `light-content` regardless of hero colour.
+- **Changes**:
+  - `DashboardScreenContainer`: one scroll owner; status-bar scrim in the hero colour; compact header revealed by a single `useAnimatedReaction` when the surface meets the header line, with a 40 dp hysteresis band (no per-frame React state); hero drifts at 0.28x and a faint background motif at 0.5x (transforms only, off under reduced motion); real squircle top edge drawn once from `theme/squirclePath` (Figma smoothing 0.6) instead of a plain radius.
+  - `DashboardHeader`: solid full-width bar that slides out from under the scrim; hidden from touch and screen readers until pinned.
+  - `VitalityHero`: rewritten compact (~290 dp vs ~415 dp): greeting, one concentric ring (points/quests/water) with a plain-language legend, Level/XP, Vitality only when checked in today, and one next action (check in → next quest → roadmap). `VitalityRingGauge` and `TimeRangeFilter` removed (no other users).
+  - `AnalyticalMetricGrid`: Steps / Sleep / Heart rate / Movement with provenance ("Health Connect", "your check-in", "Logged today"); missing data shown as missing; stale sleep (older than yesterday) never labelled "last night".
+  - `HydrationTrackerCard`: partial capsules, last entry + count, undo disabled when nothing is journaled, goal button opens the existing goal picker.
+  - `healthSlice`: every change to `hydration[date]` is journaled (`source: 'adjustment'` for direct edits, signed); undo reverses exactly the last entry; invalid amounts rejected. Nutrition screen stepper now shares this journal.
+  - `dashboardAnalytics`: Vitality = today's check-in (+ quests when assigned, + last-night sleep), weights renormalised over recorded inputs only; water excluded so logging water can never lower the score; `loggedActiveMinutes`, `trendDaysWithData`.
+  - Home order: hero → metrics → water → check-in trend (only with ≥2 check-ins this week) → today's plan → setup/recovery → focus → this week → connect row (only when nothing is connected) → guide → tools.
+  - `ui/Avatar` (photo → initials → neutral glyph; placeholder names never become initials) used in hero, header and drawer. Theme: `onPrimaryAccent` / `onPrimaryInfo` tokens for data colours on the hero.
+- **Verification**:
+  - `pnpm compile` → PASS. `pnpm lint` → PASS (0 errors; 1 pre-existing warning in `TodayMeals.tsx`). `pnpm test` → PASS (47 suites, 328 tests; new vitality, active-minutes and hydration-journal tests).
+  - `./gradlew :app:assembleRelease -PreactNativeArchitectures=arm64-v8a` → BUILD SUCCESSFUL; `adb -s ZD2225KYKD install -r` → Success.
+  - Device (release build): initial view without header (`10_*`), surface rising over the hero mid-scroll (`11_*`), header pinned and held through a small reverse drag (`12_*`), pinned deep in the page (`13_*`), last section clears the safe area (`14_*`), return to top restores the initial state; water +250/+150 → 400 ml, persisted across force-stop, undo removed exactly +150 ml (`20_*`–`22_*`); drawer neutral avatar for "Guest" (`30_*`); font scale 1.3 (`40_*`).
+- **Not verified / not done in this milestone**: TalkBack pass, reduced-motion on device, iOS, emulator run, a profile with a photo or real name, Health Connect data on device (none connected). Phone step counter (Android `TYPE_STEP_COUNTER` / iOS Core Motion) is NOT STARTED: it needs a sensor module and the `ACTIVITY_RECOGNITION` permission flow; steps currently come only from Health Connect.

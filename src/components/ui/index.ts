@@ -28,3 +28,4 @@ export * from './Toggle';
 export * from './AchievementModal';
 export * from './GlassOrbButton';
 export * from './Squircle';
+export * from './Avatar';

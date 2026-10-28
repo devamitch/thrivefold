@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Link, useFocusEffect, useRouter, type Href } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ActivityRow } from '../../../components/game/ActivityRow';
 import { QuestSheet } from '../../../components/game/QuestSheet';
@@ -11,17 +12,15 @@ import { DashboardHeader } from '../../../components/home/DashboardHeader';
 import { DashboardScreenContainer } from '../../../components/home/DashboardScreenContainer';
 import { HomeGuide } from '../../../components/home/HomeGuide';
 import { HydrationTrackerCard } from '../../../components/home/HydrationTrackerCard';
-import { MetricBarChart } from '../../../components/home/MetricBarChart';
 import { SocialInvite } from '../../../components/home/SocialInvite';
-import { TimeRangeFilter, type TimeRange } from '../../../components/home/TimeRangeFilter';
 import { ToolsGrid } from '../../../components/home/ToolsGrid';
-import { TrendAreaChart } from '../../../components/home/TrendAreaChart';
-import { VitalityHero } from '../../../components/home/VitalityHero';
+import { VitalityHero, VitalityHeroDecor, type HeroAction } from '../../../components/home/VitalityHero';
 import { WeekGlance } from '../../../components/home/WeekGlance';
 import { Card } from '../../../components/ui/Card';
 import { Chip } from '../../../components/ui/Chip';
 import { PressableScale } from '../../../components/ui/PressableScale';
 import { SettingsRow } from '../../../components/ui/SettingsRow';
+import { TrendBars } from '../../../components/ui/TrendBars';
 import { evaluateDeterministicRoutine } from '../../../domain/ai/deterministicRules';
 import { computeInsights, recentLoad } from '../../../domain/ai/insights';
 import {
@@ -29,6 +28,8 @@ import {
   getEqualizerBars,
   getWeeklyHydrationBars,
   getWeeklyTrendPoints,
+  loggedActiveMinutes,
+  trendDaysWithData,
 } from '../../../domain/analytics/dashboardAnalytics';
 import {
   formatLocalDate,
@@ -103,7 +104,9 @@ export default function HomeScreen() {
       dailyGoalReached: st.dailyGoalReached,
       readings: st.deviceReadings,
       hydration: st.hydration,
-      setHydration: st.setHydration,
+      waterLogs: st.waterLogs,
+      activityLogs: st.activityLogs,
+      workoutSessions: st.workoutSessions,
       addWaterLog: st.addWaterLog,
       undoWaterLog: st.undoWaterLog,
       hydrationTargetGlasses: st.hydrationTargetGlasses,
@@ -112,10 +115,14 @@ export default function HomeScreen() {
     })),
   );
 
+  const insets = useSafeAreaInsets();
+  const openDrawer = useCallback(() => {
+    hapticLight();
+    useRootStore.getState().setDrawerOpen(true);
+  }, []);
   const agendaSources = useAgendaSources();
   const [filter, setFilter] = useState<'all' | QuestFamily>('all');
   const [openQuest, setOpenQuest] = useState<string | null>(null);
-  const [timeRange, setTimeRange] = useState<TimeRange>('today');
   const [analyticsSheetOpen, setAnalyticsSheetOpen] = useState(false);
 
   const todaysCheckIn = s.checkInHistory.find((c) => c.date === today());
@@ -184,7 +191,13 @@ export default function HomeScreen() {
       .filter((r) => r.kind === kind)
       .reduce<(typeof s.readings)[number] | null>((a, r) => (!a || r.date > a.date ? r : a), null);
   const steps = latest('steps');
-  const sleep = latest('sleep_minutes');
+  // A sleep reading only describes "last night" if it is dated today or yesterday.
+  const latestSleep = latest('sleep_minutes');
+  const yesterday = formatLocalDate(new Date(Date.now() - 86_400_000));
+  const sleep =
+    latestSleep && (latestSleep.date === today() || latestSleep.date === yesterday)
+      ? latestSleep
+      : null;
   const heart = latest('heart_rate_avg');
   const sleepMinutesValue = sleep
     ? Math.round(sleep.value)
@@ -193,58 +206,72 @@ export default function HomeScreen() {
       : null;
 
   const todayHydration = s.hydration[today()] ?? 0;
-  const handleIncrementHydration = useCallback(() => {
-    s.addWaterLog(250, today());
-  }, [s]);
+  const hydrationTarget = s.hydrationTargetGlasses ?? 8;
+  const todayWaterEntries = useMemo(
+    () => s.waterLogs.filter((w) => w.date === today()),
+    [s.waterLogs],
+  );
+  const activeMinutes = useMemo(
+    () => loggedActiveMinutes(today(), s.activityLogs, s.workoutSessions),
+    [s.activityLogs, s.workoutSessions],
+  );
 
   const vitality = useMemo(
     () =>
       computeVitalityScore({
         todayCheckIn: todaysCheckIn ?? null,
-        recentCheckIns: s.checkInHistory,
         questsDone: done,
         questsTotal: active,
         lastSleepMinutes: sleep?.value ?? null,
         todayHydrationGlasses: todayHydration,
       }),
-    [todaysCheckIn, s.checkInHistory, done, active, sleep, todayHydration],
+    [todaysCheckIn, done, active, sleep, todayHydration],
   );
 
   const trendPoints = useMemo(
     () => getWeeklyTrendPoints(s.checkInHistory, s.readings),
     [s.checkInHistory, s.readings],
   );
+  const trendDays = trendDaysWithData(trendPoints);
 
   const stepBars = useMemo(() => getEqualizerBars(s.readings, 'steps'), [s.readings]);
 
-  const hydrationBars = useMemo(() => getWeeklyHydrationBars(s.hydration), [s.hydration]);
+  const hydrationBars = useMemo(
+    () => getWeeklyHydrationBars(s.hydration, new Date(), hydrationTarget),
+    [s.hydration, hydrationTarget],
+  );
 
-  const subtitle =
-    !todaysCheckIn && daysAway >= 2
-      ? 'Welcome back. Nothing to catch up on; start with today.'
-      : !todaysCheckIn
-        ? 'Start with a one-minute check-in.'
-        : active === 0
-          ? 'No quests yet today.'
-          : done >= active
-            ? 'All of today’s quests are done.'
-            : `${done} of ${active} quests done today.`;
+  // Gentle restart (spec §4.4): only a gap earns a line under the greeting.
+  const heroNote =
+    !todaysCheckIn && daysAway >= 2 ? 'Welcome back. Nothing to catch up on; start with today.' : null;
 
-  const deviceTiles = [
-    steps
+  // One next action, in order: check in, the next open quest, else the roadmap.
+  const nextQuest = useMemo(() => {
+    const open = visible.filter((q) => !q.isCompleted && q.status !== 'skipped');
+    const t = splitByTime(open, new Date());
+    return t.now[0] ?? t.later[0]?.quests[0] ?? null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [s.quests]);
+  const heroAction: HeroAction = !todaysCheckIn
+    ? {
+        label: 'Check in · 1 minute',
+        icon: 'sunny-outline',
+        onPress: () => router.push('/(app)/check-in'),
+      }
+    : nextQuest
       ? {
-          label: steps.date === today() ? 'Steps today' : `Steps ${steps.date.slice(5)}`,
-          value: steps.value.toLocaleString(),
+          label: `Next: ${nextQuest.title}`,
+          icon: 'play-outline',
+          onPress: () => setOpenQuest(nextQuest.id),
+          accessibilityLabel: `Next quest: ${nextQuest.title}. Open`,
         }
-      : null,
-    sleep
-      ? {
-          label: 'Last sleep',
-          value: `${Math.floor(sleep.value / 60)}h ${Math.round(sleep.value % 60)}m`,
-        }
-      : null,
-    heart ? { label: 'Avg heart rate', value: `${Math.round(heart.value)} bpm` } : null,
-  ].filter((t): t is { label: string; value: string } => t !== null);
+      : {
+          label: 'All done today · see your roadmap',
+          icon: 'map-outline',
+          onPress: () => router.push('/(app)/roadmap' as Href),
+        };
+
+  const connected = s.readings.length > 0;
   useFocusEffect(
     useCallback(() => {
       useRootStore.getState().autoClaimAnsweredSetupRewards();
@@ -277,184 +304,112 @@ export default function HomeScreen() {
 
   return (
     <DashboardScreenContainer
-      header={({ scrollY, collapseProgress, dockDistance, scrollToTop }) => (
+      heroDecor={<VitalityHeroDecor />}
+      header={({ headerProgress, headerVisible, scrollToTop }) => (
         <DashboardHeader
-          userName={name ? name : undefined}
+          subtitle={`${s.dailyPoints} of ${s.dailyPointsTarget} pts · Level ${progress.level}`}
+          userName={name}
           userPhotoUrl={s.user?.photoUrl}
-          statusLabel={
-            vitality.hasCheckInToday
-              ? `Vitality ${vitality.score}`
-              : `${s.dailyPoints}/${s.dailyPointsTarget} pts`
-          }
-          badgeText={`Lvl ${progress.level}`}
-          onMenuPress={() => useRootStore.getState().setDrawerOpen(true)}
-          scrollY={scrollY}
-          collapseProgress={collapseProgress}
-          dockDistance={dockDistance}
-          progress={s.dailyPoints / Math.max(1, s.dailyPointsTarget)}
-          onCompactPress={scrollToTop}
+          onMenuPress={openDrawer}
+          onTitlePress={scrollToTop}
+          headerProgress={headerProgress}
+          visible={headerVisible}
         />
       )}
-      hero={({ scrollY, collapseProgress }) => (
+      hero={() => (
         <VitalityHero
-          scrollY={scrollY}
-          collapseProgress={collapseProgress}
+          topInset={insets.top}
           eyebrow={new Date().toLocaleDateString(undefined, {
             weekday: 'long',
             day: 'numeric',
             month: 'long',
           })}
           greeting={name ? `${greeting()}, ${name}` : greeting()}
-          subtitle={subtitle}
-          score={vitality.score}
-          tier={vitality.tier}
-          label={vitality.label}
-          subtext={vitality.subtext}
-          hasCheckInToday={vitality.hasCheckInToday}
-          energy={todaysCheckIn?.energy ?? null}
-          mood={todaysCheckIn?.mood ?? null}
-          sleepHours={
-            todaysCheckIn?.sleepHours ?? (sleep ? Math.round(sleep.value / 6) / 10 : null)
-          }
-          hydrationGlasses={todayHydration}
-          hydrationTargetGlasses={s.hydrationTargetGlasses ?? 8}
-          questsDone={done}
-          questsTotal={active}
+          note={heroNote}
+          userName={name}
+          userPhotoUrl={s.user?.photoUrl}
+          onAvatarPress={openDrawer}
           points={s.dailyPoints}
           target={s.dailyPointsTarget}
+          questsDone={done}
+          questsTotal={active}
+          waterGlasses={todayHydration}
+          waterTarget={hydrationTarget}
+          vitality={
+            vitality.hasCheckInToday ? { score: vitality.score, label: vitality.label } : null
+          }
           level={progress.level}
           xpToNext={progress.next ? Math.max(0, progress.xpForNext - progress.xpIntoLevel) : null}
-          onCheckIn={() => router.push('/(app)/check-in')}
           onRoadmap={() => router.push('/(app)/roadmap' as Href)}
+          action={heroAction}
         />
       )}
     >
-      {/* Analytical Controls & Responsive Charts */}
-      <View>
-        <TimeRangeFilter selected={timeRange} onChange={setTimeRange} />
+      <AnalyticalMetricGrid
+        steps={
+          steps
+            ? { value: Math.round(steps.value), date: steps.date, isToday: steps.date === today() }
+            : null
+        }
+        sleep={
+          sleep
+            ? { minutes: Math.round(sleep.value), source: 'health_connect' }
+            : sleepMinutesValue !== null
+              ? { minutes: sleepMinutesValue, source: 'check_in' }
+              : null
+        }
+        heart={heart ? { bpm: heart.value, isToday: heart.date === today() } : null}
+        activeMinutes={activeMinutes}
+        connected={connected}
+      />
 
-        {timeRange === 'today' ? (
-          <>
-            <AnalyticalMetricGrid
-              stepsCount={steps ? Math.round(steps.value) : null}
-              sleepMinutes={sleepMinutesValue}
-              heartRateAvg={heart ? Math.round(heart.value) : null}
-              hydrationCount={todayHydration}
-              hydrationTarget={s.hydrationTargetGlasses ?? 8}
-              onIncrementHydration={handleIncrementHydration}
-            />
-            <HydrationTrackerCard
-              glasses={todayHydration}
-              targetGlasses={s.hydrationTargetGlasses ?? 8}
-              onSetGlasses={(v) => s.setHydration(today(), v)}
-              onAddMl={(ml) => s.addWaterLog(ml, today())}
-              onUndo={() => s.undoWaterLog(today())}
-            />
-
-            {/* Weekly Analytics & Trends Bottom-Sheet Launcher */}
-            <PressableScale
-              onPress={() => {
-                hapticLight();
-                setAnalyticsSheetOpen(true);
-              }}
-              style={{ marginTop: spacing.md }}
-              accessibilityRole="button"
-              accessibilityLabel="Open weekly analytics and health trends sheet"
-            >
-              <Card variant="surface" style={{ padding: spacing.base }}>
-                <View style={styles.rowBetween}>
-                  <View style={styles.rowCenter}>
-                    <View
-                      style={[styles.analyticsIconCircle, { backgroundColor: colors.primaryAlpha }]}
-                    >
-                      <Ionicons name="analytics" size={18} color={colors.primary} />
-                    </View>
-                    <View style={{ marginLeft: 12 }}>
-                      <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                        Weekly Wellbeing Trajectory
-                      </Text>
-                      <Text
-                        style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}
-                      >
-                        Tap to expand 7-day vitality curves, rhythm & targets
-                      </Text>
-                    </View>
-                  </View>
-                  <Ionicons name="chevron-up" size={18} color={colors.primary} />
-                </View>
-              </Card>
-            </PressableScale>
-          </>
-        ) : (
-          <>
-            <TrendAreaChart points={trendPoints} onCheckIn={() => router.push('/(app)/check-in')} />
-            <MetricBarChart
-              bars={stepBars}
-              title="Steps Distribution"
-              subtitle="Daily activity across the week"
-              totalDisplay={
-                steps
-                  ? `${(stepBars.reduce((a, b) => a + b.value, 0) / 1000).toFixed(1)}k total`
-                  : undefined
-              }
-              onPress={() => router.push('/(app)/health/integrations' as Href)}
-            />
-            <MetricBarChart
-              bars={hydrationBars}
-              title="Hydration Rhythm"
-              subtitle="Daily glasses of water (250 ml each)"
-              totalDisplay={`${hydrationBars.reduce((a, b) => a + b.value, 0)} glasses`}
-              onPress={() => router.push('/(app)/health/nutrition' as Href)}
-            />
-          </>
-        )}
+      <View style={{ marginTop: spacing.md }}>
+        <HydrationTrackerCard
+          glasses={todayHydration}
+          targetGlasses={hydrationTarget}
+          entries={todayWaterEntries}
+          onAddMl={(ml) => s.addWaterLog(ml, today())}
+          onUndo={() => s.undoWaterLog(today())}
+          onEditGoal={() => setAnalyticsSheetOpen(true)}
+        />
       </View>
 
-      <View>
-        <HomeGuide />
-      </View>
-      <View>
-        <SocialInvite />
-      </View>
-
-      {setupOpen > 0 ? (
-        <View>
-          <Link href={'/(app)/personalize' as Href} asChild>
-            <Card variant="surface" style={{ padding: spacing.base, marginTop: spacing.md }}>
-              <View style={styles.rowBetween}>
-                <View style={[styles.iconTile, { backgroundColor: colors.primaryAlpha }]}>
-                  <Ionicons name="trophy-outline" size={20} color={colors.primary} />
-                </View>
-                <View style={[styles.flex, { marginLeft: 12 }]}>
-                  <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                    {setupOpen} setup step{setupOpen === 1 ? '' : 's'} open
-                  </Text>
-                  <Text
-                    style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}
-                    numberOfLines={2}
-                  >
-                    {openSections.map((sec) => sec.title).join(' · ')}
-                  </Text>
-                </View>
-                <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
+      <View style={{ marginTop: spacing.md }}>
+        <Card
+          onPress={() => {
+            hapticLight();
+            setAnalyticsSheetOpen(true);
+          }}
+          accessibilityLabel={
+            trendDays >= 2
+              ? `Check-in trend, ${trendDays} of the last 7 days. Open trends`
+              : 'Trends appear after two check-ins this week. Open trends'
+          }
+        >
+          {trendDays >= 2 ? (
+            <TrendBars
+              label="Check-in trend"
+              max={100}
+              points={trendPoints.map((p) => ({
+                date: p.date,
+                value: p.hasData ? p.vitality : null,
+              }))}
+            />
+          ) : (
+            <View style={styles.rowBetween}>
+              <View style={styles.flex}>
+                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Trends</Text>
+                <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                  {trendDays === 1
+                    ? 'One check-in this week. A trend appears after the second.'
+                    : 'A trend appears after two check-ins this week.'}
+                </Text>
               </View>
-            </Card>
-          </Link>
-        </View>
-      ) : null}
-
-      {recovery ? (
-        <View>
-          <Card variant="surface" style={{ padding: spacing.base, marginTop: spacing.md }}>
-            <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-              {recovery.title}
-            </Text>
-            <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>
-              {recovery.aiExplanation.text}
-            </Text>
-          </Card>
-        </View>
-      ) : null}
+              <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
+            </View>
+          )}
+        </Card>
+      </View>
 
       {/* Quests */}
       <View>
@@ -547,6 +502,58 @@ export default function HomeScreen() {
         ) : null}
       </View>
 
+      {setupOpen > 0 ? (
+        <View>
+          <Link href={'/(app)/personalize' as Href} asChild>
+            <Card variant="surface" style={{ padding: spacing.base, marginTop: spacing.md }}>
+              <View style={styles.rowBetween}>
+                <View style={[styles.iconTile, { backgroundColor: colors.primaryAlpha }]}>
+                  <Ionicons name="trophy-outline" size={20} color={colors.primary} />
+                </View>
+                <View style={[styles.flex, { marginLeft: 12 }]}>
+                  <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                    {setupOpen} setup step{setupOpen === 1 ? '' : 's'} open
+                  </Text>
+                  <Text
+                    style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}
+                    numberOfLines={2}
+                  >
+                    {openSections.map((sec) => sec.title).join(' · ')}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
+              </View>
+            </Card>
+          </Link>
+        </View>
+      ) : null}
+
+      {recovery ? (
+        <View>
+          <Card variant="surface" style={{ padding: spacing.base, marginTop: spacing.md }}>
+            <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+              {recovery.title}
+            </Text>
+            <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>
+              {recovery.aiExplanation.text}
+            </Text>
+          </Card>
+        </View>
+      ) : null}
+
+      {recovery ? (
+        <View>
+          <Card variant="surface" style={{ padding: spacing.base, marginTop: spacing.md }}>
+            <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+              {recovery.title}
+            </Text>
+            <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>
+              {recovery.aiExplanation.text}
+            </Text>
+          </Card>
+        </View>
+      ) : null}
+
       {/* Experience focus */}
       <View>
         {experience === 'women_health' ? (
@@ -603,43 +610,27 @@ export default function HomeScreen() {
         ) : null}
       </View>
 
-      <View>
-        {deviceTiles.length > 0 ? (
+      {!connected ? (
+        <View style={{ marginTop: spacing.md }}>
           <Link href={'/(app)/health/integrations' as Href} asChild>
-            <Card style={{ padding: spacing.base, marginTop: spacing.md }}>
-              <View style={styles.rowBetween}>
-                <Text style={[typography.label, { color: colors.text.muted }]}>
-                  From Health Connect
-                </Text>
-                <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
-              </View>
-              <View style={[styles.metrics, { marginTop: spacing.sm }]}>
-                {deviceTiles.map((t) => (
-                  <View key={t.label} style={[styles.metric, { backgroundColor: colors.surface1 }]}>
-                    <Text style={[typography.subheading, { color: colors.text.primary }]}>
-                      {t.value}
-                    </Text>
-                    <Text style={[typography.caption, { color: colors.text.muted }]}>{t.label}</Text>
-                  </View>
-                ))}
-              </View>
-            </Card>
+            <SettingsRow
+              icon="sync-outline"
+              title="Connect Health Connect"
+              subtitle="Bring in steps, sleep and heart rate"
+            />
           </Link>
-        ) : (
-          <View style={{ marginTop: spacing.md }}>
-            <Link href={'/(app)/health/integrations' as Href} asChild>
-              <SettingsRow
-                icon="sync-outline"
-                title="Connect Health Connect"
-                subtitle="Bring in steps, sleep and heart rate"
-              />
-            </Link>
-          </View>
-        )}
+        </View>
+      ) : null}
+
+      <View>
+        <HomeGuide />
+      </View>
+      <View>
+        <SocialInvite />
       </View>
 
       {/* Wellness Tools */}
-      <View style={{ marginTop: spacing.xl, marginBottom: spacing.xl }}>
+      <View style={{ marginTop: spacing.xl }}>
         <View style={styles.sectionHeader}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>Tools</Text>
         </View>
@@ -653,7 +644,7 @@ export default function HomeScreen() {
         trendPoints={trendPoints}
         stepBars={stepBars}
         hydrationBars={hydrationBars}
-        targetGlasses={s.hydrationTargetGlasses ?? 8}
+        targetGlasses={hydrationTarget}
         onSetTargetGlasses={(t) => s.setHydrationTargetGlasses(t)}
         totalHydrationGlasses={todayHydration}
         onCheckIn={() => router.push('/(app)/check-in')}

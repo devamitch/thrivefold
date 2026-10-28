@@ -3,6 +3,8 @@ import {
   getWeeklyTrendPoints,
   getEqualizerBars,
   getWeeklyHydrationBars,
+  loggedActiveMinutes,
+  trendDaysWithData,
 } from '../../src/domain/analytics/dashboardAnalytics';
 import type { DailyCheckInRecord } from '../../src/stores/slices/healthSlice';
 import type { DeviceReading } from '../../src/domain/interop/readings';
@@ -61,7 +63,8 @@ describe('dashboardAnalytics', () => {
 
     expect(res.hasCheckInToday).toBe(false);
     expect(res.tier).toBe('starting_out');
-    expect(res.label).toBe('Ready to Begin');
+    expect(res.label).toBe('Ready to begin');
+    expect(res.score).toBe(0);
   });
 
   it('generates 7 trend points ending at reference date', () => {
@@ -110,5 +113,63 @@ describe('dashboardAnalytics', () => {
     expect(todayBar?.displayValue).toBe('6');
     expect(todayBar?.heightPct).toBe(0.75);
   });
-});
 
+  it('never lets an older check-in stand in for today', () => {
+    const res = computeVitalityScore({
+      todayCheckIn: null,
+      recentCheckIns: [mockCheckIn],
+      questsDone: 2,
+      questsTotal: 3,
+      lastSleepMinutes: 480,
+    });
+    expect(res.hasCheckInToday).toBe(false);
+    expect(res.score).toBe(0);
+    expect(res.components.energyScore).toBeNull();
+  });
+
+  it('scores only recorded inputs instead of filling in neutral values', () => {
+    // Check-in only: energy/mood 85 (w .35), stress 80 (w .20), its 7.5 h sleep 100 (w .20) -> 87.7.
+    const checkInOnly = computeVitalityScore({
+      todayCheckIn: mockCheckIn,
+      questsDone: 0,
+      questsTotal: 0,
+      lastSleepMinutes: null,
+    });
+    expect(checkInOnly.score).toBe(88);
+    expect(checkInOnly.components.sleepHours).toBe(7.5);
+    expect(checkInOnly.components.hydrationGlasses).toBeNull();
+  });
+
+  it('does not let logging water lower the score', () => {
+    const base = { todayCheckIn: mockCheckIn, questsDone: 0, questsTotal: 0, lastSleepMinutes: null };
+    const none = computeVitalityScore(base);
+    const some = computeVitalityScore({ ...base, todayHydrationGlasses: 1 });
+    expect(some.score).toBe(none.score);
+    expect(some.components.hydrationGlasses).toBe(1);
+  });
+
+  it('sums logged movement and returns null when nothing was logged', () => {
+    expect(loggedActiveMinutes('2026-10-28', [], [])).toBeNull();
+    expect(
+      loggedActiveMinutes(
+        '2026-10-28',
+        [
+          { date: '2026-10-28', minutes: 20 },
+          { date: '2026-10-27', minutes: 45 },
+        ],
+        [
+          {
+            date: '2026-10-28',
+            startedAt: '2026-10-28T07:00:00.000Z',
+            finishedAt: '2026-10-28T07:15:00.000Z',
+          },
+        ],
+      ),
+    ).toBe(35);
+  });
+
+  it('counts only days with real check-ins in a trend series', () => {
+    const ref = new Date('2026-10-28T12:00:00Z');
+    expect(trendDaysWithData(getWeeklyTrendPoints([mockCheckIn], [], ref))).toBe(1);
+  });
+});

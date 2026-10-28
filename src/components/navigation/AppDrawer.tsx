@@ -1,6 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
 import { hapticSelection } from '../../services/haptics';
-import { Image } from 'expo-image';
 import { usePathname, useRouter, type Href } from 'expo-router';
 import React, { memo, useCallback, useMemo, type ReactNode, type RefObject } from 'react';
 import {
@@ -28,6 +27,7 @@ import { useRootStore, useShallow } from '../../stores/useRootStore';
 import type { ThemeColors } from '../../theme/colors';
 import type { ProductExperience } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
+import { Avatar } from '../ui/Avatar';
 import { PressableScale } from '../ui/PressableScale';
 import { SquircleSurface } from '../ui/SquircleSurface';
 import { drawerProgress, drawerWidthFor } from './drawerProgress';
@@ -53,12 +53,6 @@ const QUICK: {
   { label: 'Train', icon: 'fitness-outline', route: '/(app)/train' },
 ];
 const QUICK_ROUTES = new Set(QUICK.map((q) => q.route));
-
-const AVATAR_ICON: Record<ProductExperience, keyof typeof Ionicons.glyphMap> = {
-  women_health: 'flower-outline',
-  men_health: 'shield-outline',
-  pride_wellbeing: 'heart-outline',
-};
 
 const EXPERIENCE_LABEL: Record<ProductExperience, string> = {
   women_health: "Women's health",
@@ -304,18 +298,13 @@ export function AppDrawer({ blurTarget: _blurTarget }: { blurTarget?: RefObject<
               accessibilityLabel={`${user?.pseudonym || 'You'}, level ${level}, ${EXPERIENCE_LABEL[experience]}. Open profile`}
             >
               <View style={styles.profile}>
-                <SquircleSurface shape="circle" fill={palette.accentWash} style={styles.avatar}>
-                  {user?.photoUrl ? (
-                    <Image
-                      source={{ uri: user.photoUrl }}
-                      style={styles.avatarPhoto}
-                      contentFit="cover"
-                      accessibilityIgnoresInvertColors
-                    />
-                  ) : (
-                    <Ionicons name={AVATAR_ICON[experience]} size={22} color={palette.accent} />
-                  )}
-                </SquircleSurface>
+                <Avatar
+                  photoUrl={user?.photoUrl}
+                  name={user?.pseudonym}
+                  size={46}
+                  fill={palette.accentWash}
+                  ink={palette.accent}
+                />
                 <View style={styles.flex}>
                   <Text numberOfLines={1} style={[typography.subheading, { color: palette.ink }]}>
                     {user?.pseudonym || 'You'}
@@ -474,17 +463,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     gap: 12,
-  },
-  avatar: {
-    alignItems: 'center',
-    height: 46,
-    justifyContent: 'center',
-    overflow: 'hidden',
-    width: 46,
-  },
-  avatarPhoto: {
-    height: 46,
-    width: 46,
   },
   iconButton: {
     alignItems: 'center',

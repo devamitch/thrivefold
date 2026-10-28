@@ -30,6 +30,9 @@ export interface ThemeColors {
   /** Secondary text and quiet fills on a primary-coloured hero. */
   onPrimaryMuted: string;
   onPrimarySurface: string;
+  /** Second and third data colours on a primary-coloured hero (rings, legend dots). */
+  onPrimaryAccent: string;
+  onPrimaryInfo: string;
   primaryAlpha: string;
   primaryGradient: readonly [string, string, ...string[]];
   accent: string;
@@ -78,6 +81,8 @@ interface Recipe {
   status: { success: string; warning: string; info: string; error: string };
   dock: string;
   dockActive: string;
+  /** Data colours legible on `primary`; default to translucent `onPrimary`. */
+  onPrimaryData?: { accent: string; info: string };
 }
 
 function palette(r: Recipe): ThemeColors {
@@ -98,6 +103,8 @@ function palette(r: Recipe): ThemeColors {
     onPrimary: r.onPrimary,
     onPrimaryMuted: alpha(r.onPrimary, 0.74),
     onPrimarySurface: alpha(r.onPrimary, dark ? 0.16 : 0.14),
+    onPrimaryAccent: r.onPrimaryData?.accent ?? alpha(r.onPrimary, 0.7),
+    onPrimaryInfo: r.onPrimaryData?.info ?? alpha(r.onPrimary, 0.5),
     primaryAlpha: alpha(r.primary, dark ? 0.18 : 0.1),
     primaryGradient: r.gradient,
     accent: r.accent,
@@ -141,6 +148,7 @@ export const womenLightColors = palette({
   status: LIGHT_STATUS,
   dock: '#1A1614',
   dockActive: '#E28A6D',
+  onPrimaryData: { accent: '#F2D3B3', info: '#CFE3F2' },
 });
 
 export const womenDarkColors = palette({
@@ -175,6 +183,7 @@ export const menLightColors = palette({
   status: LIGHT_STATUS,
   dock: '#121820',
   dockActive: '#C9A46A',
+  onPrimaryData: { accent: '#C9A46A', info: '#8FB4D6' },
 });
 
 export const menDarkColors = palette({
@@ -208,6 +217,7 @@ export const prideLightColors = palette({
   status: LIGHT_STATUS,
   dock: '#140E1E',
   dockActive: '#B682F2',
+  onPrimaryData: { accent: '#F4A8C6', info: '#A9D3F0' },
 });
 
 export const prideDarkColors = palette({

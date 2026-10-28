@@ -5,333 +5,180 @@ import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { useTheme } from '../../theme/useTheme';
-import { hapticLight } from '../../services/haptics';
 import { Card } from '../ui/Card';
-import { PressableScale } from '../ui/PressableScale';
 
-interface Props {
-  stepsCount: number | null;
-  stepsTarget?: number;
-  sleepMinutes: number | null;
-  heartRateAvg: number | null;
-  hydrationCount: number;
-  hydrationTarget?: number;
-  onIncrementHydration: () => void;
+export interface MetricGridProps {
+  /** Latest daily step total from a connected source. */
+  steps: { value: number; date: string; isToday: boolean } | null;
+  stepsGoal?: number;
+  sleep: { minutes: number; source: 'health_connect' | 'check_in' } | null;
+  heart: { bpm: number; isToday: boolean } | null;
+  /** Minutes the person logged today (activities and workouts); null when nothing was logged. */
+  activeMinutes: number | null;
+  /** Whether any connected source has delivered readings. Drives the empty-state wording. */
+  connected: boolean;
 }
 
-const MINI_DIAL_SIZE = 44;
-const MINI_STROKE = 4.5;
-const MINI_PAD = MINI_STROKE / 2 + 1;
-const MINI_RADIUS = (MINI_DIAL_SIZE - MINI_PAD * 2) / 2;
+const DIAL = 40;
+const DIAL_STROKE = 4;
+const DIAL_R = (DIAL - DIAL_STROKE) / 2 - 1;
 
+const shortDate = (iso: string) =>
+  new Date(`${iso}T12:00:00`).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+
+/**
+ * Four compact tiles with real values only. Missing data is shown as missing ("Not connected",
+ * "Nothing logged"), never as zero, and each value says where it came from.
+ */
 export function AnalyticalMetricGrid({
-  stepsCount,
-  stepsTarget = 8000,
-  sleepMinutes,
-  heartRateAvg,
-  hydrationCount,
-  hydrationTarget = 8,
-  onIncrementHydration,
-}: Props) {
+  steps,
+  stepsGoal = 8000,
+  sleep,
+  heart,
+  activeMinutes,
+  connected,
+}: MetricGridProps) {
   const router = useRouter();
-  const { colors, typography, spacing } = useTheme();
+  const { colors } = useTheme();
+  const notConnected = connected ? 'No reading yet' : 'Not connected';
 
-  // Steps Progress Arc
-  const stepsRatio = Math.min(1, (stepsCount ?? 0) / Math.max(1, stepsTarget));
-  const { stepsTrackPath, stepsActivePath } = useMemo(() => {
-    const track = Skia.Path.Make();
-    track.addArc(
-      { x: MINI_PAD, y: MINI_PAD, width: MINI_RADIUS * 2, height: MINI_RADIUS * 2 },
-      -90,
-      359.9,
-    );
-
-    const active = Skia.Path.Make();
-    const sweep = Math.max(0.1, 360 * stepsRatio);
-    active.addArc(
-      { x: MINI_PAD, y: MINI_PAD, width: MINI_RADIUS * 2, height: MINI_RADIUS * 2 },
-      -90,
-      sweep,
-    );
-
-    return { stepsTrackPath: track, stepsActivePath: active };
-  }, [stepsRatio]);
-
-  // Sleep Display
-  const sleepDisplay = useMemo(() => {
-    if (!sleepMinutes || sleepMinutes <= 0) return 'No log yet';
-    const h = Math.floor(sleepMinutes / 60);
-    const m = Math.round(sleepMinutes % 60);
-    return `${h}h ${m}m`;
-  }, [sleepMinutes]);
-
-  // Sleep Ratio (target 8h = 480m)
-  const sleepRatio = Math.min(1, (sleepMinutes ?? 0) / 480);
-  const { sleepTrackPath, sleepActivePath } = useMemo(() => {
-    const track = Skia.Path.Make();
-    track.addArc(
-      { x: MINI_PAD, y: MINI_PAD, width: MINI_RADIUS * 2, height: MINI_RADIUS * 2 },
-      140,
-      260,
-    );
-
-    const active = Skia.Path.Make();
-    const sweep = Math.max(0.1, 260 * sleepRatio);
-    active.addArc(
-      { x: MINI_PAD, y: MINI_PAD, width: MINI_RADIUS * 2, height: MINI_RADIUS * 2 },
-      140,
-      sweep,
-    );
-
-    return { sleepTrackPath: track, sleepActivePath: active };
-  }, [sleepRatio]);
-
-  const handleAddWater = () => {
-    hapticLight();
-    onIncrementHydration();
-  };
+  const sleepValue = sleep
+    ? `${Math.floor(sleep.minutes / 60)}h ${Math.round(sleep.minutes % 60)}m`
+    : null;
 
   return (
     <View style={styles.grid}>
-      {/* 1. Steps Card */}
-      <View style={styles.cell}>
-        <Card
-          onPress={() => router.push('/(app)/health/integrations' as Href)}
-          style={[styles.metricCard, { padding: spacing.md }]}
+      <Tile
+        icon="footsteps-outline"
+        tint={colors.primary}
+        label={steps && !steps.isToday ? `Steps · ${shortDate(steps.date)}` : 'Steps'}
+        value={steps ? steps.value.toLocaleString() : null}
+        context={
+          steps
+            ? `of ${stepsGoal.toLocaleString()} · Health Connect`
+            : notConnected
+        }
+        dial={steps ? Math.min(1, steps.value / stepsGoal) : null}
+        onPress={() => router.push('/(app)/health/integrations' as Href)}
+        accessibilityHint="Opens connected health sources"
+      />
+      <Tile
+        icon="moon-outline"
+        tint={colors.accent}
+        label="Sleep"
+        value={sleepValue}
+        context={
+          sleep
+            ? sleep.source === 'health_connect'
+              ? 'Last night · Health Connect'
+              : 'Last night · your check-in'
+            : 'Nothing logged'
+        }
+        onPress={() => router.push('/(app)/health/sleep' as Href)}
+        accessibilityHint="Opens sleep"
+      />
+      <Tile
+        icon="heart-outline"
+        tint={colors.error}
+        label="Heart rate"
+        value={heart ? `${Math.round(heart.bpm)} bpm` : null}
+        context={heart ? (heart.isToday ? 'Day average' : 'Latest day average') : notConnected}
+        onPress={() => router.push('/(app)/health/integrations' as Href)}
+        accessibilityHint="Opens connected health sources"
+      />
+      <Tile
+        icon="walk-outline"
+        tint={colors.success}
+        label="Movement"
+        value={activeMinutes !== null ? `${activeMinutes} min` : null}
+        context={activeMinutes !== null ? 'Logged today' : 'Nothing logged today'}
+        onPress={() => router.push('/(app)/health/activity' as Href)}
+        accessibilityHint="Opens activity log"
+      />
+    </View>
+  );
+}
+
+function Tile({
+  icon,
+  tint,
+  label,
+  value,
+  context,
+  dial = null,
+  onPress,
+  accessibilityHint,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  tint: string;
+  label: string;
+  value: string | null;
+  context: string;
+  dial?: number | null;
+  onPress: () => void;
+  accessibilityHint: string;
+}) {
+  const { colors, typography, spacing } = useTheme();
+  const { track, arc } = useMemo(() => {
+    const t = Skia.Path.Make();
+    t.addArc({ x: DIAL / 2 - DIAL_R, y: DIAL / 2 - DIAL_R, width: DIAL_R * 2, height: DIAL_R * 2 }, -90, 359.9);
+    return { track: t, arc: t.copy() };
+  }, []);
+
+  return (
+    <View style={styles.cell}>
+      <Card
+        onPress={onPress}
+        accessibilityLabel={`${label}: ${value ?? context}${value ? `, ${context}` : ''}. ${accessibilityHint}`}
+        style={[styles.card, { padding: spacing.md }]}
+      >
+        <View style={styles.head}>
+          <View style={[styles.iconBox, { backgroundColor: colors.surface1 }]}>
+            <Ionicons name={icon} size={17} color={tint} />
+          </View>
+          {dial !== null ? (
+            <Canvas style={styles.dial}>
+              <Path path={track} style="stroke" strokeWidth={DIAL_STROKE} color={colors.surface2} />
+              <Path
+                path={arc}
+                style="stroke"
+                strokeWidth={DIAL_STROKE}
+                strokeCap="round"
+                color={tint}
+                start={0}
+                end={dial}
+              />
+            </Canvas>
+          ) : null}
+        </View>
+        <Text numberOfLines={1} style={[typography.caption, { color: colors.text.secondary }]}>
+          {label}
+        </Text>
+        <Text
+          numberOfLines={1}
+          style={[typography.subheading, { color: value ? colors.text.primary : colors.text.muted }]}
         >
-          <View style={styles.cardHeader}>
-            <View style={[styles.iconBox, { backgroundColor: colors.surface1 }]}>
-              <Ionicons name="footsteps-outline" size={18} color={colors.primary} />
-            </View>
-            {/* Mini Skia Arc Gauge */}
-            <View style={styles.dialBox}>
-              <Canvas style={styles.canvas}>
-                <Path
-                  path={stepsTrackPath}
-                  style="stroke"
-                  strokeWidth={MINI_STROKE}
-                  color={colors.surface2}
-                />
-                <Path
-                  path={stepsActivePath}
-                  style="stroke"
-                  strokeWidth={MINI_STROKE}
-                  strokeCap="round"
-                  color={colors.primary}
-                />
-              </Canvas>
-              <Text style={[typography.caption, styles.dialCenterText, { color: colors.text.muted }]}>
-                {Math.round(stepsRatio * 100)}%
-              </Text>
-            </View>
-          </View>
-
-          <Text style={[typography.subheading, styles.metricVal, { color: colors.text.primary }]}>
-            {stepsCount !== null ? stepsCount.toLocaleString() : '—'}
-          </Text>
-          <Text style={[typography.caption, { color: colors.text.secondary }]}>
-            {stepsCount !== null ? `of ${stepsTarget.toLocaleString()} steps` : 'Connect steps'}
-          </Text>
-        </Card>
-      </View>
-
-      {/* 2. Sleep Card */}
-      <View style={styles.cell}>
-        <Card
-          onPress={() => router.push('/(app)/health/integrations' as Href)}
-          style={[styles.metricCard, { padding: spacing.md }]}
-        >
-          <View style={styles.cardHeader}>
-            <View style={[styles.iconBox, { backgroundColor: colors.surface1 }]}>
-              <Ionicons name="moon-outline" size={18} color={colors.accent} />
-            </View>
-            {/* Mini Sleep Arc */}
-            <View style={styles.dialBox}>
-              <Canvas style={styles.canvas}>
-                <Path
-                  path={sleepTrackPath}
-                  style="stroke"
-                  strokeWidth={MINI_STROKE}
-                  strokeCap="round"
-                  color={colors.surface2}
-                />
-                <Path
-                  path={sleepActivePath}
-                  style="stroke"
-                  strokeWidth={MINI_STROKE}
-                  strokeCap="round"
-                  color={colors.accent}
-                />
-              </Canvas>
-              <Text style={[typography.caption, styles.dialCenterText, { color: colors.text.muted }]}>
-                {Math.round(sleepRatio * 100)}%
-              </Text>
-            </View>
-          </View>
-
-          <Text style={[typography.subheading, styles.metricVal, { color: colors.text.primary }]}>
-            {sleepDisplay}
-          </Text>
-          <Text style={[typography.caption, { color: colors.text.secondary }]}>
-            Last night · 8h goal
-          </Text>
-        </Card>
-      </View>
-
-      {/* 3. Resting Heart Rate Card with Equalizer Waveform */}
-      <View style={styles.cell}>
-        <Card
-          onPress={() => router.push('/(app)/health/integrations' as Href)}
-          style={[styles.metricCard, { padding: spacing.md }]}
-        >
-          <View style={styles.cardHeader}>
-            <View style={[styles.iconBox, { backgroundColor: colors.surface1 }]}>
-              <Ionicons name="heart-outline" size={18} color={colors.error} />
-            </View>
-            {/* 7-bar mini pulse equalizer */}
-            <View style={styles.equalizerRow}>
-              {[12, 22, 16, 26, 14, 20, 10].map((h, i) => (
-                <View
-                  key={i}
-                  style={[
-                    styles.eqBar,
-                    {
-                      height: h,
-                      backgroundColor: heartRateAvg ? colors.error : colors.surface2,
-                    },
-                  ]}
-                />
-              ))}
-            </View>
-          </View>
-
-          <Text style={[typography.subheading, styles.metricVal, { color: colors.text.primary }]}>
-            {heartRateAvg !== null ? `${Math.round(heartRateAvg)} bpm` : '—'}
-          </Text>
-          <Text style={[typography.caption, { color: colors.text.secondary }]}>
-            {heartRateAvg !== null ? 'Avg heart rate' : 'Connect HR monitor'}
-          </Text>
-        </Card>
-      </View>
-
-      {/* 4. Hydration Card with Interactive Quick-Tap */}
-      <View style={styles.cell}>
-        <Card style={[styles.metricCard, { padding: spacing.md }]}>
-          <View style={styles.cardHeader}>
-            <View style={[styles.iconBox, { backgroundColor: colors.infoSurface }]}>
-              <Ionicons name="water-outline" size={18} color={colors.info} />
-            </View>
-            {/* Interactive + button */}
-            <PressableScale
-              onPress={handleAddWater}
-              style={[styles.addWaterBtn, { backgroundColor: colors.info }]}
-              accessibilityRole="button"
-              accessibilityLabel="Add one glass of water"
-            >
-              <Ionicons name="add" size={16} color={colors.onPrimary} />
-            </PressableScale>
-          </View>
-
-          <Text style={[typography.subheading, styles.metricVal, { color: colors.text.primary }]}>
-            {hydrationCount} of {hydrationTarget} cups
-          </Text>
-
-          {/* 8 mini water droplets / pills */}
-          <View style={styles.waterDotsRow}>
-            {Array.from({ length: hydrationTarget }).map((_, i) => {
-              const isFilled = i < hydrationCount;
-              return (
-                <View
-                  key={i}
-                  style={[
-                    styles.waterDot,
-                    {
-                      backgroundColor: isFilled ? colors.info : colors.surface2,
-                    },
-                  ]}
-                />
-              );
-            })}
-          </View>
-        </Card>
-      </View>
+          {value ?? '—'}
+        </Text>
+        <Text numberOfLines={2} style={[typography.caption, { color: colors.text.muted }]}>
+          {context}
+        </Text>
+      </Card>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginTop: 10,
-  },
-  cell: {
-    width: '48.5%',
-  },
-  metricCard: {
-    minHeight: 124,
-    justifyContent: 'space-between',
-  },
-  cardHeader: {
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 10 },
+  cell: { width: '48.6%' },
+  card: { minHeight: 118 },
+  head: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
+    minHeight: DIAL,
   },
-  iconBox: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dialBox: {
-    width: MINI_DIAL_SIZE,
-    height: MINI_DIAL_SIZE,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  canvas: {
-    width: MINI_DIAL_SIZE,
-    height: MINI_DIAL_SIZE,
-  },
-  dialCenterText: {
-    position: 'absolute',
-    fontSize: 9,
-    fontWeight: '700',
-  },
-  equalizerRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    height: 28,
-    gap: 3,
-    paddingRight: 4,
-  },
-  eqBar: {
-    width: 3,
-    borderRadius: 1.5,
-  },
-  metricVal: {
-    fontSize: 18,
-    lineHeight: 22,
-    fontWeight: '700',
-  },
-  addWaterBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  waterDotsRow: {
-    flexDirection: 'row',
-    gap: 4,
-    marginTop: 6,
-  },
-  waterDot: {
-    flex: 1,
-    height: 6,
-    borderRadius: 3,
-  },
+  iconBox: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  dial: { width: DIAL, height: DIAL },
 });

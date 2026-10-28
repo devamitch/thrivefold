@@ -200,6 +200,39 @@ describe('Gaming Engine - Quest Auto-Completion & Health Integration', () => {
     expect(state.waterLogs.length).toBe(1);
   });
 
+  it('journals direct total edits so undo reverses exactly that edit', () => {
+    const store = useRootStore.getState();
+    useRootStore.setState({ hydration: {}, waterLogs: [] });
+
+    store.addWaterLog(250, today);
+    store.setHydration(today, 4);
+    let state = useRootStore.getState();
+    expect(state.hydration[today]).toBe(4);
+    expect(state.waterLogs[0].source).toBe('adjustment');
+    expect(state.waterLogs[0].glasses).toBe(3);
+
+    store.undoWaterLog(today);
+    state = useRootStore.getState();
+    expect(state.hydration[today]).toBe(1);
+    expect(state.waterLogs.length).toBe(1);
+  });
+
+  it('undo without a journaled entry leaves a saved total untouched', () => {
+    useRootStore.setState({ hydration: { [today]: 5 }, waterLogs: [] });
+    useRootStore.getState().undoWaterLog(today);
+    expect(useRootStore.getState().hydration[today]).toBe(5);
+  });
+
+  it('rejects non-positive or implausible water amounts', () => {
+    useRootStore.setState({ hydration: {}, waterLogs: [] });
+    const store = useRootStore.getState();
+    store.addWaterLog(0, today);
+    store.addWaterLog(-250, today);
+    store.addWaterLog(5000, today);
+    expect(useRootStore.getState().waterLogs.length).toBe(0);
+    expect(useRootStore.getState().hydration[today]).toBeUndefined();
+  });
+
   it('setHydrationTargetGlasses updates and clamps personal water goal', () => {
     const store = useRootStore.getState();
     store.setHydrationTargetGlasses(10);

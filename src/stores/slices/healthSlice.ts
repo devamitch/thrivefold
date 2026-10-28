@@ -124,9 +124,13 @@ export interface WaterLogEntry {
   date: string; // YYYY-MM-DD
   timestamp: string; // ISO string
   milliliters: number;
+  /** Signed: an `adjustment` that lowers the day's total is negative. */
   glasses: number;
-  source: 'manual' | 'health_connect';
+  /** `adjustment` records a direct edit of the day's total, so undo can reverse it too. */
+  source: 'manual' | 'health_connect' | 'adjustment';
 }
+
+const clampGlasses = (g: number) => Math.max(0, Math.min(24, Math.round(g * 10) / 10));
 
 export interface HealthSlice {
   currentStreak: number;
@@ -351,9 +355,25 @@ export const createHealthSlice: StateCreator<
   waterLogs: [],
   hydrationTargetGlasses: 8,
 
+  // `hydration[date]` is the canonical daily total (glasses of 250 ml); every change to it is also
+  // journaled in `waterLogs`, so undo reverses exactly what was done and history stays truthful.
   setHydration: (date, glasses) => {
-    const clamped = Math.max(0, Math.min(24, Math.round(glasses * 10) / 10));
-    set((state) => ({ hydration: { ...state.hydration, [date]: clamped } }));
+    const clamped = clampGlasses(glasses);
+    const current = get().hydration[date] ?? 0;
+    const delta = Math.round((clamped - current) * 10) / 10;
+    if (delta === 0) return;
+    const entry: WaterLogEntry = {
+      id: `water_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      date,
+      timestamp: new Date().toISOString(),
+      milliliters: Math.round(delta * 250),
+      glasses: delta,
+      source: 'adjustment',
+    };
+    set((state) => ({
+      hydration: { ...state.hydration, [date]: clamped },
+      waterLogs: [entry, ...state.waterLogs].slice(0, 500),
+    }));
     const root = get() as unknown as { completeHydrationQuest?: (g: number, d: string) => void };
     if (typeof root.completeHydrationQuest === 'function') {
       root.completeHydrationQuest(clamped, date);
@@ -361,48 +381,39 @@ export const createHealthSlice: StateCreator<
   },
 
   addWaterLog: (milliliters, dateStr) => {
+    const ml = Math.round(milliliters);
+    if (!Number.isFinite(ml) || ml <= 0 || ml > 2000) return;
     const date = dateStr ?? formatLocalDate(new Date());
-    const glasses = Math.round((milliliters / 250) * 10) / 10;
+    const glasses = Math.round((ml / 250) * 10) / 10;
     const entry: WaterLogEntry = {
       id: `water_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
       date,
       timestamp: new Date().toISOString(),
-      milliliters,
+      milliliters: ml,
       glasses,
       source: 'manual',
     };
-    set((state) => {
-      const current = state.hydration[date] ?? 0;
-      const nextGlasses = Math.max(0, Math.min(24, Math.round((current + glasses) * 10) / 10));
-      return {
-        waterLogs: [entry, ...state.waterLogs].slice(0, 500),
-        hydration: { ...state.hydration, [date]: nextGlasses },
-      };
-    });
+    set((state) => ({
+      waterLogs: [entry, ...state.waterLogs].slice(0, 500),
+      hydration: { ...state.hydration, [date]: clampGlasses((state.hydration[date] ?? 0) + glasses) },
+    }));
     const root = get() as unknown as { completeHydrationQuest?: (g: number, d: string) => void; hydration: Record<string, number> };
     if (typeof root.completeHydrationQuest === 'function') {
       root.completeHydrationQuest(root.hydration[date] ?? 0, date);
     }
   },
 
+  // Reverses the latest journaled change for the date. With nothing journaled (totals saved before
+  // the journal existed) it does nothing rather than guessing an amount to remove. Rewards already
+  // earned are kept: XP is never clawed back by an undo.
   undoWaterLog: (dateStr) => {
     const date = dateStr ?? formatLocalDate(new Date());
-    const state = get();
-    const entryToUndo = state.waterLogs.find((w) => w.date === date);
-    if (!entryToUndo) {
-      const current = state.hydration[date] ?? 0;
-      state.setHydration(date, Math.max(0, current - 1));
-      return;
-    }
-    set((s) => {
-      const nextLogs = s.waterLogs.filter((w) => w.id !== entryToUndo.id);
-      const currentGlasses = s.hydration[date] ?? 0;
-      const nextGlasses = Math.max(0, Math.round((currentGlasses - entryToUndo.glasses) * 10) / 10);
-      return {
-        waterLogs: nextLogs,
-        hydration: { ...s.hydration, [date]: nextGlasses },
-      };
-    });
+    const entryToUndo = get().waterLogs.find((w) => w.date === date);
+    if (!entryToUndo) return;
+    set((s) => ({
+      waterLogs: s.waterLogs.filter((w) => w.id !== entryToUndo.id),
+      hydration: { ...s.hydration, [date]: clampGlasses((s.hydration[date] ?? 0) - entryToUndo.glasses) },
+    }));
   },
 
   setHydrationTargetGlasses: (target) => {

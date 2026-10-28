@@ -55,138 +55,135 @@ export interface EqualizerBar {
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
 
 /**
- * Computes the overall Vitality Score (0-100) deterministically from verified user records.
+ * Vitality (0-100) for today, computed only from what was actually recorded today.
  *
- * Weights:
- * - Energy & Mood: 35%
- * - Stress Balance (11 - stress): 20%
- * - Quests completed: 25%
- * - Sleep restorative baseline: 20%
+ * Inputs and base weights (renormalised over the inputs that exist, never filled in):
+ * - Energy & mood from today's check-in (1-10 each): 35%
+ * - Stress balance from today's check-in (11 - stress): 20%
+ * - Share of today's assigned quests completed (only when quests are assigned): 25%
+ * - Sleep last night, Health Connect first, else the check-in's sleep hours: 20%
+ *
+ * Water is deliberately not an input: an unlogged glass is not a zero, and adding a partial day's
+ * water would make logging it lower the score. Water has its own ring and card.
+ *
+ * Without a check-in today there is no score: `score` is 0 and `hasCheckInToday` is false, and
+ * the UI must show the check-in prompt instead of a number.
  */
 export function computeVitalityScore(params: {
   todayCheckIn: DailyCheckInRecord | null;
-  recentCheckIns: DailyCheckInRecord[];
+  /** @deprecated Older check-ins never stand in for today. Kept for call-site compatibility. */
+  recentCheckIns?: DailyCheckInRecord[];
   questsDone: number;
   questsTotal: number;
   lastSleepMinutes: number | null;
+  /** Reported back in `components` only; not scored. */
   todayHydrationGlasses?: number | null;
 }): VitalityResult {
   const {
     todayCheckIn,
-    recentCheckIns,
     questsDone,
     questsTotal,
     lastSleepMinutes,
     todayHydrationGlasses,
   } = params;
 
-  const activeCheckIn = todayCheckIn ?? (recentCheckIns.length > 0 ? recentCheckIns[0] : null);
   const hasCheckInToday = Boolean(todayCheckIn);
-
-  // 1. Energy & Mood Component (0-100)
-  const energyScore = activeCheckIn ? Math.round(activeCheckIn.energy * 10) : null;
-  const moodScore = activeCheckIn ? Math.round(activeCheckIn.mood * 10) : null;
-  const energyMoodAvg =
-    energyScore !== null && moodScore !== null
-      ? (energyScore + moodScore) / 2
-      : energyScore ?? moodScore ?? 70;
-
-  // 2. Stress Balance Component (0-100) — Invert 1-10 stress scale so lower stress = higher score
-  const stressBalance = activeCheckIn ? Math.round((11 - activeCheckIn.stress) * 10) : null;
-  const effectiveStressScore = stressBalance ?? 70;
-
-  // 3. Quest Completion Component (0-100)
+  const energyScore = todayCheckIn ? Math.round(todayCheckIn.energy * 10) : null;
+  const moodScore = todayCheckIn ? Math.round(todayCheckIn.mood * 10) : null;
+  const stressBalance = todayCheckIn ? Math.round((11 - todayCheckIn.stress) * 10) : null;
   const questCompletionPct =
-    questsTotal > 0
-      ? Math.min(100, Math.round((questsDone / questsTotal) * 100))
-      : questsDone > 0
-        ? 100
-        : 75; // Neutral baseline if no quests assigned
-
-  // 4. Sleep Component (0-100) — Healthy adult baseline: 7-8 hours (420-480 min)
+    questsTotal > 0 ? Math.min(100, Math.round((questsDone / questsTotal) * 100)) : 0;
   const sleepHours =
     lastSleepMinutes !== null
       ? Math.round((lastSleepMinutes / 60) * 10) / 10
-      : activeCheckIn?.sleepHours ?? null;
+      : (todayCheckIn?.sleepHours ?? null);
+  const hydrationGlasses =
+    todayHydrationGlasses !== undefined && todayHydrationGlasses !== null && todayHydrationGlasses > 0
+      ? todayHydrationGlasses
+      : null;
 
-  let sleepScore = 75; // Neutral baseline
-  if (sleepHours !== null) {
-    if (sleepHours >= 7 && sleepHours <= 9) {
-      sleepScore = 100;
-    } else if (sleepHours >= 6 && sleepHours < 7) {
-      sleepScore = 80;
-    } else if (sleepHours > 9 && sleepHours <= 10) {
-      sleepScore = 85;
-    } else if (sleepHours >= 5 && sleepHours < 6) {
-      sleepScore = 65;
-    } else {
-      sleepScore = Math.max(30, Math.min(100, Math.round((sleepHours / 8) * 100)));
-    }
+  const components = {
+    energyScore,
+    moodScore,
+    stressBalance,
+    questCompletionPct,
+    sleepHours,
+    hydrationGlasses,
+  };
+
+  if (!todayCheckIn) {
+    return {
+      score: 0,
+      tier: 'starting_out',
+      label: 'Ready to begin',
+      subtext: 'Check in to see today’s vitality',
+      hasCheckInToday,
+      components,
+    };
   }
 
-  // 5. Hydration Component (0-100) — Target: 8 glasses (2,000 ml)
-  const hasHydration =
-    todayHydrationGlasses !== undefined && todayHydrationGlasses !== null;
-  const hydrationScore = hasHydration
-    ? Math.min(100, Math.round((todayHydrationGlasses / 8) * 100))
-    : 75;
-
-  // Weighted calculation (balanced 100% distribution)
-  const composite = hasHydration
-    ? 0.30 * energyMoodAvg +
-      0.15 * effectiveStressScore +
-      0.20 * questCompletionPct +
-      0.20 * sleepScore +
-      0.15 * hydrationScore
-    : 0.35 * energyMoodAvg +
-      0.20 * effectiveStressScore +
-      0.25 * questCompletionPct +
-      0.20 * sleepScore;
-
+  const parts: [weight: number, value: number][] = [
+    [0.35, ((energyScore ?? 0) + (moodScore ?? 0)) / 2],
+    [0.2, stressBalance ?? 0],
+  ];
+  if (questsTotal > 0) parts.push([0.25, questCompletionPct]);
+  if (sleepHours !== null) parts.push([0.2, sleepScoreFor(sleepHours)]);
+  const totalWeight = parts.reduce((a, [w]) => a + w, 0);
+  const composite = parts.reduce((a, [w, v]) => a + w * v, 0) / totalWeight;
   const score = Math.max(0, Math.min(100, Math.round(composite)));
 
-  // Categorize tier
-  let tier: VitalityTier = 'starting_out';
-  let label = 'Getting Started';
-  let subtext = 'Log your first check-in to compute your rhythm';
+  const [tier, label, subtext]: [VitalityTier, string, string] =
+    score >= 80
+      ? ['thriving', 'Thriving', 'Strong alignment across rest, energy and routines']
+      : score >= 60
+        ? ['balanced', 'Balanced', 'Steady rhythm; keep your regular recovery window']
+        : score >= 40
+          ? ['recharging', 'Recharging', 'Take gentle restorative moments today']
+          : ['starting_out', 'Needs care', 'Focus on rest, water and light movement'];
 
-  if (!hasCheckInToday && !activeCheckIn && questsDone === 0) {
-    tier = 'starting_out';
-    label = 'Ready to Begin';
-    subtext = 'Start with a 1-minute daily check-in';
-  } else if (score >= 80) {
-    tier = 'thriving';
-    label = 'Thriving';
-    subtext = 'Strong alignment across rest, energy and routines';
-  } else if (score >= 60) {
-    tier = 'balanced';
-    label = 'Balanced';
-    subtext = 'Steady rhythm; keep your regular recovery window';
-  } else if (score >= 40) {
-    tier = 'recharging';
-    label = 'Recharging';
-    subtext = 'Take gentle restorative moments today';
-  } else {
-    tier = 'starting_out';
-    label = 'Needs Care';
-    subtext = 'Focus on rest, hydration and light movement';
+  return { score, tier, label, subtext, hasCheckInToday, components };
+}
+
+/** 7-9 h is the adult reference range; shorter and much longer nights score lower. */
+function sleepScoreFor(hours: number): number {
+  if (hours >= 7 && hours <= 9) return 100;
+  if (hours >= 6 && hours < 7) return 80;
+  if (hours > 9 && hours <= 10) return 85;
+  if (hours >= 5 && hours < 6) return 65;
+  return Math.max(30, Math.min(100, Math.round((hours / 8) * 100)));
+}
+
+/**
+ * Minutes of movement the person logged on a date: manual activity logs plus finished workout
+ * sessions (camera-counted or entered). Camera pose sessions are part of workout sessions and are
+ * not counted again. Returns null when nothing was logged, so the UI can say "nothing logged"
+ * instead of showing 0 as if it were measured.
+ */
+export function loggedActiveMinutes(
+  date: string,
+  activityLogs: { date: string; minutes: number }[],
+  workoutSessions: { date: string; startedAt: string; finishedAt: string }[],
+): number | null {
+  let minutes = 0;
+  let any = false;
+  for (const a of activityLogs) {
+    if (a.date !== date) continue;
+    any = true;
+    minutes += Math.max(0, a.minutes);
   }
+  for (const w of workoutSessions) {
+    if (w.date !== date) continue;
+    const ms = Date.parse(w.finishedAt) - Date.parse(w.startedAt);
+    if (!Number.isFinite(ms) || ms <= 0) continue;
+    any = true;
+    minutes += Math.min(ms, 6 * 3_600_000) / 60_000;
+  }
+  return any ? Math.round(minutes) : null;
+}
 
-  return {
-    score,
-    tier,
-    label,
-    subtext,
-    hasCheckInToday,
-    components: {
-      energyScore,
-      moodScore,
-      stressBalance,
-      questCompletionPct,
-      sleepHours,
-      hydrationGlasses: todayHydrationGlasses ?? null,
-    },
-  };
+/** Number of days in a 7-day series that carry a real check-in. */
+export function trendDaysWithData(points: DayTrendPoint[]): number {
+  return points.filter((p) => p.hasData).length;
 }
 
 /**
