@@ -91,26 +91,6 @@ export function DashboardScreenContainer({
     return range > 0 ? Math.min(1, Math.max(0, scrollY.value / range)) : 0;
   });
 
-  // Docking worklet: when scrollY reaches dockDistance, sheet container freezes visually at headerHeight
-  const sheetContainerAnimStyle = useAnimatedStyle(() => {
-    if (reduceMotion) return {};
-    const d = dockDistance.value;
-    const delta = Math.max(0, scrollY.value - d);
-    return {
-      transform: [{ translateY: delta }],
-    };
-  });
-
-  // Inner content worklet: counters the container freeze so inner cards continue scrolling at 1:1 speed
-  const innerContentAnimStyle = useAnimatedStyle(() => {
-    if (reduceMotion) return {};
-    const d = dockDistance.value;
-    const delta = Math.max(0, scrollY.value - d);
-    return {
-      transform: [{ translateY: -delta }],
-    };
-  });
-
   const onScroll = useAnimatedScrollHandler({
     onScroll: (e) => {
       scrollY.value = e.contentOffset.y;
@@ -172,19 +152,17 @@ export function DashboardScreenContainer({
           {hero(ctx)}
         </View>
 
-        {/* Docked Squircle Content Surface */}
-        <Animated.View
+        {/* Elevated Squircle Content Surface */}
+        <View
           style={[
             styles.surface,
             {
               backgroundColor: colors.background,
               borderTopColor: colors.border,
             },
-            sheetContainerAnimStyle,
           ]}
         >
-          {/* Inner scrolling content driven by inner translateY */}
-          <Animated.View
+          <View
             style={[
               styles.column,
               {
@@ -192,12 +170,11 @@ export function DashboardScreenContainer({
                 paddingHorizontal: layout.gutter,
                 paddingBottom: dockInset + 44,
               },
-              innerContentAnimStyle,
             ]}
           >
             {children}
-          </Animated.View>
-        </Animated.View>
+          </View>
+        </View>
       </Animated.ScrollView>
 
       {/* Render header after scrollview so Android touches reliably dispatch to header buttons */}
