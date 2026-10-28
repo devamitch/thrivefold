@@ -16,6 +16,7 @@ const OPEN: { words: RegExp; route: string; label: string }[] = [
   { words: /\bface\b(?! shape)|\bjaw\b|\bsmile\b|\bbrow/, route: '/(app)/beta-lab/face-exercises', label: 'face exercises' },
   { words: /\bglasses\b|\bframes?\b|\bstyle\b|\boutfit\b|\bdress\b|\bbmi\b|\bbody shape\b|\bface shape\b|\bmeal plan/, route: '/(app)/beta-lab/body-style', label: 'the body and style companion' },
   { words: /\bpursuit\b|\bfollow the dot\b|\bdot\b/, route: '/(app)/beta-lab/eye-pursuit', label: 'eye pursuit' },
+  { words: /\bvoice\b|\bspeech\b|\bspeak(ing)?\b|\bpronunciation\b|\bvocal\b/, route: '/(app)/beta-lab/voice-practice', label: 'voice practice' },
   { words: /\beye\b|\beyes\b|\bblink/, route: '/(app)/beta-lab/eye-tracking', label: 'the eye studio' },
   { words: /\bfinger|\bhand\b|\bhands\b|\bgrip\b|\bgame\b/, route: '/(app)/beta-lab/gesture-game', label: 'the finger game' },
   { words: /\bpose\b|\bposture\b|\bsquat|\bform\b/, route: '/(app)/beta-lab/pose-coach', label: 'the pose coach' },

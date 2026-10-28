@@ -63,6 +63,15 @@ const STUDIOS: StudioProduct[] = [
     badgeVariant: 'gold',
   },
   {
+    id: 'voice-practice',
+    title: 'Voice Practice',
+    subtitle: 'Hold an "aah", keep an even loudness, and say phrases clearly with the coach',
+    tag: 'Microphone',
+    icon: 'mic-outline',
+    route: '/(app)/beta-lab/voice-practice',
+    badgeVariant: 'gold',
+  },
+  {
     id: 'body-style',
     title: 'Body & Style Companion',
     subtitle: 'Face shape and glasses, posture score, fit tips, outfit colours, BMI and meals',

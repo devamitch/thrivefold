@@ -16,8 +16,9 @@ import {
   requestEmailCode,
   verifyEmailCode,
 } from '../../services/account/accountService';
-import { googleAvailable, signInWithGoogle } from '../../services/account/googleAccount';
-import { applyProfile, pullProfile, pushProfile } from '../../services/account/profileSync';
+import { suggestedExperience } from '../../domain/account/googleProfile';
+import { googleAvailable, pendingGoogleProfile, requestBirthdayAndGender, signInWithGoogle } from '../../services/account/googleAccount';
+import { applyProfile, profileFromGoogle, pullProfile, pushProfile } from '../../services/account/profileSync';
 import { newLocalId } from '../../stores/slices/authSlice';
 import { useRootStore } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
@@ -85,7 +86,18 @@ export default function SignInScreen() {
       void pushProfile();
       router.replace('/');
     } else {
-      router.push('/(auth)/confirm-profile');
+      // New here: ask Google (its own consent screen) for the birthday and gender in the account.
+      // With a full birthday and a gender that maps to a space, nothing needs to be typed.
+      await requestBirthdayAndGender();
+      const g = pendingGoogleProfile();
+      const space = suggestedExperience(g?.gender ?? null);
+      const bd = g?.birthDateString && /^\d{4}-\d{2}-\d{2}$/.test(g.birthDateString) ? g.birthDateString : null;
+      if (g && bd && space && (g.age ?? 0) >= 18 && applyProfile(profileFromGoogle(bd, space, base.name), { ...base, gender: g.gender })) {
+        void pushProfile();
+        router.replace('/');
+      } else {
+        router.push('/(auth)/confirm-profile');
+      }
     }
   };
 

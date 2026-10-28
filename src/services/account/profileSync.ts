@@ -73,7 +73,10 @@ export async function pullProfile(): Promise<RemoteProfile | null> {
     )
     .eq('user_id', id)
     .maybeSingle();
-  if (error) return null;
+  if (error) {
+    console.warn('profile pull failed', error.code, error.message);
+    return null;
+  }
   return (data as RemoteProfile | null) ?? null;
 }
 
@@ -81,7 +84,10 @@ export async function pullProfile(): Promise<RemoteProfile | null> {
 export async function pushProfile(): Promise<boolean> {
   const id = await userId();
   const s = useRootStore.getState();
-  if (!supabase || !id || !s.user || s.user.isGuest) return false;
+  if (!supabase || !id || !s.user || s.user.isGuest) {
+    if (s.user && !s.user.isGuest && !id) console.warn('profile push skipped: no server session');
+    return false;
+  }
   const o = s.onboarding;
   const k = s.koshProfile;
   const { error } = await supabase.from('thrivefold_personal_profiles').upsert(
@@ -111,7 +117,11 @@ export async function pushProfile(): Promise<boolean> {
     },
     { onConflict: 'user_id' },
   );
-  if (error) return false;
+  if (error) {
+    // Code and message only; never the profile values.
+    console.warn('profile push failed', error.code, error.message);
+    return false;
+  }
   return syncEmergencyContacts(id);
 }
 
@@ -141,12 +151,24 @@ const ageFromDate = (d: string) => {
   return ageOn({ year: y, month: m, day }, new Date());
 };
 
+/** A profile built from facts Google shared, in the same shape as a saved one. */
+export function profileFromGoogle(birthDate: string, experience: ProductExperience, name: string): RemoteProfile {
+  return {
+    display_name: name, birth_date: birthDate, experience, onboarded: false, goals: [], constraints: [], routine_minutes: null, diet: null,
+    preferred_name: null, phone: null, languages: [], food_restrictions: [], allergies: [], cuisines: [], food_dislikes: [],
+    interests: [], skills: [], career_goal: null, accessibility: {}, field_sources: {},
+  };
+}
+
 /**
  * Applies a saved profile to this phone after sign-in. Fills only what is missing here, so a
  * profile on this phone is never overwritten. Returns true when the person no longer needs to
  * confirm a birthday and space.
  */
-export function applyProfile(remote: RemoteProfile, base: { id: string; email: string; photo: string | null; name: string }): boolean {
+export function applyProfile(
+  remote: RemoteProfile,
+  base: { id: string; email: string; photo: string | null; name: string; gender?: string | null },
+): boolean {
   const s = useRootStore.getState();
   const birthDate = remote.birth_date ?? null;
   const age = birthDate ? ageFromDate(birthDate) : null;
@@ -162,13 +184,14 @@ export function applyProfile(remote: RemoteProfile, base: { id: string; email: s
     birthDate,
     isAgeVerified: existing?.isAgeVerified ?? false,
     email: base.email,
-    gender: existing?.gender ?? null,
+    gender: existing?.gender ?? base.gender ?? null,
     photoUrl: existing?.photoUrl ?? base.photo,
     profileSource: 'google',
     isGuest: false,
     createdAt: existing?.createdAt ?? new Date().toISOString(),
   });
   s.confirmAdult();
+  if (base.gender && !existing?.gender) s.setPrivateIdentity({ pronouns: '', genderDescription: base.gender });
   if (!s.experienceConfirmed) s.setExperience(remote.experience);
   const o = s.onboarding;
   s.setOnboardingAnswers({

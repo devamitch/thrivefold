@@ -9,8 +9,15 @@ import { GoogleSignin, isErrorWithCode, isSuccessResponse, statusCodes } from '@
 import { birthDateFromPeople, factsFromPeople, type ProfileFacts } from '../../domain/account/googleProfile';
 import { supabase } from '../supabase/supabaseClient';
 
-// Essential Google OpenID scopes only (profile, email) to prevent verification blocks or delays
+// Sign-in itself asks only for name, email and photo.
 const NECESSARY_SCOPES = ['profile', 'email'];
+/**
+ * Birthday and gender are asked for separately, only when this account has no saved profile
+ * (incremental authorization). They are Google "sensitive" scopes: they work for the app's test
+ * users now; for everyone else Google must verify the OAuth consent screen with these scopes listed.
+ */
+const BIRTHDAY_SCOPE = 'https://www.googleapis.com/auth/user.birthday.read';
+const GENDER_SCOPE = 'https://www.googleapis.com/auth/user.gender.read';
 
 export interface GoogleProfile extends ProfileFacts {
   id: string;
@@ -90,6 +97,31 @@ export async function signInWithGoogle(): Promise<GoogleResult> {
         return { ok: false, message: 'Google sign-in is not fully set up for this app yet. Please continue another way.' };
     }
     return { ok: false, message: 'Could not sign in with Google. Check your connection and try again.' };
+  }
+}
+
+/**
+ * Asks Google (on its own consent screen) to share the birthday and gender saved in the account,
+ * then reads them from the People API. Updates the pending profile. Null if declined or unavailable.
+ */
+export async function requestBirthdayAndGender(): Promise<ProfileFacts | null> {
+  if (!pending) return null;
+  try {
+    configure();
+    const added = await GoogleSignin.addScopes({ scopes: [BIRTHDAY_SCOPE, GENDER_SCOPE] });
+    if (!added) return null;
+    const { accessToken } = await GoogleSignin.getTokens();
+    const facts = await readFacts(accessToken);
+    pending = {
+      ...pending,
+      age: facts.age ?? pending.age,
+      birthYear: facts.birthYear ?? pending.birthYear,
+      birthDateString: facts.birthDateString ?? pending.birthDateString,
+      gender: facts.gender ?? pending.gender,
+    };
+    return facts;
+  } catch {
+    return null;
   }
 }
 

@@ -12,6 +12,7 @@ import { TextField } from '../../../components/ui/TextField';
 import { parseCommand } from '../../../domain/assistant/commands';
 import { coachVoice } from '../../../services/ai/coachVoice';
 import { runCommand } from '../../../services/assistant/runCommand';
+import { useVoiceInput } from '../../../services/voice/useVoiceInput';
 import { useTheme } from '../../../theme/useTheme';
 
 interface Turn {
@@ -36,6 +37,9 @@ export default function AssistantScreen() {
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const scroll = useRef<ScrollView>(null);
+  const sendRef = useRef<(t: string) => Promise<void>>(async () => undefined);
+  const voice = useVoiceInput((text) => void sendRef.current(text));
+  const listening = voice.state === 'listening';
 
   useEffect(() => () => coachVoice.stop(), []);
 
@@ -52,6 +56,8 @@ export default function AssistantScreen() {
     setTimeout(() => scroll.current?.scrollToEnd({ animated: true }), 50);
     if (reply.route) setTimeout(() => router.push(reply.route as Href), 900);
   };
+
+  sendRef.current = send;
 
   return (
     <ScreenContainer>
@@ -103,8 +109,15 @@ export default function AssistantScreen() {
         </View>
       </ScrollView>
       <View style={[styles.inputRow, { paddingHorizontal: spacing.base, paddingBottom: spacing.md }]}>
+        <PressableScale
+          onPress={() => (listening ? voice.stop() : void voice.start())}
+          accessibilityLabel={listening ? 'Stop listening' : 'Speak to the coach'}
+          style={[styles.send, { backgroundColor: listening ? colors.primary : colors.surface2 }]}
+        >
+          <Ionicons name={listening ? 'stop' : 'mic'} size={20} color={listening ? colors.text.inverse : colors.text.primary} />
+        </PressableScale>
         <TextField
-          value={draft}
+          value={listening && voice.partial ? voice.partial : draft}
           onChangeText={setDraft}
           placeholder="Ask or tell the coach…"
           returnKeyType="send"
@@ -121,7 +134,9 @@ export default function AssistantScreen() {
         </PressableScale>
       </View>
       <Text style={[typography.caption, styles.note, { color: colors.text.muted, paddingHorizontal: spacing.base }]}>
-        Voice input needs microphone access, which this build does not request yet.
+        {listening
+          ? 'Listening… speak now. Nothing is recorded.'
+          : voice.error ?? 'Tap the microphone to speak, or type. Audio is never saved.'}
       </Text>
     </ScreenContainer>
   );

@@ -104,6 +104,13 @@ The copied `setu-beta-scanner` / `blinkquest-vision` modules needed VisionCamera
 - **Licensing:** Open-Meteo free API is non-commercial; a paid Open-Meteo plan (or IMD API access, which needs registration) is needed before commercial release. SACHET feed is public domain.
 - **Not built:** routes/traffic/transport (need a paid maps key), festival/pandal itineraries (no verified venue data source), trip check-ins with location sharing (needs location permission in app.json, which agents cannot edit).
 
+### P14 — Microphone, voice practice, Google birthday/gender (2026-10-29)
+- **Microphone on** (owner approved): `RECORD_AUDIO` removed from `blockedPermissions`; `expo-speech-recognition@3.1.3` with its config plugin (Google on-device speech service preferred). **Publishing:** Play Data safety must declare "Audio: voice or sound recordings — processed ephemerally on device, not collected" and the permission declaration; audio is never stored or sent by the app.
+- **`beta-lab/voice-practice`:** hold an "aah" (longest continuous voice), steady loudness (time in band), say-it-clearly (word match by LCS + words per minute) with coach instructions spoken before the mic opens (`domain/voice/practice.ts`, 4 tests). Practice, not therapy.
+- **Thrive Coach:** mic button; spoken requests go through the same command router.
+- **Google birthday and gender:** asked for with incremental consent (`GoogleSignin.addScopes` with `user.birthday.read` + `user.gender.read`) only for an account with no saved profile; with a full birthday (18+) and a male/female gender the account is completed without the confirm screen. These are Google sensitive scopes: list them on the OAuth consent screen; until Google verifies the app they work for test users only, others see the confirm screen.
+- **Release signing survives `prebuild --clean`:** `plugins/withLocalReleaseSigning.js` (CommonJS copy of the .ts plugin, which Node could not load) is now in `app.json` plugins; local release APKs are signed with the upload key from `credentials.json` again.
+
 ### Route ↔ capability matrix (beta)
 | Route | Capability | Input | Saved |
 | --- | --- | --- | --- |
@@ -114,6 +121,7 @@ The copied `setu-beta-scanner` / `blinkquest-vision` modules needed VisionCamera
 | `beta-lab/face-exercises` | Face & eye exercises with coach voice | Face landmarker | `face_exercise` |
 | `beta-lab/body-style` | Face shape, glasses, PD, posture, fit, outfit colours, BMI, meal plan | Photo: face mesh + pose + segmentation | `portrait_scan` |
 | `beta-lab/eye-pursuit` | Follow-the-dot eye exercise | Face landmarker (iris) | `eye_pursuit` |
+| `beta-lab/voice-practice` | Hold, steady, clear-speech drills with coach | Mic: speech service text + loudness | `voice_practice` |
 | `beta-lab/assistant` | Thrive Coach: commands, today's numbers, on-device LLM answers | Text (voice blocked) | water log |
 | `beta-lab/pose-coach` | Skeleton, joint angles, reps | Pose landmarker | — |
 | `health/meal-log` (Beta Lab "Food Lens" opens it) | Meal photo labels → server macros | Food classifier + meal-vision function | meal log |

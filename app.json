@@ -44,7 +44,6 @@
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.SYSTEM_ALERT_WINDOW",
-        "android.permission.RECORD_AUDIO",
         "android.permission.ACCESS_ADSERVICES_AD_ID",
         "android.permission.ACCESS_ADSERVICES_ATTRIBUTION"
       ],
@@ -81,6 +80,15 @@
     },
     "plugins": [
       "expo-router",
+      "./plugins/withLocalReleaseSigning.js",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Thrivefold uses the microphone only while you talk to the coach or do voice practice. Audio is processed on this phone and never saved.",
+          "speechRecognitionPermission": "Thrivefold turns your speech into text for voice commands and voice practice.",
+          "androidSpeechServicePackages": ["com.google.android.as", "com.google.android.googlequicksearchbox"]
+        }
+      ],
       [
         "expo-font",
         {
