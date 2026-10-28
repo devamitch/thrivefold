@@ -4,7 +4,8 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
 import { Link, useRouter, type Href } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Linking, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Linking, Modal, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
   classifyImage,
@@ -61,6 +62,7 @@ const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '_').slice(0,
 export default function MealLogScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
+  const insets = useSafeAreaInsets();
   const [type, setType] = useState<MealLog['type']>(typeForNow);
   const [items, setItems] = useState<MealItem[]>([]);
   const [query, setQuery] = useState('');
@@ -321,61 +323,7 @@ export default function MealLogScreen() {
       </View>
 
       {/* Capture: live scan, the chosen photo, or the two entry buttons */}
-      {scanning && FoodCameraView ? (
-        <View style={[styles.stage, { backgroundColor: colors.callBackground, marginTop: spacing.md }]}>
-          <FoodCameraView
-            ref={camera}
-            style={StyleSheet.absoluteFill}
-            active={scanning}
-            onFoodReady={() => setCameraReady(true)}
-            onLabels={(e) => setLiveLabels(e.nativeEvent.labels)}
-            onFoodError={() => {
-              setScanning(false);
-              setNotice({ message: 'The camera could not start. Pick a photo from the gallery instead.' });
-            }}
-          />
-          <View style={[styles.liveChip, { backgroundColor: colors.callSurface }]}>
-            {!cameraReady ? <ActivityIndicator size="small" color={colors.callText} /> : null}
-            <Text style={[typography.captionBold, { color: colors.callText }]}>
-              {!cameraReady
-                ? 'Starting camera'
-                : liveTop
-                  ? `Looks like ${liveTop.label} · ${Math.round(liveTop.score * 100)}%`
-                  : 'Point at your plate'}
-            </Text>
-          </View>
-          <View style={styles.controls}>
-            <PressableScale
-              onPress={pickFromGallery}
-              accessibilityRole="button"
-              accessibilityLabel="Choose from gallery"
-              style={[styles.roundBtn, { backgroundColor: colors.callSurfaceStrong }]}
-            >
-              <Ionicons name="images-outline" size={20} color={colors.callText} />
-            </PressableScale>
-            <PressableScale
-              onPress={shoot}
-              disabled={!cameraReady}
-              accessibilityRole="button"
-              accessibilityLabel="Take photo"
-              style={[styles.shutter, { borderColor: colors.callText, opacity: cameraReady ? 1 : 0.5 }]}
-            >
-              <View style={[styles.shutterInner, { backgroundColor: colors.callText }]} />
-            </PressableScale>
-            <PressableScale
-              onPress={() => setScanning(false)}
-              accessibilityRole="button"
-              accessibilityLabel="Close camera"
-              style={[styles.roundBtn, { backgroundColor: colors.callSurfaceStrong }]}
-            >
-              <Ionicons name="close" size={20} color={colors.callText} />
-            </PressableScale>
-          </View>
-          <Text style={[typography.caption, styles.privacy, { color: colors.callMuted }]}>
-            Recognised on this phone. Nothing is sent.
-          </Text>
-        </View>
-      ) : photo ? (
+      {photo ? (
         <View style={{ marginTop: spacing.md }}>
           <View style={styles.photoWrap}>
             <Image source={{ uri: photo }} style={styles.photo} contentFit="cover" />
@@ -415,6 +363,81 @@ export default function MealLogScreen() {
           />
         </View>
       )}
+
+      {/* Full-screen live scanner */}
+      <Modal
+        visible={scanning && Boolean(FoodCameraView)}
+        animationType="fade"
+        statusBarTranslucent
+        navigationBarTranslucent
+        onRequestClose={() => setScanning(false)}
+      >
+        <View style={[styles.full, { backgroundColor: colors.callBackground }]}>
+          {FoodCameraView && scanning ? (
+            <FoodCameraView
+              ref={camera}
+              style={StyleSheet.absoluteFill}
+              active={scanning}
+              onFoodReady={() => setCameraReady(true)}
+              onLabels={(e) => setLiveLabels(e.nativeEvent.labels)}
+              onFoodError={() => {
+                setScanning(false);
+                setNotice({ message: 'The camera could not start. Pick a photo from the gallery instead.' });
+              }}
+            />
+          ) : null}
+          {/* Framing guide */}
+          <View pointerEvents="none" style={styles.frameGuide}>
+            <View style={[styles.frameBox, { borderColor: colors.callSurfaceStrong }]} />
+          </View>
+          <View style={[styles.fullTop, { paddingTop: insets.top + 12 }]}>
+            <PressableScale
+              onPress={() => setScanning(false)}
+              accessibilityRole="button"
+              accessibilityLabel="Close camera"
+              style={[styles.roundBtn, { backgroundColor: colors.callSurface }]}
+            >
+              <Ionicons name="close" size={22} color={colors.callText} />
+            </PressableScale>
+            <View style={[styles.liveChipFull, { backgroundColor: colors.callSurface }]}>
+              {!cameraReady ? <ActivityIndicator size="small" color={colors.callText} /> : null}
+              <Text style={[typography.captionBold, { color: colors.callText }]} numberOfLines={1}>
+                {!cameraReady
+                  ? 'Starting camera'
+                  : liveTop
+                    ? `Looks like ${liveTop.label} · ${Math.round(liveTop.score * 100)}%`
+                    : 'Fit your plate in the frame'}
+              </Text>
+            </View>
+            <View style={styles.roundBtn} />
+          </View>
+          <View style={[styles.fullBottom, { paddingBottom: insets.bottom + 24 }]}>
+            <Text style={[typography.caption, { color: colors.callMuted, marginBottom: 16 }]}>
+              Recognised on this phone. Nothing is sent until you ask for AI.
+            </Text>
+            <View style={styles.controlsRow}>
+              <PressableScale
+                onPress={pickFromGallery}
+                accessibilityRole="button"
+                accessibilityLabel="Choose from gallery"
+                style={[styles.roundBtnLg, { backgroundColor: colors.callSurface }]}
+              >
+                <Ionicons name="images-outline" size={22} color={colors.callText} />
+              </PressableScale>
+              <PressableScale
+                onPress={shoot}
+                disabled={!cameraReady}
+                accessibilityRole="button"
+                accessibilityLabel="Take photo"
+                style={[styles.shutter, { borderColor: colors.callText, opacity: cameraReady ? 1 : 0.5 }]}
+              >
+                <View style={[styles.shutterInner, { backgroundColor: colors.callText }]} />
+              </PressableScale>
+              <View style={styles.roundBtnLg} />
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {notice ? (
         <View style={[styles.row, { marginTop: spacing.sm, gap: 8 }]}>
@@ -677,6 +700,31 @@ const styles = StyleSheet.create({
     justifyContent: 'space-evenly',
   },
   roundBtn: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
+  roundBtnLg: { width: 54, height: 54, borderRadius: 27, alignItems: 'center', justifyContent: 'center' },
+  full: { flex: 1 },
+  fullTop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+  },
+  liveChipFull: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 14,
+    height: 36,
+    borderRadius: 18,
+    maxWidth: '68%',
+  },
+  fullBottom: { position: 'absolute', bottom: 0, left: 0, right: 0, alignItems: 'center' },
+  controlsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-evenly', alignSelf: 'stretch' },
+  frameGuide: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
+  frameBox: { width: '78%', aspectRatio: 1, borderRadius: 36, borderWidth: 2 },
   shutter: {
     width: 72,
     height: 72,

@@ -25,6 +25,8 @@ export interface MetricGridProps {
   heart: { bpm: number; isToday: boolean } | null;
   /** Minutes the person logged today (activities and workouts); null when nothing was logged. */
   activeMinutes: number | null;
+  /** Walking minutes estimated from today's measured steps; used when nothing was logged. */
+  walkingMinutesFromSteps?: number | null;
   /** Whether any connected source has delivered readings. Drives the empty-state wording. */
   connected: boolean;
 }
@@ -46,6 +48,7 @@ export function AnalyticalMetricGrid({
   sleep,
   heart,
   activeMinutes,
+  walkingMinutesFromSteps = null,
   connected,
   phoneSteps,
   onEnablePhoneSteps,
@@ -120,8 +123,22 @@ export function AnalyticalMetricGrid({
         icon="walk-outline"
         tint={colors.primary}
         label="Movement"
-        value={activeMinutes !== null ? `${activeMinutes} min` : null}
-        context={activeMinutes !== null ? 'Logged today' : 'Nothing logged today'}
+        value={
+          activeMinutes !== null
+            ? `${Math.max(activeMinutes, walkingMinutesFromSteps ?? 0)} min`
+            : walkingMinutesFromSteps
+              ? `≈ ${walkingMinutesFromSteps} min`
+              : null
+        }
+        context={
+          activeMinutes !== null && walkingMinutesFromSteps
+            ? 'Larger of logged and step-measured'
+            : activeMinutes !== null
+              ? 'Logged today'
+              : walkingMinutesFromSteps
+                ? 'Walking, measured by steps'
+                : 'Nothing yet today'
+        }
         onPress={() => router.push('/(app)/health/activity' as Href)}
         accessibilityHint="Opens activity log"
       />

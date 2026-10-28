@@ -12,6 +12,7 @@ import { DashboardHeader } from '../../../components/home/DashboardHeader';
 import { DashboardScreenContainer } from '../../../components/home/DashboardScreenContainer';
 import { HomeGuide } from '../../../components/home/HomeGuide';
 import { HydrationTrackerCard } from '../../../components/home/HydrationTrackerCard';
+import { LiveStepsCard } from '../../../components/home/LiveStepsCard';
 import { MetricBarChart } from '../../../components/home/MetricBarChart';
 import { SocialInvite } from '../../../components/home/SocialInvite';
 import { ToolsGrid } from '../../../components/home/ToolsGrid';
@@ -47,6 +48,7 @@ import {
 } from '../../../domain/game/setupProfile';
 import { DAY_PART_LABEL, dayPartAt, splitByTime } from '../../../domain/game/timeOfDay';
 import { getCyclePredictions } from '../../../domain/health/cycleCalculations';
+import { stepInsights } from '../../../domain/activity/stepInsights';
 import { stepsByDate, type DailySteps } from '../../../domain/interop/readings';
 import { useAgendaSources } from '../../../hooks/useAgendaSources';
 import { routeForEvent } from '../../../navigation/eventRoutes';
@@ -371,6 +373,16 @@ export default function HomeScreen() {
         />
       )}
     >
+      {phoneSteps.status === 'on' && phoneSteps.today ? (
+        <View style={{ marginBottom: spacing.md }}>
+          <LiveStepsCard
+            steps={Math.round(phoneSteps.today.steps)}
+            hours={phoneSteps.today.hours}
+            since={phoneSteps.today.since}
+            onPress={() => router.push('/(app)/health/activity' as Href)}
+          />
+        </View>
+      ) : null}
       <AnalyticalMetricGrid
         steps={
           steps
@@ -398,6 +410,9 @@ export default function HomeScreen() {
         }
         heart={heart ? { bpm: heart.value, isToday: heart.date === today() } : null}
         activeMinutes={activeMinutes}
+        walkingMinutesFromSteps={
+          steps && steps.date === today() ? stepInsights(steps.value).walkingMinutes : null
+        }
         connected={connected}
       />
 

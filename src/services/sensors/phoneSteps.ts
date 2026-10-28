@@ -67,15 +67,33 @@ const LIVE_THROTTLE_MS = 2500;
  * Keeps phone steps current while the calling screen is mounted: syncs on mount and whenever
  * the app returns to the foreground, and streams live counts (throttled) while open.
  */
+const todayKey = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+/** Today's phone-measured steps (with hourly buckets), straight from the device ledger. */
+export function readTodaySteps(): PhoneStepDay | null {
+  if (!StepCounter || phoneStepStatus() !== 'on') return null;
+  try {
+    return StepCounter.getDays().find((d) => d.date === todayKey()) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export function usePhoneSteps() {
   const [status, setStatus] = useState<PhoneStepStatus>(() => phoneStepStatus());
+  // Live view for the screen: refreshed on sync and on sensor events (at most once a second).
+  const [today, setToday] = useState<PhoneStepDay | null>(() => readTodaySteps());
+  const lastLive = useRef(0);
   const lastPush = useRef(0);
   const pending = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const refresh = useCallback(() => {
     const next = phoneStepStatus();
     setStatus(next);
-    if (next === 'on') void syncPhoneSteps();
+    if (next === 'on') void syncPhoneSteps().then(() => setToday(readTodaySteps()));
     return next;
   }, []);
 
@@ -92,6 +110,10 @@ export function usePhoneSteps() {
     const counter = StepCounter;
     const listener = counter.addListener('onSteps', (day) => {
       const now = Date.now();
+      if (now - lastLive.current >= 1000) {
+        lastLive.current = now;
+        setToday(readTodaySteps() ?? day);
+      }
       const push = () => {
         lastPush.current = Date.now();
         pending.current = null;
@@ -114,8 +136,9 @@ export function usePhoneSteps() {
   const enable = useCallback(async () => {
     const next = await enablePhoneSteps();
     setStatus(next);
+    setToday(readTodaySteps());
     return next;
   }, []);
 
-  return { status, enable };
+  return { status, enable, today };
 }

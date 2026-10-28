@@ -32,6 +32,7 @@ class StepCounterModule : Module() {
     "steps" to d.steps.toDouble(),
     "estimated" to d.estimated.toDouble(),
     "since" to d.since?.toDouble(),
+    "hours" to d.hours.map { it.toDouble() },
   )
 
   override fun definition() = ModuleDefinition {

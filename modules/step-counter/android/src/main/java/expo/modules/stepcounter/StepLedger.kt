@@ -22,7 +22,8 @@ class StepLedger(context: Context) {
   private val prefs: SharedPreferences =
     appContext.getSharedPreferences("thrivefold_step_ledger", Context.MODE_PRIVATE)
 
-  data class Day(val steps: Long, val estimated: Long, val since: Long?)
+  /** `hours` has 24 entries: steps attributed to each local hour of the day. */
+  data class Day(val steps: Long, val estimated: Long, val since: Long?, val hours: LongArray = LongArray(24))
 
   @Synchronized
   fun record(counter: Float, now: Long = System.currentTimeMillis()): Day {
@@ -75,7 +76,7 @@ class StepLedger(context: Context) {
     var cursor = from
     var assigned = 0L
     while (cursor < to) {
-      val boundary = minOf(nextMidnight(cursor), to)
+      val boundary = minOf(nextHour(cursor), to)
       val share =
         if (boundary >= to) delta - assigned else Math.round(delta * (boundary - cursor) / span)
       assigned += share
@@ -84,20 +85,30 @@ class StepLedger(context: Context) {
       val steps = (day?.optLong("steps") ?: 0L) + share
       val est = (day?.optLong("estimated") ?: 0L) + if (estimated) share else 0L
       val since = day?.let { if (it.has("since")) it.optLong("since") else null }
-      days.put(key, dayJson(steps, est, since))
+      val hours = hoursOf(day)
+      hours[hourOf(cursor)] += share
+      days.put(key, dayJson(steps, est, since, hours))
       cursor = boundary
     }
   }
 
-  private fun nextMidnight(t: Long): Long =
+  private fun nextHour(t: Long): Long =
     Calendar.getInstance().apply {
       timeInMillis = t
-      set(Calendar.HOUR_OF_DAY, 0)
       set(Calendar.MINUTE, 0)
       set(Calendar.SECOND, 0)
       set(Calendar.MILLISECOND, 0)
-      add(Calendar.DAY_OF_MONTH, 1)
+      add(Calendar.HOUR_OF_DAY, 1)
     }.timeInMillis
+
+  private fun hourOf(t: Long): Int = Calendar.getInstance().apply { timeInMillis = t }.get(Calendar.HOUR_OF_DAY)
+
+  private fun hoursOf(day: JSONObject?): LongArray {
+    val out = LongArray(24)
+    val arr = day?.optJSONArray("hours") ?: return out
+    for (i in 0 until minOf(24, arr.length())) out[i] = arr.optLong(i)
+    return out
+  }
 
   private fun prune(days: JSONObject, now: Long) {
     val cutoff = dateOf(now - KEEP_DAYS * 86_400_000L)
@@ -111,9 +122,10 @@ class StepLedger(context: Context) {
       JSONObject()
     }
 
-  private fun dayJson(steps: Long, estimated: Long, since: Long?) =
+  private fun dayJson(steps: Long, estimated: Long, since: Long?, hours: LongArray? = null) =
     JSONObject().put("steps", steps).put("estimated", estimated).apply {
       if (since != null) put("since", since)
+      if (hours != null) put("hours", org.json.JSONArray(hours.toList()))
     }
 
   private fun dayFrom(json: JSONObject?): Day =
@@ -122,6 +134,7 @@ class StepLedger(context: Context) {
       json.optLong("steps"),
       json.optLong("estimated"),
       if (json.has("since")) json.optLong("since") else null,
+      hoursOf(json),
     )
 
   private fun bootCount(): Int =

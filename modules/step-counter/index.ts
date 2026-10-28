@@ -9,6 +9,8 @@ export interface PhoneStepDay {
   estimated: number;
   /** When tracking began, if it began on this day (ms since epoch); earlier steps are unknown. */
   since: number | null;
+  /** 24 entries: steps in each local hour (absent on data saved before hourly tracking). */
+  hours?: number[];
 }
 
 interface StepCounterNative {
