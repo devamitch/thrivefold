@@ -26,7 +26,7 @@ export interface VisualAcuityChartProps {
 const DIRECTIONS: OptotypeDirection[] = ['right', 'down', 'left', 'up'];
 
 export function VisualAcuityChart({
-  distanceCm = 40,
+  distanceCm,
   targetDistanceCm = 40,
   onComplete,
 }: VisualAcuityChartProps) {
@@ -37,7 +37,7 @@ export function VisualAcuityChart({
   const [feedback, setFeedback] = useState<string | null>(null);
 
   const currentDirection = DIRECTIONS[dirIndex % DIRECTIONS.length];
-  const isDistanceAligned = Math.abs(distanceCm - targetDistanceCm) <= 8;
+  const isDistanceAligned = distanceCm !== undefined && Math.abs(distanceCm - targetDistanceCm) <= 8;
 
   // Optotype font size decreases as user advances
   const optotypeSize = Math.max(22, 68 - level * 9);
@@ -75,7 +75,7 @@ export function VisualAcuityChart({
             Optotype Visual Acuity
           </Text>
           <Text style={[typography.caption, { color: colors.text.muted, marginTop: 2 }]}>
-            5 arcmin visual angle benchmark
+            A focus game, not an eye test or prescription
           </Text>
         </View>
 
@@ -96,7 +96,7 @@ export function VisualAcuityChart({
               { color: isDistanceAligned ? colors.primary : colors.warning, marginLeft: 4 },
             ]}
           >
-            {distanceCm.toFixed(0)} cm {isDistanceAligned ? '(Harmon)' : '(Align)'}
+            {distanceCm === undefined ? 'Distance unknown' : `${distanceCm.toFixed(0)} cm ${isDistanceAligned ? '(Harmon)' : '(Align)'}`}
           </Text>
         </View>
       </View>

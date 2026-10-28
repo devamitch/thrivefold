@@ -65,6 +65,7 @@ import { usePhoneSteps } from '../../../services/sensors/phoneSteps';
 import type { Quest } from '../../../stores/slices/questSlice';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
+import { useBetaEnabled } from '../../../hooks/useBetaEnabled';
 
 const EVENT_ICON: Partial<Record<CalendarEvent['kind'], keyof typeof Ionicons.glyphMap>> = {
   exercise: 'barbell-outline',
@@ -100,6 +101,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const { colors, typography, spacing, experience } = useTheme();
 
+  const betaMode = useBetaEnabled();
   const s = useRootStore(
     useShallow((st) => ({
       user: st.user,
@@ -116,7 +118,6 @@ export default function HomeScreen() {
       dailyPointsTarget: st.dailyPointsTarget,
       dailyGoalReached: st.dailyGoalReached,
       weightKg: st.weightKg,
-      betaMode: st.betaMode,
       readings: st.deviceReadings,
       hydration: st.hydration,
       waterLogs: st.waterLogs,
@@ -453,7 +454,7 @@ export default function HomeScreen() {
         connected={connected}
       />
 
-      {s.betaMode ? (
+      {betaMode ? (
         <Card
           onPress={() => router.push('/(app)/beta-lab' as Href)}
           style={{
@@ -474,7 +475,7 @@ export default function HomeScreen() {
             <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
           </View>
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>
-            Eye tracking, hand gestures & pose recognition studios are running locally on your device.
+            Eye, hand, pose and breathing studios are on. Camera work stays on this phone.
           </Text>
         </Card>
       ) : null}

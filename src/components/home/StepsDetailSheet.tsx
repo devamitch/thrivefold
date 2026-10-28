@@ -14,6 +14,7 @@ import { Card } from '../ui/Card';
 import { Chip } from '../ui/Chip';
 import { LiveStepsCard } from './LiveStepsCard';
 import { MetricBarChart } from './MetricBarChart';
+import { BetaStudioEntries } from '../beta/BetaStudioEntries';
 
 interface Props {
   visible: boolean;
@@ -277,6 +278,7 @@ export function StepsDetailSheet({
           total, never both added.
         </Text>
       </Card>
+      <BetaStudioEntries section="steps" onBeforeNavigate={onClose} />
     </AppBottomSheetModal>
   );
 }

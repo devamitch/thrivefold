@@ -21,11 +21,13 @@ import { EyeTrackerSession, type EyeState } from '../../../domain/vision/eyeTrac
 import { PoseDetectionAdapter } from '../experiments/pose-detection/PoseDetectionAdapter';
 import { coachVoice } from '../../../services/ai/coachVoice';
 import { hapticLight, hapticSuccess, hapticSelection } from '../../../services/haptics';
+import { useRootStore } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
 import { VisualAcuityChart } from './VisualAcuityChart';
 import { BlinkBloomExercise } from './BlinkBloomExercise';
 import { NearFarFocusExercise } from './NearFarFocusExercise';
 import type { PoseFrame } from '../../../../modules/pose-landmarker';
+import { ensureCameraPermission } from '../../../services/sensors/cameraPermission';
 
 type StudioMode = 'scanner' | 'bloom' | 'nearfar' | 'acuity';
 
@@ -33,35 +35,30 @@ export function EyeTrackingStudio() {
   const { colors, typography, spacing } = useTheme();
   const [active, setActive] = useState(false);
   const [mode, setMode] = useState<StudioMode>('scanner');
-  const [eyeState, setEyeState] = useState<EyeState>({
-    earLeft: 0.25,
-    earRight: 0.25,
-    earAvg: 0.25,
-    isOpen: true,
-    blinkCount: 0,
-    blinksPerMin: 0,
-    gaze: 'center',
-    strainLevel: 'low',
-    lastBlinkAt: Date.now(),
-    distanceCm: 42,
-    gazeAngleDeg: 18,
-    isTooClose: false,
-    harmonZone: 'optimal',
-    fatigueScore: 92,
-    recommendation: 'Optimal reading distance and posture.',
-    batteryLevel: 100,
-    activeAlert: null,
-  });
-  const [rateHistory, setRateHistory] = useState<number[]>([14, 16, 15, 12, 17, 15, 18]);
+  const [eyeState, setEyeState] = useState<EyeState>(() => new EyeTrackerSession().processFace(undefined));
+  // Blinks/min sampled every 3 s while a face is tracked; starts empty, never seeded.
+  const [rateHistory, setRateHistory] = useState<number[]>([]);
+  const addBetaSession = useRootStore((s) => s.addBetaSession);
+  const session = useRef({ startedAt: 0, trackedFrames: 0, distanceSum: 0 });
 
   const tracker = useRef(new EyeTrackerSession());
   const prevBlinkRef = useRef(0);
   const lastCoachLineRef = useRef(0);
+  const lastAlertAtRef = useRef(0);
 
   const onPose = useCallback((e: NativeSyntheticEvent<PoseFrame>) => {
     const frame = e.nativeEvent;
     const next = tracker.current.processFace(frame.face);
     setEyeState(next);
+    // The coach says each new comfort alert once (the alert engine already applies cooldowns).
+    if (next.activeAlert && next.activeAlert.at !== lastAlertAtRef.current) {
+      lastAlertAtRef.current = next.activeAlert.at;
+      void coachVoice.speak(`${next.activeAlert.title}. ${next.activeAlert.body}`, { priority: 3 });
+    }
+    if (next.tracked) {
+      session.current.trackedFrames += 1;
+      session.current.distanceSum += next.distanceCm;
+    }
 
     // Rep / blink chime & coach guidance
     if (next.blinkCount > prevBlinkRef.current) {
@@ -79,25 +76,58 @@ export function EyeTrackingStudio() {
     }
   }, []);
 
-  // Update rolling history every 3s
+  // Sample the measured rate every 3 s, only while a face is in view.
+  const latest = useRef(eyeState);
+  latest.current = eyeState;
   useEffect(() => {
     if (!active) return;
     const iv = setInterval(() => {
-      setRateHistory((prev) => [...prev.slice(-9), eyeState.blinksPerMin || 15]);
+      if (latest.current.tracked) setRateHistory((prev) => [...prev.slice(-19), latest.current.blinksPerMin]);
     }, 3000);
     return () => clearInterval(iv);
-  }, [active, eyeState.blinksPerMin]);
+  }, [active]);
 
-  const toggleStudio = () => {
+  const finishSession = useCallback(() => {
+    const st = session.current;
+    const endedAt = Date.now();
+    // Keep only sessions long enough to mean something: 20 s with a face in view.
+    if (st.startedAt && endedAt - st.startedAt >= 20_000 && st.trackedFrames >= 60) {
+      addBetaSession({
+        kind: mode === 'bloom' ? 'blink_bloom' : 'eye_scan',
+        startedAt: st.startedAt,
+        endedAt,
+        metrics: {
+          blinks: latest.current.blinkCount,
+          blinksPerMin: Math.round((latest.current.blinkCount / (endedAt - st.startedAt)) * 60_000),
+          distanceCm: Math.round(st.distanceSum / st.trackedFrames),
+        },
+      });
+    }
+    session.current = { startedAt: 0, trackedFrames: 0, distanceSum: 0 };
+  }, [addBetaSession, mode]);
+
+  // Leaving the screen ends the camera; save what was measured.
+  const finishRef = useRef(finishSession);
+  finishRef.current = finishSession;
+  useEffect(() => () => finishRef.current(), []);
+
+  const [denied, setDenied] = useState(false);
+  const toggleStudio = async () => {
     hapticLight();
     if (!active) {
+      const ok = await ensureCameraPermission();
+      setDenied(!ok);
+      if (!ok) return;
       tracker.current.reset();
       prevBlinkRef.current = 0;
+      setRateHistory([]);
+      session.current = { startedAt: Date.now(), trackedFrames: 0, distanceSum: 0 };
       setActive(true);
       void coachVoice.speak('Eye tracking studio active. Look straight and blink naturally.', { priority: 3 });
     } else {
       setActive(false);
       coachVoice.stop();
+      finishSession();
     }
   };
 
@@ -215,7 +245,7 @@ export function EyeTrackingStudio() {
             <View style={[styles.hudPill, { backgroundColor: 'rgba(0,0,0,0.6)' }]}>
               <Ionicons name="resize-outline" size={12} color="#FFF" />
               <Text style={[typography.captionBold, { color: '#FFF', marginLeft: 4 }]}>
-                ~{eyeState.distanceCm.toFixed(0)} cm
+                {eyeState.tracked ? `~${eyeState.distanceCm.toFixed(0)} cm` : 'Looking for your face'}
               </Text>
             </View>
             <View style={[styles.hudPill, { backgroundColor: 'rgba(0,0,0,0.6)' }]}>
@@ -276,7 +306,7 @@ export function EyeTrackingStudio() {
             <View style={styles.statItem}>
               <Text style={[typography.caption, { color: colors.text.muted }]}>Distance</Text>
               <Text style={[typography.heading, { color: colors.text.primary, fontSize: 18 }]}>
-                ~{eyeState.distanceCm.toFixed(0)} <Text style={{ fontSize: 11 }}>cm</Text>
+                {eyeState.tracked ? `~${eyeState.distanceCm.toFixed(0)}` : '—'} <Text style={{ fontSize: 11 }}>cm</Text>
               </Text>
               <Text
                 style={[
@@ -292,7 +322,9 @@ export function EyeTrackingStudio() {
                   },
                 ]}
               >
-                {eyeState.harmonZone === 'optimal'
+                {!eyeState.tracked
+                  ? 'No face'
+                  : eyeState.harmonZone === 'optimal'
                   ? 'Harmon Zone'
                   : eyeState.harmonZone === 'too_close'
                     ? 'Too Close'
@@ -313,7 +345,7 @@ export function EyeTrackingStudio() {
             <View style={styles.statItem}>
               <Text style={[typography.caption, { color: colors.text.muted }]}>Gaze Angle</Text>
               <Text style={[typography.heading, { color: colors.text.primary, fontSize: 18 }]}>
-                {eyeState.gazeAngleDeg.toFixed(0)}°
+                {eyeState.tracked ? `${eyeState.gazeAngleDeg.toFixed(0)}°` : '—'}
               </Text>
               <Text style={[typography.caption, { color: colors.text.muted, fontSize: 10 }]}>
                 {eyeState.gaze}
@@ -352,7 +384,11 @@ export function EyeTrackingStudio() {
                 Blink Frequency & Distribution
               </Text>
               <Text style={[typography.caption, { color: colors.text.muted }]}>
-                Avg {Math.round(rateHistory.reduce((a, b) => a + b, 0) / rateHistory.length)} bpm
+                {rateHistory.length
+                  ? `Avg ${Math.round(rateHistory.reduce((a, b) => a + b, 0) / rateHistory.length)} /min`
+                  : active
+                    ? 'Measuring…'
+                    : 'Start the camera to measure'}
               </Text>
             </View>
             <View style={styles.barGraphContainer}>
@@ -392,7 +428,13 @@ export function EyeTrackingStudio() {
 
       {mode === 'nearfar' && <NearFarFocusExercise />}
 
-      {mode === 'acuity' && <VisualAcuityChart distanceCm={eyeState.distanceCm} />}
+      {mode === 'acuity' && <VisualAcuityChart distanceCm={eyeState.tracked ? eyeState.distanceCm : undefined} />}
+
+      {denied ? (
+        <Text style={[typography.caption, { color: colors.error, marginTop: 12 }]}>
+          Camera access was not allowed. Allow it in Android settings to use eye tracking.
+        </Text>
+      ) : null}
 
       {/* Action Button */}
       <View style={{ marginTop: 16 }}>

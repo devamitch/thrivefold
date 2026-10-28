@@ -10,6 +10,7 @@ import { Header } from '../../../components/ui/Header';
 import { useTheme } from '../../../theme/useTheme';
 import MenHealthScreen from './men/index';
 import PrideHealthScreen from './pride/index';
+import { BetaStudioEntries } from '../../../components/beta/BetaStudioEntries';
 
 export default function HealthIndexScreen() {
   const { colors, typography, spacing, experience } = useTheme();
@@ -153,6 +154,8 @@ export default function HealthIndexScreen() {
             </View>
           </Card>
         </Link>
+
+        <BetaStudioEntries section="wellbeing" />
       </ScrollView>
     </ScreenWrapper>
   );

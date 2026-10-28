@@ -11,6 +11,7 @@ import { useTheme } from '../../theme/useTheme';
 import { PressableScale } from '../ui/PressableScale';
 import { SquircleSurface } from '../ui/SquircleSurface';
 import { BetaBadge } from '../ui/Badge';
+import { useBetaEnabled } from '../../hooks/useBetaEnabled';
 
 interface Tile {
   icon: keyof typeof Ionicons.glyphMap;
@@ -35,13 +36,13 @@ const SPACE_TILE: Record<ProductExperience, Omit<Tile, 'meta' | 'hasActivity'> &
 export function ToolsGrid({ todayCount }: { todayCount: number }) {
   const { colors, typography, spacing, experience } = useTheme();
   const today = formatLocalDate(new Date());
-  const { sessions, meals, journal, checkIns, betaMode } = useRootStore(
+  const betaMode = useBetaEnabled();
+  const { sessions, meals, journal, checkIns } = useRootStore(
     useShallow((s) => ({
       sessions: s.workoutSessions,
       meals: s.mealLogs,
       journal: s.journalEntries,
       checkIns: s.checkInHistory,
-      betaMode: s.betaMode,
     })),
   );
 

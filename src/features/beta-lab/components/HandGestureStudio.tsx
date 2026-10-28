@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { PressableScale } from '../../../components/ui/PressableScale';
@@ -8,9 +8,11 @@ import { HandTrackerSession, type HandState } from '../../../domain/vision/handT
 import { PoseDetectionAdapter } from '../experiments/pose-detection/PoseDetectionAdapter';
 import { coachVoice } from '../../../services/ai/coachVoice';
 import { hapticLight, hapticSuccess } from '../../../services/haptics';
+import { useRootStore } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
 import type { NativeSyntheticEvent } from 'react-native';
 import type { PoseFrame } from '../../../../modules/pose-landmarker';
+import { ensureCameraPermission } from '../../../services/sensors/cameraPermission';
 
 export function HandGestureStudio() {
   const { colors, typography, spacing } = useTheme();
@@ -27,6 +29,24 @@ export function HandGestureStudio() {
 
   const tracker = useRef(new HandTrackerSession());
   const prevRepsRef = useRef(0);
+  const startedAt = useRef(0);
+  const addBetaSession = useRootStore((s) => s.addBetaSession);
+
+  // Save a session with at least one counted rep; runs on stop and when leaving the screen.
+  const finishSession = useCallback(() => {
+    if (startedAt.current && prevRepsRef.current > 0) {
+      addBetaSession({
+        kind: 'hand_grip',
+        startedAt: startedAt.current,
+        endedAt: Date.now(),
+        metrics: { reps: prevRepsRef.current },
+      });
+    }
+    startedAt.current = 0;
+  }, [addBetaSession]);
+  const finishRef = useRef(finishSession);
+  finishRef.current = finishSession;
+  useEffect(() => () => finishRef.current(), []);
 
   const onPose = useCallback((e: NativeSyntheticEvent<PoseFrame>) => {
     const frame = e.nativeEvent;
@@ -42,16 +62,22 @@ export function HandGestureStudio() {
     }
   }, []);
 
-  const toggleStudio = () => {
+  const [denied, setDenied] = useState(false);
+  const toggleStudio = async () => {
     hapticLight();
     if (!active) {
+      const ok = await ensureCameraPermission();
+      setDenied(!ok);
+      if (!ok) return;
       tracker.current.reset();
       prevRepsRef.current = 0;
+      startedAt.current = Date.now();
       setActive(true);
       void coachVoice.speak('Hand gesture studio active. Show your hand, squeeze into a fist, and open.', { priority: 3 });
     } else {
       setActive(false);
       coachVoice.stop();
+      finishSession();
     }
   };
 
@@ -101,7 +127,7 @@ export function HandGestureStudio() {
         <View style={styles.statItem}>
           <Text style={[typography.caption, { color: colors.text.muted }]}>State</Text>
           <Text style={[typography.heading, { color: colors.text.primary, fontSize: 16, textTransform: 'capitalize' }]}>
-            {handState.kind}
+            {handState.confidence > 0 ? handState.kind : active ? 'No hand' : '—'}
           </Text>
         </View>
         <View style={styles.statItem}>
@@ -113,7 +139,7 @@ export function HandGestureStudio() {
         <View style={styles.statItem}>
           <Text style={[typography.caption, { color: colors.text.muted }]}>Mobility</Text>
           <Text style={[typography.heading, { color: colors.text.primary, fontSize: 18 }]}>
-            {handState.wristMobilityScore}%
+            {handState.confidence > 0 ? `${handState.wristMobilityScore}%` : '—'}
           </Text>
         </View>
       </View>
@@ -125,6 +151,12 @@ export function HandGestureStudio() {
           Grip exercise: Squeeze hand into a tight fist, then open fingers fully. Coach will count reps.
         </Text>
       </View>
+
+      {denied ? (
+        <Text style={[typography.caption, { color: colors.error, marginTop: 12 }]}>
+          Camera access was not allowed. Allow it in Android settings to use hand tracking.
+        </Text>
+      ) : null}
 
       {/* Action Button */}
       <View style={{ marginTop: 14 }}>

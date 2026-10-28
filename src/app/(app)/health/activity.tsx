@@ -16,17 +16,18 @@ import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngin
 import { ACTIVITY_TYPES } from '../../../domain/fitness/workouts';
 import { MET_BY_ACTIVITY, DEFAULT_WEIGHT_KG } from '../../../domain/activity/calories';
 import { PressableScale } from '../../../components/ui/PressableScale';
+import { useBetaEnabled } from '../../../hooks/useBetaEnabled';
 
 const DISTANCE_TYPES = new Set(['Walking', 'Running', 'Treadmill', 'Walking pad', 'Cycling', 'Swimming', 'Rowing', 'Hiking']);
 
 /** Log any activity done outside a plan: type, minutes, optional distance and effort, or run a live session. */
 export default function ActivityLogScreen() {
   const { colors, typography, spacing } = useTheme();
-  const { logs, weightKg, betaMode, addActivityLog, deleteActivityLog, showToast, showAlert } = useRootStore(
+  const betaMode = useBetaEnabled();
+  const { logs, weightKg, addActivityLog, deleteActivityLog, showToast, showAlert } = useRootStore(
     useShallow((s) => ({
       logs: s.activityLogs,
       weightKg: s.weightKg,
-      betaMode: s.betaMode,
       addActivityLog: s.addActivityLog,
       deleteActivityLog: s.deleteActivityLog,
       showToast: s.showToast,

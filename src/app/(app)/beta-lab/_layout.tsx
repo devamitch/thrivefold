@@ -1,7 +1,13 @@
-import { Stack } from 'expo-router';
+import { Redirect, Stack } from 'expo-router';
 import React from 'react';
 
+import { useBetaAccess } from '../../../hooks/useBetaEnabled';
+
 export default function BetaLabLayout() {
+  // Beta Lab exists in development builds and for server-confirmed owners only.
+  const allowed = useBetaAccess();
+  if (!allowed) return <Redirect href="/(app)/(tabs)" />;
+
   return (
     <Stack
       screenOptions={{
@@ -12,8 +18,9 @@ export default function BetaLabLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="eye-tracking" />
       <Stack.Screen name="hand-gestures" />
+      <Stack.Screen name="gesture-game" options={{ animation: 'fade' }} />
+      <Stack.Screen name="breathing" />
       <Stack.Screen name="pose-coach" />
-      <Stack.Screen name="food-lens" />
       <Stack.Screen name="voice-coach" />
       <Stack.Screen name="motion-blur" />
       <Stack.Screen name="settings" />

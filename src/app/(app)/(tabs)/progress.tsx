@@ -26,6 +26,7 @@ import {
 import { activeCalories } from '../../../domain/activity/calories';
 import { stepsByDate } from '../../../domain/interop/readings';
 import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngine';
+import { BetaStudioEntries } from '../../../components/beta/BetaStudioEntries';
 
 interface Stats {
   questsCompleted: number;
@@ -635,6 +636,7 @@ export default function ProgressScreen() {
             ) : null}
           </Animated.View>
         )}
+        <BetaStudioEntries section="progress" />
       </View>
     </ScreenContainer>
   );

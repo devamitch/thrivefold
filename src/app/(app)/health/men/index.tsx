@@ -12,6 +12,7 @@ import { useTheme } from '../../../../theme/useTheme';
 import { useRootStore, useShallow } from '../../../../stores/useRootStore';
 import { formatLocalDate } from '../../../../domain/calendar/universalCalendarEngine';
 import { planById, sessionsThisWeek } from '../../../../domain/fitness/workouts';
+import { BetaStudioEntries } from '../../../../components/beta/BetaStudioEntries';
 
 /** Men's health hub: today's own check-in, training, recovery, reflection and education. */
 export default function MenHealthScreen() {
@@ -124,6 +125,7 @@ export default function MenHealthScreen() {
             </Link>
           </View>
         </Card>
+        <BetaStudioEntries section="wellbeing" />
       </View>
     </ScreenContainer>
   );

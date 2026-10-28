@@ -22,6 +22,8 @@ export interface EyePoint {
 }
 
 export interface EyeState {
+  /** False when no face was found in this frame; the distance/gaze values are then placeholders and must not be shown. */
+  tracked: boolean;
   earLeft: number;
   earRight: number;
   earAvg: number;
@@ -131,6 +133,7 @@ export class EyeTrackerSession {
       const blinksPerMin = this.computeBlinkRate(now);
       const battery = eyeBatteryManager.getState();
       return {
+        tracked: false,
         earLeft: 0.25,
         earRight: 0.25,
         earAvg: 0.25,
@@ -220,6 +223,7 @@ export class EyeTrackerSession {
     });
 
     return {
+      tracked: true,
       earLeft,
       earRight,
       earAvg,

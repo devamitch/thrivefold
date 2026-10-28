@@ -11,6 +11,7 @@ import { TextField } from '../../../../components/ui/TextField';
 import { GuidedTimer } from '../../../../components/ui/GuidedTimer';
 import { useTheme } from '../../../../theme/useTheme';
 import { useRootStore, useShallow } from '../../../../stores/useRootStore';
+import { BetaStudioEntries } from '../../../../components/beta/BetaStudioEntries';
 
 /** LGBTQ+ wellbeing hub: private identity settings, care tracking, support and community. */
 export default function PrideWellbeingScreen() {
@@ -109,6 +110,7 @@ export default function PrideWellbeingScreen() {
             <Button label="Circles" size="sm" variant="outline" style={{ alignSelf: 'flex-start' }} />
           </Link>,
         )}
+        <BetaStudioEntries section="wellbeing" />
       </View>
     </ScreenWrapper>
   );

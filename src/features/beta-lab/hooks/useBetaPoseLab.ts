@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import { useSharedValue } from 'react-native-reanimated';
 import type { NativeSyntheticEvent } from 'react-native';
 import type { PoseFrame } from 'pose-landmarker';
+import { ensureCameraPermission } from '../../../services/sensors/cameraPermission';
 
 export interface PoseTelemetry {
   fps: number;
@@ -111,7 +112,11 @@ export function useBetaPoseLab() {
     }));
   }, []);
 
-  const toggleCamera = useCallback(() => {
+  const toggleCamera = useCallback(async () => {
+    if (!active && !(await ensureCameraPermission())) {
+      setTelemetry((t) => ({ ...t, status: 'error', errorMessage: 'Camera access was not allowed. Allow it in Android settings to use the pose coach.' }));
+      return;
+    }
     setActive((prev) => {
       const next = !prev;
       setTelemetry((t) => ({
@@ -122,7 +127,7 @@ export function useBetaPoseLab() {
       }));
       return next;
     });
-  }, []);
+  }, [active]);
 
   const flipCamera = useCallback(() => {
     setFacing((prev) => (prev === 'front' ? 'back' : 'front'));

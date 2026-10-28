@@ -16,6 +16,7 @@ import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngin
 import { fitFor } from '../../../domain/game/setupProfile';
 import { questFamily } from '../../../domain/game/progression';
 import { PLANS, suggestPlans, activeMinutesThisWeek, activitiesThisWeek, exerciseById, planById, sessionsThisWeek, type WorkoutPlan } from '../../../domain/fitness/workouts';
+import { BetaStudioEntries } from '../../../components/beta/BetaStudioEntries';
 
 const SETTINGS: { id: 'all' | WorkoutPlan['setting']; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -210,6 +211,7 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
             })}
           </View>
         )}
+        <BetaStudioEntries section="movement" />
       </View>
     </ScreenWrapper>
   );

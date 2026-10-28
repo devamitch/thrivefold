@@ -68,6 +68,7 @@ import { getBetaSettings } from '../../../../features/beta-lab/flags/betaFlags';
 import { speakCoach } from '../../../../services/ai/coachVoiceService';
 import { useRootStore } from '../../../../stores/useRootStore';
 import { useTheme } from '../../../../theme/useTheme';
+import { useBetaEnabled } from '../../../../hooks/useBetaEnabled';
 
 /** Tutorial video re-renders only when its own props change, not on every rep update. */
 const TutorialVideo = memo(YouTubePlayer);
@@ -132,7 +133,7 @@ export default function CoachScreen() {
     item ? Boolean(s.watchedTutorials[item.exerciseId]) : false,
   );
   const markTutorialWatched = useRootStore((s) => s.markTutorialWatched);
-  const betaMode = useRootStore((s) => s.betaMode);
+  const betaMode = useBetaEnabled();
 
   // ── Checking active ───────────────────────────────────────────────────────
   // `armed` flips only when the person taps Start: positioning never counts reps or obeys gestures.

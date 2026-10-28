@@ -17,7 +17,7 @@ Thrivefold has evolved from an activity tracker into a local-first, privacy-resp
 ### P0 — Safety & Release Readiness
 - **Version Alignment:** Version `1.0.3` (build `4`) configured and built cleanly.
 - **Fastlane Deployment:** Successfully uploaded release bundle (`app-release.aab` v4) to the Google Play Internal testing track via Fastlane supply with clean production changelog `4.txt` (zero mentions of beta).
-- **Secret & Credential Protection:** All personal owner references configured via environment variables (`EXPO_PUBLIC_OWNER_EMAIL`) and server-side RPCs (`public.tf_is_owner` via Supabase RLS). No secrets, credentials, or private health data in source files.
+- **Owner access:** decided only by the server RPC `public.tf_is_owner()` (verified email in `tf_owners`). The earlier client-side `EXPO_PUBLIC_OWNER_EMAIL` shortcut was removed on 2026-10-29: a public env value matched against a local profile is not proof of ownership.
 
 ### P1 — Unified Health OS Foundation, Metric Registry & Provenance
 - **Metric Registry:** `src/domain/health/metricRegistry.ts` establishes single source of truth for units, live/historical support, provenance, and aggregation rules across steps, calories, heart rate, sleep, hydration, and screen time.
@@ -58,6 +58,29 @@ Thrivefold has evolved from an activity tracker into a local-first, privacy-resp
 - **Unit Test Coverage:** 8 new unit tests in `tests/unit/eye-metrics.test.ts` (361 total unit tests passing).
 
 ---
+
+### P8 — Global Beta Mode wiring (2026-10-29)
+- **One switch:** `useBetaEnabled()` (`src/hooks/useBetaEnabled.ts`) = `betaMode && (__DEV__ || isOwner)`. Every beta surface reads it; a persisted `betaMode` alone unlocks nothing after sign-out. `beta-lab/_layout.tsx` redirects anyone without access.
+- **Entry points in the sections they belong to** (`BetaStudioEntries`): Health hubs (women, men, LGBTQ+) → eye studio, breathing; Workouts → pose coach, grip exercises, Finger Count Challenge; Steps sheet → treadmill / walking pad / swim / ride session; Progress → eye sessions, all studios. Home keeps its Beta banner.
+- **New routes:** `beta-lab/gesture-game` (full-screen, coach-voiced Finger Count Challenge, pure rules in `domain/vision/fingerGame.ts`) and `beta-lab/breathing` (paced breathing with spoken cues, `domain/wellbeing/breathing.ts`).
+- **History:** finished eye, blink-bloom, grip, game and breathing sessions are saved as derived numbers (`betaSessions` in the app slice, MMKV) and drawn per route by `BetaSessionHistory`.
+- **Truthfulness fixes:** the eye studio no longer seeds 42 cm / 92 % / fake blink history; values show "—" until a face is tracked (`EyeState.tracked`). The acuity game no longer claims a 5-arcmin benchmark. Camera permission is requested by the eye, hand, game and pose studios before the camera starts.
+- **Fake result removed:** `beta-lab/food-lens` showed a hard-coded "Dal Makhani 485 kcal" result on a "scan" button. Deleted; the Food Lens entry now opens the real meal scanner.
+- **Build fix:** removed `modules/setu-beta-scanner` (340 MB of duplicated models, unused by any screen) and `modules/blinkquest-vision` (unused copy that required `react-native-vision-camera`, which Thrivefold does not install). The face landmarker in `modules/pose-landmarker` serves the eye studio.
+
+### Route ↔ capability matrix (beta)
+| Route | Capability | Input | Saved |
+| --- | --- | --- | --- |
+| `beta-lab/eye-tracking` | Blink rate, screen distance, gaze angle, Blink Bloom, near/far, focus game | Face landmarker | `eye_scan`, `blink_bloom` |
+| `beta-lab/hand-gestures` | Grip reps, finger count, wrist mobility | Hand landmarker | `hand_grip` |
+| `beta-lab/gesture-game` | Finger Count Challenge with coach voice | Hand landmarker | `finger_game` |
+| `beta-lab/breathing` | Paced breathing with coach voice | Timer | `breathing` |
+| `beta-lab/pose-coach` | Skeleton, joint angles, reps | Pose landmarker | — |
+| `health/meal-log` (Beta Lab "Food Lens" opens it) | Meal photo labels → server macros | Food classifier + meal-vision function | meal log |
+| `beta-lab/voice-coach` | Coach voice test bench | expo-speech | — |
+| `health/activity` | Timed sessions incl. treadmill, walking pad, swim, ride | Timer + MET estimate | activity log |
+
+Not done: touchless pointer control (research only), segmentation/OCR (no model bundled), system-wide screen time (Usage Access not implemented; only Thrivefold's own foreground time), SQLite aggregation and periodic cloud sync of beta sessions.
 
 ## 3. Verification Gates
 - **Type Checking:** `pnpm compile` (`tsc --noEmit`) -> **PASS (0 errors)**.

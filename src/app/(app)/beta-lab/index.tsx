@@ -44,6 +44,24 @@ const STUDIOS: StudioProduct[] = [
     badgeVariant: 'beta',
   },
   {
+    id: 'finger-game',
+    title: 'Finger Count Challenge',
+    subtitle: 'Coach-voiced hand game: show the count the coach calls out',
+    tag: 'Coach Game',
+    icon: 'game-controller-outline',
+    route: '/(app)/beta-lab/gesture-game',
+    badgeVariant: 'gold',
+  },
+  {
+    id: 'breathing',
+    title: 'Breathing Coach',
+    subtitle: 'Paced breathing patterns with spoken cues and session history',
+    tag: 'Guided',
+    icon: 'leaf-outline',
+    route: '/(app)/beta-lab/breathing',
+    badgeVariant: 'success',
+  },
+  {
     id: 'pose',
     title: 'Live Pose Coach',
     subtitle: '33-joint skeleton tracking, joint angle telemetry & form score',
@@ -58,7 +76,7 @@ const STUDIOS: StudioProduct[] = [
     subtitle: 'Live plate capture, culinary item classification & macro estimation',
     tag: 'Multimodal AI',
     icon: 'restaurant-outline',
-    route: '/(app)/beta-lab/food-lens',
+    route: '/(app)/health/meal-log',
     badgeVariant: 'gold',
   },
   {

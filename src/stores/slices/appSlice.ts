@@ -8,6 +8,17 @@ import { normaliseWorldviewProfile, type WorldviewProfile } from '../../domain/i
 
 export type ThemeMode = 'system' | 'light' | 'dark';
 
+export type BetaSessionKind = 'eye_scan' | 'blink_bloom' | 'hand_grip' | 'finger_game' | 'breathing';
+
+export interface BetaSession {
+  id: string;
+  kind: BetaSessionKind;
+  startedAt: number;
+  endedAt: number;
+  /** Measured or counted values for the session, e.g. blinksPerMin, reps, score, cycles. */
+  metrics: Record<string, number>;
+}
+
 export interface ToastItem {
   id: string;
   type: 'success' | 'error' | 'warning' | 'info';
@@ -111,6 +122,9 @@ export interface AppSlice {
   /** Opt-in experimental Beta Mode: unlocks Beta Lab, experimental pose, and motion blur. Off by default. */
   betaMode: boolean;
   setBetaMode: (on: boolean) => void;
+  /** Finished beta studio sessions (derived numbers only, never frames), newest first. */
+  betaSessions: BetaSession[];
+  addBetaSession: (session: Omit<BetaSession, 'id'>) => void;
   /** Server-confirmed project owner (tf_is_owner): unlocks Beta Lab and developer tools. */
   isOwner: boolean;
   setIsOwner: (on: boolean) => void;
@@ -207,6 +221,11 @@ export const createAppSlice: StateCreator<
   setAiDeliveryMode: (aiDeliveryMode) => set({ aiDeliveryMode }),
   betaMode: false,
   setBetaMode: (betaMode) => set({ betaMode }),
+  betaSessions: [],
+  addBetaSession: (session) =>
+    set((state) => ({
+      betaSessions: [{ ...session, id: `${session.kind}-${session.endedAt}` }, ...state.betaSessions].slice(0, 300),
+    })),
   isOwner: false,
   setIsOwner: (isOwner) => set({ isOwner }),
   activeCalorieGoal: 300,

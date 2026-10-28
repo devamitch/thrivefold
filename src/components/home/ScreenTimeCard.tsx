@@ -10,14 +10,15 @@ import { BetaBadge } from '../ui/Badge';
 import { identifyWorkSchedule } from '../../domain/productivity/screenTime';
 import { useRootStore, useShallow } from '../../stores/useRootStore';
 import { formatLocalDate } from '../../domain/calendar/universalCalendarEngine';
+import { useBetaEnabled } from '../../hooks/useBetaEnabled';
 
 export function ScreenTimeCard() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
-  const { appStateHistory, betaMode } = useRootStore(
+  const betaMode = useBetaEnabled();
+  const { appStateHistory } = useRootStore(
     useShallow((s) => ({
       appStateHistory: s.appStateHistory,
-      betaMode: s.betaMode,
     })),
   );
 
