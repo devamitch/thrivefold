@@ -46,11 +46,23 @@ Thrivefold has evolved from an activity tracker into a local-first, privacy-resp
 ### P6 — Progress & Health Trends
 - **Health Trends Tab:** Added third tab to `src/app/(app)/(tabs)/progress.tsx` offering 7-day and 30-day equalizer bar charts for Daily Steps, Active Energy, Hydration, and Sleep duration.
 
+### P7 — BlinkQuest Eye Metrics & Vision Wellness Suite
+- **Eye Battery Daily Energy Model:** Mathematical drain & recharge engine (`src/domain/vision/eyeBattery.ts`) persisting to encrypted local storage via MMKV. Drains based on continuous screen focus, low blink rate (<8 bpm), close device distance (<25 cm), and heavy eye closure; recharges via breaks and eye exercises.
+- **Reading Ergonomics & Harmon Distance:** `src/domain/vision/readingErgonomics.ts` computes optical screen distance from normalized interpupillary geometry, downward gaze inclination angle (15°–25° dry-eye prevention standard), and Harmon reading zone classification (Too Close / Optimal / Far).
+- **Non-Nagging Eye Alerts:** `src/domain/vision/eyeAlerts.ts` evaluates real measured fatigue signals (`too_close`, `low_blink`, `eyes_closing`, `break_due`, `battery_low`) with non-nagging cooldowns (3–30 mins).
+- **Interactive Eye Routines:**
+  - `BlinkBloomExercise.tsx`: 8-petal blooming flower guided routine detecting complete slow blinks via EAR.
+  - `NearFarFocusExercise.tsx`: Guided 20-20-20 accommodation exercise relaxing ciliary muscle tension.
+  - `VisualAcuityChart.tsx`: Calibrated digital Tumbling E optotype visual acuity test anchored to screen-to-eye distance.
+- **Screen Time Card on Home:** `ScreenTimeCard.tsx` mounted on Home dashboard providing active screen time, recommended breaks, and direct links to Eye Studio and Desk Reset.
+- **Unit Test Coverage:** 8 new unit tests in `tests/unit/eye-metrics.test.ts` (361 total unit tests passing).
+
 ---
 
 ## 3. Verification Gates
 - **Type Checking:** `pnpm compile` (`tsc --noEmit`) -> **PASS (0 errors)**.
 - **Linting:** `pnpm lint` (`eslint src tests --quiet`) -> **PASS (0 errors)**.
+- **Unit Testing:** `pnpm test` (`jest`) -> **PASS (55/55 test suites, 361 tests passed)**.
 - **Gradle Release Build:** Previously verified -> **BUILD SUCCESSFUL**.
 
 
