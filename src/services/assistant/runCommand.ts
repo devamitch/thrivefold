@@ -3,7 +3,10 @@ import { activeCalories } from '../../domain/activity/calories';
 import type { Command } from '../../domain/assistant/commands';
 import { formatLocalDate } from '../../domain/calendar/universalCalendarEngine';
 import { stepsByDate } from '../../domain/interop/readings';
+import { describeCode, planWalk } from '../../domain/world/outdoor';
 import { useRootStore } from '../../stores/useRootStore';
+import { alertsFor } from '../world/officialAlerts';
+import { getForecast } from '../world/weather';
 
 export interface AssistantReply {
   text: string;
@@ -41,6 +44,25 @@ export async function runCommand(cmd: Command): Promise<AssistantReply> {
     }
 
     case 'ask': {
+      if (cmd.metric === 'weather') {
+        const place = s.outdoorPlace;
+        if (!place) return { text: 'Choose your town in the Outdoors card on Home and I can tell you the weather and the best time to walk.' };
+        try {
+          const f = await getForecast(place);
+          let alerts: Awaited<ReturnType<typeof alertsFor>> = [];
+          try {
+            alerts = await alertsFor(place.lat, place.lon);
+          } catch {
+            // Alerts are optional for this answer; the weather still helps.
+          }
+          const plan = planWalk(f.hours, new Date(), alerts);
+          const best = plan.best ? ` The best time to walk is around ${Number(plan.best.time.slice(11, 13)) % 12 || 12} ${Number(plan.best.time.slice(11, 13)) < 12 ? 'am' : 'pm'}.` : '';
+          const warn = alerts[0] ? ` Official alert: ${alerts[0].event}, from ${alerts[0].sender}.` : '';
+          return { text: `In ${place.name} it is ${Math.round(f.now.tempC)} degrees, ${describeCode(f.now.code).toLowerCase()}.${best}${warn} ${plan.tips[0] ?? ''}`.trim() };
+        } catch {
+          return { text: 'I could not get the weather just now. Check your connection and try again.' };
+        }
+      }
       if (cmd.metric === 'steps') {
         const d = stepsByDate(s.deviceReadings).get(today);
         return { text: d ? `You have ${Math.round(d.value).toLocaleString()} steps today.` : 'No steps are counted yet today. Turn on step counting from the Steps tile on Home.' };
@@ -78,6 +100,9 @@ export async function runCommand(cmd: Command): Promise<AssistantReply> {
           `Water today: ${s.hydration[today] ?? 0} glasses`,
           s.weightKg ? `Weight: ${s.weightKg} kg` : null,
           s.heightCm ? `Height: ${s.heightCm} cm` : null,
+          s.koshProfile.preferredName ? `Call them ${s.koshProfile.preferredName}` : null,
+          s.koshProfile.allergies.length ? `Allergies: ${s.koshProfile.allergies.join(', ')}` : null,
+          s.koshProfile.foodRestrictions.length ? `Food rules: ${s.koshProfile.foodRestrictions.join(', ')}` : null,
         ]
           .filter(Boolean)
           .join('. ');

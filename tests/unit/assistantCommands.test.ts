@@ -24,6 +24,7 @@ describe('assistant commands', () => {
     expect(parseCommand('How many steps today?')).toEqual({ kind: 'ask', metric: 'steps' });
     expect(parseCommand('how much water did I drink')).toEqual({ kind: 'ask', metric: 'water' });
     expect(parseCommand('what quests are left')).toEqual({ kind: 'ask', metric: 'quests' });
+    expect(parseCommand('will it rain today?')).toEqual({ kind: 'ask', metric: 'weather' });
   });
 
   it('puts support first when someone mentions harming themselves', () => {

@@ -5,6 +5,7 @@
  * constraints, routine length and diet. Never observances, health records or anything inferred.
  */
 import { ageBandFor, ageOn } from '../../domain/account/googleProfile';
+import { PHONE_RE, mergeKosh, type EmergencyContact, type KoshProfile } from '../../domain/account/koshProfile';
 import type { ProductExperience } from '../../theme/tokens';
 import { useRootStore } from '../../stores/useRootStore';
 import { supabase } from '../supabase/supabaseClient';
@@ -18,6 +19,41 @@ export interface RemoteProfile {
   constraints: string[];
   routine_minutes: 5 | 10 | 20 | null;
   diet: string | null;
+  preferred_name: string | null;
+  phone: string | null;
+  languages: string[];
+  food_restrictions: string[];
+  allergies: string[];
+  cuisines: string[];
+  food_dislikes: string[];
+  interests: string[];
+  skills: string[];
+  career_goal: string | null;
+  accessibility: KoshProfile['accessibility'];
+  field_sources: KoshProfile['fieldSources'];
+}
+
+const toKosh = (r: RemoteProfile): Partial<KoshProfile> => ({
+  preferredName: r.preferred_name,
+  phone: r.phone,
+  languages: r.languages ?? [],
+  foodRestrictions: r.food_restrictions ?? [],
+  allergies: r.allergies ?? [],
+  cuisines: r.cuisines ?? [],
+  foodDislikes: r.food_dislikes ?? [],
+  interests: r.interests ?? [],
+  skills: r.skills ?? [],
+  careerGoal: r.career_goal,
+  accessibility: r.accessibility ?? {},
+  fieldSources: r.field_sources ?? {},
+});
+
+/** Server profile into this phone's Anvay Kosh profile, filling only empty fields. */
+export function applyKosh(remote: RemoteProfile): string[] {
+  const s = useRootStore.getState();
+  const { merged, filled } = mergeKosh(s.koshProfile, toKosh(remote));
+  if (filled.length) useRootStore.setState({ koshProfile: merged });
+  return filled;
 }
 
 async function userId(): Promise<string | null> {
@@ -32,7 +68,9 @@ export async function pullProfile(): Promise<RemoteProfile | null> {
   if (!supabase || !id) return null;
   const { data, error } = await supabase
     .from('thrivefold_personal_profiles')
-    .select('display_name, birth_date, experience, onboarded, goals, constraints, routine_minutes, diet')
+    .select(
+      'display_name, birth_date, experience, onboarded, goals, constraints, routine_minutes, diet, preferred_name, phone, languages, food_restrictions, allergies, cuisines, food_dislikes, interests, skills, career_goal, accessibility, field_sources',
+    )
     .eq('user_id', id)
     .maybeSingle();
   if (error) return null;
@@ -45,6 +83,7 @@ export async function pushProfile(): Promise<boolean> {
   const s = useRootStore.getState();
   if (!supabase || !id || !s.user || s.user.isGuest) return false;
   const o = s.onboarding;
+  const k = s.koshProfile;
   const { error } = await supabase.from('thrivefold_personal_profiles').upsert(
     {
       user_id: id,
@@ -56,11 +95,45 @@ export async function pushProfile(): Promise<boolean> {
       constraints: o.constraints.slice(0, 20),
       routine_minutes: o.routineMinutes,
       diet: o.diet?.slice(0, 40) ?? null,
+      preferred_name: k.preferredName,
+      phone: k.phone && PHONE_RE.test(k.phone) ? k.phone : null,
+      languages: k.languages.slice(0, 10),
+      food_restrictions: k.foodRestrictions.slice(0, 20),
+      allergies: k.allergies.slice(0, 20),
+      cuisines: k.cuisines.slice(0, 20),
+      food_dislikes: k.foodDislikes.slice(0, 30),
+      interests: k.interests.slice(0, 30),
+      skills: k.skills.slice(0, 30),
+      career_goal: k.careerGoal?.slice(0, 300) ?? null,
+      accessibility: k.accessibility,
+      field_sources: k.fieldSources,
       updated_at: new Date().toISOString(),
     },
     { onConflict: 'user_id' },
   );
-  return !error;
+  if (error) return false;
+  return syncEmergencyContacts(id);
+}
+
+/**
+ * Emergency contacts: the server list is replaced by this phone's list when this phone has any;
+ * a new phone with none takes the server's list.
+ */
+async function syncEmergencyContacts(id: string): Promise<boolean> {
+  if (!supabase) return false;
+  const local = useRootStore.getState().emergencyContacts;
+  if (local.length === 0) {
+    const { data, error } = await supabase.from('anvay_emergency_contacts').select('id, name, phone, relation').eq('user_id', id);
+    if (error) return false;
+    if (data?.length) useRootStore.getState().setEmergencyContacts(data as EmergencyContact[]);
+    return true;
+  }
+  const del = await supabase.from('anvay_emergency_contacts').delete().eq('user_id', id);
+  if (del.error) return false;
+  const ins = await supabase
+    .from('anvay_emergency_contacts')
+    .insert(local.slice(0, 5).map((c) => ({ user_id: id, name: c.name, phone: c.phone, relation: c.relation })));
+  return !ins.error;
 }
 
 const ageFromDate = (d: string) => {
@@ -105,5 +178,6 @@ export function applyProfile(remote: RemoteProfile, base: { id: string; email: s
     diet: o.diet ?? remote.diet,
   });
   if (remote.onboarded && !s.isOnboarded) s.setIsOnboarded(true);
+  applyKosh(remote);
   return true;
 }

@@ -7,7 +7,7 @@
 export type Command =
   | { kind: 'open'; route: string; label: string }
   | { kind: 'log_water'; glasses: number }
-  | { kind: 'ask'; metric: 'steps' | 'water' | 'quests' | 'calories' }
+  | { kind: 'ask'; metric: 'steps' | 'water' | 'quests' | 'calories' | 'weather' }
   | { kind: 'crisis' }
   | { kind: 'unknown'; text: string };
 
@@ -47,8 +47,9 @@ export function parseCommand(input: string): Command {
     return { kind: 'log_water', glasses: Math.max(1, Math.min(6, Number.isFinite(n) ? n : 1)) };
   }
 
-  const asking = /^(how|what|did|have|am|do)\b|\?$|\b(how many|how much|tell me)\b/.test(text);
+  const asking = /^(how|what|did|have|am|do|will|is|should|can|whats|when)\b|\?$|\b(how many|how much|tell me)\b/.test(text);
   if (asking) {
+    if (/\bweather\b|\brain\b|\bhot\b|\bwalk outside\b|\bgo out\b|\bumbrella\b/.test(text)) return { kind: 'ask', metric: 'weather' };
     if (/\bsteps?\b|\bwalked\b/.test(text)) return { kind: 'ask', metric: 'steps' };
     if (/\bwater\b|\bdrink|\bhydrat/.test(text)) return { kind: 'ask', metric: 'water' };
     if (/\bcalor|\bburn/.test(text)) return { kind: 'ask', metric: 'calories' };

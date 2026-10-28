@@ -5,6 +5,7 @@ import type { RootState } from '../rootTypes';
 import { EMPTY_BASELINE, type Baseline } from '../../domain/game/setupProfile';
 import { ProductExperience } from '../../theme/tokens';
 import { normaliseWorldviewProfile, type WorldviewProfile } from '../../domain/identity/worldview';
+import { EMPTY_KOSH, type EmergencyContact, type KoshProfile } from '../../domain/account/koshProfile';
 
 export type ThemeMode = 'system' | 'light' | 'dark';
 
@@ -122,6 +123,14 @@ export interface AppSlice {
   /** Opt-in experimental Beta Mode: unlocks Beta Lab, experimental pose, and motion blur. Off by default. */
   betaMode: boolean;
   setBetaMode: (on: boolean) => void;
+  /** Anvay Kosh profile (typed or confirmed by the person) and their emergency contacts. */
+  koshProfile: KoshProfile;
+  updateKoshProfile: (patch: Partial<KoshProfile>, source?: 'user' | 'google') => void;
+  emergencyContacts: EmergencyContact[];
+  setEmergencyContacts: (contacts: EmergencyContact[]) => void;
+  /** The town the person chose for weather and official alerts (searched by name, never GPS). */
+  outdoorPlace: { name: string; region: string | null; country: string | null; lat: number; lon: number } | null;
+  setOutdoorPlace: (place: AppSlice['outdoorPlace']) => void;
   /** Profile questions on Home: when each may be asked again, and when one was last shown. */
   profileAsk: { snoozedUntil: Partial<Record<'birthday' | 'height' | 'weight' | 'diet' | 'routine', number>>; lastAskedAt: number | null };
   snoozeProfileQuestion: (q: 'birthday' | 'height' | 'weight' | 'diet' | 'routine', until: number) => void;
@@ -228,6 +237,18 @@ export const createAppSlice: StateCreator<
   setAiDeliveryMode: (aiDeliveryMode) => set({ aiDeliveryMode }),
   betaMode: false,
   setBetaMode: (betaMode) => set({ betaMode }),
+  koshProfile: EMPTY_KOSH,
+  updateKoshProfile: (patch, source = 'user') =>
+    set((state) => {
+      const at = new Date().toISOString();
+      const sources = { ...state.koshProfile.fieldSources };
+      for (const k of Object.keys(patch)) if (k !== 'fieldSources') (sources as Record<string, unknown>)[k] = { source, at };
+      return { koshProfile: { ...state.koshProfile, ...patch, fieldSources: sources } };
+    }),
+  emergencyContacts: [],
+  setEmergencyContacts: (emergencyContacts) => set({ emergencyContacts: emergencyContacts.slice(0, 5) }),
+  outdoorPlace: null,
+  setOutdoorPlace: (outdoorPlace) => set({ outdoorPlace }),
   profileAsk: { snoozedUntil: {}, lastAskedAt: null },
   snoozeProfileQuestion: (q, until) =>
     set((state) => ({ profileAsk: { ...state.profileAsk, snoozedUntil: { ...state.profileAsk.snoozedUntil, [q]: until } } })),

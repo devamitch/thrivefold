@@ -149,11 +149,19 @@ export default function BodyStyleScreen() {
       return;
     }
     setBusy('plan');
+    // The person's own food rules from their profile; allergies are hard limits.
+    const k = useRootStore.getState().koshProfile;
+    const foodRules = [
+      k.allergies.length ? ` Never include: ${k.allergies.join(', ')} (allergies).` : '',
+      k.foodRestrictions.length ? ` Follow these food rules: ${k.foodRestrictions.join(', ')}.` : '',
+      k.cuisines.length ? ` Prefer ${k.cuisines.join(', ')} cuisine.` : '',
+      k.foodDislikes.length ? ` Avoid ${k.foodDislikes.join(', ')}.` : '',
+    ].join('');
     try {
       const target = numbers.energy ? `${numbers.energy.low}-${numbers.energy.high} kcal` : 'a balanced amount of energy';
       const text = await LocalAI.generateText({
         system: 'You are a friendly nutrition coach. Write a simple one-day meal plan in plain lines: breakfast, lunch, snack, dinner. No medical claims, no supplements.',
-        prompt: `Plan one day of everyday home meals for about ${target} with ${numbers.proteinG.low}-${numbers.proteinG.high} g protein and ${numbers.waterL} L of water.`,
+        prompt: `Plan one day of everyday home meals for about ${target} with ${numbers.proteinG.low}-${numbers.proteinG.high} g protein and ${numbers.waterL} L of water.${foodRules}`,
       });
       setPlan(text.trim() || 'The model returned nothing; try again.');
     } catch {

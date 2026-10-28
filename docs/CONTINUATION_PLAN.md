@@ -96,6 +96,14 @@ The copied `setu-beta-scanner` / `blinkquest-vision` modules needed VisionCamera
 - **Thrive Coach safety:** mentions of suicide or self-harm get a supportive reply and open Urgent support before anything else.
 - **Not built, on purpose:** guessing gender, religion, community or caste from a name or location (hard rule 4); sexual-partner, handwriting or voice-print profiles; matching people across accounts by face or fingerprint; a master account that can see other users' data; attractiveness or beauty scores.
 
+### P13 — Anvay Kosh profile, outdoor intelligence, emergency (2026-10-29)
+- **Anvay Kosh profile** (migration 20, pushed): preferred name, phone, languages, food restrictions, allergies, cuisines, dislikes, interests, skills, career goal, accessibility, per-field provenance, on `thrivefold_personal_profiles`; `anvay_emergency_contacts` (≤5, owner-only). Editor at `you/profile` (Settings → Your profile). Sync: pull on start fills empty local fields only (`mergeKosh`), then push; changes push debounced. RLS tests 171 pass.
+- **Kept on the phone (encrypted MMKV):** health records, cycle data, journal, medications, camera session results. Not sent to Supabase.
+- **Outdoors card on Home:** Open-Meteo forecast for a town the person searches (no GPS; no location permission), best hour to walk + tips (`domain/world/outdoor.ts`), NDMA SACHET CAP alerts whose polygon contains the town, non-expired, de-duplicated, with sender/issue/expiry (`services/world/officialAlerts.ts`, tested on real saved CAP/RSS fixtures; live check found the active Uttarakhand SDMA thunderstorm alert for Dehradun). One-tap 112.
+- **Assistant:** "will it rain?" answers from the forecast + alerts; meal plans and LLM answers respect allergies and food rules from the profile.
+- **Licensing:** Open-Meteo free API is non-commercial; a paid Open-Meteo plan (or IMD API access, which needs registration) is needed before commercial release. SACHET feed is public domain.
+- **Not built:** routes/traffic/transport (need a paid maps key), festival/pandal itineraries (no verified venue data source), trip check-ins with location sharing (needs location permission in app.json, which agents cannot edit).
+
 ### Route ↔ capability matrix (beta)
 | Route | Capability | Input | Saved |
 | --- | --- | --- | --- |

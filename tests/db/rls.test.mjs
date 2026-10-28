@@ -578,6 +578,21 @@ await as('anon');
 r = await q(`select count(*)::int as n from public.thrivefold_personal_profiles`);
 check('anon cannot read personal profiles', !!r.error || r.rows?.[0]?.n === 0, r.error ?? JSON.stringify(r.rows));
 
+// Anvay Kosh profile domains and emergency contacts (migration 20).
+await as('A');
+r = await q(`update public.thrivefold_personal_profiles set languages = '{bn,en}', allergies = '{peanut}', phone = '+91 98300 00000' where user_id = '${ids.A}'`);
+check('owner updates own kosh profile fields', !r.error, r.error);
+r = await q(`update public.thrivefold_personal_profiles set phone = 'not a phone' where user_id = '${ids.A}'`);
+check('malformed phone is refused', !!r.error, r.error);
+for (let i = 0; i < 5; i++) await q(`insert into public.anvay_emergency_contacts (user_id, name, phone) values ('${ids.A}', 'C${i}', '+91 90000 0000${i}')`);
+r = await q(`insert into public.anvay_emergency_contacts (user_id, name, phone) values ('${ids.A}', 'Sixth', '+91 90000 00009')`);
+check('at most five emergency contacts', !!r.error, r.error);
+r = await q(`insert into public.anvay_emergency_contacts (user_id, name, phone) values ('${ids.B}', 'X', '+91 90000 00001')`);
+check("cannot add another person's emergency contact", !!r.error, r.error);
+await as('B');
+r = await q(`select count(*)::int as n from public.anvay_emergency_contacts`);
+check('others cannot read emergency contacts', r.rows?.[0]?.n === 0, JSON.stringify(r.rows));
+
 // Anvay Vault: owner-only shared profile.
 await as('A');
 r = await q(`insert into public.anvay_profiles (user_id, display_name, locale) values ('${ids.A}', 'Asha', 'en-IN') returning user_id`);

@@ -1,7 +1,7 @@
 import { refreshOwnerStatus } from '../../services/account/owner';
 import { supabase } from '../../services/supabase/supabaseClient';
 import { coachVoice } from '../../services/ai/coachVoice';
-import { pushProfile } from '../../services/account/profileSync';
+import { applyKosh, pullProfile, pushProfile } from '../../services/account/profileSync';
 import React, { useEffect, useRef } from 'react';
 import { AppState, StyleSheet, View } from 'react-native';
 import { Redirect, Stack, usePathname, useRouter, type Href } from 'expo-router';
@@ -68,10 +68,15 @@ export default function AppLayout() {
   // Keep the server copy of the person's own profile current (debounced; signed-in accounts only).
   useEffect(() => {
     const key = (st: ReturnType<typeof useRootStore.getState>) =>
-      JSON.stringify([st.user?.pseudonym, st.user?.birthDate, st.experience, st.experienceConfirmed, st.isOnboarded, st.onboarding.goals, st.onboarding.constraints, st.onboarding.routineMinutes, st.onboarding.diet]);
+      JSON.stringify([st.user?.pseudonym, st.user?.birthDate, st.experience, st.experienceConfirmed, st.isOnboarded, st.onboarding.goals, st.onboarding.constraints, st.onboarding.routineMinutes, st.onboarding.diet, st.koshProfile, st.emergencyContacts]);
     let last = key(useRootStore.getState());
     let timer: ReturnType<typeof setTimeout> | null = null;
-    void pushProfile();
+    // On start: take anything the server has that this phone lacks, then send this phone's copy.
+    void pullProfile()
+      .then((r) => {
+        if (r) applyKosh(r);
+      })
+      .finally(() => void pushProfile());
     const unsub = useRootStore.subscribe((st) => {
       const k = key(st);
       if (k === last) return;
