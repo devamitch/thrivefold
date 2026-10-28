@@ -29,6 +29,7 @@ import { coachVoice } from '../../../services/ai/coachVoice';
 import { recordBetaSession } from '../../../services/beta/recordSession';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
+import { BetaHero } from '../../../components/beta/BetaHero';
 
 const SHAPE_LABEL: Record<FaceResult['shape'], string> = {
   oval: 'Oval', round: 'Round', square: 'Square', heart: 'Heart', oblong: 'Long (oblong)', diamond: 'Diamond',
@@ -180,6 +181,7 @@ export default function BodyStyleScreen() {
         rightAction={<BetaBadge />}
       />
       <ScreenScrollView contentContainerStyle={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xl * 2 }}>
+        <BetaHero source={require('../../../../assets/illustrations/workout-strength.jpg')} label="Body and style" />
         <Text style={[typography.caption, { color: colors.text.muted }]}>
           Photos are analysed on this phone and not saved or sent. Results are estimates from one photo. Thrivefold never
           rates how anyone looks.

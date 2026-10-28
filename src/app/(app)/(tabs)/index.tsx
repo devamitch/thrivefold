@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ActivityRow } from '../../../components/game/ActivityRow';
 import { QuestSheet } from '../../../components/game/QuestSheet';
 import { AnalyticalMetricGrid } from '../../../components/home/AnalyticalMetricGrid';
+import { ProfileQuestionCard } from '../../../components/home/ProfileQuestionCard';
 import { AnalyticsDetailSheet } from '../../../components/home/AnalyticsDetailSheet';
 import { CalorieDetailSheet } from '../../../components/home/CalorieDetailSheet';
 import { DashboardHeader } from '../../../components/home/DashboardHeader';
@@ -491,6 +492,8 @@ export default function HomeScreen() {
           </Text>
         </Card>
       ) : null}
+
+      <ProfileQuestionCard />
 
       <ScreenTimeCard />
 

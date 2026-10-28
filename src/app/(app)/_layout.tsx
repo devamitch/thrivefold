@@ -1,6 +1,7 @@
 import { refreshOwnerStatus } from '../../services/account/owner';
 import { supabase } from '../../services/supabase/supabaseClient';
 import { coachVoice } from '../../services/ai/coachVoice';
+import { pushProfile } from '../../services/account/profileSync';
 import React, { useEffect, useRef } from 'react';
 import { AppState, StyleSheet, View } from 'react-native';
 import { Redirect, Stack, usePathname, useRouter, type Href } from 'expo-router';
@@ -62,6 +63,26 @@ export default function AppLayout() {
       void refreshOwnerStatus();
     });
     return () => sub?.data.subscription.unsubscribe();
+  }, []);
+
+  // Keep the server copy of the person's own profile current (debounced; signed-in accounts only).
+  useEffect(() => {
+    const key = (st: ReturnType<typeof useRootStore.getState>) =>
+      JSON.stringify([st.user?.pseudonym, st.user?.birthDate, st.experience, st.experienceConfirmed, st.isOnboarded, st.onboarding.goals, st.onboarding.constraints, st.onboarding.routineMinutes, st.onboarding.diet]);
+    let last = key(useRootStore.getState());
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    void pushProfile();
+    const unsub = useRootStore.subscribe((st) => {
+      const k = key(st);
+      if (k === last) return;
+      last = k;
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => void pushProfile(), 4000);
+    });
+    return () => {
+      unsub();
+      if (timer) clearTimeout(timer);
+    };
   }, []);
 
   const coachVoiceEnabled = useRootStore((s) => s.coachVoiceEnabled);

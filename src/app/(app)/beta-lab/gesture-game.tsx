@@ -26,6 +26,7 @@ import { ensureCameraPermission } from '../../../services/sensors/cameraPermissi
 import type { BetaSessionKind } from '../../../stores/slices/appSlice';
 import { useTheme } from '../../../theme/useTheme';
 import { recordBetaSession } from '../../../services/beta/recordSession';
+import { BetaHero } from '../../../components/beta/BetaHero';
 
 const KINDS: BetaSessionKind[] = ['finger_game'];
 type Mode = 'fingers' | 'gestures';
@@ -174,6 +175,7 @@ export default function GestureGameScreen() {
           <BetaBadge />
         </View>
         <View style={{ paddingHorizontal: spacing.base, paddingTop: spacing.md }}>
+          <BetaHero source={require('../../../../assets/illustrations/workout-mobility.jpg')} label="Hand games" />
           <View style={styles.modes}>
             <Chip label="Finger count" selected={mode === 'fingers'} onPress={() => setMode('fingers')} />
             <Chip label="Gesture match" selected={mode === 'gestures'} onPress={() => setMode('gestures')} />

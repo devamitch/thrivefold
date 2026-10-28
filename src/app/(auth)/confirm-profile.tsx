@@ -13,6 +13,7 @@ import { SquircleSurface } from '../../components/ui/SquircleSurface';
 import { formatLocalDate } from '../../domain/calendar/universalCalendarEngine';
 import { ageBandFor, ageOn, suggestedExperience } from '../../domain/account/googleProfile';
 import { pendingGoogleProfile, signOutGoogle } from '../../services/account/googleAccount';
+import { pushProfile } from '../../services/account/profileSync';
 import { useRootStore, useShallow } from '../../stores/useRootStore';
 import type { ProductExperience } from '../../theme/tokens';
 import { useTheme } from '../../theme/useTheme';
@@ -79,6 +80,7 @@ export default function ConfirmProfileScreen() {
       avatarSeed: `google_${profile.id}`,
       age,
       ageBand: ageBandFor(age),
+      birthDate,
       // A birthday from Google or typed in is self-declared, never verification.
       isAgeVerified: false,
       email: profile.email,
@@ -91,6 +93,7 @@ export default function ConfirmProfileScreen() {
     confirmAdult();
     if (profile.gender) setPrivateIdentity({ pronouns: '', genderDescription: profile.gender });
     setExperience(space);
+    void pushProfile();
     hapticSuccess();
     router.replace('/');
   };

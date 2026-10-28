@@ -16,6 +16,8 @@ export interface UserProfile {
    */
   isAgeVerified: boolean;
   ageBand: string | null;
+  /** YYYY-MM-DD as the person stated or confirmed it (self-declared, never age verification). */
+  birthDate?: string | null;
   email?: string;
   /** As saved in the person's Google account and confirmed by them; never inferred. */
   gender?: string | null;

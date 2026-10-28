@@ -28,6 +28,12 @@ export async function runCommand(cmd: Command): Promise<AssistantReply> {
     case 'open':
       return { text: `Opening ${cmd.label}.`, route: cmd.route };
 
+    case 'crisis':
+      return {
+        text: "I'm really glad you told me. You don't have to go through this alone. I'm opening urgent support so you can reach someone right now. If you are in danger, call your local emergency number.",
+        route: '/(app)/safety/urgent-support',
+      };
+
     case 'log_water': {
       s.addWaterLog(cmd.glasses * 250, today);
       const total = useRootStore.getState().hydration[today] ?? 0;

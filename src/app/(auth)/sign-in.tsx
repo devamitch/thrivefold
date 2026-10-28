@@ -17,6 +17,7 @@ import {
   verifyEmailCode,
 } from '../../services/account/accountService';
 import { googleAvailable, signInWithGoogle } from '../../services/account/googleAccount';
+import { applyProfile, pullProfile, pushProfile } from '../../services/account/profileSync';
 import { newLocalId } from '../../stores/slices/authSlice';
 import { useRootStore } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
@@ -63,9 +64,29 @@ export default function SignInScreen() {
     setBusy(true);
     setAuthError(null);
     const res = await signInWithGoogle();
+    if (!res.ok) {
+      setBusy(false);
+      if (!res.cancelled) setAuthError(res.message);
+      return;
+    }
+    // Returning person: restore the saved profile (server first, then this phone) instead of
+    // asking for the birthday and space again.
+    const p = res.profile;
+    const base = { id: `google_${p.id}`, email: p.email, photo: p.photo, name: (p.givenName || p.name?.split(' ')[0] || 'Friend').slice(0, 24) };
+    const remote = p.serverSession ? await pullProfile() : null;
+    const local = useRootStore.getState();
+    const knownHere =
+      !!local.user && !local.user.isGuest && local.user.email === p.email && local.user.age !== null && local.experienceConfirmed;
     setBusy(false);
-    if (res.ok) router.push('/(auth)/confirm-profile');
-    else if (!res.cancelled) setAuthError(res.message);
+    if (remote && applyProfile(remote, base)) {
+      void pushProfile();
+      router.replace('/');
+    } else if (knownHere) {
+      void pushProfile();
+      router.replace('/');
+    } else {
+      router.push('/(auth)/confirm-profile');
+    }
   };
 
 
@@ -110,6 +131,9 @@ export default function SignInScreen() {
       isGuest: false,
       createdAt: existing?.createdAt ?? new Date().toISOString(),
     });
+    const remote = await pullProfile();
+    if (remote) applyProfile(remote, { id: res.userId, email: res.email, photo: null, name: name || 'Friend' });
+    void pushProfile();
     router.replace('/');
   };
 

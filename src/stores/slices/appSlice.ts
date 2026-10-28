@@ -122,6 +122,10 @@ export interface AppSlice {
   /** Opt-in experimental Beta Mode: unlocks Beta Lab, experimental pose, and motion blur. Off by default. */
   betaMode: boolean;
   setBetaMode: (on: boolean) => void;
+  /** Profile questions on Home: when each may be asked again, and when one was last shown. */
+  profileAsk: { snoozedUntil: Partial<Record<'birthday' | 'height' | 'weight' | 'diet' | 'routine', number>>; lastAskedAt: number | null };
+  snoozeProfileQuestion: (q: 'birthday' | 'height' | 'weight' | 'diet' | 'routine', until: number) => void;
+  markProfileAsked: (at: number) => void;
   /** Spoken coach cues in workouts and beta studios. On by default; off silences every line. */
   coachVoiceEnabled: boolean;
   setCoachVoiceEnabled: (on: boolean) => void;
@@ -224,6 +228,10 @@ export const createAppSlice: StateCreator<
   setAiDeliveryMode: (aiDeliveryMode) => set({ aiDeliveryMode }),
   betaMode: false,
   setBetaMode: (betaMode) => set({ betaMode }),
+  profileAsk: { snoozedUntil: {}, lastAskedAt: null },
+  snoozeProfileQuestion: (q, until) =>
+    set((state) => ({ profileAsk: { ...state.profileAsk, snoozedUntil: { ...state.profileAsk.snoozedUntil, [q]: until } } })),
+  markProfileAsked: (at) => set((state) => ({ profileAsk: { ...state.profileAsk, lastAskedAt: at } })),
   coachVoiceEnabled: true,
   setCoachVoiceEnabled: (coachVoiceEnabled) => set({ coachVoiceEnabled }),
   betaSessions: [],

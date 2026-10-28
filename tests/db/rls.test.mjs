@@ -561,6 +561,23 @@ await as('anon');
 r = await q(`select public.tf_upsert_weekly_summary_v2(date_trunc('week', current_date - 7)::date, 1, 5, 5, 5, 7, 0, 0, 0, 0, 0, 0, 0)`);
 check('anon cannot back up summaries v2', !!r.error, r.error);
 
+// Thrivefold profiles (migration 19): own row only, bounded values.
+await as('A');
+r = await q(`insert into public.thrivefold_personal_profiles (user_id, display_name, birth_date, experience, onboarded, goals) values ('${ids.A}', 'Asha', '1994-05-02', 'women_health', true, '{sleep,energy}') returning user_id`);
+check('owner saves own personal profile', !r.error && r.rows?.[0]?.user_id === ids.A, r.error);
+r = await q(`insert into public.thrivefold_personal_profiles (user_id, display_name) values ('${ids.B}', 'Forged')`);
+check("cannot write another person's personal profile", !!r.error, r.error);
+r = await q(`update public.thrivefold_personal_profiles set experience = 'something_else' where user_id = '${ids.A}'`);
+check('unknown space is refused', !!r.error, r.error);
+r = await q(`update public.thrivefold_personal_profiles set birth_date = current_date + 10 where user_id = '${ids.A}'`);
+check('future birthday is refused', !!r.error, r.error);
+await as('B');
+r = await q(`select count(*)::int as n from public.thrivefold_personal_profiles`);
+check('others cannot read personal profiles', r.rows?.[0]?.n === 0, JSON.stringify(r.rows));
+await as('anon');
+r = await q(`select count(*)::int as n from public.thrivefold_personal_profiles`);
+check('anon cannot read personal profiles', !!r.error || r.rows?.[0]?.n === 0, r.error ?? JSON.stringify(r.rows));
+
 // Anvay Vault: owner-only shared profile.
 await as('A');
 r = await q(`insert into public.anvay_profiles (user_id, display_name, locale) values ('${ids.A}', 'Asha', 'en-IN') returning user_id`);

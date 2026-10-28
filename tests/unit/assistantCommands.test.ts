@@ -26,6 +26,13 @@ describe('assistant commands', () => {
     expect(parseCommand('what quests are left')).toEqual({ kind: 'ask', metric: 'quests' });
   });
 
+  it('puts support first when someone mentions harming themselves', () => {
+    expect(parseCommand('I want to die')).toEqual({ kind: 'crisis' });
+    expect(parseCommand('thinking about suicide')).toEqual({ kind: 'crisis' });
+    expect(parseCommand("I don't want to live anymore")).toEqual({ kind: 'crisis' });
+    expect(parseCommand('open breathing')).toMatchObject({ kind: 'open' });
+  });
+
   it('passes anything else on as a question', () => {
     expect(parseCommand('why do I feel tired after lunch and coffee every afternoon')).toMatchObject({ kind: 'unknown' });
   });

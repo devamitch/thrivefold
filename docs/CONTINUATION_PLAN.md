@@ -89,6 +89,13 @@ The copied `setu-beta-scanner` / `blinkquest-vision` modules needed VisionCamera
 - **`beta-lab/eye-pursuit`:** smooth-pursuit exercise scored by gaze–target correlation (`pursuitScore`).
 - **Assistant:** routes style/glasses/BMI questions to the companion; on-device LLM answers get today's steps, water, height and weight as context.
 
+### P12 — Account profile restore, profile questions, safety (2026-10-29)
+- **Why Google asked again for birthday and gender:** commit 1933e06 (2026-10-27) cut Google scopes to `profile email` (the birthday and gender scopes are Google "sensitive" scopes that need OAuth verification), and the confirm screen ran on every sign-in because nothing was stored on the server.
+- **Fix:** migration 19 `thrivefold_personal_profiles` (owner-only RLS; name, self-declared birthday, chosen space, onboarding goals/constraints/routine/diet; never observances or anything inferred), pushed 2026-10-29. Sign-in (Google or email code) pulls it and skips the confirm screen when birthday and space are known; `(app)/_layout` pushes changes (debounced). RLS tests 166 pass.
+- **Profile questions on Home** (`ProfileQuestionCard`, `domain/account/profileQuestions.ts`): one missing detail a day (birthday for signed-in accounts, height, weight, eating style, routine length); "Not now" waits a week.
+- **Thrive Coach safety:** mentions of suicide or self-harm get a supportive reply and open Urgent support before anything else.
+- **Not built, on purpose:** guessing gender, religion, community or caste from a name or location (hard rule 4); sexual-partner, handwriting or voice-print profiles; matching people across accounts by face or fingerprint; a master account that can see other users' data; attractiveness or beauty scores.
+
 ### Route ↔ capability matrix (beta)
 | Route | Capability | Input | Saved |
 | --- | --- | --- | --- |

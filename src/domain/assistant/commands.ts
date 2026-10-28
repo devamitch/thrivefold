@@ -8,6 +8,7 @@ export type Command =
   | { kind: 'open'; route: string; label: string }
   | { kind: 'log_water'; glasses: number }
   | { kind: 'ask'; metric: 'steps' | 'water' | 'quests' | 'calories' }
+  | { kind: 'crisis' }
   | { kind: 'unknown'; text: string };
 
 const OPEN: { words: RegExp; route: string; label: string }[] = [
@@ -34,6 +35,10 @@ const NUMBER_WORDS: Record<string, number> = { a: 1, an: 1, one: 1, two: 2, thre
 export function parseCommand(input: string): Command {
   const text = input.toLowerCase().replace(/[^\w\s'-]/g, ' ').replace(/\s+/g, ' ').trim();
   if (!text) return { kind: 'unknown', text: '' };
+  // Anyone who mentions wanting to die or hurt themselves gets support first, before anything else.
+  if (/\b(suicid\w*|kill (my ?self|me)|end (my|it all)|want to die|don'?t want to (live|be here)|self[- ]?harm|hurt(ing)? my ?self|no reason to live)\b/.test(text)) {
+    return { kind: 'crisis' };
+  }
 
   const water = text.match(/\b(?:log|add|drank|had)\b.*?\b(\d+|a|an|one|two|three|four|five|six)\b\s*(?:glass|glasses|cup|cups)\b/);
   if (water || /\b(?:log|add)\b.*\bwater\b/.test(text)) {

@@ -13,6 +13,7 @@ import { BETA_CAPABILITIES, type BetaCapability } from '../../../domain/health/m
 import { hapticSelection } from '../../../services/haptics';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
+import { BetaHero } from '../../../components/beta/BetaHero';
 
 interface StudioProduct {
   id: string;
@@ -171,6 +172,7 @@ export default function BetaLabScreen() {
       />
 
       <ScreenScrollView contentContainerStyle={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xl * 2 }}>
+        <BetaHero source={require('../../../../assets/illustrations/games-focus.jpg')} label="Beta Lab" />
         {/* Global Beta Mode Master Banner */}
         <SquircleSurface radius={24} fill={colors.surface} style={[styles.masterCard, { marginTop: spacing.sm }]}>
           <View style={styles.bannerHeader}>
