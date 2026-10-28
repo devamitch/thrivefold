@@ -3,7 +3,7 @@ import { Image } from 'expo-image';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
 import { Link, useRouter, type Href } from 'expo-router';
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Linking, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import {
@@ -22,7 +22,8 @@ import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngine';
 import { foodSuggestions } from '../../../domain/nutrition/foodLabels';
 import { foodById, itemFood, searchFoods, totals, type MealItem } from '../../../domain/nutrition/foods';
-import { analyzeMealPhoto, photoAiAvailability, type EstimatedFood } from '../../../services/ai/mealVision';
+import { analyzeMealPhoto, photoAiRoute, type EstimatedFood, type PhotoAiRoute } from '../../../services/ai/mealVision';
+import { googleAvailable, signInWithGoogle } from '../../../services/account/googleAccount';
 import { hapticLight, hapticSuccess } from '../../../services/haptics';
 import { syncSmartHealthReminders } from '../../../services/notifications/smartHealthReminders';
 import type { MealLog } from '../../../stores/slices/healthSlice';
@@ -80,7 +81,14 @@ export default function MealLogScreen() {
   const results = useMemo(() => searchFoods(query).slice(0, query ? 20 : 8), [query]);
   const liveTop = foodSuggestions(liveLabels, 0.15, 1)[0];
   const suggestions = useMemo(() => foodSuggestions(photoLabels), [photoLabels]);
-  const ai = photoAiAvailability();
+  const [ai, setAi] = useState<PhotoAiRoute | null>(null);
+  const refreshAi = useCallback(() => {
+    void photoAiRoute().then(setAi);
+  }, []);
+  useEffect(refreshAi, [refreshAi]);
+  const aiConsented = useRootStore((st) =>
+    st.consentRecords.some((c) => c.source === 'meal_photo_ai' && c.decision === 'granted'),
+  );
   const liveCamera = Boolean(FoodCameraView) && foodVisionAvailable();
 
   const add = (foodId: string) =>
@@ -105,7 +113,10 @@ export default function MealLogScreen() {
     await FileSystem.copyAsync({ from: uri, to: dest });
     setPhoto(dest);
     setAiItems(null);
-    setPhotoLabels(await classifyImage(dest));
+    const labels = await classifyImage(dest);
+    setPhotoLabels(labels);
+    // Already agreed once: analyse straight away so the macros come with the photo.
+    if (aiConsented && ai?.route) void runAi(dest, labels);
   };
 
   const startScan = async () => {
@@ -163,17 +174,18 @@ export default function MealLogScreen() {
     }
   };
 
-  const runAi = async () => {
-    if (!photo || aiBusy) return;
+  const runAi = async (uri = photo, labels = photoLabels) => {
+    if (!uri || aiBusy) return;
     setAiBusy(true);
     setNotice(null);
     const res = await analyzeMealPhoto(
-      photo,
-      [...suggestions.map((s) => s.label), note.trim()].filter(Boolean),
+      uri,
+      [...foodSuggestions(labels).map((x) => x.label), note.trim()].filter(Boolean),
     );
     setAiBusy(false);
     if ('error' in res) {
       setNotice({ message: res.error });
+      refreshAi();
       return;
     }
     if (res.items.length === 0) {
@@ -183,26 +195,65 @@ export default function MealLogScreen() {
     setAiItems(res.items.map((it) => ({ ...it, picked: it.confidence >= 0.4 })));
   };
 
+  // First use asks once; the decision is kept in the consent log and can be reviewed there.
+  const askAndRunAi = () => {
+    if (aiConsented) {
+      void runAi();
+      return;
+    }
+    useRootStore.getState().showAlert({
+      title: 'Analyse photos with AI?',
+      message:
+        ai?.route === 'server'
+          ? 'Each photo you analyse is sent once to Thrivefold’s server, which asks Google Gemini (or OpenRouter as backup) for foods and macros. Photos are not stored. You review every item before it is saved.'
+          : 'Each photo you analyse is sent once to Google Gemini with your own key. You review every item before it is saved.',
+      confirmText: 'Analyse',
+      cancelText: 'Not now',
+      onConfirm: () => {
+        useRootStore.getState().recordConsent('meal_photo_ai', ['photo:meal-macros'], 'granted');
+        void runAi();
+      },
+    });
+  };
+
+  const connectGoogle = async () => {
+    const res = await signInWithGoogle();
+    if (res.ok) refreshAi();
+    else if (!res.cancelled) setNotice({ message: res.message });
+  };
+
   const acceptAi = () => {
     if (!aiItems) return;
     const stamp = Date.now() % 100000;
     const picked = aiItems.filter((i) => i.picked);
-    setItems((cur) => [
-      ...cur,
-      ...picked.map((p, idx) => ({
-        foodId: `ai:${slug(p.name)}:${stamp + idx}`,
-        servings: 1,
-        custom: {
-          name: titleCase(p.name),
-          serving: p.serving,
-          kcal: p.kcal,
-          protein: p.protein,
-          carbs: p.carbs,
-          fat: p.fat,
-          source: 'ai_estimate' as const,
-        },
-      })),
-    ]);
+    setItems((cur) => {
+      let next = [...cur];
+      picked.forEach((p, idx) => {
+        // Table match: real table values for the estimated number of servings.
+        if (p.catalogId && p.servings) {
+          const id = p.catalogId;
+          const servings = p.servings;
+          next = next.some((i) => i.foodId === id)
+            ? next.map((i) => (i.foodId === id ? { ...i, servings: i.servings + servings } : i))
+            : [...next, { foodId: id, servings }];
+          return;
+        }
+        next.push({
+          foodId: `ai:${slug(p.name)}:${stamp + idx}`,
+          servings: 1,
+          custom: {
+            name: titleCase(p.name),
+            serving: p.serving,
+            kcal: p.kcal,
+            protein: p.protein,
+            carbs: p.carbs,
+            fat: p.fat,
+            source: 'ai_estimate' as const,
+          },
+        });
+      });
+      return next;
+    });
     hapticSuccess();
     setAiItems(null);
   };
@@ -251,9 +302,11 @@ export default function MealLogScreen() {
           label={
             items.length
               ? `Save meal · ${sum.kcal} kcal`
-              : canSave
-                ? 'Save meal'
-                : 'Add a food, photo or note'
+              : photo
+                ? 'Save photo only (no macros)'
+                : canSave
+                  ? 'Save meal'
+                  : 'Add a food, photo or note'
           }
           size="lg"
           disabled={!canSave || submitting}
@@ -403,9 +456,10 @@ export default function MealLogScreen() {
 
           {aiItems ? (
             <>
-              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>AI estimate</Text>
+              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Found in your photo</Text>
               <Text style={[typography.caption, { color: colors.text.muted, marginBottom: 4 }]}>
-                Check portions; untick anything that is wrong.
+                Check portions and untick anything wrong. Food-table items use table values; the
+                rest are AI estimates.
               </Text>
               {aiItems.map((it, idx) => (
                 <PressableScale
@@ -429,7 +483,9 @@ export default function MealLogScreen() {
                       {titleCase(it.name)}
                     </Text>
                     <Text style={[typography.caption, { color: colors.text.secondary }]}>
-                      {it.serving} · {it.kcal} kcal · P {it.protein} · C {it.carbs} · F {it.fat}
+                      {it.catalogId && it.servings
+                        ? `${it.servings} x ${foodById(it.catalogId)?.serving ?? it.serving} · food table`
+                        : `${it.serving} · ${it.kcal} kcal · P ${it.protein} · C ${it.carbs} · F ${it.fat} · estimate`}
                     </Text>
                   </View>
                 </PressableScale>
@@ -442,33 +498,40 @@ export default function MealLogScreen() {
                 style={{ marginTop: 8 }}
               />
             </>
-          ) : ai.ok ? (
+          ) : aiBusy ? (
+            <View style={styles.row}>
+              <ActivityIndicator color={colors.primary} />
+              <Text style={[typography.subbody, { color: colors.text.secondary, marginLeft: 10 }]}>
+                Finding foods and macros…
+              </Text>
+            </View>
+          ) : ai?.route ? (
             <>
               <Button
-                label={aiBusy ? 'Analysing…' : 'Estimate macros with AI'}
-                variant="outline"
+                label="Find foods and macros with AI"
                 size="sm"
-                loading={aiBusy}
-                disabled={aiBusy}
-                onPress={runAi}
-                icon={<Ionicons name="nutrition-outline" size={16} color={colors.primary} />}
+                onPress={askAndRunAi}
+                icon={<Ionicons name="nutrition-outline" size={16} color={colors.onPrimary} />}
               />
               <Text style={[typography.caption, { color: colors.text.muted, marginTop: 6 }]}>
-                Sends this photo to Google Gemini with your key. You review every item.
+                {ai.route === 'server'
+                  ? 'Sent once to Thrivefold AI (Gemini); not stored. You review every item.'
+                  : 'Sent once to Google Gemini with your key. You review every item.'}
               </Text>
             </>
-          ) : (
-            <View style={styles.row}>
-              <Text style={[typography.caption, styles.flex, { color: colors.text.secondary }]}>
-                {ai.reason}
-              </Text>
-              <Link href={'/(app)/settings/ai-byok' as Href} asChild>
-                <PressableScale hitSlop={8} accessibilityRole="button">
-                  <Text style={[typography.captionBold, { color: colors.primary }]}>AI keys</Text>
-                </PressableScale>
-              </Link>
-            </View>
-          )}
+          ) : ai ? (
+            <>
+              <Text style={[typography.caption, { color: colors.text.secondary }]}>{ai.reason}</Text>
+              <View style={[styles.row, { gap: 8, marginTop: 8 }]}>
+                {ai.action === 'sign_in' && googleAvailable() ? (
+                  <Button label="Sign in with Google" size="sm" onPress={connectGoogle} style={styles.flex} />
+                ) : null}
+                <Link href={'/(app)/settings/ai-byok' as Href} asChild>
+                  <Button label="AI keys" size="sm" variant="outline" style={styles.flex} />
+                </Link>
+              </View>
+            </>
+          ) : null}
         </Card>
       ) : null}
 

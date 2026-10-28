@@ -49,6 +49,31 @@ class FoodVisionModule : Module() {
       }
     }
 
+    /** Writes an upright JPEG of at most `maxSide` px to the cache; resolves with its file:// URI. */
+    AsyncFunction("resizeForUpload") { uri: String, maxSide: Int, promise: Promise ->
+      val ctx = appContext.reactContext
+      if (ctx == null) {
+        promise.reject("no_context", "No React context", null)
+        return@AsyncFunction
+      }
+      worker.execute {
+        try {
+          val src = decode(ctx, Uri.parse(uri)) ?: throw IllegalArgumentException("Unreadable image")
+          val scale = minOf(1f, maxSide.toFloat() / maxOf(src.width, src.height))
+          val out = if (scale < 1f) {
+            Bitmap.createScaledBitmap(src, (src.width * scale).toInt(), (src.height * scale).toInt(), true)
+          } else src
+          val file = java.io.File(ctx.cacheDir, "upload_${System.currentTimeMillis()}.jpg")
+          file.outputStream().use { out.compress(Bitmap.CompressFormat.JPEG, 82, it) }
+          if (out !== src) out.recycle()
+          src.recycle()
+          promise.resolve("file://${file.absolutePath}")
+        } catch (e: Throwable) {
+          promise.reject("resize_failed", e.message ?: "Could not prepare the photo", e)
+        }
+      }
+    }
+
     View(FoodCameraView::class) {
       Events("onLabels", "onFoodReady", "onFoodError")
       Prop("active") { view: FoodCameraView, active: Boolean -> view.setActive(active) }
@@ -63,7 +88,7 @@ class FoodVisionModule : Module() {
     val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
     resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
     var sample = 1
-    while (maxOf(bounds.outWidth, bounds.outHeight) / sample > 1024) sample *= 2
+    while (maxOf(bounds.outWidth, bounds.outHeight) / sample > 2048) sample *= 2
     val bmp = resolver.openInputStream(uri)?.use {
       BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = sample })
     } ?: return null

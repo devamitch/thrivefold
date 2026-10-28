@@ -183,6 +183,10 @@ export default function SettingsScreen() {
           <SettingsRow icon="trail-sign-outline" title="Roadmap" subtitle="Chapters, levels and what unlocks next" />
         </Link>
 
+        <Link href={'/(app)/settings/anvaykosh' as Href} asChild>
+          <SettingsRow icon="apps-outline" title="AnvayKosh" subtitle="Anvay ID, shared profile and your other apps" />
+        </Link>
+
         <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.md, marginBottom: spacing.sm }]}>
           Settings
         </Text>

@@ -23,6 +23,7 @@ export interface FoodCameraViewProps extends ViewProps {
 interface FoodVisionNative {
   isAvailable(): boolean;
   classifyImage(uri: string): Promise<VisionLabel[]>;
+  resizeForUpload(uri: string, maxSide: number): Promise<string>;
 }
 
 const native: FoodVisionNative | null =
@@ -56,5 +57,15 @@ export async function classifyImage(uri: string): Promise<VisionLabel[]> {
     return await native.classifyImage(uri);
   } catch {
     return [];
+  }
+}
+
+/** A smaller upright JPEG for upload; falls back to the original when the module is missing. */
+export async function resizeForUpload(uri: string, maxSide = 1280): Promise<string> {
+  if (!native) return uri;
+  try {
+    return await native.resizeForUpload(uri, maxSide);
+  } catch {
+    return uri;
   }
 }

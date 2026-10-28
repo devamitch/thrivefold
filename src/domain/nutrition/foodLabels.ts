@@ -63,7 +63,7 @@ export interface FoodSuggestion {
 /** Food-only suggestions, best first; at most `limit`, each with score ≥ `minScore`. */
 export function foodSuggestions(
   labels: { label: string; score: number }[],
-  minScore = 0.08,
+  minScore = 0.2,
   limit = 3,
 ): FoodSuggestion[] {
   const out: FoodSuggestion[] = [];

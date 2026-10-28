@@ -9,13 +9,16 @@ export interface EstimatedFood {
   fat: number;
   /** 0-1, the model's own confidence. */
   confidence: number;
+  /** Set when the model matched a food-table entry: use the table's values for `servings`. */
+  catalogId: string | null;
+  servings: number | null;
 }
 
 const clampNum = (v: unknown, max: number) =>
   typeof v === 'number' && Number.isFinite(v) ? Math.max(0, Math.min(max, Math.round(v * 10) / 10)) : null;
 
 /** Parses and sanity-checks the model's JSON; drops anything implausible rather than fixing it. */
-export function parseEstimate(text: string): EstimatedFood[] {
+export function parseEstimate(text: string, knownIds?: ReadonlySet<string>): EstimatedFood[] {
   const json = text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1);
   const parsed = JSON.parse(json) as { items?: unknown[] };
   const out: EstimatedFood[] = [];
@@ -35,8 +38,22 @@ export function parseEstimate(text: string): EstimatedFood[] {
       carbs,
       fat,
       confidence: clampNum(r.confidence, 1) ?? 0.5,
+      ...catalogMatch(r, knownIds),
     });
   }
   return out.slice(0, 8);
 }
 
+
+/** Accepts a table match only for a known id and a sensible serving count (rounded to 0.5). */
+function catalogMatch(
+  r: Record<string, unknown>,
+  knownIds?: ReadonlySet<string>,
+): { catalogId: string | null; servings: number | null } {
+  const id = typeof r.catalogId === 'string' ? r.catalogId : null;
+  const servings = clampNum(r.servings, 20);
+  if (!id || !knownIds?.has(id) || servings === null || servings <= 0) {
+    return { catalogId: null, servings: null };
+  }
+  return { catalogId: id, servings: Math.max(0.5, Math.round(servings * 2) / 2) };
+}

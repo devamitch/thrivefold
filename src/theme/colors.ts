@@ -235,13 +235,64 @@ export const prideDarkColors = palette({
   dockActive: '#B682F2',
 });
 
-export function getThemeColors(experience: ProductExperience, _scheme: ColorScheme): ThemeColors {
-  // Dark theme disabled for now per user aesthetic requirements
-  if (experience === 'men_health') {
-    return menLightColors;
-  }
-  if (experience === 'pride_wellbeing') {
-    return prideLightColors;
-  }
-  return womenLightColors;
+/**
+ * Men's health in terracotta clay with a sage accent (the palette Women's used before).
+ * Same recipe, own identity, so the two experiences can diverge later.
+ */
+export const menTerracottaColors = palette({
+  experience: 'men_health',
+  scheme: 'light',
+  canvas: ['#FAF8F5', '#FFFFFF', '#F4EFEA', '#EAE2DA', '#DFD5CB'],
+  ink: ['#1C1917', '#57524E', '#857D76'],
+  primary: '#B85D3E',
+  onPrimary: '#FFFFFF',
+  accent: '#5E826D',
+  accentText: '#486956',
+  gradient: ['#C76A4B', '#B85D3E'],
+  status: LIGHT_STATUS,
+  dock: '#1A1614',
+  dockActive: '#E28A6D',
+  onPrimaryData: { accent: '#F2D3B3', info: '#CFE3F2' },
+});
+
+/**
+ * Women's health in sage green on a soft sage-tinted ivory, with a muted clay accent.
+ * Primary #557A63 on white is 4.8:1 (WCAG AA for text and controls).
+ */
+export const womenSageColors = palette({
+  experience: 'women_health',
+  scheme: 'light',
+  canvas: ['#F7F8F4', '#FFFFFF', '#EEF1EA', '#E2E7DC', '#D3DACB'],
+  ink: ['#18201B', '#4E5A52', '#78847C'],
+  primary: '#557A63',
+  onPrimary: '#FFFFFF',
+  accent: '#B5704F',
+  accentText: '#8F5538',
+  gradient: ['#628A71', '#557A63'],
+  status: LIGHT_STATUS,
+  dock: '#141A16',
+  dockActive: '#9CC3A8',
+  onPrimaryData: { accent: '#F2D3B3', info: '#CFE3F2' },
+});
+
+/** One stable object per experience, so memoised screens do not re-render on every read. */
+const GUEST_COLORS: Record<ProductExperience, ThemeColors> = {
+  women_health: { ...menLightColors, experience: 'women_health' },
+  men_health: menLightColors,
+  pride_wellbeing: { ...menLightColors, experience: 'pride_wellbeing' },
+};
+
+/**
+ * Colours by who is using the app: guests (not signed in) get the calm slate ink-blue palette;
+ * signed-in people get their experience's palette. Dark theme is disabled for now.
+ */
+export function getThemeColors(
+  experience: ProductExperience,
+  _scheme: ColorScheme,
+  isGuest = false,
+): ThemeColors {
+  if (isGuest) return GUEST_COLORS[experience];
+  if (experience === 'men_health') return menTerracottaColors;
+  if (experience === 'pride_wellbeing') return prideLightColors;
+  return womenSageColors;
 }

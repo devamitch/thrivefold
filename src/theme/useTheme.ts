@@ -14,11 +14,13 @@ export interface ThemeContextValue {
 
 export function useTheme(): ThemeContextValue {
   const experience = useRootStore((s) => s.experience);
+  // Guests (no account yet) share one neutral slate ink-blue look.
+  const isGuest = useRootStore((s) => !s.user || s.user.isGuest === true);
 
   // Dark theme explicitly disabled for homely, calm, eye-friendly aesthetics
   const isDark = false;
   const scheme = 'light';
-  const colors = getThemeColors(experience, scheme);
+  const colors = getThemeColors(experience, scheme, isGuest);
 
   return {
     colors,

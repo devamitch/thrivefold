@@ -9,7 +9,8 @@ describe('on-device food labels', () => {
       { label: 'plate', score: 0.6 },
       { label: 'banana', score: 0.3 },
       { label: 'pizza', score: 0.5 },
-      { label: 'burrito', score: 0.12 },
+      { label: 'burrito', score: 0.22 },
+      { label: 'pretzel', score: 0.12 },
       { label: 'lemon', score: 0.02 },
     ]);
     expect(s.map((x) => x.label)).toEqual(['pizza', 'banana', 'burrito']);
@@ -42,5 +43,17 @@ describe('estimated plate items', () => {
     expect(totals(items).kcal).toBe(540);
     expect(itemFood(items[1])?.estimated).toBe(true);
     expect(itemFood(items[0])?.estimated).toBe(false);
+  });
+});
+
+describe('food-table matches from the AI', () => {
+  it('keeps a known table id with servings rounded to 0.5, and ignores unknown ids', () => {
+    const items = parseEstimate(
+      '{"items":[{"name":"Dal","catalogId":"dal","servings":1.3,"serving":"1 bowl","kcal":230,"protein":14,"carbs":32,"fat":5,"confidence":0.9},' +
+        '{"name":"Mystery curry","catalogId":"made_up","servings":1,"serving":"1 bowl","kcal":300,"protein":10,"carbs":20,"fat":18,"confidence":0.6}]}',
+      new Set(['dal']),
+    );
+    expect(items[0]).toMatchObject({ catalogId: 'dal', servings: 1.5 });
+    expect(items[1]).toMatchObject({ catalogId: null, servings: null, kcal: 300 });
   });
 });

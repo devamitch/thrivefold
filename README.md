@@ -38,11 +38,11 @@ Thrivefold is one of the **AnvayKosh** apps (Thrivefold, Neev, HarmonyBloom, Bli
 | Surface | Meaning | Status in Thrivefold |
 | --- | --- | --- |
 | **AnvayKosh** | The shared ecosystem of these apps | Brand only |
-| **Anvay ID** | One sign-in across the apps | **Not available.** No button is shown. |
-| **Anvay Vault** | A user-controlled, encrypted shared profile | **Not available.** Thrivefold's data stays on this phone. |
-| **Anvay Connect** | Authorised data exchange between registered apps | **Disabled.** See below. |
+| **Anvay ID** | One sign-in across the apps | **Live:** Google via Supabase auth (Settings → AnvayKosh). Other apps join by using the same Supabase project. |
+| **Anvay Vault** | A user-controlled shared profile | **Live:** `anvay_profiles`, owner-only RLS; name, avatar, photo, language, time zone only. Fill-empty merge with per-field source. |
+| **Anvay Connect** | Authorised data exchange between registered apps | Sibling apps are detected and opened with no data. App-to-app data exchange stays off until a server-side app registry exists. |
 
-**Why it is off.** The first version ("Unified Vault SOS") passed profile and health data inside
+**What was removed.** The first version ("Unified Vault SOS") passed profile and health data inside
 deep-link URLs and trusted any caller: any app or web page could open
 `thrivefold://unified-vault?callback_url=…` and receive the user's data, or overwrite it with a
 crafted `…/callback?payload=…`. That code was removed. Old links are caught by

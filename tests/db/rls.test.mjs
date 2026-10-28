@@ -551,5 +551,20 @@ await as('anon');
 r = await q(`select public.tf_upsert_weekly_summary(date_trunc('week', current_date - 7)::date, 1, 5, 5, 5, 7, 0, 0, 0, 0, 0)`);
 check('anon cannot back up summaries', !!r.error, r.error);
 
+// Anvay Vault: owner-only shared profile.
+await as('A');
+r = await q(`insert into public.anvay_profiles (user_id, display_name, locale) values ('${ids.A}', 'Asha', 'en-IN') returning user_id`);
+check('owner creates own anvay profile', !r.error && r.rows?.[0]?.user_id === ids.A, r.error);
+r = await q(`insert into public.anvay_profiles (user_id, display_name) values ('${ids.B}', 'Forged')`);
+check('cannot create another user\'s anvay profile', !!r.error, r.error);
+await as('B');
+r = await q(`select count(*)::int as n from public.anvay_profiles`);
+check('other users cannot see an anvay profile', r.rows?.[0]?.n === 0, JSON.stringify(r.rows));
+r = await q(`update public.anvay_profiles set display_name = 'Taken' where user_id = '${ids.A}' returning user_id`);
+check('other users cannot change an anvay profile', !r.error && r.rows?.length === 0, r.error ?? JSON.stringify(r.rows));
+await as('anon');
+r = await q(`select * from public.anvay_profiles`);
+check('anon cannot read anvay profiles', !!r.error || r.rows?.length === 0, r.error);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
