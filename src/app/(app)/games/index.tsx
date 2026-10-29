@@ -159,7 +159,7 @@ export default function GamesScreen() {
         <Card style={{ marginBottom: spacing.md, padding: 14, backgroundColor: colors.surface }}>
           <View style={styles.heroWrap}>
             <Image
-              source={require('../../../../assets/illustrations/games-focus.jpg')}
+              source={require('../../../../assets/illustrations/beta-hand-games.jpg')}
               style={styles.heroImage}
               contentFit="cover"
             />

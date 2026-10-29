@@ -12,6 +12,7 @@ import { Header } from '../../../components/ui/Header';
 import { Card } from '../../../components/ui/Card';
 import { Chip } from '../../../components/ui/Chip';
 import { useTheme } from '../../../theme/useTheme';
+import { getSanctuaryIllustration } from '../../../utils/illustrationResolver';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngine';
 import { fitFor } from '../../../domain/game/setupProfile';
@@ -74,9 +75,11 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
   }, [checkIns, onboarding, sessions, today]);
 
   const heroImage =
-    experience === 'women_health'
-      ? require('../../../../assets/illustrations/workout-yoga-flow.jpg')
-      : require('../../../../assets/illustrations/workout-hiit-strength.jpg');
+    experience === 'men_health'
+      ? getSanctuaryIllustration('hiitStrength', experience)
+      : experience === 'pride_wellbeing'
+        ? getSanctuaryIllustration('healthHub', experience)
+        : getSanctuaryIllustration('yogaFlow', experience);
 
   return (
     <ScreenWrapper scrollable>

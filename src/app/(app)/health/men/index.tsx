@@ -30,6 +30,18 @@ export default function MenHealthScreen() {
   return (
     <ScreenContainer header={<AppHeader title="Men's Health" subtitle="Strength, recovery and health basics" showBack />} scrollMode="shell-scroll-view">
       <View style={{ paddingBottom: spacing.xxl }}>
+        <Card style={{ marginBottom: spacing.md, padding: 14, backgroundColor: colors.surface }}>
+          <View style={styles.imageWrap}>
+            <Image source={require('../../../../../assets/illustrations/health-men.jpg')} style={styles.cardImage} contentFit="cover" />
+          </View>
+          <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 12 }]}>
+            Strength, recovery & health basics
+          </Text>
+          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4, lineHeight: 18 }]}>
+            Tailored daily movement, posture resets, stress resilience and check-ins. Kept strictly on this device.
+          </Text>
+        </Card>
+
         <Card style={{ marginBottom: spacing.md, padding: spacing.lg }}>
           <Text style={[typography.subheading, { color: colors.text.primary }]}>Today</Text>
           {todays ? (
@@ -57,7 +69,7 @@ export default function MenHealthScreen() {
 
         <Card style={{ marginBottom: spacing.md, padding: spacing.base }}>
           <View style={styles.imageWrap}>
-            <Image source={require('../../../../../assets/illustrations/workout-strength.jpg')} style={styles.cardImage} contentFit="cover" />
+            <Image source={require('../../../../../assets/illustrations/workout-hiit-strength-men.jpg')} style={styles.cardImage} contentFit="cover" />
           </View>
           <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 14 }]}>Strength training</Text>
           <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>
@@ -83,7 +95,7 @@ export default function MenHealthScreen() {
 
         <Card style={{ marginBottom: spacing.md, padding: spacing.base }}>
           <View style={styles.imageWrap}>
-            <Image source={require('../../../../../assets/illustrations/workout-mobility.jpg')} style={styles.cardImage} contentFit="cover" />
+            <Image source={require('../../../../../assets/illustrations/workout-desk-reset-men.jpg')} style={styles.cardImage} contentFit="cover" />
           </View>
           <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 14 }]}>Mobility and recovery</Text>
           <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>

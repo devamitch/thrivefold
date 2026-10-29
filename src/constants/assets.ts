@@ -37,6 +37,13 @@ export const AssetIllustrations = {
   healthMen: require('@assets/illustrations/health-men.jpg'),
   healthPride: require('@assets/illustrations/health-pride.jpg'),
   emergencyHelp: require('@assets/illustrations/emergency-help.jpg'),
+  workoutYogaFlowMen: require('@assets/illustrations/workout-yoga-flow-men.jpg'),
+  workoutHiitStrengthMen: require('@assets/illustrations/workout-hiit-strength-men.jpg'),
+  workoutDeskResetMen: require('@assets/illustrations/workout-desk-reset-men.jpg'),
+  wellnessMeditationMen: require('@assets/illustrations/wellness-meditation-men.jpg'),
+  wellnessDeepSleepMen: require('@assets/illustrations/wellness-deep-sleep-men.jpg'),
+  wellnessEyeVisionMen: require('@assets/illustrations/wellness-eye-vision-men.jpg'),
+  betaFaceExercisesMen: require('@assets/illustrations/beta-face-exercises-men.jpg'),
 } as const;
 
 export type AssetIllustrationsName = keyof typeof AssetIllustrations;

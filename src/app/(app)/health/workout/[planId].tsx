@@ -13,6 +13,7 @@ import { Card } from '../../../../components/ui/Card';
 import { Button } from '../../../../components/ui/Button';
 import { Chip } from '../../../../components/ui/Chip';
 import { useTheme } from '../../../../theme/useTheme';
+import { getSanctuaryIllustration } from '../../../../utils/illustrationResolver';
 import { useRootStore, useShallow } from '../../../../stores/useRootStore';
 import { formatLocalDate } from '../../../../domain/calendar/universalCalendarEngine';
 import { writeWorkoutToHealthConnect } from '../../../../services/integrations/healthConnect';
@@ -31,7 +32,7 @@ export default function WorkoutSessionScreen() {
   const router = useRouter();
   const { planId, assignmentId } = useLocalSearchParams<{ planId: string; assignmentId?: string }>();
   const plan = planById(planId ?? '');
-  const { colors, typography, spacing } = useTheme();
+  const { colors, typography, spacing, experience } = useTheme();
   const { sessions, saveWorkoutSession, showToast } = useRootStore(
     useShallow((s) => ({ sessions: s.workoutSessions, saveWorkoutSession: s.saveWorkoutSession, showToast: s.showToast })),
   );
@@ -62,11 +63,11 @@ export default function WorkoutSessionScreen() {
   );
 
   const workoutHeroImage = useMemo(() => {
-    if (plan?.setting === 'yoga') return require('../../../../assets/illustrations/workout-yoga-flow.jpg');
-    if (plan?.setting === 'desk' || plan?.setting === 'seated') return require('../../../../assets/illustrations/workout-desk-reset.jpg');
-    if (plan?.setting === 'recovery') return require('../../../../assets/illustrations/wellness-deep-sleep.jpg');
-    return require('../../../../assets/illustrations/workout-hiit-strength.jpg');
-  }, [plan?.setting]);
+    if (plan?.setting === 'yoga') return getSanctuaryIllustration('yogaFlow', experience);
+    if (plan?.setting === 'desk' || plan?.setting === 'seated') return getSanctuaryIllustration('deskReset', experience);
+    if (plan?.setting === 'recovery') return getSanctuaryIllustration('deepSleep', experience);
+    return getSanctuaryIllustration('hiitStrength', experience);
+  }, [plan?.setting, experience]);
 
   if (!plan) {
     return (

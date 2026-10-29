@@ -46,28 +46,28 @@ const SLIDES: readonly IntroSlide[] = [
     eyebrow: 'Yours, on your phone',
     title: 'Your health, kept close',
     description: 'Check-ins, sleep, workouts and health notes are encrypted on this device. Nothing leaves it unless you choose.',
-    image: require('../../../assets/illustrations/health-holistic.jpg'),
+    image: require('../../../assets/illustrations/activity-indoor.jpg'),
   },
   {
     id: 'quests',
     eyebrow: 'Gentle daily quests',
     title: 'Small steps that fit your day',
     description: 'Quests follow your pace, your limits and the time of day. A hard day makes them lighter, never heavier.',
-    image: require('../../../assets/illustrations/intro-quests.jpg'),
+    image: require('../../../assets/illustrations/beta-lab-hub.jpg'),
   },
   {
     id: 'coach',
     eyebrow: 'Camera coach',
     title: 'Move with a coach beside you',
     description: 'For supported exercises, the camera counts reps and checks form on the phone. Video is never saved or sent. Good form earns ten times the XP.',
-    image: require('../../../assets/illustrations/workout-strength.jpg'),
+    image: require('../../../assets/illustrations/beta-pose-coach.jpg'),
   },
   {
     id: 'memory',
     eyebrow: 'Patterns, privately',
     title: 'See what helps you',
     description: 'How sleep, stress and energy connect for you, worked out on this phone. No ads, no selling, no guessing about you.',
-    image: require('../../../assets/illustrations/intro-vault.jpg'),
+    image: require('../../../assets/illustrations/profile-kosh.jpg'),
   },
 ];
 

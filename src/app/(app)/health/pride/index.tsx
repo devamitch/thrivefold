@@ -1,6 +1,7 @@
 import { SquircleSurface } from '../../../../components/ui/SquircleSurface';
 import React, { useState } from 'react';
-import { Text, View } from 'react-native';
+import { Text, View, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import { Link, useRouter, type Href } from 'expo-router';
 
 import { ScreenWrapper } from '../../../../components/ui/ScreenWrapper';
@@ -42,6 +43,21 @@ export default function PrideWellbeingScreen() {
     <ScreenWrapper scrollable>
       <Header title="LGBTQ+ wellbeing" subtitle="Affirming care, on your terms" showBack />
       <View style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
+        <Card style={{ marginBottom: spacing.md, padding: 14, backgroundColor: colors.surface }}>
+          <View style={styles.heroWrap}>
+            <Image
+              source={require('../../../../../assets/illustrations/health-pride.jpg')}
+              style={styles.heroImage}
+              contentFit="cover"
+            />
+          </View>
+          <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 12 }]}>
+            Affirming care, on your terms
+          </Text>
+          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4, lineHeight: 18 }]}>
+            Private identity notes, hormone reminders, grounding exercises and calm support spaces.
+          </Text>
+        </Card>
         {section(
           'Your identity',
           identity.pronouns || identity.genderDescription
@@ -115,3 +131,16 @@ export default function PrideWellbeingScreen() {
     </ScreenWrapper>
   );
 }
+
+const styles = StyleSheet.create({
+  heroWrap: {
+    width: '100%',
+    height: 140,
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
+  },
+});

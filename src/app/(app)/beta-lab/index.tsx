@@ -181,7 +181,7 @@ export default function BetaLabScreen() {
       />
 
       <ScreenScrollView contentContainerStyle={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xl * 2 }}>
-        <BetaHero source={require('../../../../assets/illustrations/games-focus.jpg')} label="Beta Lab" />
+        <BetaHero source={require('../../../../assets/illustrations/beta-lab-hub.jpg')} label="Beta Lab" />
         {/* Global Beta Mode Master Banner */}
         <SquircleSurface radius={24} fill={colors.surface} style={[styles.masterCard, { marginTop: spacing.sm }]}>
           <View style={styles.bannerHeader}>

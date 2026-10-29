@@ -175,7 +175,7 @@ export default function GestureGameScreen() {
           <BetaBadge />
         </View>
         <View style={{ paddingHorizontal: spacing.base, paddingTop: spacing.md }}>
-          <BetaHero source={require('../../../../assets/illustrations/workout-mobility.jpg')} label="Hand games" />
+          <BetaHero source={require('../../../../assets/illustrations/beta-hand-games.jpg')} label="Hand games" />
           <View style={styles.modes}>
             <Chip label="Finger count" selected={mode === 'fingers'} onPress={() => setMode('fingers')} />
             <Chip label="Gesture match" selected={mode === 'gestures'} onPress={() => setMode('gestures')} />

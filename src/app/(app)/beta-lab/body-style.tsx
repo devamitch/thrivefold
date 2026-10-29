@@ -189,7 +189,7 @@ export default function BodyStyleScreen() {
         rightAction={<BetaBadge />}
       />
       <ScreenScrollView contentContainerStyle={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xl * 2 }}>
-        <BetaHero source={require('../../../../assets/illustrations/workout-strength.jpg')} label="Body and style" />
+        <BetaHero source={require('../../../../assets/illustrations/beta-body-style.jpg')} label="Body and style" />
         <Text style={[typography.caption, { color: colors.text.muted }]}>
           Photos are analysed on this phone and not saved or sent. Results are estimates from one photo. Thrivefold never
           rates how anyone looks.

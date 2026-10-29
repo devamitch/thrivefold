@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, type Href } from 'expo-router';
 
 import { useTheme } from '../../theme/useTheme';
+import { getSanctuaryIllustration } from '../../utils/illustrationResolver';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { BetaBadge } from '../ui/Badge';
@@ -15,7 +16,7 @@ import { useBetaEnabled } from '../../hooks/useBetaEnabled';
 
 export function ScreenTimeCard() {
   const router = useRouter();
-  const { colors, typography, spacing } = useTheme();
+  const { colors, typography, spacing, experience } = useTheme();
   const betaMode = useBetaEnabled();
   const { appStateHistory } = useRootStore(
     useShallow((s) => ({
@@ -49,7 +50,7 @@ export function ScreenTimeCard() {
       action: 'Eye Studio',
       route: '/(app)/beta-lab' as Href,
       icon: 'eye-outline' as const,
-      image: require('../../../assets/illustrations/wellness-eye-vision.jpg'),
+      image: getSanctuaryIllustration('eyeVision', experience),
     },
     posture_reset: {
       title: 'Posture & Neck Reset',
@@ -57,7 +58,7 @@ export function ScreenTimeCard() {
       action: 'Desk Reset',
       route: '/(app)/health/workout/desk_reset' as Href,
       icon: 'body-outline' as const,
-      image: require('../../../assets/illustrations/workout-desk-reset.jpg'),
+      image: getSanctuaryIllustration('deskReset', experience),
     },
     water_hydrate: {
       title: 'Hydration Pause',
@@ -65,7 +66,7 @@ export function ScreenTimeCard() {
       action: 'Check Water',
       route: '/(app)/(tabs)' as Href,
       icon: 'water-outline' as const,
-      image: require('../../../assets/illustrations/wellness-meditation-mind.jpg'),
+      image: getSanctuaryIllustration('meditation', experience),
     },
   }[schedule.recommendedBreakKind];
 

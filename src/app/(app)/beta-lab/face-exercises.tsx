@@ -24,6 +24,8 @@ import { recordBetaSession } from '../../../services/beta/recordSession';
 import { hapticLight, hapticSuccess } from '../../../services/haptics';
 import { ensureCameraPermission } from '../../../services/sensors/cameraPermission';
 import type { BetaSessionKind } from '../../../stores/slices/appSlice';
+import { BetaHero } from '../../../components/beta/BetaHero';
+import { getSanctuaryIllustration } from '../../../utils/illustrationResolver';
 import { useTheme } from '../../../theme/useTheme';
 
 const KINDS: BetaSessionKind[] = ['face_exercise'];
@@ -40,7 +42,7 @@ type Phase = 'intro' | 'calibrating' | 'exercise' | 'done';
 export default function FaceExercisesScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { colors, typography, spacing } = useTheme();
+  const { colors, typography, spacing, experience } = useTheme();
 
   const [phase, setPhase] = useState<Phase>('intro');
   const [index, setIndex] = useState(0);
@@ -174,6 +176,9 @@ export default function FaceExercisesScreen() {
           <BetaBadge />
         </View>
         <View style={{ paddingHorizontal: spacing.base, paddingTop: spacing.md }}>
+          {phase !== 'done' ? (
+            <BetaHero source={getSanctuaryIllustration('faceExercises', experience)} label="Face & eye exercises" />
+          ) : null}
           {phase === 'done' ? (
             <View style={[styles.summary, { backgroundColor: colors.surface }]}>
               <Text style={[typography.heading, { color: colors.text.primary }]}>{total} movements</Text>

@@ -130,7 +130,7 @@ export default function InsightsScreen() {
         <Card style={{ marginBottom: spacing.md, padding: 14, backgroundColor: colors.surface }}>
           <View style={styles.heroWrap}>
             <Image
-              source={require('../../../../assets/illustrations/intro-vault.jpg')}
+              source={require('../../../../assets/illustrations/beta-coach-assistant.jpg')}
               style={styles.heroImage}
               contentFit="cover"
             />

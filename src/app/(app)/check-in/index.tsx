@@ -14,6 +14,7 @@ import { Chip } from '../../../components/ui/Chip';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import type { DailyCheckInRecord } from '../../../stores/useRootStore';
+import { getSanctuaryIllustration } from '../../../utils/illustrationResolver';
 import { useTheme } from '../../../theme/useTheme';
 import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngine';
 import { classifyLocalInput } from '../../../domain/ai/localClassifier';
@@ -92,7 +93,7 @@ export default function CheckInScreen() {
     >
       <Card style={styles.heroCard}>
         <Image
-          source={require('../../../assets/illustrations/wellness-meditation-mind.jpg')}
+          source={getSanctuaryIllustration('meditation', experience)}
           style={styles.heroImage}
           contentFit="cover"
         />

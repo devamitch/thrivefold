@@ -111,7 +111,7 @@ export default function SafetyScreen() {
         <Card style={{ marginBottom: spacing.md, padding: 14, backgroundColor: colors.surface }}>
           <View style={styles.heroWrap}>
             <Image
-              source={require('../../../../assets/illustrations/safety-sanctuary.jpg')}
+              source={require('../../../../assets/illustrations/emergency-help.jpg')}
               style={styles.heroImage}
               contentFit="cover"
             />

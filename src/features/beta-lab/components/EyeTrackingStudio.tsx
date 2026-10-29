@@ -23,6 +23,7 @@ import { PoseDetectionAdapter } from '../experiments/pose-detection/PoseDetectio
 import { coachVoice } from '../../../services/ai/coachVoice';
 import { hapticLight, hapticSuccess, hapticSelection } from '../../../services/haptics';
 import { useTheme } from '../../../theme/useTheme';
+import { getSanctuaryIllustration } from '../../../utils/illustrationResolver';
 import { VisualAcuityChart } from './VisualAcuityChart';
 import { BlinkBloomExercise } from './BlinkBloomExercise';
 import { NearFarFocusExercise } from './NearFarFocusExercise';
@@ -33,7 +34,7 @@ import { recordBetaSession } from '../../../services/beta/recordSession';
 type StudioMode = 'scanner' | 'bloom' | 'nearfar' | 'acuity';
 
 export function EyeTrackingStudio() {
-  const { colors, typography, spacing } = useTheme();
+  const { colors, typography, spacing, experience } = useTheme();
   const [active, setActive] = useState(false);
   const [mode, setMode] = useState<StudioMode>('scanner');
   const [eyeState, setEyeState] = useState<EyeState>(() => new EyeTrackerSession().processFace(undefined));
@@ -232,7 +233,7 @@ export function EyeTrackingStudio() {
         ) : (
           <View style={[StyleSheet.absoluteFill, styles.placeholderWrap]}>
             <Image
-              source={require('../../../../assets/illustrations/wellness-eye-vision.jpg')}
+              source={getSanctuaryIllustration('eyeVision', experience)}
               style={StyleSheet.absoluteFill}
               contentFit="cover"
             />
