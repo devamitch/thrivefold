@@ -67,28 +67,28 @@ export default function GestureGameScreen() {
     if (isFinished(g)) {
       void coachVoice.speak(`Game over. You scored ${g.score} out of ${ROUNDS}.`, { priority: 3 });
     } else {
-      void coachVoice.speak(`${g.last === 'hit' ? 'Nice. ' : g.last === 'miss' ? 'Next one. ' : ''}Show ${WORDS[modeRef.current][g.target]}.`, {
-        priority: 3,
-      });
+      void coachVoice.speak(
+        `${g.last === 'hit' ? 'Nice. ' : g.last === 'miss' ? 'Next one. ' : ''}Show ${WORDS[modeRef.current][g.target]}.`,
+        {
+          priority: 3,
+        },
+      );
     }
   }, []);
 
-  const finish = useCallback(
-    (g: FingerGameState) => {
-      recordBetaSession({
-        kind: 'finger_game',
-        startedAt: startedAt.current,
-        endedAt: Date.now(),
-        metrics: {
-          gestureMode: modeRef.current === 'gestures' ? 1 : 0,
-          score: g.score,
-          rounds: ROUNDS,
-          reactionMs: g.reactions.length ? Math.round(g.reactions.reduce((a, b) => a + b, 0) / g.reactions.length) : 0,
-        },
-      });
-    },
-    [],
-  );
+  const finish = useCallback((g: FingerGameState) => {
+    recordBetaSession({
+      kind: 'finger_game',
+      startedAt: startedAt.current,
+      endedAt: Date.now(),
+      metrics: {
+        gestureMode: modeRef.current === 'gestures' ? 1 : 0,
+        score: g.score,
+        rounds: ROUNDS,
+        reactionMs: g.reactions.length ? Math.round(g.reactions.reduce((a, b) => a + b, 0) / g.reactions.length) : 0,
+      },
+    });
+  }, []);
 
   const onPose = useCallback(
     (e: NativeSyntheticEvent<PoseFrame>) => {
@@ -184,17 +184,23 @@ export default function GestureGameScreen() {
             {mode === 'fingers'
               ? 'The coach calls a number from one to five. Hold up that many fingers to the front camera until the ring fills.'
               : 'The coach calls a hand sign: thumbs up, peace, open palm, fist or pointing up. Show it to the front camera until the ring fills.'}{' '}
-            {ROUNDS} rounds, {ROUND_MS / 1000} seconds each. Good for finger dexterity and a quick break from the screen.
+            {ROUNDS} rounds, {ROUND_MS / 1000} seconds each. Good for finger dexterity and a quick break from the
+            screen.
           </Text>
           <Text style={[typography.caption, { color: colors.text.muted, marginTop: 8 }]}>
-            Hand landmarks are processed on this phone; no video is saved. Hold your palm toward the camera in good light.
+            Hand landmarks are processed on this phone; no video is saved. Hold your palm toward the camera in good
+            light.
           </Text>
           {denied ? (
             <Text style={[typography.caption, { color: colors.error, marginTop: 8 }]}>
               Camera access was not allowed. Allow it in Android settings to play.
             </Text>
           ) : null}
-          <PressableScale onPress={start} style={[styles.cta, { backgroundColor: colors.primary }]} accessibilityLabel="Start game">
+          <PressableScale
+            onPress={start}
+            style={[styles.cta, { backgroundColor: colors.primary }]}
+            accessibilityLabel="Start game"
+          >
             <Ionicons name="play" size={18} color={colors.text.inverse} />
             <Text style={[typography.bodyBold, { color: colors.text.inverse, marginLeft: 8 }]}>Start game</Text>
           </PressableScale>
@@ -203,7 +209,9 @@ export default function GestureGameScreen() {
             metric="score"
             unit={`of ${ROUNDS}`}
             title="Your games"
-            describe={(s) => `${s.metrics.score}/${s.metrics.rounds}${s.metrics.reactionMs ? ` · ${(s.metrics.reactionMs / 1000).toFixed(1)} s` : ''}`}
+            describe={(s) =>
+              `${s.metrics.score}/${s.metrics.rounds}${s.metrics.reactionMs ? ` · ${(s.metrics.reactionMs / 1000).toFixed(1)} s` : ''}`
+            }
           />
         </View>
       </View>
@@ -212,7 +220,15 @@ export default function GestureGameScreen() {
 
   return (
     <View style={[styles.fill, styles.dark]}>
-      <PoseDetectionAdapter engine="default" active={playing} facing="front" face={false} hands onPose={onPose} style={StyleSheet.absoluteFill} />
+      <PoseDetectionAdapter
+        engine="default"
+        active={playing}
+        facing="front"
+        face={false}
+        hands
+        onPose={onPose}
+        style={StyleSheet.absoluteFill}
+      />
       <View style={[styles.overlayTop, { paddingTop: insets.top + 8, paddingHorizontal: spacing.base }]}>
         <PressableScale onPress={stop} accessibilityLabel="End game" style={[styles.iconBtn, styles.scrim]}>
           <Ionicons name="close" size={22} color="#FFFFFF" />
@@ -227,12 +243,26 @@ export default function GestureGameScreen() {
 
       {playing ? (
         <View style={styles.center} pointerEvents="none">
-          <View style={[styles.targetRing, { borderColor: holding > 0 ? colors.success : 'rgba(255,255,255,0.5)' }]}>
-            <Text style={[mode === 'fingers' ? styles.target : styles.targetWord, styles.light]}>{TARGET_LABEL[mode][game.target]}</Text>
+          <View
+            style={[
+              styles.targetRing,
+              {
+                borderColor: holding > 0 ? colors.success : 'rgba(255,255,255,0.5)',
+              },
+            ]}
+          >
+            <Text style={[mode === 'fingers' ? styles.target : styles.targetWord, styles.light]}>
+              {TARGET_LABEL[mode][game.target]}
+            </Text>
           </View>
           <Text style={[typography.bodyBold, styles.light, { marginTop: 12 }]}>Show {WORDS[mode][game.target]}</Text>
           <Text style={[typography.caption, styles.dim, { marginTop: 4 }]}>
-            {fingers === null ? 'No hand in view' : mode === 'fingers' ? `I see ${fingers}` : `I see ${fingers ? TARGET_LABEL.gestures[fingers] : 'no sign yet'}`} · {remaining}s
+            {fingers === null
+              ? 'No hand in view'
+              : mode === 'fingers'
+                ? `I see ${fingers}`
+                : `I see ${fingers ? TARGET_LABEL.gestures[fingers] : 'no sign yet'}`}{' '}
+            · {remaining}s
           </Text>
         </View>
       ) : (
@@ -246,7 +276,11 @@ export default function GestureGameScreen() {
               : 'No rounds scored this time.'}
           </Text>
           <View style={styles.endRow}>
-            <PressableScale onPress={start} style={[styles.cta, styles.endBtn, { backgroundColor: colors.primary }]} accessibilityLabel="Play again">
+            <PressableScale
+              onPress={start}
+              style={[styles.cta, styles.endBtn, { backgroundColor: colors.primary }]}
+              accessibilityLabel="Play again"
+            >
               <Text style={[typography.bodyBold, { color: colors.text.inverse }]}>Play again</Text>
             </PressableScale>
             <PressableScale onPress={stop} style={[styles.cta, styles.endBtn, styles.scrim]} accessibilityLabel="Done">
@@ -267,14 +301,59 @@ const styles = StyleSheet.create({
   dim: { color: 'rgba(255,255,255,0.75)' },
   scrim: { backgroundColor: 'rgba(0,0,0,0.45)' },
   topBar: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  iconBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 52, borderRadius: 18, marginTop: 20 },
-  overlayTop: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  scorePill: { minWidth: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
-  center: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
-  targetRing: { width: 132, height: 132, borderRadius: 66, borderWidth: 6, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.35)' },
+  iconBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 52,
+    borderRadius: 18,
+    marginTop: 20,
+  },
+  overlayTop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  scorePill: {
+    minWidth: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+  },
+  center: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  targetRing: {
+    width: 132,
+    height: 132,
+    borderRadius: 66,
+    borderWidth: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
   target: { fontSize: 72, lineHeight: 80, fontWeight: '800' },
-  targetWord: { fontSize: 20, lineHeight: 26, fontWeight: '800', textAlign: 'center' },
+  targetWord: {
+    fontSize: 20,
+    lineHeight: 26,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
   modes: { flexDirection: 'row', gap: 8 },
   endRow: { flexDirection: 'row', gap: 12, marginTop: 8 },
   endBtn: { paddingHorizontal: 28 },

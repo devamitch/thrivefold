@@ -73,9 +73,17 @@ export default function FaceExercisesScreen() {
     const total = resultsRef.current.reduce((a, b) => a + b, 0);
     void coachVoice.speak(`All done. ${total} movements in total. Relax your face.`, { priority: 3 });
     if (total > 0) {
-      const metrics: Record<string, number> = { reps: total, exercises: resultsRef.current.filter((r) => r > 0).length };
+      const metrics: Record<string, number> = {
+        reps: total,
+        exercises: resultsRef.current.filter((r) => r > 0).length,
+      };
       FACE_ROUTINE.forEach((ex, i) => (metrics[`reps_${ex.id}`] = resultsRef.current[i] ?? 0));
-      recordBetaSession({ kind: 'face_exercise', startedAt: startedAt.current, endedAt: Date.now(), metrics });
+      recordBetaSession({
+        kind: 'face_exercise',
+        startedAt: startedAt.current,
+        endedAt: Date.now(),
+        metrics,
+      });
     }
   }, []);
 
@@ -85,7 +93,9 @@ export default function FaceExercisesScreen() {
     setIndex(i);
     setRep(repRef.current);
     go('exercise');
-    void coachVoice.speak(`${FACE_ROUTINE[i].title}. ${FACE_ROUTINE[i].cue}`, { priority: 3 });
+    void coachVoice.speak(`${FACE_ROUTINE[i].title}. ${FACE_ROUTINE[i].cue}`, {
+      priority: 3,
+    });
   }, []);
 
   const nextExercise = useCallback(() => {
@@ -124,7 +134,10 @@ export default function FaceExercisesScreen() {
           void coachVoice.speak(`${NUMBERS[next.reps] ?? next.reps}. Well done.`, { priority: 3 });
           nextExercise();
         } else {
-          void coachVoice.speak(NUMBERS[next.reps] ?? String(next.reps), { priority: 2, minGapMs: 0 });
+          void coachVoice.speak(NUMBERS[next.reps] ?? String(next.reps), {
+            priority: 2,
+            minGapMs: 0,
+          });
         }
       } else if (next !== repRef.current) {
         repRef.current = next;
@@ -219,7 +232,11 @@ export default function FaceExercisesScreen() {
               Camera access was not allowed. Allow it in Android settings to start.
             </Text>
           ) : null}
-          <PressableScale onPress={start} style={[styles.cta, { backgroundColor: colors.primary }]} accessibilityLabel="Start exercises">
+          <PressableScale
+            onPress={start}
+            style={[styles.cta, { backgroundColor: colors.primary }]}
+            accessibilityLabel="Start exercises"
+          >
             <Ionicons name="play" size={18} color={colors.text.inverse} />
             <Text style={[typography.bodyBold, { color: colors.text.inverse, marginLeft: 8 }]}>
               {phase === 'done' ? 'Go again' : 'Start'}
@@ -240,7 +257,15 @@ export default function FaceExercisesScreen() {
   const ex = FACE_ROUTINE[index];
   return (
     <View style={[styles.fill, styles.dark]}>
-      <PoseDetectionAdapter engine="default" active facing="front" face hands={false} onPose={onPose} style={StyleSheet.absoluteFill} />
+      <PoseDetectionAdapter
+        engine="default"
+        active
+        facing="front"
+        face
+        hands={false}
+        onPose={onPose}
+        style={StyleSheet.absoluteFill}
+      />
       <View style={[styles.overlayTop, { paddingTop: insets.top + 8, paddingHorizontal: spacing.base }]}>
         <PressableScale onPress={end} accessibilityLabel="End session" style={[styles.iconBtn, styles.scrim]}>
           <Ionicons name="close" size={22} color="#FFFFFF" />
@@ -272,7 +297,15 @@ export default function FaceExercisesScreen() {
                 <Text style={[typography.body, styles.dim]}> / {ex.reps}</Text>
               </Text>
               <View style={styles.meter}>
-                <View style={[styles.meterFill, { width: `${level * 100}%`, backgroundColor: level >= 1 ? colors.success : colors.primary }]} />
+                <View
+                  style={[
+                    styles.meterFill,
+                    {
+                      width: `${level * 100}%`,
+                      backgroundColor: level >= 1 ? colors.success : colors.primary,
+                    },
+                  ]}
+                />
               </View>
             </View>
           </>
@@ -290,14 +323,52 @@ const styles = StyleSheet.create({
   dim: { color: 'rgba(255,255,255,0.75)' },
   scrim: { backgroundColor: 'rgba(0,0,0,0.5)' },
   topBar: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  iconBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  skip: { height: 36, borderRadius: 18, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center' },
-  cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 52, borderRadius: 18, marginTop: 20 },
-  overlayTop: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  iconBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  skip: {
+    height: 36,
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 52,
+    borderRadius: 18,
+    marginTop: 20,
+  },
+  overlayTop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   panel: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingTop: 18 },
-  repRow: { flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 12 },
+  repRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    marginTop: 12,
+  },
   reps: { fontSize: 40, lineHeight: 46, fontWeight: '800' },
-  meter: { flex: 1, height: 10, borderRadius: 5, backgroundColor: 'rgba(255,255,255,0.2)', overflow: 'hidden' },
+  meter: {
+    flex: 1,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    overflow: 'hidden',
+  },
   meterFill: { height: '100%', borderRadius: 5 },
   summary: { borderRadius: 18, padding: 16, marginBottom: 4 },
   summaryRow: { flexDirection: 'row', paddingVertical: 4 },

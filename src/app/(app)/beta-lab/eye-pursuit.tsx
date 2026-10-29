@@ -50,7 +50,9 @@ export default function EyePursuitScreen() {
     if (t0.value === 0) t0.value = f.timestamp;
     x.value = Math.sin((2 * Math.PI * (f.timestamp - t0.value)) / PERIOD_MS);
   }, false);
-  const dot = useAnimatedStyle(() => ({ transform: [{ translateX: x.value * (width / 2 - 40) }] }));
+  const dot = useAnimatedStyle(() => ({
+    transform: [{ translateX: x.value * (width / 2 - 40) }],
+  }));
 
   const finish = useCallback(() => {
     frame.setActive(false);
@@ -63,7 +65,12 @@ export default function EyePursuitScreen() {
       return;
     }
     void coachVoice.speak(`Done. Your eyes followed the dot with a score of ${s}.`, { priority: 3 });
-    recordBetaSession({ kind: 'eye_pursuit', startedAt: startedAt.current, endedAt: Date.now(), metrics: { score: s, samples: samples.current.length } });
+    recordBetaSession({
+      kind: 'eye_pursuit',
+      startedAt: startedAt.current,
+      endedAt: Date.now(),
+      metrics: { score: s, samples: samples.current.length },
+    });
   }, [frame]);
 
   useEffect(() => {
@@ -119,7 +126,15 @@ export default function EyePursuitScreen() {
       {running ? (
         <View style={styles.fill}>
           <View style={styles.preview}>
-            <PoseDetectionAdapter engine="default" active facing="front" face hands={false} onPose={onPose} style={StyleSheet.absoluteFill} />
+            <PoseDetectionAdapter
+              engine="default"
+              active
+              facing="front"
+              face
+              hands={false}
+              onPose={onPose}
+              style={StyleSheet.absoluteFill}
+            />
           </View>
           <View style={styles.stage}>
             <Animated.View style={[styles.dot, { backgroundColor: colors.primary }, dot]} />
@@ -127,7 +142,17 @@ export default function EyePursuitScreen() {
           <Text style={[typography.bodyBold, styles.center, { color: colors.text.primary }]}>
             {faceSeen ? `Follow the dot · ${left}s` : 'Bring your face into view'}
           </Text>
-          <PressableScale onPress={finish} style={[styles.cta, { backgroundColor: colors.surface2, marginHorizontal: spacing.base }]} accessibilityLabel="Stop">
+          <PressableScale
+            onPress={finish}
+            style={[
+              styles.cta,
+              {
+                backgroundColor: colors.surface2,
+                marginHorizontal: spacing.base,
+              },
+            ]}
+            accessibilityLabel="Stop"
+          >
             <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Stop</Text>
           </PressableScale>
         </View>
@@ -137,21 +162,37 @@ export default function EyePursuitScreen() {
           {score !== null ? (
             <View style={[styles.result, { backgroundColor: colors.surface }]}>
               <Text style={[styles.big, { color: colors.primary }]}>{score}</Text>
-              <Text style={[typography.caption, { color: colors.text.secondary }]}>How closely your eyes followed the dot (0–100)</Text>
+              <Text style={[typography.caption, { color: colors.text.secondary }]}>
+                How closely your eyes followed the dot (0–100)
+              </Text>
             </View>
           ) : null}
           <Text style={[typography.body, { color: colors.text.secondary }]}>
-            A dot glides from side to side for {RUN_MS / 1000} seconds. Hold the phone at eye level, keep your head still and
-            follow it with your eyes. A relaxing eye-movement exercise, not an eye test.
+            A dot glides from side to side for {RUN_MS / 1000} seconds. Hold the phone at eye level, keep your head
+            still and follow it with your eyes. A relaxing eye-movement exercise, not an eye test.
           </Text>
           {denied ? (
-            <Text style={[typography.caption, { color: colors.error, marginTop: 8 }]}>Camera access was not allowed.</Text>
+            <Text style={[typography.caption, { color: colors.error, marginTop: 8 }]}>
+              Camera access was not allowed.
+            </Text>
           ) : null}
-          <PressableScale onPress={start} style={[styles.cta, { backgroundColor: colors.primary }]} accessibilityLabel="Start">
+          <PressableScale
+            onPress={start}
+            style={[styles.cta, { backgroundColor: colors.primary }]}
+            accessibilityLabel="Start"
+          >
             <Ionicons name="play" size={18} color={colors.text.inverse} />
-            <Text style={[typography.bodyBold, { color: colors.text.inverse, marginLeft: 8 }]}>{score !== null ? 'Again' : 'Start'}</Text>
+            <Text style={[typography.bodyBold, { color: colors.text.inverse, marginLeft: 8 }]}>
+              {score !== null ? 'Again' : 'Start'}
+            </Text>
           </PressableScale>
-          <BetaSessionHistory kinds={KINDS} metric="score" unit="score" title="Your runs" describe={(s) => `score ${s.metrics.score}`} />
+          <BetaSessionHistory
+            kinds={KINDS}
+            metric="score"
+            unit="score"
+            title="Your runs"
+            describe={(s) => `score ${s.metrics.score}`}
+          />
         </View>
       )}
     </View>
@@ -162,12 +203,40 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   flex: { flex: 1 },
   topBar: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  iconBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  preview: { position: 'absolute', top: 8, right: 16, width: 72, height: 96, borderRadius: 12, overflow: 'hidden', zIndex: 2 },
+  iconBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  preview: {
+    position: 'absolute',
+    top: 8,
+    right: 16,
+    width: 72,
+    height: 96,
+    borderRadius: 12,
+    overflow: 'hidden',
+    zIndex: 2,
+  },
   stage: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   dot: { width: 44, height: 44, borderRadius: 22 },
   center: { textAlign: 'center', marginBottom: 12 },
-  cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 52, borderRadius: 18, marginTop: 20, marginBottom: 24 },
-  result: { borderRadius: 18, padding: 16, marginBottom: 12, alignItems: 'center' },
+  cta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 52,
+    borderRadius: 18,
+    marginTop: 20,
+    marginBottom: 24,
+  },
+  result: {
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 12,
+    alignItems: 'center',
+  },
   big: { fontSize: 44, lineHeight: 50, fontWeight: '800' },
 });

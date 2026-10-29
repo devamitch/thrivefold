@@ -1,19 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
-import { StyleSheet, Switch, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { AppHeader } from '../../../components/ui/AppHeader';
 import { Badge, BetaBadge } from '../../../components/ui/Badge';
 import { PressableScale } from '../../../components/ui/PressableScale';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
-import { ScreenScrollView } from '../../../components/ui/ScreenScrollView';
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import { BETA_CAPABILITIES, type BetaCapability } from '../../../domain/health/metricRegistry';
 import { hapticSelection } from '../../../services/haptics';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
 import { BetaHero } from '../../../components/beta/BetaHero';
+import { AssetIllustrations } from '../../../constants/assets';
+import { SanctuaryImageBackground } from '../../../components/ui/SanctuaryImageBackground';
+import { Toggle } from '../../../components/ui/Toggle';
 
 interface StudioProduct {
   id: string;
@@ -188,43 +190,52 @@ export default function BetaLabScreen() {
   }, []);
 
   return (
-    <ScreenContainer>
-      <AppHeader
-        eyebrow="HEALTH OS · EXPERIMENTAL"
-        title="Beta Lab"
-        subtitle="On-Device Vision, Gesture & Audio Studios"
-        showBack
-        onBack={() => router.back()}
-        rightAction={<BetaBadge />}
-      />
-
-      <ScreenScrollView contentContainerStyle={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xl * 2 }}>
+    <SanctuaryImageBackground source={AssetIllustrations.sanctuaryAmbientBg}>
+      <ScreenContainer
+        style={{ backgroundColor: 'transparent' }}
+        scrollable
+        header={
+          <AppHeader
+            eyebrow="HEALTH OS · EXPERIMENTAL"
+            title="Beta Lab"
+            subtitle="On-Device Vision, Gesture & Audio Studios"
+            showBack
+            onBack={() => router.back()}
+            rightAction={<BetaBadge />}
+          />
+        }
+      >
         <BetaHero source={require('../../../../assets/illustrations/beta-lab-hub.jpg')} label="Beta Lab" />
         {/* Global Beta Mode Master Banner */}
         <SquircleSurface radius={24} fill={colors.surface} style={[styles.masterCard, { marginTop: spacing.sm }]}>
           <View style={styles.bannerHeader}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 10,
+                flex: 1,
+              }}
+            >
               <BetaBadge />
               <View style={{ flex: 1 }}>
-                <Text style={[typography.subheading, { color: colors.text.primary }]}>
-                  Global Beta Mode
-                </Text>
+                <Text style={[typography.subheading, { color: colors.text.primary }]}>Global Beta Mode</Text>
                 <Text style={[typography.caption, { color: colors.text.secondary }]}>
                   {betaMode ? 'Active across Home, Health & Tools' : 'Off · Only stable flows exposed'}
                 </Text>
               </View>
             </View>
-            <Switch
+            <Toggle
               value={betaMode}
               onValueChange={(val) => {
                 tick();
                 setBetaMode(val);
               }}
-              thumbColor={betaMode ? colors.dockActive : colors.text.muted}
             />
           </View>
           <Text style={[typography.caption, { color: colors.text.muted, marginTop: 8 }]}>
-            Enabling Global Beta Mode unlocks all 7 dedicated studios below and surfaces experimental telemetry throughout Thrivefold.
+            Enabling Global Beta Mode unlocks all 7 dedicated studios below and surfaces experimental telemetry
+            throughout Thrivefold.
           </Text>
         </SquircleSurface>
 
@@ -233,9 +244,7 @@ export default function BetaLabScreen() {
           <Text style={[typography.captionBold, { color: colors.text.muted, letterSpacing: 1.2 }]}>
             DEDICATED BETA STUDIOS
           </Text>
-          <Text style={[typography.caption, { color: colors.primary }]}>
-            {STUDIOS.length} Separate Flows
-          </Text>
+          <Text style={[typography.caption, { color: colors.primary }]}>{STUDIOS.length} Separate Flows</Text>
         </View>
 
         {/* Studios Grid */}
@@ -258,7 +267,10 @@ export default function BetaLabScreen() {
 
                 <View style={{ flex: 1 }}>
                   <Badge label={studio.tag} variant={studio.badgeVariant ?? 'beta'} style={{ marginBottom: 4 }} />
-                  <Text style={[typography.bodyBold, { color: colors.text.primary, marginBottom: 2 }]} numberOfLines={1}>
+                  <Text
+                    style={[typography.bodyBold, { color: colors.text.primary, marginBottom: 2 }]}
+                    numberOfLines={1}
+                  >
                     {studio.title}
                   </Text>
                   <Text style={[typography.caption, { color: colors.text.secondary }]} numberOfLines={2}>
@@ -288,10 +300,14 @@ export default function BetaLabScreen() {
               fill={colors.surface}
               style={[styles.capCard, { padding: spacing.md }]}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Text style={[typography.bodyBold, { color: colors.text.primary, flex: 1 }]}>
-                  {cap.title}
-                </Text>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <Text style={[typography.bodyBold, { color: colors.text.primary, flex: 1 }]}>{cap.title}</Text>
                 <Badge
                   label={cap.status.toUpperCase()}
                   variant={
@@ -306,11 +322,16 @@ export default function BetaLabScreen() {
                 />
               </View>
 
-              <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>
-                {cap.subtitle}
-              </Text>
+              <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>{cap.subtitle}</Text>
 
-              <View style={{ marginTop: 8, backgroundColor: colors.surface2, padding: 8, borderRadius: 10 }}>
+              <View
+                style={{
+                  marginTop: 8,
+                  backgroundColor: colors.surface2,
+                  padding: 8,
+                  borderRadius: 10,
+                }}
+              >
                 <Text style={[typography.captionBold, { color: colors.primary, fontSize: 11 }]}>
                   STATUS: {cap.statusNote}
                 </Text>
@@ -324,7 +345,13 @@ export default function BetaLabScreen() {
                 </Text>
               </View>
 
-              <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 10 }}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'flex-end',
+                  marginTop: 10,
+                }}
+              >
                 <PressableScale
                   onPress={() => {
                     tick();
@@ -334,18 +361,20 @@ export default function BetaLabScreen() {
                   accessibilityRole="button"
                   accessibilityLabel={`Open ${cap.title}`}
                 >
-                  <SquircleSurface radius={10} fill={colors.dockActive} style={{ paddingHorizontal: 14, paddingVertical: 6 }}>
-                    <Text style={[typography.captionBold, { color: colors.dock }]}>
-                      Open Dedicated Route
-                    </Text>
+                  <SquircleSurface
+                    radius={10}
+                    fill={colors.dockActive}
+                    style={{ paddingHorizontal: 14, paddingVertical: 6 }}
+                  >
+                    <Text style={[typography.captionBold, { color: colors.dock }]}>Open Dedicated Route</Text>
                   </SquircleSurface>
                 </PressableScale>
               </View>
             </SquircleSurface>
           ))}
         </View>
-      </ScreenScrollView>
-    </ScreenContainer>
+      </ScreenContainer>
+    </SanctuaryImageBackground>
   );
 }
 

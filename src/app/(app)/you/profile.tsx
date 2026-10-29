@@ -1,14 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { Linking, StyleSheet, Switch, Text, View } from 'react-native';
+import { Linking, StyleSheet, Text, View } from 'react-native';
 
 import { AppHeader } from '../../../components/ui/AppHeader';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
+import { CollapsibleSection } from '../../../components/ui/CollapsibleSection';
 import { Chip } from '../../../components/ui/Chip';
 import { PressableScale } from '../../../components/ui/PressableScale';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
-import { ScreenScrollView } from '../../../components/ui/ScreenScrollView';
 import { TextField } from '../../../components/ui/TextField';
 import { PHONE_RE, koshCompleteness, splitList, type KoshProfile } from '../../../domain/account/koshProfile';
 import { pushProfile } from '../../../services/account/profileSync';
@@ -16,17 +16,60 @@ import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
 import { BetaHero } from '../../../components/beta/BetaHero';
 import { getSanctuaryIllustration } from '../../../utils/illustrationResolver';
+import { AssetIllustrations } from '../../../constants/assets';
+import { SanctuaryImageBackground } from '../../../components/ui/SanctuaryImageBackground';
+import { Toggle } from '../../../components/ui/Toggle';
 
 type ListKey = 'languages' | 'foodRestrictions' | 'allergies' | 'cuisines' | 'foodDislikes' | 'interests' | 'skills';
 
-const LISTS: { key: ListKey; label: string; hint: string; group: 'about' | 'food' | 'growth' }[] = [
-  { key: 'languages', label: 'Languages you prefer', hint: 'e.g. Bengali, English', group: 'about' },
-  { key: 'foodRestrictions', label: 'Food rules you follow', hint: 'e.g. vegetarian, no onion or garlic, halal', group: 'food' },
-  { key: 'allergies', label: 'Allergies and intolerances', hint: 'e.g. peanuts, lactose', group: 'food' },
-  { key: 'cuisines', label: 'Cuisines you enjoy', hint: 'e.g. Bengali, South Indian', group: 'food' },
-  { key: 'foodDislikes', label: 'Foods you dislike', hint: 'e.g. bitter gourd', group: 'food' },
-  { key: 'interests', label: 'Interests', hint: 'e.g. music, heritage walks', group: 'growth' },
-  { key: 'skills', label: 'Skills you have or want', hint: 'e.g. public speaking, Python', group: 'growth' },
+const LISTS: {
+  key: ListKey;
+  label: string;
+  hint: string;
+  group: 'about' | 'food' | 'growth';
+}[] = [
+  {
+    key: 'languages',
+    label: 'Languages you prefer',
+    hint: 'e.g. Bengali, English',
+    group: 'about',
+  },
+  {
+    key: 'foodRestrictions',
+    label: 'Food rules you follow',
+    hint: 'e.g. vegetarian, no onion or garlic, halal',
+    group: 'food',
+  },
+  {
+    key: 'allergies',
+    label: 'Allergies and intolerances',
+    hint: 'e.g. peanuts, lactose',
+    group: 'food',
+  },
+  {
+    key: 'cuisines',
+    label: 'Cuisines you enjoy',
+    hint: 'e.g. Bengali, South Indian',
+    group: 'food',
+  },
+  {
+    key: 'foodDislikes',
+    label: 'Foods you dislike',
+    hint: 'e.g. bitter gourd',
+    group: 'food',
+  },
+  {
+    key: 'interests',
+    label: 'Interests',
+    hint: 'e.g. music, heritage walks',
+    group: 'growth',
+  },
+  {
+    key: 'skills',
+    label: 'Skills you have or want',
+    hint: 'e.g. public speaking, Python',
+    group: 'growth',
+  },
 ];
 
 /**
@@ -36,7 +79,20 @@ const LISTS: { key: ListKey; label: string; hint: string; group: 'about' | 'food
  */
 export default function KoshProfileScreen() {
   const { colors, typography, spacing, experience } = useTheme();
-  const { kosh, update, contacts, setContacts, signedIn, heightCm, weightKg, setHeightCm, setWeightKg, diet, routineMinutes, setOnboardingAnswers } = useRootStore(
+  const {
+    kosh,
+    update,
+    contacts,
+    setContacts,
+    signedIn,
+    heightCm,
+    weightKg,
+    setHeightCm,
+    setWeightKg,
+    diet,
+    routineMinutes,
+    setOnboardingAnswers,
+  } = useRootStore(
     useShallow((s) => ({
       kosh: s.koshProfile,
       update: s.updateKoshProfile,
@@ -89,7 +145,15 @@ export default function KoshProfileScreen() {
     const name = cName.trim();
     const phone = cPhone.trim();
     if (!name || !PHONE_RE.test(phone) || contacts.length >= 5) return;
-    setContacts([...contacts, { id: `local_${Date.now()}`, name, phone, relation: cRelation.trim() || null }]);
+    setContacts([
+      ...contacts,
+      {
+        id: `local_${Date.now()}`,
+        name,
+        phone,
+        relation: cRelation.trim() || null,
+      },
+    ]);
     setCName('');
     setCPhone('');
     setCRelation('');
@@ -110,14 +174,27 @@ export default function KoshProfileScreen() {
   const access = (key: keyof KoshProfile['accessibility'], label: string) => (
     <View style={styles.switchRow}>
       <Text style={[typography.subbody, styles.flex, { color: colors.text.primary }]}>{label}</Text>
-      <Switch value={!!kosh.accessibility[key]} onValueChange={(v) => update({ accessibility: { ...kosh.accessibility, [key]: v } })} />
+      <Toggle
+        value={!!kosh.accessibility[key]}
+        onValueChange={(v) => update({ accessibility: { ...kosh.accessibility, [key]: v } })}
+      />
     </View>
   );
 
   return (
-    <ScreenContainer>
-      <AppHeader eyebrow="ANVAY KOSH" title="Your profile" subtitle={`${koshCompleteness(kosh, contacts.length)}% complete · every field optional`} showBack />
-      <ScreenScrollView contentContainerStyle={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xl * 2 }}>
+    <SanctuaryImageBackground source={AssetIllustrations.progressZenBg}>
+      <ScreenContainer
+        style={{ backgroundColor: 'transparent' }}
+        scrollable
+        header={
+          <AppHeader
+            eyebrow="ANVAY KOSH"
+            title="Your profile"
+            subtitle={`${koshCompleteness(kosh, contacts.length)}% complete · every field optional`}
+            showBack
+          />
+        }
+      >
         <BetaHero source={getSanctuaryIllustration('profileKosh', experience)} label="Your profile" />
         <Text style={[typography.caption, { color: colors.text.secondary }]}>
           {signedIn
@@ -125,30 +202,97 @@ export default function KoshProfileScreen() {
             : 'You are using Thrivefold as a guest, so this stays on this phone. Sign in to keep it with your account.'}
         </Text>
 
-        <Card style={styles.card}>
-          <Text style={[typography.subheading, { color: colors.text.primary }]}>About you</Text>
-          <TextField label="What should we call you?" value={text('preferredName', kosh.preferredName ?? '')} onChangeText={(v) => setDraft('preferredName', v)} onBlur={() => commitText('preferredName')} containerStyle={styles.field} />
-          <TextField label="Phone" keyboardType="phone-pad" value={text('phone', kosh.phone ?? '')} onChangeText={(v) => setDraft('phone', v)} onBlur={() => commitText('phone')} containerStyle={styles.field} />
+        <CollapsibleSection
+          title="About you"
+          icon="person-outline"
+          summary={
+            [kosh.preferredName, kosh.phone, kosh.languages.length ? kosh.languages.join(', ') : null]
+              .filter(Boolean)
+              .join(' · ') || 'Name, phone, languages'
+          }
+          done={!!kosh.preferredName}
+          defaultOpen
+        >
+          <TextField
+            label="What should we call you?"
+            value={text('preferredName', kosh.preferredName ?? '')}
+            onChangeText={(v) => setDraft('preferredName', v)}
+            onBlur={() => commitText('preferredName')}
+            containerStyle={styles.field}
+          />
+          <TextField
+            label="Phone"
+            keyboardType="phone-pad"
+            value={text('phone', kosh.phone ?? '')}
+            onChangeText={(v) => setDraft('phone', v)}
+            onBlur={() => commitText('phone')}
+            containerStyle={styles.field}
+          />
           {LISTS.filter((l) => l.group === 'about').map(listField)}
-        </Card>
+        </CollapsibleSection>
 
-        <Card style={styles.card}>
-          <Text style={[typography.subheading, { color: colors.text.primary }]}>Body and routine</Text>
-          <Text style={[typography.caption, { color: colors.text.muted }]}>Used for BMI, calorie estimates and quests that fit your day.</Text>
+        <CollapsibleSection
+          title="Body and routine"
+          icon="body-outline"
+          summary={
+            [
+              heightCm ? `${heightCm} cm` : null,
+              weightKg ? `${weightKg} kg` : null,
+              diet,
+              routineMinutes ? `${routineMinutes} min routine` : null,
+            ]
+              .filter(Boolean)
+              .join(' · ') || 'Height, weight, how you eat, routine, home area'
+          }
+          done={!!heightCm && !!weightKg}
+        >
+          <Text style={[typography.caption, { color: colors.text.muted }]}>
+            Used for BMI, calorie estimates and quests that fit your day.
+          </Text>
           <View style={styles.pair}>
-            <TextField label="Height (cm)" keyboardType="numeric" value={text('height', heightCm ? String(heightCm) : '')} onChangeText={(v) => setDraft('height', v)} onBlur={() => commitNumber('height')} containerStyle={styles.flex} />
-            <TextField label="Weight (kg)" keyboardType="numeric" value={text('weight', weightKg ? String(weightKg) : '')} onChangeText={(v) => setDraft('weight', v)} onBlur={() => commitNumber('weight')} containerStyle={styles.flex} />
+            <TextField
+              label="Height (cm)"
+              keyboardType="numeric"
+              value={text('height', heightCm ? String(heightCm) : '')}
+              onChangeText={(v) => setDraft('height', v)}
+              onBlur={() => commitNumber('height')}
+              containerStyle={styles.flex}
+            />
+            <TextField
+              label="Weight (kg)"
+              keyboardType="numeric"
+              value={text('weight', weightKg ? String(weightKg) : '')}
+              onChangeText={(v) => setDraft('weight', v)}
+              onBlur={() => commitNumber('weight')}
+              containerStyle={styles.flex}
+            />
           </View>
           <Text style={[typography.caption, { color: colors.text.muted, marginTop: 10 }]}>How you eat</Text>
           <View style={styles.chips}>
             {['No preference', 'Vegetarian', 'Vegan', 'Non-Vegetarian', 'Pescatarian', 'Eggetarian'].map((d) => (
-              <Chip key={d} label={d} selected={diet === d} onPress={() => setOnboardingAnswers({ diet: diet === d ? null : d })} />
+              <Chip
+                key={d}
+                label={d}
+                selected={diet === d}
+                onPress={() => setOnboardingAnswers({ diet: diet === d ? null : d })}
+              />
             ))}
           </View>
-          <Text style={[typography.caption, { color: colors.text.muted, marginTop: 10 }]}>Time for a daily routine</Text>
+          <Text style={[typography.caption, { color: colors.text.muted, marginTop: 10 }]}>
+            Time for a daily routine
+          </Text>
           <View style={styles.chips}>
             {([5, 10, 20] as const).map((m) => (
-              <Chip key={m} label={`${m} min`} selected={routineMinutes === m} onPress={() => setOnboardingAnswers({ routineMinutes: routineMinutes === m ? null : m })} />
+              <Chip
+                key={m}
+                label={`${m} min`}
+                selected={routineMinutes === m}
+                onPress={() =>
+                  setOnboardingAnswers({
+                    routineMinutes: routineMinutes === m ? null : m,
+                  })
+                }
+              />
             ))}
           </View>
           <TextField
@@ -159,41 +303,99 @@ export default function KoshProfileScreen() {
             onBlur={() => commitText('homeAddress')}
             containerStyle={styles.field}
           />
-          <Text style={[typography.caption, { color: colors.text.muted, marginTop: 4 }]}>Only used to suggest walks and outings near home.</Text>
-        </Card>
+          <Text style={[typography.caption, { color: colors.text.muted, marginTop: 4 }]}>
+            Only used to suggest walks and outings near home.
+          </Text>
+        </CollapsibleSection>
 
-        <Card style={styles.card}>
-          <Text style={[typography.subheading, { color: colors.text.primary }]}>Food</Text>
-          <Text style={[typography.caption, { color: colors.text.muted }]}>Meal ideas follow these. Allergies are always respected first.</Text>
+        <CollapsibleSection
+          title="Food"
+          icon="restaurant-outline"
+          summary={
+            [
+              kosh.foodRestrictions.length ? `${kosh.foodRestrictions.length} food rules` : null,
+              kosh.allergies.length ? `${kosh.allergies.length} allergies` : null,
+            ]
+              .filter(Boolean)
+              .join(' · ') || 'Food rules, allergies, cuisines'
+          }
+          done={kosh.foodRestrictions.length + kosh.allergies.length + kosh.cuisines.length > 0}
+        >
+          <Text style={[typography.caption, { color: colors.text.muted }]}>
+            Meal ideas follow these. Allergies are always respected first.
+          </Text>
           {LISTS.filter((l) => l.group === 'food').map(listField)}
-        </Card>
+        </CollapsibleSection>
 
-        <Card style={styles.card}>
-          <Text style={[typography.subheading, { color: colors.text.primary }]}>Growth</Text>
+        <CollapsibleSection
+          title="Growth"
+          icon="trending-up-outline"
+          summary={
+            [kosh.interests.length ? `${kosh.interests.length} interests` : null, kosh.careerGoal ? 'goal set' : null]
+              .filter(Boolean)
+              .join(' · ') || 'Interests, skills, a goal'
+          }
+          done={kosh.interests.length > 0 || !!kosh.careerGoal}
+        >
           {LISTS.filter((l) => l.group === 'growth').map(listField)}
-          <TextField label="A goal for your work or studies" value={text('careerGoal', kosh.careerGoal ?? '')} onChangeText={(v) => setDraft('careerGoal', v)} onBlur={() => commitText('careerGoal')} containerStyle={styles.field} multiline />
-        </Card>
+          <TextField
+            label="A goal for your work or studies"
+            value={text('careerGoal', kosh.careerGoal ?? '')}
+            onChangeText={(v) => setDraft('careerGoal', v)}
+            onBlur={() => commitText('careerGoal')}
+            containerStyle={styles.field}
+            multiline
+          />
+        </CollapsibleSection>
 
-        <Card style={styles.card}>
-          <Text style={[typography.subheading, { color: colors.text.primary }]}>Accessibility</Text>
+        <CollapsibleSection
+          title="Accessibility"
+          icon="accessibility-outline"
+          summary={
+            Object.values(kosh.accessibility).some(Boolean)
+              ? 'Preferences set'
+              : 'Screen reader, larger text, spoken results'
+          }
+          done={Object.values(kosh.accessibility).some(Boolean)}
+        >
           {access('screenReader', 'I use a screen reader')}
           {access('largeText', 'I prefer larger text')}
           {access('voiceFirst', 'Speak results and instructions to me')}
-        </Card>
+        </CollapsibleSection>
 
-        <Card style={styles.card}>
-          <Text style={[typography.subheading, { color: colors.text.primary }]}>Emergency contacts</Text>
-          <Text style={[typography.caption, { color: colors.text.muted }]}>Up to five people you can call in one tap. They are not contacted automatically.</Text>
+        <CollapsibleSection
+          title="Emergency contacts"
+          icon="call-outline"
+          summary={
+            contacts.length
+              ? `${contacts.length} contact${contacts.length === 1 ? '' : 's'}`
+              : 'People you can call in one tap'
+          }
+          done={contacts.length > 0}
+        >
+          <Text style={[typography.caption, { color: colors.text.muted }]}>
+            Up to five people you can call in one tap. They are not contacted automatically.
+          </Text>
           {contacts.map((c) => (
             <View key={c.id} style={[styles.contact, { borderTopColor: colors.surface1 }]}>
               <View style={styles.flex}>
                 <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{c.name}</Text>
-                <Text style={[typography.caption, { color: colors.text.secondary }]}>{[c.relation, c.phone].filter(Boolean).join(' · ')}</Text>
+                <Text style={[typography.caption, { color: colors.text.secondary }]}>
+                  {[c.relation, c.phone].filter(Boolean).join(' · ')}
+                </Text>
               </View>
-              <PressableScale onPress={() => void Linking.openURL(`tel:${c.phone.replace(/[^0-9+]/g, '')}`)} accessibilityLabel={`Call ${c.name}`} style={styles.iconBtn}>
+              <PressableScale
+                onPress={() => void Linking.openURL(`tel:${c.phone.replace(/[^0-9+]/g, '')}`)}
+                accessibilityLabel={`Call ${c.name}`}
+                style={styles.iconBtn}
+              >
                 <Ionicons name="call-outline" size={20} color={colors.primary} />
               </PressableScale>
-              <PressableScale onPress={() => setContacts(contacts.filter((x) => x.id !== c.id))} accessibilityLabel={`Remove ${c.name}`} style={styles.iconBtn}>
+              <PressableScale
+                onPress={() => setContacts(contacts.filter((x) => x.id !== c.id))}
+                accessibilityLabel={`Remove ${c.name}`}
+                style={styles.iconBtn}
+              >
                 <Ionicons name="trash-outline" size={18} color={colors.text.muted} />
               </PressableScale>
             </View>
@@ -201,12 +403,29 @@ export default function KoshProfileScreen() {
           {contacts.length < 5 ? (
             <>
               <TextField label="Name" value={cName} onChangeText={setCName} containerStyle={styles.field} />
-              <TextField label="Phone" keyboardType="phone-pad" value={cPhone} onChangeText={setCPhone} containerStyle={styles.field} />
-              <TextField label="Relation (optional)" value={cRelation} onChangeText={setCRelation} containerStyle={styles.field} />
-              <Button label="Add contact" size="sm" variant="outline" onPress={addContact} style={{ marginTop: 8, alignSelf: 'flex-start' }} />
+              <TextField
+                label="Phone"
+                keyboardType="phone-pad"
+                value={cPhone}
+                onChangeText={setCPhone}
+                containerStyle={styles.field}
+              />
+              <TextField
+                label="Relation (optional)"
+                value={cRelation}
+                onChangeText={setCRelation}
+                containerStyle={styles.field}
+              />
+              <Button
+                label="Add contact"
+                size="sm"
+                variant="outline"
+                onPress={addContact}
+                style={{ marginTop: 8, alignSelf: 'flex-start' }}
+              />
             </>
           ) : null}
-        </Card>
+        </CollapsibleSection>
 
         <Button
           label={saved === 'saving' ? 'Saving…' : 'Save to my account'}
@@ -214,12 +433,16 @@ export default function KoshProfileScreen() {
           disabled={!signedIn || saved === 'saving'}
           style={{ marginTop: spacing.md }}
         />
-        {saved === 'saved' ? <Text style={[typography.caption, { color: colors.success, marginTop: 6 }]}>Saved to your account.</Text> : null}
-        {saved === 'local' ? (
-          <Text style={[typography.caption, { color: colors.warning, marginTop: 6 }]}>Saved on this phone; it will sync when you are online.</Text>
+        {saved === 'saved' ? (
+          <Text style={[typography.caption, { color: colors.success, marginTop: 6 }]}>Saved to your account.</Text>
         ) : null}
-      </ScreenScrollView>
-    </ScreenContainer>
+        {saved === 'local' ? (
+          <Text style={[typography.caption, { color: colors.warning, marginTop: 6 }]}>
+            Saved on this phone; it will sync when you are online.
+          </Text>
+        ) : null}
+      </ScreenContainer>
+    </SanctuaryImageBackground>
   );
 }
 
@@ -230,6 +453,17 @@ const styles = StyleSheet.create({
   pair: { flexDirection: 'row', gap: 10, marginTop: 10 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 },
   switchRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
-  contact: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderTopWidth: StyleSheet.hairlineWidth, marginTop: 6 },
-  iconBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  contact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    marginTop: 6,
+  },
+  iconBtn: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

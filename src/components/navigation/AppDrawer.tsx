@@ -416,7 +416,12 @@ export function AppDrawer({ blurTarget: _blurTarget }: { blurTarget?: RefObject<
                 accessibilityRole="button"
                 accessibilityLabel="Beta features"
               >
-                <Text style={[typography.bodyBold, { color: palette.ink }]}>Beta features</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={[typography.bodyBold, { color: palette.ink }]}>Beta features</Text>
+                  <View style={{ paddingHorizontal: 6, paddingVertical: 1, borderRadius: 8, backgroundColor: '#C9A46A' }}>
+                    <Text style={{ color: '#2A1E0E', fontSize: 10, fontWeight: '800', letterSpacing: 0.6 }}>BETA</Text>
+                  </View>
+                </View>
                 <Text style={[typography.caption, { color: palette.inkMuted }]}>{betaMode ? 'On · open Beta Lab' : 'Eye, voice, camera and AI extras'}</Text>
               </PressableScale>
               <Switch
@@ -425,7 +430,9 @@ export function AppDrawer({ blurTarget: _blurTarget }: { blurTarget?: RefObject<
                   tick();
                   setBetaMode(v);
                 }}
-                trackColor={{ true: '#C9A46A', false: undefined }}
+                trackColor={{ true: '#C9A46A', false: withAlpha(palette.inkMuted, 0.35) }}
+                thumbColor={betaMode ? '#FFF4DE' : palette.inkMuted}
+                ios_backgroundColor={withAlpha(palette.inkMuted, 0.35)}
                 accessibilityLabel="Beta features"
               />
             </SquircleSurface>

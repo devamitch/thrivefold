@@ -8,7 +8,6 @@ import { CameraCapture } from '../../../components/camera/CameraCapture';
 import { AppHeader } from '../../../components/ui/AppHeader';
 import { Button } from '../../../components/ui/Button';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
-import { ScreenScrollView } from '../../../components/ui/ScreenScrollView';
 import { coachVoice } from '../../../services/ai/coachVoice';
 import { describeObjects } from '../../../domain/assist/objects';
 import { useTheme } from '../../../theme/useTheme';
@@ -50,40 +49,62 @@ export default function LookAroundScreen() {
 
   const w = width - 32;
   return (
-    <ScreenContainer>
-      <AppHeader eyebrow="ASSIST" title="What's around me" subtitle="Photo → spoken list of objects, on this phone" showBack />
-      <ScreenScrollView contentContainerStyle={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xl * 2 }}>
-        <Button label="Take a photo and tell me" size="lg" onPress={() => setCam(true)} accessibilityHint="Opens the camera, then reads out what it sees" />
-        {busy ? <ActivityIndicator color={colors.primary} style={{ marginTop: 16 }} /> : null}
-        {error ? <Text style={[typography.body, { color: colors.error, marginTop: 12 }]}>{error}</Text> : null}
-        {said ? (
-          <Text accessibilityLiveRegion="polite" style={[typography.subheading, { color: colors.text.primary, marginTop: 16 }]}>
-            {said}
-          </Text>
-        ) : null}
-        {uri ? (
-          <View style={[styles.photo, { width: w, height: w * 1.33 }]}>
-            <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="contain" />
-            {objects.map((o, i) => (
-              <View
-                key={i}
-                style={[
-                  styles.box,
-                  { borderColor: colors.primary, left: `${o.box[0] * 100}%`, top: `${o.box[1] * 100}%`, width: `${(o.box[2] - o.box[0]) * 100}%`, height: `${(o.box[3] - o.box[1]) * 100}%` },
-                ]}
-              >
-                <Text style={[styles.tag, { backgroundColor: colors.primary }]}>{o.label}</Text>
-              </View>
-            ))}
-          </View>
-        ) : null}
-        <View style={styles.note}>
-          <Ionicons name="information-circle-outline" size={16} color={colors.text.muted} />
-          <Text style={[typography.caption, { color: colors.text.muted, flex: 1 }]}>
-            Recognises about 80 everyday objects (people, cups, chairs, phones, vehicles…). It can be wrong; do not rely on it for safety.
-          </Text>
+    <ScreenContainer
+      scrollable
+      header={
+        <AppHeader
+          eyebrow="ASSIST"
+          title="What's around me"
+          subtitle="Photo → spoken list of objects, on this phone"
+          showBack
+        />
+      }
+    >
+      <Button
+        label="Take a photo and tell me"
+        size="lg"
+        onPress={() => setCam(true)}
+        accessibilityHint="Opens the camera, then reads out what it sees"
+      />
+      {busy ? <ActivityIndicator color={colors.primary} style={{ marginTop: 16 }} /> : null}
+      {error ? <Text style={[typography.body, { color: colors.error, marginTop: 12 }]}>{error}</Text> : null}
+      {said ? (
+        <Text
+          accessibilityLiveRegion="polite"
+          style={[typography.subheading, { color: colors.text.primary, marginTop: 16 }]}
+        >
+          {said}
+        </Text>
+      ) : null}
+      {uri ? (
+        <View style={[styles.photo, { width: w, height: w * 1.33 }]}>
+          <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="contain" />
+          {objects.map((o, i) => (
+            <View
+              key={i}
+              style={[
+                styles.box,
+                {
+                  borderColor: colors.primary,
+                  left: `${o.box[0] * 100}%`,
+                  top: `${o.box[1] * 100}%`,
+                  width: `${(o.box[2] - o.box[0]) * 100}%`,
+                  height: `${(o.box[3] - o.box[1]) * 100}%`,
+                },
+              ]}
+            >
+              <Text style={[styles.tag, { backgroundColor: colors.primary }]}>{o.label}</Text>
+            </View>
+          ))}
         </View>
-      </ScreenScrollView>
+      ) : null}
+      <View style={styles.note}>
+        <Ionicons name="information-circle-outline" size={16} color={colors.text.muted} />
+        <Text style={[typography.caption, { color: colors.text.muted, flex: 1 }]}>
+          Recognises about 80 everyday objects (people, cups, chairs, phones, vehicles…). It can be wrong; do not rely
+          on it for safety.
+        </Text>
+      </View>
       <CameraCapture
         visible={cam}
         onClose={() => setCam(false)}
@@ -99,8 +120,22 @@ export default function LookAroundScreen() {
 }
 
 const styles = StyleSheet.create({
-  photo: { marginTop: 16, borderRadius: 16, overflow: 'hidden', backgroundColor: '#000' },
+  photo: {
+    marginTop: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: '#000',
+  },
   box: { position: 'absolute', borderWidth: 2, borderRadius: 6 },
-  tag: { position: 'absolute', top: -2, left: -2, color: '#FFF', fontSize: 11, paddingHorizontal: 4, borderRadius: 4, overflow: 'hidden' },
+  tag: {
+    position: 'absolute',
+    top: -2,
+    left: -2,
+    color: '#FFF',
+    fontSize: 11,
+    paddingHorizontal: 4,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
   note: { flexDirection: 'row', gap: 6, marginTop: 16 },
 });

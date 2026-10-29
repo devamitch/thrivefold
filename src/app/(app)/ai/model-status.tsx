@@ -17,7 +17,6 @@ import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
-import { ScreenScrollView } from '../../../components/ui/ScreenScrollView';
 import { askLocal, ensureLocalModel } from '../../../services/ai/localModel';
 import { useRootStore } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
@@ -67,11 +66,13 @@ export default function ModelStatusScreen() {
         await load();
       })
       .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Download failed'))
-      .finally(() => setProgress((p) => {
-        const n = { ...p };
-        delete n[m.id];
-        return n;
-      }));
+      .finally(() =>
+        setProgress((p) => {
+          const n = { ...p };
+          delete n[m.id];
+          return n;
+        }),
+      );
   };
 
   const load = async () => {
@@ -84,98 +85,137 @@ export default function ModelStatusScreen() {
 
   const test = async () => {
     setState('testing');
-    const out = await askLocal('Say hello in one short, friendly sentence and suggest one healthy habit for today.', 'You are Thrive, a brief, warm wellbeing coach.');
+    const out = await askLocal(
+      'Say hello in one short, friendly sentence and suggest one healthy habit for today.',
+      'You are Thrive, a brief, warm wellbeing coach.',
+    );
     setReply(out ?? 'No answer.');
     setState('ready');
   };
 
   return (
-    <ScreenContainer>
-      <AppHeader eyebrow="AI" title="On-device AI" subtitle="A language model that runs on this phone" showBack />
-      <ScreenScrollView contentContainerStyle={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xl * 2 }}>
-        <Card style={styles.card}>
-          <View style={styles.row}>
-            <Ionicons name="hardware-chip-outline" size={22} color={colors.primary} />
-            <View style={styles.flex}>
-              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{supported ? 'llama.cpp engine ready' : 'Not available on this device'}</Text>
-              <Text style={[typography.caption, { color: colors.text.secondary }]}>
-                {caps ? `${Math.round(caps.totalRamMb / 1024)} GB RAM · ${Math.round(caps.availableStorageMb / 1024)} GB free storage` : ''}
-              </Text>
-            </View>
-            <Badge label={state === 'ready' ? 'Loaded' : state === 'loading' ? 'Loading' : 'Not loaded'} variant={state === 'ready' ? 'success' : 'neutral'} />
+    <ScreenContainer
+      scrollable
+      header={
+        <AppHeader eyebrow="AI" title="On-device AI" subtitle="A language model that runs on this phone" showBack />
+      }
+    >
+      <Card style={styles.card}>
+        <View style={styles.row}>
+          <Ionicons name="hardware-chip-outline" size={22} color={colors.primary} />
+          <View style={styles.flex}>
+            <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+              {supported ? 'llama.cpp engine ready' : 'Not available on this device'}
+            </Text>
+            <Text style={[typography.caption, { color: colors.text.secondary }]}>
+              {caps
+                ? `${Math.round(caps.totalRamMb / 1024)} GB RAM · ${Math.round(caps.availableStorageMb / 1024)} GB free storage`
+                : ''}
+            </Text>
           </View>
-          <Text style={[typography.caption, { color: colors.text.muted, marginTop: 8 }]}>
-            Thrive Coach, global search and meal plans use it. Without a model, commands and today&apos;s numbers still work.
-          </Text>
-        </Card>
+          <Badge
+            label={state === 'ready' ? 'Loaded' : state === 'loading' ? 'Loading' : 'Not loaded'}
+            variant={state === 'ready' ? 'success' : 'neutral'}
+          />
+        </View>
+        <Text style={[typography.caption, { color: colors.text.muted, marginTop: 8 }]}>
+          Thrive Coach, global search and meal plans use it. Without a model, commands and today&apos;s numbers still
+          work.
+        </Text>
+      </Card>
 
-        {MODEL_PRESETS.map((m) => {
-          const pct = progress[m.id];
-          const downloaded = have[m.id];
-          return (
-            <Card key={m.id} style={styles.card}>
-              <View style={styles.row}>
-                <View style={styles.flex}>
-                  <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{m.name}</Text>
-                  <Text style={[typography.caption, { color: colors.text.secondary }]}>{m.description}</Text>
-                  <Text style={[typography.caption, { color: colors.text.muted, marginTop: 2 }]}>
-                    {m.sizeMb} MB · needs about {Math.round(m.minRamMb / 1024)} GB RAM · {m.license}
-                  </Text>
-                </View>
-                {m.id === recommended.id ? <Badge label="Best for this phone" variant="gold" /> : null}
+      {MODEL_PRESETS.map((m) => {
+        const pct = progress[m.id];
+        const downloaded = have[m.id];
+        return (
+          <Card key={m.id} style={styles.card}>
+            <View style={styles.row}>
+              <View style={styles.flex}>
+                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{m.name}</Text>
+                <Text style={[typography.caption, { color: colors.text.secondary }]}>{m.description}</Text>
+                <Text style={[typography.caption, { color: colors.text.muted, marginTop: 2 }]}>
+                  {m.sizeMb} MB · needs about {Math.round(m.minRamMb / 1024)} GB RAM · {m.license}
+                </Text>
               </View>
-              {pct !== undefined ? (
-                <View style={{ marginTop: 10 }}>
-                  <View style={[styles.track, { backgroundColor: colors.surface1 }]}>
-                    <View style={[styles.fill, { width: `${Math.round(pct * 100)}%`, backgroundColor: colors.primary }]} />
-                  </View>
-                  <View style={[styles.row, { marginTop: 6 }]}>
-                    <Text style={[typography.caption, styles.flex, { color: colors.text.secondary }]}>Downloading {Math.round(pct * 100)}%</Text>
-                    <Button label="Cancel" size="sm" variant="ghost" onPress={() => void handles.current[m.id]?.cancel()} />
-                  </View>
-                </View>
-              ) : downloaded ? (
-                <View style={[styles.row, { marginTop: 10 }]}>
-                  <Button
-                    label={chosen === m.id && state === 'ready' ? 'In use' : 'Use this model'}
-                    size="sm"
-                    disabled={chosen === m.id && state === 'ready'}
-                    onPress={() => {
-                      setChosen(m.id);
-                      void load();
-                    }}
+              {m.id === recommended.id ? <Badge label="Best for this phone" variant="gold" /> : null}
+            </View>
+            {pct !== undefined ? (
+              <View style={{ marginTop: 10 }}>
+                <View style={[styles.track, { backgroundColor: colors.surface1 }]}>
+                  <View
+                    style={[
+                      styles.fill,
+                      {
+                        width: `${Math.round(pct * 100)}%`,
+                        backgroundColor: colors.primary,
+                      },
+                    ]}
                   />
+                </View>
+                <View style={[styles.row, { marginTop: 6 }]}>
+                  <Text style={[typography.caption, styles.flex, { color: colors.text.secondary }]}>
+                    Downloading {Math.round(pct * 100)}%
+                  </Text>
                   <Button
-                    label="Delete"
+                    label="Cancel"
                     size="sm"
                     variant="ghost"
-                    onPress={async () => {
-                      if (chosen === m.id) {
-                        await LocalAI.unloadModel();
-                        setChosen(null);
-                        setState('idle');
-                      }
-                      await deleteLocalModel(m.id);
-                      void refresh();
-                    }}
+                    onPress={() => void handles.current[m.id]?.cancel()}
                   />
                 </View>
-              ) : (
-                <Button label={`Download ${m.sizeMb} MB`} size="sm" variant="outline" disabled={!supported} onPress={() => download(m)} style={{ marginTop: 10, alignSelf: 'flex-start' }} />
-              )}
-            </Card>
-          );
-        })}
+              </View>
+            ) : downloaded ? (
+              <View style={[styles.row, { marginTop: 10 }]}>
+                <Button
+                  label={chosen === m.id && state === 'ready' ? 'In use' : 'Use this model'}
+                  size="sm"
+                  disabled={chosen === m.id && state === 'ready'}
+                  onPress={() => {
+                    setChosen(m.id);
+                    void load();
+                  }}
+                />
+                <Button
+                  label="Delete"
+                  size="sm"
+                  variant="ghost"
+                  onPress={async () => {
+                    if (chosen === m.id) {
+                      await LocalAI.unloadModel();
+                      setChosen(null);
+                      setState('idle');
+                    }
+                    await deleteLocalModel(m.id);
+                    void refresh();
+                  }}
+                />
+              </View>
+            ) : (
+              <Button
+                label={`Download ${m.sizeMb} MB`}
+                size="sm"
+                variant="outline"
+                disabled={!supported}
+                onPress={() => download(m)}
+                style={{ marginTop: 10, alignSelf: 'flex-start' }}
+              />
+            )}
+          </Card>
+        );
+      })}
 
-        {error ? <Text style={[typography.caption, { color: colors.error, marginTop: 10 }]}>{error}</Text> : null}
-        {state === 'loading' || state === 'testing' ? <ActivityIndicator color={colors.primary} style={{ marginTop: 12 }} /> : null}
-        {state === 'ready' ? <Button label="Try it" variant="outline" onPress={() => void test()} style={{ marginTop: 12 }} /> : null}
-        {reply ? <Text style={[typography.body, { color: colors.text.primary, marginTop: 10 }]}>{reply}</Text> : null}
-        <Text style={[typography.caption, { color: colors.text.muted, marginTop: 12 }]}>
-          Models come from Qwen (Apache-2.0) on Hugging Face and are checked against their published SHA-256. Answers are general guidance,
-          not medical advice.
-        </Text>
-      </ScreenScrollView>
+      {error ? <Text style={[typography.caption, { color: colors.error, marginTop: 10 }]}>{error}</Text> : null}
+      {state === 'loading' || state === 'testing' ? (
+        <ActivityIndicator color={colors.primary} style={{ marginTop: 12 }} />
+      ) : null}
+      {state === 'ready' ? (
+        <Button label="Try it" variant="outline" onPress={() => void test()} style={{ marginTop: 12 }} />
+      ) : null}
+      {reply ? <Text style={[typography.body, { color: colors.text.primary, marginTop: 10 }]}>{reply}</Text> : null}
+      <Text style={[typography.caption, { color: colors.text.muted, marginTop: 12 }]}>
+        Models come from Qwen (Apache-2.0) on Hugging Face and are checked against their published SHA-256. Answers are
+        general guidance, not medical advice.
+      </Text>
     </ScreenContainer>
   );
 }

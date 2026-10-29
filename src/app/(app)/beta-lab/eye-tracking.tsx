@@ -4,7 +4,6 @@ import { useRouter } from 'expo-router';
 
 import { AppHeader } from '../../../components/ui/AppHeader';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
-import { ScreenScrollView } from '../../../components/ui/ScreenScrollView';
 import { BetaBadge } from '../../../components/ui/Badge';
 import { EyeTrackingStudio } from '../../../features/beta-lab/components/EyeTrackingStudio';
 import { BetaSessionHistory } from '../../../components/beta/BetaSessionHistory';
@@ -18,31 +17,33 @@ export default function EyeTrackingBetaScreen() {
   const { colors, typography, spacing } = useTheme();
 
   return (
-    <ScreenContainer>
-      <AppHeader
-        eyebrow="BETA LAB · ON-DEVICE VISION"
-        title="Eye Tracking Studio"
-        subtitle="Iris metrics, Harmon distance & BlinkQuest Eye Battery"
-        showBack
-        onBack={() => router.back()}
-        rightAction={<BetaBadge />}
-      />
-      <ScreenScrollView contentContainerStyle={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xl * 2 }}>
-        <View style={styles.content}>
-          <EyeTrackingStudio />
-          <BetaSessionHistory
-            kinds={EYE_KINDS}
-            metric="blinksPerMin"
-            unit="blinks/min"
-            title="Eye sessions"
-            describe={(s) => `${s.metrics.blinksPerMin ?? 0}/min · ~${s.metrics.distanceCm ?? 0} cm`}
-          />
-          <Text style={[typography.caption, { color: colors.text.muted, marginTop: 10 }]}>
-            Blink rate and distance are estimated from the front camera for comfort habits. This is not an
-            eye examination and cannot detect eye disease or measure a prescription.
-          </Text>
-        </View>
-      </ScreenScrollView>
+    <ScreenContainer
+      scrollable
+      header={
+        <AppHeader
+          eyebrow="BETA LAB · ON-DEVICE VISION"
+          title="Eye Tracking Studio"
+          subtitle="Iris metrics, Harmon distance & BlinkQuest Eye Battery"
+          showBack
+          onBack={() => router.back()}
+          rightAction={<BetaBadge />}
+        />
+      }
+    >
+      <View style={styles.content}>
+        <EyeTrackingStudio />
+        <BetaSessionHistory
+          kinds={EYE_KINDS}
+          metric="blinksPerMin"
+          unit="blinks/min"
+          title="Eye sessions"
+          describe={(s) => `${s.metrics.blinksPerMin ?? 0}/min · ~${s.metrics.distanceCm ?? 0} cm`}
+        />
+        <Text style={[typography.caption, { color: colors.text.muted, marginTop: 10 }]}>
+          Blink rate and distance are estimated from the front camera for comfort habits. This is not an eye examination
+          and cannot detect eye disease or measure a prescription.
+        </Text>
+      </View>
     </ScreenContainer>
   );
 }

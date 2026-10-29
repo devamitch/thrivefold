@@ -48,7 +48,10 @@ const KINDS: BetaSessionKind[] = ['eye_game'];
 const DURATION_SEC = 30;
 const DWELL_MS = 250;
 const PROMPT_TIMEOUT_MS = 3500;
-const CAL_STEPS: { key: 'center' | 'left' | 'right' | 'up' | 'down'; label: string }[] = [
+const CAL_STEPS: {
+  key: 'center' | 'left' | 'right' | 'up' | 'down';
+  label: string;
+}[] = [
   { key: 'center', label: 'Look at the centre dot' },
   { key: 'left', label: 'Now look left, eyes only' },
   { key: 'right', label: 'Now look right' },
@@ -58,12 +61,33 @@ const CAL_STEPS: { key: 'center' | 'left' | 'right' | 'up' | 'down'; label: stri
 const CAL_SETTLE_MS = 700;
 const CAL_SAMPLE_MS = 900;
 const DIRS: Dir[] = ['left', 'right', 'up', 'down'];
-const ARROW: Record<Dir, keyof typeof Ionicons.glyphMap> = { left: 'arrow-back', right: 'arrow-forward', up: 'arrow-up', down: 'arrow-down' };
+const ARROW: Record<Dir, keyof typeof Ionicons.glyphMap> = {
+  left: 'arrow-back',
+  right: 'arrow-forward',
+  up: 'arrow-up',
+  down: 'arrow-down',
+};
 const MODES: { id: Mode; title: string; how: string }[] = [
-  { id: 'pop', title: 'Gaze Pop', how: 'Look at the orb, then back to the centre. Quick eye jumps.' },
-  { id: 'direction', title: 'Direction Trail', how: 'Look where the arrow points, eyes only.' },
-  { id: 'pursuitH', title: 'Slider Chase', how: 'Follow the orb as it glides left and right.' },
-  { id: 'pursuitO', title: 'Orbit Follow', how: 'Follow the orb around a circle.' },
+  {
+    id: 'pop',
+    title: 'Gaze Pop',
+    how: 'Look at the orb, then back to the centre. Quick eye jumps.',
+  },
+  {
+    id: 'direction',
+    title: 'Direction Trail',
+    how: 'Look where the arrow points, eyes only.',
+  },
+  {
+    id: 'pursuitH',
+    title: 'Slider Chase',
+    how: 'Follow the orb as it glides left and right.',
+  },
+  {
+    id: 'pursuitO',
+    title: 'Orbit Follow',
+    how: 'Follow the orb around a circle.',
+  },
 ];
 
 interface Stats {
@@ -74,7 +98,14 @@ interface Stats {
   trackedMs: number;
   headTurns: number;
 }
-const emptyStats = (): Stats => ({ hits: 0, misses: 0, responses: [], onTargetMs: 0, trackedMs: 0, headTurns: 0 });
+const emptyStats = (): Stats => ({
+  hits: 0,
+  misses: 0,
+  responses: [],
+  onTargetMs: 0,
+  trackedMs: 0,
+  headTurns: 0,
+});
 
 export default function EyeGamesScreen() {
   const router = useRouter();
@@ -99,7 +130,10 @@ export default function EyeGamesScreen() {
   const calibration = useRef<GazeCalibration | null>(null);
   const calSamples = useRef<GazeSample[]>([]);
   const calResult = useRef<Record<string, { x: number; y: number }>>({});
-  const calHead = useRef<{ yaw: number | null; pitch: number | null }>({ yaw: null, pitch: null });
+  const calHead = useRef<{ yaw: number | null; pitch: number | null }>({
+    yaw: null,
+    pitch: null,
+  });
   const gaze = useRef<GazeSample | null>(null);
   const source = useRef<GazeSample['source']>('blendshapes');
   const stats = useRef<Stats>(emptyStats());
@@ -114,7 +148,11 @@ export default function EyeGamesScreen() {
   const needCenterRef = useRef(false);
   const saidZone = useRef<string | null>(null);
 
-  const marker = { x: useSharedValue(0), y: useSharedValue(0), on: useSharedValue(0) };
+  const marker = {
+    x: useSharedValue(0),
+    y: useSharedValue(0),
+    on: useSharedValue(0),
+  };
   const pursuit = { x: useSharedValue(0), y: useSharedValue(0) };
 
   /* Gaze stream from the camera module. */
@@ -136,7 +174,18 @@ export default function EyeGamesScreen() {
       const centre = calResult.current.center;
       const c =
         calibration.current ??
-        (centre ? { cx: centre.x, cy: centre.y, left: 0.2, right: 0.2, up: 0.15, down: 0.15, yaw0: null, pitch0: null } : null);
+        (centre
+          ? {
+              cx: centre.x,
+              cy: centre.y,
+              left: 0.2,
+              right: 0.2,
+              up: 0.15,
+              down: 0.15,
+              yaw0: null,
+              pitch0: null,
+            }
+          : null);
       if (c) {
         const { nx, ny } = normalize(g, c);
         marker.x.value = Math.max(-1.2, Math.min(1.2, nx));
@@ -152,7 +201,11 @@ export default function EyeGamesScreen() {
       // Target choice only (not a measurement), so plain randomness is fine.
       const options = DIRS.filter((d) => d !== prev);
       const t = options[Math.floor(Math.random() * options.length)];
-      void coachVoice.speak(`Look ${t}`, { priority: 2, minGapMs: 0, maxMs: 1200 });
+      void coachVoice.speak(`Look ${t}`, {
+        priority: 2,
+        minGapMs: 0,
+        maxMs: 1200,
+      });
       return t;
     });
     promptAt.current = Date.now();
@@ -166,7 +219,10 @@ export default function EyeGamesScreen() {
     needCenterRef.current = false;
     playStart.current = Date.now();
     setPhase('playing');
-    void coachVoice.speak(mode === 'pop' ? 'Look at the orb' : mode === 'direction' ? 'Follow the arrows' : 'Follow the orb with your eyes', { priority: 3 });
+    void coachVoice.speak(
+      mode === 'pop' ? 'Look at the orb' : mode === 'direction' ? 'Follow the arrows' : 'Follow the orb with your eyes',
+      { priority: 3 },
+    );
     if (mode === 'pop' || mode === 'direction') nextTarget();
   }, [mode, nextTarget]);
 
@@ -182,7 +238,9 @@ export default function EyeGamesScreen() {
     startedAt.current = Date.now();
     setCalStep(0);
     setPhase('calibrating');
-    void coachVoice.speak('A five second eye check. Keep your head still and follow the dot with your eyes.', { priority: 3 });
+    void coachVoice.speak('A five second eye check. Keep your head still and follow the dot with your eyes.', {
+      priority: 3,
+    });
   };
 
   /* Calibration: each step waits for a tracked face, settles, then samples. */
@@ -198,7 +256,10 @@ export default function EyeGamesScreen() {
         setPhase('calibration_failed');
         return;
       }
-      calResult.current[step.key] = { x: median(s.map((g) => g.x)), y: median(s.map((g) => g.y)) };
+      calResult.current[step.key] = {
+        x: median(s.map((g) => g.x)),
+        y: median(s.map((g) => g.y)),
+      };
       if (step.key === 'center') {
         const last = s[s.length - 1];
         calHead.current = { yaw: last.headYawDeg, pitch: last.headPitchDeg };
@@ -208,7 +269,11 @@ export default function EyeGamesScreen() {
         hapticLight();
         return;
       }
-      const res = buildCalibration(calResult.current as Parameters<typeof buildCalibration>[0], source.current, calHead.current);
+      const res = buildCalibration(
+        calResult.current as Parameters<typeof buildCalibration>[0],
+        source.current,
+        calHead.current,
+      );
       if (!res.ok) {
         setCalError(
           `We couldn't see your eyes move ${res.weak.join(' and ')}. Keep your head still and move only your eyes, a bit further. With glasses, tilting the phone slightly helps avoid glare.`,
@@ -260,10 +325,15 @@ export default function EyeGamesScreen() {
         pursuit.x.value = tx;
         pursuit.y.value = ty;
         // Say where the orb is heading as it reaches each side.
-        const zone = Math.abs(tx) > 0.75 ? (tx > 0 ? 'right' : 'left') : Math.abs(ty) > 0.75 ? (ty > 0 ? 'down' : 'up') : null;
+        const zone =
+          Math.abs(tx) > 0.75 ? (tx > 0 ? 'right' : 'left') : Math.abs(ty) > 0.75 ? (ty > 0 ? 'down' : 'up') : null;
         if (zone && zone !== saidZone.current) {
           saidZone.current = zone;
-          void coachVoice.speak(`Look ${zone}`, { priority: 2, minGapMs: 0, maxMs: 1100 });
+          void coachVoice.speak(`Look ${zone}`, {
+            priority: 2,
+            minGapMs: 0,
+            maxMs: 1100,
+          });
         }
         const { nx, ny } = normalize(g, c);
         const err = mode === 'pursuitH' ? Math.abs(nx - tx) : Math.hypot(nx - tx, ny - ty);
@@ -324,7 +394,10 @@ export default function EyeGamesScreen() {
     const s = stats.current;
     const pct = s.trackedMs > 0 ? Math.round((s.onTargetMs / s.trackedMs) * 100) : 0;
     const score = pursuitMode ? pct : Math.min(100, s.hits * 10);
-    void coachVoice.speak(pursuitMode ? `Done. On target ${pct} percent of the time.` : `Done. ${s.hits} targets reached.`, { priority: 3 });
+    void coachVoice.speak(
+      pursuitMode ? `Done. On target ${pct} percent of the time.` : `Done. ${s.hits} targets reached.`,
+      { priority: 3 },
+    );
     recordBetaSession({
       kind: 'eye_game',
       startedAt: startedAt.current,
@@ -345,8 +418,18 @@ export default function EyeGamesScreen() {
   const markerStyle = useAnimatedStyle(() => ({
     opacity: withTiming(marker.on.value ? 1 : 0, { duration: 150 }),
     transform: [
-      { translateX: withTiming(marker.x.value * (half - 30), { duration: 60, easing: Easing.linear }) },
-      { translateY: withTiming(marker.y.value * (half - 30), { duration: 60, easing: Easing.linear }) },
+      {
+        translateX: withTiming(marker.x.value * (half - 30), {
+          duration: 60,
+          easing: Easing.linear,
+        }),
+      },
+      {
+        translateY: withTiming(marker.y.value * (half - 30), {
+          duration: 60,
+          easing: Easing.linear,
+        }),
+      },
     ],
   }));
   const pursuitStyle = useAnimatedStyle(() => ({
@@ -355,7 +438,13 @@ export default function EyeGamesScreen() {
   const k = half - 34;
   const offset = (d: Dir) => ({ left: [-k, 0], right: [k, 0], up: [0, -k], down: [0, k] })[d];
   const calKey = CAL_STEPS[calStep]?.key ?? 'center';
-  const calPos = { center: [0, 0], left: [-(half - 26), 0], right: [half - 26, 0], up: [0, -(half - 26)], down: [0, half - 26] }[calKey];
+  const calPos = {
+    center: [0, 0],
+    left: [-(half - 26), 0],
+    right: [half - 26, 0],
+    up: [0, -(half - 26)],
+    down: [0, half - 26],
+  }[calKey];
 
   if (phase === 'intro' || phase === 'calibration_failed' || phase === 'complete') {
     return (
@@ -397,14 +486,30 @@ export default function EyeGamesScreen() {
             ]}
             tip="Good, even light on your face helps. With glasses, tilt the phone slightly to avoid glare."
           />
-          {calError ? <Text style={[typography.caption, { color: colors.error, marginTop: 8 }]}>{calError}</Text> : null}
-          <PressableScale onPress={() => void begin()} style={[styles.cta, { backgroundColor: colors.primary }]} accessibilityLabel="Start eye game">
+          {calError ? (
+            <Text style={[typography.caption, { color: colors.error, marginTop: 8 }]}>{calError}</Text>
+          ) : null}
+          <PressableScale
+            onPress={() => void begin()}
+            style={[styles.cta, { backgroundColor: colors.primary }]}
+            accessibilityLabel="Start eye game"
+          >
             <Ionicons name="play" size={18} color={colors.text.inverse} />
             <Text style={[typography.bodyBold, { color: colors.text.inverse, marginLeft: 8 }]}>
-              {phase === 'calibration_failed' ? 'Try the eye check again' : phase === 'complete' ? 'Play again' : 'Start with the camera'}
+              {phase === 'calibration_failed'
+                ? 'Try the eye check again'
+                : phase === 'complete'
+                  ? 'Play again'
+                  : 'Start with the camera'}
             </Text>
           </PressableScale>
-          <BetaSessionHistory kinds={KINDS} metric="score" unit="score" title="Your games" describe={(s) => `${MODES[s.metrics.mode]?.title ?? 'Game'} · ${s.metrics.score}`} />
+          <BetaSessionHistory
+            kinds={KINDS}
+            metric="score"
+            unit="score"
+            title="Your games"
+            describe={(s) => `${MODES[s.metrics.mode]?.title ?? 'Game'} · ${s.metrics.score}`}
+          />
         </View>
       </View>
     );
@@ -412,18 +517,46 @@ export default function EyeGamesScreen() {
 
   return (
     <View style={[styles.fill, { backgroundColor: colors.background }]}>
-      <View style={[styles.mirror, { top: insets.top + 10, borderColor: tracking ? colors.success : colors.surface2 }]}>
-        <PoseDetectionAdapter engine="default" active facing="front" face hands={false} onPose={onPose} style={StyleSheet.absoluteFill} />
+      <View
+        style={[
+          styles.mirror,
+          {
+            top: insets.top + 10,
+            borderColor: tracking ? colors.success : colors.surface2,
+          },
+        ]}
+      >
+        <PoseDetectionAdapter
+          engine="default"
+          active
+          facing="front"
+          face
+          hands={false}
+          onPose={onPose}
+          style={StyleSheet.absoluteFill}
+        />
       </View>
       <View style={[styles.hud, { paddingTop: insets.top + 16, paddingHorizontal: spacing.base }]}>
-        <Text style={[typography.captionBold, { color: tracking ? colors.success : colors.text.muted }]}>{tracking ? 'Eyes tracked' : 'Looking for your face'}</Text>
-        {phase === 'playing' || phase === 'paused' ? <Text style={[typography.heading, { color: colors.text.primary }]}>{secondsLeft}s</Text> : null}
+        <Text style={[typography.captionBold, { color: tracking ? colors.success : colors.text.muted }]}>
+          {tracking ? 'Eyes tracked' : 'Looking for your face'}
+        </Text>
+        {phase === 'playing' || phase === 'paused' ? (
+          <Text style={[typography.heading, { color: colors.text.primary }]}>{secondsLeft}s</Text>
+        ) : null}
       </View>
 
       <View style={styles.center}>
         <View style={[styles.area, { width: area, height: area, backgroundColor: colors.surface1 }]}>
           {phase === 'calibrating' ? (
-            <View style={[styles.calDot, { backgroundColor: colors.primary, transform: [{ translateX: calPos[0] }, { translateY: calPos[1] }] }]} />
+            <View
+              style={[
+                styles.calDot,
+                {
+                  backgroundColor: colors.primary,
+                  transform: [{ translateX: calPos[0] }, { translateY: calPos[1] }],
+                },
+              ]}
+            />
           ) : null}
           {phase === 'playing' && mode === 'direction' && target ? (
             <View style={[styles.arrow, { backgroundColor: colors.primaryAlpha }]}>
@@ -431,13 +564,28 @@ export default function EyeGamesScreen() {
             </View>
           ) : null}
           {phase === 'playing' && mode === 'pop' && target ? (
-            <View style={[styles.orb, { backgroundColor: colors.primary, transform: [{ translateX: offset(target)[0] }, { translateY: offset(target)[1] }] }]} />
+            <View
+              style={[
+                styles.orb,
+                {
+                  backgroundColor: colors.primary,
+                  transform: [{ translateX: offset(target)[0] }, { translateY: offset(target)[1] }],
+                },
+              ]}
+            />
           ) : null}
-          {phase === 'playing' && mode === 'pop' && needCenter ? <View style={[styles.centerDot, { borderColor: colors.primary }]} /> : null}
+          {phase === 'playing' && mode === 'pop' && needCenter ? (
+            <View style={[styles.centerDot, { borderColor: colors.primary }]} />
+          ) : null}
           {phase === 'playing' && pursuitMode ? (
-            <Animated.View style={[styles.orb, { backgroundColor: onTarget ? colors.success : colors.primary }, pursuitStyle]} />
+            <Animated.View
+              style={[styles.orb, { backgroundColor: onTarget ? colors.success : colors.primary }, pursuitStyle]}
+            />
           ) : null}
-          <Animated.View pointerEvents="none" style={[styles.marker, { borderColor: colors.text.primary }, markerStyle]} />
+          <Animated.View
+            pointerEvents="none"
+            style={[styles.marker, { borderColor: colors.text.primary }, markerStyle]}
+          />
           {phase === 'paused' ? (
             <Text style={[typography.subheading, { color: colors.text.primary }]}>Paused · {secondsLeft}s left</Text>
           ) : null}
@@ -468,7 +616,15 @@ export default function EyeGamesScreen() {
         ) : null}
       </View>
 
-      <View style={[styles.footer, { paddingBottom: insets.bottom + 16, paddingHorizontal: spacing.base }]}>
+      <View
+        style={[
+          styles.footer,
+          {
+            paddingBottom: insets.bottom + 16,
+            paddingHorizontal: spacing.base,
+          },
+        ]}
+      >
         {phase === 'playing' ? (
           <Chip label="Pause" onPress={() => setPhase('paused')} />
         ) : phase === 'paused' ? (
@@ -484,20 +640,75 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   flex: { flex: 1 },
   topBar: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  iconBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  iconBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
-  cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 52, borderRadius: 18, marginTop: 16 },
-  result: { borderRadius: 18, padding: 16, alignItems: 'center', marginBottom: 12 },
+  cta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 52,
+    borderRadius: 18,
+    marginTop: 16,
+  },
+  result: {
+    borderRadius: 18,
+    padding: 16,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   big: { fontSize: 48, lineHeight: 54, fontWeight: '800' },
-  mirror: { position: 'absolute', right: 16, width: 78, height: 104, borderRadius: 14, overflow: 'hidden', borderWidth: 2, zIndex: 3 },
-  hud: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingRight: 110 },
+  mirror: {
+    position: 'absolute',
+    right: 16,
+    width: 78,
+    height: 104,
+    borderRadius: 14,
+    overflow: 'hidden',
+    borderWidth: 2,
+    zIndex: 3,
+  },
+  hud: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingRight: 110,
+  },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  area: { borderRadius: 36, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  area: {
+    borderRadius: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
   calDot: { position: 'absolute', width: 28, height: 28, borderRadius: 14 },
-  arrow: { width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center' },
+  arrow: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   orb: { position: 'absolute', width: 52, height: 52, borderRadius: 26 },
-  centerDot: { position: 'absolute', width: 28, height: 28, borderRadius: 14, borderWidth: 3 },
-  marker: { position: 'absolute', width: 32, height: 32, borderRadius: 16, borderWidth: 2.5 },
+  centerDot: {
+    position: 'absolute',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 3,
+  },
+  marker: {
+    position: 'absolute',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 2.5,
+  },
   prompt: { marginTop: 18, textAlign: 'center', paddingHorizontal: 24 },
   footer: { flexDirection: 'row', justifyContent: 'center', gap: 12 },
 });

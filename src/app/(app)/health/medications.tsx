@@ -1,7 +1,7 @@
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import { useRouter, type Href } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Linking, StyleSheet, Switch, Text, View } from 'react-native';
+import { Linking, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
@@ -15,6 +15,7 @@ import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngin
 import { PressableScale } from '../../../components/ui/PressableScale';
 import { DatePickerModal } from '../../../components/ui/DatePickerModal';
 import { syncCareReminders } from '../../../services/notifications/careReminders';
+import { Toggle } from '../../../components/ui/Toggle';
 
 const isTime = (t: string) => /^([01]\d|2[0-3]):[0-5]\d$/.test(t);
 
@@ -153,7 +154,7 @@ export default function MedicationsScreen() {
               <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Remind me at these times</Text>
               <Text style={[typography.caption, { color: colors.text.secondary }]}>A daily notification for each medicine. Names stay hidden on the lock screen.</Text>
             </View>
-            <Switch value={remindersOn} onValueChange={setRemindersOn} accessibilityLabel="Medicine reminders" />
+            <Toggle value={remindersOn} onValueChange={setRemindersOn} accessibilityLabel="Medicine reminders" />
           </View>
           {permissionDenied ? (
             <Text style={[typography.caption, { color: colors.error, marginTop: 6 }]}>Notifications are off for Thrivefold. Allow them in Android settings.</Text>

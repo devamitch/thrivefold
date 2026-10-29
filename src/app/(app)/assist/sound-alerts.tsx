@@ -6,7 +6,6 @@ import { AppHeader } from '../../../components/ui/AppHeader';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
-import { ScreenScrollView } from '../../../components/ui/ScreenScrollView';
 import { importantSound } from '../../../domain/assist/sounds';
 import { useAudioSense } from '../../../services/voice/useAudioSense';
 import { useTheme } from '../../../theme/useTheme';
@@ -35,51 +34,73 @@ export default function SoundAlertsScreen() {
   });
 
   return (
-    <ScreenContainer>
-      <AppHeader eyebrow="ASSIST" title="Sound alerts" subtitle="Names important sounds around you, on this phone" showBack />
-      <ScreenScrollView contentContainerStyle={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xl * 2 }}>
-        <Button
-          label={audio.listening ? 'Stop listening' : 'Start listening'}
-          size="lg"
-          variant={audio.listening ? 'outline' : 'primary'}
-          onPress={() => (audio.listening ? audio.stop() : void audio.start(true))}
+    <ScreenContainer
+      scrollable
+      header={
+        <AppHeader
+          eyebrow="ASSIST"
+          title="Sound alerts"
+          subtitle="Names important sounds around you, on this phone"
+          showBack
         />
-        {audio.error ? <Text style={[typography.body, { color: colors.error, marginTop: 10 }]}>{audio.error}</Text> : null}
+      }
+    >
+      <Button
+        label={audio.listening ? 'Stop listening' : 'Start listening'}
+        size="lg"
+        variant={audio.listening ? 'outline' : 'primary'}
+        onPress={() => (audio.listening ? audio.stop() : void audio.start(true))}
+      />
+      {audio.error ? (
+        <Text style={[typography.body, { color: colors.error, marginTop: 10 }]}>{audio.error}</Text>
+      ) : null}
 
-        <Card style={styles.card}>
-          <Text style={[typography.caption, { color: colors.text.muted }]}>{audio.listening ? 'Hearing now' : 'Not listening'}</Text>
-          {audio.listening && now.length ? (
-            now.map((c) => (
-              <View key={c.label} style={styles.row}>
-                <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>{c.label}</Text>
-                <Text style={[typography.caption, { color: colors.text.muted }]}>{Math.round(c.score * 100)}%</Text>
-              </View>
-            ))
-          ) : (
-            <Text style={[typography.body, { color: colors.text.secondary, marginTop: 4 }]}>{audio.listening ? 'Quiet…' : 'Tap Start listening.'}</Text>
-          )}
-        </Card>
-
-        {log.length ? (
-          <Card style={styles.card}>
-            <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Alerts</Text>
-            {log.map((l, i) => (
-              <View key={i} style={styles.row}>
-                <Ionicons name="notifications" size={18} color={colors.warning} />
-                <Text accessibilityLiveRegion="assertive" style={[typography.subheading, styles.flex, { color: colors.text.primary, marginLeft: 8 }]}>
-                  {l.label}
-                </Text>
-                <Text style={[typography.caption, { color: colors.text.muted }]}>{new Date(l.at).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', second: '2-digit' })}</Text>
-              </View>
-            ))}
-          </Card>
-        ) : null}
-
-        <Text style={[typography.caption, { color: colors.text.muted, marginTop: 12 }]}>
-          Listens only while this screen is open. Audio is analysed in memory and never recorded. It can miss sounds or mislabel them; never
-          rely on it instead of a smoke alarm or other safety device.
+      <Card style={styles.card}>
+        <Text style={[typography.caption, { color: colors.text.muted }]}>
+          {audio.listening ? 'Hearing now' : 'Not listening'}
         </Text>
-      </ScreenScrollView>
+        {audio.listening && now.length ? (
+          now.map((c) => (
+            <View key={c.label} style={styles.row}>
+              <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>{c.label}</Text>
+              <Text style={[typography.caption, { color: colors.text.muted }]}>{Math.round(c.score * 100)}%</Text>
+            </View>
+          ))
+        ) : (
+          <Text style={[typography.body, { color: colors.text.secondary, marginTop: 4 }]}>
+            {audio.listening ? 'Quiet…' : 'Tap Start listening.'}
+          </Text>
+        )}
+      </Card>
+
+      {log.length ? (
+        <Card style={styles.card}>
+          <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Alerts</Text>
+          {log.map((l, i) => (
+            <View key={i} style={styles.row}>
+              <Ionicons name="notifications" size={18} color={colors.warning} />
+              <Text
+                accessibilityLiveRegion="assertive"
+                style={[typography.subheading, styles.flex, { color: colors.text.primary, marginLeft: 8 }]}
+              >
+                {l.label}
+              </Text>
+              <Text style={[typography.caption, { color: colors.text.muted }]}>
+                {new Date(l.at).toLocaleTimeString(undefined, {
+                  hour: 'numeric',
+                  minute: '2-digit',
+                  second: '2-digit',
+                })}
+              </Text>
+            </View>
+          ))}
+        </Card>
+      ) : null}
+
+      <Text style={[typography.caption, { color: colors.text.muted, marginTop: 12 }]}>
+        Listens only while this screen is open. Audio is analysed in memory and never recorded. It can miss sounds or
+        mislabel them; never rely on it instead of a smoke alarm or other safety device.
+      </Text>
     </ScreenContainer>
   );
 }

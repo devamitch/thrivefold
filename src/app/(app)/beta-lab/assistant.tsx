@@ -25,7 +25,16 @@ interface Turn {
   fromModel?: boolean;
 }
 
-const SUGGESTIONS = ['How many steps today?', 'Log two glasses of water', 'Will it rain today?', 'Start breathing', 'Stress at work', 'Relationship stress', 'Scan a prescription', 'Plan an outing'];
+const SUGGESTIONS = [
+  'How many steps today?',
+  'Log two glasses of water',
+  'Will it rain today?',
+  'Start breathing',
+  'Stress at work',
+  'Relationship stress',
+  'Scan a prescription',
+  'Plan an outing',
+];
 
 /**
  * Thrive Coach assistant: type a request and the coach carries it out on this phone and says the
@@ -73,7 +82,10 @@ export default function AssistantScreen() {
       />
       <ScrollView
         ref={scroll}
-        contentContainerStyle={{ paddingHorizontal: spacing.base, paddingBottom: spacing.lg }}
+        contentContainerStyle={{
+          paddingHorizontal: spacing.base,
+          paddingBottom: spacing.lg,
+        }}
         keyboardShouldPersistTaps="handled"
       >
         {turns.length === 0 ? (
@@ -94,9 +106,20 @@ export default function AssistantScreen() {
                 : [styles.theirs, { backgroundColor: colors.surface }],
             ]}
           >
-            <Text style={[typography.body, { color: t.from === 'me' ? colors.text.inverse : colors.text.primary }]}>{t.text}</Text>
+            <Text
+              style={[
+                typography.body,
+                {
+                  color: t.from === 'me' ? colors.text.inverse : colors.text.primary,
+                },
+              ]}
+            >
+              {t.text}
+            </Text>
             {t.fromModel ? (
-              <Text style={[typography.caption, { color: colors.text.muted, marginTop: 4 }]}>On-device model · general guidance, not medical advice</Text>
+              <Text style={[typography.caption, { color: colors.text.muted, marginTop: 4 }]}>
+                On-device model · general guidance, not medical advice
+              </Text>
             ) : null}
             {t.needsModel ? (
               <View style={styles.actions}>
@@ -119,7 +142,11 @@ export default function AssistantScreen() {
           accessibilityLabel={listening ? 'Stop listening' : 'Speak to the coach'}
           style={[styles.send, { backgroundColor: listening ? colors.primary : colors.surface2 }]}
         >
-          <Ionicons name={listening ? 'stop' : 'mic'} size={20} color={listening ? colors.text.inverse : colors.text.primary} />
+          <Ionicons
+            name={listening ? 'stop' : 'mic'}
+            size={20}
+            color={listening ? colors.text.inverse : colors.text.primary}
+          />
         </PressableScale>
         <TextField
           value={listening && voice.partial ? voice.partial : draft}
@@ -133,7 +160,12 @@ export default function AssistantScreen() {
         <PressableScale
           onPress={() => void send(draft)}
           accessibilityLabel="Send"
-          style={[styles.send, { backgroundColor: draft.trim() ? colors.primary : colors.surface2 }]}
+          style={[
+            styles.send,
+            {
+              backgroundColor: draft.trim() ? colors.primary : colors.surface2,
+            },
+          ]}
         >
           <Ionicons name="arrow-up" size={20} color={draft.trim() ? colors.text.inverse : colors.text.muted} />
         </PressableScale>
@@ -141,7 +173,7 @@ export default function AssistantScreen() {
       <Text style={[typography.caption, styles.note, { color: colors.text.muted, paddingHorizontal: spacing.base }]}>
         {listening
           ? 'Listening… speak now. Nothing is recorded.'
-          : voice.error ?? 'Tap the microphone to speak, or type. Audio is never saved.'}
+          : (voice.error ?? 'Tap the microphone to speak, or type. Audio is never saved.')}
       </Text>
     </ScreenContainer>
   );
@@ -149,11 +181,23 @@ export default function AssistantScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  bubble: { borderRadius: 18, paddingHorizontal: 14, paddingVertical: 10, marginTop: 8, maxWidth: '88%' },
+  bubble: {
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginTop: 8,
+    maxWidth: '88%',
+  },
   mine: { alignSelf: 'flex-end' },
   theirs: { alignSelf: 'flex-start' },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
   inputRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  send: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  send: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   note: { marginBottom: 8 },
 });
