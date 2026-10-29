@@ -18,8 +18,7 @@ import { hapticMedium, hapticSelection } from '../../services/haptics';
 import { globalVoiceController, type VoiceAssistantState } from '../../services/voice/globalVoiceController';
 import { useTheme } from '../../theme/useTheme';
 import { PressableScale } from '../ui/PressableScale';
-import { AnimatedThrivefoldMark } from '../brand/AnimatedThrivefoldMark';
-import { AnimatedThrivefoldMark as ThriveBuddy } from '../brand/thrive/AnimatedThrivefoldMark';
+import { ThriveBlob } from '../brand/ThriveBlob';
 import { BrainSetupCard } from './BrainSetupCard';
 
 interface Turn {
@@ -166,7 +165,7 @@ export function GlobalVoiceAssistant() {
           <View style={[styles.grabber, { backgroundColor: colors.surface3 }]} />
           <View style={[styles.header, { paddingHorizontal: spacing.base }]}>
             <Animated.View style={[styles.miniOrb, { backgroundColor: colors.surface }, orbStyle]}>
-              <AnimatedThrivefoldMark size={34} entrance={false} mood={mood} />
+              <ThriveBlob size={40} mood={mood} />
             </Animated.View>
             <View style={styles.flex}>
               <Text style={[typography.subheading, { color: colors.text.primary }]}>Thrive Coach</Text>
@@ -195,14 +194,9 @@ export function GlobalVoiceAssistant() {
             {turns.length === 0 && !partial ? (
               <View style={styles.empty}>
                 {/* The whole character, never cropped, reacting to the conversation. */}
-                <PressableScale
-                  style={styles.buddy}
-                  onPress={() => go('/(app)/thrive')}
-                  accessibilityLabel="Meet Thrive"
-                  scaleTo={0.97}
-                >
-                  <ThriveBuddy size={170} entrance mood={mood} />
-                </PressableScale>
+                <View style={styles.buddy} pointerEvents="none">
+                  <ThriveBlob size={132} mood={mood} />
+                </View>
                 <Text style={[typography.body, { color: colors.text.secondary }]}>
                   Talk naturally. Ask a question, or say things like &quot;log two glasses of water and then open
                   sleep&quot;, &quot;export all my metrics&quot; or &quot;remember that I train at 7 am&quot;.

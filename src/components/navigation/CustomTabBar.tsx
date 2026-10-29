@@ -26,7 +26,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { ClipPath, Defs, Path } from 'react-native-svg';
 import { hapticMedium, hapticSelection } from '../../services/haptics';
 import { globalVoiceController } from '../../services/voice/globalVoiceController';
-import { AnimatedThrivefoldMark } from '../brand/AnimatedThrivefoldMark';
+import { ThriveBlob } from '../brand/ThriveBlob';
 
 type OrbMood = 'idle' | 'listening' | 'thinking' | 'speaking';
 const ORB_LABEL: Record<OrbMood, string> = {
@@ -373,7 +373,7 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
               ]}
             >
               <View pointerEvents="none">
-                <AnimatedThrivefoldMark size={CENTER_SIZE - 10} entrance={false} mood={mood} personality />
+                <ThriveBlob size={CENTER_SIZE - 6} mood={mood} />
               </View>
             </View>
 
