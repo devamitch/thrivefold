@@ -7,6 +7,8 @@ import { alertsFor } from '../../services/world/officialAlerts';
 import { getForecast, searchPlaces, type Forecast, type Place } from '../../services/world/weather';
 import { useRootStore } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
+import { getSanctuaryIllustration } from '../../utils/illustrationResolver';
+import { BetaHero } from '../beta/BetaHero';
 import { Card } from '../ui/Card';
 import { Chip } from '../ui/Chip';
 import { TextField } from '../ui/TextField';
@@ -24,7 +26,7 @@ const timeLabel = (iso: string | null) =>
  * An emergency call is always one tap away, with or without data.
  */
 export function OutdoorCard() {
-  const { colors, typography, spacing } = useTheme();
+  const { colors, typography, spacing, experience } = useTheme();
   const place = useRootStore((s) => s.outdoorPlace);
   const setPlace = useRootStore((s) => s.setOutdoorPlace);
 
@@ -82,6 +84,7 @@ export function OutdoorCard() {
           <Text style={[typography.bodyBold, styles.flex, { color: colors.text.primary }]}>Outdoors today</Text>
           {emergency}
         </View>
+        <BetaHero source={getSanctuaryIllustration('outdoors', experience)} label="Outdoors" />
         <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>
           Choose your town for weather, the best time to walk, and official alerts. Only the town name you pick is used.
         </Text>

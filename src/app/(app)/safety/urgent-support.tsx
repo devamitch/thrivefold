@@ -9,9 +9,11 @@ import { Header } from '../../../components/ui/Header';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { useTheme } from '../../../theme/useTheme';
+import { BetaHero } from '../../../components/beta/BetaHero';
+import { getSanctuaryIllustration } from '../../../utils/illustrationResolver';
 
 export default function UrgentSupportScreen() {
-  const { colors, typography, spacing } = useTheme();
+  const { colors, typography, spacing, experience } = useTheme();
 
   const helplines = [
     {
@@ -55,6 +57,7 @@ export default function UrgentSupportScreen() {
     <ScreenWrapper scrollable>
       <Header title="Get help now" subtitle="Free, confidential help" showBack />
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
+        <BetaHero source={getSanctuaryIllustration('emergency', experience)} label="Support" />
         <Card style={{ marginBottom: spacing.md, backgroundColor: colors.surface1, borderColor: colors.border }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
             <Ionicons name="heart" size={20} color={colors.primary} />

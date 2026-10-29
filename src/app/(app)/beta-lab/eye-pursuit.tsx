@@ -17,6 +17,8 @@ import { hapticSuccess } from '../../../services/haptics';
 import { ensureCameraPermission } from '../../../services/sensors/cameraPermission';
 import type { BetaSessionKind } from '../../../stores/slices/appSlice';
 import { useTheme } from '../../../theme/useTheme';
+import { BetaHero } from '../../../components/beta/BetaHero';
+import { getSanctuaryIllustration } from '../../../utils/illustrationResolver';
 
 const KINDS: BetaSessionKind[] = ['eye_pursuit'];
 const RUN_MS = 30_000;
@@ -32,7 +34,7 @@ export default function EyePursuitScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const { colors, typography, spacing } = useTheme();
+  const { colors, typography, spacing, experience } = useTheme();
 
   const [running, setRunning] = useState(false);
   const [score, setScore] = useState<number | null>(null);
@@ -131,6 +133,7 @@ export default function EyePursuitScreen() {
         </View>
       ) : (
         <View style={{ paddingHorizontal: spacing.base, paddingTop: spacing.md }}>
+          <BetaHero source={getSanctuaryIllustration('eyePursuit', experience)} label="Eye pursuit" />
           {score !== null ? (
             <View style={[styles.result, { backgroundColor: colors.surface }]}>
               <Text style={[styles.big, { color: colors.primary }]}>{score}</Text>

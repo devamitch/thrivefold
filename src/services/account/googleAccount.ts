@@ -49,8 +49,19 @@ async function readFacts(accessToken: string): Promise<ProfileFacts> {
     const res = await fetch('https://people.googleapis.com/v1/people/me?personFields=birthdays,genders', {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
-    if (!res.ok) return { age: null, birthYear: null, gender: null, birthDateString: null };
+    if (!res.ok) {
+      // Google's error reason only (e.g. API disabled or scope missing); no profile data.
+      const body = await res.text().catch(() => '');
+      console.warn('google people api', res.status, body.slice(0, 300));
+      return { age: null, birthYear: null, gender: null, birthDateString: null };
+    }
     const json = await res.json();
+    // Which fields came back (never the values themselves).
+    const b = (json.birthdays ?? []) as { date?: { year?: number; month?: number; day?: number }; metadata?: { source?: { type?: string } } }[];
+    console.warn(
+      'google people fields',
+      JSON.stringify({ birthdays: b.map((x) => ({ y: !!x.date?.year, m: !!x.date?.month, d: !!x.date?.day, src: x.metadata?.source?.type })), genders: (json.genders ?? []).length }),
+    );
     return {
       ...factsFromPeople(json),
       birthDateString: birthDateFromPeople(json),
@@ -109,6 +120,7 @@ export async function requestBirthdayAndGender(): Promise<ProfileFacts | null> {
   try {
     configure();
     const added = await GoogleSignin.addScopes({ scopes: [BIRTHDAY_SCOPE, GENDER_SCOPE] });
+    console.warn('google addScopes', added ? 'granted' : 'no user');
     if (!added) return null;
     const { accessToken } = await GoogleSignin.getTokens();
     const facts = await readFacts(accessToken);
@@ -120,7 +132,8 @@ export async function requestBirthdayAndGender(): Promise<ProfileFacts | null> {
       gender: facts.gender ?? pending.gender,
     };
     return facts;
-  } catch {
+  } catch (e) {
+    console.warn('google addScopes failed', isErrorWithCode(e) ? e.code : String(e));
     return null;
   }
 }

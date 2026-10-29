@@ -15,12 +15,16 @@ export default function BootstrapResolver() {
   const step = useRootStore((s) => s.onboardingStep);
   const lastActiveRoute = useRootStore((s) => s.lastActiveRoute);
   const lastActiveAt = useRootStore((s) => s.lastActiveAt);
+  const experienceConfirmed = useRootStore((s) => s.experienceConfirmed);
 
   if (!isAuthenticated) return <Redirect href="/(auth)/sign-in" />;
   if (!isOnboarded) {
     const resume: OnboardingStep = ONBOARDING_STEPS.includes(step as OnboardingStep)
       ? (step as OnboardingStep)
-      : 'choose-experience';
+      : // A space already chosen at sign-in is not asked again.
+        experienceConfirmed
+        ? 'privacy-choices'
+        : 'choose-experience';
     return <Redirect href={`/(onboarding)/${resume}`} />;
   }
 

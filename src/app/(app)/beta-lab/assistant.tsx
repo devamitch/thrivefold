@@ -14,6 +14,8 @@ import { coachVoice } from '../../../services/ai/coachVoice';
 import { runCommand } from '../../../services/assistant/runCommand';
 import { useVoiceInput } from '../../../services/voice/useVoiceInput';
 import { useTheme } from '../../../theme/useTheme';
+import { BetaHero } from '../../../components/beta/BetaHero';
+import { getSanctuaryIllustration } from '../../../utils/illustrationResolver';
 
 interface Turn {
   from: 'me' | 'coach';
@@ -32,7 +34,7 @@ const SUGGESTIONS = ['How many steps today?', 'Log two glasses of water', 'Start
  */
 export default function AssistantScreen() {
   const router = useRouter();
-  const { colors, typography, spacing } = useTheme();
+  const { colors, typography, spacing, experience } = useTheme();
   const [turns, setTurns] = useState<Turn[]>([]);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
@@ -74,6 +76,9 @@ export default function AssistantScreen() {
         contentContainerStyle={{ paddingHorizontal: spacing.base, paddingBottom: spacing.lg }}
         keyboardShouldPersistTaps="handled"
       >
+        {turns.length === 0 ? (
+          <BetaHero source={getSanctuaryIllustration('coachAssistant', experience)} label="Thrive Coach" />
+        ) : null}
         {turns.length === 0 ? (
           <Text style={[typography.body, { color: colors.text.secondary, marginTop: spacing.sm }]}>
             Try one of these. Commands and today&apos;s numbers work offline; nothing you type leaves the phone.

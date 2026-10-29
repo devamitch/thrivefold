@@ -15,11 +15,13 @@ import { useBetaSettings } from '../../../features/beta-lab/flags/betaFlags';
 import { useBetaPoseLab } from '../../../features/beta-lab/hooks/useBetaPoseLab';
 import { hapticSelection } from '../../../services/haptics';
 import { useTheme } from '../../../theme/useTheme';
+import { BetaHero } from '../../../components/beta/BetaHero';
+import { getSanctuaryIllustration } from '../../../utils/illustrationResolver';
 
 export default function PoseCoachBetaScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const { colors, typography, spacing } = useTheme();
+  const { colors, typography, spacing, experience } = useTheme();
   const { settings, updateSetting } = useBetaSettings();
   const poseLab = useBetaPoseLab();
 
@@ -39,6 +41,7 @@ export default function PoseCoachBetaScreen() {
       />
 
       <ScreenScrollView contentContainerStyle={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xl * 2 }}>
+        <BetaHero source={getSanctuaryIllustration('poseCoach', experience)} label="Pose coach" />
         <SquircleSurface radius={24} fill={colors.surface} style={[styles.card, { marginTop: spacing.sm }]}>
           <View style={styles.cardHeader}>
             <Ionicons name="body-outline" size={20} color={colors.primary} />

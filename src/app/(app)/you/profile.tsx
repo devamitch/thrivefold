@@ -13,6 +13,8 @@ import { PHONE_RE, koshCompleteness, splitList, type KoshProfile } from '../../.
 import { pushProfile } from '../../../services/account/profileSync';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
+import { BetaHero } from '../../../components/beta/BetaHero';
+import { getSanctuaryIllustration } from '../../../utils/illustrationResolver';
 
 type ListKey = 'languages' | 'foodRestrictions' | 'allergies' | 'cuisines' | 'foodDislikes' | 'interests' | 'skills';
 
@@ -32,7 +34,7 @@ const LISTS: { key: ListKey; label: string; hint: string; group: 'about' | 'food
  * is guessed. Health records, cycle data and journal stay on this phone (encrypted).
  */
 export default function KoshProfileScreen() {
-  const { colors, typography, spacing } = useTheme();
+  const { colors, typography, spacing, experience } = useTheme();
   const { kosh, update, contacts, setContacts, signedIn } = useRootStore(
     useShallow((s) => ({
       kosh: s.koshProfile,
@@ -101,6 +103,7 @@ export default function KoshProfileScreen() {
     <ScreenContainer>
       <AppHeader eyebrow="ANVAY KOSH" title="Your profile" subtitle={`${koshCompleteness(kosh, contacts.length)}% complete · every field optional`} showBack />
       <ScreenScrollView contentContainerStyle={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xl * 2 }}>
+        <BetaHero source={getSanctuaryIllustration('profileKosh', experience)} label="Your profile" />
         <Text style={[typography.caption, { color: colors.text.secondary }]}>
           {signedIn
             ? 'Saved to your account, so you are not asked again on another phone or after reinstalling. Health records, cycle data and your journal stay encrypted on this phone.'

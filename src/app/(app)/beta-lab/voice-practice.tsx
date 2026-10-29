@@ -18,6 +18,8 @@ import { hapticSuccess } from '../../../services/haptics';
 import { useVoiceInput } from '../../../services/voice/useVoiceInput';
 import type { BetaSessionKind } from '../../../stores/slices/appSlice';
 import { useTheme } from '../../../theme/useTheme';
+import { BetaHero } from '../../../components/beta/BetaHero';
+import { getSanctuaryIllustration } from '../../../utils/illustrationResolver';
 
 type Drill = 'sustain' | 'steady' | 'repeat';
 const KINDS: BetaSessionKind[] = ['voice_practice'];
@@ -35,7 +37,7 @@ const BAND: [number, number] = [4, 8];
  */
 export default function VoicePracticeScreen() {
   const router = useRouter();
-  const { colors, typography, spacing } = useTheme();
+  const { colors, typography, spacing, experience } = useTheme();
   const [drill, setDrill] = useState<Drill>('sustain');
   const [phrase, setPhrase] = useState(PHRASES[0]);
   const [level, setLevel] = useState(-2);
@@ -138,6 +140,7 @@ export default function VoicePracticeScreen() {
         rightAction={<BetaBadge />}
       />
       <ScreenScrollView contentContainerStyle={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xl * 2 }}>
+        <BetaHero source={getSanctuaryIllustration('voicePractice', experience)} label="Voice practice" />
         <View style={styles.chips}>
           {(Object.keys(DRILLS) as Drill[]).map((d) => (
             <Chip key={d} label={DRILLS[d].title} selected={drill === d} onPress={() => !listening && setDrill(d)} />

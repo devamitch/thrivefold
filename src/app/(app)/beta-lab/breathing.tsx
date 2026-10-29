@@ -18,6 +18,8 @@ import type { BetaSessionKind } from '../../../stores/slices/appSlice';
 import { useRootStore } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
 import { recordBetaSession } from '../../../services/beta/recordSession';
+import { BetaHero } from '../../../components/beta/BetaHero';
+import { getSanctuaryIllustration } from '../../../utils/illustrationResolver';
 
 const KINDS: BetaSessionKind[] = ['breathing'];
 const LENGTHS = [1, 3, 5];
@@ -26,7 +28,7 @@ const SAY: Record<BreathPhase, string> = { inhale: 'Breathe in', hold: 'Hold', e
 /** Paced breathing with the coach's voice and a breathing circle; sessions are saved on this phone. */
 export default function BreathingScreen() {
   const router = useRouter();
-  const { colors, typography, spacing } = useTheme();
+  const { colors, typography, spacing, experience } = useTheme();
   const reduce = useReducedMotion();
 
   const [pattern, setPattern] = useState<BreathPattern>(PATTERNS[0]);
@@ -106,6 +108,8 @@ export default function BreathingScreen() {
         rightAction={<BetaBadge />}
       />
       <ScreenScrollView contentContainerStyle={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xl * 2 }}>
+
+        {!startedAt ? <BetaHero source={getSanctuaryIllustration('breathing', experience)} label="Breathing coach" /> : null}
         <View style={styles.stage}>
           <Animated.View style={[styles.circle, { backgroundColor: colors.primaryAlpha, borderColor: colors.primary }, circle]} />
           <View style={styles.stageText} pointerEvents="none">

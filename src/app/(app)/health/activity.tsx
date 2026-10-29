@@ -17,12 +17,14 @@ import { ACTIVITY_TYPES } from '../../../domain/fitness/workouts';
 import { MET_BY_ACTIVITY, DEFAULT_WEIGHT_KG } from '../../../domain/activity/calories';
 import { PressableScale } from '../../../components/ui/PressableScale';
 import { useBetaEnabled } from '../../../hooks/useBetaEnabled';
+import { BetaHero } from '../../../components/beta/BetaHero';
+import { getSanctuaryIllustration } from '../../../utils/illustrationResolver';
 
 const DISTANCE_TYPES = new Set(['Walking', 'Running', 'Treadmill', 'Walking pad', 'Cycling', 'Swimming', 'Rowing', 'Hiking']);
 
 /** Log any activity done outside a plan: type, minutes, optional distance and effort, or run a live session. */
 export default function ActivityLogScreen() {
-  const { colors, typography, spacing } = useTheme();
+  const { colors, typography, spacing, experience } = useTheme();
   const betaMode = useBetaEnabled();
   const { logs, weightKg, addActivityLog, deleteActivityLog, showToast, showAlert } = useRootStore(
     useShallow((s) => ({
@@ -116,6 +118,7 @@ export default function ActivityLogScreen() {
       scrollMode="shell-scroll-view"
       footer={<Button label="Save activity" size="lg" disabled={!valid} onPress={save} />}
     >
+      <BetaHero source={getSanctuaryIllustration('activityIndoor', experience)} label="Activity" />
       {/* Live Activity Session Card */}
       <Card style={{ padding: spacing.md, marginBottom: spacing.md }}>
         <View style={styles.liveHead}>

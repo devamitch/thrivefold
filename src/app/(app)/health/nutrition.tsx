@@ -11,6 +11,8 @@ import { useTheme } from '../../../theme/useTheme';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngine';
 import { TodayMeals } from '../../../components/home/TodayMeals';
+import { BetaHero } from '../../../components/beta/BetaHero';
+import { getSanctuaryIllustration } from '../../../utils/illustrationResolver';
 
 interface MealRecommendation {
   id: string;
@@ -70,7 +72,7 @@ const GOALS = [6, 8, 10, 12];
 
 /** Today's food and water in one place, plus meal ideas that follow the person's food preference. */
 export default function NutritionScreen() {
-  const { colors, typography, spacing } = useTheme();
+  const { colors, typography, spacing, experience } = useTheme();
   const date = formatLocalDate(new Date());
   const s = useRootStore(
     useShallow((st) => ({
@@ -95,6 +97,8 @@ export default function NutritionScreen() {
         style={styles.scroll}
         contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}
       >
+
+        <BetaHero source={getSanctuaryIllustration('nutrition', experience)} label="Nutrition" />
         <TodayMeals />
 
         <View style={{ marginTop: spacing.md }}>
