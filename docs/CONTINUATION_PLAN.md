@@ -111,6 +111,11 @@ The copied `setu-beta-scanner` / `blinkquest-vision` modules needed VisionCamera
 - **Google birthday and gender:** asked for with incremental consent (`GoogleSignin.addScopes` with `user.birthday.read` + `user.gender.read`) only for an account with no saved profile; with a full birthday (18+) and a male/female gender the account is completed without the confirm screen. These are Google sensitive scopes: list them on the OAuth consent screen; until Google verifies the app they work for test users only, others see the confirm screen.
 - **Release signing survives `prebuild --clean`:** `plugins/withLocalReleaseSigning.js` (CommonJS copy of the .ts plugin, which Node could not load) is now in `app.json` plugins; local release APKs are signed with the upload key from `credentials.json` again.
 
+### P15 — Google People API, maps, outing planner (2026-10-29)
+- **Birthday root cause (verified on device):** Google People API returned 403 "has not been used in project 976390431722 or it is disabled". Owner enabled it 2026-10-29; re-test pending (phone disconnected).
+- **Maps:** key stored only as Edge Function secret `GOOGLE_MAPS_KEY`; `supabase/functions/maps` deployed (Routes API computeRoutes + Places API (New) Text Search, signed-in only, shared daily counter). **Blocked:** the key's API restrictions block both (`API_KEY_SERVICE_BLOCKED`); allow "Routes API" and "Places API (New)" for the key (or use a separate server key).
+- **`/(app)/outing`:** find real places near the chosen town (e.g. Durga Puja pandals), pick up to 6, nearest-next walking order (`domain/world/itinerary.ts`, 3 tests), real walking legs, estimated steps, best start hour + tips + official alerts, open each stop in Google Maps. No crowd/queue/timing claims. Linked from the Outdoors card and the coach ("plan an outing", "pandal").
+
 ### Route ↔ capability matrix (beta)
 | Route | Capability | Input | Saved |
 | --- | --- | --- | --- |

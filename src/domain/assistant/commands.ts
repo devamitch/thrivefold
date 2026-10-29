@@ -25,6 +25,7 @@ const OPEN: { words: RegExp; route: string; label: string }[] = [
   { words: /\bsleep\b/, route: '/(app)/health/sleep', label: 'sleep' },
   { words: /\bworkout|\bexercise|\btrain/, route: '/(app)/train', label: 'workouts' },
   { words: /\btreadmill|\bwalking pad|\bswim|\bcycl|\bride\b|\brun\b|\bactivity\b/, route: '/(app)/health/activity', label: 'activity sessions' },
+  { words: /\bouting\b|\bpandal|\bpuja\b|\bplan a (walk|trip|day out)\b|\bsightseeing\b|\bheritage\b/, route: '/(app)/outing', label: 'the outing planner' },
   { words: /\bquest/, route: '/(app)/quests', label: 'quests' },
   { words: /\bprogress\b|\btrend|\bhistory\b/, route: '/(app)/(tabs)/progress', label: 'progress' },
   { words: /\bjournal\b|\bwrite\b/, route: '/(app)/journal/new', label: 'a new journal entry' },

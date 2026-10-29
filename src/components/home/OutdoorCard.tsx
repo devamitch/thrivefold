@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter, type Href } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Linking, StyleSheet, Text, View } from 'react-native';
 
@@ -27,6 +28,7 @@ const timeLabel = (iso: string | null) =>
  */
 export function OutdoorCard() {
   const { colors, typography, spacing, experience } = useTheme();
+  const router = useRouter();
   const place = useRootStore((s) => s.outdoorPlace);
   const setPlace = useRootStore((s) => s.setOutdoorPlace);
 
@@ -175,6 +177,9 @@ export function OutdoorCard() {
           ))
         : null}
 
+      <View style={styles.chips}>
+        <Chip label="Plan an outing" onPress={() => router.push('/(app)/outing' as Href)} />
+      </View>
       <Text style={[typography.caption, { color: colors.text.muted, marginTop: 8 }]}>
         {alertsError
           ? 'Official alerts could not be checked just now. '
