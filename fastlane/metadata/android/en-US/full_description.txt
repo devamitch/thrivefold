@@ -26,6 +26,11 @@ Designed to help you build sustainable daily health without noisy social feeds o
 • Flow Quests: Bite-sized daily actions that reward consistent, mindful habits with experience points (XP).
 • Rhythm Strip: Visual timeline of past sessions, streaks, and personal milestones.
 
+🧠 MINDFUL REFLECTION & FOCUS PACING
+• On-Device Focus Screening: Explore your personal rhythm and pacing with private, HIPAA-aligned daily self-reflection.
+• Coach Voice Guidance: Spoken prompts for eye pursuits, breathing resets, and gentle movement pacing.
+• Adaptive Habit Tweaks: Practical, non-judgmental micro-adjustments for deep work, transitions, and sensory comfort.
+
 🛡️ THE ANVAYKOSH ECOSYSTEM & SOVEREIGN PRIVACY
 • Anvay ID 1-Tap Sign-In: Seamless, federated access across all flagship Amit Dev Labs ecosystem apps.
 • Local-First & Offline Ready: All workouts, logs, and habit records function fully offline in Airplane Mode.

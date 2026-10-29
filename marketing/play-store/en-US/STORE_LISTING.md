@@ -1,20 +1,20 @@
 # Thrivefold — Google Play Store Listing Package
 
 - **Package ID**: `com.amit.thrivefold`
-- **Version Name**: `1.0.1`
-- **Version Code**: `2`
-- **Release Track**: `Internal Testing`
+- **Version Name**: `1.0.4`
+- **Version Code**: `5`
+- **Release Track**: `Internal & Closed Beta (Alpha)`
 
 ---
 
-### App Title (27/30 chars)
+### App Title (28/30 chars)
 ```text
-Thrivefold: Mindful Fitness
+Thrivefold: Mindful Vitality
 ```
 
-### Short Description (77/80 chars)
+### Short Description (76/80 chars)
 ```text
-Mindful movement, offline pose tracking, wellness quests, and daily vitality.
+Mindful daily habits, focus reflection, calm movement, and holistic vitality.
 ```
 
 ### Full Description (2968/4000 chars)
