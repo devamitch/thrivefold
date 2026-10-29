@@ -29,6 +29,8 @@ const AVATAR_OPTIONS = [
   { id: 'shield', icon: 'shield-outline' as const, label: 'Guardian' },
 ];
 
+const STEPS = ['You', 'Contact', 'Body', 'Food', 'Growth'];
+
 export default function EditProfileScreen() {
   const router = useRouter();
   const { colors, typography } = useTheme();
@@ -80,6 +82,7 @@ export default function EditProfileScreen() {
   const [interestsText, setInterestsText] = useState(kosh.interests.join(', '));
   const [skillsText, setSkillsText] = useState(kosh.skills.join(', '));
   const [isSaving, setIsSaving] = useState(false);
+  const [step, setStep] = useState(0);
   const [syncStatus, setSyncStatus] = useState<string | null>(null);
 
   const handleSaveAll = async () => {
@@ -143,273 +146,289 @@ export default function EditProfileScreen() {
         />
       }
     >
-      {/* Quick Section Shortcuts */}
+      {/* One part at a time: tap a step or use Next. Every field is optional. */}
       <View style={styles.quickBar}>
-        <PressableScale
-          onPress={() => router.push('/(app)/you/adhd-screener' as Href)}
-          style={[styles.quickChip, { backgroundColor: colors.primaryAlpha }]}
-        >
-          <Ionicons name="sparkles-outline" size={14} color={colors.primary} />
-          <Text style={[typography.captionBold, { color: colors.primary }]}>Focus check</Text>
-        </PressableScale>
-
-        <PressableScale
-          onPress={() => router.push('/(app)/you/preferences' as Href)}
-          style={[styles.quickChip, { backgroundColor: colors.surface2 }]}
-        >
-          <Ionicons name="options-outline" size={14} color={colors.text.primary} />
-          <Text style={[typography.captionBold, { color: colors.text.primary }]}>Preferences</Text>
-        </PressableScale>
-
-        <PressableScale
-          onPress={() => router.push('/(app)/settings/anvaykosh' as Href)}
-          style={[styles.quickChip, { backgroundColor: colors.surface2 }]}
-        >
-          <Ionicons name="cloud-outline" size={14} color={colors.text.primary} />
-          <Text style={[typography.captionBold, { color: colors.text.primary }]}>Account sync</Text>
-        </PressableScale>
+        {STEPS.map((label, i) => (
+          <Chip key={label} label={label} selected={step === i} onPress={() => setStep(i)} />
+        ))}
       </View>
 
-      {/* Section 1: Display Emblem & Identity */}
-      <Card style={styles.sectionCard}>
-        <Text style={[typography.subheading, { color: colors.text.primary }]}>Display Emblem</Text>
-        <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-          Pick the symbol that reflects your daily intention.
-        </Text>
-
-        <View style={styles.avatarGrid}>
-          {AVATAR_OPTIONS.map((a) => {
-            const isSelected = avatarSeed === a.id;
-            return (
-              <PressableScale
-                key={a.id}
-                onPress={() => {
-                  hapticLight();
-                  setAvatarSeed(a.id);
-                }}
-                scaleTo={0.94}
-                style={styles.avatarScale}
-              >
-                <SquircleSurface
-                  radius={16}
-                  fill={isSelected ? colors.primaryAlpha : colors.surface1}
-                  strokeWidth={1}
-                  style={styles.avatarTile}
-                >
-                  <Ionicons name={a.icon} size={28} color={isSelected ? colors.primary : colors.text.secondary} />
-                  <Text
-                    style={[
-                      typography.caption,
-                      {
-                        color: isSelected ? colors.primary : colors.text.secondary,
-                        fontSize: 11,
-                        marginTop: 4,
-                      },
-                    ]}
-                  >
-                    {a.label}
-                  </Text>
-                </SquircleSurface>
-              </PressableScale>
-            );
-          })}
-        </View>
-
-        <View style={{ marginTop: 14 }}>
-          <TextField
-            label="Display name / Pseudonym"
-            value={pseudonym}
-            onChangeText={setPseudonym}
-            placeholder="Enter pseudonym"
-            maxLength={30}
-          />
-        </View>
-      </Card>
-
-      {/* Section 2: About You */}
-      <CollapsibleSection
-        title="Personal & Contact"
-        icon="person-outline"
-        summary={
-          preferredName || phone
-            ? [preferredName, phone].filter(Boolean).join(' · ')
-            : 'Preferred name, phone, languages'
-        }
-        done={Boolean(preferredName)}
-        defaultOpen
-      >
-        <TextField
-          label="What should Thrivefold call you?"
-          value={preferredName}
-          onChangeText={setPreferredName}
-          placeholder="Your preferred name"
-          containerStyle={styles.field}
-        />
-        <TextField
-          label="Phone number (optional)"
-          value={phone}
-          onChangeText={setPhone}
-          keyboardType="phone-pad"
-          placeholder="+91..."
-          containerStyle={styles.field}
-        />
-        <TextField
-          label="Preferred languages"
-          value={languagesText}
-          onChangeText={setLanguagesText}
-          placeholder="e.g. English, Hindi, Bengali"
-          containerStyle={styles.field}
-        />
-        <TextField
-          label="Home address or area (optional)"
-          value={homeAddress}
-          onChangeText={setHomeAddress}
-          placeholder="Used only for nearby walk recommendations"
-          containerStyle={styles.field}
-        />
-      </CollapsibleSection>
-
-      {/* Section 3: Body & Fitness Pacing */}
-      <CollapsibleSection
-        title="Body & Daily Pacing"
-        icon="body-outline"
-        summary={
-          heightInput && weightInput ? `${heightInput} cm · ${weightInput} kg` : 'Height, weight, daily routine length'
-        }
-        done={Boolean(heightInput && weightInput)}
-      >
-        <View style={styles.pair}>
-          <TextField
-            label="Height (cm)"
-            keyboardType="numeric"
-            value={heightInput}
-            onChangeText={setHeightInput}
-            placeholder="170"
-            containerStyle={styles.flex}
-          />
-          <TextField
-            label="Weight (kg)"
-            keyboardType="numeric"
-            value={weightInput}
-            onChangeText={setWeightInput}
-            placeholder="68"
-            containerStyle={styles.flex}
-          />
-        </View>
-
-        <Text style={[typography.captionBold, { color: colors.text.muted, marginTop: 12 }]}>Daily Routine Pacing</Text>
-        <View style={styles.chipsRow}>
-          {([5, 10, 20] as const).map((m) => (
-            <Chip
-              key={m}
-              label={`${m} min / day`}
-              selected={routineMinutes === m}
-              onPress={() =>
-                setOnboardingAnswers({
-                  routineMinutes: routineMinutes === m ? null : m,
-                })
-              }
-            />
-          ))}
-        </View>
-
-        <Text style={[typography.captionBold, { color: colors.text.muted, marginTop: 12 }]}>
-          Diet & Nutrition Style
-        </Text>
-        <View style={styles.chipsRow}>
-          {['No preference', 'Vegetarian', 'Vegan', 'Non-Vegetarian', 'Pescatarian', 'Eggetarian'].map((d) => (
-            <Chip
-              key={d}
-              label={d}
-              selected={diet === d}
-              onPress={() => setOnboardingAnswers({ diet: diet === d ? null : d })}
-            />
-          ))}
-        </View>
-      </CollapsibleSection>
-
-      {/* Section 4: Food Rules & Allergies */}
-      <CollapsibleSection
-        title="Food Rules & Allergies"
-        icon="restaurant-outline"
-        summary={foodRulesText || allergiesText ? 'Allergies & rules configured' : 'Food rules, allergies, cuisines'}
-        done={Boolean(foodRulesText || allergiesText)}
-      >
-        <TextField
-          label="Food rules you follow"
-          value={foodRulesText}
-          onChangeText={setFoodRulesText}
-          placeholder="e.g. Vegetarian, Jain, Halal"
-          containerStyle={styles.field}
-        />
-        <TextField
-          label="Allergies & intolerances"
-          value={allergiesText}
-          onChangeText={setAllergiesText}
-          placeholder="e.g. Peanuts, Lactose, Gluten"
-          containerStyle={styles.field}
-        />
-        <TextField
-          label="Favorite cuisines"
-          value={cuisinesText}
-          onChangeText={setCuisinesText}
-          placeholder="e.g. South Indian, Mediterranean"
-          containerStyle={styles.field}
-        />
-      </CollapsibleSection>
-
-      {/* Section 5: Growth & Goals */}
-      <CollapsibleSection
-        title="Growth, Skills & Career"
-        icon="trending-up-outline"
-        summary={careerGoal ? 'Career goal set' : 'Interests, skills and goals'}
-        done={Boolean(careerGoal || interestsText)}
-      >
-        <TextField
-          label="Interests & Hobbies"
-          value={interestsText}
-          onChangeText={setInterestsText}
-          placeholder="e.g. Reading, cycling, botanical drawing"
-          containerStyle={styles.field}
-        />
-        <TextField
-          label="Skills to explore or learn"
-          value={skillsText}
-          onChangeText={setSkillsText}
-          placeholder="e.g. Python, public speaking, meditation"
-          containerStyle={styles.field}
-        />
-        <TextField
-          label="A goal for your work, studies or life"
-          value={careerGoal}
-          onChangeText={setCareerGoal}
-          placeholder="What are you building or striving toward?"
-          multiline
-          containerStyle={styles.field}
-        />
-      </CollapsibleSection>
-
-      {/* ADHD Focus Screener Card Shortcut */}
-      <Card style={[styles.sectionCard, { backgroundColor: colors.surface }]}>
-        <View style={styles.rowBetween}>
-          <View style={styles.flex}>
-            <Text style={[typography.subheading, { color: colors.text.primary }]}>Focus & Attention Style</Text>
+      {step === 0 ? (
+        <>
+          {/* Section 1: Display Emblem & Identity */}
+          <Card style={styles.sectionCard}>
+            <Text style={[typography.subheading, { color: colors.text.primary }]}>Display Emblem</Text>
             <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-              {adhdProfile.completedAt
-                ? `Style: ${adhdProfile.focusStyle ?? 'Completed'} · Tap to adjust`
-                : 'Take the gentle 6-question screener to personalize quest lengths'}
+              Pick the symbol that reflects your daily intention.
             </Text>
-          </View>
-          <PressableScale
-            onPress={() => router.push('/(app)/you/adhd-screener' as Href)}
-            style={[styles.editChip, { backgroundColor: colors.primaryAlpha }]}
+
+            <View style={styles.avatarGrid}>
+              {AVATAR_OPTIONS.map((a) => {
+                const isSelected = avatarSeed === a.id;
+                return (
+                  <PressableScale
+                    key={a.id}
+                    onPress={() => {
+                      hapticLight();
+                      setAvatarSeed(a.id);
+                    }}
+                    scaleTo={0.94}
+                    style={styles.avatarScale}
+                  >
+                    <SquircleSurface
+                      radius={16}
+                      fill={isSelected ? colors.primaryAlpha : colors.surface1}
+                      strokeWidth={1}
+                      style={styles.avatarTile}
+                    >
+                      <Ionicons name={a.icon} size={28} color={isSelected ? colors.primary : colors.text.secondary} />
+                      <Text
+                        style={[
+                          typography.caption,
+                          {
+                            color: isSelected ? colors.primary : colors.text.secondary,
+                            fontSize: 11,
+                            marginTop: 4,
+                          },
+                        ]}
+                      >
+                        {a.label}
+                      </Text>
+                    </SquircleSurface>
+                  </PressableScale>
+                );
+              })}
+            </View>
+
+            <View style={{ marginTop: 14 }}>
+              <TextField
+                label="Display name / Pseudonym"
+                value={pseudonym}
+                onChangeText={setPseudonym}
+                placeholder="Enter pseudonym"
+                maxLength={30}
+              />
+            </View>
+          </Card>
+        </>
+      ) : null}
+
+      {step === 1 ? (
+        <>
+          {/* Section 2: About You */}
+          <CollapsibleSection
+            title="Personal & Contact"
+            icon="person-outline"
+            summary={
+              preferredName || phone
+                ? [preferredName, phone].filter(Boolean).join(' · ')
+                : 'Preferred name, phone, languages'
+            }
+            done={Boolean(preferredName)}
+            defaultOpen
           >
-            <Text style={[typography.captionBold, { color: colors.primary }]}>
-              {adhdProfile.completedAt ? 'Review' : 'Start'}
+            <TextField
+              label="What should Thrivefold call you?"
+              value={preferredName}
+              onChangeText={setPreferredName}
+              placeholder="Your preferred name"
+              containerStyle={styles.field}
+            />
+            <TextField
+              label="Phone number (optional)"
+              value={phone}
+              onChangeText={setPhone}
+              keyboardType="phone-pad"
+              placeholder="+91..."
+              containerStyle={styles.field}
+            />
+            <TextField
+              label="Preferred languages"
+              value={languagesText}
+              onChangeText={setLanguagesText}
+              placeholder="e.g. English, Hindi, Bengali"
+              containerStyle={styles.field}
+            />
+            <TextField
+              label="Home address or area (optional)"
+              value={homeAddress}
+              onChangeText={setHomeAddress}
+              placeholder="Used only for nearby walk recommendations"
+              containerStyle={styles.field}
+            />
+          </CollapsibleSection>
+        </>
+      ) : null}
+
+      {step === 2 ? (
+        <>
+          {/* Section 3: Body & Fitness Pacing */}
+          <CollapsibleSection
+            title="Body & Daily Pacing"
+            icon="body-outline"
+            summary={
+              heightInput && weightInput
+                ? `${heightInput} cm · ${weightInput} kg`
+                : 'Height, weight, daily routine length'
+            }
+            done={Boolean(heightInput && weightInput)}
+            defaultOpen
+          >
+            <View style={styles.pair}>
+              <TextField
+                label="Height (cm)"
+                keyboardType="numeric"
+                value={heightInput}
+                onChangeText={setHeightInput}
+                placeholder="170"
+                containerStyle={styles.flex}
+              />
+              <TextField
+                label="Weight (kg)"
+                keyboardType="numeric"
+                value={weightInput}
+                onChangeText={setWeightInput}
+                placeholder="68"
+                containerStyle={styles.flex}
+              />
+            </View>
+
+            <Text style={[typography.captionBold, { color: colors.text.muted, marginTop: 12 }]}>
+              Daily Routine Pacing
             </Text>
-          </PressableScale>
-        </View>
-      </Card>
+            <View style={styles.chipsRow}>
+              {([5, 10, 20] as const).map((m) => (
+                <Chip
+                  key={m}
+                  label={`${m} min / day`}
+                  selected={routineMinutes === m}
+                  onPress={() =>
+                    setOnboardingAnswers({
+                      routineMinutes: routineMinutes === m ? null : m,
+                    })
+                  }
+                />
+              ))}
+            </View>
+
+            <Text style={[typography.captionBold, { color: colors.text.muted, marginTop: 12 }]}>
+              Diet & Nutrition Style
+            </Text>
+            <View style={styles.chipsRow}>
+              {['No preference', 'Vegetarian', 'Vegan', 'Non-Vegetarian', 'Pescatarian', 'Eggetarian'].map((d) => (
+                <Chip
+                  key={d}
+                  label={d}
+                  selected={diet === d}
+                  onPress={() => setOnboardingAnswers({ diet: diet === d ? null : d })}
+                />
+              ))}
+            </View>
+          </CollapsibleSection>
+        </>
+      ) : null}
+
+      {step === 3 ? (
+        <>
+          {/* Section 4: Food Rules & Allergies */}
+          <CollapsibleSection
+            title="Food Rules & Allergies"
+            icon="restaurant-outline"
+            summary={
+              foodRulesText || allergiesText ? 'Allergies & rules configured' : 'Food rules, allergies, cuisines'
+            }
+            done={Boolean(foodRulesText || allergiesText)}
+            defaultOpen
+          >
+            <TextField
+              label="Food rules you follow"
+              value={foodRulesText}
+              onChangeText={setFoodRulesText}
+              placeholder="e.g. Vegetarian, Jain, Halal"
+              containerStyle={styles.field}
+            />
+            <TextField
+              label="Allergies & intolerances"
+              value={allergiesText}
+              onChangeText={setAllergiesText}
+              placeholder="e.g. Peanuts, Lactose, Gluten"
+              containerStyle={styles.field}
+            />
+            <TextField
+              label="Favorite cuisines"
+              value={cuisinesText}
+              onChangeText={setCuisinesText}
+              placeholder="e.g. South Indian, Mediterranean"
+              containerStyle={styles.field}
+            />
+          </CollapsibleSection>
+        </>
+      ) : null}
+
+      {step === 4 ? (
+        <>
+          {/* Section 5: Growth & Goals */}
+          <CollapsibleSection
+            title="Growth, Skills & Career"
+            icon="trending-up-outline"
+            summary={careerGoal ? 'Career goal set' : 'Interests, skills and goals'}
+            done={Boolean(careerGoal || interestsText)}
+            defaultOpen
+          >
+            <TextField
+              label="Interests & Hobbies"
+              value={interestsText}
+              onChangeText={setInterestsText}
+              placeholder="e.g. Reading, cycling, botanical drawing"
+              containerStyle={styles.field}
+            />
+            <TextField
+              label="Skills to explore or learn"
+              value={skillsText}
+              onChangeText={setSkillsText}
+              placeholder="e.g. Python, public speaking, meditation"
+              containerStyle={styles.field}
+            />
+            <TextField
+              label="A goal for your work, studies or life"
+              value={careerGoal}
+              onChangeText={setCareerGoal}
+              placeholder="What are you building or striving toward?"
+              multiline
+              containerStyle={styles.field}
+            />
+          </CollapsibleSection>
+
+          {/* ADHD Focus Screener Card Shortcut */}
+          <Card style={[styles.sectionCard, { backgroundColor: colors.surface }]}>
+            <View style={styles.rowBetween}>
+              <View style={styles.flex}>
+                <Text style={[typography.subheading, { color: colors.text.primary }]}>Focus & Attention Style</Text>
+                <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                  {adhdProfile.completedAt
+                    ? `Style: ${adhdProfile.focusStyle ?? 'Completed'} · Tap to adjust`
+                    : 'Take the gentle 6-question screener to personalize quest lengths'}
+                </Text>
+              </View>
+              <PressableScale
+                onPress={() => router.push('/(app)/you/adhd-screener' as Href)}
+                style={[styles.editChip, { backgroundColor: colors.primaryAlpha }]}
+              >
+                <Text style={[typography.captionBold, { color: colors.primary }]}>
+                  {adhdProfile.completedAt ? 'Review' : 'Start'}
+                </Text>
+              </PressableScale>
+            </View>
+          </Card>
+        </>
+      ) : null}
+
+      <View style={styles.stepNav}>
+        {step > 0 ? <Button label="Back" variant="ghost" onPress={() => setStep(step - 1)} /> : <View />}
+        {step < STEPS.length - 1 ? (
+          <Button label={`Next: ${STEPS[step + 1]}`} variant="outline" onPress={() => setStep(step + 1)} />
+        ) : null}
+      </View>
 
       {/* Status Message */}
       {syncStatus ? (
@@ -432,8 +451,10 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingTop: 8,
   },
+  stepNav: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   quickBar: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: 8,
     marginBottom: 12,

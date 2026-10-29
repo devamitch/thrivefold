@@ -184,7 +184,8 @@ export default function AnvayKoshScreen() {
     });
   };
 
-  const filledFields = (Object.keys(FIELD_LABEL) as VaultField[]).filter((f) => vault?.[f]);
+  // The avatar seed is an internal id; the photo row already shows the picture is set.
+  const filledFields = (Object.keys(FIELD_LABEL) as VaultField[]).filter((f) => f !== 'avatar_seed' && vault?.[f]);
 
   return (
     <ScreenContainer
@@ -297,7 +298,7 @@ export default function AnvayKoshScreen() {
           </Text>
         </View>
         <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 6 }]}>
-          A small profile only you can read: name, avatar, photo, language and time zone. Syncing
+          A small profile only you can read: name, photo, language and time zone. Syncing
           fills blanks and never overwrites. Health, cycle and journal data are never part of it.
         </Text>
         {status?.signedIn ? (
