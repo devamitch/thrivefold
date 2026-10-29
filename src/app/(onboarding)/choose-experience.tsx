@@ -9,6 +9,7 @@ import { Icon, IconName } from '../../components/ui/Icon';
 import { useRootStore } from '../../stores/useRootStore';
 import { suggestedExperience } from '../../domain/account/googleProfile';
 import { ProductExperience } from '../../theme/tokens';
+import { TERMS_VERSION } from '../../domain/legal/terms';
 import { useTheme } from '../../theme/useTheme';
 
 const EXPERIENCES: { id: ProductExperience; title: string; desc: string; icon: IconName }[] = [
@@ -37,6 +38,7 @@ export default function ChooseExperienceScreen() {
   const { colors, typography, spacing } = useTheme();
   const experience = useRootStore((s) => s.experience);
   const confirmed = useRootStore((s) => s.experienceConfirmed);
+  const agreed = useRootStore((s) => Boolean(s.adultConfirmedAt) && s.termsAcceptedVersion === TERMS_VERSION);
   const setExperience = useRootStore((s) => s.setExperience);
   const googleGender = useRootStore((s) => (s.user?.profileSource === 'google' ? s.user.gender : null));
   const suggested = suggestedExperience(googleGender ?? null);
@@ -49,7 +51,7 @@ export default function ChooseExperienceScreen() {
       subtitle="This sets your home screen, tools and look. You can change it later in Personalize."
       primaryLabel={confirmed ? 'Continue' : 'Choose one to continue'}
       primaryDisabled={!confirmed}
-      onPrimary={() => router.push('/(onboarding)/privacy-choices')}
+      onPrimary={() => router.push(agreed ? '/(onboarding)/goals' : '/(onboarding)/privacy-choices')}
     >
       {EXPERIENCES.map((item) => {
         const selected = confirmed && experience === item.id;

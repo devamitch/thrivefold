@@ -1,7 +1,7 @@
 import { SquircleSurface } from '../../components/ui/SquircleSurface';
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter, type Href } from 'expo-router';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { OnboardingScaffold } from '../../components/onboarding/OnboardingScaffold';
@@ -42,6 +42,10 @@ export default function PrivacyChoicesScreen() {
   const acceptTerms = useRootStore((s) => s.acceptTerms);
   const termsVersion = useRootStore((s) => s.termsAcceptedVersion);
   const adult = Boolean(adultConfirmedAt) && termsVersion === TERMS_VERSION;
+  // Agreed at sign-in with a birthday showing 18+: nothing to ask here.
+  useEffect(() => {
+    if (adult) router.replace('/(onboarding)/goals');
+  }, [adult, router]);
 
   return (
     <OnboardingScaffold

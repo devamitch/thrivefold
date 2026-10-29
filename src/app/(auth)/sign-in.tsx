@@ -18,6 +18,7 @@ import {
 } from '../../services/account/accountService';
 import { suggestedExperience } from '../../domain/account/googleProfile';
 import { googleAvailable, pendingGoogleProfile, requestBirthdayAndGender, signInWithGoogle } from '../../services/account/googleAccount';
+import { TERMS_VERSION } from '../../domain/legal/terms';
 import { applyProfile, profileFromGoogle, pullProfile, pushProfile } from '../../services/account/profileSync';
 import { newLocalId } from '../../stores/slices/authSlice';
 import { useRootStore } from '../../stores/useRootStore';
@@ -70,6 +71,8 @@ export default function SignInScreen() {
       if (!res.cancelled) setAuthError(res.message);
       return;
     }
+    // Continuing with an account is the agreement stated under the buttons.
+    useRootStore.getState().acceptTerms(TERMS_VERSION);
     // Returning person: restore the saved profile (server first, then this phone) instead of
     // asking for the birthday and space again.
     const p = res.profile;
@@ -143,6 +146,7 @@ export default function SignInScreen() {
       isGuest: false,
       createdAt: existing?.createdAt ?? new Date().toISOString(),
     });
+    useRootStore.getState().acceptTerms(TERMS_VERSION);
     const remote = await pullProfile();
     if (remote) applyProfile(remote, { id: res.userId, email: res.email, photo: null, name: name || 'Friend' });
     void pushProfile();
@@ -150,7 +154,11 @@ export default function SignInScreen() {
   };
 
   const legal = (
-    <View style={[styles.links, { marginTop: spacing.md }]}>
+    <>
+    <Text style={[typography.caption, { color: colors.text.muted, textAlign: 'center', marginTop: spacing.md }]}>
+      By continuing with an account you confirm you are 18 or older and agree to the Terms and Privacy policy.
+    </Text>
+    <View style={[styles.links, { marginTop: spacing.xs }]}>
       {(
         [
           ['Terms', '/(public)/legal/terms'],
@@ -170,6 +178,7 @@ export default function SignInScreen() {
         </React.Fragment>
       ))}
     </View>
+    </>
   );
 
   if (!introSeen) {

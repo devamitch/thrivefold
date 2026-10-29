@@ -23,6 +23,7 @@ export const ONBOARDING_STEPS = [
   'lifestyle-preferences',
 ] as const;
 export type OnboardingStep = (typeof ONBOARDING_STEPS)[number];
+const OPTIONAL_STEPS: OnboardingStep[] = ['goals', 'baseline', 'activity-constraints', 'lifestyle-preferences'];
 
 interface OnboardingScaffoldProps {
   step: OnboardingStep;
@@ -180,6 +181,10 @@ export function OnboardingScaffold({
         ]}
       >
         <Button label={primaryLabel} onPress={continueStep} disabled={primaryDisabled} size="lg" />
+        {/* The optional steps after the space can all be answered later; Home asks gradually. */}
+        {OPTIONAL_STEPS.includes(step) ? (
+          <Button label="Finish later" variant="ghost" onPress={() => router.replace('/(onboarding)/complete')} style={{ marginTop: 4 }} />
+        ) : null}
       </View>
     </View>
   );

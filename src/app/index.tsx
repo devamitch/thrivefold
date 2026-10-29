@@ -1,6 +1,7 @@
 import { Redirect, type Href } from 'expo-router';
 
 import { ONBOARDING_STEPS, type OnboardingStep } from '../components/onboarding/OnboardingScaffold';
+import { TERMS_VERSION } from '../domain/legal/terms';
 import { restorableRoute } from '../navigation/restore';
 import { useRootStore } from '../stores/useRootStore';
 
@@ -16,6 +17,7 @@ export default function BootstrapResolver() {
   const lastActiveRoute = useRootStore((s) => s.lastActiveRoute);
   const lastActiveAt = useRootStore((s) => s.lastActiveAt);
   const experienceConfirmed = useRootStore((s) => s.experienceConfirmed);
+  const agreed = useRootStore((s) => Boolean(s.adultConfirmedAt) && s.termsAcceptedVersion === TERMS_VERSION);
 
   if (!isAuthenticated) return <Redirect href="/(auth)/sign-in" />;
   if (!isOnboarded) {
@@ -23,7 +25,9 @@ export default function BootstrapResolver() {
       ? (step as OnboardingStep)
       : // A space already chosen at sign-in is not asked again.
         experienceConfirmed
-        ? 'privacy-choices'
+        ? agreed
+          ? 'goals'
+          : 'privacy-choices'
         : 'choose-experience';
     return <Redirect href={`/(onboarding)/${resume}`} />;
   }

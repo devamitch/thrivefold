@@ -31,6 +31,7 @@ export interface RemoteProfile {
   career_goal: string | null;
   accessibility: KoshProfile['accessibility'];
   field_sources: KoshProfile['fieldSources'];
+  terms_version?: string | null;
 }
 
 const toKosh = (r: RemoteProfile): Partial<KoshProfile> => ({
@@ -69,7 +70,7 @@ export async function pullProfile(): Promise<RemoteProfile | null> {
   const { data, error } = await supabase
     .from('thrivefold_personal_profiles')
     .select(
-      'display_name, birth_date, experience, onboarded, goals, constraints, routine_minutes, diet, preferred_name, phone, languages, food_restrictions, allergies, cuisines, food_dislikes, interests, skills, career_goal, accessibility, field_sources',
+      'display_name, birth_date, experience, onboarded, goals, constraints, routine_minutes, diet, preferred_name, phone, languages, food_restrictions, allergies, cuisines, food_dislikes, interests, skills, career_goal, accessibility, field_sources, terms_version',
     )
     .eq('user_id', id)
     .maybeSingle();
@@ -113,6 +114,7 @@ export async function pushProfile(): Promise<boolean> {
       career_goal: k.careerGoal?.slice(0, 300) ?? null,
       accessibility: k.accessibility,
       field_sources: k.fieldSources,
+      terms_version: s.termsAcceptedVersion ?? null,
       updated_at: new Date().toISOString(),
     },
     { onConflict: 'user_id' },
@@ -191,6 +193,7 @@ export function applyProfile(
     createdAt: existing?.createdAt ?? new Date().toISOString(),
   });
   s.confirmAdult();
+  if (remote.terms_version && !s.termsAcceptedVersion) s.acceptTerms(remote.terms_version);
   if (base.gender && !existing?.gender) s.setPrivateIdentity({ pronouns: '', genderDescription: base.gender });
   if (!s.experienceConfirmed) s.setExperience(remote.experience);
   const o = s.onboarding;
