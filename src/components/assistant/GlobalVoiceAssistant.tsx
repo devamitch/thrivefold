@@ -195,9 +195,14 @@ export function GlobalVoiceAssistant() {
             {turns.length === 0 && !partial ? (
               <View style={styles.empty}>
                 {/* The whole character, never cropped, reacting to the conversation. */}
-                <View style={styles.buddy} pointerEvents="none">
+                <PressableScale
+                  style={styles.buddy}
+                  onPress={() => go('/(app)/thrive')}
+                  accessibilityLabel="Meet Thrive"
+                  scaleTo={0.97}
+                >
                   <ThriveBuddy size={170} entrance mood={mood} />
-                </View>
+                </PressableScale>
                 <Text style={[typography.body, { color: colors.text.secondary }]}>
                   Talk naturally. Ask a question, or say things like &quot;log two glasses of water and then open
                   sleep&quot;, &quot;export all my metrics&quot; or &quot;remember that I train at 7 am&quot;.

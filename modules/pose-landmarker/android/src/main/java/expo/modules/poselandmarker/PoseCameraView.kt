@@ -55,7 +55,7 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
       "eyeLookInRight", "eyeLookOutRight", "eyeLookUpRight", "eyeLookDownRight",
       "eyeBlinkLeft", "eyeBlinkRight", "eyeSquintLeft", "eyeSquintRight", "eyeWideLeft", "eyeWideRight",
       "browInnerUp", "browOuterUpLeft", "browOuterUpRight", "browDownLeft", "browDownRight",
-      "jawOpen", "mouthSmileLeft", "mouthSmileRight", "mouthPucker", "cheekPuff",
+      "jawOpen", "mouthSmileLeft", "mouthSmileRight", "mouthFrownLeft", "mouthFrownRight", "mouthPucker", "cheekPuff",
     )
     /** Gesture recognizer bundle: MediaPipe hand landmarker plus the canned gesture classifier. */
     const val HAND_ASSET = "gesture_recognizer.task"

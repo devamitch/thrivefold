@@ -18,13 +18,15 @@ export const REST = {
   // body
   lean: 0, squash: 0, hop: 0, spin: 0, lie: 0, shake: 0, floatY: 0, pop: 0, enter: 1,
   // limbs (hand / foot targets in the 1024 design grid)
-  lHx: 232, lHy: 556, rHx: 722, rHy: 540, lFx: 428, lFy: 868, rFx: 498, rFy: 868,
+  lHx: 232, lHy: 700, rHx: 722, rHy: 700, lFx: 432, lFy: 868, rFx: 522, rFy: 868,
   // mark parts
   leaf: 0, sun: 1, sunY: 0, glow: 0.3,
   // props
   glasses: 0, cup: 0, cupFill: 1, cupTilt: 0, bar: 0,
   // fx
   zzz: 0, hearts: 0, steam: 0, wind: 0, stars: 0,
+  // live heart rate (bpm) from a wearable; 0 = unknown. The tummy sun beats with it.
+  bpm: 0,
 } as const;
 
 type K = keyof typeof REST;
@@ -86,7 +88,7 @@ const ACT: Record<Activity, (r: Rig) => number> = {
 
   wave: (r) => {
     seq(r.rHx, [[790, 380], ...rep([[835, 240], [745, 240]], 5), [722, 420]]);
-    seq(r.rHy, [[150, 380], [150, 2400], [540, 420]]);
+    seq(r.rHy, [[220, 380], [220, 2400], [700, 420]]);
     seq(r.leaf, [[1, 300], [-1, 300], [1, 300], [-1, 300], [1, 300], [0, 400]]);
     return 3200;
   },
@@ -98,8 +100,8 @@ const ACT: Record<Activity, (r: Rig) => number> = {
   },
 
   drink: (r) => {
-    seq(r.lHx, [[432, 700], [432, 2400], [232, 700]]);
-    seq(r.lHy, [[522, 700], [522, 2400], [556, 700]]);
+    seq(r.lHx, [[440, 700], [440, 2400], [232, 700]]);
+    seq(r.lHy, [[430, 700], [430, 2400], [700, 700]]);
     seq(r.cup, [[1, 300], [1, 3200], [0, 300]]);
     seq(r.cupTilt, [[0, 700], [-35, 500], [-35, 1400], [0, 400], [0, 800]]);
     seq(r.cupFill, [[1, 700], [1, 500], [0.15, 1600], [0.15, 1000]]);
@@ -109,13 +111,13 @@ const ACT: Record<Activity, (r: Rig) => number> = {
 
   exercise: (r) => {
     seq(r.bar, [[1, 400], [1, 5000], [0, 400]]);
-    seq(r.lHy, [[290, 500], ...rep([[290, 480], [120, 480]], 5), [556, 500]]);
+    seq(r.lHy, [[430, 500], ...rep([[430, 480], [210, 480]], 5), [700, 500]]);
     seq(r.lHx, [[330, 500], ...rep([[305, 480], [330, 480]], 5), [232, 500]]);
-    seq(r.rHy, [[280, 500], ...rep([[280, 480], [120, 480]], 5), [540, 500]]);
+    seq(r.rHy, [[430, 500], ...rep([[430, 480], [210, 480]], 5), [700, 500]]);
     seq(r.rHx, [[630, 500], ...rep([[655, 480], [630, 480]], 5), [722, 500]]);
     seq(r.squash, [[0, 500], ...rep([[0.7, 480], [0, 480]], 5), [0, 500]]);
-    seq(r.lFx, [[410, 400], [410, 5000], [428, 400]]);
-    seq(r.rFx, [[516, 400], [516, 5000], [498, 400]]);
+    seq(r.lFx, [[410, 400], [410, 5000], [432, 400]]);
+    seq(r.rFx, [[544, 400], [544, 5000], [522, 400]]);
     seq(r.sweat, [[1, 1500], [1, 3800], [0, 500]]);
     return 5800;
   },
@@ -123,18 +125,18 @@ const ACT: Record<Activity, (r: Rig) => number> = {
   jacks: (r) => {
     const a = 420;
     seq(r.lHx, rep([[205, a], [232, a]], 6));
-    seq(r.lHy, rep([[130, a], [556, a]], 6));
+    seq(r.lHy, rep([[200, a], [700, a]], 6));
     seq(r.rHx, rep([[765, a], [722, a]], 6));
-    seq(r.rHy, rep([[110, a], [540, a]], 6));
-    seq(r.lFx, rep([[372, a], [428, a]], 6));
-    seq(r.rFx, rep([[556, a], [498, a]], 6));
+    seq(r.rHy, rep([[190, a], [700, a]], 6));
+    seq(r.lFx, rep([[380, a], [432, a]], 6));
+    seq(r.rFx, rep([[574, a], [522, a]], 6));
     seq(r.hop, rep([[0.45, a / 2], [0, a / 2], [0.45, a / 2], [0, a / 2]], 6));
     seq(r.sweat, [[1, 1200], [1, 3400], [0, 440]]);
     return 5040;
   },
 
   sleep: (r) => {
-    go(r.lHx, 300, 900); go(r.lHy, 520, 900); go(r.rHx, 650, 900); go(r.rHy, 520, 900);
+    go(r.lHx, 420, 900); go(r.lHy, 600, 900); go(r.rHx, 534, 900); go(r.rHy, 600, 900);
     return 0;
   },
 
@@ -142,17 +144,17 @@ const ACT: Record<Activity, (r: Rig) => number> = {
     seq(r.mouthOpen, [[1, 900], [1, 900], [0.1, 500]]);
     seq(r.squint, [[0.8, 700], [0.8, 1100], [0, 500]]);
     seq(r.lHx, [[220, 800], [220, 1000], [232, 600]]);
-    seq(r.lHy, [[200, 800], [200, 1000], [556, 600]]);
+    seq(r.lHy, [[230, 800], [230, 1000], [700, 600]]);
     seq(r.rHx, [[710, 800], [710, 1000], [722, 600]]);
-    seq(r.rHy, [[190, 800], [190, 1000], [540, 600]]);
+    seq(r.rHy, [[220, 800], [220, 1000], [700, 600]]);
     return 2600;
   },
 
   stretch: (r) => {
     seq(r.lHx, [[215, 700], [215, 2200], [232, 700]]);
-    seq(r.lHy, [[150, 700], [150, 2200], [556, 700]]);
+    seq(r.lHy, [[170, 700], [170, 2200], [700, 700]]);
     seq(r.rHx, [[735, 700], [735, 2200], [722, 700]]);
-    seq(r.rHy, [[130, 700], [130, 2200], [540, 700]]);
+    seq(r.rHy, [[160, 700], [160, 2200], [700, 700]]);
     seq(r.lean, [[0, 700], [9, 900], [-9, 1200], [0, 800]]);
     seq(r.squint, [[0.7, 700], [0.7, 2200], [0, 700]]);
     return 3600;
@@ -161,8 +163,8 @@ const ACT: Record<Activity, (r: Rig) => number> = {
   roll: (r) => {
     seq(r.spin, [[360, 1300]]);
     seq(r.hop, [[0.7, 500], [0, 800]]);
-    go(r.lHx, 350, 250); go(r.lHy, 430, 250); go(r.rHx, 580, 250); go(r.rHy, 430, 250);
-    go(r.lFy, 810, 250); go(r.rFy, 810, 250); go(r.lFx, 445, 250); go(r.rFx, 481, 250);
+    go(r.lHx, 400, 250); go(r.lHy, 560, 250); go(r.rHx, 554, 250); go(r.rHy, 560, 250);
+    go(r.lFy, 810, 250); go(r.rFy, 810, 250); go(r.lFx, 452, 250); go(r.rFx, 502, 250);
     return 1500;
   },
 
@@ -170,8 +172,8 @@ const ACT: Record<Activity, (r: Rig) => number> = {
     const b = 300;
     seq(r.lean, rep([[9, b], [-9, b]], 8));
     seq(r.hop, rep([[0.35, b], [0, b]], 8));
-    seq(r.lHy, rep([[160, b], [520, b]], 8));
-    seq(r.rHy, rep([[520, b], [160, b]], 8));
+    seq(r.lHy, rep([[200, b], [640, b]], 8));
+    seq(r.rHy, rep([[640, b], [200, b]], 8));
     seq(r.lHx, rep([[200, b], [232, b]], 8));
     seq(r.rHx, rep([[722, b], [760, b]], 8));
     seq(r.leaf, rep([[1, b], [-1, b]], 8));
@@ -182,14 +184,14 @@ const ACT: Record<Activity, (r: Rig) => number> = {
   sob: (r) => {
     go(r.shake, 1, 200);
     seq(r.squash, rep([[0.25, 450], [0, 450]], 5));
-    go(r.lHx, 360, 500); go(r.lHy, 385, 500); go(r.rHx, 565, 500); go(r.rHy, 372, 500);
+    go(r.lHx, 350, 500); go(r.lHy, 420, 500); go(r.rHx, 604, 500); go(r.rHy, 420, 500);
     return 4600;
   },
 
   tantrum: (r) => {
     go(r.shake, 1, 150);
-    seq(r.lHx, [[185, 300]]); seq(r.lHy, [[240, 300]]);
-    seq(r.rHx, [[760, 300]]); seq(r.rHy, [[225, 300]]);
+    seq(r.lHx, [[185, 300]]); seq(r.lHy, [[270, 300]]);
+    seq(r.rHx, [[760, 300]]); seq(r.rHy, [[255, 300]]);
     seq(r.lFy, rep([[828, 140], [868, 140]], 13));
     seq(r.rFy, rep([[868, 140], [828, 140]], 13));
     seq(r.lean, rep([[-4, 140], [4, 140]], 13));
@@ -201,14 +203,14 @@ const ACT: Record<Activity, (r: Rig) => number> = {
     seq(r.wind, [[1, 500], [1, 3200], [0, 500]]);
     seq(r.lean, [[-16, 700], [-9, 500], [-18, 600], [-7, 700], [-13, 500], [0, 900]]);
     seq(r.leaf, rep([[1.6, 160], [-1.2, 160]], 12));
-    go(r.squint, 0.6, 400); go(r.lFx, 405, 300); go(r.rFx, 520, 300);
+    go(r.squint, 0.6, 400); go(r.lFx, 415, 300); go(r.rFx, 535, 300);
     return 4200;
   },
 
   peek: (r) => {
     seq(r.pop, [[1, 450], [1, 1900], [0, 450]]);
     seq(r.rHx, [[610, 450], [610, 1900], [722, 450]]);
-    seq(r.rHy, [[255, 450], [255, 1900], [540, 450]]);
+    seq(r.rHy, [[290, 450], [290, 1900], [700, 450]]);
     seq(r.lean, [[5, 450], [5, 1900], [0, 450]]);
     return 2800;
   },
@@ -216,15 +218,15 @@ const ACT: Record<Activity, (r: Rig) => number> = {
   clap: (r) => {
     seq(r.lHx, [[400, 300], ...rep([[440, 100], [400, 100]], 4), [232, 500]]);
     seq(r.rHx, [[540, 300], ...rep([[500, 100], [540, 100]], 4), [722, 500]]);
-    seq(r.lHy, [[440, 300], [440, 800], [556, 500]]);
-    seq(r.rHy, [[440, 300], [440, 800], [540, 500]]);
+    seq(r.lHy, [[580, 300], [580, 800], [700, 500]]);
+    seq(r.rHy, [[580, 300], [580, 800], [700, 500]]);
     seq(r.hop, [[0.2, 200], [0, 250], [0.2, 200], [0, 250]]);
     return 1600;
   },
 
   think: (r) => {
-    seq(r.rHx, [[540, 500], [540, 2400], [722, 500]]);
-    seq(r.rHy, [[500, 500], [500, 2400], [540, 500]]);
+    seq(r.rHx, [[530, 500], [530, 2400], [722, 500]]);
+    seq(r.rHy, [[470, 500], [470, 2400], [700, 500]]);
     seq(r.lean, [[5, 500], [5, 2400], [0, 500]]);
     return 3400;
   },
@@ -233,27 +235,27 @@ const ACT: Record<Activity, (r: Rig) => number> = {
     seq(r.hop, rep([[0.25, 150], [0, 150]], 9));
     seq(r.mouthOpen, rep([[0.9, 150], [0.45, 150]], 9));
     go(r.squint, 1, 250);
-    go(r.lHx, 385, 400); go(r.lHy, 470, 400); go(r.rHx, 555, 400); go(r.rHy, 470, 400);
+    go(r.lHx, 410, 400); go(r.lHy, 600, 400); go(r.rHx, 544, 400); go(r.rHy, 600, 400);
     return 2800;
   },
 
   meditate: (r) => {
     seq(r.squash, [[0.18, 800], [0.18, 4400], [0, 800]]);
     seq(r.floatY, [[-18, 1500], [0, 1500], [-18, 1500], [0, 1500]]);
-    go(r.lHx, 430, 800); go(r.lHy, 430, 800); go(r.rHx, 500, 800); go(r.rHy, 430, 800);
-    go(r.lFy, 800, 800); go(r.rFy, 800, 800); go(r.lFx, 440, 800); go(r.rFx, 486, 800);
+    go(r.lHx, 450, 800); go(r.lHy, 570, 800); go(r.rHx, 504, 800); go(r.rHy, 570, 800);
+    go(r.lFy, 800, 800); go(r.rFy, 800, 800); go(r.lFx, 452, 800); go(r.rFx, 502, 800);
     go(r.eyeOpen, 0, 700); go(r.glow, 1, 900); go(r.sun, 1.2, 900);
     return 6000;
   },
 
   hug: (r) => {
-    go(r.lHx, 505, 600); go(r.lHy, 445, 600); go(r.rHx, 430, 600); go(r.rHy, 445, 600);
+    go(r.lHx, 520, 600); go(r.lHy, 580, 600); go(r.rHx, 434, 600); go(r.rHy, 580, 600);
     seq(r.pop, [[0.6, 500], [0.6, 2000], [0, 500]]);
     return 3000;
   },
 
   listen: (r) => {
-    go(r.rHx, 742, 400); go(r.rHy, 285, 400); go(r.lean, 5, 400);
+    go(r.rHx, 750, 400); go(r.rHy, 380, 400); go(r.lean, 5, 400);
     return 0;
   },
 };

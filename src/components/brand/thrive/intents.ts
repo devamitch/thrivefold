@@ -1,6 +1,6 @@
 import type { Activity, Mood } from './types';
 
-export type GuideName = 'workout' | 'breathing' | 'eyebreak' | 'stretch' | 'water';
+export type GuideName = 'intro' | 'workout' | 'breathing' | 'eyebreak' | 'stretch' | 'water';
 
 export type Intent =
   | { type: 'activity'; activity: Activity; say: string }
@@ -87,6 +87,17 @@ export interface GuideStep { say: string; activity: Activity; ms: number }
 export interface Guide { title: string; steps: GuideStep[]; done: string }
 
 export const GUIDES: Record<GuideName, Guide> = {
+  intro: {
+    title: 'Meet Thrivefold',
+    done: "Let's thrive together.",
+    steps: [
+      { say: "Hi! I'm Thrivefold, your companion. I live on your phone and everything I do works offline.", activity: 'greet', ms: 8000 },
+      { say: 'Tap the mic and talk to me. I can take notes, tell the time, and guide your workouts.', activity: 'wave', ms: 8000 },
+      { say: 'Turn on the camera and I will see how you feel, and feel with you.', activity: 'peek', ms: 6500 },
+      { say: 'I will remind you to drink water, rest your eyes, and sleep on time.', activity: 'drink', ms: 6000 },
+      { say: 'I am always here for you.', activity: 'hug', ms: 4000 },
+    ],
+  },
   workout: {
     title: 'Quick workout',
     done: 'Great work! You finished. Drink some water.',

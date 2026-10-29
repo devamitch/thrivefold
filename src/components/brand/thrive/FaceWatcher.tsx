@@ -7,9 +7,12 @@ import { ensureCameraPermission } from '../../../services/sensors/cameraPermissi
 import { useTheme } from '../../../theme/useTheme';
 import type { FaceSignal } from './types';
 
+const avg = (a?: number, b?: number) => ((a ?? 0) + (b ?? 0)) / 2;
+
 /**
- * On-device face signals from the app's own MediaPipe camera (no network): smile, eyes open,
- * head angles, position and distance. Frames are read in memory and never stored.
+ * On-device face signals from the app's own MediaPipe camera (no network). Beyond smile and eyes it
+ * now passes jaw, brow and frown blendshapes so the companion can read surprise, anger and sadness.
+ * Frames are read in memory and never stored.
  */
 export function FaceWatcher({
   active,
@@ -45,10 +48,7 @@ export function FaceWatcher({
         onSignal({ present: false, smile: 0, eyesOpen: 1, yaw: 0, pitch: 0, roll: 0, x: 0, y: 0, size: 0 });
         return;
       }
-      let minX = 1;
-      let maxX = 0;
-      let minY = 1;
-      let maxY = 0;
+      let minX = 1, maxX = 0, minY = 1, maxY = 0;
       for (let i = 0; i + 1 < pts.length; i += 2) {
         minX = Math.min(minX, pts[i]);
         maxX = Math.max(maxX, pts[i]);
@@ -56,17 +56,21 @@ export function FaceWatcher({
         maxY = Math.max(maxY, pts[i + 1]);
       }
       const b = f.blendshapes ?? {};
-      const cx = (minX + maxX) - 1; // centre mapped to -1..1
+      const cx = minX + maxX - 1;
       onSignal({
         present: true,
-        smile: ((b.mouthSmileLeft ?? 0) + (b.mouthSmileRight ?? 0)) / 2,
-        eyesOpen: 1 - ((b.eyeBlinkLeft ?? 0) + (b.eyeBlinkRight ?? 0)) / 2,
+        smile: avg(b.mouthSmileLeft, b.mouthSmileRight),
+        eyesOpen: 1 - avg(b.eyeBlinkLeft, b.eyeBlinkRight),
         yaw: f.head?.yaw ?? 0,
         pitch: f.head?.pitch ?? 0,
         roll: 0,
         x: mirror ? -cx : cx,
         y: minY + maxY - 1,
         size: maxY - minY,
+        jawOpen: b.jawOpen ?? 0,
+        browDown: avg(b.browDownLeft, b.browDownRight),
+        browUp: b.browInnerUp ?? 0,
+        frown: avg(b.mouthFrownLeft, b.mouthFrownRight),
       });
     },
     [onSignal, mirror],

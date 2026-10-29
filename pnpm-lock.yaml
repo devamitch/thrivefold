@@ -101,6 +101,9 @@ importers:
       expo-motion-blur:
         specifier: ^0.1.0
         version: 0.1.0(expo@55.0.31)(react-native@0.83.10(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.87.1(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.0)(supports-color@8.1.1))(react@19.2.0)
+      expo-network:
+        specifier: ~55.0.18
+        version: 55.0.18(expo@55.0.31)(react@19.2.0)
       expo-notifications:
         specifier: ~55.0.27
         version: 55.0.27(expo@55.0.31)(react-native@0.83.10(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.87.1(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.0)(supports-color@8.1.1))(react@19.2.0)(supports-color@8.1.1)(typescript@5.9.3)
@@ -3380,6 +3383,12 @@ packages:
       expo: '*'
       react: '*'
       react-native: '*'
+
+  expo-network@55.0.18:
+    resolution: {integrity: sha512-zHKgRbTbPAN/TYbnV4r2DGlTvq5DG26n/N0S/MF41i3S/kcU6fad/YNgdkixmXt2JFNOCfT3OnouV2q7OyYAWg==}
+    peerDependencies:
+      expo: '*'
+      react: '*'
 
   expo-notifications@55.0.27:
     resolution: {integrity: sha512-Qquo8zytHPR4Rj819KwghUqvdf2RJG8+S8Y3DQ+4wUZgRFdWqNnh8IX9IhcdITTGr/Ei0I9LzI0BKG4qyO9ubw==}
@@ -9962,6 +9971,11 @@ snapshots:
       expo: 55.0.31(8b6155f4e1a8580e4767c524e77c7a10)
       react: 19.2.0
       react-native: 0.83.10(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.87.1(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.0)(supports-color@8.1.1)
+
+  expo-network@55.0.18(expo@55.0.31)(react@19.2.0):
+    dependencies:
+      expo: 55.0.31(8b6155f4e1a8580e4767c524e77c7a10)
+      react: 19.2.0
 
   expo-notifications@55.0.27(expo@55.0.31)(react-native@0.83.10(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.87.1(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.0)(supports-color@8.1.1))(react@19.2.0)(supports-color@8.1.1)(typescript@5.9.3):
     dependencies:

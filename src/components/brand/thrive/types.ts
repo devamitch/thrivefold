@@ -24,4 +24,9 @@ export interface FaceSignal {
   /** Optional: set these if you plug in a TFLite emotion / glasses model. */
   emotion?: Mood;
   glasses?: boolean;
+  /** MediaPipe blendshapes (0..1), used to read surprise / anger / sadness offline. */
+  jawOpen?: number;
+  browDown?: number;
+  browUp?: number;
+  frown?: number;
 }
