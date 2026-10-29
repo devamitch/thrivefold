@@ -21,6 +21,83 @@ export * from './src/modelCatalog';
 export * from './src/modelDownloader';
 export * from './src/useLocalAI';
 
+export interface DocumentChunkResult {
+  index: number;
+  text: string;
+  startOffset: number;
+  endOffset: number;
+  tokenEstimate: number;
+}
+
+export function jsChunkDocument(
+  text: string,
+  targetChunkSize = 320,
+  overlapChars = 40
+): DocumentChunkResult[] {
+  const cleaned = text
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!cleaned) return [];
+  if (cleaned.length <= targetChunkSize) {
+    return [
+      {
+        index: 0,
+        text: cleaned,
+        startOffset: 0,
+        endOffset: cleaned.length,
+        tokenEstimate: Math.max(1, Math.round(cleaned.split(' ').filter(Boolean).length * 1.3)),
+      },
+    ];
+  }
+
+  const chunks: DocumentChunkResult[] = [];
+  const sentences = cleaned.split(/(?<=[.!?\n])\s+/).filter(Boolean);
+  let buffer = '';
+  let chunkIdx = 0;
+  let currentStart = 0;
+
+  for (const sentence of sentences) {
+    if (buffer.length + sentence.length > targetChunkSize && buffer.length > 0) {
+      const chunkText = buffer.trim();
+      chunks.push({
+        index: chunkIdx++,
+        text: chunkText,
+        startOffset: currentStart,
+        endOffset: currentStart + chunkText.length,
+        tokenEstimate: Math.max(1, Math.round(chunkText.split(' ').filter(Boolean).length * 1.3)),
+      });
+      const overlapText =
+        chunkText.length > overlapChars ? chunkText.slice(-overlapChars) : chunkText;
+      currentStart += chunkText.length - overlapText.length;
+      buffer = `${overlapText} `;
+    }
+    buffer += `${sentence} `;
+  }
+
+  if (buffer.trim()) {
+    const chunkText = buffer.trim();
+    chunks.push({
+      index: chunkIdx,
+      text: chunkText,
+      startOffset: currentStart,
+      endOffset: currentStart + chunkText.length,
+      tokenEstimate: Math.max(1, Math.round(chunkText.split(' ').filter(Boolean).length * 1.3)),
+    });
+  }
+  return chunks;
+}
+
+export function jsComputeTermFrequencies(text: string): Record<string, number> {
+  const clean = text.toLowerCase().replace(/[^a-z0-9\s]/g, ' ');
+  const tokens = clean.split(/\s+/).filter((t) => t.length > 2);
+  const tf: Record<string, number> = {};
+  for (const t of tokens) {
+    tf[t] = (tf[t] || 0) + 1;
+  }
+  return tf;
+}
+
 interface LocalAINative {
   isSupported: boolean;
   nativeEngine: string;
@@ -51,6 +128,12 @@ interface LocalAINative {
   startStream(turnId: string, prompt: string, context?: string, system?: string): boolean;
   cancelGeneration(): boolean;
   embed(text: string): Promise<number[]>;
+  chunkDocument(
+    text: string,
+    targetChunkSize?: number,
+    overlapChars?: number
+  ): DocumentChunkResult[];
+  computeTermFrequencies(text: string): Record<string, number>;
 
   addListener(eventName: string, listener: (event: unknown) => void): { remove: () => void };
   removeAllListeners(eventName: string): void;
@@ -244,6 +327,39 @@ class LocalAIService {
       throw new Error('LocalAI native module is unavailable on this platform.');
     }
     return native.embed(text);
+  }
+
+  /**
+   * Performs fast semantic document chunking using native engine when available,
+   * falling back to portable JS chunker on non-Android/test platforms.
+   */
+  chunkDocument(
+    text: string,
+    targetChunkSize = 320,
+    overlapChars = 40
+  ): DocumentChunkResult[] {
+    if (!native) {
+      return jsChunkDocument(text, targetChunkSize, overlapChars);
+    }
+    try {
+      return native.chunkDocument(text, targetChunkSize, overlapChars);
+    } catch {
+      return jsChunkDocument(text, targetChunkSize, overlapChars);
+    }
+  }
+
+  /**
+   * Computes term frequency map for sparse BM25 indexing.
+   */
+  computeTermFrequencies(text: string): Record<string, number> {
+    if (!native) {
+      return jsComputeTermFrequencies(text);
+    }
+    try {
+      return native.computeTermFrequencies(text);
+    } catch {
+      return jsComputeTermFrequencies(text);
+    }
   }
 
   // Event Listeners

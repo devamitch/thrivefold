@@ -15,6 +15,7 @@ import { stepsByDate } from '../interop/readings';
 import { activeCalories } from '../activity/calories';
 import { answerWithHybridRag } from '../../services/local-ai/rag/hybridRagPipeline';
 import { memoryStore } from '../../services/local-ai/memory/memoryStore';
+import { knowledgeStore } from '../../services/local-ai/rag/knowledgeStore';
 import { lookupMedicine, analyzePrescriptionText } from '../../services/ai/medicineResearch';
 
 function navigateTo(route: string) {
@@ -246,6 +247,47 @@ export const TOOLS: Record<string, ToolDefinition> = {
         success: true,
         message: `Saved reflection to your private on-device memories.`,
         data: { memoryId: memory.id },
+      };
+    },
+  },
+
+  ingest_user_document: {
+    name: 'ingest_user_document',
+    description: 'Chunks, indexes, and saves an educational wellness document or personal note into on-device vector RAG.',
+    parameters: {
+      title: {
+        type: 'string',
+        description: 'Title of the document',
+        required: true,
+      },
+      text: {
+        type: 'string',
+        description: 'Full text content of the document',
+        required: true,
+      },
+      sourceType: {
+        type: 'string',
+        description: 'Document category',
+        enum: ['user_note', 'health_article', 'wellness_guide', 'imported_file', 'medical_reference'],
+      },
+    },
+    execute: async (
+      params: {
+        title: string;
+        text: string;
+        sourceType?: 'user_note' | 'health_article' | 'wellness_guide' | 'imported_file' | 'medical_reference';
+      },
+      context: ToolExecutionContext
+    ) => {
+      const doc = await knowledgeStore.ingestDocument(context.userId || 'local_user', {
+        title: params.title,
+        text: params.text,
+        sourceType: params.sourceType,
+      });
+      return {
+        success: true,
+        message: `Indexed "${doc.title}" into ${doc.chunkCount} searchable knowledge chunk${doc.chunkCount === 1 ? '' : 's'} on device.`,
+        data: { documentId: doc.id, chunkCount: doc.chunkCount },
       };
     },
   },

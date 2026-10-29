@@ -11,17 +11,28 @@
 import { LocalAI } from '../../../../modules/local-ai';
 import { memoryStore } from '../memory/memoryStore';
 import type { UserMemory } from '../memory/types';
+import { knowledgeStore, type KnowledgeChunk } from './knowledgeStore';
 import { tokenize, makeSnippet } from '../../../domain/ai/localRetrieval';
 import { EXERCISES } from '../../../domain/fitness/workouts';
 
 export interface RagDocument {
   id: string;
-  sourceType: 'user_memory' | 'user_journal' | 'exercise_catalog' | 'wellness_guide';
+  sourceType:
+    | 'user_memory'
+    | 'user_journal'
+    | 'exercise_catalog'
+    | 'wellness_guide'
+    | 'user_document'
+    | 'user_note'
+    | 'health_article'
+    | 'imported_file'
+    | 'medical_reference';
   title: string;
   content: string;
   date?: string;
   metadata?: Record<string, unknown>;
   embedding?: number[];
+  chunkOffset?: { start: number; end: number };
 }
 
 export interface RagEvidenceHit {
@@ -103,7 +114,8 @@ export function rankSparseBM25(docs: RagDocument[], query: string): { doc: RagDo
 }
 
 /**
- * Executes a full hybrid retrieval query over persistent analytical memories & local catalogs.
+ * Executes a full hybrid retrieval query over persistent analytical memories,
+ * ingested documents/guides, and local catalogs.
  */
 export async function retrieveHybridEvidence(
   userId: string,
@@ -124,28 +136,56 @@ export async function retrieveHybridEvidence(
     embedding: m.embedding,
   }));
 
-  const allDocs = [...catalogDocs, ...memoryDocs];
+  // 2. Fetch ingested knowledge chunks from SQLite
+  let knowledgeChunkDocs: RagDocument[] = [];
+  try {
+    const chunks = await knowledgeStore.getAllChunks(userId);
+    knowledgeChunkDocs = chunks.map((c) => ({
+      id: c.id,
+      sourceType: 'user_document' as const,
+      title: `Doc Chunk ${c.chunkIndex + 1}`,
+      content: c.content,
+      date: c.createdAt,
+      embedding: c.embedding,
+      chunkOffset: { start: c.startOffset, end: c.endOffset },
+      metadata: { documentId: c.documentId, tokenEstimate: c.tokenEstimate },
+    }));
+  } catch {
+    // If table is newly created or empty
+  }
 
-  // 2. Sparse Lexical BM25 Ranking
+  const allDocs = [...catalogDocs, ...memoryDocs, ...knowledgeChunkDocs];
+
+  // 3. Sparse Lexical BM25 Ranking
   const sparseHits = rankSparseBM25(allDocs, query);
   const sparseRankMap = new Map<string, number>();
   sparseHits.forEach((hit, idx) => sparseRankMap.set(hit.doc.id, idx + 1));
 
-  // 3. Dense Semantic Vector Search (if local embedding model available)
+  // 4. Dense Semantic Vector Search (if local embedding model available)
   const denseRankMap = new Map<string, number>();
   if (LocalAI.isLoaded()) {
     try {
       const queryVec = await LocalAI.embed(query);
       if (queryVec && queryVec.length > 0) {
-        const denseResults = await memoryStore.searchMemoriesByVector(userId, queryVec, 10, 0.45);
-        denseResults.forEach((res, idx) => denseRankMap.set(res.memory.id, idx + 1));
+        // Query memory store vectors
+        const denseMemories = await memoryStore.searchMemoriesByVector(userId, queryVec, 10, 0.4);
+        denseMemories.forEach((res, idx) => denseRankMap.set(res.memory.id, idx + 1));
+
+        // Query knowledge chunk vectors
+        const denseChunks = await knowledgeStore.searchChunksByVector(userId, queryVec, 10, 0.4);
+        denseChunks.forEach((res, idx) => {
+          const currentRank = denseRankMap.get(res.chunk.id);
+          if (currentRank === undefined || idx + 1 < currentRank) {
+            denseRankMap.set(res.chunk.id, idx + 1);
+          }
+        });
       }
     } catch {
       // Degrades gracefully to sparse ranking if embedding engine is busy or unavailable
     }
   }
 
-  // 4. Reciprocal Rank Fusion (RRF)
+  // 5. Reciprocal Rank Fusion (RRF)
   const candidateIds = new Set<string>([...sparseRankMap.keys(), ...denseRankMap.keys()]);
   const docMap = new Map<string, RagDocument>(allDocs.map((d) => [d.id, d]));
   const fusionHits: RagEvidenceHit[] = [];
@@ -159,7 +199,7 @@ export async function retrieveHybridEvidence(
 
     let score = 0;
     if (sRank !== undefined) score += 1 / (RRF_K + sRank);
-    if (dRank !== undefined) score += 1.2 / (RRF_K + dRank); // Slight boost for semantic matches
+    if (dRank !== undefined) score += 1.2 / (RRF_K + dRank); // Boost for semantic vector matches
 
     const terms = tokenize(query);
     fusionHits.push({
@@ -185,7 +225,7 @@ export async function answerWithHybridRag(
 
   if (hits.length === 0 || hits[0].hybridScore < 0.01) {
     return {
-      answer: 'I could not find enough relevant records in your personal wellness notes or exercise library to answer that with certainty.',
+      answer: 'I could not find enough relevant records in your personal wellness notes, documents, or exercise library to answer that with certainty.',
       citations: [],
       evidenceHits: [],
       confidence: 0,
@@ -193,16 +233,26 @@ export async function answerWithHybridRag(
     };
   }
 
-  const citations: string[] = hits.map((h) =>
-    h.document.sourceType === 'exercise_catalog'
-      ? `[Exercise Catalog: ${h.document.title}]`
-      : `[Personal Memory: ${h.document.title}]`
-  );
+  const citations: string[] = hits.map((h) => {
+    if (h.document.sourceType === 'exercise_catalog') {
+      return `[Exercise Catalog: ${h.document.title}]`;
+    }
+    if (h.document.sourceType === 'user_document') {
+      return `[Document: ${h.document.title}]`;
+    }
+    return `[Personal Memory: ${h.document.title}]`;
+  });
 
   // If local AI is loaded, synthesize grounded response; otherwise format crisp factual digest
   if (LocalAI.isLoaded()) {
     const evidenceText = hits.map((h, i) => `[Source ${i + 1} - ${h.document.title}]: ${h.document.content}`).join('\n\n');
-    const prompt = `Answer the user's question using ONLY the provided evidence. Cite sources using [Source 1], [Source 2], etc. Do not fabricate facts.\n\nEvidence:\n${evidenceText}\n\nQuestion: "${query}"\n\nAnswer:`;
+    const prompt =
+      `You are Thrive Coach, an evidence-grounded on-device wellness assistant.\n` +
+      `Use ONLY the provided evidence below to answer the user's question.\n` +
+      `Cite sources using [Source 1], [Source 2], etc. If the answer is not in the context, say "I don't know based on your recorded notes and documents." Do not invent facts.\n\n` +
+      `Evidence Context:\n${evidenceText}\n\n` +
+      `Question: "${query}"\n\n` +
+      `Answer:`;
 
     try {
       const generated = await LocalAI.generateText({
@@ -224,13 +274,20 @@ export async function answerWithHybridRag(
 
   // Deterministic synthesis fallback
   const topDoc = hits[0].document;
-  const answer = `Based on your ${topDoc.sourceType === 'exercise_catalog' ? 'exercise catalog' : 'recorded notes'}: ${hits.map((h) => h.snippet).join(' ')}`;
+  const sourceLabel =
+    topDoc.sourceType === 'exercise_catalog'
+      ? 'exercise catalog'
+      : topDoc.sourceType === 'user_document'
+      ? 'saved health documents'
+      : 'recorded notes';
+
+  const answer = `Based on your ${sourceLabel}: ${hits.map((h) => h.snippet).join(' ')}`;
 
   return {
     answer,
     citations,
     evidenceHits: hits,
-    confidence: 0.82,
+    confidence: 0.85,
     isGrounded: true,
   };
 }

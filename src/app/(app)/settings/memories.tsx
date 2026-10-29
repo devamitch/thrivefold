@@ -17,6 +17,7 @@ import { PressableScale } from '../../../components/ui/PressableScale';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { TextField } from '../../../components/ui/TextField';
 import { memoryStore } from '../../../services/local-ai/memory/memoryStore';
+import { knowledgeStore } from '../../../services/local-ai/rag/knowledgeStore';
 import type { UserMemory, MemoryKind } from '../../../services/local-ai/memory/types';
 import { useTheme } from '../../../theme/useTheme';
 import { hapticMedium, hapticSelection } from '../../../services/haptics';
@@ -102,6 +103,7 @@ export default function MemoriesScreen() {
           style: 'destructive',
           onPress: async () => {
             await memoryStore.clearAllMemories('local_user');
+            await knowledgeStore.clearAllDocuments('local_user');
             await loadMemories();
           },
         },

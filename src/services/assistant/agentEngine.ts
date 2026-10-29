@@ -170,11 +170,17 @@ class AgentEngine {
       return { text: res.message, toolResult: res };
     }
 
-    // 2. Local RAG Query: Check if the user is asking about personal memory or exercise form
-    if (/\b(?:remember|recall|journal|memory|notes|past|history)\b/i.test(text)) {
+    // 2. Local RAG Query: Check if the user is asking about personal memory, exercise form, or saved documents
+    if (
+      /\b(?:remember|recall|journal|memory|notes|past|history|exercise|workout|how to do|technique|form|routine|guide|document|article)\b/i.test(
+        text
+      )
+    ) {
       const res = await executeTool('search_personal_memory', { query: text }, { userId: 'local_user' });
-      this.finishTurn(res.message, res, callbacks);
-      return { text: res.message, toolResult: res };
+      if (res.data?.isGrounded) {
+        this.finishTurn(res.message, res, callbacks);
+        return { text: res.message, toolResult: res };
+      }
     }
 
     // 3. Medicine Educational Research Query
