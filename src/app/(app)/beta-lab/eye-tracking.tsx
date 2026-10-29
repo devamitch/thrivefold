@@ -21,9 +21,9 @@ export default function EyeTrackingBetaScreen() {
       scrollable
       header={
         <AppHeader
-          eyebrow="BETA LAB · ON-DEVICE VISION"
-          title="Eye Tracking Studio"
-          subtitle="Iris metrics, Harmon distance & BlinkQuest Eye Battery"
+          eyebrow="BETA LAB"
+          title="Eye studio"
+          subtitle="Eye comfort checks with your front camera"
           showBack
           onBack={() => router.back()}
           rightAction={<BetaBadge />}

@@ -137,178 +137,152 @@ export function EyeTrackingStudio() {
 
   const maxRate = Math.max(25, ...rateHistory);
 
+  const [camError, setCamError] = useState<string | null>(null);
+  const zoneLabel = !eyeState.tracked
+    ? 'No face yet'
+    : eyeState.harmonZone === 'optimal'
+      ? 'Good distance'
+      : eyeState.harmonZone === 'too_close'
+        ? 'Too close'
+        : 'A bit far';
+  const zoneColor =
+    eyeState.harmonZone === 'optimal'
+      ? colors.success
+      : eyeState.harmonZone === 'too_close'
+        ? colors.error
+        : colors.warning;
+  const current = MODES.find((m) => m.key === mode) ?? MODES[0];
+
   return (
-    <SquircleSurface radius={24} fill={colors.surface} style={styles.card}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Ionicons name="eye-outline" size={20} color={colors.primary} />
-        <Text style={[typography.subheading, { color: colors.text.primary, flex: 1, marginLeft: 8 }]}>
-          Eye Tracking & Blink Studio
-        </Text>
-        <SquircleSurface radius={8} fill={colors.primaryAlpha} style={styles.pill}>
-          <Text style={[typography.captionBold, { color: colors.primary }]}>BlinkQuest Modules</Text>
-        </SquircleSurface>
-      </View>
-
-      {/* Mode Selector Tabs */}
-      <View style={[styles.tabBar, { backgroundColor: colors.surface2 }]}>
-        <PressableScale
-          onPress={() => {
-            hapticSelection();
-            setMode('scanner');
-          }}
-          style={[styles.tabItem, mode === 'scanner' && { backgroundColor: colors.surface }]}
-        >
-          <Text
-            style={[
-              typography.captionBold,
-              { color: mode === 'scanner' ? colors.primary : colors.text.secondary },
-            ]}
-          >
-            Live Monitor
-          </Text>
-        </PressableScale>
-
-        <PressableScale
-          onPress={() => {
-            hapticSelection();
-            setMode('bloom');
-          }}
-          style={[styles.tabItem, mode === 'bloom' && { backgroundColor: colors.surface }]}
-        >
-          <Text
-            style={[
-              typography.captionBold,
-              { color: mode === 'bloom' ? colors.primary : colors.text.secondary },
-            ]}
-          >
-            Blink Bloom
-          </Text>
-        </PressableScale>
-
-        <PressableScale
-          onPress={() => {
-            hapticSelection();
-            setMode('nearfar');
-          }}
-          style={[styles.tabItem, mode === 'nearfar' && { backgroundColor: colors.surface }]}
-        >
-          <Text
-            style={[
-              typography.captionBold,
-              { color: mode === 'nearfar' ? colors.primary : colors.text.secondary },
-            ]}
-          >
-            20-20-20 Break
-          </Text>
-        </PressableScale>
-
-        <PressableScale
-          onPress={() => {
-            hapticSelection();
-            setMode('acuity');
-          }}
-          style={[styles.tabItem, mode === 'acuity' && { backgroundColor: colors.surface }]}
-        >
-          <Text
-            style={[
-              typography.captionBold,
-              { color: mode === 'acuity' ? colors.primary : colors.text.secondary },
-            ]}
-          >
-            Visual Acuity
-          </Text>
-        </PressableScale>
-      </View>
-
-      {/* Live monitor runs full screen; the guided exercises keep the small camera above their UI. */}
-      <Modal visible={active && mode === 'scanner'} animationType="fade" statusBarTranslucent onRequestClose={() => void toggleStudio()}>
-        <View style={styles.full}>
-          <PoseDetectionAdapter engine="default" active={active && mode === 'scanner'} facing="front" face hands={false} onPose={onPose} style={StyleSheet.absoluteFill} />
-          <EyeOverlay face={overlay.face} frameW={overlay.w} frameH={overlay.h} />
-          <View style={styles.fullTop}>
-            <Text style={[typography.bodyBold, { color: '#FFF' }]}>{eyeState.tracked ? 'Tracking your eyes' : 'Bring your face into view'}</Text>
-          </View>
-          <View style={styles.fullPanel}>
-            <View style={styles.fullStats}>
-              <FullStat label="distance" value={eyeState.tracked ? `${eyeState.distanceCm.toFixed(0)} cm` : '—'} />
-              <FullStat label="blinks/min" value={`${eyeState.blinksPerMin}`} />
-              <FullStat label="blinks" value={`${eyeState.blinkCount}`} />
-              <FullStat label="eye battery" value={`${eyeState.batteryLevel.toFixed(0)}%`} />
-            </View>
-            <Text style={[typography.caption, { color: 'rgba(255,255,255,0.8)', marginTop: 8 }]}>{eyeState.recommendation}</Text>
-            {eyeState.activeAlert ? (
-              <Text style={[typography.captionBold, { color: '#F2C27B', marginTop: 6 }]}>{eyeState.activeAlert.title}</Text>
-            ) : null}
-            <PressableScale onPress={() => void toggleStudio()} style={styles.fullStop} accessibilityLabel="Stop eye tracking">
-              <Ionicons name="stop" size={18} color="#FFF" />
-              <Text style={[typography.bodyBold, { color: '#FFF', marginLeft: 8 }]}>Stop and save</Text>
-            </PressableScale>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Camera Viewport */}
-      <View style={[styles.cameraContainer, { backgroundColor: '#111' }]}>
+    <View>
+      {/* Preview: illustration until the camera runs for a guided exercise. */}
+      <View style={[styles.cameraContainer, { backgroundColor: colors.surface2 }]}>
         {active && mode !== 'scanner' ? (
           <PoseDetectionAdapter
             engine="default"
             active={active}
             facing="front"
-            face={true}
+            face
             hands={false}
             onPose={onPose}
+            onPoseError={(e) => setCamError(e.nativeEvent.message)}
             style={StyleSheet.absoluteFill}
           />
         ) : (
-          <View style={[StyleSheet.absoluteFill, styles.placeholderWrap]}>
-            <Image
-              source={getSanctuaryIllustration('eyeVision', experience)}
-              style={StyleSheet.absoluteFill}
-              contentFit="cover"
-            />
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.55)' }]} />
-            <View style={styles.placeholder}>
-              <Ionicons name="eye-outline" size={32} color="#FFF" />
-              <Text style={[typography.bodyBold, { color: '#FFF', marginTop: 6 }]}>
-                Vision & Ergonomics Studio
-              </Text>
-              <Text style={[typography.caption, { color: 'rgba(255,255,255,0.85)', marginTop: 2, textAlign: 'center' }]}>
-                Harmon distance, downward gaze angle & real-time EAR tracking
-              </Text>
-            </View>
-          </View>
+          <Image
+            source={getSanctuaryIllustration('eyeVision', experience)}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+          />
         )}
-
-        {/* HUD Overlay Badges when active */}
-        {active && (
+        {active && mode !== 'scanner' ? (
           <View style={styles.hudOverlay}>
-            <View style={[styles.hudPill, { backgroundColor: 'rgba(0,0,0,0.6)' }]}>
-              <Ionicons name="resize-outline" size={12} color="#FFF" />
-              <Text style={[typography.captionBold, { color: '#FFF', marginLeft: 4 }]}>
-                {eyeState.tracked ? `~${eyeState.distanceCm.toFixed(0)} cm` : 'Looking for your face'}
-              </Text>
-            </View>
-            <View style={[styles.hudPill, { backgroundColor: 'rgba(0,0,0,0.6)' }]}>
-              <Ionicons name="battery-charging-outline" size={12} color="#4CAF50" />
-              <Text style={[typography.captionBold, { color: '#4CAF50', marginLeft: 4 }]}>
-                {eyeState.batteryLevel.toFixed(0)}% Battery
+            <View style={[styles.hudPill, { backgroundColor: colors.scrim }]}>
+              <Text style={[typography.captionBold, { color: colors.text.inverse }]}>
+                {camError ??
+                  (eyeState.tracked ? `${zoneLabel} · ${eyeState.distanceCm.toFixed(0)} cm` : 'Looking for your face')}
               </Text>
             </View>
           </View>
-        )}
+        ) : null}
       </View>
 
-      {/* Alert Banner if active */}
-      {eyeState.activeAlert && (
+      {/* Pick an activity: one clear list instead of a cramped tab strip. */}
+      <View style={styles.modeList}>
+        {MODES.map((m) => {
+          const on = m.key === mode;
+          return (
+            <PressableScale
+              key={m.key}
+              onPress={() => {
+                hapticSelection();
+                if (active && m.key !== mode) void toggleStudio();
+                setMode(m.key);
+              }}
+              accessibilityRole="button"
+              accessibilityState={{ selected: on }}
+              style={[
+                styles.modeTile,
+                {
+                  backgroundColor: on ? colors.primaryAlpha : colors.surface,
+                  borderColor: on ? colors.primary : colors.surface2,
+                },
+              ]}
+            >
+              <View style={[styles.modeIcon, { backgroundColor: on ? colors.primary : colors.surface2 }]}>
+                <Ionicons name={m.icon} size={20} color={on ? colors.text.inverse : colors.primary} />
+              </View>
+              <View style={styles.flex}>
+                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{m.title}</Text>
+                <Text style={[typography.caption, { color: colors.text.secondary }]}>{m.body}</Text>
+              </View>
+              {on ? <Ionicons name="checkmark-circle" size={20} color={colors.primary} /> : null}
+            </PressableScale>
+          );
+        })}
+      </View>
+
+      {/* Live check runs full screen with the eyes outlined; the guided exercises keep a small camera. */}
+      <Modal
+        visible={active && mode === 'scanner'}
+        animationType="fade"
+        statusBarTranslucent
+        onRequestClose={() => void toggleStudio()}
+      >
+        <View style={[styles.full, { backgroundColor: colors.text.primary }]}>
+          <PoseDetectionAdapter
+            engine="default"
+            active={active && mode === 'scanner'}
+            facing="front"
+            face
+            hands={false}
+            onPose={onPose}
+            onPoseError={(e) => setCamError(e.nativeEvent.message)}
+            style={StyleSheet.absoluteFill}
+          />
+          <EyeOverlay face={overlay.face} frameW={overlay.w} frameH={overlay.h} />
+          <View style={styles.fullTop}>
+            <View style={[styles.fullChip, { backgroundColor: eyeState.tracked ? colors.success : colors.scrim }]}>
+              <Text style={[typography.captionBold, { color: colors.text.inverse }]}>
+                {camError ?? (eyeState.tracked ? 'Tracking your eyes' : 'Bring your face into view')}
+              </Text>
+            </View>
+          </View>
+          <View style={[styles.fullPanel, { backgroundColor: colors.scrim }]}>
+            {/* Two scrim layers keep white text readable over a bright camera image in light mode. */}
+            <View style={[StyleSheet.absoluteFill, styles.fullPanelShade, { backgroundColor: colors.scrim }]} />
+            <View style={styles.fullStats}>
+              <FullStat label={zoneLabel} value={eyeState.tracked ? `${eyeState.distanceCm.toFixed(0)} cm` : '—'} />
+              <FullStat label="blinks a minute" value={`${eyeState.blinksPerMin}`} />
+              <FullStat label="eye battery" value={`${eyeState.batteryLevel.toFixed(0)}%`} />
+            </View>
+            <Text style={[typography.body, { color: colors.text.inverse, marginTop: 10, opacity: 0.9 }]}>
+              {eyeState.recommendation}
+            </Text>
+            {eyeState.activeAlert ? (
+              <Text style={[typography.bodyBold, { color: colors.warning, marginTop: 6 }]}>
+                {eyeState.activeAlert.title}
+              </Text>
+            ) : null}
+            <PressableScale
+              onPress={() => void toggleStudio()}
+              style={[styles.fullStop, { backgroundColor: colors.primary }]}
+              accessibilityLabel="Stop and save"
+            >
+              <Ionicons name="stop" size={18} color={colors.text.inverse} />
+              <Text style={[typography.bodyBold, { color: colors.text.inverse, marginLeft: 8 }]}>Stop and save</Text>
+            </PressableScale>
+          </View>
+        </View>
+      </Modal>
+
+      {eyeState.activeAlert ? (
         <View
           style={[
             styles.alertBanner,
             {
               backgroundColor:
-                eyeState.activeAlert.severity === 'critical'
-                  ? colors.errorSurface
-                  : colors.warningSurface,
+                eyeState.activeAlert.severity === 'critical' ? colors.errorSurface : colors.warningSurface,
             },
           ]}
         >
@@ -318,120 +292,34 @@ export function EyeTrackingStudio() {
             color={eyeState.activeAlert.severity === 'critical' ? colors.error : colors.warning}
           />
           <View style={{ flex: 1, marginLeft: 8 }}>
-            <Text
-              style={[
-                typography.captionBold,
-                {
-                  color:
-                    eyeState.activeAlert.severity === 'critical' ? colors.error : colors.warning,
-                },
-              ]}
-            >
-              {eyeState.activeAlert.title}
-            </Text>
+            <Text style={[typography.captionBold, { color: colors.text.primary }]}>{eyeState.activeAlert.title}</Text>
             <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 1 }]}>
               {eyeState.activeAlert.body}
             </Text>
           </View>
-          <PressableScale onPress={() => tracker.current.dismissAlert()}>
+          <PressableScale onPress={() => tracker.current.dismissAlert()} accessibilityLabel="Dismiss">
             <Ionicons name="close" size={16} color={colors.text.muted} />
           </PressableScale>
         </View>
-      )}
+      ) : null}
 
-      {/* Mode-specific content */}
-      {mode === 'scanner' && (
-        <>
-          {/* Metrics Grid */}
-          <View style={[styles.statsRow, { backgroundColor: colors.surface2 }]}>
-            <View style={styles.statItem}>
-              <Text style={[typography.caption, { color: colors.text.muted }]}>Distance</Text>
-              <Text style={[typography.heading, { color: colors.text.primary, fontSize: 18 }]}>
-                {eyeState.tracked ? `~${eyeState.distanceCm.toFixed(0)}` : '—'} <Text style={{ fontSize: 11 }}>cm</Text>
-              </Text>
-              <Text
-                style={[
-                  typography.caption,
-                  {
-                    color:
-                      eyeState.harmonZone === 'optimal'
-                        ? colors.success
-                        : eyeState.harmonZone === 'too_close'
-                          ? colors.error
-                          : colors.primary,
-                    fontSize: 10,
-                  },
-                ]}
-              >
-                {!eyeState.tracked
-                  ? 'No face'
-                  : eyeState.harmonZone === 'optimal'
-                  ? 'Harmon Zone'
-                  : eyeState.harmonZone === 'too_close'
-                    ? 'Too Close'
-                    : 'Comfort Far'}
-              </Text>
-            </View>
-
-            <View style={styles.statItem}>
-              <Text style={[typography.caption, { color: colors.text.muted }]}>Blinks</Text>
-              <Text style={[typography.heading, { color: colors.text.primary, fontSize: 18 }]}>
-                {eyeState.blinksPerMin} <Text style={{ fontSize: 11 }}>/min</Text>
-              </Text>
-              <Text style={[typography.caption, { color: colors.text.muted, fontSize: 10 }]}>
-                {eyeState.blinkCount} total
-              </Text>
-            </View>
-
-            <View style={styles.statItem}>
-              <Text style={[typography.caption, { color: colors.text.muted }]}>Gaze Angle</Text>
-              <Text style={[typography.heading, { color: colors.text.primary, fontSize: 18 }]}>
-                {eyeState.tracked ? `${eyeState.gazeAngleDeg.toFixed(0)}°` : '—'}
-              </Text>
-              <Text style={[typography.caption, { color: colors.text.muted, fontSize: 10 }]}>
-                {eyeState.gaze}
-              </Text>
-            </View>
-
-            <View style={styles.statItem}>
-              <Text style={[typography.caption, { color: colors.text.muted }]}>Eye Battery</Text>
-              <Text style={[typography.heading, { color: colors.primary, fontSize: 18 }]}>
-                {eyeState.batteryLevel.toFixed(0)}%
-              </Text>
-              <Text
-                style={[
-                  typography.caption,
-                  {
-                    color:
-                      eyeState.strainLevel === 'high'
-                        ? colors.error
-                        : eyeState.strainLevel === 'moderate'
-                          ? colors.warning
-                          : colors.success,
-                    fontSize: 10,
-                    textTransform: 'uppercase',
-                  },
-                ]}
-              >
-                {eyeState.strainLevel}
-              </Text>
-            </View>
+      {mode === 'scanner' && (eyeState.blinkCount > 0 || rateHistory.length > 0) ? (
+        <SquircleSurface radius={20} fill={colors.surface} style={styles.card}>
+          <Text style={[typography.captionBold, { color: colors.text.muted }]}>LAST CHECK</Text>
+          <View style={styles.statsRow}>
+            <Stat
+              label={zoneLabel}
+              value={eyeState.tracked ? `${eyeState.distanceCm.toFixed(0)} cm` : '—'}
+              color={zoneColor}
+            />
+            <Stat label="blinks a minute" value={`${eyeState.blinksPerMin}`} color={colors.text.primary} />
+            <Stat
+              label={`${eyeState.strainLevel} strain`}
+              value={`${eyeState.batteryLevel.toFixed(0)}%`}
+              color={colors.primary}
+            />
           </View>
-
-          {/* Blink Rate Sparkline / Bar Graph */}
-          <View style={{ marginTop: 14 }}>
-            <View style={styles.rowBetween}>
-              <Text style={[typography.captionBold, { color: colors.text.secondary }]}>
-                Blink Frequency & Distribution
-              </Text>
-              <Text style={[typography.caption, { color: colors.text.muted }]}>
-                {rateHistory.length
-                  ? `Avg ${Math.round(rateHistory.reduce((a, b) => a + b, 0) / rateHistory.length)} /min`
-                  : active
-                    ? 'Measuring…'
-                    : 'Start the camera to measure'}
-              </Text>
-            </View>
+          {rateHistory.length ? (
             <View style={styles.barGraphContainer}>
               {rateHistory.map((val, idx) => (
                 <View key={idx} style={styles.barColumn}>
@@ -447,28 +335,17 @@ export function EyeTrackingStudio() {
                 </View>
               ))}
             </View>
-          </View>
-
-          {/* Ergonomic Recommendation */}
-          <View style={[styles.recommendationBox, { backgroundColor: colors.surface2 }]}>
-            <Ionicons name="information-circle-outline" size={16} color={colors.primary} />
-            <Text style={[typography.caption, { color: colors.text.secondary, flex: 1, marginLeft: 6 }]}>
-              {eyeState.recommendation}
-            </Text>
-          </View>
-        </>
-      )}
+          ) : null}
+          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 10 }]}>
+            {eyeState.recommendation}
+          </Text>
+        </SquircleSurface>
+      ) : null}
 
       {mode === 'bloom' && (
-        <BlinkBloomExercise
-          blinkCount={eyeState.blinkCount}
-          isOpen={eyeState.isOpen}
-          earAvg={eyeState.earAvg}
-        />
+        <BlinkBloomExercise blinkCount={eyeState.blinkCount} isOpen={eyeState.isOpen} earAvg={eyeState.earAvg} />
       )}
-
       {mode === 'nearfar' && <NearFarFocusExercise />}
-
       {mode === 'acuity' && <VisualAcuityChart distanceCm={eyeState.tracked ? eyeState.distanceCm : undefined} />}
 
       {denied ? (
@@ -477,40 +354,110 @@ export function EyeTrackingStudio() {
         </Text>
       ) : null}
 
-      {/* Action Button */}
-      <View style={{ marginTop: 16 }}>
-        <PressableScale onPress={toggleStudio} scaleTo={0.96}>
-          <SquircleSurface
-            radius={16}
-            fill={active ? colors.error : colors.primary}
-            style={styles.actionBtn}
-          >
-            <Ionicons name={active ? 'stop' : 'videocam'} size={18} color="#FFF" />
-            <Text style={[typography.bodyBold, { color: '#FFF', marginLeft: 8 }]}>
-              {active ? 'Stop Camera Session' : 'Start Eye Camera Scanner'}
+      {current.camera ? (
+        <PressableScale onPress={toggleStudio} scaleTo={0.97} style={{ marginTop: 16 }}>
+          <SquircleSurface radius={18} fill={active ? colors.error : colors.primary} style={styles.actionBtn}>
+            <Ionicons name={active ? 'stop' : 'eye'} size={20} color={colors.text.inverse} />
+            <Text style={[typography.bodyBold, { color: colors.text.inverse, marginLeft: 8 }]}>
+              {active ? 'Stop and save' : current.start}
             </Text>
           </SquircleSurface>
         </PressableScale>
-      </View>
-    </SquircleSurface>
+      ) : null}
+    </View>
+  );
+}
+
+const MODES: {
+  key: StudioMode;
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+  title: string;
+  body: string;
+  start: string;
+  camera: boolean;
+}[] = [
+  {
+    key: 'scanner',
+    icon: 'scan-outline',
+    title: 'Live eye check',
+    body: 'Distance, blinks and eye battery, full screen',
+    start: 'Start live eye check',
+    camera: true,
+  },
+  {
+    key: 'bloom',
+    icon: 'flower-outline',
+    title: 'Blink Bloom',
+    body: 'Slow, full blinks grow a flower',
+    start: 'Start Blink Bloom',
+    camera: true,
+  },
+  {
+    key: 'nearfar',
+    icon: 'swap-horizontal-outline',
+    title: '20-20-20 break',
+    body: 'Look 6 metres away for 20 seconds',
+    start: '',
+    camera: false,
+  },
+  {
+    key: 'acuity',
+    icon: 'text-outline',
+    title: 'Reading chart',
+    body: 'A quick letter chart at your distance',
+    start: '',
+    camera: false,
+  },
+];
+
+function Stat({ label, value, color }: { label: string; value: string; color: string }) {
+  const { colors, typography } = useTheme();
+  return (
+    <View style={{ flex: 1 }}>
+      <Text style={[typography.heading, { color }]}>{value}</Text>
+      <Text style={[typography.caption, { color: colors.text.muted }]}>{label}</Text>
+    </View>
   );
 }
 
 function FullStat({ label, value }: { label: string; value: string }) {
+  const { colors, typography } = useTheme();
   return (
     <View style={{ flex: 1, alignItems: 'center' }}>
-      <Text style={{ color: '#FFF', fontSize: 20, fontWeight: '800' }}>{value}</Text>
-      <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11 }}>{label}</Text>
+      <Text style={[typography.heading, { color: colors.text.inverse }]}>{value}</Text>
+      <Text style={[typography.caption, { color: colors.text.inverse, opacity: 0.75 }]}>{label}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  full: { flex: 1, backgroundColor: '#000' },
-  fullTop: { position: 'absolute', top: 48, left: 0, right: 0, alignItems: 'center' },
-  fullPanel: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: 20, paddingBottom: 36, backgroundColor: 'rgba(0,0,0,0.55)' },
+  flex: { flex: 1 },
+  full: { flex: 1 },
+  fullTop: { position: 'absolute', top: 52, left: 0, right: 0, alignItems: 'center' },
+  fullChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999 },
+  fullPanel: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    padding: 20,
+    paddingBottom: 40,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+  },
+  fullPanelShade: { borderTopLeftRadius: 28, borderTopRightRadius: 28 },
   fullStats: { flexDirection: 'row' },
-  fullStop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 50, borderRadius: 16, marginTop: 14, backgroundColor: 'rgba(255,255,255,0.18)' },
+  fullStop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 54,
+    borderRadius: 18,
+    marginTop: 16,
+  },
+  modeList: { gap: 10, marginTop: 4 },
+  modeTile: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 20, borderWidth: 1 },
+  modeIcon: { width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   card: { padding: 16, marginTop: 12 },
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   pill: { paddingHorizontal: 8, paddingVertical: 4 },
@@ -528,8 +475,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cameraContainer: {
-    height: 200,
-    borderRadius: 16,
+    aspectRatio: 16 / 9,
+    marginBottom: 14,
+    borderRadius: 22,
     overflow: 'hidden',
     position: 'relative',
     justifyContent: 'center',
@@ -592,6 +540,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     height: 48,
-    borderRadius: 16,
+    borderRadius: 22,
   },
 });
