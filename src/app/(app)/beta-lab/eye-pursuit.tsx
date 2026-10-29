@@ -8,7 +8,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { PoseFrame } from '../../../../modules/pose-landmarker';
 import { BetaSessionHistory } from '../../../components/beta/BetaSessionHistory';
 import { BetaBadge } from '../../../components/ui/Badge';
+import { CoachGuide } from '../../../components/beta/CoachGuide';
 import { PressableScale } from '../../../components/ui/PressableScale';
+import { eyePursuitDirection } from '../../../domain/vision/gaze';
 import { measureFace, pursuitScore } from '../../../domain/vision/faceExercises';
 import { PoseDetectionAdapter } from '../../../features/beta-lab/experiments/pose-detection/PoseDetectionAdapter';
 import { coachVoice } from '../../../services/ai/coachVoice';
@@ -41,7 +43,9 @@ export default function EyePursuitScreen() {
   const [faceSeen, setFaceSeen] = useState(false);
   const [denied, setDenied] = useState(false);
   const [left, setLeft] = useState(RUN_MS / 1000);
+  const [currentDir, setCurrentDir] = useState<'left' | 'right'>('right');
   const startedAt = useRef(0);
+  const lastSpokenDir = useRef<'left' | 'right' | null>(null);
   const samples = useRef<{ target: number; gaze: number }[]>([]);
 
   const x = useSharedValue(0);
@@ -57,6 +61,7 @@ export default function EyePursuitScreen() {
   const finish = useCallback(() => {
     frame.setActive(false);
     setRunning(false);
+    lastSpokenDir.current = null;
     const s = pursuitScore(samples.current);
     setScore(s);
     hapticSuccess();
@@ -76,10 +81,25 @@ export default function EyePursuitScreen() {
   useEffect(() => {
     if (!running) return;
     const iv = setInterval(() => {
-      const rem = Math.max(0, Math.ceil((RUN_MS - (Date.now() - startedAt.current)) / 1000));
+      const now = Date.now();
+      const at = now - startedAt.current;
+      const rem = Math.max(0, Math.ceil((RUN_MS - at) / 1000));
       setLeft(rem);
-      if (rem === 0) finish();
-    }, 250);
+      if (rem === 0) {
+        finish();
+        return;
+      }
+      const dir = eyePursuitDirection(at, PERIOD_MS);
+      setCurrentDir(dir);
+      if (dir !== lastSpokenDir.current && at > 1000) {
+        lastSpokenDir.current = dir;
+        void coachVoice.speak(`Look ${dir}`, {
+          priority: 2,
+          minGapMs: 0,
+          maxMs: 1000,
+        });
+      }
+    }, 100);
     return () => clearInterval(iv);
   }, [running, finish]);
 
@@ -101,9 +121,15 @@ export default function EyePursuitScreen() {
     setScore(null);
     startedAt.current = Date.now();
     t0.value = 0;
+    lastSpokenDir.current = 'right';
+    setCurrentDir('right');
     frame.setActive(true);
     setRunning(true);
-    void coachVoice.speak('Keep your head still. Follow the dot with your eyes only.', { priority: 3 });
+    void coachVoice.speak('Follow the dot. Look right.', {
+      priority: 2,
+      minGapMs: 0,
+      maxMs: 1400,
+    });
   };
 
   return (
@@ -140,7 +166,7 @@ export default function EyePursuitScreen() {
             <Animated.View style={[styles.dot, { backgroundColor: colors.primary }, dot]} />
           </View>
           <Text style={[typography.bodyBold, styles.center, { color: colors.text.primary }]}>
-            {faceSeen ? `Follow the dot · ${left}s` : 'Bring your face into view'}
+            {faceSeen ? `Look ${currentDir} · Follow the dot · ${left}s` : 'Bring your face into view'}
           </Text>
           <PressableScale
             onPress={finish}
@@ -171,6 +197,14 @@ export default function EyePursuitScreen() {
             A dot glides from side to side for {RUN_MS / 1000} seconds. Hold the phone at eye level, keep your head
             still and follow it with your eyes. A relaxing eye-movement exercise, not an eye test.
           </Text>
+          <CoachGuide
+            steps={[
+              'Hold the phone at eye level, keep your head still.',
+              'Follow the gliding dot with your eyes only; head turns do not score.',
+              'Listen to the coach: you will hear "Look right" and "Look left" as the dot glides across.',
+            ]}
+            tip="Good, even light on your face helps iris tracking stay reliable."
+          />
           {denied ? (
             <Text style={[typography.caption, { color: colors.error, marginTop: 8 }]}>
               Camera access was not allowed.

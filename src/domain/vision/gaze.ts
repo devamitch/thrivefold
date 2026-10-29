@@ -152,3 +152,40 @@ export function buildCalibration(
   if (reach.down < min * 0.5) reach.down = Math.max(reach.down, hFallback);
   return { ok: true, calibration: { cx: r.center.x, cy: r.center.y, ...reach, yaw0: head.yaw, pitch0: head.pitch } };
 }
+
+/**
+ * Direction the horizontal pursuit target is moving at time t (seconds).
+ * Standard period is 4 seconds: 0..1s moving right, 1..3s moving left, 3..4s moving right.
+ */
+export function pursuitDirectionH(tSec: number, periodSec = 4): 'left' | 'right' {
+  const mod = ((tSec % periodSec) + periodSec) % periodSec;
+  const quarter = periodSec / 4;
+  const threeQuarters = (periodSec * 3) / 4;
+  return mod >= quarter && mod < threeQuarters ? 'left' : 'right';
+}
+
+/**
+ * Direction the circular orbit pursuit target is moving towards at time t (seconds).
+ * Standard period is 6 seconds.
+ * 0..1.5s heading down, 1.5..3.0s heading left, 3.0..4.5s heading up, 4.5..6.0s heading right.
+ */
+export function pursuitDirectionOrbit(tSec: number, periodSec = 6): 'down' | 'left' | 'up' | 'right' {
+  const mod = ((tSec % periodSec) + periodSec) % periodSec;
+  const quarter = periodSec / 4;
+  const idx = Math.floor(mod / quarter) % 4;
+  const dirs: ('down' | 'left' | 'up' | 'right')[] = ['down', 'left', 'up', 'right'];
+  return dirs[idx];
+}
+
+/**
+ * Direction the eye pursuit gliding dot is moving at time elapsed (ms).
+ * Default period is 6000 ms.
+ * 0..1500 ms moving right, 1500..4500 ms moving left, 4500..6000 ms moving right.
+ */
+export function eyePursuitDirection(ms: number, periodMs = 6000): 'left' | 'right' {
+  const cycle = ((ms % periodMs) + periodMs) % periodMs;
+  const quarter = periodMs / 4;
+  const threeQuarters = (periodMs * 3) / 4;
+  return cycle >= quarter && cycle < threeQuarters ? 'left' : 'right';
+}
+

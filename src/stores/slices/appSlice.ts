@@ -71,6 +71,20 @@ export interface UserApiKeys {
 
 export type AiDeliveryMode = 'local_only' | 'byok' | 'hybrid';
 
+export interface AdhdProfile {
+  answers: Record<string, number>;
+  completedAt: string | null;
+  focusStyle: string | null;
+  score: number;
+}
+
+export const EMPTY_ADHD_PROFILE: AdhdProfile = {
+  answers: {},
+  completedAt: null,
+  focusStyle: null,
+  score: 0,
+};
+
 export interface AppSlice {
   experience: ProductExperience;
   /** True once the person picked (or confirmed a suggested) experience; nothing is preselected. */
@@ -134,6 +148,9 @@ export interface AppSlice {
   /** The town the person chose for weather and official alerts (searched by name, never GPS). */
   outdoorPlace: { name: string; region: string | null; country: string | null; lat: number; lon: number } | null;
   setOutdoorPlace: (place: AppSlice['outdoorPlace']) => void;
+  /** HIPAA-aligned, local-first ADHD & focus self-reflection screener profile. */
+  adhdProfile: AdhdProfile;
+  setAdhdProfile: (profile: AdhdProfile) => void;
   /** Profile questions on Home: when each may be asked again, and when one was last shown. */
   profileAsk: { snoozedUntil: Partial<Record<'birthday' | 'height' | 'weight' | 'diet' | 'routine', number>>; lastAskedAt: number | null };
   snoozeProfileQuestion: (q: 'birthday' | 'height' | 'weight' | 'diet' | 'routine', until: number) => void;
@@ -259,6 +276,8 @@ export const createAppSlice: StateCreator<
   setTrip: (trip) => set({ trip }),
   outdoorPlace: null,
   setOutdoorPlace: (outdoorPlace) => set({ outdoorPlace }),
+  adhdProfile: EMPTY_ADHD_PROFILE,
+  setAdhdProfile: (adhdProfile) => set({ adhdProfile }),
   profileAsk: { snoozedUntil: {}, lastAskedAt: null },
   snoozeProfileQuestion: (q, until) =>
     set((state) => ({ profileAsk: { ...state.profileAsk, snoozedUntil: { ...state.profileAsk.snoozedUntil, [q]: until } } })),

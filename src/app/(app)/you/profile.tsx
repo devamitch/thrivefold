@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter, type Href } from 'expo-router';
 import React, { useState } from 'react';
 import { Linking, StyleSheet, Text, View } from 'react-native';
 
@@ -78,6 +79,7 @@ const LISTS: {
  * is guessed. Health records, cycle data and journal stay on this phone (encrypted).
  */
 export default function KoshProfileScreen() {
+  const router = useRouter();
   const { colors, typography, spacing, experience } = useTheme();
   const {
     kosh,
@@ -92,6 +94,7 @@ export default function KoshProfileScreen() {
     diet,
     routineMinutes,
     setOnboardingAnswers,
+    adhdProfile,
   } = useRootStore(
     useShallow((s) => ({
       kosh: s.koshProfile,
@@ -106,6 +109,7 @@ export default function KoshProfileScreen() {
       diet: s.onboarding.diet,
       routineMinutes: s.onboarding.routineMinutes,
       setOnboardingAnswers: s.setOnboardingAnswers,
+      adhdProfile: s.adhdProfile,
     })),
   );
   const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -201,6 +205,79 @@ export default function KoshProfileScreen() {
             ? 'Saved to your account, so you are not asked again on another phone or after reinstalling. Health records, cycle data and your journal stay encrypted on this phone.'
             : 'You are using Thrivefold as a guest, so this stays on this phone. Sign in to keep it with your account.'}
         </Text>
+
+        {/* Quick Section Shortcuts */}
+        <View style={styles.quickBar}>
+          <PressableScale
+            onPress={() => router.push('/(app)/you/edit-profile' as Href)}
+            style={[styles.quickChip, { backgroundColor: colors.primaryAlpha }]}
+          >
+            <Ionicons name="create-outline" size={14} color={colors.primary} />
+            <Text style={[typography.captionBold, { color: colors.primary }]}>Full Editor</Text>
+          </PressableScale>
+
+          <PressableScale
+            onPress={() => router.push('/(app)/you/adhd-screener' as Href)}
+            style={[styles.quickChip, { backgroundColor: colors.surface2 }]}
+          >
+            <Ionicons name="sparkles-outline" size={14} color={colors.text.primary} />
+            <Text style={[typography.captionBold, { color: colors.text.primary }]}>Focus & ADHD</Text>
+          </PressableScale>
+
+          <PressableScale
+            onPress={() => router.push('/(app)/you/preferences' as Href)}
+            style={[styles.quickChip, { backgroundColor: colors.surface2 }]}
+          >
+            <Ionicons name="options-outline" size={14} color={colors.text.primary} />
+            <Text style={[typography.captionBold, { color: colors.text.primary }]}>Preferences</Text>
+          </PressableScale>
+
+          <PressableScale
+            onPress={() => router.push('/(app)/settings/anvaykosh' as Href)}
+            style={[styles.quickChip, { backgroundColor: colors.surface2 }]}
+          >
+            <Ionicons name="cloud-upload-outline" size={14} color={colors.text.primary} />
+            <Text style={[typography.captionBold, { color: colors.text.primary }]}>Cloud Sync</Text>
+          </PressableScale>
+        </View>
+
+        {/* ADHD & Focus Style Section */}
+        <CollapsibleSection
+          title="Focus & Attention (ADHD)"
+          icon="sparkles-outline"
+          summary={
+            adhdProfile.completedAt
+              ? `Style: ${adhdProfile.focusStyle ?? 'Completed'} · Score ${adhdProfile.score}`
+              : 'Gentle 6-question reflection for micro-step quest planning'
+          }
+          done={Boolean(adhdProfile.completedAt)}
+        >
+          <Text style={[typography.caption, { color: colors.text.muted }]}>
+            HIPAA-aligned & 100% on-device. Personalizes daily quest pacing and micro-step options.
+          </Text>
+          <View style={[styles.sectionRow, { marginTop: 10 }]}>
+            <View style={styles.flex}>
+              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                {adhdProfile.completedAt
+                  ? adhdProfile.focusStyle ?? 'Self-Reflection Complete'
+                  : 'Take the reflection screener'}
+              </Text>
+              <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                {adhdProfile.completedAt
+                  ? 'Your focus style is active and tuning your daily routines.'
+                  : 'WHO ASRS-v1.1 quiet questions with skippable options.'}
+              </Text>
+            </View>
+            <PressableScale
+              onPress={() => router.push('/(app)/you/adhd-screener' as Href)}
+              style={[styles.editBtn, { backgroundColor: colors.primaryAlpha }]}
+            >
+              <Text style={[typography.captionBold, { color: colors.primary }]}>
+                {adhdProfile.completedAt ? 'Review' : 'Start'}
+              </Text>
+            </PressableScale>
+          </View>
+        </CollapsibleSection>
 
         <CollapsibleSection
           title="About you"
@@ -465,5 +542,31 @@ const styles = StyleSheet.create({
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  quickBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 12,
+    marginBottom: 10,
+  },
+  quickChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 14,
+  },
+  sectionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  editBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
   },
 });

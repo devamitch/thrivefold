@@ -630,5 +630,18 @@ await as('B');
 r = await q(`select public.tf_is_owner() as o`);
 check('an unconfirmed email is not an owner', !r.error && r.rows?.[0]?.o === false, r.error ?? JSON.stringify(r.rows));
 
+// Migration 23: thrivefold_progress RLS
+await as('A');
+r = await q(`insert into public.thrivefold_progress (user_id, xp, level, diamonds, streak, quests_completed) values ('${ids.A}', 250, 2, 5, 3, 4) on conflict (user_id) do update set xp = 250 returning xp, level`);
+check('owner saves own progress', !r.error && r.rows?.[0]?.xp === 250, r.error ?? JSON.stringify(r.rows));
+r = await q(`insert into public.thrivefold_progress (user_id, xp) values ('${ids.B}', 999)`);
+check('cannot write another person\'s progress', !!r.error, r.error);
+await as('B');
+r = await q(`select count(*)::int as n from public.thrivefold_progress where user_id = '${ids.A}'`);
+check('others cannot read progress', r.rows?.[0]?.n === 0, JSON.stringify(r.rows));
+await as('anon');
+r = await q(`select * from public.thrivefold_progress`);
+check('anon cannot read progress', !!r.error || r.rows?.length === 0, r.error);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

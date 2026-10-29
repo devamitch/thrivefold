@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { Link, type Href } from 'expo-router';
+import { Link, useRouter, type Href } from 'expo-router';
 import React, { useState } from 'react';
 import { Modal, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
@@ -30,6 +30,7 @@ const AVATAR_OPTIONS = [
 ];
 
 export default function SettingsScreen() {
+  const router = useRouter();
   const { colors, typography, spacing, experience } = useTheme();
   const HEALTH_SPACE =
     experience === 'women_health'
@@ -177,6 +178,44 @@ export default function SettingsScreen() {
           </>
         ) : null}
 
+        {/* Section: Account & Identity */}
+        <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm }]}>
+          Account & Identity
+        </Text>
+        <Link href={'/(app)/you/profile' as Href} asChild>
+          <SettingsRow icon="person-circle-outline" title="Your profile" subtitle="Languages, food rules, allergies, growth, accessibility" />
+        </Link>
+        <Link href={'/(app)/you/edit-profile' as Href} asChild>
+          <SettingsRow icon="create-outline" title="Full profile editor" subtitle="All-in-one multi-section editor with keyboard protection" />
+        </Link>
+        <Link href={'/(app)/settings/anvaykosh' as Href} asChild>
+          <SettingsRow icon="apps-outline" title="AnvayKosh & Cloud Sync" subtitle="Anvay ID, Supabase push/pull, progress and ecosystem apps" />
+        </Link>
+
+        {/* Section: Preferences & Daily Focus */}
+        <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm }]}>
+          Preferences & Daily Focus
+        </Text>
+        <Link href={'/(app)/you/preferences' as Href} asChild>
+          <SettingsRow icon="options-outline" title="Preferences brief" subtitle="Routine length, meal style, and sensory comfort in one view" />
+        </Link>
+        <Link href={'/(app)/you/adhd-screener' as Href} asChild>
+          <SettingsRow icon="sparkles-outline" title="Focus & Attention (ADHD)" subtitle="Gentle 6-question reflection for micro-step pacing" />
+        </Link>
+        <Link href={'/(onboarding)/lifestyle-preferences' as Href} asChild>
+          <SettingsRow icon="restaurant-outline" title="Food preferences" subtitle="Nutrition focus and meal timing" />
+        </Link>
+        <Link href={'/(app)/personalize' as Href} asChild>
+          <SettingsRow icon="compass-outline" title="Personalize space" subtitle="Space, goals, pace and limits" />
+        </Link>
+        <Link href={'/(app)/you/beliefs' as Href} asChild>
+          <SettingsRow icon="globe-outline" title="Beliefs and culture" subtitle="Optional, private, for observance reminders" />
+        </Link>
+        <Link href={'/(app)/you/reminders' as Href} asChild>
+          <SettingsRow icon="notifications-outline" title="Reminders & Quiet Hours" subtitle="Quest reminders and quiet hours" />
+        </Link>
+
+        {/* Section: Your spaces */}
         <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm }]}>
           Your spaces
         </Text>
@@ -198,30 +237,15 @@ export default function SettingsScreen() {
           <SettingsRow icon="trail-sign-outline" title="Roadmap" subtitle="Chapters, levels and what unlocks next" />
         </Link>
 
-        <Link href={'/(app)/you/profile' as Href} asChild>
-          <SettingsRow icon="person-circle-outline" title="Your profile" subtitle="Languages, food rules, allergies, growth, accessibility, emergency contacts" />
-        </Link>
-        <Link href={'/(app)/settings/anvaykosh' as Href} asChild>
-          <SettingsRow icon="apps-outline" title="AnvayKosh" subtitle="Anvay ID, shared profile and your other apps" />
-        </Link>
-
-        <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.md, marginBottom: spacing.sm }]}>
-          Settings
+        {/* Section: System & Security */}
+        <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm }]}>
+          System & Security
         </Text>
         <Link href={'/(app)/ai/model-status' as Href} asChild>
           <SettingsRow icon="hardware-chip-outline" title="On-device AI" subtitle="Download the local language model (llama.cpp) for offline answers" />
         </Link>
-        <Link href={'/(app)/personalize' as Href} asChild>
-          <SettingsRow icon="options-outline" title="Personalize" subtitle="Space, goals, pace and limits" />
-        </Link>
-        <Link href={'/(onboarding)/lifestyle-preferences' as Href} asChild>
-          <SettingsRow icon="restaurant-outline" title="Food preferences" subtitle="Nutrition focus and meal timing" />
-        </Link>
-        <Link href={'/(app)/you/beliefs' as Href} asChild>
-          <SettingsRow icon="globe-outline" title="Beliefs and culture" subtitle="Optional, private, for observance reminders" />
-        </Link>
-        <Link href={'/(app)/you/reminders' as Href} asChild>
-          <SettingsRow icon="notifications-outline" title="Reminders" subtitle="Quest reminders and quiet hours" />
+        <Link href={'/(app)/settings/ai-byok' as Href} asChild>
+          <SettingsRow icon="key-outline" title="AI & API Keys (BYOK)" subtitle="Bring Your Own Key or run 100% on-device" />
         </Link>
         <SettingsRow
           icon="finger-print-outline"
@@ -237,9 +261,6 @@ export default function SettingsScreen() {
         />
         <Link href={'/(app)/you/privacy' as Href} asChild>
           <SettingsRow icon="lock-closed-outline" title="Privacy and data" subtitle="Export, connected apps, backup and safety" />
-        </Link>
-        <Link href={'/(app)/settings/ai-byok' as Href} asChild>
-          <SettingsRow icon="key-outline" title="AI & API Keys (BYOK)" subtitle="Bring Your Own Key or run 100% on-device" />
         </Link>
         <Link href={'/(app)/you/account' as Href} asChild>
           <SettingsRow icon="person-circle-outline" title="Account" subtitle="Sign out, redo setup or erase" />
@@ -315,6 +336,70 @@ export default function SettingsScreen() {
             placeholder="Enter name"
             maxLength={24}
           />
+        </View>
+
+        {/* Section Navigation Buttons */}
+        <View style={{ marginTop: 16 }}>
+          <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 8 }]}>
+            Detailed Section Editors
+          </Text>
+
+          <PressableScale
+            onPress={() => {
+              setIsEditingProfile(false);
+              router.push('/(app)/you/edit-profile' as Href);
+            }}
+            style={[styles.modalNavBtn, { backgroundColor: colors.surface1 }]}
+          >
+            <Ionicons name="create-outline" size={18} color={colors.primary} />
+            <View style={{ flex: 1, marginLeft: 10 }}>
+              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                Full Profile & Section Editor
+              </Text>
+              <Text style={[typography.caption, { color: colors.text.secondary }]}>
+                Edit body, food rules, growth, and personal info
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
+          </PressableScale>
+
+          <PressableScale
+            onPress={() => {
+              setIsEditingProfile(false);
+              router.push('/(app)/you/adhd-screener' as Href);
+            }}
+            style={[styles.modalNavBtn, { backgroundColor: colors.surface1, marginTop: 8 }]}
+          >
+            <Ionicons name="sparkles-outline" size={18} color={colors.primary} />
+            <View style={{ flex: 1, marginLeft: 10 }}>
+              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                Focus & Attention (ADHD) Screener
+              </Text>
+              <Text style={[typography.caption, { color: colors.text.secondary }]}>
+                Gentle WHO ASRS-v1.1 quiet self-reflection
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
+          </PressableScale>
+
+          <PressableScale
+            onPress={() => {
+              setIsEditingProfile(false);
+              router.push('/(app)/settings/anvaykosh' as Href);
+            }}
+            style={[styles.modalNavBtn, { backgroundColor: colors.surface1, marginTop: 8 }]}
+          >
+            <Ionicons name="cloud-upload-outline" size={18} color={colors.primary} />
+            <View style={{ flex: 1, marginLeft: 10 }}>
+              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                AnvayKosh & Supabase Sync
+              </Text>
+              <Text style={[typography.caption, { color: colors.text.secondary }]}>
+                Single-tap cloud backup and progress sync
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
+          </PressableScale>
         </View>
 
       </AppBottomSheetModal>
@@ -432,5 +517,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 12,
     alignItems: 'center',
+  },
+  modalNavBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 14,
   },
 });

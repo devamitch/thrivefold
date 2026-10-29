@@ -21,8 +21,14 @@ import {
   type AnvayApp,
   type AnvayIdStatus,
 } from '../../../services/ecosystem/anvayKosh';
+import {
+  pullProfile,
+  pullProgress,
+  pushProfile,
+  pushProgress,
+} from '../../../services/account/profileSync';
 import { hapticSuccess } from '../../../services/haptics';
-import { useRootStore } from '../../../stores/useRootStore';
+import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
 
 const FIELD_LABEL: Record<VaultField, string> = {
@@ -48,10 +54,20 @@ const APP_NAME: Record<string, string> = {
  */
 export default function AnvayKoshScreen() {
   const { colors, typography, spacing } = useTheme();
+  const { user, level, xp, streak, diamonds, questsCompleted } = useRootStore(
+    useShallow((s) => ({
+      user: s.user,
+      level: s.level,
+      xp: s.xp,
+      streak: s.currentStreak,
+      diamonds: s.diamonds,
+      questsCompleted: s.questsCompleted,
+    })),
+  );
   const [status, setStatus] = useState<AnvayIdStatus | null>(null);
   const [vault, setVault] = useState<VaultProfile | null>(null);
   const [apps, setApps] = useState<(AnvayApp & { installed: boolean })[]>([]);
-  const [busy, setBusy] = useState<'signin' | 'sync' | 'delete' | null>(null);
+  const [busy, setBusy] = useState<'signin' | 'sync' | 'delete' | 'supabase' | 'pull' | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -68,6 +84,44 @@ export default function AnvayKoshScreen() {
       setVault(null);
     }
   }, []);
+
+  const syncSupabase = async () => {
+    setBusy('supabase');
+    setMessage(null);
+    try {
+      const okProfile = await pushProfile();
+      const okProgress = await pushProgress();
+      hapticSuccess();
+      if (okProfile || okProgress) {
+        setMessage(`Synced successfully with Supabase · Level ${level}, ${xp} XP, ${streak} day streak.`);
+      } else {
+        setMessage('Saved locally. Sign in with Google to push to Supabase.');
+      }
+    } catch {
+      setMessage('Supabase sync could not complete. Check your connection.');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const pullSupabase = async () => {
+    setBusy('pull');
+    setMessage(null);
+    try {
+      const rem = await pullProfile();
+      const prog = await pullProgress();
+      hapticSuccess();
+      if (rem || prog) {
+        setMessage('Merged latest profile and progress from Supabase.');
+      } else {
+        setMessage('No remote profile found. Pushed local data.');
+      }
+    } catch {
+      setMessage('Could not pull from Supabase. Check your connection.');
+    } finally {
+      setBusy(null);
+    }
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -182,6 +236,58 @@ export default function AnvayKoshScreen() {
         ) : null}
       </Card>
 
+      {/* Supabase Cloud & Progress Sync */}
+      <Card style={{ marginTop: spacing.md }}>
+        <View style={styles.row}>
+          <Ionicons name="cloud-upload-outline" size={20} color={colors.primary} />
+          <Text style={[typography.bodyBold, styles.flex, { color: colors.text.primary, marginLeft: 8 }]}>
+            Supabase Cloud & Progress Sync
+          </Text>
+          <Text style={[typography.captionBold, { color: user && !user.isGuest ? colors.success : colors.text.muted }]}>
+            {user && !user.isGuest ? 'Online account' : 'Local guest'}
+          </Text>
+        </View>
+        <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 6 }]}>
+          Sync your personal profile and progress (Level {level}, {xp} XP, {streak} day streak, {diamonds} diamonds)
+          so signing in on another phone restores everything.
+        </Text>
+
+        <View style={[styles.progressBox, { backgroundColor: colors.surface1, marginTop: spacing.sm }]}>
+          <View style={styles.progressItem}>
+            <Text style={[typography.captionBold, { color: colors.primary }]}>Lvl {level}</Text>
+            <Text style={[typography.caption, { color: colors.text.muted }]}>Level</Text>
+          </View>
+          <View style={styles.progressItem}>
+            <Text style={[typography.captionBold, { color: colors.accent }]}>{xp}</Text>
+            <Text style={[typography.caption, { color: colors.text.muted }]}>XP</Text>
+          </View>
+          <View style={styles.progressItem}>
+            <Text style={[typography.captionBold, { color: colors.text.primary }]}>{streak}d</Text>
+            <Text style={[typography.caption, { color: colors.text.muted }]}>Streak</Text>
+          </View>
+          <View style={styles.progressItem}>
+            <Text style={[typography.captionBold, { color: colors.warning }]}>{diamonds}</Text>
+            <Text style={[typography.caption, { color: colors.text.muted }]}>Diamonds</Text>
+          </View>
+        </View>
+
+        <View style={[styles.row, { gap: 8, marginTop: spacing.md }]}>
+          <Button
+            label={busy === 'supabase' ? 'Pushing…' : 'Push to Supabase'}
+            onPress={syncSupabase}
+            disabled={busy !== null}
+            style={styles.flex}
+          />
+          <Button
+            label={busy === 'pull' ? 'Pulling…' : 'Pull from Cloud'}
+            variant="outline"
+            onPress={pullSupabase}
+            disabled={busy !== null}
+            style={styles.flex}
+          />
+        </View>
+      </Card>
+
       {/* Anvay Vault */}
       <Card style={{ marginTop: spacing.md }}>
         <View style={styles.row}>
@@ -282,4 +388,14 @@ const styles = StyleSheet.create({
   fieldLabel: { width: 72 },
   appRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, gap: 12 },
   appBtn: { paddingHorizontal: 14, height: 32, borderRadius: 16, justifyContent: 'center' },
+  progressBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  progressItem: {
+    alignItems: 'center',
+  },
 });

@@ -18,6 +18,8 @@ import {
   headMoved,
   median,
   normalize,
+  pursuitDirectionH,
+  pursuitDirectionOrbit,
   smoothGaze,
   type GazeCalibration,
   type GazeDirection,
@@ -217,13 +219,22 @@ export default function EyeGamesScreen() {
     setSecondsLeft(DURATION_SEC);
     setNeedCenter(false);
     needCenterRef.current = false;
+    saidZone.current = null;
     playStart.current = Date.now();
     setPhase('playing');
-    void coachVoice.speak(
-      mode === 'pop' ? 'Look at the orb' : mode === 'direction' ? 'Follow the arrows' : 'Follow the orb with your eyes',
-      { priority: 3 },
-    );
-    if (mode === 'pop' || mode === 'direction') nextTarget();
+    if (mode === 'pop') {
+      void coachVoice.speak('Look at the orb', { priority: 2, maxMs: 1200 });
+      nextTarget();
+    } else if (mode === 'direction') {
+      void coachVoice.speak('Follow the arrows', { priority: 2, maxMs: 1200 });
+      nextTarget();
+    } else if (mode === 'pursuitH') {
+      saidZone.current = 'right';
+      void coachVoice.speak('Follow the orb. Look right.', { priority: 2, minGapMs: 0, maxMs: 1400 });
+    } else if (mode === 'pursuitO') {
+      saidZone.current = 'down';
+      void coachVoice.speak('Follow the orb. Look down.', { priority: 2, minGapMs: 0, maxMs: 1400 });
+    }
   }, [mode, nextTarget]);
 
   const begin = async () => {
@@ -265,8 +276,21 @@ export default function EyeGamesScreen() {
         calHead.current = { yaw: last.headYawDeg, pitch: last.headPitchDeg };
       }
       if (calStep < CAL_STEPS.length - 1) {
-        setCalStep(calStep + 1);
+        const nextStep = calStep + 1;
+        setCalStep(nextStep);
         hapticLight();
+        const stepKey = CAL_STEPS[nextStep].key;
+        const cue =
+          stepKey === 'center'
+            ? 'Look at the centre dot'
+            : stepKey === 'left'
+              ? 'Now look left'
+              : stepKey === 'right'
+                ? 'Now look right'
+                : stepKey === 'up'
+                  ? 'Look up'
+                  : 'Look down';
+        void coachVoice.speak(cue, { priority: 2, minGapMs: 0, maxMs: 1100 });
         return;
       }
       const res = buildCalibration(
@@ -324,15 +348,15 @@ export default function EyeGamesScreen() {
         const ty = mode === 'pursuitH' ? 0 : Math.sin((2 * Math.PI * t) / 6);
         pursuit.x.value = tx;
         pursuit.y.value = ty;
-        // Say where the orb is heading as it reaches each side.
-        const zone =
-          Math.abs(tx) > 0.75 ? (tx > 0 ? 'right' : 'left') : Math.abs(ty) > 0.75 ? (ty > 0 ? 'down' : 'up') : null;
+
+        // Tell user which way to look as the orb moves.
+        const zone = mode === 'pursuitH' ? pursuitDirectionH(t) : pursuitDirectionOrbit(t);
         if (zone && zone !== saidZone.current) {
           saidZone.current = zone;
           void coachVoice.speak(`Look ${zone}`, {
             priority: 2,
             minGapMs: 0,
-            maxMs: 1100,
+            maxMs: 1000,
           });
         }
         const { nx, ny } = normalize(g, c);
@@ -363,6 +387,7 @@ export default function EyeGamesScreen() {
           needCenterRef.current = true;
           setNeedCenter(true);
           setTarget(null);
+          void coachVoice.speak('Back to centre', { priority: 2, minGapMs: 250, maxMs: 900 });
         } else nextTarget();
         force();
       } else if (dir !== 'center' && dir !== tgt && held >= DWELL_MS * 1.5) {
@@ -606,8 +631,8 @@ export default function EyeGamesScreen() {
                   : mode === 'direction'
                     ? 'Look where the arrow points'
                     : onTarget
-                      ? 'On target, keep following'
-                      : 'Follow the orb with your eyes'}
+                      ? `On target · Follow ${saidZone.current ?? 'the orb'}`
+                      : `Look ${saidZone.current ?? 'at the orb'} · Keep following`}
         </Text>
         {phase === 'playing' ? (
           <Text style={[typography.caption, { color: colors.text.secondary }]}>
@@ -626,11 +651,23 @@ export default function EyeGamesScreen() {
         ]}
       >
         {phase === 'playing' ? (
-          <Chip label="Pause" onPress={() => setPhase('paused')} />
+          <Chip
+            label="Pause"
+            onPress={() => {
+              coachVoice.stop();
+              setPhase('paused');
+            }}
+          />
         ) : phase === 'paused' ? (
           <Chip label="Resume" selected onPress={() => setPhase('playing')} />
         ) : null}
-        <Chip label={phase === 'calibrating' ? 'Cancel eye check' : 'Stop'} onPress={() => setPhase('intro')} />
+        <Chip
+          label={phase === 'calibrating' ? 'Cancel eye check' : 'Stop'}
+          onPress={() => {
+            coachVoice.stop();
+            setPhase('intro');
+          }}
+        />
       </View>
     </View>
   );

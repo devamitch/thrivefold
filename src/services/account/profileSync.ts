@@ -134,7 +134,71 @@ export async function pushProfile(): Promise<boolean> {
     console.warn('profile push failed', error.code, error.message);
     return false;
   }
+  await pushProgress();
   return syncEmergencyContacts(id);
+}
+
+export interface RemoteProgress {
+  xp: number;
+  level: number;
+  diamonds: number;
+  streak: number;
+  quests_completed: number;
+  achievements: string[];
+  updated_at?: string;
+}
+
+/** Pushes Level, XP, Diamonds, Streak and Achievements to thrivefold_progress (migration 23). */
+export async function pushProgress(): Promise<boolean> {
+  const id = await userId();
+  const s = useRootStore.getState();
+  if (!supabase || !id || !s.user || s.user.isGuest) return false;
+  const { error } = await supabase.from('thrivefold_progress').upsert(
+    {
+      user_id: id,
+      xp: Math.max(0, Math.min(10000000, s.xp)),
+      level: Math.max(1, Math.min(1000, s.level)),
+      diamonds: Math.max(0, Math.min(1000000, s.diamonds)),
+      streak: Math.max(0, Math.min(10000, s.currentStreak)),
+      quests_completed: Math.max(0, Math.min(1000000, s.questsCompleted)),
+      achievements: s.achievements.slice(0, 500),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'user_id' },
+  );
+  if (error) {
+    console.warn('progress push failed', error.code, error.message);
+    return false;
+  }
+  return true;
+}
+
+/** Pulls cloud progress and merges non-destructively with local state. */
+export async function pullProgress(): Promise<RemoteProgress | null> {
+  const id = await userId();
+  if (!supabase || !id) return null;
+  const { data, error } = await supabase
+    .from('thrivefold_progress')
+    .select('xp, level, diamonds, streak, quests_completed, achievements, updated_at')
+    .eq('user_id', id)
+    .maybeSingle();
+  if (error) {
+    console.warn('progress pull failed', error.code, error.message);
+    return null;
+  }
+  if (!data) return null;
+  const rem = data as RemoteProgress;
+  const s = useRootStore.getState();
+  if (rem.xp > s.xp) useRootStore.setState({ xp: rem.xp });
+  if (rem.level > s.level) useRootStore.setState({ level: rem.level });
+  if (rem.diamonds > s.diamonds) useRootStore.setState({ diamonds: rem.diamonds });
+  if (rem.streak > s.currentStreak) useRootStore.setState({ currentStreak: rem.streak });
+  if (rem.quests_completed > s.questsCompleted) useRootStore.setState({ questsCompleted: rem.quests_completed });
+  if (rem.achievements?.length) {
+    const combined = Array.from(new Set([...s.achievements, ...rem.achievements]));
+    useRootStore.setState({ achievements: combined });
+  }
+  return rem;
 }
 
 /**
