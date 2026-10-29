@@ -111,7 +111,7 @@ export function AnalyticsDetailSheet({
         <View style={{ marginTop: spacing.md }}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionTitleRow}>
-              <Ionicons name="sparkles" size={16} color={colors.primary} style={{ marginRight: 6 }} />
+              <Ionicons name="bulb" size={16} color={colors.primary} style={{ marginRight: 6 }} />
               <Text style={[typography.subheading, { color: colors.text.primary }]}>
                 Vitality Trajectory
               </Text>

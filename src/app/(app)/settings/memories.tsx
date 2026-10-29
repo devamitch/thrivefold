@@ -225,7 +225,7 @@ export default function MemoriesScreen() {
             docs.map((d) => (
               <Card key={d.id} style={styles.row}>
                 <Ionicons
-                  name={d.metadata?.source === 'cloud_coach' ? 'sparkles-outline' : 'document-text-outline'}
+                  name={d.metadata?.source === 'cloud_coach' ? 'bulb-outline' : 'document-text-outline'}
                   size={18}
                   color={colors.primary}
                 />

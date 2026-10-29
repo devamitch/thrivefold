@@ -832,7 +832,7 @@ export default function DevToolsScreen() {
             <Button
               variant="secondary"
               label="2. Test Tone Classification (Zod Validated)"
-              icon={<Ionicons name="sparkles-outline" size={18} color={colors.text.primary} />}
+              icon={<Ionicons name="bulb-outline" size={18} color={colors.text.primary} />}
               disabled={isAiBusy}
               onPress={async () => {
                 setIsAiBusy(true);

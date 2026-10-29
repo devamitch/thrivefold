@@ -409,7 +409,7 @@ export function AppDrawer({ blurTarget: _blurTarget }: { blurTarget?: RefObject<
           {/* Footer: Beta switch, then Safety and Support */}
           <Reveal index={rows.length + 2} progress={progress} style={styles.footer}>
             <SquircleSurface radius={18} fill={palette.wash} style={[styles.footerButton, { marginBottom: 8 }]}>
-              <Ionicons name="sparkles" size={19} color="#C9A46A" />
+              <Ionicons name="bulb" size={19} color="#C9A46A" />
               <PressableScale
                 onPress={() => (betaMode ? go('/(app)/beta-lab') : undefined)}
                 style={styles.flex}

@@ -256,7 +256,7 @@ export default function SettingsScreen() {
         </Link>
         <Link href={'/(app)/you/adhd-screener' as Href} asChild>
           <SettingsRow
-            icon="sparkles-outline"
+            icon="bulb-outline"
             title="Focus self-check"
             subtitle="Six quick questions so tasks come in smaller steps"
           />
@@ -462,7 +462,7 @@ export default function SettingsScreen() {
             }}
             style={[styles.modalNavBtn, { backgroundColor: colors.surface1, marginTop: 8 }]}
           >
-            <Ionicons name="sparkles-outline" size={18} color={colors.primary} />
+            <Ionicons name="bulb-outline" size={18} color={colors.primary} />
             <View style={{ flex: 1, marginLeft: 10 }}>
               <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
                 Focus & Attention (ADHD) Screener

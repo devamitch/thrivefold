@@ -26,7 +26,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { ClipPath, Defs, Path } from 'react-native-svg';
 import { hapticMedium, hapticSelection } from '../../services/haptics';
 import { globalVoiceController } from '../../services/voice/globalVoiceController';
-import { ThriveBlob } from '../brand/ThriveBlob';
+import { ThriveClock } from '../brand/ThriveClock';
 
 type OrbMood = 'idle' | 'listening' | 'thinking' | 'speaking';
 const ORB_LABEL: Record<OrbMood, string> = {
@@ -366,14 +366,12 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
             <View
               style={[
                 styles.centerOrb,
-                {
-                  backgroundColor: colors.background,
-                  borderColor: mood === 'idle' ? colors.dockActive : colors.primary,
-                },
+                // No disc behind Thrive: the clock is the button.
+                { backgroundColor: 'transparent', borderColor: 'transparent' },
               ]}
             >
               <View pointerEvents="none">
-                <ThriveBlob size={CENTER_SIZE - 6} mood={mood} />
+                <ThriveClock size={CENTER_SIZE + 6} mood={mood} />
               </View>
             </View>
 

@@ -94,7 +94,7 @@ export default function PreferencesBriefScreen() {
             onPress={() => router.push('/(app)/you/adhd-screener' as Href)}
             style={[styles.subLink, { backgroundColor: colors.surface1, marginTop: spacing.md }]}
           >
-            <Ionicons name="sparkles-outline" size={18} color={colors.primary} />
+            <Ionicons name="bulb-outline" size={18} color={colors.primary} />
             <View style={[styles.flex, { marginLeft: 10 }]}>
               <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
                 Focus & Attention Screener

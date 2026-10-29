@@ -75,7 +75,7 @@ export default function MotionBlurBetaScreen() {
     >
       <SquircleSurface radius={24} fill={colors.surface} style={[styles.card, { marginTop: spacing.sm }]}>
         <View style={styles.cardHeader}>
-          <Ionicons name="sparkles-outline" size={20} color={colors.primary} />
+          <Ionicons name="bulb-outline" size={20} color={colors.primary} />
           <Text style={[typography.subheading, { color: colors.callText, flex: 1 }]}>Native Motion Blur Studio</Text>
           <SquircleSurface
             radius={8}

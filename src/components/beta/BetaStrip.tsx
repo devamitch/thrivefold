@@ -37,7 +37,7 @@ export function BetaStrip({ practiceLine }: { practiceLine: string }) {
     <View style={{ marginTop: spacing.lg }}>
       <PressableScale onPress={() => router.push('/(app)/beta-lab' as Href)} accessibilityLabel="Open Beta Lab">
         <LinearGradient colors={[GOLD_A, GOLD_B]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
-          <Ionicons name="sparkles" size={18} color="#FFF8EC" />
+          <Ionicons name="bulb" size={18} color="#FFF8EC" />
           <View style={styles.flex}>
             <Text style={[typography.bodyBold, styles.light]}>Beta studios</Text>
             <Text style={[typography.caption, styles.lightDim]} numberOfLines={1}>

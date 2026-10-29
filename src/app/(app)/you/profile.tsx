@@ -220,7 +220,7 @@ export default function KoshProfileScreen() {
             onPress={() => router.push('/(app)/you/adhd-screener' as Href)}
             style={[styles.quickChip, { backgroundColor: colors.surface2 }]}
           >
-            <Ionicons name="sparkles-outline" size={14} color={colors.text.primary} />
+            <Ionicons name="bulb-outline" size={14} color={colors.text.primary} />
             <Text style={[typography.captionBold, { color: colors.text.primary }]}>Focus & ADHD</Text>
           </PressableScale>
 
@@ -244,7 +244,7 @@ export default function KoshProfileScreen() {
         {/* ADHD & Focus Style Section */}
         <CollapsibleSection
           title="Focus & Attention (ADHD)"
-          icon="sparkles-outline"
+          icon="bulb-outline"
           summary={
             adhdProfile.completedAt
               ? `Style: ${adhdProfile.focusStyle ?? 'Completed'} · Score ${adhdProfile.score}`

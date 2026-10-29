@@ -459,7 +459,7 @@ export function GestureRemoteGuideModal({
         <View
           style={[styles.voiceNote, { backgroundColor: colors.surface1, marginTop: spacing.md }]}
         >
-          <Ionicons name="sparkles-outline" size={16} color={colors.primary} />
+          <Ionicons name="bulb-outline" size={16} color={colors.primary} />
           <Text
             style={[typography.caption, { color: colors.text.secondary, marginLeft: 8, flex: 1 }]}
           >

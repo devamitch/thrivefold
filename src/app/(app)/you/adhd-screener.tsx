@@ -128,7 +128,7 @@ export default function AdhdScreenerScreen() {
               </Text>
               {evaluation.strengths.map((s, idx) => (
                 <View key={idx} style={styles.bulletRow}>
-                  <Ionicons name="sparkles-outline" size={16} color={colors.primary} />
+                  <Ionicons name="bulb-outline" size={16} color={colors.primary} />
                   <Text style={[typography.body, styles.flex, { color: colors.text.primary, marginLeft: 8 }]}>
                     {s}
                   </Text>

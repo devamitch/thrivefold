@@ -33,7 +33,7 @@ const PROVIDERS: ProviderConfig[] = [
     description: 'Generous free tier with Gemini 2.0 Flash. Fast reasoning and vision assistance.',
     docsUrl: 'https://aistudio.google.com/app/apikey',
     placeholder: 'AIzaSy...',
-    icon: 'sparkles-outline',
+    icon: 'bulb-outline',
   },
   {
     id: 'groq',

@@ -159,7 +159,7 @@ const STUDIOS: StudioProduct[] = [
     title: 'Native Motion Blur',
     subtitle: 'Velocity-driven AGSL runtime shaders & 60fps card animation',
     tag: 'AGSL Shaders',
-    icon: 'sparkles-outline',
+    icon: 'bulb-outline',
     route: '/(app)/beta-lab/motion-blur',
     badgeVariant: 'neutral',
   },

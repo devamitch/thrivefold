@@ -137,7 +137,7 @@ export default function SearchScreen() {
         {busy ? <ActivityIndicator color={colors.primary} style={{ marginTop: 16 }} /> : null}
         {answer ? (
           <View style={[styles.answer, { backgroundColor: colors.primaryAlpha }]}>
-            <Ionicons name="sparkles-outline" size={16} color={colors.primary} />
+            <Ionicons name="bulb-outline" size={16} color={colors.primary} />
             <Text style={[typography.subbody, styles.flex, { color: colors.text.primary }]}>{answer}</Text>
           </View>
         ) : null}

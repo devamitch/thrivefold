@@ -18,7 +18,7 @@ import { hapticMedium, hapticSelection } from '../../services/haptics';
 import { globalVoiceController, type VoiceAssistantState } from '../../services/voice/globalVoiceController';
 import { useTheme } from '../../theme/useTheme';
 import { PressableScale } from '../ui/PressableScale';
-import { ThriveBlob } from '../brand/ThriveBlob';
+import { ThriveClock } from '../brand/ThriveClock';
 import { BrainSetupCard } from './BrainSetupCard';
 
 interface Turn {
@@ -164,8 +164,8 @@ export function GlobalVoiceAssistant() {
         <View style={[styles.sheet, { backgroundColor: colors.background }]}>
           <View style={[styles.grabber, { backgroundColor: colors.surface3 }]} />
           <View style={[styles.header, { paddingHorizontal: spacing.base }]}>
-            <Animated.View style={[styles.miniOrb, { backgroundColor: colors.surface }, orbStyle]}>
-              <ThriveBlob size={40} mood={mood} />
+            <Animated.View style={[styles.miniOrb, orbStyle]}>
+              <ThriveClock size={48} mood={mood} />
             </Animated.View>
             <View style={styles.flex}>
               <Text style={[typography.subheading, { color: colors.text.primary }]}>Thrive Coach</Text>
@@ -195,7 +195,7 @@ export function GlobalVoiceAssistant() {
               <View style={styles.empty}>
                 {/* The whole character, never cropped, reacting to the conversation. */}
                 <View style={styles.buddy} pointerEvents="none">
-                  <ThriveBlob size={132} mood={mood} />
+                  <ThriveClock size={140} mood={mood} />
                 </View>
                 <Text style={[typography.body, { color: colors.text.secondary }]}>
                   Talk naturally. Ask a question, or say things like &quot;log two glasses of water and then open
