@@ -12,14 +12,14 @@
 
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Modal, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import type { NativeSyntheticEvent } from 'react-native';
 
 import { PressableScale } from '../../../components/ui/PressableScale';
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import { EyeTrackerSession, type EyeState } from '../../../domain/vision/eyeTracker';
-import { EyeOverlay } from '../../../components/vision/EyeOverlay';
+import { EyeScanFullScreen } from '../../../components/vision/EyeScanFullScreen';
 import { PoseDetectionAdapter } from '../experiments/pose-detection/PoseDetectionAdapter';
 import { coachVoice } from '../../../services/ai/coachVoice';
 import { hapticLight, hapticSuccess, hapticSelection } from '../../../services/haptics';
@@ -222,59 +222,14 @@ export function EyeTrackingStudio() {
         })}
       </View>
 
-      {/* Live check runs full screen with the eyes outlined; the guided exercises keep a small camera. */}
-      <Modal
+      {/* Live check runs full screen, BlinkQuest scanner style. */}
+      <EyeScanFullScreen
         visible={active && mode === 'scanner'}
-        animationType="fade"
-        statusBarTranslucent
-        onRequestClose={() => void toggleStudio()}
-      >
-        <View style={[styles.full, { backgroundColor: colors.text.primary }]}>
-          <PoseDetectionAdapter
-            engine="default"
-            active={active && mode === 'scanner'}
-            facing="front"
-            face
-            hands={false}
-            onPose={onPose}
-            onPoseError={(e) => setCamError(e.nativeEvent.message)}
-            style={StyleSheet.absoluteFill}
-          />
-          <EyeOverlay face={overlay.face} frameW={overlay.w} frameH={overlay.h} />
-          <View style={styles.fullTop}>
-            <View style={[styles.fullChip, { backgroundColor: eyeState.tracked ? colors.success : colors.scrim }]}>
-              <Text style={[typography.captionBold, { color: colors.text.inverse }]}>
-                {camError ?? (eyeState.tracked ? 'Tracking your eyes' : 'Bring your face into view')}
-              </Text>
-            </View>
-          </View>
-          <View style={[styles.fullPanel, { backgroundColor: colors.scrim }]}>
-            {/* Two scrim layers keep white text readable over a bright camera image in light mode. */}
-            <View style={[StyleSheet.absoluteFill, styles.fullPanelShade, { backgroundColor: colors.scrim }]} />
-            <View style={styles.fullStats}>
-              <FullStat label={zoneLabel} value={eyeState.tracked ? `${eyeState.distanceCm.toFixed(0)} cm` : '—'} />
-              <FullStat label="blinks a minute" value={`${eyeState.blinksPerMin}`} />
-              <FullStat label="eye battery" value={`${eyeState.batteryLevel.toFixed(0)}%`} />
-            </View>
-            <Text style={[typography.body, { color: colors.text.inverse, marginTop: 10, opacity: 0.9 }]}>
-              {eyeState.recommendation}
-            </Text>
-            {eyeState.activeAlert ? (
-              <Text style={[typography.bodyBold, { color: colors.warning, marginTop: 6 }]}>
-                {eyeState.activeAlert.title}
-              </Text>
-            ) : null}
-            <PressableScale
-              onPress={() => void toggleStudio()}
-              style={[styles.fullStop, { backgroundColor: colors.primary }]}
-              accessibilityLabel="Stop and save"
-            >
-              <Ionicons name="stop" size={18} color={colors.text.inverse} />
-              <Text style={[typography.bodyBold, { color: colors.text.inverse, marginLeft: 8 }]}>Stop and save</Text>
-            </PressableScale>
-          </View>
-        </View>
-      </Modal>
+        eye={eyeState}
+        overlay={overlay}
+        onPose={onPose}
+        onStop={() => void toggleStudio()}
+      />
 
       {eyeState.activeAlert ? (
         <View
@@ -420,15 +375,6 @@ function Stat({ label, value, color }: { label: string; value: string; color: st
   );
 }
 
-function FullStat({ label, value }: { label: string; value: string }) {
-  const { colors, typography } = useTheme();
-  return (
-    <View style={{ flex: 1, alignItems: 'center' }}>
-      <Text style={[typography.heading, { color: colors.text.inverse }]}>{value}</Text>
-      <Text style={[typography.caption, { color: colors.text.inverse, opacity: 0.75 }]}>{label}</Text>
-    </View>
-  );
-}
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },

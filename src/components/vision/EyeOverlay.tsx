@@ -7,7 +7,20 @@ import Svg, { Circle, Polygon } from 'react-native-svg';
  * contours and irises from the face subset the camera module sends. Maps the analysed frame onto
  * the preview with the same FIT_CENTER letterboxing the native preview uses.
  */
-export function EyeOverlay({ face, frameW, frameH, color = '#9BD18B' }: { face: number[] | undefined; frameW: number; frameH: number; color?: string }) {
+export function EyeOverlay({
+  face,
+  frameW,
+  frameH,
+  color = '#9BD18B',
+  mode = 'eyes',
+}: {
+  face: number[] | undefined;
+  frameW: number;
+  frameH: number;
+  color?: string;
+  /** Eyes only, every tracked face point, or both. */
+  mode?: 'eyes' | 'face' | 'both';
+}) {
   const { width, height } = useWindowDimensions();
   if (!face || face.length < 84 || !frameW || !frameH) return null;
   const scale = Math.min(width / frameW, height / frameH);
@@ -24,10 +37,20 @@ export function EyeOverlay({ face, frameW, frameH, color = '#9BD18B' }: { face: 
   const b = iris(37, 38);
   return (
     <Svg pointerEvents="none" style={StyleSheet.absoluteFill} width={width} height={height}>
+      {mode !== 'eyes'
+        ? Array.from({ length: Math.floor(face.length / 2) }, (_, k) => {
+            const [x, y] = P(k);
+            return <Circle key={k} cx={x} cy={y} r={1.6} fill="#FFFFFF" opacity={0.75} />;
+          })
+        : null}
+      {mode === 'face' ? null : (
+        <>
       <Polygon points={ring(0)} fill="none" stroke={color} strokeWidth={2} />
       <Polygon points={ring(16)} fill="none" stroke={color} strokeWidth={2} />
       <Circle cx={a.cx} cy={a.cy} r={a.r} fill="none" stroke="#FFFFFF" strokeWidth={2} />
       <Circle cx={b.cx} cy={b.cy} r={b.r} fill="none" stroke="#FFFFFF" strokeWidth={2} />
+        </>
+      )}
     </Svg>
   );
 }
