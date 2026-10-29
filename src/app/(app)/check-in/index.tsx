@@ -12,7 +12,6 @@ import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { Chip } from '../../../components/ui/Chip';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
-import { AssetIllustrations } from '../../../constants/assets';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import type { DailyCheckInRecord } from '../../../stores/useRootStore';
 import { getSanctuaryIllustration } from '../../../utils/illustrationResolver';
@@ -91,8 +90,6 @@ export default function CheckInScreen() {
       header={<AppHeader title="Check in" subtitle={existing ? 'Update today’s check-in' : 'About a minute. Everything stays on this phone.'} showBack />}
       scrollMode="shell-scroll-view"
       footer={<Button label={existing ? 'Update check-in' : 'Save check-in'} size="lg" onPress={save} />}
-      backgroundImage={AssetIllustrations.todayMorningBg}
-      backgroundOverlayOpacity={0.92}
     >
       <Card style={styles.heroCard}>
         <Image

@@ -9,7 +9,6 @@ import { AppHeader } from '../../components/ui/AppHeader';
 import { Badge } from '../../components/ui/Badge';
 import { Card } from '../../components/ui/Card';
 import { ScreenContainer } from '../../components/ui/ScreenContainer';
-import { AssetIllustrations } from '../../constants/assets';
 import { articlesFor } from '../../content/learn';
 import { useTheme } from '../../theme/useTheme';
 import { PressableScale } from '../../components/ui/PressableScale';
@@ -22,12 +21,7 @@ export default function LearnScreen() {
   const articles = articlesFor(experience);
 
   return (
-    <ScreenContainer
-      header={<AppHeader title="Learn" subtitle="Plain-language health basics" showBack />}
-      scrollMode="shell-scroll-view"
-      backgroundImage={AssetIllustrations.sanctuaryAmbientBg}
-      backgroundOverlayOpacity={0.92}
-    >
+    <ScreenContainer header={<AppHeader title="Learn" subtitle="Plain-language health basics" showBack />} scrollMode="shell-scroll-view">
       <Card variant="surface1" style={{ marginBottom: spacing.md, padding: spacing.base }}>
         <Text style={[typography.caption, { color: colors.text.secondary }]}>
           General information based on public health guidance (NHS, WHO, CDC). Not medical advice and not a diagnosis.

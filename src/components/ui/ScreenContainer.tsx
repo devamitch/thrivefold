@@ -1,15 +1,6 @@
 import { SquircleSurface } from './SquircleSurface';
 import React, { isValidElement, useContext, useEffect, type ReactNode } from 'react';
-import {
-  StyleProp,
-  StyleSheet,
-  View,
-  ViewStyle,
-  type ImageSourcePropType,
-  type ImageStyle,
-} from 'react-native';
-import { Image, type ImageSource } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
+import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 import Animated, {
   useAnimatedScrollHandler,
   useReducedMotion,
@@ -71,25 +62,6 @@ export interface ScreenContainerProps {
   headerMode?: 'compact' | 'collapsing' | 'none' | 'custom';
   /** Bottom dock policy. */
   dockBehavior?: 'always' | 'auto-hide' | 'hidden';
-  /**
-   * Optional full-bleed ambient background illustration (using absolutely positioned Image).
-   * Renders behind screen content with a calm, eye-friendly theme wash.
-   */
-  backgroundImage?: ImageSource | ImageSourcePropType | number | string;
-  /** Opacity of the background tint wash (defaults to 0.92 for low-glare calm). */
-  backgroundOverlayOpacity?: number;
-  /** Optional blur radius for ultra-soft, low-glare ambient texture (e.g. 2..8). */
-  backgroundBlurRadius?: number;
-  /** Custom style for the background image. */
-  backgroundImageStyle?: StyleProp<ImageStyle>;
-}
-
-function toRgba(hex: string, alpha: number): string {
-  if (!hex || !hex.startsWith('#')) return hex;
-  const raw = hex.replace('#', '');
-  const n = parseInt(raw.length === 3 ? raw.split('').map((c) => c + c).join('') : raw, 16);
-  if (isNaN(n)) return hex;
-  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${Math.max(0, Math.min(1, alpha))})`;
 }
 
 /** Horizontal page gutter shared by every screen. */
@@ -117,10 +89,6 @@ export function ScreenContainer({
   scrollMode,
   headerMode,
   dockBehavior,
-  backgroundImage,
-  backgroundOverlayOpacity,
-  backgroundBlurRadius,
-  backgroundImageStyle,
 }: ScreenContainerProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -205,42 +173,7 @@ export function ScreenContainer({
   const containerProps = safeArea
     ? { edges: ownsTopInset ? (['left', 'right'] as const) : (['top', 'left', 'right'] as const) }
     : {};
-  const rootStyle = [
-    styles.root,
-    { backgroundColor: backgroundImage ? 'transparent' : colors.background },
-    style,
-  ];
-
-  const wrapWithBackground = (node: React.ReactElement) => {
-    if (!backgroundImage) return node;
-    const maxOpacity = backgroundOverlayOpacity ?? 0.96;
-    return (
-      <View style={styles.bgImageRoot}>
-        <Image
-          source={backgroundImage}
-          style={[StyleSheet.absoluteFill, styles.bgImage, backgroundImageStyle]}
-          contentFit="cover"
-          blurRadius={backgroundBlurRadius ?? 0}
-          priority="low"
-          pointerEvents="none"
-          cachePolicy="memory-disk"
-          accessibilityIgnoresInvertColors
-        />
-        <LinearGradient
-          colors={[
-            toRgba(colors.background, 0.0),
-            toRgba(colors.background, 0.35 * maxOpacity),
-            toRgba(colors.background, 0.82 * maxOpacity),
-            toRgba(colors.background, maxOpacity),
-          ]}
-          locations={[0, 0.28, 0.65, 1.0]}
-          pointerEvents="none"
-          style={StyleSheet.absoluteFill}
-        />
-        {node}
-      </View>
-    );
-  };
+  const rootStyle = [styles.root, { backgroundColor: colors.background }, style];
 
   const resolvedScrollMode = scrollMode ?? (scrollable ? 'shell-scroll-view' : 'external');
 
@@ -282,7 +215,7 @@ export function ScreenContainer({
     const largeTitle = (
       <CollapsingLargeTitle props={headerProps} scrollY={scrollY} titleHeight={titleHeight} />
     );
-    return wrapWithBackground(
+    return (
       <ScreenScrollContext.Provider value={{ ...contextValue, headerProps, contentTop }}>
         <ContainerComponent {...containerProps} style={rootStyle}>
           {resolvedScrollMode === 'shell-scroll-view' ? (
@@ -336,7 +269,7 @@ export function ScreenContainer({
   }
 
   /* ── Standard / Compact Header Flow ─────────────── */
-  return wrapWithBackground(
+  return (
     <ScreenScrollContext.Provider value={contextValue}>
       <ContainerComponent {...containerProps} style={rootStyle}>
         {pinnedHeaderNode}
@@ -369,15 +302,6 @@ export function ScreenContainer({
 }
 
 const styles = StyleSheet.create({
-  bgImage: {
-    opacity: 0.95,
-  },
-  bgImageRoot: {
-    flex: 1,
-    overflow: 'hidden',
-    position: 'relative',
-    width: '100%',
-  },
   externalBody: {
     flex: 1,
     minHeight: 0,

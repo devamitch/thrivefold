@@ -13,7 +13,6 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { useShallow } from 'zustand/react/shallow';
 
 import { useTheme } from '../../../theme/useTheme';
-import { AssetIllustrations } from '../../../constants/assets';
 import {
   ScreenContainer,
   AppHeader,
@@ -379,8 +378,6 @@ export default function TodayScreen() {
         />
       }
       scrollMode="shell-scroll-view"
-      backgroundImage={AssetIllustrations.todayMorningBg}
-      backgroundOverlayOpacity={0.92}
     >
       {/* Reanimated Animated Tab Bar with Spring Indicator */}
       <View style={{ marginTop: spacing.xs, marginBottom: spacing.sm }}>
