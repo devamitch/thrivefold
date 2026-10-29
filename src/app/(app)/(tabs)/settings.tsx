@@ -244,6 +244,9 @@ export default function SettingsScreen() {
         <Link href={'/(app)/ai/model-status' as Href} asChild>
           <SettingsRow icon="hardware-chip-outline" title="On-device AI" subtitle="Download the local language model (llama.cpp) for offline answers" />
         </Link>
+        <Link href={'/(app)/settings/memories' as Href} asChild>
+          <SettingsRow icon="library-outline" title="Private AI Memories" subtitle="Inspect, search, and manage on-device knowledge used by Thrive Coach" />
+        </Link>
         <Link href={'/(app)/settings/ai-byok' as Href} asChild>
           <SettingsRow icon="key-outline" title="AI & API Keys (BYOK)" subtitle="Bring Your Own Key or run 100% on-device" />
         </Link>

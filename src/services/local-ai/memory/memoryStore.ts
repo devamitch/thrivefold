@@ -247,6 +247,18 @@ export class AnalyticalMemoryStore {
   }
 
   /**
+   * Clears all memories for a user (GDPR / right to be forgotten).
+   */
+  async clearAllMemories(userId: string): Promise<boolean> {
+    const database = getDb();
+    const res = database.runSync(
+      `DELETE FROM user_memories WHERE user_id = ?`,
+      [userId]
+    );
+    return res.changes > 0;
+  }
+
+  /**
    * Lists memories for a user with optional category/status filters.
    */
   async listMemories(userId: string, filter?: MemoryFilter): Promise<UserMemory[]> {

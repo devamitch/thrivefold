@@ -1,33 +1,29 @@
 package expo.modules.localai
 
 import android.os.Bundle
-import android.os.SystemClock
 import android.util.Log
-import com.llamatik.library.platform.GenStream
-import com.llamatik.library.platform.LlamaBridge
 import expo.modules.kotlin.Promise
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
-import kotlinx.coroutines.*
+import kotlinx.coroutines.launch
 import java.io.File
-import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicBoolean
 
-private const val TAG = "LocalAIModule"
+private const val TAG = "AnvaykoshAIModule"
 
+/**
+ * Anvaykosh AI Native Expo Module.
+ *
+ * Provides the unified Kotlin bridge for on-device mobile AI in Thrivefold:
+ * - On-device GGUF quantized model execution via AnvaykoshAiEngine
+ * - Memory headroom safety validation via LlmMemoryGuard
+ * - Model download integrity and atomic promotion via AssetModelExtractor
+ * - Native semantic text chunking & BM25 preprocessing via AnvaykoshDocumentProcessor
+ * - Reactive token streaming with tokens-per-second (TPS) metrics
+ * - Conversational barge-in cancellation
+ */
 class LocalAIModule : Module() {
 
-  // Dedicated single-threaded executor for native llama.cpp operations to serialize inference
-  private val inferenceExecutor = Executors.newSingleThreadExecutor()
-  private val inferenceDispatcher = inferenceExecutor.asCoroutineDispatcher()
-  private val moduleScope = CoroutineScope(SupervisorJob() + inferenceDispatcher)
-
-  private val isModelLoaded = AtomicBoolean(false)
-  private val isGenerating = AtomicBoolean(false)
-
-  private var loadedModelPath: String? = null
-  private var loadedFileName: String? = null
-  private var loadedModelSizeBytes: Long = 0L
+  private val engine = AnvaykoshAiEngine()
 
   override fun definition() = ModuleDefinition {
     Name("LocalAI")
@@ -40,11 +36,12 @@ class LocalAIModule : Module() {
     )
 
     Constant("isSupported") { true }
-    Constant("nativeEngine") { "Llamatik/llama.cpp" }
-    Constant("sdkVersion") { "0.12.0" }
+    Constant("nativeEngine") { "Anvaykosh AI (Llamatik/llama.cpp)" }
+    Constant("engineBranding") { "Anvaykosh AI" }
+    Constant("sdkVersion") { "1.0.0" }
 
     /**
-     * Checks if the native llama.cpp shared libraries are linked and operational.
+     * Checks if native shared libraries are linked and operational.
      */
     Function("isAvailable") {
       try {
@@ -56,19 +53,19 @@ class LocalAIModule : Module() {
     }
 
     /**
-     * Returns comprehensive runtime status for health monitoring and diagnostics.
+     * Returns runtime diagnostics and active model metadata.
      */
     Function("getRuntimeStatus") {
       mapOf(
         "isSupported" to true,
-        "isLoaded" to isModelLoaded.get(),
-        "isGenerating" to isGenerating.get(),
-        "loadedModelPath" to (loadedModelPath ?: ""),
-        "loadedFileName" to (loadedFileName ?: ""),
-        "modelSizeBytes" to loadedModelSizeBytes,
-        "modelSizeMb" to (loadedModelSizeBytes / (1024 * 1024)),
-        "nativeEngine" to "Llamatik/llama.cpp",
-        "sdkVersion" to "0.12.0"
+        "isLoaded" to engine.isModelLoaded.get(),
+        "isGenerating" to engine.isGenerating.get(),
+        "loadedModelPath" to (engine.loadedModelPath ?: ""),
+        "loadedFileName" to (engine.loadedFileName ?: ""),
+        "modelSizeBytes" to engine.loadedModelSizeBytes,
+        "modelSizeMb" to (engine.loadedModelSizeBytes / (1024 * 1024)),
+        "nativeEngine" to "Anvaykosh AI (Llamatik/llama.cpp)",
+        "sdkVersion" to "1.0.0"
       )
     }
 
@@ -84,7 +81,7 @@ class LocalAIModule : Module() {
      * Verifies post-download file integrity against an expected SHA-256 hash.
      */
     AsyncFunction("verifyModelChecksum") { filePath: String, expectedSha256: String, promise: Promise ->
-      moduleScope.launch {
+      engine.scope.launch {
         try {
           val cleanPath = filePath.removePrefix("file://")
           val file = File(cleanPath)
@@ -124,19 +121,17 @@ class LocalAIModule : Module() {
     }
 
     Function("isLoaded") {
-      isModelLoaded.get()
+      engine.isModelLoaded.get()
     }
 
     Function("isGenerating") {
-      isGenerating.get()
+      engine.isGenerating.get()
     }
 
     /**
-     * Lazily and safely loads a quantized GGUF model into native memory:
-     * - Checks device RAM headroom (refuses loading if memory pressure will cause OS LMK crash)
-     * - Configures optimal performance threads
-     * - Releases previous model from RAM if one is already open
-     * - Runs entirely on background worker thread to prevent UI freezing (ANR)
+     * Lazily loads a quantized GGUF model into native memory:
+     * - Validates RAM headroom via LlmMemoryGuard
+     * - Runs on background thread to prevent UI jank
      */
     AsyncFunction("loadModel") { modelPathOrAsset: String, isAsset: Boolean, options: Map<String, Any>?, promise: Promise ->
       val ctx = appContext.reactContext
@@ -145,22 +140,9 @@ class LocalAIModule : Module() {
         return@AsyncFunction
       }
 
-      moduleScope.launch {
+      engine.scope.launch {
         try {
-          // Unload any active model first to avoid double allocation
-          if (isModelLoaded.get()) {
-            try {
-              LlamaBridge.shutdown()
-            } catch (t: Throwable) {
-              Log.w(TAG, "Error shutting down previous model: ${t.message}")
-            }
-            isModelLoaded.set(false)
-            loadedModelPath = null
-            System.gc()
-          }
-
-          sendProgress(0.15f, "Resolving model path...")
-
+          sendProgress(0.2f, "Resolving model path...")
           val file = AssetModelExtractor.resolveModelPath(ctx, modelPathOrAsset, isAsset)
           val fileSize = file.length()
 
@@ -169,7 +151,7 @@ class LocalAIModule : Module() {
             return@launch
           }
 
-          // RAM Headroom check
+          // RAM Headroom safety check
           val force = options?.get("force") as? Boolean ?: false
           val memCheck = LlmMemoryGuard.checkMemorySafety(ctx, fileSize)
 
@@ -182,16 +164,16 @@ class LocalAIModule : Module() {
             return@launch
           }
 
-          sendProgress(0.45f, "Configuring native generation parameters...")
+          sendProgress(0.6f, "Loading model weights into Anvaykosh AI engine...")
 
-          val optimalThreads = LlmMemoryGuard.getOptimalThreadCount()
           val temperature = (options?.get("temperature") as? Number)?.toFloat() ?: 0.7f
           val maxTokens = (options?.get("maxTokens") as? Number)?.toInt() ?: 512
           val topP = (options?.get("topP") as? Number)?.toFloat() ?: 0.9f
           val topK = (options?.get("topK") as? Number)?.toInt() ?: 40
           val repeatPenalty = (options?.get("repeatPenalty") as? Number)?.toFloat() ?: 1.1f
 
-          LlamaBridge.updateGenerateParams(
+          val result = engine.loadModel(
+            modelFile = file,
             temperature = temperature,
             maxTokens = maxTokens,
             topP = topP,
@@ -199,39 +181,22 @@ class LocalAIModule : Module() {
             repeatPenalty = repeatPenalty
           )
 
-          sendProgress(0.70f, "Loading model weights into native memory...")
-
-          val startTime = SystemClock.elapsedRealtime()
-          val success = LlamaBridge.initGenerateModel(file.absolutePath)
-          val elapsedMs = SystemClock.elapsedRealtime() - startTime
-
-          if (!success) {
-            promise.reject(
-              "INIT_FAILED",
-              "LlamaBridge failed to initialize model at ${file.absolutePath}. File format may be incompatible or corrupt.",
-              null
+          result.onSuccess { durationMs ->
+            sendProgress(1.0f, "Ready")
+            promise.resolve(
+              mapOf(
+                "success" to true,
+                "modelPath" to file.absolutePath,
+                "fileName" to file.name,
+                "sizeBytes" to fileSize,
+                "sizeMb" to (fileSize / (1024 * 1024)),
+                "durationMs" to durationMs,
+                "engine" to "Anvaykosh AI"
+              )
             )
-            return@launch
+          }.onFailure { err ->
+            promise.reject("LOAD_FAILED", err.message ?: "Failed to initialize Anvaykosh AI model", err)
           }
-
-          isModelLoaded.set(true)
-          loadedModelPath = file.absolutePath
-          loadedFileName = file.name
-          loadedModelSizeBytes = fileSize
-
-          sendProgress(1.0f, "Ready")
-
-          promise.resolve(
-            mapOf(
-              "success" to true,
-              "modelPath" to file.absolutePath,
-              "fileName" to file.name,
-              "sizeBytes" to fileSize,
-              "sizeMb" to (fileSize / (1024 * 1024)),
-              "durationMs" to elapsedMs,
-              "threads" to optimalThreads
-            )
-          )
         } catch (e: Throwable) {
           Log.e(TAG, "Failed to load model: ${e.message}", e)
           promise.reject("LOAD_EXCEPTION", e.message ?: "Unknown model loading exception", e)
@@ -240,84 +205,32 @@ class LocalAIModule : Module() {
     }
 
     /**
-     * Unloads the model and reclaims native memory.
+     * Unloads model from RAM.
      */
     AsyncFunction("unloadModel") { promise: Promise ->
-      moduleScope.launch {
-        try {
-          if (isGenerating.get()) {
-            LlamaBridge.nativeCancelGenerate()
-            isGenerating.set(false)
-          }
-
-          LlamaBridge.shutdown()
-          isModelLoaded.set(false)
-          loadedModelPath = null
-          loadedFileName = null
-          loadedModelSizeBytes = 0L
-
-          System.gc()
-          promise.resolve(true)
-        } catch (e: Throwable) {
-          Log.e(TAG, "Error unloading model: ${e.message}", e)
-          promise.resolve(false)
-        }
+      engine.scope.launch {
+        val success = engine.unload()
+        promise.resolve(success)
       }
     }
 
     /**
-     * Updates dynamic generation parameters.
-     */
-    Function("updateParams") { params: Map<String, Any> ->
-      val temperature = (params["temperature"] as? Number)?.toFloat() ?: 0.7f
-      val maxTokens = (params["maxTokens"] as? Number)?.toInt() ?: 512
-      val topP = (params["topP"] as? Number)?.toFloat() ?: 0.9f
-      val topK = (params["topK"] as? Number)?.toInt() ?: 40
-      val repeatPenalty = (params["repeatPenalty"] as? Number)?.toFloat() ?: 1.1f
-
-      LlamaBridge.updateGenerateParams(
-        temperature = temperature,
-        maxTokens = maxTokens,
-        topP = topP,
-        topK = topK,
-        repeatPenalty = repeatPenalty
-      )
-      true
-    }
-
-    /**
-     * Synchronous / complete text generation.
+     * Synchronous complete text generation.
      */
     AsyncFunction("generateText") { prompt: String, context: String?, system: String?, promise: Promise ->
-      if (!isModelLoaded.get()) {
-        promise.reject("NOT_LOADED", "No local AI model is currently loaded.", null)
-        return@AsyncFunction
-      }
-
-      moduleScope.launch {
-        try {
-          isGenerating.set(true)
-          val startTime = SystemClock.elapsedRealtime()
-
-          val result = if (!system.isNullOrBlank() || !context.isNullOrBlank()) {
-            LlamaBridge.generateWithContext(system ?: "", context ?: "", prompt)
-          } else {
-            LlamaBridge.generate(prompt)
-          }
-
-          val elapsedMs = SystemClock.elapsedRealtime() - startTime
-          isGenerating.set(false)
-
+      engine.scope.launch {
+        val startTime = System.currentTimeMillis()
+        val res = engine.generateText(prompt, context, system)
+        val elapsed = System.currentTimeMillis() - startTime
+        res.onSuccess { text ->
           promise.resolve(
             mapOf(
-              "text" to result,
-              "durationMs" to elapsedMs
+              "text" to text,
+              "durationMs" to elapsed
             )
           )
-        } catch (e: Throwable) {
-          isGenerating.set(false)
-          Log.e(TAG, "Generation error: ${e.message}", e)
-          promise.reject("GENERATE_FAILED", e.message ?: "Inference error", e)
+        }.onFailure { err ->
+          promise.reject("GENERATE_FAILED", err.message ?: "Inference error", err)
         }
       }
     }
@@ -326,149 +239,112 @@ class LocalAIModule : Module() {
      * Structured JSON generation with schema constraint.
      */
     AsyncFunction("generateStructured") { prompt: String, schema: String?, context: String?, system: String?, promise: Promise ->
-      if (!isModelLoaded.get()) {
-        promise.reject("NOT_LOADED", "No local AI model is currently loaded.", null)
-        return@AsyncFunction
-      }
-
-      moduleScope.launch {
-        try {
-          isGenerating.set(true)
-          val startTime = SystemClock.elapsedRealtime()
-
-          val result = if (!system.isNullOrBlank() || !context.isNullOrBlank()) {
-            LlamaBridge.generateJsonWithContext(system ?: "", context ?: "", prompt, schema)
-          } else {
-            LlamaBridge.generateJson(prompt, schema)
-          }
-
-          val elapsedMs = SystemClock.elapsedRealtime() - startTime
-          isGenerating.set(false)
-
+      engine.scope.launch {
+        val startTime = System.currentTimeMillis()
+        val res = engine.generateJson(prompt, schema, context, system)
+        val elapsed = System.currentTimeMillis() - startTime
+        res.onSuccess { json ->
           promise.resolve(
             mapOf(
-              "json" to result,
-              "durationMs" to elapsedMs
+              "json" to json,
+              "durationMs" to elapsed
             )
           )
-        } catch (e: Throwable) {
-          isGenerating.set(false)
-          Log.e(TAG, "JSON Generation error: ${e.message}", e)
-          promise.reject("GENERATE_JSON_FAILED", e.message ?: "JSON Inference error", e)
+        }.onFailure { err ->
+          promise.reject("GENERATE_JSON_FAILED", err.message ?: "JSON Inference error", err)
         }
       }
     }
 
     /**
-     * Starts token streaming generation.
-     * Emits `onToken`, `onStreamComplete`, and `onStreamError` events.
+     * Token-by-token streaming inference.
      */
     Function("startStream") { turnId: String, prompt: String, context: String?, system: String? ->
-      if (!isModelLoaded.get()) {
-        throw IllegalStateException("No local AI model is currently loaded.")
-      }
-
-      isGenerating.set(true)
-
-      moduleScope.launch {
-        val startTime = SystemClock.elapsedRealtime()
-        var tokenIndex = 0
-        val textAccumulator = StringBuilder()
-
-        val callback = object : GenStream {
-          override fun onDelta(text: String) {
-            textAccumulator.append(text)
-            val bundle = Bundle().apply {
-              putString("turnId", turnId)
-              putString("token", text)
-              putInt("index", tokenIndex++)
-            }
-            sendEvent("onToken", bundle)
+      engine.startStream(
+        prompt = prompt,
+        context = context,
+        system = system,
+        onDelta = { token ->
+          val bundle = Bundle().apply {
+            putString("turnId", turnId)
+            putString("token", token)
           }
-
-          override fun onComplete() {
-            isGenerating.set(false)
-            val elapsedMs = SystemClock.elapsedRealtime() - startTime
-            val tps = if (elapsedMs > 0) (tokenIndex.toDouble() / (elapsedMs.toDouble() / 1000.0)) else 0.0
-
-            val bundle = Bundle().apply {
-              putString("turnId", turnId)
-              putString("fullText", textAccumulator.toString())
-              putInt("tokenCount", tokenIndex)
-              putLong("durationMs", elapsedMs)
-              putDouble("tokensPerSecond", tps)
-            }
-            sendEvent("onStreamComplete", bundle)
+          sendEvent("onToken", bundle)
+        },
+        onComplete = { fullText, tokenCount, durationMs, tps ->
+          val bundle = Bundle().apply {
+            putString("turnId", turnId)
+            putString("fullText", fullText)
+            putInt("tokenCount", tokenCount)
+            putLong("durationMs", durationMs)
+            putDouble("tokensPerSecond", tps)
           }
-
-          override fun onError(message: String) {
-            isGenerating.set(false)
-            Log.e(TAG, "Streaming error: $message")
-            val bundle = Bundle().apply {
-              putString("turnId", turnId)
-              putString("error", message)
-            }
-            sendEvent("onStreamError", bundle)
+          sendEvent("onStreamComplete", bundle)
+        },
+        onError = { err ->
+          val bundle = Bundle().apply {
+            putString("turnId", turnId)
+            putString("error", err)
           }
+          sendEvent("onStreamError", bundle)
         }
-
-        try {
-          if (!system.isNullOrBlank() || !context.isNullOrBlank()) {
-            LlamaBridge.generateStreamWithContext(system ?: "", context ?: "", prompt, callback)
-          } else {
-            LlamaBridge.generateStream(prompt, callback)
-          }
-        } catch (e: Throwable) {
-          isGenerating.set(false)
-          callback.onError(e.message ?: "Unknown streaming exception")
-        }
-      }
-
+      )
       true
     }
 
     /**
-     * Cancels an ongoing generation or stream.
+     * Cancels an ongoing generation (barge-in interruption).
      */
     Function("cancelGeneration") {
-      try {
-        LlamaBridge.nativeCancelGenerate()
-        isGenerating.set(false)
-        true
-      } catch (e: Throwable) {
-        Log.e(TAG, "Error cancelling generation: ${e.message}", e)
-        false
+      engine.cancel()
+    }
+
+    /**
+     * Generates dense embedding vector on device.
+     */
+    AsyncFunction("embed") { text: String, promise: Promise ->
+      engine.scope.launch {
+        val res = engine.embed(text)
+        res.onSuccess { floatArray ->
+          val list = floatArray.map { it.toDouble() }
+          promise.resolve(list)
+        }.onFailure { err ->
+          promise.reject("EMBED_FAILED", err.message ?: "Embedding error", err)
+        }
       }
     }
 
     /**
-     * Generates embedding vector for text on device (for offline RAG / semantic similarity).
+     * Fast native semantic chunking for document ingestion & offline RAG.
      */
-    AsyncFunction("embed") { text: String, promise: Promise ->
-      if (!isModelLoaded.get()) {
-        promise.reject("NOT_LOADED", "No local AI model is currently loaded.", null)
-        return@AsyncFunction
-      }
-
-      moduleScope.launch {
-        try {
-          val floatArray = LlamaBridge.embed(text)
-          val list = floatArray.map { it.toDouble() }
-          promise.resolve(list)
-        } catch (e: Throwable) {
-          Log.e(TAG, "Embedding error: ${e.message}", e)
-          promise.reject("EMBED_FAILED", e.message ?: "Embedding error", e)
-        }
+    Function("chunkDocument") { text: String, targetChunkSize: Int?, overlapChars: Int? ->
+      val chunks = AnvaykoshDocumentProcessor.chunkDocument(
+        text = text,
+        targetChunkSize = targetChunkSize ?: 320,
+        overlapChars = overlapChars ?: 40
+      )
+      chunks.map { c ->
+        mapOf(
+          "index" to c.index,
+          "text" to c.text,
+          "startOffset" to c.startOffset,
+          "endOffset" to c.endOffset,
+          "tokenEstimate" to c.tokenEstimate
+        )
       }
     }
 
+    /**
+     * Fast native term frequency computation for BM25 ranking.
+     */
+    Function("computeTermFrequencies") { text: String ->
+      AnvaykoshDocumentProcessor.computeTermFrequencies(text)
+    }
+
     OnActivityDestroys {
-      try {
-        if (isGenerating.get()) {
-          LlamaBridge.nativeCancelGenerate()
-        }
-        LlamaBridge.shutdown()
-      } catch (_: Throwable) {}
+      engine.scope.launch {
+        engine.unload()
+      }
     }
   }
 

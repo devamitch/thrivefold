@@ -24,6 +24,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { ClipPath, Defs, Path } from 'react-native-svg';
 import { hapticMedium, hapticSelection } from '../../services/haptics';
+import { globalVoiceController } from '../../services/voice/globalVoiceController';
 
 import { useTheme } from '../../theme/useTheme';
 import { PressableScale } from '../ui/PressableScale';
@@ -279,6 +280,12 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
     router.push('/(app)/check-in' as any);
   }, []);
 
+  const handleOrbLongPress = useCallback(() => {
+    hapticMedium();
+    const activeRouteName = state.routes[state.index]?.name || '/(app)/(tabs)';
+    void globalVoiceController.open(activeRouteName);
+  }, [state]);
+
   const renderTab = (route: (typeof routes)[number], index: number) => {
     const meta = experienceIcons.tabs[route.name as keyof typeof experienceIcons.tabs];
     if (!meta) return null;
@@ -331,7 +338,7 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
         <Animated.View pointerEvents="box-none" style={[styles.centerWrap, orbPress]}>
           <PressableScale
             accessibilityRole="button"
-            accessibilityLabel="Thrive: start today's check-in"
+            accessibilityLabel="Thrive: start today's check-in (hold for Voice Coach)"
             testID="tab-action-orb"
             hitSlop={6}
             onPressIn={() => {
@@ -341,6 +348,7 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
               press.value = reduceMotion ? 0 : withTiming(0, PRESS);
             }}
             onPress={handleOrbPress}
+            onLongPress={handleOrbLongPress}
             scaleTo={0.94}
             style={styles.orbButton}
           >
