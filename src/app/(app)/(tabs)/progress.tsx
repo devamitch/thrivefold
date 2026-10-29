@@ -13,6 +13,8 @@ import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { ProgressionPanel } from '../../../components/game/ProgressionPanel';
 import { SETUP_REWARDS } from '../../../domain/game/setupProfile';
+import { SanctuaryImageBackground } from '../../../components/ui/SanctuaryImageBackground';
+import { AssetIllustrations } from '../../../constants/assets';
 import { useTheme } from '../../../theme/useTheme';
 import { PressableScale } from '../../../components/ui/PressableScale';
 import { MetricBarChart } from '../../../components/home/MetricBarChart';
@@ -61,7 +63,8 @@ const ROADMAP_STEPS: RoadmapStep[] = [
     stepNumber: 1,
     phase: 'Foundation',
     title: 'Finish setting up',
-    description: (s) => `${s.setupDone} of ${SETUP_REWARDS.length} setup steps answered. Each one fits your quests better.`,
+    description: (s) =>
+      `${s.setupDone} of ${SETUP_REWARDS.length} setup steps answered. Each one fits your quests better.`,
     icon: 'options-outline',
     targetRoute: '/(app)/personalize',
     isUnlocked: () => true,
@@ -94,7 +97,8 @@ const ROADMAP_STEPS: RoadmapStep[] = [
     stepNumber: 4,
     phase: 'Momentum',
     title: 'Move with a plan',
-    description: (s) => (s.movementCount ? `${s.movementCount} workouts or activities logged.` : 'Log a workout, walk, ride or class.'),
+    description: (s) =>
+      s.movementCount ? `${s.movementCount} workouts or activities logged.` : 'Log a workout, walk, ride or class.',
     icon: 'barbell-outline',
     targetRoute: '/(app)/health/exercise',
     isUnlocked: () => true,
@@ -105,7 +109,8 @@ const ROADMAP_STEPS: RoadmapStep[] = [
     stepNumber: 5,
     phase: 'Momentum',
     title: 'Three check-ins in a row',
-    description: (s) => `Current run: ${s.streak} day${s.streak === 1 ? '' : 's'}. Rest days never take away earned progress.`,
+    description: (s) =>
+      `Current run: ${s.streak} day${s.streak === 1 ? '' : 's'}. Rest days never take away earned progress.`,
     icon: 'flame-outline',
     targetRoute: '/(app)/check-in',
     isUnlocked: (s) => s.daysActive >= 1,
@@ -205,10 +210,7 @@ export default function ProgressScreen() {
   );
 
   // ── Health Trends Computation ──
-  const stepBars = useMemo(
-    () => getEqualizerBars(readings, 'steps', new Date(), trendRange),
-    [readings, trendRange],
-  );
+  const stepBars = useMemo(() => getEqualizerBars(readings, 'steps', new Date(), trendRange), [readings, trendRange]);
   const sleepBars = useMemo(
     () => getEqualizerBars(readings, 'sleep_minutes', new Date(), trendRange),
     [readings, trendRange],
@@ -267,378 +269,358 @@ export default function ProgressScreen() {
   const roadmapPct = Math.round((completedStepsCount / ROADMAP_STEPS.length) * 100);
 
   return (
-    <ScreenContainer
-      header={
-        <AppHeader
-          eyebrow={isMen ? 'MOMENTUM & VITALITY' : isPride ? 'WELLBEING & AFFIRMATION' : 'YOUR JOURNEY'}
-          title="Progress"
-          subtitle="Your level, milestones and what you have logged"
-        />
-      }
-      scrollMode="shell-scroll-view"
-    >
-      <View style={{ paddingBottom: spacing.xxl }}>
-        <Link href={'/(app)/roadmap' as Href} asChild>
-          <Card variant="tinted" style={{ padding: spacing.base, marginTop: spacing.sm }}>
-            <View style={styles.rowBetween}>
-              <Ionicons name="map-outline" size={22} color={colors.primary} />
-              <View style={{ flex: 1, marginLeft: 12 }}>
-                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Your roadmap</Text>
-                <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                  20 chapters, their stages, and where you are now
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
-            </View>
-          </Card>
-        </Link>
-        <ProgressionPanel />
-
-        {/* View Switcher Tabs (Roadmap vs Badges) */}
-        <View style={[styles.tabBar, { backgroundColor: colors.surface1, marginTop: spacing.md }]}>
-          <PressableScale
-            onPress={() => setActiveTab('roadmap')}
-            style={[
-              styles.tabBtn,
-              { backgroundColor: activeTab === 'roadmap' ? colors.surface : 'transparent' },
-            ]}
-          >
-            <Ionicons
-              name="trail-sign-outline"
-              size={16}
-              color={activeTab === 'roadmap' ? colors.primary : colors.text.secondary}
-            />
-            <Text
-              style={[
-                typography.captionBold,
-                {
-                  color: activeTab === 'roadmap' ? colors.primary : colors.text.secondary,
-                  marginLeft: 6,
-                },
-              ]}
-            >
-              Milestones ({roadmapPct}%)
-            </Text>
-          </PressableScale>
-
-          <PressableScale
-            onPress={() => setActiveTab('badges')}
-            style={[
-              styles.tabBtn,
-              { backgroundColor: activeTab === 'badges' ? colors.surface : 'transparent' },
-            ]}
-          >
-            <Ionicons
-              name="trophy-outline"
-              size={16}
-              color={activeTab === 'badges' ? colors.primary : colors.text.secondary}
-            />
-            <Text
-              style={[
-                typography.captionBold,
-                {
-                  color: activeTab === 'badges' ? colors.primary : colors.text.secondary,
-                  marginLeft: 6,
-                },
-              ]}
-            >
-              Stats
-            </Text>
-          </PressableScale>
-
-          <PressableScale
-            onPress={() => setActiveTab('trends')}
-            style={[
-              styles.tabBtn,
-              { backgroundColor: activeTab === 'trends' ? colors.surface : 'transparent' },
-            ]}
-          >
-            <Ionicons
-              name="analytics-outline"
-              size={16}
-              color={activeTab === 'trends' ? colors.primary : colors.text.secondary}
-            />
-            <Text
-              style={[
-                typography.captionBold,
-                {
-                  color: activeTab === 'trends' ? colors.primary : colors.text.secondary,
-                  marginLeft: 6,
-                },
-              ]}
-            >
-              Trends
-            </Text>
-          </PressableScale>
-        </View>
-
-        {/* Roadmap View */}
-        {activeTab === 'roadmap' && (
-          <Animated.View entering={FadeIn.duration(180)}>
-            {/* Roadmap Progress Summary */}
-            <Card style={[styles.roadmapBanner, { backgroundColor: colors.surface, marginTop: spacing.md }]}>
+    <SanctuaryImageBackground source={AssetIllustrations.progressZenBg}>
+      <ScreenContainer
+        style={{ backgroundColor: 'transparent' }}
+        header={
+          <AppHeader
+            eyebrow={isMen ? 'MOMENTUM & VITALITY' : isPride ? 'WELLBEING & AFFIRMATION' : 'YOUR JOURNEY'}
+            title="Progress"
+            subtitle="Your level, milestones and what you have logged"
+          />
+        }
+        scrollMode="shell-scroll-view"
+      >
+        <View style={{ paddingBottom: spacing.xxl }}>
+          <Link href={'/(app)/roadmap' as Href} asChild>
+            <Card variant="tinted" style={{ padding: spacing.base, marginTop: spacing.sm }}>
               <View style={styles.rowBetween}>
-                <View>
-                  <Text style={[typography.subheading, { color: colors.text.primary }]}>
-                    Milestones
-                  </Text>
+                <Ionicons name="map-outline" size={22} color={colors.primary} />
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Your roadmap</Text>
                   <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                    {completedStepsCount} of {ROADMAP_STEPS.length} reached
+                    20 chapters, their stages, and where you are now
                   </Text>
                 </View>
-                <Badge label={`${roadmapPct}% Complete`} variant="primary" />
-              </View>
-              <View style={[styles.xpTrack, { backgroundColor: colors.surface1, marginTop: 12 }]}>
-                <View
-                  style={[
-                    styles.xpFill,
-                    { backgroundColor: colors.accent, width: `${roadmapPct}%` },
-                  ]}
-                />
+                <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
               </View>
             </Card>
+          </Link>
+          <ProgressionPanel />
 
-            {/* Interactive Timeline Steps */}
-            <View style={styles.timelineContainer}>
-              {ROADMAP_STEPS.map((step, idx) => {
-                const isComp = step.isCompleted(stats);
-                const isUnl = step.isUnlocked(stats);
+          {/* View Switcher Tabs (Roadmap vs Badges) */}
+          <View style={[styles.tabBar, { backgroundColor: colors.surface1, marginTop: spacing.md }]}>
+            <PressableScale
+              onPress={() => setActiveTab('roadmap')}
+              style={[styles.tabBtn, { backgroundColor: activeTab === 'roadmap' ? colors.surface : 'transparent' }]}
+            >
+              <Ionicons
+                name="trail-sign-outline"
+                size={16}
+                color={activeTab === 'roadmap' ? colors.primary : colors.text.secondary}
+              />
+              <Text
+                style={[
+                  typography.captionBold,
+                  {
+                    color: activeTab === 'roadmap' ? colors.primary : colors.text.secondary,
+                    marginLeft: 6,
+                  },
+                ]}
+              >
+                Milestones ({roadmapPct}%)
+              </Text>
+            </PressableScale>
 
-                return (
-                  <View key={step.id} style={styles.timelineItem}>
-                    {/* Left node indicator & vertical connecting line */}
-                    <View style={styles.nodeColumn}>
-                      <View
-                        style={[
-                          styles.nodeCircle,
-                          {
-                            backgroundColor: isComp
-                              ? colors.success
-                              : isUnl
-                              ? colors.primary
-                              : colors.surface1,
-                          },
-                        ]}
-                      >
-                        {isComp ? (
-                          <Ionicons name="checkmark" size={14} color={colors.onPrimary} />
-                        ) : isUnl ? (
-                          <Ionicons name={step.icon} size={14} color={colors.onPrimary} />
-                        ) : (
-                          <Ionicons name="lock-closed" size={12} color={colors.text.muted} />
-                        )}
-                      </View>
-                      {idx < ROADMAP_STEPS.length - 1 && (
+            <PressableScale
+              onPress={() => setActiveTab('badges')}
+              style={[styles.tabBtn, { backgroundColor: activeTab === 'badges' ? colors.surface : 'transparent' }]}
+            >
+              <Ionicons
+                name="trophy-outline"
+                size={16}
+                color={activeTab === 'badges' ? colors.primary : colors.text.secondary}
+              />
+              <Text
+                style={[
+                  typography.captionBold,
+                  {
+                    color: activeTab === 'badges' ? colors.primary : colors.text.secondary,
+                    marginLeft: 6,
+                  },
+                ]}
+              >
+                Stats
+              </Text>
+            </PressableScale>
+
+            <PressableScale
+              onPress={() => setActiveTab('trends')}
+              style={[styles.tabBtn, { backgroundColor: activeTab === 'trends' ? colors.surface : 'transparent' }]}
+            >
+              <Ionicons
+                name="analytics-outline"
+                size={16}
+                color={activeTab === 'trends' ? colors.primary : colors.text.secondary}
+              />
+              <Text
+                style={[
+                  typography.captionBold,
+                  {
+                    color: activeTab === 'trends' ? colors.primary : colors.text.secondary,
+                    marginLeft: 6,
+                  },
+                ]}
+              >
+                Trends
+              </Text>
+            </PressableScale>
+          </View>
+
+          {/* Roadmap View */}
+          {activeTab === 'roadmap' && (
+            <Animated.View entering={FadeIn.duration(180)}>
+              {/* Roadmap Progress Summary */}
+              <Card style={[styles.roadmapBanner, { backgroundColor: colors.surface, marginTop: spacing.md }]}>
+                <View style={styles.rowBetween}>
+                  <View>
+                    <Text style={[typography.subheading, { color: colors.text.primary }]}>Milestones</Text>
+                    <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                      {completedStepsCount} of {ROADMAP_STEPS.length} reached
+                    </Text>
+                  </View>
+                  <Badge label={`${roadmapPct}% Complete`} variant="primary" />
+                </View>
+                <View style={[styles.xpTrack, { backgroundColor: colors.surface1, marginTop: 12 }]}>
+                  <View style={[styles.xpFill, { backgroundColor: colors.accent, width: `${roadmapPct}%` }]} />
+                </View>
+              </Card>
+
+              {/* Interactive Timeline Steps */}
+              <View style={styles.timelineContainer}>
+                {ROADMAP_STEPS.map((step, idx) => {
+                  const isComp = step.isCompleted(stats);
+                  const isUnl = step.isUnlocked(stats);
+
+                  return (
+                    <View key={step.id} style={styles.timelineItem}>
+                      {/* Left node indicator & vertical connecting line */}
+                      <View style={styles.nodeColumn}>
                         <View
                           style={[
-                            styles.nodeLine,
+                            styles.nodeCircle,
                             {
-                              backgroundColor: isComp ? colors.success : colors.surface1,
+                              backgroundColor: isComp ? colors.success : isUnl ? colors.primary : colors.surface1,
                             },
                           ]}
-                        />
-                      )}
-                    </View>
-
-                    {/* Right Step Card */}
-                    <View style={{ flex: 1, paddingBottom: 16 }}>
-                      <Card
-                        onPress={() => {
-                          if (step.targetRoute) {
-                            router.push(step.targetRoute as Href);
-                          }
-                        }}
-                        style={[
-                          styles.stepCard,
-                          {
-                            backgroundColor: colors.surface,
-                            opacity: isUnl ? 1 : 0.6,
-                          },
-                        ]}
-                      >
-                        <View style={styles.rowBetween}>
-                          <Text style={[typography.captionBold, { color: colors.primary, fontSize: 11 }]}>
-                            {step.phase.toUpperCase()}
-                          </Text>
+                        >
                           {isComp ? (
-                            <Badge label="Done" variant="success" />
+                            <Ionicons name="checkmark" size={14} color={colors.onPrimary} />
                           ) : isUnl ? (
-                            <Badge label="Next" variant="primary" />
+                            <Ionicons name={step.icon} size={14} color={colors.onPrimary} />
                           ) : (
-                            <Badge label="Locked" variant="neutral" />
+                            <Ionicons name="lock-closed" size={12} color={colors.text.muted} />
                           )}
                         </View>
-
-                        <Text
-                          style={[
-                            typography.subheading,
-                            { color: colors.text.primary, marginTop: 4, fontSize: 16 },
-                          ]}
-                        >
-                          {step.title}
-                        </Text>
-                        <Text
-                          style={[
-                            typography.caption,
-                            { color: colors.text.secondary, marginTop: 2 },
-                          ]}
-                        >
-                          {step.description(stats)}
-                        </Text>
-
-                        {/* Interactive Action CTA */}
-                        {isUnl && !isComp && (
-                          <View style={styles.stepCtaRow}>
-                            <Text style={[typography.captionBold, { color: colors.primary }]}>
-                              Go
-                            </Text>
-                            <Ionicons name="arrow-forward" size={14} color={colors.primary} />
-                          </View>
+                        {idx < ROADMAP_STEPS.length - 1 && (
+                          <View
+                            style={[
+                              styles.nodeLine,
+                              {
+                                backgroundColor: isComp ? colors.success : colors.surface1,
+                              },
+                            ]}
+                          />
                         )}
-                      </Card>
+                      </View>
+
+                      {/* Right Step Card */}
+                      <View style={{ flex: 1, paddingBottom: 16 }}>
+                        <Card
+                          onPress={() => {
+                            if (step.targetRoute) {
+                              router.push(step.targetRoute as Href);
+                            }
+                          }}
+                          style={[
+                            styles.stepCard,
+                            {
+                              backgroundColor: colors.surface,
+                              opacity: isUnl ? 1 : 0.6,
+                            },
+                          ]}
+                        >
+                          <View style={styles.rowBetween}>
+                            <Text style={[typography.captionBold, { color: colors.primary, fontSize: 11 }]}>
+                              {step.phase.toUpperCase()}
+                            </Text>
+                            {isComp ? (
+                              <Badge label="Done" variant="success" />
+                            ) : isUnl ? (
+                              <Badge label="Next" variant="primary" />
+                            ) : (
+                              <Badge label="Locked" variant="neutral" />
+                            )}
+                          </View>
+
+                          <Text
+                            style={[typography.subheading, { color: colors.text.primary, marginTop: 4, fontSize: 16 }]}
+                          >
+                            {step.title}
+                          </Text>
+                          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                            {step.description(stats)}
+                          </Text>
+
+                          {/* Interactive Action CTA */}
+                          {isUnl && !isComp && (
+                            <View style={styles.stepCtaRow}>
+                              <Text style={[typography.captionBold, { color: colors.primary }]}>Go</Text>
+                              <Ionicons name="arrow-forward" size={14} color={colors.primary} />
+                            </View>
+                          )}
+                        </Card>
+                      </View>
                     </View>
+                  );
+                })}
+              </View>
+            </Animated.View>
+          )}
+
+          {/* Stats View */}
+          {activeTab === 'badges' && (
+            <Animated.View entering={FadeIn.duration(180)}>
+              {/* Stats Grid */}
+              <View style={[styles.statsGrid, { marginTop: spacing.md }]}>
+                <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
+                  <View style={[styles.statIconWrap, { backgroundColor: colors.primaryAlpha }]}>
+                    <Ionicons name="checkmark-circle-outline" size={20} color={colors.primary} />
                   </View>
-                );
-              })}
-            </View>
-          </Animated.View>
-        )}
-
-        {/* Stats View */}
-        {activeTab === 'badges' && (
-          <Animated.View entering={FadeIn.duration(180)}>
-            {/* Stats Grid */}
-            <View style={[styles.statsGrid, { marginTop: spacing.md }]}>
-              <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
-                <View style={[styles.statIconWrap, { backgroundColor: colors.primaryAlpha }]}>
-                  <Ionicons name="checkmark-circle-outline" size={20} color={colors.primary} />
+                  <Text style={[typography.display, { color: colors.text.primary, marginTop: 10, fontSize: 24 }]}>
+                    {questsCompleted}
+                  </Text>
+                  <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                    Quests Finished
+                  </Text>
                 </View>
-                <Text style={[typography.display, { color: colors.text.primary, marginTop: 10, fontSize: 24 }]}>
-                  {questsCompleted}
-                </Text>
-                <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                  Quests Finished
-                </Text>
-              </View>
 
-              <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
-                <View style={[styles.statIconWrap, { backgroundColor: colors.surface1 }]}>
-                  <Ionicons name="flame-outline" size={20} color={colors.accent} />
-                </View>
-                <Text style={[typography.display, { color: colors.text.primary, marginTop: 10, fontSize: 24 }]}>
-                  {currentStreak}d
-                </Text>
-                <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                  Active Streak
-                </Text>
-              </View>
-
-              <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
-                <View style={[styles.statIconWrap, { backgroundColor: colors.surface1 }]}>
-                  <Ionicons name="calendar-outline" size={20} color={colors.primary} />
-                </View>
-                <Text style={[typography.display, { color: colors.text.primary, marginTop: 10, fontSize: 24 }]}>
-                  {daysActive}
-                </Text>
-                <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                  Days Active
-                </Text>
-              </View>
-
-              <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
-                <View style={[styles.statIconWrap, { backgroundColor: colors.surface1 }]}>
-                  <Ionicons name="mail-outline" size={20} color={colors.accent} />
-                </View>
-                <Text style={[typography.display, { color: colors.text.primary, marginTop: 10, fontSize: 24 }]}>
-                  {journalCount}
-                </Text>
-                <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                  Journal entries
-                </Text>
-              </View>
-            </View>
-
-            {/* Badges Section */}
-            <Text
-              style={[
-                typography.subheading,
-                { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm },
-              ]}
-            >
-              Milestones reached
-            </Text>
-            {earned.length === 0 ? (
-              <Text style={[typography.subbody, { color: colors.text.secondary }]}>
-                Milestones you reach show up here. Start with a check-in.
-              </Text>
-            ) : (
-              earned.map((ach) => (
-                <Card key={ach.id} style={[styles.achCard, { marginBottom: 8, backgroundColor: colors.surface }]}>
-                  <View style={styles.achRow}>
-                    <View style={[styles.achIcon, { backgroundColor: colors.primaryAlpha }]}>
-                      <Ionicons name={ach.icon} size={20} color={colors.primary} />
-                    </View>
-                    <View style={{ flex: 1, marginLeft: 12 }}>
-                      <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{ach.title}</Text>
-                      <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                        {ach.phase}
-                      </Text>
-                    </View>
-                    <Badge label="Reached" variant="success" />
+                <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
+                  <View style={[styles.statIconWrap, { backgroundColor: colors.surface1 }]}>
+                    <Ionicons name="flame-outline" size={20} color={colors.accent} />
                   </View>
-                </Card>
-              ))
-            )}
-          </Animated.View>
-        )}
+                  <Text style={[typography.display, { color: colors.text.primary, marginTop: 10, fontSize: 24 }]}>
+                    {currentStreak}d
+                  </Text>
+                  <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                    Active Streak
+                  </Text>
+                </View>
 
-        {/* Health Trends View */}
-        {activeTab === 'trends' && (
-          <Animated.View entering={FadeIn.duration(180)}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.md }}>
-              <Text style={[typography.subheading, { color: colors.text.primary }]}>
-                Health Trends
-              </Text>
-              <View style={{ flexDirection: 'row', gap: 6 }}>
-                <Chip label="7 Days" selected={trendRange === 7} onPress={() => setTrendRange(7)} />
-                <Chip label="30 Days" selected={trendRange === 30} onPress={() => setTrendRange(30)} />
+                <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
+                  <View style={[styles.statIconWrap, { backgroundColor: colors.surface1 }]}>
+                    <Ionicons name="calendar-outline" size={20} color={colors.primary} />
+                  </View>
+                  <Text style={[typography.display, { color: colors.text.primary, marginTop: 10, fontSize: 24 }]}>
+                    {daysActive}
+                  </Text>
+                  <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>Days Active</Text>
+                </View>
+
+                <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
+                  <View style={[styles.statIconWrap, { backgroundColor: colors.surface1 }]}>
+                    <Ionicons name="mail-outline" size={20} color={colors.accent} />
+                  </View>
+                  <Text style={[typography.display, { color: colors.text.primary, marginTop: 10, fontSize: 24 }]}>
+                    {journalCount}
+                  </Text>
+                  <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                    Journal entries
+                  </Text>
+                </View>
               </View>
-            </View>
 
-            <MetricBarChart
-              bars={stepBars}
-              title="Daily Steps"
-              subtitle={`${trendRange === 7 ? 'Last 7 days' : 'Last 30 days'} · phone & Health Connect`}
-              totalDisplay={stepAvg !== null ? `avg ${stepAvg >= 1000 ? `${(stepAvg / 1000).toFixed(1)}k` : stepAvg}/day` : 'No data'}
-            />
+              {/* Badges Section */}
+              <Text
+                style={[
+                  typography.subheading,
+                  { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm },
+                ]}
+              >
+                Milestones reached
+              </Text>
+              {earned.length === 0 ? (
+                <Text style={[typography.subbody, { color: colors.text.secondary }]}>
+                  Milestones you reach show up here. Start with a check-in.
+                </Text>
+              ) : (
+                earned.map((ach) => (
+                  <Card key={ach.id} style={[styles.achCard, { marginBottom: 8, backgroundColor: colors.surface }]}>
+                    <View style={styles.achRow}>
+                      <View style={[styles.achIcon, { backgroundColor: colors.primaryAlpha }]}>
+                        <Ionicons name={ach.icon} size={20} color={colors.primary} />
+                      </View>
+                      <View style={{ flex: 1, marginLeft: 12 }}>
+                        <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{ach.title}</Text>
+                        <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                          {ach.phase}
+                        </Text>
+                      </View>
+                      <Badge label="Reached" variant="success" />
+                    </View>
+                  </Card>
+                ))
+              )}
+            </Animated.View>
+          )}
 
-            <MetricBarChart
-              bars={calorieBars}
-              title="Active Energy"
-              subtitle={`${trendRange === 7 ? 'Last 7 days' : 'Last 30 days'} · steps & workouts`}
-              totalDisplay={calAvg !== null ? `avg ${calAvg} kcal/day` : 'No data'}
-            />
+          {/* Health Trends View */}
+          {activeTab === 'trends' && (
+            <Animated.View entering={FadeIn.duration(180)}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginTop: spacing.md,
+                }}
+              >
+                <Text style={[typography.subheading, { color: colors.text.primary }]}>Health Trends</Text>
+                <View style={{ flexDirection: 'row', gap: 6 }}>
+                  <Chip label="7 Days" selected={trendRange === 7} onPress={() => setTrendRange(7)} />
+                  <Chip label="30 Days" selected={trendRange === 30} onPress={() => setTrendRange(30)} />
+                </View>
+              </View>
 
-            <MetricBarChart
-              bars={hydrationBars}
-              title="Hydration"
-              subtitle={`${trendRange === 7 ? 'Last 7 days' : 'Last 30 days'} · glasses, target 8`}
-              totalDisplay={`${hydrationBars.filter((b: EqualizerBar) => b.value > 0).length} days logged`}
-            />
-
-            {sleepBars.some((b: EqualizerBar) => b.value > 0) ? (
               <MetricBarChart
-                bars={sleepBars}
-                title="Sleep Duration"
-                subtitle={`${trendRange === 7 ? 'Last 7 days' : 'Last 30 days'} · Health Connect`}
-                totalDisplay={`${sleepBars.filter((b: EqualizerBar) => b.value > 0).length} nights`}
+                bars={stepBars}
+                title="Daily Steps"
+                subtitle={`${trendRange === 7 ? 'Last 7 days' : 'Last 30 days'} · phone & Health Connect`}
+                totalDisplay={
+                  stepAvg !== null
+                    ? `avg ${stepAvg >= 1000 ? `${(stepAvg / 1000).toFixed(1)}k` : stepAvg}/day`
+                    : 'No data'
+                }
               />
-            ) : null}
-          </Animated.View>
-        )}
-        <BetaStudioEntries section="progress" />
-      </View>
-    </ScreenContainer>
+
+              <MetricBarChart
+                bars={calorieBars}
+                title="Active Energy"
+                subtitle={`${trendRange === 7 ? 'Last 7 days' : 'Last 30 days'} · steps & workouts`}
+                totalDisplay={calAvg !== null ? `avg ${calAvg} kcal/day` : 'No data'}
+              />
+
+              <MetricBarChart
+                bars={hydrationBars}
+                title="Hydration"
+                subtitle={`${trendRange === 7 ? 'Last 7 days' : 'Last 30 days'} · glasses, target 8`}
+                totalDisplay={`${hydrationBars.filter((b: EqualizerBar) => b.value > 0).length} days logged`}
+              />
+
+              {sleepBars.some((b: EqualizerBar) => b.value > 0) ? (
+                <MetricBarChart
+                  bars={sleepBars}
+                  title="Sleep Duration"
+                  subtitle={`${trendRange === 7 ? 'Last 7 days' : 'Last 30 days'} · Health Connect`}
+                  totalDisplay={`${sleepBars.filter((b: EqualizerBar) => b.value > 0).length} nights`}
+                />
+              ) : null}
+            </Animated.View>
+          )}
+          <BetaStudioEntries section="progress" />
+        </View>
+      </ScreenContainer>
+    </SanctuaryImageBackground>
   );
 }
 

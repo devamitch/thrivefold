@@ -12,6 +12,8 @@ import { hapticSelection, hapticLight, hapticSuccess } from '../../../services/h
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useShallow } from 'zustand/react/shallow';
 
+import { SanctuaryImageBackground } from '../../../components/ui/SanctuaryImageBackground';
+import { AssetIllustrations } from '../../../constants/assets';
 import { useTheme } from '../../../theme/useTheme';
 import {
   ScreenContainer,
@@ -31,19 +33,10 @@ import {
   MultiMonthForecastItem,
   CycleHistoryView,
 } from '../../../components/calendar';
-import {
-  QuestsSection,
-  QuestSheet,
-  SomaticWellnessArcade,
-} from '../../../components/game';
-import {
-  PersonalizedNourishmentCard,
-  AthleticCheckInCard,
-} from '../../../components/wellness';
+import { QuestsSection, QuestSheet, SomaticWellnessArcade } from '../../../components/game';
+import { PersonalizedNourishmentCard, AthleticCheckInCard } from '../../../components/wellness';
 
-import { useRootStore ,
-  PersonalCalendarEvent,
-} from '../../../stores/useRootStore';
+import { useRootStore, PersonalCalendarEvent } from '../../../stores/useRootStore';
 import {
   generateMonthGrid,
   generateDayAgenda,
@@ -57,10 +50,7 @@ import {
 import { currentLevelProgress } from '../../../domain/game/gameCatalogService';
 import { useAgendaSources } from '../../../hooks/useAgendaSources';
 import { routeForEvent } from '../../../navigation/eventRoutes';
-import {
-  PHASE_CONFIG,
-  computeAdvancedCycleMetrics,
-} from '../../../domain/health/cycleCalculations';
+import { PHASE_CONFIG, computeAdvancedCycleMetrics } from '../../../domain/health/cycleCalculations';
 
 type ActiveTab = 'quests' | 'calendar' | 'arcade' | 'forecast' | 'recovery';
 
@@ -113,7 +103,7 @@ export default function TodayScreen() {
       deletePeriod: s.deletePeriod,
       deletePersonalEvent: s.deletePersonalEvent,
       showAlert: s.showAlert,
-    }))
+    })),
   );
 
   const [showPeriodModal, setShowPeriodModal] = useState(false);
@@ -132,17 +122,11 @@ export default function TodayScreen() {
   const checkedInToday = Boolean(todaysCheckIn);
   const [activeStageIndex, setActiveStageIndex] = useState(0);
 
-  const progress = useMemo(
-    () => currentLevelProgress(xp, completedCheckpoints),
-    [xp, completedCheckpoints],
-  );
+  const progress = useMemo(() => currentLevelProgress(xp, completedCheckpoints), [xp, completedCheckpoints]);
 
   // Calendar Grid generation
   const monthGrid = useMemo(() => {
-    return generateMonthGrid(
-      currentMonthDate.getFullYear(),
-      currentMonthDate.getMonth()
-    );
+    return generateMonthGrid(currentMonthDate.getFullYear(), currentMonthDate.getMonth());
   }, [currentMonthDate]);
 
   // 12-Month Calculated Rolling Horizon Projections
@@ -189,7 +173,12 @@ export default function TodayScreen() {
   const agendaEvents = useMemo(() => {
     const todayKey = formatLocalDate(new Date());
     const quests = todayQuests.map((q) => ({ id: q.id, title: q.title, status: q.status, date: todayKey }));
-    return generateDayAgenda(selectedDateStr, { experience, cycleData, ...agendaSources, quests: [...agendaSources.quests.filter((q) => q.date !== todayKey), ...quests] });
+    return generateDayAgenda(selectedDateStr, {
+      experience,
+      cycleData,
+      ...agendaSources,
+      quests: [...agendaSources.quests.filter((q) => q.date !== todayKey), ...quests],
+    });
   }, [selectedDateStr, experience, cycleData, personalEvents, todayQuests, agendaSources]);
 
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null);
@@ -203,10 +192,7 @@ export default function TodayScreen() {
         if (p.isOngoing) {
           return selectedDateStr >= p.startDate;
         }
-        return (
-          selectedDateStr >= p.startDate &&
-          (!p.endDate || selectedDateStr <= p.endDate)
-        );
+        return selectedDateStr >= p.startDate && (!p.endDate || selectedDateStr <= p.endDate);
       }) || null
     );
   }, [cycleData?.periodHistory, selectedDateStr]);
@@ -241,7 +227,7 @@ export default function TodayScreen() {
         cycleData?.periodHistory ?? [],
         cycleData?.cycleLengthDays ?? 28,
         cycleData?.periodLengthDays ?? 5,
-        cycleData?.reproductiveContext ?? 'regular'
+        cycleData?.reproductiveContext ?? 'regular',
       );
     } catch {
       return null;
@@ -300,31 +286,37 @@ export default function TodayScreen() {
     setShowMilestoneModal(true);
   }, []);
 
-  const handleDeletePeriod = useCallback((recordId: string, dateStr: string) => {
-    showAlert({
-      title: 'Delete Period Record?',
-      message: `Are you sure you want to remove the record for ${dateStr}? Dependent predictions will be recalculated.`,
-      confirmText: 'Delete',
-      destructive: true,
-      onConfirm: () => {
-        deletePeriod(recordId);
-        showToast({ type: 'info', message: 'Period record deleted.' });
-      },
-    });
-  }, [showAlert, deletePeriod, showToast]);
+  const handleDeletePeriod = useCallback(
+    (recordId: string, dateStr: string) => {
+      showAlert({
+        title: 'Delete Period Record?',
+        message: `Are you sure you want to remove the record for ${dateStr}? Dependent predictions will be recalculated.`,
+        confirmText: 'Delete',
+        destructive: true,
+        onConfirm: () => {
+          deletePeriod(recordId);
+          showToast({ type: 'info', message: 'Period record deleted.' });
+        },
+      });
+    },
+    [showAlert, deletePeriod, showToast],
+  );
 
-  const handleDeleteMilestone = useCallback((eventId: string, title: string) => {
-    showAlert({
-      title: 'Delete Milestone?',
-      message: `Are you sure you want to remove "${title}"?`,
-      confirmText: 'Delete',
-      destructive: true,
-      onConfirm: () => {
-        deletePersonalEvent(eventId);
-        showToast({ type: 'info', message: 'Milestone deleted.' });
-      },
-    });
-  }, [showAlert, deletePersonalEvent, showToast]);
+  const handleDeleteMilestone = useCallback(
+    (eventId: string, title: string) => {
+      showAlert({
+        title: 'Delete Milestone?',
+        message: `Are you sure you want to remove "${title}"?`,
+        confirmText: 'Delete',
+        destructive: true,
+        onConfirm: () => {
+          deletePersonalEvent(eventId);
+          showToast({ type: 'info', message: 'Milestone deleted.' });
+        },
+      });
+    },
+    [showAlert, deletePersonalEvent, showToast],
+  );
 
   // Updates today's check-in with the new energy and mood; the first check-in of the day goes
   // through the full check-in screen so stress, sleep and symptoms are the person's own.
@@ -367,204 +359,211 @@ export default function TodayScreen() {
   }, [isWomen]);
 
   return (
-    <ScreenContainer
-      header={
-        <AppHeader
-          title={isWomen ? 'Cycle and calendar' : 'Plan'}
-          subtitle={isWomen ? 'Periods, estimates, events and quests by date' : 'Your calendar, quests and recovery'}
-          rightAction={
-            <HeaderIconButton icon="menu-outline" label="Open menu" onPress={() => useRootStore.getState().setDrawerOpen(true)} />
-          }
-        />
-      }
-      scrollMode="shell-scroll-view"
-    >
-      {/* Reanimated Animated Tab Bar with Spring Indicator */}
-      <View style={{ marginTop: spacing.xs, marginBottom: spacing.sm }}>
-        <AnimatedTabBar
-          tabs={tabItems}
-          activeTab={activeTab}
-          onTabChange={(tabId) => setActiveTab(tabId as ActiveTab)}
-        />
-      </View>
-
-      {/* SECTION 1: QUESTS & GAME ENGINE (PRIMARY TAB) */}
-      {activeTab === 'quests' && (
-        <Animated.View entering={FadeIn.duration(180)}>
-          <QuestsSection
-            progress={progress}
-            xp={xp}
-            diamonds={diamonds}
-            streak={streak}
-            dailyPoints={dailyPoints}
-            dailyPointsTarget={dailyPointsTarget}
-            dailyGoalReached={dailyGoalReached}
-            todayQuests={todayQuests}
-            onOpenQuest={setSelectedAssignmentId}
+    <SanctuaryImageBackground source={AssetIllustrations.todayMorningBg}>
+      <ScreenContainer
+        style={{ backgroundColor: 'transparent' }}
+        header={
+          <AppHeader
+            title={isWomen ? 'Cycle and calendar' : 'Plan'}
+            subtitle={isWomen ? 'Periods, estimates, events and quests by date' : 'Your calendar, quests and recovery'}
+            rightAction={
+              <HeaderIconButton
+                icon="menu-outline"
+                label="Open menu"
+                onPress={() => useRootStore.getState().setDrawerOpen(true)}
+              />
+            }
           />
-        </Animated.View>
-      )}
+        }
+        scrollMode="shell-scroll-view"
+      >
+        {/* Reanimated Animated Tab Bar with Spring Indicator */}
+        <View style={{ marginTop: spacing.xs, marginBottom: spacing.sm }}>
+          <AnimatedTabBar
+            tabs={tabItems}
+            activeTab={activeTab}
+            onTabChange={(tabId) => setActiveTab(tabId as ActiveTab)}
+          />
+        </View>
 
-      {/* SECTION 2: CLEAN MONTH CALENDAR & SELECTED DAY AGENDA (NO SUB-SWITCHERS!) */}
-      {activeTab === 'calendar' && (
-        <Animated.View entering={FadeIn.duration(180)}>
-          {/* Quick Header Row with History Modal Button */}
-          <View style={styles.calendarHeaderRow}>
-            <Text style={[typography.captionBold, { color: colors.text.muted }]}>
-              {currentMonthDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase()}
-            </Text>
-            <Button
-              label={isWomen ? 'Cycle History' : 'Milestones'}
-              size="sm"
-              variant="ghost"
-              onPress={() => setShowHistoryModal(true)}
+        {/* SECTION 1: QUESTS & GAME ENGINE (PRIMARY TAB) */}
+        {activeTab === 'quests' && (
+          <Animated.View entering={FadeIn.duration(180)}>
+            <QuestsSection
+              progress={progress}
+              xp={xp}
+              diamonds={diamonds}
+              streak={streak}
+              dailyPoints={dailyPoints}
+              dailyPointsTarget={dailyPointsTarget}
+              dailyGoalReached={dailyGoalReached}
+              todayQuests={todayQuests}
+              onOpenQuest={setSelectedAssignmentId}
             />
-          </View>
+          </Animated.View>
+        )}
 
-          {/* Month Grid View */}
-          <MonthGridView
-            currentMonthDate={currentMonthDate}
-            onPrevMonth={() => {
-              const prev = new Date(currentMonthDate);
-              prev.setMonth(prev.getMonth() - 1);
-              setCurrentMonthDate(prev);
-            }}
-            onNextMonth={() => {
-              const next = new Date(currentMonthDate);
-              next.setMonth(next.getMonth() + 1);
-              setCurrentMonthDate(next);
-            }}
-            onJumpToday={handleJumpToday}
-            monthGrid={monthGrid}
-            selectedDateStr={selectedDateStr}
-            onSelectDate={setSelectedDateStr}
+        {/* SECTION 2: CLEAN MONTH CALENDAR & SELECTED DAY AGENDA (NO SUB-SWITCHERS!) */}
+        {activeTab === 'calendar' && (
+          <Animated.View entering={FadeIn.duration(180)}>
+            {/* Quick Header Row with History Modal Button */}
+            <View style={styles.calendarHeaderRow}>
+              <Text style={[typography.captionBold, { color: colors.text.muted }]}>
+                {currentMonthDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase()}
+              </Text>
+              <Button
+                label={isWomen ? 'Cycle History' : 'Milestones'}
+                size="sm"
+                variant="ghost"
+                onPress={() => setShowHistoryModal(true)}
+              />
+            </View>
+
+            {/* Month Grid View */}
+            <MonthGridView
+              currentMonthDate={currentMonthDate}
+              onPrevMonth={() => {
+                const prev = new Date(currentMonthDate);
+                prev.setMonth(prev.getMonth() - 1);
+                setCurrentMonthDate(prev);
+              }}
+              onNextMonth={() => {
+                const next = new Date(currentMonthDate);
+                next.setMonth(next.getMonth() + 1);
+                setCurrentMonthDate(next);
+              }}
+              onJumpToday={handleJumpToday}
+              monthGrid={monthGrid}
+              selectedDateStr={selectedDateStr}
+              onSelectDate={setSelectedDateStr}
+              cycleData={cycleData}
+              agendaEvents={agendaEvents}
+              personalEvents={personalEvents}
+              isWomen={isWomen}
+            />
+
+            {/* Clean Overview Card for Selected Day */}
+            <SelectedDateOverviewCard
+              selectedDateStr={selectedDateStr}
+              selectedDateRangeInfo={selectedDateRangeInfo}
+              phaseConfig={phaseConfig}
+              selectedDateHoliday={selectedDateHoliday}
+              selectedDateMilestones={selectedDateMilestones}
+              existingPeriodRecord={existingPeriodRecord}
+              agendaEvents={agendaEvents}
+              isWomen={isWomen}
+              onPrevDay={handlePrevDay}
+              onNextDay={handleNextDay}
+              onJumpToday={handleJumpToday}
+              onLogPeriod={handleLogPeriodBleeding}
+              onAddMilestone={handleOpenMilestoneModal}
+              onToggleEvent={handleToggleEvent}
+              onSelectTask={handleToggleEvent}
+            />
+          </Animated.View>
+        )}
+
+        {/* Short calming exercises with their own timer state */}
+        {activeTab === 'arcade' && (
+          <Animated.View entering={FadeIn.duration(180)}>
+            <SomaticWellnessArcade onCompleteExercise={handleExerciseComplete} />
+          </Animated.View>
+        )}
+
+        {/* SECTION 4: FORECAST (WOMEN) OR RECOVERY & NOURISHMENT (MEN) */}
+        {isWomen && activeTab === 'forecast' && (
+          <Animated.View entering={FadeIn.duration(180)}>
+            <MultiMonthCycleForecast
+              cycleData={cycleData}
+              twelveMonthForecast={twelveMonthForecast}
+              activeStageIndex={activeStageIndex}
+              onSelectStageIndex={setActiveStageIndex}
+              onSelectForecastItem={(item) => {
+                setCurrentMonthDate(new Date(item.year, item.month, 1));
+                setSelectedDateStr(item.estimatedPeriodStart);
+                setActiveTab('calendar');
+                hapticSelection();
+              }}
+            />
+          </Animated.View>
+        )}
+
+        {isMen && activeTab === 'recovery' && (
+          <Animated.View entering={FadeIn.duration(180)}>
+            <AthleticCheckInCard
+              energy={energy}
+              mood={mood}
+              onSetEnergy={setEnergy}
+              onSetMood={setMood}
+              checkedInToday={checkedInToday}
+              onSaveCheckIn={handleSaveCheckIn}
+            />
+            <PersonalizedNourishmentCard
+              activeDiet={activeDiet}
+              waterGlasses={waterGlasses}
+              onSetWaterGlasses={setWaterGlasses}
+              agendaEvents={agendaEvents}
+              onToggleEvent={handleToggleEvent}
+              onViewNutrition={() => router.push('/(app)/health/nutrition')}
+            />
+          </Animated.View>
+        )}
+
+        <QuestSheet assignmentId={selectedAssignmentId} onClose={() => setSelectedAssignmentId(null)} />
+
+        {/* Period & Cycle Logger Modal */}
+        <PeriodLoggerModal
+          visible={showPeriodModal}
+          initialDateStr={selectedDateStr}
+          existingRecord={existingPeriodRecord}
+          onClose={() => setShowPeriodModal(false)}
+          onSaved={() => {
+            showToast({ type: 'success', message: 'Cycle records updated reliably.' });
+          }}
+        />
+
+        {/* Personal Milestones Modal */}
+        <PersonalEventModal
+          visible={showMilestoneModal}
+          initialDateStr={selectedDateStr}
+          existingEvent={selectedMilestoneToEdit}
+          onClose={() => {
+            setShowMilestoneModal(false);
+            setSelectedMilestoneToEdit(null);
+          }}
+        />
+
+        {/* Dedicated Clean Cycle History / Milestones Bottom Sheet Modal */}
+        <AppBottomSheetModal
+          visible={showHistoryModal}
+          onClose={() => setShowHistoryModal(false)}
+          title={isWomen ? 'Cycle History & Records' : 'Milestones & Events'}
+          eyebrow="HISTORY & INSIGHTS"
+          maxHeight="92%"
+          contentContainerStyle={{ paddingBottom: 24 }}
+        >
+          <CycleHistoryView
+            isWomen={isWomen}
             cycleData={cycleData}
-            agendaEvents={agendaEvents}
             personalEvents={personalEvents}
-            isWomen={isWomen}
-          />
-
-          {/* Clean Overview Card for Selected Day */}
-          <SelectedDateOverviewCard
-            selectedDateStr={selectedDateStr}
-            selectedDateRangeInfo={selectedDateRangeInfo}
-            phaseConfig={phaseConfig}
-            selectedDateHoliday={selectedDateHoliday}
-            selectedDateMilestones={selectedDateMilestones}
-            existingPeriodRecord={existingPeriodRecord}
-            agendaEvents={agendaEvents}
-            isWomen={isWomen}
-            onPrevDay={handlePrevDay}
-            onNextDay={handleNextDay}
-            onJumpToday={handleJumpToday}
+            advancedCycleMetrics={advancedCycleMetrics}
             onLogPeriod={handleLogPeriodBleeding}
             onAddMilestone={handleOpenMilestoneModal}
-            onToggleEvent={handleToggleEvent}
-            onSelectTask={handleToggleEvent}
-          />
-        </Animated.View>
-      )}
-
-      {/* Short calming exercises with their own timer state */}
-      {activeTab === 'arcade' && (
-        <Animated.View entering={FadeIn.duration(180)}>
-          <SomaticWellnessArcade onCompleteExercise={handleExerciseComplete} />
-        </Animated.View>
-      )}
-
-      {/* SECTION 4: FORECAST (WOMEN) OR RECOVERY & NOURISHMENT (MEN) */}
-      {isWomen && activeTab === 'forecast' && (
-        <Animated.View entering={FadeIn.duration(180)}>
-          <MultiMonthCycleForecast
-            cycleData={cycleData}
-            twelveMonthForecast={twelveMonthForecast}
-            activeStageIndex={activeStageIndex}
-            onSelectStageIndex={setActiveStageIndex}
-            onSelectForecastItem={(item) => {
-              setCurrentMonthDate(new Date(item.year, item.month, 1));
-              setSelectedDateStr(item.estimatedPeriodStart);
-              setActiveTab('calendar');
-              hapticSelection();
+            onEditPeriod={(rec) => {
+              setSelectedDateStr(rec.startDate);
+              setShowHistoryModal(false);
+              setShowPeriodModal(true);
             }}
+            onDeletePeriod={handleDeletePeriod}
+            onEditMilestone={(pe) => {
+              setShowHistoryModal(false);
+              handleEditMilestone(pe);
+            }}
+            onDeleteMilestone={handleDeleteMilestone}
           />
-        </Animated.View>
-      )}
-
-      {isMen && activeTab === 'recovery' && (
-        <Animated.View entering={FadeIn.duration(180)}>
-          <AthleticCheckInCard
-            energy={energy}
-            mood={mood}
-            onSetEnergy={setEnergy}
-            onSetMood={setMood}
-            checkedInToday={checkedInToday}
-            onSaveCheckIn={handleSaveCheckIn}
-          />
-          <PersonalizedNourishmentCard
-            activeDiet={activeDiet}
-            waterGlasses={waterGlasses}
-            onSetWaterGlasses={setWaterGlasses}
-            agendaEvents={agendaEvents}
-            onToggleEvent={handleToggleEvent}
-            onViewNutrition={() => router.push('/(app)/health/nutrition')}
-          />
-        </Animated.View>
-      )}
-
-      <QuestSheet assignmentId={selectedAssignmentId} onClose={() => setSelectedAssignmentId(null)} />
-
-      {/* Period & Cycle Logger Modal */}
-      <PeriodLoggerModal
-        visible={showPeriodModal}
-        initialDateStr={selectedDateStr}
-        existingRecord={existingPeriodRecord}
-        onClose={() => setShowPeriodModal(false)}
-        onSaved={() => {
-          showToast({ type: 'success', message: 'Cycle records updated reliably.' });
-        }}
-      />
-
-      {/* Personal Milestones Modal */}
-      <PersonalEventModal
-        visible={showMilestoneModal}
-        initialDateStr={selectedDateStr}
-        existingEvent={selectedMilestoneToEdit}
-        onClose={() => {
-          setShowMilestoneModal(false);
-          setSelectedMilestoneToEdit(null);
-        }}
-      />
-
-      {/* Dedicated Clean Cycle History / Milestones Bottom Sheet Modal */}
-      <AppBottomSheetModal
-        visible={showHistoryModal}
-        onClose={() => setShowHistoryModal(false)}
-        title={isWomen ? 'Cycle History & Records' : 'Milestones & Events'}
-        eyebrow="HISTORY & INSIGHTS"
-        maxHeight="92%"
-        contentContainerStyle={{ paddingBottom: 24 }}
-      >
-        <CycleHistoryView
-          isWomen={isWomen}
-          cycleData={cycleData}
-          personalEvents={personalEvents}
-          advancedCycleMetrics={advancedCycleMetrics}
-          onLogPeriod={handleLogPeriodBleeding}
-          onAddMilestone={handleOpenMilestoneModal}
-          onEditPeriod={(rec) => {
-            setSelectedDateStr(rec.startDate);
-            setShowHistoryModal(false);
-            setShowPeriodModal(true);
-          }}
-          onDeletePeriod={handleDeletePeriod}
-          onEditMilestone={(pe) => {
-            setShowHistoryModal(false);
-            handleEditMilestone(pe);
-          }}
-          onDeleteMilestone={handleDeleteMilestone}
-        />
-      </AppBottomSheetModal>
-    </ScreenContainer>
+        </AppBottomSheetModal>
+      </ScreenContainer>
+    </SanctuaryImageBackground>
   );
 }
 
