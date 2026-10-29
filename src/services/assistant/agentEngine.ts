@@ -20,6 +20,7 @@ import { askThrive } from '../ai/cloudChat';
 import { runCommand as runLegacyCommand } from './runCommand';
 import { ensureLocalModel } from '../ai/localModel';
 import { knowledgeStore } from '../local-ai/rag/knowledgeStore';
+import { retrieveHybridEvidence } from '../local-ai/rag/hybridRagPipeline';
 
 /** Questions where exact numbers matter (macros, calories, doses of a plan): worth a stronger model. */
 const NEEDS_PRECISION =
@@ -256,7 +257,25 @@ class AgentEngine {
         };
 
         const sub = LocalAI.onToken(onTokenListener);
-        LocalAI.startStream(turnId, text, screenSummary, systemPrompt);
+        // Ground the model in what the phone already knows: saved memories, documents and answers
+        // learned earlier from the cloud coach. This is how replies get better over time.
+        let evidence = '';
+        try {
+          const hits = await retrieveHybridEvidence('local_user', text, 3);
+          evidence = hits
+            .filter((h) => h.hybridScore >= 0.05)
+            .map((h) => `- ${h.document.title}: ${h.snippet}`)
+            .join('\n')
+            .slice(0, 1500);
+        } catch {
+          // Retrieval is optional; answer from the screen context alone.
+        }
+        LocalAI.startStream(
+          turnId,
+          text,
+          evidence ? `${screenSummary}\nKnown from this phone (use only if relevant):\n${evidence}` : screenSummary,
+          systemPrompt,
+        );
 
         // Wait for completion via Promise wrapper
         const streamedResult = await new Promise<string>((resolve) => {
