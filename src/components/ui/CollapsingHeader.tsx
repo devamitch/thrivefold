@@ -10,7 +10,6 @@ import Animated, {
   type SharedValue,
 } from 'react-native-reanimated';
 import { useTheme } from '../../theme/useTheme';
-import { FrostedView } from './FrostedView';
 import {
   HEADER_BAR_HEIGHT,
   HEADER_BUTTON_SIZE,
@@ -127,7 +126,8 @@ export function CollapsingHeaderBar({
       ]}
     >
       <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, barBg]}>
-        <FrostedView tone="canvas" intensity={50} style={StyleSheet.absoluteFill} />
+        {/* Solid, square bar: scrolled content never shows through or behind rounded corners. */}
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background }]} />
         <View style={[styles.hairline, { backgroundColor: colors.borderStrong }]} />
       </Animated.View>
 

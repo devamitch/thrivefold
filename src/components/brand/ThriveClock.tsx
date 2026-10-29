@@ -150,7 +150,7 @@ export function ThriveClock({ size = 64, mood = 'idle' }: { size?: number; mood?
     const a = ((deg - 90) * Math.PI) / 180;
     return { x2: CX + Math.cos(a) * 29, y2: CY + Math.sin(a) * 29 };
   });
-  const ring = useAnimatedProps(() => ({ r: 46 + lean.value * 3, opacity: lean.value * 0.4 }));
+  const ring = useAnimatedProps(() => ({ r: 41 + lean.value * 3, opacity: lean.value * 0.4 }));
 
   const hourDeg = ((now.getHours() % 12) + now.getMinutes() / 60) * 30;
   const minDeg = now.getMinutes() * 6;

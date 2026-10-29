@@ -45,7 +45,7 @@ export const SanctuaryImageBackground = memo<SanctuaryImageBackgroundProps>(func
   source = AssetIllustrations.sanctuaryAmbientBg,
   overlayOpacity = 0.96,
   overlayColor,
-  blurRadius = 0,
+  blurRadius = 2,
   gradientLocations = [0, 0.28, 0.65, 1.0] as const,
   style,
   imageStyle,
@@ -55,10 +55,11 @@ export const SanctuaryImageBackground = memo<SanctuaryImageBackgroundProps>(func
   const tint = overlayColor ?? colors.background;
 
   const gradientColors = useMemo<readonly [string, string, string, string]>(() => {
+    // A soft wash even at the top: the art stays a gentle backdrop and never fights the title.
     return [
-      toRgba(tint, 0.0),
-      toRgba(tint, 0.35 * overlayOpacity),
-      toRgba(tint, 0.82 * overlayOpacity),
+      toRgba(tint, 0.6 * overlayOpacity),
+      toRgba(tint, 0.78 * overlayOpacity),
+      toRgba(tint, 0.92 * overlayOpacity),
       toRgba(tint, overlayOpacity),
     ];
   }, [tint, overlayOpacity]);
