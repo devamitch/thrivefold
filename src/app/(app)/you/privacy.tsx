@@ -1,12 +1,12 @@
 import { Link, type Href } from 'expo-router';
 import React, { useState } from 'react';
-import { Share, Text } from 'react-native';
+import { Platform, Share, Text } from 'react-native';
 import { Toggle } from '../../../components/ui/Toggle';
 
 import { AppHeader } from '../../../components/ui/AppHeader';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { SettingsRow } from '../../../components/ui/SettingsRow';
-import { buildLocalExport } from '../../../services/privacy/localData';
+import { buildLocalExport, exportRawJson, restoreFromBackup } from '../../../services/privacy/localData';
 import { firebaseAnalytics } from '../../../services/telemetry/firebaseAnalytics';
 import { clearSummaryOutbox, enqueueFinishedWeeks, flushSummaryOutbox, outboxStatus } from '../../../services/sync/summaryOutbox';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
@@ -51,9 +51,28 @@ export default function PrivacyScreen() {
 
   const exportAll = async () => {
     try {
+      // On Android the folder picker saves a real file that "Restore from a backup" can read back.
+      if (Platform.OS === 'android') {
+        const ok = await exportRawJson();
+        if (ok) s.showAlert({ title: 'Backup saved', message: 'Keep this file before you uninstall or change phones. Restore it from this screen.', confirmText: 'OK', cancelText: null });
+        return;
+      }
       await Share.share({ title: 'Thrivefold export', message: buildLocalExport() });
     } catch {
       s.showAlert({ title: 'Could not export', message: 'Please try again.', confirmText: 'OK', cancelText: null });
+    }
+  };
+
+  const restore = async () => {
+    try {
+      const n = await restoreFromBackup();
+      s.showAlert(
+        n === null
+          ? { title: 'No backup found', message: 'Choose the folder where you saved your Thrivefold backup.', confirmText: 'OK', cancelText: null }
+          : { title: 'Backup restored', message: n ? 'Records from your backup were added. Nothing on this phone was replaced.' : 'Everything in the backup is already on this phone.', confirmText: 'OK', cancelText: null },
+      );
+    } catch {
+      s.showAlert({ title: 'Could not restore', message: 'That file could not be read.', confirmText: 'OK', cancelText: null });
     }
   };
 
@@ -63,7 +82,10 @@ export default function PrivacyScreen() {
         Check-ins, cycle records, journal, workouts, meals and photos are encrypted on this phone. Nothing leaves it unless
         you choose one of the options below.
       </Text>
-      <SettingsRow icon="download-outline" title="Export everything" subtitle="A full copy of your records as a file you can save or share." onPress={exportAll} />
+      <SettingsRow icon="download-outline" title="Back up everything" subtitle="Save a full copy as a file. Do this before you uninstall or change phones." onPress={exportAll} />
+      {Platform.OS === 'android' ? (
+        <SettingsRow icon="cloud-download-outline" title="Restore from a backup" subtitle="Add records from a saved backup. Nothing here is replaced." onPress={restore} />
+      ) : null}
       <Link href={'/(app)/health/integrations' as Href} asChild>
         <SettingsRow icon="link-outline" title="Connected apps" subtitle="Health Connect, heart-rate straps and FHIR export." />
       </Link>

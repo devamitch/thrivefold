@@ -12,6 +12,7 @@ import { useRootStore } from '../../stores/useRootStore';
 import { formatLocalDate } from '../../domain/calendar/universalCalendarEngine';
 import { worldviewExportRows } from '../../domain/identity/worldview';
 import { buildXlsx, toBase64, type Sheet } from './xlsx';
+import { mergeBackup } from '../../domain/privacy/backupMerge';
 
 export function buildLocalExport(): string {
   const state = useRootStore.getState();
@@ -289,7 +290,7 @@ export async function exportDataToWorkbook(): Promise<boolean> {
 export async function exportRawJson(): Promise<boolean> {
   try {
     return await saveFile(
-      `thrivefold_export_${formatLocalDate(new Date())}.json`,
+      `thrivefold_backup_${formatLocalDate(new Date())}.json`,
       'application/json',
       toBase64(new TextEncoder().encode(buildLocalExport())),
       'Thrivefold raw data export',
@@ -297,6 +298,38 @@ export async function exportRawJson(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+/**
+ * Restores a backup made with "Export everything" (or a raw JSON export). The person picks the
+ * folder they saved it in; the newest Thrivefold export there is read and merged without
+ * overwriting anything already on this phone. Returns how many kinds of record were restored,
+ * or null when nothing was chosen or no backup was found.
+ */
+export async function restoreFromBackup(): Promise<number | null> {
+  if (Platform.OS !== 'android') return null;
+  const SAF = FileSystem.StorageAccessFramework;
+  const perm = await SAF.requestDirectoryPermissionsAsync();
+  if (!perm.granted) return null;
+  const files = (await SAF.readDirectoryAsync(perm.directoryUri))
+    .filter((u) => /thrivefold_(export|backup)[^/]*\.json$/i.test(decodeURIComponent(u)))
+    .sort();
+  const newest = files[files.length - 1];
+  if (!newest) return null;
+  const parsed = JSON.parse(await FileSystem.readAsStringAsync(newest)) as { format?: string; data?: Record<string, unknown> };
+  if (!parsed?.data || !String(parsed.format ?? '').startsWith('thrivefold-local-export')) return null;
+  const state = useRootStore.getState() as unknown as Record<string, unknown>;
+  const { patch, changed } = mergeBackup(state, parsed.data);
+  if (changed.length) useRootStore.setState(patch as never);
+  const d = parsed.data;
+  const restoredPoints = useRootStore
+    .getState()
+    .mergeRemoteProgress(
+      Array.isArray(d.rewardLedger) ? (d.rewardLedger as never) : [],
+      Array.isArray(d.completedCheckpoints) ? (d.completedCheckpoints as string[]) : [],
+      Array.isArray(d.achievements) ? (d.achievements as string[]) : [],
+    );
+  return changed.length + (restoredPoints ? 1 : 0);
 }
 
 /** @deprecated Kept for older callers; exports the Excel workbook. */
