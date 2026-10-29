@@ -48,7 +48,6 @@ export const AssetIllustrations = {
   betaVoicePracticeMen: require('@assets/illustrations/beta-voice-practice-men.jpg'),
   nutritionPlateMen: require('@assets/illustrations/nutrition-plate-men.jpg'),
   betaBreathingMen: require('@assets/illustrations/beta-breathing-men.jpg'),
-  outdoorsWalkMen: require('@assets/illustrations/outdoors-walk-men.jpg'),
   roadmapJourneyBg: require('@assets/illustrations/roadmap-journey-bg.jpg'),
   todayMorningBg: require('@assets/illustrations/today-morning-bg.jpg'),
   progressZenBg: require('@assets/illustrations/progress-zen-bg.jpg'),

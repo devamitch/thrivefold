@@ -9,6 +9,7 @@ import {
   type ImageStyle,
 } from 'react-native';
 import { Image, type ImageSource } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useAnimatedScrollHandler,
   useReducedMotion,
@@ -81,6 +82,14 @@ export interface ScreenContainerProps {
   backgroundBlurRadius?: number;
   /** Custom style for the background image. */
   backgroundImageStyle?: StyleProp<ImageStyle>;
+}
+
+function toRgba(hex: string, alpha: number): string {
+  if (!hex || !hex.startsWith('#')) return hex;
+  const raw = hex.replace('#', '');
+  const n = parseInt(raw.length === 3 ? raw.split('').map((c) => c + c).join('') : raw, 16);
+  if (isNaN(n)) return hex;
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${Math.max(0, Math.min(1, alpha))})`;
 }
 
 /** Horizontal page gutter shared by every screen. */
@@ -204,6 +213,7 @@ export function ScreenContainer({
 
   const wrapWithBackground = (node: React.ReactElement) => {
     if (!backgroundImage) return node;
+    const maxOpacity = backgroundOverlayOpacity ?? 0.96;
     return (
       <View style={styles.bgImageRoot}>
         <Image
@@ -211,19 +221,21 @@ export function ScreenContainer({
           style={[StyleSheet.absoluteFill, styles.bgImage, backgroundImageStyle]}
           contentFit="cover"
           blurRadius={backgroundBlurRadius ?? 0}
+          priority="low"
           pointerEvents="none"
           cachePolicy="memory-disk"
           accessibilityIgnoresInvertColors
         />
-        <View
-          pointerEvents="none"
-          style={[
-            StyleSheet.absoluteFill,
-            {
-              backgroundColor: colors.background,
-              opacity: backgroundOverlayOpacity ?? 0.92,
-            },
+        <LinearGradient
+          colors={[
+            toRgba(colors.background, 0.0),
+            toRgba(colors.background, 0.35 * maxOpacity),
+            toRgba(colors.background, 0.82 * maxOpacity),
+            toRgba(colors.background, maxOpacity),
           ]}
+          locations={[0, 0.28, 0.65, 1.0]}
+          pointerEvents="none"
+          style={StyleSheet.absoluteFill}
         />
         {node}
       </View>
@@ -362,6 +374,8 @@ const styles = StyleSheet.create({
   },
   bgImageRoot: {
     flex: 1,
+    overflow: 'hidden',
+    position: 'relative',
     width: '100%',
   },
   externalBody: {
