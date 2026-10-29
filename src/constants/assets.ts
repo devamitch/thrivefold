@@ -46,6 +46,7 @@ export const AssetIllustrations = {
   wellnessEyeVisionMen: require('@assets/illustrations/wellness-eye-vision-men.jpg'),
   betaFaceExercisesMen: require('@assets/illustrations/beta-face-exercises-men.jpg'),
   betaVoicePracticeMen: require('@assets/illustrations/beta-voice-practice-men.jpg'),
+  nutritionPlateMen: require('@assets/illustrations/nutrition-plate-men.jpg'),
 } as const;
 
 export type AssetIllustrationsName = keyof typeof AssetIllustrations;

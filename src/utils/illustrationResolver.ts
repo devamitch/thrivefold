@@ -51,6 +51,8 @@ export function getSanctuaryIllustration(
         return AssetIllustrations.betaFaceExercisesMen;
       case 'voicePractice':
         return AssetIllustrations.betaVoicePracticeMen;
+      case 'nutrition':
+        return AssetIllustrations.nutritionPlateMen;
       default:
         break;
     }
