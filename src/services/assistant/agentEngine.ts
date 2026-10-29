@@ -16,6 +16,13 @@ import { executeTool, type ToolExecutionResult } from '../../domain/assistant/to
 import { resolveScreenCapability } from '../../domain/assistant/screenRegistry';
 import { resolveLocalCoachReply } from '../../domain/coach/localCoachAI';
 import { useRootStore } from '../../stores/useRootStore';
+import { askThrive } from '../ai/cloudChat';
+import { ensureLocalModel } from '../ai/localModel';
+import { knowledgeStore } from '../local-ai/rag/knowledgeStore';
+
+/** Questions where exact numbers matter (macros, calories, doses of a plan): worth a stronger model. */
+const NEEDS_PRECISION =
+  /\b(?:macro|macros|calorie|calories|kcal|protein|carbs?|fat grams|meal plan|diet plan|workout plan|weekly plan|nutrition|bmr|tdee)\b/i;
 
 export interface AgentMessage {
   id: string;
@@ -196,8 +203,19 @@ class AgentEngine {
     const storeState = useRootStore.getState();
     const screenSummary = screenCap.getContextSummary(storeState);
 
-    // 4. On-Device LLM Inference (if model loaded)
-    if (LocalAI.isLoaded()) {
+    // 4. Precision questions go to the cloud coach when the person allowed it (keys stay on the
+    // server); the answer is kept in the on-device knowledge store so later questions are local.
+    const wantsCloud = storeState.cloudAiConsent && !!storeState.user && !storeState.user.isGuest;
+    if (wantsCloud && NEEDS_PRECISION.test(text)) {
+      const cloud = await this.askCloud(text);
+      if (cloud) {
+        this.finishTurn(cloud, undefined, callbacks);
+        return { text: cloud };
+      }
+    }
+
+    // 5. On-Device LLM Inference (loads the downloaded model on first use)
+    if (await ensureLocalModel()) {
       try {
         const systemPrompt =
           `You are Thrive Coach, a warm, concise on-device wellbeing assistant.\n` +
@@ -245,7 +263,14 @@ class AgentEngine {
       }
     }
 
-    // 5. Fallback: Deterministic On-Device Coach Intelligence
+    // 6. No local model: the cloud coach (if allowed), then the deterministic on-device coach.
+    if (wantsCloud) {
+      const cloud = await this.askCloud(text);
+      if (cloud) {
+        this.finishTurn(cloud, undefined, callbacks);
+        return { text: cloud };
+      }
+    }
     const coachReply = resolveLocalCoachReply(text);
     const replyText = coachReply.text;
     const toolRes = coachReply.route
@@ -259,6 +284,28 @@ class AgentEngine {
 
     this.finishTurn(replyText, toolRes, callbacks);
     return { text: replyText, toolResult: toolRes };
+  }
+
+  private async askCloud(text: string): Promise<string | null> {
+    try {
+      const turns = this.activeSession.messages
+        .slice(-8)
+        .map((m) => ({ role: m.sender === 'user' ? ('user' as const) : ('assistant' as const), content: m.text }));
+      const { reply } = await askThrive(turns.length ? turns : [{ role: 'user', content: text }]);
+      const answer = reply?.trim();
+      if (!answer) return null;
+      void knowledgeStore
+        .ingestDocument('local_user', {
+          title: text.slice(0, 80),
+          text: `Question: ${text}\nAnswer: ${answer}`,
+          sourceType: 'wellness_guide',
+          metadata: { source: 'cloud_coach', at: new Date().toISOString() },
+        })
+        .catch(() => undefined);
+      return answer;
+    } catch {
+      return null;
+    }
   }
 
   private finishTurn(

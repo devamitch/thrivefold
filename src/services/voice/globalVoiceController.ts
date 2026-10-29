@@ -49,10 +49,14 @@ class GlobalVoiceController {
   private setupSpeechListeners() {
     try {
       ExpoSpeechRecognitionModule?.addListener?.('start', () => {
+        // Other screens (dictation, voice practice) use the same recogniser; ignore their sessions.
+        if (!this.isListeningActive) return;
         this.setState('listening');
       });
 
       ExpoSpeechRecognitionModule?.addListener?.('result', (event: any) => {
+        // Other screens (dictation, voice practice) use the same recogniser; ignore their sessions.
+        if (!this.isListeningActive) return;
         const text = (event.results?.[0]?.transcript ?? '').trim();
         if (!text) return;
 
@@ -80,11 +84,15 @@ class GlobalVoiceController {
       });
 
       ExpoSpeechRecognitionModule?.addListener?.('volumechange', (event: any) => {
+        // Other screens (dictation, voice practice) use the same recogniser; ignore their sessions.
+        if (!this.isListeningActive) return;
         const level = event.value ?? 0;
         this.listeners.forEach((l) => l.onAudioLevel?.(level));
       });
 
       ExpoSpeechRecognitionModule?.addListener?.('end', () => {
+        // Other screens (dictation, voice practice) use the same recogniser; ignore their sessions.
+        if (!this.isListeningActive) return;
         if (this.state === 'listening') {
           this.setState('idle');
         }
@@ -92,6 +100,8 @@ class GlobalVoiceController {
       });
 
       ExpoSpeechRecognitionModule?.addListener?.('error', (event: any) => {
+        // Other screens (dictation, voice practice) use the same recogniser; ignore their sessions.
+        if (!this.isListeningActive) return;
         const errorMsg = event.message || (event as any).error || 'Speech recognition error';
         this.setState('error');
         this.listeners.forEach((l) => l.onError(errorMsg));
@@ -163,11 +173,13 @@ class GlobalVoiceController {
       this.setState('listening');
       this.isListeningActive = true;
       ExpoSpeechRecognitionModule?.start?.({
-        lang: 'en-US',
+        lang: Intl.DateTimeFormat().resolvedOptions().locale || 'en-US',
         interimResults: true,
         continuous: false,
         requiresOnDeviceRecognition: false,
         addsPunctuation: true,
+        // Local first: use the phone's offline speech pack when it has one.
+        androidIntentOptions: { EXTRA_PREFER_OFFLINE: true },
       });
     } catch (err: any) {
       this.setState('error');
@@ -210,9 +222,15 @@ class GlobalVoiceController {
       this.listeners.forEach((l) => l.onAssistantReply(result.text, result.toolResult));
 
       // Speak assistant reply using centralized coach voice (priority 2)
-      await coachVoice.speak(result.text, { priority: 2, minGapMs: 400 });
+      // Priority 3 so a reply is never dropped by the gap rule; long replies are not cut short.
+      await coachVoice.speak(result.text, { priority: 3, maxMs: 60_000 });
 
       this.setState('idle');
+      // Conversation mode: while the assistant is open, keep listening for the next thing said.
+      if (this.isOpen) {
+        await new Promise((r) => setTimeout(r, 350));
+        if (this.isOpen && this.state === 'idle') await this.startListening();
+      }
     } catch (err: any) {
       this.setState('error');
       this.listeners.forEach((l) => l.onError(err.message || 'Error processing request'));
