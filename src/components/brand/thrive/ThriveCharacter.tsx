@@ -97,7 +97,8 @@ function Eye({ cx, cy, side, r }: { cx: number; cy: number; side: -1 | 1; r: Rig
   const open = useDerivedValue(() => Math.max(0, r.eyeOpen.value) * (1 - r.blink.value));
   const close = useDerivedValue(() => 1 - Math.min(1, open.value));
   const scaleTf = useDerivedValue(() => {
-    const s = Math.max(1, open.value);
+    // Big, round baby eyes: the whole eye is drawn 1.45x around its centre.
+    const s = Math.max(1, open.value) * 1.45;
     return [{ translateX: cx }, { translateY: cy }, { scale: s }, { translateX: -cx }, { translateY: -cy }];
   });
   const pupilTf = useDerivedValue(() => {
@@ -126,8 +127,9 @@ function Eye({ cx, cy, side, r }: { cx: number; cy: number; side: -1 | 1; r: Rig
       <Group clip={clip}>
         <Oval x={cx - 21} y={cy - 24} width={42} height={48} color={WHITE} />
         <Group transform={pupilTf} opacity={pupilOp}>
-          <Circle cx={0} cy={0} r={11} color={INK} />
-          <Circle cx={-3.5} cy={-4} r={3.4} color="#FFFFFF" />
+          <Circle cx={0} cy={0} r={13.5} color={INK} />
+          <Circle cx={-4.5} cy={-5} r={4.6} color="#FFFFFF" />
+          <Circle cx={4} cy={4.5} r={2} color="#FFFFFF" opacity={0.85} />
         </Group>
         <Group transform={pupilTf} opacity={r.love}>
           <Path path={HEART_SM} color="#FF5D7A" />
@@ -156,7 +158,8 @@ function Face({ r, t }: { r: Rig; t: SharedValue<number> }) {
     const talk = r.talk.value * Math.abs(Math.sin(t.value / 95)) * 0.8;
     const open = Math.min(1, r.mouthOpen.value + talk);
     const c = r.mouthCurve.value;
-    const cx = 463, cy = 498, w = 30;
+    // A small mouth close under the eyes reads as a baby face.
+    const cx = 463, cy = 420, w = 20;
     const endY = cy - c * 10;
     const mid = cy + c * 16;
     const midLow = mid + open * 26;
@@ -168,15 +171,16 @@ function Face({ r, t }: { r: Rig; t: SharedValue<number> }) {
     return p;
   });
   const mouthFillOp = useDerivedValue(() => Math.min(1, (r.mouthOpen.value + r.talk.value * 0.3) * 6));
-  const blushOp = useDerivedValue(() => r.blush.value * 0.55);
+  // Always a little rosy, more when happy or shy.
+  const blushOp = useDerivedValue(() => 0.35 + r.blush.value * 0.4);
   return (
     <>
-      <Circle cx={306} cy={332} r={17} color={CHEEK} opacity={blushOp} />
-      <Circle cx={628} cy={324} r={17} color={CHEEK} opacity={blushOp} />
+      <Circle cx={318} cy={372} r={22} color={CHEEK} opacity={blushOp} />
+      <Circle cx={610} cy={366} r={22} color={CHEEK} opacity={blushOp} />
       <Eye cx={EYE_L.cx} cy={EYE_L.cy} side={-1} r={r} />
       <Eye cx={EYE_R.cx} cy={EYE_R.cy} side={1} r={r} />
       <Path path={mouth} color={MOUTH} opacity={mouthFillOp} />
-      <Path path={mouth} style="stroke" strokeWidth={9} strokeCap="round" strokeJoin="round" color={MOUTH} />
+      <Path path={mouth} style="stroke" strokeWidth={8} strokeCap="round" strokeJoin="round" color={MOUTH} />
     </>
   );
 }

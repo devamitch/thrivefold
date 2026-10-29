@@ -189,8 +189,13 @@ class AnvaykoshAiEngine {
     }
 
     try {
-      val vector = LlamaBridge.embed(text)
-      Result.success(vector)
+      // The native bridge returns null when the loaded model has no embedding context.
+      val vector: FloatArray? = LlamaBridge.embed(text)
+      if (vector == null || vector.isEmpty()) {
+        Result.failure(IllegalStateException("This model cannot make embeddings"))
+      } else {
+        Result.success(vector)
+      }
     } catch (e: Throwable) {
       Result.failure(e)
     }
