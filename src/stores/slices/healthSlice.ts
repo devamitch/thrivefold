@@ -66,6 +66,15 @@ export interface MedicationEntry {
   time: string; // HH:mm
 }
 
+/** A doctor follow-up the person adds; reminders go out the day before and on the day. */
+export interface FollowUp {
+  id: string;
+  date: string; // YYYY-MM-DD
+  time: string | null; // HH:mm
+  with: string; // doctor or clinic, as typed
+  note: string | null;
+}
+
 export interface DailyCheckInRecord {
   id: string;
   date: string;
@@ -166,6 +175,12 @@ export interface HealthSlice {
   addMedication: (entry: Omit<MedicationEntry, 'id'>) => void;
   deleteMedication: (id: string) => void;
   toggleMedicationTaken: (id: string, date: string) => void;
+  /** Daily reminder notifications for medications (off by default). */
+  medicationRemindersOn: boolean;
+  setMedicationRemindersOn: (on: boolean) => void;
+  followUps: FollowUp[];
+  addFollowUp: (f: Omit<FollowUp, 'id'>) => void;
+  deleteFollowUp: (id: string) => void;
   /** Saves a finished workout and returns its id. */
   saveWorkoutSession: (session: Omit<WorkoutSession, 'id'>) => string;
   deleteWorkoutSession: (id: string) => void;
@@ -426,6 +441,14 @@ export const createHealthSlice: StateCreator<
     })),
   medications: [],
   medicationTaken: [],
+  medicationRemindersOn: false,
+  setMedicationRemindersOn: (medicationRemindersOn) => set({ medicationRemindersOn }),
+  followUps: [],
+  addFollowUp: (f) =>
+    set((state) => ({
+      followUps: [...state.followUps, { ...f, id: `fu_${Date.now()}` }].sort((a, b) => a.date.localeCompare(b.date)).slice(-50),
+    })),
+  deleteFollowUp: (id) => set((state) => ({ followUps: state.followUps.filter((f) => f.id !== id) })),
 
   addMedication: (entry) =>
     set((state) => ({

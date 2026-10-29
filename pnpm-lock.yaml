@@ -95,6 +95,9 @@ importers:
       expo-localization:
         specifier: ~55.0.8
         version: 55.0.19(expo@55.0.31)(react@19.2.0)
+      expo-location:
+        specifier: ~55.1.15
+        version: 55.1.15(expo@55.0.31)(supports-color@8.1.1)(typescript@5.9.3)
       expo-motion-blur:
         specifier: ^0.1.0
         version: 0.1.0(expo@55.0.31)(react-native@0.83.10(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.87.1(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.0)(supports-color@8.1.1))(react@19.2.0)
@@ -3351,6 +3354,11 @@ packages:
     peerDependencies:
       expo: '*'
       react: '*'
+
+  expo-location@55.1.15:
+    resolution: {integrity: sha512-4wTDpVZg2/ZH4FnLkobY+PeIrfPz0uFTQqx7LIkxgviucNcRUPGstODBd+XRBOd8mIU1tN1vf6TSs8qEzOOJAw==}
+    peerDependencies:
+      expo: '*'
 
   expo-modules-autolinking@55.0.27:
     resolution: {integrity: sha512-gBRONXQT41PwfsQgeZfFlaeK+zrYMYjRMgxocecnQuSXEm7wCTqD8SsTJmWAf3SDayMQGDZFBlMODeVEnv8FmA==}
@@ -9922,6 +9930,14 @@ snapshots:
       expo: 55.0.31(8b6155f4e1a8580e4767c524e77c7a10)
       react: 19.2.0
       rtl-detect: 1.1.2
+
+  expo-location@55.1.15(expo@55.0.31)(supports-color@8.1.1)(typescript@5.9.3):
+    dependencies:
+      '@expo/image-utils': 0.8.17(supports-color@8.1.1)(typescript@5.9.3)
+      expo: 55.0.31(8b6155f4e1a8580e4767c524e77c7a10)
+    transitivePeerDependencies:
+      - supports-color
+      - typescript
 
   expo-modules-autolinking@55.0.27(supports-color@8.1.1)(typescript@5.9.3):
     dependencies:

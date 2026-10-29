@@ -179,6 +179,7 @@ export function OutdoorCard() {
 
       <View style={styles.chips}>
         <Chip label="Plan an outing" onPress={() => router.push('/(app)/outing' as Href)} />
+        <Chip label="Trip check-in" onPress={() => router.push('/(app)/safety/trip' as Href)} />
       </View>
       <Text style={[typography.caption, { color: colors.text.muted, marginTop: 8 }]}>
         {alertsError

@@ -1,5 +1,6 @@
 import { refreshOwnerStatus } from '../../services/account/owner';
 import { supabase } from '../../services/supabase/supabaseClient';
+import * as Notifications from 'expo-notifications';
 import { coachVoice } from '../../services/ai/coachVoice';
 import { applyKosh, pullProfile, pushProfile } from '../../services/account/profileSync';
 import React, { useEffect, useRef } from 'react';
@@ -89,6 +90,18 @@ export default function AppLayout() {
       if (timer) clearTimeout(timer);
     };
   }, []);
+
+  // Tapping a reminder (medicine, appointment, trip check-in) opens its screen.
+  useEffect(() => {
+    const open = (data: unknown) => {
+      const route = (data as { route?: unknown } | undefined)?.route;
+      if (typeof route === 'string' && route.startsWith('/(app)/')) router.push(route as Href);
+    };
+    const last = Notifications.getLastNotificationResponse();
+    if (last) open(last.notification.request.content.data);
+    const sub = Notifications.addNotificationResponseReceivedListener((r) => open(r.notification.request.content.data));
+    return () => sub.remove();
+  }, [router]);
 
   const coachVoiceEnabled = useRootStore((s) => s.coachVoiceEnabled);
   useEffect(() => {

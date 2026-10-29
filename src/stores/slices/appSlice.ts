@@ -128,6 +128,9 @@ export interface AppSlice {
   updateKoshProfile: (patch: Partial<KoshProfile>, source?: 'user' | 'google') => void;
   emergencyContacts: EmergencyContact[];
   setEmergencyContacts: (contacts: EmergencyContact[]) => void;
+  /** An active trip check-in, or null. */
+  trip: { destination: string; startedAt: number; dueAt: number; contactIds: string[]; notificationId: string | null } | null;
+  setTrip: (trip: AppSlice['trip']) => void;
   /** The town the person chose for weather and official alerts (searched by name, never GPS). */
   outdoorPlace: { name: string; region: string | null; country: string | null; lat: number; lon: number } | null;
   setOutdoorPlace: (place: AppSlice['outdoorPlace']) => void;
@@ -247,6 +250,8 @@ export const createAppSlice: StateCreator<
     }),
   emergencyContacts: [],
   setEmergencyContacts: (emergencyContacts) => set({ emergencyContacts: emergencyContacts.slice(0, 5) }),
+  trip: null,
+  setTrip: (trip) => set({ trip }),
   outdoorPlace: null,
   setOutdoorPlace: (outdoorPlace) => set({ outdoorPlace }),
   profileAsk: { snoozedUntil: {}, lastAskedAt: null },
