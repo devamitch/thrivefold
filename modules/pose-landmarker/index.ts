@@ -71,6 +71,8 @@ export interface PoseCameraViewProps extends ViewProps {
   hands?: boolean;
   /** Minimum ms between analysed frames (0 = as fast as the model runs). Raise it when idle. */
   minIntervalMs?: number;
+  /** 'cover' fills the view for full-screen face screens; default 'contain' letterboxes. */
+  fit?: 'contain' | 'cover';
   onPose?: (event: NativeSyntheticEvent<PoseFrame>) => void;
   onPoseError?: (event: NativeSyntheticEvent<{ code: string; message: string }>) => void;
   /** Models are loaded (in the background) and tracking is live. */

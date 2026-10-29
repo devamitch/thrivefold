@@ -13,6 +13,7 @@ export function EyeOverlay({
   frameH,
   color = '#9BD18B',
   mode = 'eyes',
+  cover = false,
 }: {
   face: number[] | undefined;
   frameW: number;
@@ -20,10 +21,12 @@ export function EyeOverlay({
   color?: string;
   /** Eyes only, every tracked face point, or both. */
   mode?: 'eyes' | 'face' | 'both';
+  /** Match a preview that fills the screen (FILL_CENTER) instead of letterboxing. */
+  cover?: boolean;
 }) {
   const { width, height } = useWindowDimensions();
   if (!face || face.length < 84 || !frameW || !frameH) return null;
-  const scale = Math.min(width / frameW, height / frameH);
+  const scale = (cover ? Math.max : Math.min)(width / frameW, height / frameH);
   const ox = (width - frameW * scale) / 2;
   const oy = (height - frameH * scale) / 2;
   const P = (k: number) => [ox + face[k * 2] * frameW * scale, oy + face[k * 2 + 1] * frameH * scale] as const;

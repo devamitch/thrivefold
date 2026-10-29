@@ -27,6 +27,7 @@ class PoseLandmarkerModule : Module() {
       Prop("face") { view: PoseCameraView, on: Boolean -> view.setFace(on) }
       Prop("hands") { view: PoseCameraView, on: Boolean -> view.setHands(on) }
       Prop("minIntervalMs") { view: PoseCameraView, ms: Int -> view.setMinInterval(ms) }
+      Prop("fit") { view: PoseCameraView, fit: String -> view.setFit(fit) }
       OnViewDestroys { view: PoseCameraView -> view.release() }
     }
   }

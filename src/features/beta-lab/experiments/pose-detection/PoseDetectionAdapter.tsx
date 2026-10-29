@@ -10,6 +10,7 @@ export interface PoseDetectionAdapterProps {
   face?: boolean;
   hands?: boolean;
   minIntervalMs?: number;
+  fit?: 'contain' | 'cover';
   onPose?: (event: NativeSyntheticEvent<PoseFrame>) => void;
   onPoseError?: (event: NativeSyntheticEvent<{ code: string; message: string }>) => void;
   onPoseReady?: (event: NativeSyntheticEvent<{ delegate: 'gpu' | 'cpu' }>) => void;
@@ -31,6 +32,7 @@ export const PoseDetectionAdapter = memo(function PoseDetectionAdapter({
   face = false,
   hands = false,
   minIntervalMs = 0,
+  fit = 'contain',
   onPose,
   onPoseError,
   onPoseReady,
@@ -63,6 +65,7 @@ export const PoseDetectionAdapter = memo(function PoseDetectionAdapter({
       face={face}
       hands={hands}
       minIntervalMs={Math.max(0, minIntervalMs)}
+      fit={fit}
       onPose={onPose}
       onPoseError={handleError}
       onPoseReady={onPoseReady}

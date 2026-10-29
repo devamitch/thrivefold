@@ -126,6 +126,11 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
   private val canvas = Canvas()
   private var convEmaMs = 0.0
 
+  /** "cover" fills the view (cropping edges) for full-screen face screens; default letterboxes. */
+  fun setFit(value: String) {
+    previewView.scaleType = if (value == "cover") PreviewView.ScaleType.FILL_CENTER else PreviewView.ScaleType.FIT_CENTER
+  }
+
   fun setMinInterval(value: Int) {
     minIntervalMs = value.coerceIn(0, 2000).toLong()
   }

@@ -421,6 +421,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cameraContainer: {
+    width: '100%',
     aspectRatio: 16 / 9,
     marginBottom: 14,
     borderRadius: 22,

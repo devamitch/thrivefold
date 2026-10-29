@@ -67,11 +67,12 @@ export function EyeScanFullScreen({
           facing={facing}
           face
           hands={false}
+          fit="cover"
           onPose={onPose}
           onPoseError={(e) => setError(e.nativeEvent.message)}
           style={StyleSheet.absoluteFill}
         />
-        {!paused ? <EyeOverlay face={overlay.face} frameW={overlay.w} frameH={overlay.h} mode={mode} /> : null}
+        {!paused ? <EyeOverlay face={overlay.face} frameW={overlay.w} frameH={overlay.h} mode={mode} cover /> : null}
 
         {/* Soft scrims keep the glass controls legible over bright scenes. */}
         <LinearGradient
