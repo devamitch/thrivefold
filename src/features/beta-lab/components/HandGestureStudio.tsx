@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Modal, StyleSheet, Text, View } from 'react-native';
 
 import { PressableScale } from '../../../components/ui/PressableScale';
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
@@ -92,18 +92,31 @@ export function HandGestureStudio() {
         </SquircleSurface>
       </View>
 
+      {/* The grip exercise runs full screen with the count large enough to see from arm's length. */}
+      <Modal visible={active} animationType="fade" statusBarTranslucent onRequestClose={() => void toggleStudio()}>
+        <View style={styles.full}>
+          <PoseDetectionAdapter engine="default" active={active} facing="front" face={false} hands onPose={onPose} style={StyleSheet.absoluteFill} />
+          <View style={styles.fullPanel}>
+            <Text style={styles.fullReps}>{handState.gripReps}</Text>
+            <Text style={[typography.bodyBold, { color: '#FFF' }]}>
+              {handState.confidence > 0 ? (handState.kind === 'closed' ? 'Fist: now open wide' : 'Open: now squeeze') : 'Show your hand to the camera'}
+            </Text>
+            <Text style={[typography.caption, { color: 'rgba(255,255,255,0.75)', marginTop: 4 }]}>
+              {handState.confidence > 0 ? `${handState.extendedFingers} fingers open` : ''}
+            </Text>
+            <PressableScale onPress={() => void toggleStudio()} style={styles.fullStop} accessibilityLabel="Stop">
+              <Text style={[typography.bodyBold, { color: '#FFF' }]}>Stop and save</Text>
+            </PressableScale>
+          </View>
+        </View>
+      </Modal>
+
       {/* Camera Viewport */}
       <View style={[styles.cameraContainer, { backgroundColor: '#111' }]}>
         {active ? (
-          <PoseDetectionAdapter
-            engine="default"
-            active={active}
-            facing="front"
-            face={false}
-            hands={true}
-            onPose={onPose}
-            style={StyleSheet.absoluteFill}
-          />
+          <View style={styles.placeholder}>
+            <Text style={[typography.body, { color: '#AAA' }]}>Running full screen…</Text>
+          </View>
         ) : (
           <View style={styles.placeholder}>
             <Ionicons name="hand-right-outline" size={38} color="#666" />
@@ -177,6 +190,10 @@ export function HandGestureStudio() {
 }
 
 const styles = StyleSheet.create({
+  full: { flex: 1, backgroundColor: '#000' },
+  fullPanel: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: 20, paddingBottom: 36, alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.55)' },
+  fullReps: { color: '#FFF', fontSize: 72, lineHeight: 80, fontWeight: '800' },
+  fullStop: { alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center', height: 50, borderRadius: 16, marginTop: 14, backgroundColor: 'rgba(255,255,255,0.18)' },
   card: { padding: 16, marginTop: 12 },
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   pill: { paddingHorizontal: 8, paddingVertical: 4 },

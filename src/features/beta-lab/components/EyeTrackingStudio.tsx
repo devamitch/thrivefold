@@ -12,7 +12,7 @@
 
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Modal, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import type { NativeSyntheticEvent } from 'react-native';
 
@@ -218,9 +218,35 @@ export function EyeTrackingStudio() {
         </PressableScale>
       </View>
 
+      {/* Live monitor runs full screen; the guided exercises keep the small camera above their UI. */}
+      <Modal visible={active && mode === 'scanner'} animationType="fade" statusBarTranslucent onRequestClose={() => void toggleStudio()}>
+        <View style={styles.full}>
+          <PoseDetectionAdapter engine="default" active={active && mode === 'scanner'} facing="front" face hands={false} onPose={onPose} style={StyleSheet.absoluteFill} />
+          <View style={styles.fullTop}>
+            <Text style={[typography.bodyBold, { color: '#FFF' }]}>{eyeState.tracked ? 'Tracking your eyes' : 'Bring your face into view'}</Text>
+          </View>
+          <View style={styles.fullPanel}>
+            <View style={styles.fullStats}>
+              <FullStat label="distance" value={eyeState.tracked ? `${eyeState.distanceCm.toFixed(0)} cm` : '—'} />
+              <FullStat label="blinks/min" value={`${eyeState.blinksPerMin}`} />
+              <FullStat label="blinks" value={`${eyeState.blinkCount}`} />
+              <FullStat label="eye battery" value={`${eyeState.batteryLevel.toFixed(0)}%`} />
+            </View>
+            <Text style={[typography.caption, { color: 'rgba(255,255,255,0.8)', marginTop: 8 }]}>{eyeState.recommendation}</Text>
+            {eyeState.activeAlert ? (
+              <Text style={[typography.captionBold, { color: '#F2C27B', marginTop: 6 }]}>{eyeState.activeAlert.title}</Text>
+            ) : null}
+            <PressableScale onPress={() => void toggleStudio()} style={styles.fullStop} accessibilityLabel="Stop eye tracking">
+              <Ionicons name="stop" size={18} color="#FFF" />
+              <Text style={[typography.bodyBold, { color: '#FFF', marginLeft: 8 }]}>Stop and save</Text>
+            </PressableScale>
+          </View>
+        </View>
+      </Modal>
+
       {/* Camera Viewport */}
       <View style={[styles.cameraContainer, { backgroundColor: '#111' }]}>
-        {active ? (
+        {active && mode !== 'scanner' ? (
           <PoseDetectionAdapter
             engine="default"
             active={active}
@@ -466,7 +492,21 @@ export function EyeTrackingStudio() {
   );
 }
 
+function FullStat({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={{ flex: 1, alignItems: 'center' }}>
+      <Text style={{ color: '#FFF', fontSize: 20, fontWeight: '800' }}>{value}</Text>
+      <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11 }}>{label}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  full: { flex: 1, backgroundColor: '#000' },
+  fullTop: { position: 'absolute', top: 48, left: 0, right: 0, alignItems: 'center' },
+  fullPanel: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: 20, paddingBottom: 36, backgroundColor: 'rgba(0,0,0,0.55)' },
+  fullStats: { flexDirection: 'row' },
+  fullStop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 50, borderRadius: 16, marginTop: 14, backgroundColor: 'rgba(255,255,255,0.18)' },
   card: { padding: 16, marginTop: 12 },
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   pill: { paddingHorizontal: 8, paddingVertical: 4 },

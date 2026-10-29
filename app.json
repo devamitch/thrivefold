@@ -94,7 +94,10 @@
         {
           "microphonePermission": "Thrivefold uses the microphone only while you talk to the coach or do voice practice. Audio is processed on this phone and never saved.",
           "speechRecognitionPermission": "Thrivefold turns your speech into text for voice commands and voice practice.",
-          "androidSpeechServicePackages": ["com.google.android.as", "com.google.android.googlequicksearchbox"]
+          "androidSpeechServicePackages": [
+            "com.google.android.as",
+            "com.google.android.googlequicksearchbox"
+          ]
         }
       ],
       [
@@ -159,7 +162,8 @@
             "googleAppMeasurementOnDeviceConversion": true
           }
         }
-      ]
+      ],
+      "expo-audio"
     ],
     "experiments": {
       "tsconfigPaths": true,

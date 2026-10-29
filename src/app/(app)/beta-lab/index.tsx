@@ -90,6 +90,15 @@ const STUDIOS: StudioProduct[] = [
     badgeVariant: 'gold',
   },
   {
+    id: 'eye-games',
+    title: 'Eye Game',
+    subtitle: 'Follow the ball left and right with your eyes, blink rounds, scored with points',
+    tag: 'Game',
+    icon: 'eye-outline',
+    route: '/(app)/beta-lab/eye-games',
+    badgeVariant: 'gold',
+  },
+  {
     id: 'eye-pursuit',
     title: 'Eye Pursuit',
     subtitle: 'Follow a gliding dot with your eyes; scored from iris tracking',
@@ -122,7 +131,7 @@ const STUDIOS: StudioProduct[] = [
     subtitle: '33-joint skeleton tracking, joint angle telemetry & form score',
     tag: 'Full Body',
     icon: 'body-outline',
-    route: '/(app)/beta-lab/pose-coach',
+    route: '/(app)/health/pose-check',
     badgeVariant: 'beta',
   },
   {

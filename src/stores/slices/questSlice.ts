@@ -153,6 +153,11 @@ export interface QuestSlice {
    * objective accepts the workout as evidence. Standalone workouts never complete quests.
    */
   completeAssignmentWithWorkout: (assignmentId: string, facts: WorkoutFacts) => { title: string; xp: number } | null;
+  /**
+   * Pays a finished practice session (eye games, voice, breathing, hand games…) once: fixed XP
+   * plus a small score bonus, up to PRACTICE_REWARDS_PER_DAY a day. Never depends on health answers.
+   */
+  claimPracticeReward: (sessionKey: string, scoreBonus: number) => { awarded: boolean; xp: number };
   /** Pays a finished workout once: base XP, or ten times that with good camera-checked form. */
   claimWorkoutReward: (sessionId: string, form: WorkoutFormEvidence | null) => { awarded: boolean; xp: number; reason?: 'daily_limit' | 'duplicate' };
   /** Awards incremental XP and streak milestone bonuses for daily check-in once per date. */
@@ -654,6 +659,29 @@ export const createQuestSlice: StateCreator<RootState, [['zustand/persist', unkn
       if (!evidence) return null;
       const result = get().submitQuestEvidence(assignmentId, evidence);
       return result.success ? { title: task.title, xp: result.earnedXp } : null;
+    },
+
+    claimPracticeReward: (sessionKey, scoreBonus) => {
+      const state = get();
+      const date = today();
+      const key = `practice:${sessionKey}`;
+      if (state.rewardLedger.some((e) => e.key === key)) return { awarded: false, xp: 0 };
+      if (state.rewardLedger.filter((e) => e.kind === 'practice_reward' && e.gameDate === date).length >= 8) return { awarded: false, xp: 0 };
+      const xp = 10 + Math.max(0, Math.min(10, Math.round(scoreBonus)));
+      commit({
+        rewardLedger: appendLedger(state.rewardLedger, {
+          key,
+          kind: 'practice_reward',
+          xp,
+          diamonds: 0,
+          taskPoints: 5,
+          gameDate: date,
+          sourceId: sessionKey,
+          policyVersion: ECONOMY_VERSION,
+          createdAt: new Date().toISOString(),
+        }),
+      });
+      return { awarded: true, xp };
     },
 
     claimWorkoutReward: (sessionId, form) => {

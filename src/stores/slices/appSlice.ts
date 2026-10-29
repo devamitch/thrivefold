@@ -9,7 +9,7 @@ import { EMPTY_KOSH, type EmergencyContact, type KoshProfile } from '../../domai
 
 export type ThemeMode = 'system' | 'light' | 'dark';
 
-export type BetaSessionKind = 'eye_scan' | 'blink_bloom' | 'hand_grip' | 'finger_game' | 'breathing' | 'face_exercise' | 'voice_practice' | 'portrait_scan' | 'eye_pursuit';
+export type BetaSessionKind = 'eye_scan' | 'blink_bloom' | 'hand_grip' | 'finger_game' | 'breathing' | 'face_exercise' | 'voice_practice' | 'portrait_scan' | 'eye_pursuit' | 'eye_game';
 
 export interface BetaSession {
   id: string;

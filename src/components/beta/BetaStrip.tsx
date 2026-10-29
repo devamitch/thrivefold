@@ -12,13 +12,14 @@ import { PressableScale } from '../ui/PressableScale';
 
 const TILES: { title: string; sub: string; route: string; art: SanctuaryIllustrationKey }[] = [
   { title: 'Thrive Coach', sub: 'Talk or type', route: '/(app)/beta-lab/assistant', art: 'coachAssistant' },
+  { title: 'Eye game', sub: 'Look left, right, blink', route: '/(app)/beta-lab/eye-games', art: 'eyePursuit' },
   { title: 'Eye studio', sub: 'Blinks, distance', route: '/(app)/beta-lab/eye-tracking', art: 'eyeVision' },
   { title: 'Face & eyes', sub: 'Coached moves', route: '/(app)/beta-lab/face-exercises', art: 'faceExercises' },
   { title: 'Voice', sub: 'Hold, steady, clear', route: '/(app)/beta-lab/voice-practice', art: 'voicePractice' },
   { title: 'Body & style', sub: 'Glasses, posture', route: '/(app)/beta-lab/body-style', art: 'bodyStyle' },
   { title: 'Hand games', sub: 'Fingers, gestures', route: '/(app)/beta-lab/gesture-game', art: 'handGames' },
   { title: 'Breathing', sub: 'Paced, spoken', route: '/(app)/beta-lab/breathing', art: 'breathing' },
-  { title: 'Pose coach', sub: 'Reps and form', route: '/(app)/beta-lab/pose-coach', art: 'poseCoach' },
+  { title: 'Pose coach', sub: 'Reps and form', route: '/(app)/health/pose-check', art: 'poseCoach' },
 ];
 
 // Brass/gold for premium beta surfaces (matches the BETA badge).

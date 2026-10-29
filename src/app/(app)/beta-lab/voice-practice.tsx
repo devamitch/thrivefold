@@ -15,6 +15,7 @@ import { PHRASES, VOICED, longestPhonation, steadiness, wordAccuracy, wordsPerMi
 import { coachVoice } from '../../../services/ai/coachVoice';
 import { recordBetaSession } from '../../../services/beta/recordSession';
 import { hapticSuccess } from '../../../services/haptics';
+import { useLoudness } from '../../../services/voice/useLoudness';
 import { useVoiceInput } from '../../../services/voice/useVoiceInput';
 import type { BetaSessionKind } from '../../../stores/slices/appSlice';
 import { useTheme } from '../../../theme/useTheme';
@@ -49,21 +50,23 @@ export default function VoicePracticeScreen() {
   const firstVoiceAt = useRef<number | null>(null);
   const lastVoiceAt = useRef(0);
 
-  const voice = useVoiceInput(
-    (text) => heard.current.push(text),
-    (lv, at) => {
-      setLevel(lv);
-      samples.current.push({ level: lv, at });
-      if (lv > VOICED) {
-        firstVoiceAt.current ??= at;
-        lastVoiceAt.current = at;
-      }
-    },
-  );
-  const listening = voice.state === 'listening';
+  const onLevel = (lv: number, at: number) => {
+    setLevel(lv);
+    samples.current.push({ level: lv, at });
+    if (lv > VOICED) {
+      firstVoiceAt.current ??= at;
+      lastVoiceAt.current = at;
+    }
+  };
+  // Hold and steady use the phone's own microphone level (no speech service, works offline);
+  // only "say it clearly" needs speech-to-text.
+  const loud = useLoudness(onLevel);
+  const voice = useVoiceInput((text) => heard.current.push(text), onLevel);
+  const listening = loud.listening || voice.state === 'listening';
 
   const finish = useCallback(async () => {
     voice.stop();
+    void loud.stop();
     setLeft(0);
     // The recogniser delivers its final text just after stopping.
     if (drill === 'repeat') await new Promise((r) => setTimeout(r, 900));
@@ -96,7 +99,7 @@ export default function VoicePracticeScreen() {
     if (Object.keys(metrics).length > 1) {
       recordBetaSession({ kind: 'voice_practice', startedAt: startedAt.current, endedAt: Date.now(), metrics });
     }
-  }, [drill, phrase, voice]);
+  }, [drill, phrase, voice, loud]);
 
   useEffect(() => {
     if (!listening || left <= 0) return;
@@ -119,7 +122,7 @@ export default function VoicePracticeScreen() {
     // The coach explains first, then the microphone opens, so it does not hear itself.
     await coachVoice.speak(DRILLS[drill].how + (drill === 'repeat' ? ` The phrase is: ${phrase}.` : ''), { priority: 3, maxMs: 9000 });
     startedAt.current = Date.now();
-    const ok = await voice.start({ continuous: true, volume: true });
+    const ok = drill === 'repeat' ? await voice.start({ continuous: true, volume: true }) : await loud.start();
     if (ok) setLeft(DRILLS[drill].seconds);
   };
 
@@ -173,10 +176,12 @@ export default function VoicePracticeScreen() {
             <View style={[styles.fill, { width: `${meter * 100}%`, backgroundColor: drill === 'steady' && inBand ? colors.success : colors.primary }]} />
           </View>
           <Text style={[typography.caption, { color: colors.text.muted, marginTop: 4 }]}>
-            {listening ? `Listening · ${left}s` : voice.state === 'unavailable' ? 'Speech recognition is not available on this phone.' : 'Microphone off'}
+            {listening ? `Listening · ${left}s` : drill === 'repeat' && voice.state === 'unavailable' ? 'Speech recognition is not available on this phone.' : 'Microphone off'}
             {voice.partial ? ` · "${voice.partial}"` : ''}
           </Text>
-          {voice.error ? <Text style={[typography.caption, { color: colors.error, marginTop: 4 }]}>{voice.error}</Text> : null}
+          {(drill === 'repeat' ? voice.error : loud.error) ? (
+            <Text style={[typography.caption, { color: colors.error, marginTop: 4 }]}>{drill === 'repeat' ? voice.error : loud.error}</Text>
+          ) : null}
 
           <PressableScale
             onPress={() => void (listening ? finish() : start())}

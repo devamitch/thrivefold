@@ -20,7 +20,7 @@ const ENTRIES: Record<Section, { icon: React.ComponentProps<typeof BetaEntryCard
     { icon: 'happy-outline', title: 'Face & eye exercises', subtitle: 'Brows, smile, jaw, eye squeeze and gaze drills with the coach', route: '/(app)/beta-lab/face-exercises' },
   ],
   movement: [
-    { icon: 'body-outline', title: 'Live pose coach', subtitle: 'Skeleton tracking, joint angles and rep counting on this phone', route: '/(app)/beta-lab/pose-coach' },
+    { icon: 'body-outline', title: 'Live pose coach', subtitle: 'Skeleton tracking, joint angles and rep counting on this phone', route: '/(app)/health/pose-check' },
     { icon: 'hand-left-outline', title: 'Hand and grip exercises', subtitle: 'Grip reps counted from hand landmarks, with the coach counting', route: '/(app)/beta-lab/hand-gestures' },
     { icon: 'game-controller-outline', title: 'Finger Count Challenge', subtitle: 'A coach-voiced hand game for dexterity breaks', route: '/(app)/beta-lab/gesture-game' },
   ],

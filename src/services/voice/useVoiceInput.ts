@@ -52,7 +52,13 @@ export function useVoiceInput(onFinal?: (text: string) => void, onVolume?: (leve
       setState('idle');
       return;
     }
-    setError(e.error === 'not-allowed' ? 'Microphone access was not allowed.' : e.message || 'Listening stopped.');
+    setError(
+      e.error === 'not-allowed'
+        ? 'Microphone access was not allowed.'
+        : e.error === 'network' || /server|disconnect/i.test(e.message ?? '')
+          ? 'The speech service could not be reached. Check your connection, or download the offline speech pack in Android settings (Speech → Offline).'
+          : e.message || 'Listening stopped.',
+    );
     setState(e.error === 'not-allowed' ? 'denied' : 'error');
   });
 
@@ -71,17 +77,15 @@ export function useVoiceInput(onFinal?: (text: string) => void, onVolume?: (leve
     // The coach must not talk into its own microphone.
     coachVoice.stop();
     finals.current = [];
-    let onDevice = false;
-    try {
-      onDevice = ExpoSpeechRecognitionModule.supportsOnDeviceRecognition();
-    } catch {
-      onDevice = false;
-    }
+    // Requiring on-device recognition fails with "server disconnected" when the phone has no
+    // offline speech pack for the language; prefer offline but let the service fall back.
+    const onDevice = false;
     ExpoSpeechRecognitionModule.start({
       lang: opts.lang ?? 'en-IN',
       interimResults: true,
       continuous: opts.continuous ?? false,
       requiresOnDeviceRecognition: onDevice,
+      androidIntentOptions: { EXTRA_PREFER_OFFLINE: true },
       addsPunctuation: false,
       volumeChangeEventOptions: opts.volume ? { enabled: true, intervalMillis: 100 } : undefined,
     });

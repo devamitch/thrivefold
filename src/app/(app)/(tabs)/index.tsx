@@ -9,6 +9,7 @@ import { QuestSheet } from '../../../components/game/QuestSheet';
 import { AnalyticalMetricGrid } from '../../../components/home/AnalyticalMetricGrid';
 import { ProfileQuestionCard } from '../../../components/home/ProfileQuestionCard';
 import { BetaStrip } from '../../../components/beta/BetaStrip';
+import { BetaTodayCard } from '../../../components/beta/BetaTodayCard';
 import { AnalyticsDetailSheet } from '../../../components/home/AnalyticsDetailSheet';
 import { CalorieDetailSheet } from '../../../components/home/CalorieDetailSheet';
 import { DashboardHeader } from '../../../components/home/DashboardHeader';
@@ -662,6 +663,8 @@ export default function HomeScreen() {
           </Card>
         </View>
       ) : null}
+
+      <BetaTodayCard />
 
       <BetaStrip
         practiceLine={
