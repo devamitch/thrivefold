@@ -38,7 +38,7 @@ export function getSanctuaryIllustration(
       case 'yogaFlow':
         return AssetIllustrations.workoutYogaFlowMen;
       case 'hiitStrength':
-        return AssetIllustrations.workoutHiitStrengthMen;
+        return AssetIllustrations.workoutStrengthMen;
       case 'deskReset':
         return AssetIllustrations.workoutDeskResetMen;
       case 'meditation':
@@ -49,12 +49,8 @@ export function getSanctuaryIllustration(
         return AssetIllustrations.wellnessEyeVisionMen;
       case 'faceExercises':
         return AssetIllustrations.betaFaceExercisesMen;
-      case 'healthHub':
-        return AssetIllustrations.healthMen;
-      case 'breathing':
-        return AssetIllustrations.betaBreathing;
       case 'voicePractice':
-        return AssetIllustrations.betaVoicePractice;
+        return AssetIllustrations.betaVoicePracticeMen;
       default:
         break;
     }

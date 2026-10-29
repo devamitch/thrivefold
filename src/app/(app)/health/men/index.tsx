@@ -69,7 +69,7 @@ export default function MenHealthScreen() {
 
         <Card style={{ marginBottom: spacing.md, padding: spacing.base }}>
           <View style={styles.imageWrap}>
-            <Image source={require('../../../../../assets/illustrations/workout-hiit-strength-men.jpg')} style={styles.cardImage} contentFit="cover" />
+            <Image source={require('../../../../../assets/illustrations/workout-strength-men.jpg')} style={styles.cardImage} contentFit="cover" />
           </View>
           <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 14 }]}>Strength training</Text>
           <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>
