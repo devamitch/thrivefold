@@ -372,7 +372,9 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
                 },
               ]}
             >
-              <AnimatedThrivefoldMark size={CENTER_SIZE - 8} entrance={false} mood={mood} personality />
+              <View pointerEvents="none">
+                <AnimatedThrivefoldMark size={CENTER_SIZE - 10} entrance={false} mood={mood} personality />
+              </View>
             </View>
 
             <Animated.Text

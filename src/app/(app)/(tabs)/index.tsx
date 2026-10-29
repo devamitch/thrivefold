@@ -91,7 +91,7 @@ const FAMILY_META: Record<QuestFamily, { label: string; icon: keyof typeof Ionic
 
 const greeting = () => {
   const h = new Date().getHours();
-  if (h < 5) return 'Still up?';
+  if (h < 5) return 'Hello';
   if (h < 12) return 'Good morning';
   if (h < 17) return 'Good afternoon';
   if (h < 22) return 'Good evening';

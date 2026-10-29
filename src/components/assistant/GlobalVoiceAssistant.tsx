@@ -18,6 +18,8 @@ import { hapticMedium, hapticSelection } from '../../services/haptics';
 import { globalVoiceController, type VoiceAssistantState } from '../../services/voice/globalVoiceController';
 import { useTheme } from '../../theme/useTheme';
 import { PressableScale } from '../ui/PressableScale';
+import { AnimatedThrivefoldMark } from '../brand/AnimatedThrivefoldMark';
+import { AnimatedThrivefoldMark as ThriveBuddy } from '../brand/thrive/AnimatedThrivefoldMark';
 import { BrainSetupCard } from './BrainSetupCard';
 
 interface Turn {
@@ -142,6 +144,14 @@ export function GlobalVoiceAssistant() {
   if (!visible) return null;
   const screen = resolveScreenCapability(pathname);
   const listening = voiceState === 'listening';
+  const mood =
+    listening
+      ? ('listening' as const)
+      : voiceState === 'reasoning' || voiceState === 'transcribing'
+        ? ('thinking' as const)
+        : voiceState === 'speaking'
+          ? ('speaking' as const)
+          : ('idle' as const);
 
   return (
     <Modal visible animationType="slide" transparent onRequestClose={close} statusBarTranslucent>
@@ -155,8 +165,8 @@ export function GlobalVoiceAssistant() {
         <View style={[styles.sheet, { backgroundColor: colors.background }]}>
           <View style={[styles.grabber, { backgroundColor: colors.surface3 }]} />
           <View style={[styles.header, { paddingHorizontal: spacing.base }]}>
-            <Animated.View style={[styles.miniOrb, { backgroundColor: colors.primary }, orbStyle]}>
-              <Ionicons name={listening ? 'mic' : 'sparkles'} size={18} color={colors.text.inverse} />
+            <Animated.View style={[styles.miniOrb, { backgroundColor: colors.surface }, orbStyle]}>
+              <AnimatedThrivefoldMark size={34} entrance={false} mood={mood} />
             </Animated.View>
             <View style={styles.flex}>
               <Text style={[typography.subheading, { color: colors.text.primary }]}>Thrive Coach</Text>
@@ -184,6 +194,10 @@ export function GlobalVoiceAssistant() {
             <BrainSetupCard compact={turns.length > 0} />
             {turns.length === 0 && !partial ? (
               <View style={styles.empty}>
+                {/* The whole character, never cropped, reacting to the conversation. */}
+                <View style={styles.buddy} pointerEvents="none">
+                  <ThriveBuddy size={170} entrance mood={mood} />
+                </View>
                 <Text style={[typography.body, { color: colors.text.secondary }]}>
                   Talk naturally. Ask a question, or say things like &quot;log two glasses of water and then open
                   sleep&quot;, &quot;export all my metrics&quot; or &quot;remember that I train at 7 am&quot;.
@@ -273,8 +287,9 @@ const styles = StyleSheet.create({
   sheet: { height: '78%', borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingBottom: 20 },
   grabber: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, marginTop: 10 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 12, paddingBottom: 12 },
-  miniOrb: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  miniOrb: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   empty: { paddingTop: 8 },
+  buddy: { alignItems: 'center', marginBottom: 4 },
   chipsTitle: { marginTop: 20, marginBottom: 8, letterSpacing: 0.6 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1 },

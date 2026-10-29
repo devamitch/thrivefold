@@ -4,6 +4,7 @@ import * as Notifications from 'expo-notifications';
 import { coachVoice } from '../../services/ai/coachVoice';
 import { applyKosh, pullProfile, pushProfile } from '../../services/account/profileSync';
 import { syncProgress } from '../../services/account/progressSync';
+import { brainReady, getSetupState, setUpBrain } from '../../services/ai/modelSetup';
 import React, { useEffect, useRef } from 'react';
 import { AppState, StyleSheet, View } from 'react-native';
 import { Redirect, Stack, usePathname, useRouter, type Href } from 'expo-router';
@@ -108,6 +109,17 @@ export default function AppLayout() {
       unsub();
       if (timer) clearTimeout(timer);
     };
+  }, []);
+
+  // The offline brain downloads quietly in the background once, so Thrive can answer without
+  // internet. Progress shows on the coach sheet and the On-device AI screen; nothing pops up.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      void brainReady().then((ready) => {
+        if (!ready && getSetupState().phase === 'idle') void setUpBrain();
+      });
+    }, 15_000);
+    return () => clearTimeout(t);
   }, []);
 
   // Tapping a reminder (medicine, appointment, trip check-in) opens its screen.
