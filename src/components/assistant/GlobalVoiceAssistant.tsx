@@ -1,379 +1,262 @@
 /**
- * Global Voice Assistant Overlay Sheet.
+ * The Thrive Coach conversation sheet, opened by holding the tab-bar orb.
  *
- * Implements the unified interactive assistant surface:
- * - Real-time conversational state (listening, reasoning, speaking)
- * - Animated voice activity orb
- * - Streaming transcript & coach response
- * - Suggested contextual prompt chips based on active screen
- * - Action buttons for navigated tools
- * - Keyboard / text input fallback
- * - Styled strictly with Thrivefold design tokens & typography
+ * It listens, answers out loud and in text, and keeps listening until closed, so a person can
+ * talk back and forth. Every exchange stays visible as a conversation. Requests that open a
+ * screen close the sheet and go there. Typing works too.
  */
 
 import { Ionicons } from '@expo/vector-icons';
-import { usePathname, router } from 'expo-router';
-import React, { useEffect, useState, useCallback, useRef } from 'react';
-import {
-  Modal,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  Easing,
-} from 'react-native-reanimated';
+import { router, usePathname, type Href } from 'expo-router';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 
-import { useTheme } from '../../theme/useTheme';
-import { PressableScale } from '../ui/PressableScale';
-import {
-  globalVoiceController,
-  type VoiceAssistantState,
-} from '../../services/voice/globalVoiceController';
 import { resolveScreenCapability } from '../../domain/assistant/screenRegistry';
 import type { ToolExecutionResult } from '../../domain/assistant/toolRegistry';
 import { hapticMedium, hapticSelection } from '../../services/haptics';
+import { globalVoiceController, type VoiceAssistantState } from '../../services/voice/globalVoiceController';
+import { useTheme } from '../../theme/useTheme';
+import { PressableScale } from '../ui/PressableScale';
+
+interface Turn {
+  id: number;
+  who: 'you' | 'coach';
+  text: string;
+  route?: string;
+}
+
+const STATUS: Record<VoiceAssistantState, string> = {
+  idle: 'Tap the microphone or type',
+  requesting_permission: 'Allow the microphone to talk',
+  listening: 'Listening…',
+  transcribing: 'Got it…',
+  reasoning: 'Thinking…',
+  speaking: 'Speaking… just talk to interrupt',
+  error: 'Voice is not available',
+};
 
 export function GlobalVoiceAssistant() {
-  const { colors, typography } = useTheme();
+  const { colors, typography, spacing } = useTheme();
   const pathname = usePathname();
-
   const [visible, setVisible] = useState(false);
   const [voiceState, setVoiceState] = useState<VoiceAssistantState>('idle');
-  const [partialTranscript, setPartialTranscript] = useState('');
-  const [spokenReply, setSpokenReply] = useState('');
-  const [lastToolResult, setLastToolResult] = useState<ToolExecutionResult | null>(null);
-  const [manualText, setManualText] = useState('');
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [partial, setPartial] = useState('');
+  const [turns, setTurns] = useState<Turn[]>([]);
+  const [typed, setTyped] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const nextId = useRef(1);
+  const scroll = useRef<ScrollView>(null);
 
-  // Animation pulse for listening / reasoning
   const pulse = useSharedValue(1);
-
   useEffect(() => {
-    if (voiceState === 'listening' || voiceState === 'reasoning') {
-      pulse.value = withRepeat(
-        withTiming(1.2, { duration: 800, easing: Easing.inOut(Easing.ease) }),
-        -1,
-        true
-      );
-    } else {
-      pulse.value = withTiming(1, { duration: 300 });
-    }
+    pulse.value =
+      voiceState === 'listening' || voiceState === 'reasoning'
+        ? withRepeat(withTiming(1.15, { duration: 750, easing: Easing.inOut(Easing.ease) }), -1, true)
+        : withTiming(1, { duration: 250 });
   }, [voiceState, pulse]);
+  const orbStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulse.value }] }));
 
-  const animatedOrbStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: pulse.value }],
-  }));
-
-  // Subscribe to controller updates
-  useEffect(() => {
-    const unsub = globalVoiceController.subscribe({
-      onStateChange: (state) => {
-        setVoiceState(state);
-      },
-      onPartialTranscript: (text) => {
-        setPartialTranscript(text);
-        setErrorMessage(null);
-      },
-      onFinalTranscript: (text) => {
-        setPartialTranscript(text);
-      },
-      onAssistantReply: (reply, toolResult) => {
-        setSpokenReply(reply);
-        if (toolResult) {
-          setLastToolResult(toolResult);
-        }
-      },
-      onError: (err) => {
-        setErrorMessage(err);
-      },
-    });
-
-    return () => unsub();
-  }, []);
-
-  // Sync open state with controller
-  useEffect(() => {
-    const checkInterval = setInterval(() => {
-      const open = globalVoiceController.isAssistantOpen();
-      if (open !== visible) {
-        setVisible(open);
-        if (open) {
-          setErrorMessage(null);
-        }
-      }
-    }, 150);
-
-    return () => clearInterval(checkInterval);
-  }, [visible]);
-
-  const handleClose = useCallback(() => {
+  const close = useCallback(() => {
     hapticSelection();
     globalVoiceController.close();
     setVisible(false);
   }, []);
 
-  const handleToggleMic = useCallback(() => {
-    hapticMedium();
-    if (voiceState === 'listening') {
-      globalVoiceController.stopListening();
-    } else {
-      void globalVoiceController.startListening();
-    }
-  }, [voiceState]);
-
-  const handleManualSubmit = useCallback(() => {
-    const text = manualText.trim();
-    if (!text) return;
-    hapticSelection();
-    setManualText('');
-    setPartialTranscript(text);
-    void globalVoiceController.handleFinalUtterance(text);
-  }, [manualText]);
-
-  const handleChipPress = useCallback((command: string) => {
-    hapticSelection();
-    setPartialTranscript(command);
-    void globalVoiceController.handleFinalUtterance(command);
+  useEffect(() => {
+    const unsub = globalVoiceController.subscribe({
+      onStateChange: setVoiceState,
+      onPartialTranscript: (text) => {
+        setPartial(text);
+        setError(null);
+      },
+      onFinalTranscript: (text) => {
+        setPartial('');
+        setTurns((t) => [...t, { id: nextId.current++, who: 'you' as const, text }].slice(-30));
+      },
+      onAssistantReply: (reply, tool?: ToolExecutionResult) => {
+        setTurns((t) => {
+          const last = t[t.length - 1];
+          const route = tool?.routeToOpen;
+          // Streaming tokens update the coach's current reply instead of adding a new one.
+          if (last?.who === 'coach' && !last.route && reply.startsWith(last.text.slice(0, 12))) {
+            return [...t.slice(0, -1), { ...last, text: reply, route }];
+          }
+          return [...t, { id: nextId.current++, who: 'coach' as const, text: reply, route }].slice(-30);
+        });
+        if (tool?.autoNavigate && tool.routeToOpen) {
+          // The screen was opened by the tool; get out of the way so the person sees it.
+          setTimeout(() => {
+            globalVoiceController.close();
+            setVisible(false);
+          }, 900);
+        }
+      },
+      onError: (e) => setError(e),
+    });
+    return () => {
+      unsub();
+    };
   }, []);
 
-  const handleOpenRoute = useCallback((route: string) => {
-    hapticMedium();
-    handleClose();
-    router.push(route as any);
-  }, [handleClose]);
+  // The controller opens from the orb; follow it.
+  useEffect(() => {
+    const iv = setInterval(() => {
+      const open = globalVoiceController.isAssistantOpen();
+      setVisible((v) => {
+        if (open && !v) {
+          setError(null);
+          setTurns([]);
+        }
+        return open;
+      });
+    }, 150);
+    return () => clearInterval(iv);
+  }, []);
 
-  if (!visible) return null;
+  useEffect(() => {
+    setTimeout(() => scroll.current?.scrollToEnd({ animated: true }), 50);
+  }, [turns, partial]);
 
-  const screenCap = resolveScreenCapability(pathname);
-
-  const getStatusText = () => {
-    switch (voiceState) {
-      case 'requesting_permission':
-        return 'Requesting microphone permission…';
-      case 'listening':
-        return 'Listening… speak naturally';
-      case 'transcribing':
-        return 'Processing your words…';
-      case 'reasoning':
-        return 'Thinking…';
-      case 'speaking':
-        return 'Thrive Coach is speaking…';
-      case 'error':
-        return errorMessage || 'Voice unavailable';
-      default:
-        return 'Tap microphone to speak or type below';
-    }
+  const send = (text: string) => {
+    const t = text.trim();
+    if (!t) return;
+    hapticSelection();
+    setTyped('');
+    setTurns((all) => [...all, { id: nextId.current++, who: 'you' as const, text: t }].slice(-30));
+    void globalVoiceController.handleFinalUtterance(t);
   };
 
+  const toggleMic = () => {
+    hapticMedium();
+    if (voiceState === 'listening') globalVoiceController.stopListening();
+    else void globalVoiceController.startListening();
+  };
+
+  const go = (route: string) => {
+    close();
+    router.push(route as Href);
+  };
+
+  if (!visible) return null;
+  const screen = resolveScreenCapability(pathname);
+  const listening = voiceState === 'listening';
+
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={handleClose}
-    >
+    <Modal visible animationType="slide" transparent onRequestClose={close} statusBarTranslucent>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.backdrop}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={[styles.backdrop, { backgroundColor: colors.scrim }]}
       >
-        <View style={[styles.sheet, { backgroundColor: colors.surface1 }]}>
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={styles.headerLeft}>
-              <View style={[styles.statusDot, { backgroundColor: colors.dockActive }]} />
+        <PressableScale style={styles.dismissArea} onPress={close} accessibilityLabel="Close the coach" scaleTo={1}>
+          <View />
+        </PressableScale>
+        <View style={[styles.sheet, { backgroundColor: colors.background }]}>
+          <View style={[styles.grabber, { backgroundColor: colors.surface3 }]} />
+          <View style={[styles.header, { paddingHorizontal: spacing.base }]}>
+            <Animated.View style={[styles.miniOrb, { backgroundColor: colors.primary }, orbStyle]}>
+              <Ionicons name={listening ? 'mic' : 'sparkles'} size={18} color={colors.text.inverse} />
+            </Animated.View>
+            <View style={styles.flex}>
+              <Text style={[typography.subheading, { color: colors.text.primary }]}>Thrive Coach</Text>
               <Text
-                style={[
-                  styles.title,
-                  { color: colors.text.primary, fontFamily: typography.label.fontFamily },
-                ]}
+                style={[typography.caption, { color: error ? colors.error : colors.text.secondary }]}
+                numberOfLines={1}
               >
-                Thrive Coach
+                {error ?? STATUS[voiceState]}
               </Text>
             </View>
-
-            <PressableScale
-              accessibilityRole="button"
-              accessibilityLabel="Close voice assistant"
-              onPress={handleClose}
-              style={styles.closeBtn}
-            >
-              <Ionicons name="close" size={22} color={colors.text.secondary} />
+            <PressableScale onPress={() => go('/(app)/settings/memories')} hitSlop={8} accessibilityLabel="Memory">
+              <Ionicons name="library-outline" size={22} color={colors.text.secondary} />
+            </PressableScale>
+            <PressableScale onPress={close} hitSlop={8} accessibilityLabel="Close" style={{ marginLeft: 16 }}>
+              <Ionicons name="close" size={24} color={colors.text.secondary} />
             </PressableScale>
           </View>
 
           <ScrollView
-            style={styles.content}
-            contentContainerStyle={styles.contentContainer}
+            ref={scroll}
+            style={styles.flex}
+            contentContainerStyle={{ paddingHorizontal: spacing.base, paddingBottom: spacing.md }}
             keyboardShouldPersistTaps="handled"
           >
-            {/* Center Animated Voice Orb */}
-            <View style={styles.orbContainer}>
-              <Animated.View
-                style={[
-                  styles.orb,
-                  { backgroundColor: colors.dockActive },
-                  animatedOrbStyle,
-                ]}
-              >
-                <Ionicons
-                  name={voiceState === 'listening' ? 'mic' : 'sparkles'}
-                  size={32}
-                  color={colors.dock || '#121212'}
-                />
-              </Animated.View>
-              <Text
-                style={[
-                  styles.statusLabel,
-                  { color: colors.text.secondary, fontFamily: typography.body.fontFamily },
-                ]}
-              >
-                {getStatusText()}
-              </Text>
-            </View>
-
-            {/* User Utterance Box */}
-            {partialTranscript ? (
-              <View style={[styles.bubble, styles.userBubble, { backgroundColor: colors.surface }]}>
-                <Text
-                  style={[
-                    styles.userText,
-                    { color: colors.text.primary, fontFamily: typography.body.fontFamily },
-                  ]}
-                >
-                  "{partialTranscript}"
+            {turns.length === 0 && !partial ? (
+              <View style={styles.empty}>
+                <Text style={[typography.body, { color: colors.text.secondary }]}>
+                  Talk naturally. Ask a question, or say things like &quot;log two glasses of water and then open
+                  sleep&quot;, &quot;export all my metrics&quot; or &quot;remember that I train at 7 am&quot;.
                 </Text>
+                <Text style={[typography.captionBold, styles.chipsTitle, { color: colors.text.muted }]}>
+                  TRY ON {screen.title.toUpperCase()}
+                </Text>
+                <View style={styles.chips}>
+                  {screen.suggestedChips.map((c) => (
+                    <PressableScale
+                      key={c.command}
+                      onPress={() => send(c.command)}
+                      style={[styles.chip, { backgroundColor: colors.surface, borderColor: colors.surface2 }]}
+                    >
+                      <Text style={[typography.caption, { color: colors.text.primary }]}>{c.label}</Text>
+                    </PressableScale>
+                  ))}
+                </View>
               </View>
             ) : null}
 
-            {/* Coach Spoken Response Box */}
-            {spokenReply ? (
+            {turns.map((t) => (
               <View
+                key={t.id}
                 style={[
                   styles.bubble,
-                  styles.coachBubble,
-                  { backgroundColor: colors.surface, borderColor: colors.dockActive },
+                  t.who === 'you'
+                    ? [styles.mine, { backgroundColor: colors.primary }]
+                    : [styles.theirs, { backgroundColor: colors.surface }],
                 ]}
               >
-                <Text
-                  style={[
-                    styles.coachText,
-                    { color: colors.text.primary, fontFamily: typography.body.fontFamily },
-                  ]}
-                >
-                  {spokenReply}
+                <Text style={[typography.body, { color: t.who === 'you' ? colors.text.inverse : colors.text.primary }]}>
+                  {t.text}
                 </Text>
-
-                {/* If tool generated a route to open */}
-                {lastToolResult?.routeToOpen ? (
-                  <PressableScale
-                    accessibilityRole="button"
-                    style={[styles.actionBtn, { backgroundColor: colors.dockActive }]}
-                    onPress={() => handleOpenRoute(lastToolResult.routeToOpen!)}
-                  >
-                    <Text
-                      style={[
-                        styles.actionBtnText,
-                        { color: colors.dock, fontFamily: typography.label.fontFamily },
-                      ]}
-                    >
-                      Open {lastToolResult.message.includes('Opened') ? 'Screen' : 'Action'}
-                    </Text>
-                    <Ionicons name="arrow-forward" size={16} color={colors.dock} />
+                {t.route ? (
+                  <PressableScale onPress={() => go(t.route!)} style={styles.openRow} accessibilityRole="button">
+                    <Text style={[typography.captionBold, { color: colors.primary }]}>Open</Text>
+                    <Ionicons name="arrow-forward" size={14} color={colors.primary} />
                   </PressableScale>
                 ) : null}
               </View>
-            ) : null}
-
-            {/* Suggested Contextual Chips */}
-            <View style={styles.chipsSection}>
-              <Text
-                style={[
-                  styles.chipsSectionTitle,
-                  { color: colors.text.secondary, fontFamily: typography.label.fontFamily },
-                ]}
-              >
-                SUGGESTIONS FOR {screenCap.title.toUpperCase()}
-              </Text>
-              <View style={styles.chipsRow}>
-                {screenCap.suggestedChips.map((chip, idx) => (
-                  <PressableScale
-                    key={idx}
-                    accessibilityRole="button"
-                    style={[styles.chip, { backgroundColor: colors.surface, borderColor: colors.border }]}
-                    onPress={() => handleChipPress(chip.command)}
-                  >
-                    <Text
-                      style={[
-                        styles.chipText,
-                        { color: colors.text.primary, fontFamily: typography.body.fontFamily },
-                      ]}
-                    >
-                      {chip.label}
-                    </Text>
-                  </PressableScale>
-                ))}
+            ))}
+            {partial ? (
+              <View style={[styles.bubble, styles.mine, { backgroundColor: colors.primaryAlpha }]}>
+                <Text style={[typography.body, { color: colors.text.primary }]}>{partial}</Text>
               </View>
-            </View>
+            ) : null}
           </ScrollView>
 
-          {/* Footer Controls: Text input + Mic Button */}
-          <View style={[styles.footer, { borderTopColor: colors.border }]}>
+          <View style={[styles.footer, { paddingHorizontal: spacing.base, borderTopColor: colors.surface2 }]}>
             <TextInput
               style={[
+                typography.body,
                 styles.input,
-                {
-                  backgroundColor: colors.surface,
-                  color: colors.text.primary,
-                  fontFamily: typography.body.fontFamily,
-                  borderColor: colors.border,
-                },
+                { backgroundColor: colors.surface, color: colors.text.primary, borderColor: colors.surface2 },
               ]}
-              placeholder="Ask coach anything or type command…"
-              placeholderTextColor={colors.text.secondary}
-              value={manualText}
-              onChangeText={setManualText}
-              onSubmitEditing={handleManualSubmit}
+              placeholder="Type to the coach"
+              placeholderTextColor={colors.text.muted}
+              value={typed}
+              onChangeText={setTyped}
+              onSubmitEditing={() => send(typed)}
               returnKeyType="send"
             />
-
-            {manualText.trim() ? (
-              <PressableScale
-                accessibilityRole="button"
-                accessibilityLabel="Send text query"
-                style={[styles.micBtn, { backgroundColor: colors.dockActive }]}
-                onPress={handleManualSubmit}
-              >
-                <Ionicons name="send" size={20} color={colors.dock} />
-              </PressableScale>
-            ) : (
-              <PressableScale
-                accessibilityRole="button"
-                accessibilityLabel="Toggle microphone"
-                style={[
-                  styles.micBtn,
-                  {
-                    backgroundColor:
-                      voiceState === 'listening' ? '#EF4444' : colors.dockActive,
-                  },
-                ]}
-                onPress={handleToggleMic}
-              >
-                <Ionicons
-                  name={voiceState === 'listening' ? 'stop' : 'mic'}
-                  size={22}
-                  color={colors.dock}
-                />
-              </PressableScale>
-            )}
+            <PressableScale
+              accessibilityRole="button"
+              accessibilityLabel={typed.trim() ? 'Send' : listening ? 'Stop listening' : 'Talk'}
+              onPress={typed.trim() ? () => send(typed) : toggleMic}
+              style={[styles.mic, { backgroundColor: listening ? colors.error : colors.primary }]}
+            >
+              <Ionicons
+                name={typed.trim() ? 'send' : listening ? 'stop' : 'mic'}
+                size={22}
+                color={colors.text.inverse}
+              />
+            </PressableScale>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -382,152 +265,28 @@ export function GlobalVoiceAssistant() {
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    maxHeight: '85%',
-    minHeight: '55%',
-    paddingBottom: 24,
-  },
-  header: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 12,
-  },
-  headerLeft: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  statusDot: {
-    borderRadius: 4,
-    height: 8,
-    width: 8,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  closeBtn: {
-    padding: 6,
-  },
-  content: {
-    flex: 1,
-  },
-  contentContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-  },
-  orbContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginVertical: 16,
-  },
-  orb: {
-    alignItems: 'center',
-    borderRadius: 35,
-    height: 70,
-    justifyContent: 'center',
-    width: 70,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
-  statusLabel: {
-    fontSize: 14,
-    marginTop: 12,
-    textAlign: 'center',
-  },
-  bubble: {
-    borderRadius: 16,
-    marginVertical: 6,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  userBubble: {
-    alignSelf: 'flex-end',
-    maxWidth: '85%',
-  },
-  userText: {
-    fontSize: 15,
-    fontStyle: 'italic',
-  },
-  coachBubble: {
-    alignSelf: 'flex-start',
-    borderWidth: 1,
-    maxWidth: '92%',
-  },
-  coachText: {
-    fontSize: 15,
-    lineHeight: 22,
-  },
-  actionBtn: {
-    alignItems: 'center',
-    borderRadius: 12,
-    flexDirection: 'row',
-    gap: 6,
-    marginTop: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    alignSelf: 'flex-start',
-  },
-  actionBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  chipsSection: {
-    marginTop: 18,
-  },
-  chipsSectionTitle: {
-    fontSize: 11,
-    letterSpacing: 0.8,
-    marginBottom: 8,
-  },
-  chipsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  chip: {
-    borderRadius: 20,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-  },
-  chipText: {
-    fontSize: 13,
-  },
+  flex: { flex: 1 },
+  backdrop: { flex: 1, justifyContent: 'flex-end' },
+  dismissArea: { flex: 1 },
+  sheet: { height: '78%', borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingBottom: 20 },
+  grabber: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, marginTop: 10 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 12, paddingBottom: 12 },
+  miniOrb: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  empty: { paddingTop: 8 },
+  chipsTitle: { marginTop: 20, marginBottom: 8, letterSpacing: 0.6 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1 },
+  bubble: { maxWidth: '86%', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 18, marginTop: 8 },
+  mine: { alignSelf: 'flex-end', borderBottomRightRadius: 6 },
+  theirs: { alignSelf: 'flex-start', borderBottomLeftRadius: 6 },
+  openRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8 },
   footer: {
-    alignItems: 'center',
-    borderTopWidth: 1,
     flexDirection: 'row',
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingTop: 12,
-  },
-  input: {
-    borderRadius: 20,
-    borderWidth: 1,
-    flex: 1,
-    fontSize: 14,
-    height: 44,
-    paddingHorizontal: 16,
-  },
-  micBtn: {
     alignItems: 'center',
-    borderRadius: 22,
-    height: 44,
-    justifyContent: 'center',
-    width: 44,
+    gap: 10,
+    paddingTop: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
+  input: { flex: 1, height: 48, borderRadius: 24, paddingHorizontal: 18, borderWidth: 1 },
+  mic: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
 });

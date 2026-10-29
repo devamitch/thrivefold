@@ -274,17 +274,17 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
     [navigation],
   );
 
+  // The orb is the coach: tap to talk (it keeps listening until closed). Hold for the check-in.
   const handleOrbPress = useCallback(() => {
     hapticMedium();
-    // Navigate to check-in or quick action modal
-    router.push('/(app)/check-in' as any);
-  }, []);
+    const name = state.routes[state.index]?.name;
+    void globalVoiceController.open(!name || name === 'index' ? '/(app)/(tabs)' : `/(app)/(tabs)/${name}`);
+  }, [state]);
 
   const handleOrbLongPress = useCallback(() => {
     hapticMedium();
-    const activeRouteName = state.routes[state.index]?.name || '/(app)/(tabs)';
-    void globalVoiceController.open(activeRouteName);
-  }, [state]);
+    router.push('/(app)/check-in' as any);
+  }, []);
 
   const renderTab = (route: (typeof routes)[number], index: number) => {
     const meta = experienceIcons.tabs[route.name as keyof typeof experienceIcons.tabs];
@@ -338,7 +338,7 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
         <Animated.View pointerEvents="box-none" style={[styles.centerWrap, orbPress]}>
           <PressableScale
             accessibilityRole="button"
-            accessibilityLabel="Thrive: start today's check-in (hold for Voice Coach)"
+            accessibilityLabel="Talk to Thrive Coach (hold for today's check-in)"
             testID="tab-action-orb"
             hitSlop={6}
             onPressIn={() => {
