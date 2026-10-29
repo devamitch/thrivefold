@@ -141,8 +141,8 @@ export class EyeTrackerSession {
         gaze: 'unknown',
         strainLevel: 'low',
         lastBlinkAt: this.lastBlinkAt,
-        distanceCm: 42,
-        gazeAngleDeg: 18,
+        distanceCm: 0, // unknown until a face is seen; screens show a dash
+        gazeAngleDeg: 0,
         isTooClose: false,
         harmonZone: 'optimal',
         fatigueScore: 90,

@@ -157,7 +157,8 @@ describe('BlinkQuest Eye Metrics & Ergonomics Engine', () => {
       const state = session.processFace(undefined);
       expect(state.isOpen).toBe(true);
       expect(state.blinkCount).toBe(0);
-      expect(state.distanceCm).toBe(42);
+      expect(state.tracked).toBe(false);
+      expect(state.distanceCm).toBe(0);
       expect(state.harmonZone).toBe('optimal');
       expect(state.batteryLevel).toBeGreaterThan(0);
     });
