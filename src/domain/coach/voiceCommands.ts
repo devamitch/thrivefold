@@ -23,86 +23,123 @@ interface CommandPattern {
 const COMMAND_PATTERNS: CommandPattern[] = [
   {
     command: 'toggle_video',
-    keywords: ['video', 'demo', 'tutorial'],
+    keywords: ['video', 'demo', 'tutorial', 'toggle video', 'pause video'],
     phrases: [
-      /\b(?:toggle\s+video|pause\s+video|play\s+video|show\s+video|hide\s+video)\b/i,
-      /\b(?:demo\s+video|watch\s+demo)\b/i,
+      /^(?:toggle\s+video|pause\s+video|play\s+video|show\s+video|hide\s+video)$/i,
+      /^(?:demo\s+video|watch\s+demo|video\s+toggle|toggle\s+demo)$/i,
     ],
   },
   {
     command: 'add_rest',
-    keywords: ['rest', 'more time', 'thirty seconds', 'break'],
+    keywords: ['add rest', 'more rest', 'more time', 'thirty seconds', '30 seconds', 'break'],
     phrases: [
-      /\b(?:add\s+rest|more\s+rest|more\s+time|need\s+a\s+break)\b/i,
-      /\b(?:thirty\s+seconds|30\s+seconds|give\s+me\s+time)\b/i,
+      /^(?:add\s+rest|more\s+rest|more\s+time|need\s+a\s+break)$/i,
+      /^(?:give\s+me\s+)?(?:thirty|30)\s+seconds$/i,
+      /^(?:extra\s+rest|give\s+me\s+time)$/i,
     ],
   },
   {
     command: 'previous',
-    keywords: ['previous', 'go back', 'back', 'redo'],
+    keywords: ['previous', 'go back', 'step back', 'redo', 'last exercise'],
     phrases: [
-      /\b(?:previous|go\s+back|step\s+back|redo)\b/i,
-      /\b(?:last\s+exercise|go\s+to\s+last)\b/i,
+      /^(?:previous(?:\s+exercise)?|go\s+back|step\s+back|redo|last\s+exercise)$/i,
     ],
   },
   {
     command: 'pause',
     keywords: ['pause', 'stop', 'freeze', 'hold on', 'wait'],
     phrases: [
-      /\b(?:pause|stop|freeze|hold\s+on|wait)\b/i,
-      /\b(?:take\s+a\s+break|hold\s+up)\b/i,
+      /^(?:pause(?:\s+(?:workout|session|exercise))?|hold\s+on|wait|take\s+a\s+break|freeze)$/i,
+      /^stop(?:\s+(?:workout|session|exercise))?$/i,
     ],
   },
   {
     command: 'resume',
     keywords: ['resume', 'continue', 'play', 'start', 'go', 'keep going'],
     phrases: [
-      /\b(?:resume|continue|start|keep\s+going|let'?s\s+go)\b/i,
-      /\b(?:ready|i'?m\s+ready|unpause)\b/i,
+      /^(?:resume(?:\s+(?:workout|session))?|continue|keep\s+going|let'?s\s+go|unpause)$/i,
+      /^(?:i'?m\s+ready|ready|start(?:\s+(?:set|workout))?)$/i,
     ],
   },
   {
     command: 'next_set',
-    keywords: ['next', 'finish', 'done', 'skip', 'complete'],
+    keywords: ['next', 'finish', 'done', 'skip', 'complete', 'next set'],
     phrases: [
-      /\b(?:next|finish|done|skip|complete)\b/i,
-      /\b(?:next\s+set|skip\s+rest|finished|i'?m\s+done)\b/i,
+      /^(?:next(?:\s+set)?|skip\s+rest|finished|i'?m\s+done|done|complete(?:\s+set)?|finish(?:\s+set)?)$/i,
     ],
   },
   {
     command: 'help',
-    keywords: ['help', 'coach', 'commands', 'what can i say'],
+    keywords: ['help', 'commands', 'what can i say'],
     phrases: [
-      /\b(?:help|commands|what\s+can\s+i\s+say|how\s+to\s+use)\b/i,
-      /\b(?:hey\s+coach|coach\s+help)\b/i,
+      /^(?:help|commands|what\s+can\s+i\s+say|how\s+to\s+use|coach\s+help)$/i,
     ],
   },
 ];
 
+export interface ParseVoiceCommandOptions {
+  /**
+   * Only commands present in this allowlist will be returned.
+   * Useful to restrict commands based on workout phase (e.g. no set-complete during positioning).
+   */
+  allowedCommands?: VoiceCommand[];
+}
+
 /**
  * Parses user speech into a recognized VoiceCommand.
+ * Ignores casual sentence chatter where command words appear incidentally.
  */
-export function parseVoiceCommand(transcript: string): VoiceCommand | null {
+export function parseVoiceCommand(
+  transcript: string,
+  options?: ParseVoiceCommandOptions,
+): VoiceCommand | null {
   if (!transcript || typeof transcript !== 'string') return null;
-  const cleaned = transcript.trim().toLowerCase();
+  const raw = transcript.trim().toLowerCase();
+  if (!raw) return null;
+
+  // Strip leading wake phrases like "hey coach", "coach", "please"
+  const cleaned = raw
+    .replace(/^(?:hey\s+)?coach\s*,?\s*/i, '')
+    .replace(/^please\s+/i, '')
+    .trim();
+
   if (!cleaned) return null;
+
+  let recognized: VoiceCommand | null = null;
 
   // 1. Check specific multi-word phrase patterns first
   for (const { command, phrases } of COMMAND_PATTERNS) {
     for (const phrase of phrases) {
-      if (phrase.test(cleaned)) return command;
+      if (phrase.test(cleaned)) {
+        recognized = command;
+        break;
+      }
+    }
+    if (recognized) break;
+  }
+
+  // 2. Check exact command phrase matches or short focused phrases (<= 3 words)
+  if (!recognized) {
+    const words = cleaned.split(/\s+/);
+    if (words.length <= 3) {
+      for (const { command, keywords } of COMMAND_PATTERNS) {
+        for (const kw of keywords) {
+          if (cleaned === kw || (words.length <= 2 && words.includes(kw))) {
+            recognized = command;
+            break;
+          }
+        }
+        if (recognized) break;
+      }
     }
   }
 
-  // 2. Check exact word token matches
-  const words = cleaned.split(/\s+/);
-  for (const { command, keywords } of COMMAND_PATTERNS) {
-    for (const kw of keywords) {
-      if (cleaned === kw || words.includes(kw)) return command;
-    }
+  // 3. Filter against allowedCommands if provided
+  if (recognized && options?.allowedCommands && !options.allowedCommands.includes(recognized)) {
+    return null;
   }
 
-  return null;
+  return recognized;
 }
 
 /**

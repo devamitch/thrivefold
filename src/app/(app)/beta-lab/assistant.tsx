@@ -21,6 +21,7 @@ interface Turn {
   from: 'me' | 'coach';
   text: string;
   route?: string;
+  autoNavigate?: boolean;
   needsModel?: boolean;
   fromModel?: boolean;
 }
@@ -65,7 +66,9 @@ export default function AssistantScreen() {
     setTurns((t) => [...t, { from: 'coach', ...reply }]);
     void coachVoice.speak(reply.text, { priority: 3, maxMs: 12_000 });
     setTimeout(() => scroll.current?.scrollToEnd({ animated: true }), 50);
-    if (reply.route) setTimeout(() => router.push(reply.route as Href), 900);
+    if (reply.route && reply.autoNavigate) {
+      setTimeout(() => router.push(reply.route as Href), 900);
+    }
   };
 
   sendRef.current = send;
@@ -118,8 +121,20 @@ export default function AssistantScreen() {
             </Text>
             {t.fromModel ? (
               <Text style={[typography.caption, { color: colors.text.muted, marginTop: 4 }]}>
-                On-device model · general guidance, not medical advice
+                On-device language model · wellbeing guidance, not medical advice
               </Text>
+            ) : t.from === 'coach' ? (
+              <Text style={[typography.caption, { color: colors.text.muted, marginTop: 4 }]}>
+                On-device coach · wellbeing guidance, not medical advice
+              </Text>
+            ) : null}
+            {t.route && !t.autoNavigate ? (
+              <View style={styles.actions}>
+                <Chip
+                  label="Open related tool"
+                  onPress={() => router.push(t.route as Href)}
+                />
+              </View>
             ) : null}
             {t.needsModel ? (
               <View style={styles.actions}>
@@ -138,7 +153,7 @@ export default function AssistantScreen() {
       </ScrollView>
       <View style={[styles.inputRow, { paddingHorizontal: spacing.base, paddingBottom: spacing.md }]}>
         <PressableScale
-          onPress={() => (listening ? voice.stop() : void voice.start())}
+          onPress={() => (listening ? voice.stop() : void voice.start({ preferOffline: true }))}
           accessibilityLabel={listening ? 'Stop listening' : 'Speak to the coach'}
           style={[styles.send, { backgroundColor: listening ? colors.primary : colors.surface2 }]}
         >

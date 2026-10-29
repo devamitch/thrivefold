@@ -56,6 +56,7 @@ import {
 } from '../../../../components/workout/YouTubePlayer';
 import { videoFor } from '../../../../content/exerciseVideos';
 import {
+  parseVoiceCommand,
   voiceCommandResponseSpeech,
   type VoiceCommand,
 } from '../../../../domain/coach/voiceCommands';
@@ -66,6 +67,7 @@ import { liveCue, summarize } from '../../../../domain/pose/movement';
 import { PoseDetectionAdapter } from '../../../../features/beta-lab/experiments/pose-detection/PoseDetectionAdapter';
 import { getBetaSettings } from '../../../../features/beta-lab/flags/betaFlags';
 import { speakCoach } from '../../../../services/ai/coachVoiceService';
+import { useVoiceInput } from '../../../../services/voice/useVoiceInput';
 import { useRootStore } from '../../../../stores/useRootStore';
 import { useTheme } from '../../../../theme/useTheme';
 import { useBetaEnabled } from '../../../../hooks/useBetaEnabled';
@@ -333,6 +335,43 @@ export default function CoachScreen() {
       setRest,
     ],
   );
+
+  // ── Hands-Free Voice AI Command Recognition ──────────────────────────────
+  const [handsFreeVoice, setHandsFreeVoice] = useState(true);
+  const [lastVoiceCommand, setLastVoiceCommand] = useState<string | null>(null);
+
+  const onVoiceTranscript = useCallback(
+    (transcript: string) => {
+      if (!armed || phase !== 'live' || showGestureModal) return;
+
+      // Restrict commands according to current workout state allowlist
+      const allowedCommands: VoiceCommand[] =
+        rest > 0
+          ? ['resume', 'next_set', 'add_rest', 'previous', 'help', 'toggle_video']
+          : countdown > 0
+            ? ['pause', 'help']
+            : ['pause', 'next_set', 'add_rest', 'previous', 'toggle_video', 'help'];
+
+      const cmd = parseVoiceCommand(transcript, { allowedCommands });
+      if (cmd) {
+        setLastVoiceCommand(cmd);
+        setTimeout(() => setLastVoiceCommand(null), 2500);
+        executeVoiceCommand(cmd);
+      }
+    },
+    [armed, phase, showGestureModal, rest, countdown, executeVoiceCommand],
+  );
+
+  const voiceInput = useVoiceInput(onVoiceTranscript);
+
+  // Keep continuous hands-free voice recognition active during active workout sets/rests
+  useEffect(() => {
+    if (phase === 'live' && armed && handsFreeVoice && !showGestureModal) {
+      void voiceInput.start({ continuous: true, preferOffline: true });
+    } else {
+      voiceInput.stop();
+    }
+  }, [phase, armed, handsFreeVoice, showGestureModal]);
 
   // ── Counter pulse from poseTrack ──────────────────────────────────────────
   const counterAnimStyle = useAnimatedStyle(() => ({
@@ -718,6 +757,15 @@ export default function CoachScreen() {
             size={44}
           />
           <GlassIconButton
+            path={handsFreeVoice ? GlassMarks.mic : GlassMarks.micOff}
+            accessibilityLabel={
+              handsFreeVoice ? 'Hands-free voice recognition on' : 'Hands-free voice recognition off'
+            }
+            tone={handsFreeVoice && voiceInput.state === 'listening' ? 'primary' : 'neutral'}
+            onPress={() => setHandsFreeVoice((v) => !v)}
+            size={44}
+          />
+          <GlassIconButton
             path={GlassMarks.info}
             accessibilityLabel="Hands-free gesture & voice controls guide"
             tone="neutral"
@@ -817,12 +865,40 @@ export default function CoachScreen() {
         onClose={() => setShowGestureModal(false)}
         onExecuteCommand={executeVoiceCommand}
       />
+
+      {/* Voice command feedback toast */}
+      {lastVoiceCommand ? (
+        <Animated.View
+          entering={reduceMotion ? undefined : FadeIn.duration(150)}
+          exiting={reduceMotion ? undefined : FadeOut.duration(200)}
+          style={[styles.voiceToast, { top: insets.top + 60 }]}
+          pointerEvents="none"
+        >
+          <CoachGlass radius={999} style={styles.voiceToastInner}>
+            <Ionicons name="mic" size={16} color={colors.primary} />
+            <Text style={[typography.captionBold, { color: colors.callText, marginLeft: 6 }]}>
+              Voice: {lastVoiceCommand.replace('_', ' ')}
+            </Text>
+          </CoachGlass>
+        </Animated.View>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   bottomBar: { bottom: 0, left: 0, position: 'absolute', right: 0 },
+  voiceToast: {
+    alignSelf: 'center',
+    position: 'absolute',
+    zIndex: 40,
+  },
+  voiceToastInner: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
   cameraError: {
     alignSelf: 'center',
     borderRadius: 12,

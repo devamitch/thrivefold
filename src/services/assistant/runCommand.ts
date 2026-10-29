@@ -2,6 +2,7 @@ import { MediaPipeTools } from '../../../modules/pose-landmarker/tools';
 import { activeCalories } from '../../domain/activity/calories';
 import type { Command } from '../../domain/assistant/commands';
 import { formatLocalDate } from '../../domain/calendar/universalCalendarEngine';
+import { resolveLocalCoachReply } from '../../domain/coach/localCoachAI';
 import { stepsByDate } from '../../domain/interop/readings';
 import { describeCode, planWalk } from '../../domain/world/outdoor';
 import { useRootStore } from '../../stores/useRootStore';
@@ -13,6 +14,8 @@ export interface AssistantReply {
   text: string;
   /** A screen to open after speaking, for "open" commands. */
   route?: string;
+  /** Whether the screen should be opened automatically or shown as a suggested action chip. */
+  autoNavigate?: boolean;
   /** True when the reply came from the on-device language model. */
   fromModel?: boolean;
   /** True when no on-device model was available for an open question. */
@@ -44,15 +47,20 @@ export async function runCommand(cmd: Command): Promise<AssistantReply> {
 
   switch (cmd.kind) {
     case 'open':
-      return { text: `Opening ${cmd.label}.`, route: cmd.route };
+      return { text: `Opening ${cmd.label}.`, route: cmd.route, autoNavigate: true };
 
     case 'life':
-      return { text: LIFE[cmd.topic], route: cmd.topic === 'low' ? undefined : '/(app)/journal/new' };
+      return {
+        text: LIFE[cmd.topic],
+        route: cmd.topic === 'low' ? undefined : '/(app)/journal/new',
+        autoNavigate: cmd.topic !== 'low',
+      };
 
     case 'crisis':
       return {
         text: "I'm really glad you told me. You don't have to go through this alone. I'm opening urgent support so you can reach someone right now. If you are in danger, call your local emergency number.",
         route: '/(app)/safety/urgent-support',
+        autoNavigate: true,
       };
 
     case 'log_water': {
@@ -126,14 +134,20 @@ export async function runCommand(cmd: Command): Promise<AssistantReply> {
       ]
         .filter(Boolean)
         .join('. ');
+
+      // 1. Try on-device GGUF language model if loaded
       const out = await askLocal(cmd.text, SYSTEM, context);
-      if (out === null) {
-        return {
-          text: `I can open screens, log water and tell you today's numbers without a model. For open questions, download the on-device model in AI settings.${langNote}`,
-          needsModel: true,
-        };
+      if (out !== null && out.trim()) {
+        return { text: out.trim() + langNote, fromModel: true };
       }
-      return { text: out + langNote, fromModel: true };
+
+      // 2. Fall back seamlessly to on-device deterministic coaching intelligence
+      const localReply = resolveLocalCoachReply(cmd.text);
+      return {
+        text: localReply.text + langNote,
+        route: localReply.route,
+        fromModel: false,
+      };
     }
   }
 }

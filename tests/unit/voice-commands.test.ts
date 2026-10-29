@@ -35,10 +35,35 @@ describe('Voice Commands Engine', () => {
     expect(parseVoiceCommand('what can i say')).toBe('help');
   });
 
-  it('returns null for unrecognized chatter', () => {
+  it('returns null for unrecognized chatter and casual sentences', () => {
     expect(parseVoiceCommand('')).toBeNull();
     expect(parseVoiceCommand('what is the weather today')).toBeNull();
     expect(parseVoiceCommand('random noise')).toBeNull();
+    expect(parseVoiceCommand('the next thing is my tripod setup')).toBeNull();
+    expect(parseVoiceCommand('I am almost done with my positioning')).toBeNull();
+    expect(parseVoiceCommand('stop talking please')).toBeNull();
+  });
+
+  it('supports coach wake phrases and command prefixes', () => {
+    expect(parseVoiceCommand('hey coach, pause')).toBe('pause');
+    expect(parseVoiceCommand('coach next set')).toBe('next_set');
+    expect(parseVoiceCommand('please resume')).toBe('resume');
+  });
+
+  it('respects allowedCommands allowlist per workout state', () => {
+    // During positioning, next_set is not allowed
+    expect(
+      parseVoiceCommand('next set', {
+        allowedCommands: ['help', 'toggle_video', 'resume'],
+      }),
+    ).toBeNull();
+
+    // But resume or help is allowed
+    expect(
+      parseVoiceCommand('resume', {
+        allowedCommands: ['help', 'toggle_video', 'resume'],
+      }),
+    ).toBe('resume');
   });
 
   it('generates natural coaching voice response for recognized commands', () => {

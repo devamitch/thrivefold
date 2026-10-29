@@ -72,6 +72,8 @@ export const GlassMarks = {
     'M11 5 L6 9 H2 V15 H6 L11 19 V5 Z M15.5 8.5 A4.5 4.5 0 0 1 15.5 15.5 M19 6 A8.5 8.5 0 0 1 19 18',
   scan: 'M3 8 V5 A2 2 0 0 1 5 3 H8 M16 3 H19 A2 2 0 0 1 21 5 V8 M21 16 V19 A2 2 0 0 1 19 21 H16 M8 21 H5 A2 2 0 0 1 3 19 V16',
   check: 'M5 13 L9.5 17.5 L19 7',
+  mic: 'M12 3 A3 3 0 0 0 9 6 V11 A3 3 0 0 0 15 11 V6 A3 3 0 0 0 12 3 M19 10 V11 A7 7 0 0 1 5 11 V10 M12 18 V21 M8 21 H16',
+  micOff: 'M3 3 L21 21 M9 9 V11 A3 3 0 0 0 14.12 13.12 M15 6 A3 3 0 0 0 9.88 3.88 M19 10 V11 A6.96 6.96 0 0 1 17.5 15.5 M5 10 V11 A7 7 0 0 0 12 18 M12 18 V21 M8 21 H16',
 } as const;
 
 const STROKE_MARKS: ReadonlySet<string> = new Set([
@@ -85,6 +87,8 @@ const STROKE_MARKS: ReadonlySet<string> = new Set([
   GlassMarks.volume,
   GlassMarks.scan,
   GlassMarks.check,
+  GlassMarks.mic,
+  GlassMarks.micOff,
 ]);
 
 type MarkKind = 'fill' | 'stroke' | 'rounded';

@@ -33,6 +33,18 @@ let token = 0;
 let busyUntil = 0;
 let busyPriority = 0;
 let lastEndAt = 0;
+let lastSpokenText = '';
+const listeners = new Set<(speaking: boolean) => void>();
+
+function notify(speaking: boolean) {
+  listeners.forEach((fn) => {
+    try {
+      fn(speaking);
+    } catch {
+      // ignore
+    }
+  });
+}
 
 const estimateMs = (t: string) => Math.min(7000, 500 + t.length * 62);
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -41,11 +53,13 @@ function stopNow() {
   token++;
   busyUntil = 0;
   busyPriority = 0;
+  lastEndAt = Date.now();
   try {
     void Speech.stop();
   } catch {
     // ignore
   }
+  notify(false);
 }
 
 export const coachVoice = {
@@ -58,6 +72,24 @@ export const coachVoice = {
     if (v) stopNow();
   },
   stop: stopNow,
+
+  /**
+   * Check if coach is currently speaking or just finished within the echo-guard window.
+   * Used to prevent speech recognition from hearing the coach's own output.
+   */
+  isSpeaking(guardMs = 600): boolean {
+    const now = Date.now();
+    return now < busyUntil || now - lastEndAt < guardMs;
+  },
+
+  getLastSpokenText(): string {
+    return lastSpokenText;
+  },
+
+  subscribe(fn: (speaking: boolean) => void): () => void {
+    listeners.add(fn);
+    return () => listeners.delete(fn);
+  },
 
   /** Speak one line. Resolves when it should be finished (or was dropped). */
   async speak(text: string, opts: SpeakOpts = {}): Promise<void> {
@@ -82,6 +114,8 @@ export const coachVoice = {
     const mine = ++token;
     busyPriority = priority;
     busyUntil = now + Math.min(maxMs, est);
+    lastSpokenText = text;
+    notify(true);
     try {
       await Promise.all([
         sleep(Math.min(maxMs, est) * 0.7),
@@ -92,6 +126,7 @@ export const coachVoice = {
         busyUntil = 0;
         busyPriority = 0;
         lastEndAt = Date.now();
+        notify(false);
       }
     }
   },
