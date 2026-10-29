@@ -9,6 +9,7 @@ export type Command =
   | { kind: 'log_water'; glasses: number }
   | { kind: 'ask'; metric: 'steps' | 'water' | 'quests' | 'calories' | 'weather' }
   | { kind: 'crisis' }
+  | { kind: 'life'; topic: LifeTopic }
   | { kind: 'unknown'; text: string };
 
 const OPEN: { words: RegExp; route: string; label: string }[] = [
@@ -27,12 +28,16 @@ const OPEN: { words: RegExp; route: string; label: string }[] = [
   { words: /\btreadmill|\bwalking pad|\bswim|\bcycl|\bride\b|\brun\b|\bactivity\b/, route: '/(app)/health/activity', label: 'activity sessions' },
   { words: /\bouting\b|\bpandal|\bpuja\b|\bplan a (walk|trip|day out)\b|\bsightseeing\b|\bheritage\b/, route: '/(app)/outing', label: 'the outing planner' },
   { words: /\btrip\b|\bcheck[- ]?in on my way\b|\bgoing home\b|\bwalking home\b/, route: '/(app)/safety/trip', label: 'trip check-in' },
+  { words: /\bprescription\b|\bdiet chart\b|\bfood chart\b|\bworkout plan\b|\btrainer\b|\bdietitian\b/, route: '/(app)/health/documents', label: 'documents' },
   { words: /\bmedicine|\bmedication|\btablet|\bpill|\bdoctor\b|\bappointment\b/, route: '/(app)/health/medications', label: 'medicines and follow-ups' },
+  { words: /\badhd\b|\bfocus check\b|\battention\b|\bcan'?t focus\b/, route: '/(app)/beta-lab/focus-check', label: 'the focus self-check' },
   { words: /\bquest/, route: '/(app)/quests', label: 'quests' },
   { words: /\bprogress\b|\btrend|\bhistory\b/, route: '/(app)/(tabs)/progress', label: 'progress' },
   { words: /\bjournal\b|\bwrite\b/, route: '/(app)/journal/new', label: 'a new journal entry' },
   { words: /\bsettings?\b/, route: '/(app)/(tabs)/settings', label: 'settings' },
 ];
+
+export type LifeTopic = 'work' | 'balance' | 'relationship' | 'low';
 
 const NUMBER_WORDS: Record<string, number> = { a: 1, an: 1, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6 };
 
@@ -43,6 +48,11 @@ export function parseCommand(input: string): Command {
   if (/\b(suicid\w*|kill (my ?self|me)|end (my|it all)|want to die|don'?t want to (live|be here)|self[- ]?harm|hurt(ing)? my ?self|no reason to live)\b/.test(text)) {
     return { kind: 'crisis' };
   }
+
+  if (/\b(work|job|office|boss|deadline)s?\b.*\b(stress|pressure|burn ?out|overwhelm|tired|anxious)|\b(stress|pressure|burn ?out)\b.*\b(work|job|office)\b/.test(text)) return { kind: 'life', topic: 'work' };
+  if (/\bwork[- ]life\b|\bno time for (myself|family)\b|\bbalance\b/.test(text)) return { kind: 'life', topic: 'balance' };
+  if (/\b(marriage|husband|wife|partner|relationship|spouse|in-?laws)\b/.test(text) && /\b(fight|issue|problem|stress|arguing|argue|unhappy|trouble|conflict)/.test(text)) return { kind: 'life', topic: 'relationship' };
+  if (/\b(feel(ing)? (low|sad|down|lonely|empty)|depressed|hopeless)\b/.test(text)) return { kind: 'life', topic: 'low' };
 
   const water = text.match(/\b(?:log|add|drank|had)\b.*?\b(\d+|a|an|one|two|three|four|five|six)\b\s*(?:glass|glasses|cup|cups)\b/);
   if (water || /\b(?:log|add)\b.*\bwater\b/.test(text)) {

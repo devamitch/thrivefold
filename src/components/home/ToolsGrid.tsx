@@ -86,6 +86,20 @@ export function ToolsGrid({ todayCount }: { todayCount: number }) {
         hasActivity: todayCount > 0,
       },
       {
+        icon: 'document-text-outline',
+        label: 'Documents',
+        meta: 'Prescriptions, diet and workout plans',
+        route: '/(app)/health/documents' as Href,
+        hasActivity: false,
+      },
+      {
+        icon: 'partly-sunny-outline',
+        label: 'Outdoors',
+        meta: 'Weather, outings, trips',
+        route: '/(app)/outdoors' as Href,
+        hasActivity: false,
+      },
+      {
         icon: 'book-outline',
         label: 'Journal',
         meta: journal.length ? `${journal.length} entr${journal.length === 1 ? 'y' : 'ies'}` : 'Write a private note',

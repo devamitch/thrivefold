@@ -163,6 +163,20 @@ export default function SettingsScreen() {
           </Card>
         </Animated.View>
 
+        {__DEV__ || isOwner ? (
+          <>
+            <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm }]}>
+              Owner
+            </Text>
+            <Link href={'/(app)/beta-lab' as Href} asChild>
+              <SettingsRow icon="flask-outline" title="Beta Lab" subtitle="Every beta studio, coach, voice and camera feature" />
+            </Link>
+            <Link href={'/(app)/dev' as Href} asChild>
+              <SettingsRow icon="construct-outline" title="Developer tools" subtitle="Beta Mode, data and diagnostics" />
+            </Link>
+          </>
+        ) : null}
+
         <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm }]}>
           Your spaces
         </Text>
@@ -227,16 +241,6 @@ export default function SettingsScreen() {
         <Link href={'/(app)/you/account' as Href} asChild>
           <SettingsRow icon="person-circle-outline" title="Account" subtitle="Sign out, redo setup or erase" />
         </Link>
-        {__DEV__ || isOwner ? (
-          <>
-            <Link href={'/(app)/beta-lab' as Href} asChild>
-              <SettingsRow icon="flask-outline" title="Beta Lab" subtitle="Experimental features, owner access" />
-            </Link>
-            <Link href={'/(app)/dev' as Href} asChild>
-              <SettingsRow icon="construct-outline" title="Developer tools" subtitle="Owner access on this account" />
-            </Link>
-          </>
-        ) : null}
       </View>
 
       {/* Profile Edit Bottom Sheet Modal */}

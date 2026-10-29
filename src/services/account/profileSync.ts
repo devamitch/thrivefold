@@ -32,6 +32,9 @@ export interface RemoteProfile {
   accessibility: KoshProfile['accessibility'];
   field_sources: KoshProfile['fieldSources'];
   terms_version?: string | null;
+  height_cm?: number | null;
+  weight_kg?: number | null;
+  home_address?: string | null;
 }
 
 const toKosh = (r: RemoteProfile): Partial<KoshProfile> => ({
@@ -45,6 +48,7 @@ const toKosh = (r: RemoteProfile): Partial<KoshProfile> => ({
   interests: r.interests ?? [],
   skills: r.skills ?? [],
   careerGoal: r.career_goal,
+  homeAddress: r.home_address ?? null,
   accessibility: r.accessibility ?? {},
   fieldSources: r.field_sources ?? {},
 });
@@ -54,6 +58,9 @@ export function applyKosh(remote: RemoteProfile): string[] {
   const s = useRootStore.getState();
   const { merged, filled } = mergeKosh(s.koshProfile, toKosh(remote));
   if (filled.length) useRootStore.setState({ koshProfile: merged });
+  // Body numbers fill only when this phone has none.
+  if (!s.heightCm && remote.height_cm) s.setHeightCm(remote.height_cm);
+  if (!s.weightKg && remote.weight_kg) s.setWeightKg(Number(remote.weight_kg));
   return filled;
 }
 
@@ -70,7 +77,7 @@ export async function pullProfile(): Promise<RemoteProfile | null> {
   const { data, error } = await supabase
     .from('thrivefold_personal_profiles')
     .select(
-      'display_name, birth_date, experience, onboarded, goals, constraints, routine_minutes, diet, preferred_name, phone, languages, food_restrictions, allergies, cuisines, food_dislikes, interests, skills, career_goal, accessibility, field_sources, terms_version',
+      'display_name, birth_date, experience, onboarded, goals, constraints, routine_minutes, diet, preferred_name, phone, languages, food_restrictions, allergies, cuisines, food_dislikes, interests, skills, career_goal, accessibility, field_sources, terms_version, height_cm, weight_kg, home_address',
     )
     .eq('user_id', id)
     .maybeSingle();
@@ -115,6 +122,9 @@ export async function pushProfile(): Promise<boolean> {
       accessibility: k.accessibility,
       field_sources: k.fieldSources,
       terms_version: s.termsAcceptedVersion ?? null,
+      height_cm: s.heightCm && s.heightCm >= 100 && s.heightCm <= 250 ? Math.round(s.heightCm) : null,
+      weight_kg: s.weightKg && s.weightKg >= 25 && s.weightKg <= 350 ? s.weightKg : null,
+      home_address: k.homeAddress?.slice(0, 200) ?? null,
       updated_at: new Date().toISOString(),
     },
     { onConflict: 'user_id' },

@@ -24,6 +24,7 @@ export default function BetaLabLayout() {
       <Stack.Screen name="assistant" />
       <Stack.Screen name="body-style" />
       <Stack.Screen name="voice-practice" />
+      <Stack.Screen name="focus-check" />
       <Stack.Screen name="eye-pursuit" options={{ animation: 'fade' }} />
       <Stack.Screen name="pose-coach" />
       <Stack.Screen name="voice-coach" />

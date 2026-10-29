@@ -1,4 +1,5 @@
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
+import { useRouter, type Href } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Linking, StyleSheet, Switch, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -35,6 +36,7 @@ export default function MedicationsScreen() {
       showAlert: s.showAlert,
     })),
   );
+  const router = useRouter();
   const today = formatLocalDate(new Date());
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
@@ -200,6 +202,12 @@ export default function MedicationsScreen() {
           />
         </Card>
 
+        <Button
+          label="Scan a prescription"
+          variant="outline"
+          onPress={() => router.push('/(app)/health/documents' as Href)}
+          style={{ marginTop: spacing.md, alignSelf: 'flex-start' }}
+        />
         <Button
           label="Order medicines online"
           variant="ghost"

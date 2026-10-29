@@ -5,6 +5,7 @@ import { Linking, StyleSheet, Switch, Text, View } from 'react-native';
 import { AppHeader } from '../../../components/ui/AppHeader';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
+import { Chip } from '../../../components/ui/Chip';
 import { PressableScale } from '../../../components/ui/PressableScale';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { ScreenScrollView } from '../../../components/ui/ScreenScrollView';
@@ -35,13 +36,20 @@ const LISTS: { key: ListKey; label: string; hint: string; group: 'about' | 'food
  */
 export default function KoshProfileScreen() {
   const { colors, typography, spacing, experience } = useTheme();
-  const { kosh, update, contacts, setContacts, signedIn } = useRootStore(
+  const { kosh, update, contacts, setContacts, signedIn, heightCm, weightKg, setHeightCm, setWeightKg, diet, routineMinutes, setOnboardingAnswers } = useRootStore(
     useShallow((s) => ({
       kosh: s.koshProfile,
       update: s.updateKoshProfile,
       contacts: s.emergencyContacts,
       setContacts: s.setEmergencyContacts,
       signedIn: !!s.user && !s.user.isGuest,
+      heightCm: s.heightCm,
+      weightKg: s.weightKg,
+      setHeightCm: s.setHeightCm,
+      setWeightKg: s.setWeightKg,
+      diet: s.onboarding.diet,
+      routineMinutes: s.onboarding.routineMinutes,
+      setOnboardingAnswers: s.setOnboardingAnswers,
     })),
   );
   const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -57,7 +65,14 @@ export default function KoshProfileScreen() {
     if (drafts[key] === undefined) return;
     update({ [key]: splitList(drafts[key]) } as Partial<KoshProfile>);
   };
-  const commitText = (key: 'preferredName' | 'phone' | 'careerGoal') => {
+  const commitNumber = (key: 'height' | 'weight') => {
+    const raw = drafts[key];
+    if (raw === undefined) return;
+    const n = Number(raw.replace(',', '.'));
+    if (key === 'height' && n >= 100 && n <= 250) setHeightCm(Math.round(n));
+    if (key === 'weight' && n >= 25 && n <= 350) setWeightKg(Math.round(n * 10) / 10);
+  };
+  const commitText = (key: 'preferredName' | 'phone' | 'careerGoal' | 'homeAddress') => {
     if (drafts[key] === undefined) return;
     const v = drafts[key].trim();
     if (key === 'phone' && v && !PHONE_RE.test(v)) return;
@@ -115,6 +130,36 @@ export default function KoshProfileScreen() {
           <TextField label="What should we call you?" value={text('preferredName', kosh.preferredName ?? '')} onChangeText={(v) => setDraft('preferredName', v)} onBlur={() => commitText('preferredName')} containerStyle={styles.field} />
           <TextField label="Phone" keyboardType="phone-pad" value={text('phone', kosh.phone ?? '')} onChangeText={(v) => setDraft('phone', v)} onBlur={() => commitText('phone')} containerStyle={styles.field} />
           {LISTS.filter((l) => l.group === 'about').map(listField)}
+        </Card>
+
+        <Card style={styles.card}>
+          <Text style={[typography.subheading, { color: colors.text.primary }]}>Body and routine</Text>
+          <Text style={[typography.caption, { color: colors.text.muted }]}>Used for BMI, calorie estimates and quests that fit your day.</Text>
+          <View style={styles.pair}>
+            <TextField label="Height (cm)" keyboardType="numeric" value={text('height', heightCm ? String(heightCm) : '')} onChangeText={(v) => setDraft('height', v)} onBlur={() => commitNumber('height')} containerStyle={styles.flex} />
+            <TextField label="Weight (kg)" keyboardType="numeric" value={text('weight', weightKg ? String(weightKg) : '')} onChangeText={(v) => setDraft('weight', v)} onBlur={() => commitNumber('weight')} containerStyle={styles.flex} />
+          </View>
+          <Text style={[typography.caption, { color: colors.text.muted, marginTop: 10 }]}>How you eat</Text>
+          <View style={styles.chips}>
+            {['No preference', 'Vegetarian', 'Vegan', 'Non-Vegetarian', 'Pescatarian', 'Eggetarian'].map((d) => (
+              <Chip key={d} label={d} selected={diet === d} onPress={() => setOnboardingAnswers({ diet: diet === d ? null : d })} />
+            ))}
+          </View>
+          <Text style={[typography.caption, { color: colors.text.muted, marginTop: 10 }]}>Time for a daily routine</Text>
+          <View style={styles.chips}>
+            {([5, 10, 20] as const).map((m) => (
+              <Chip key={m} label={`${m} min`} selected={routineMinutes === m} onPress={() => setOnboardingAnswers({ routineMinutes: routineMinutes === m ? null : m })} />
+            ))}
+          </View>
+          <TextField
+            label="Home address or area (optional)"
+            placeholder="e.g. Salt Lake Sector V, Kolkata"
+            value={text('homeAddress', kosh.homeAddress ?? '')}
+            onChangeText={(v) => setDraft('homeAddress', v)}
+            onBlur={() => commitText('homeAddress')}
+            containerStyle={styles.field}
+          />
+          <Text style={[typography.caption, { color: colors.text.muted, marginTop: 4 }]}>Only used to suggest walks and outings near home.</Text>
         </Card>
 
         <Card style={styles.card}>
@@ -182,6 +227,8 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   card: { marginTop: 12 },
   field: { marginTop: 10 },
+  pair: { flexDirection: 'row', gap: 10, marginTop: 10 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 },
   switchRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
   contact: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderTopWidth: StyleSheet.hairlineWidth, marginTop: 6 },
   iconBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },

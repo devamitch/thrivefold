@@ -17,6 +17,20 @@ export default function UrgentSupportScreen() {
 
   const helplines = [
     {
+      country: 'India',
+      service: 'Emergency (police, fire, ambulance)',
+      number: '112',
+      action: 'tel:112',
+      hours: '24/7',
+    },
+    {
+      country: 'India',
+      service: 'Tele-MANAS mental health support (Government of India)',
+      number: '14416',
+      action: 'tel:14416',
+      hours: '24/7 Free, many languages',
+    },
+    {
       country: 'United States & Canada',
       service: 'Suicide & Crisis Lifeline',
       number: '988',
@@ -36,13 +50,6 @@ export default function UrgentSupportScreen() {
       number: '112',
       action: 'tel:112',
       hours: 'Immediate Emergency Response',
-    },
-    {
-      country: 'India',
-      service: 'KIRAN Mental Health Helpline',
-      number: '1800-599-0019',
-      action: 'tel:18005990019',
-      hours: '24/7 Toll-Free Support',
     },
     {
       country: 'International / Online',

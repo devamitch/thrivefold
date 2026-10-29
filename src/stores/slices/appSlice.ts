@@ -146,6 +146,8 @@ export interface AppSlice {
   addBetaSession: (session: Omit<BetaSession, 'id'>) => void;
   /** Server-confirmed project owner (tf_is_owner): unlocks Beta Lab and developer tools. */
   isOwner: boolean;
+  /** Owner defaults (Beta Mode on) applied once on this phone. */
+  ownerBootstrapped: boolean;
   setIsOwner: (on: boolean) => void;
   /** Daily active-calorie goal (estimated activity burn, not including resting energy). */
   activeCalorieGoal: number;
@@ -266,6 +268,7 @@ export const createAppSlice: StateCreator<
       betaSessions: [{ ...session, id: `${session.kind}-${session.endedAt}` }, ...state.betaSessions].slice(0, 300),
     })),
   isOwner: false,
+  ownerBootstrapped: false,
   setIsOwner: (isOwner) => set({ isOwner }),
   activeCalorieGoal: 300,
   setActiveCalorieGoal: (kcal) => set({ activeCalorieGoal: Math.max(100, Math.min(2000, Math.round(kcal))) }),

@@ -18,6 +18,8 @@ export interface KoshProfile {
   interests: string[];
   skills: string[];
   careerGoal: string | null;
+  /** Typed by the person; used only for suggestions near home. */
+  homeAddress: string | null;
   accessibility: { screenReader?: boolean; largeText?: boolean; voiceFirst?: boolean };
   fieldSources: Partial<Record<keyof Omit<KoshProfile, 'fieldSources'>, { source: KoshSource; at: string }>>;
 }
@@ -40,6 +42,7 @@ export const EMPTY_KOSH: KoshProfile = {
   interests: [],
   skills: [],
   careerGoal: null,
+  homeAddress: null,
   accessibility: {},
   fieldSources: {},
 };

@@ -8,7 +8,7 @@ import { ActivityRow } from '../../../components/game/ActivityRow';
 import { QuestSheet } from '../../../components/game/QuestSheet';
 import { AnalyticalMetricGrid } from '../../../components/home/AnalyticalMetricGrid';
 import { ProfileQuestionCard } from '../../../components/home/ProfileQuestionCard';
-import { OutdoorCard } from '../../../components/home/OutdoorCard';
+import { BetaStrip } from '../../../components/beta/BetaStrip';
 import { AnalyticsDetailSheet } from '../../../components/home/AnalyticsDetailSheet';
 import { CalorieDetailSheet } from '../../../components/home/CalorieDetailSheet';
 import { DashboardHeader } from '../../../components/home/DashboardHeader';
@@ -466,39 +466,7 @@ export default function HomeScreen() {
         connected={connected}
       />
 
-      {betaMode ? (
-        <Card
-          onPress={() => router.push('/(app)/beta-lab' as Href)}
-          style={{
-            marginTop: spacing.md,
-            padding: spacing.base,
-            backgroundColor: colors.surface,
-            borderColor: 'rgba(201, 164, 106, 0.4)',
-            borderWidth: 1,
-          }}
-        >
-          <View style={styles.rowBetween}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
-              <BetaBadge />
-              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                Health OS Beta Active
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
-          </View>
-          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>
-            {practiceToday.count
-              ? `Today: ${practiceToday.count} practice session${practiceToday.count === 1 ? '' : 's'} · ${practiceToday.minutes} min. Camera work stays on this phone.`
-              : 'Eye, hand, pose and breathing studios are on. Camera work stays on this phone.'}
-          </Text>
-        </Card>
-      ) : null}
-
       <ProfileQuestionCard />
-
-      <OutdoorCard />
-
-      <ScreenTimeCard />
 
       <View style={{ marginTop: spacing.md }}>
         <HydrationTrackerCard
@@ -694,6 +662,14 @@ export default function HomeScreen() {
           </Card>
         </View>
       ) : null}
+
+      <BetaStrip
+        practiceLine={
+          practiceToday.count
+            ? `Today: ${practiceToday.count} session${practiceToday.count === 1 ? '' : 's'} · ${practiceToday.minutes} min`
+            : 'Coach, eye, face, voice, style and movement'
+        }
+      />
 
       {/* Experience focus */}
       <View>

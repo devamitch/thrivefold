@@ -34,6 +34,12 @@ describe('assistant commands', () => {
     expect(parseCommand('open breathing')).toMatchObject({ kind: 'open' });
   });
 
+  it('recognises everyday life pressures', () => {
+    expect(parseCommand('so much stress at work lately')).toEqual({ kind: 'life', topic: 'work' });
+    expect(parseCommand('my husband and I keep arguing')).toEqual({ kind: 'life', topic: 'relationship' });
+    expect(parseCommand('I have been feeling low')).toEqual({ kind: 'life', topic: 'low' });
+  });
+
   it('passes anything else on as a question', () => {
     expect(parseCommand('why do I feel tired after lunch and coffee every afternoon')).toMatchObject({ kind: 'unknown' });
   });

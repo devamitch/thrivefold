@@ -18,6 +18,18 @@ export interface AssistantReply {
   needsModel?: boolean;
 }
 
+/** Short, practical support for everyday pressures, with a pointer to real help. Not therapy. */
+const LIFE: Record<'work' | 'balance' | 'relationship' | 'low', string> = {
+  work:
+    "Work pressure is heavy. Try this: write the three things that truly must happen this week, and one you can drop or delegate. Take a five-minute walk between big tasks. I'm opening a journal page so you can get it out of your head. If it keeps you from sleeping or eating, Tele-MANAS on 14416 is free and confidential.",
+  balance:
+    "Let's protect some time for you. Pick one fixed slot this week, even 20 minutes, for something that's only yours, and put it in your calendar like a meeting. I'm opening a journal page to note what drains you and what fills you up.",
+  relationship:
+    "Relationship stress affects everything. When things are calm, try one 'I feel… when… I need…' sentence instead of blame, and agree on a time to talk without phones. Writing your side first helps; I'm opening a journal page. A couples counsellor can help both of you, and Tele-MANAS on 14416 is free if you need to talk today.",
+  low:
+    "I'm sorry you're feeling low. Small things help: a short walk in daylight, water, and messaging one person you trust. If it has lasted two weeks or more, please talk to a doctor. Tele-MANAS on 14416 is free, 24 hours, in many languages. If you ever think about harming yourself, call 112 now.",
+};
+
 const SYSTEM =
   'You are Thrive, a warm, brief wellbeing coach inside a health app. Answer in at most three short sentences. ' +
   'Give general wellbeing guidance only. Never diagnose, never name medicines or doses, and suggest a doctor for anything worrying or urgent.';
@@ -30,6 +42,9 @@ export async function runCommand(cmd: Command): Promise<AssistantReply> {
   switch (cmd.kind) {
     case 'open':
       return { text: `Opening ${cmd.label}.`, route: cmd.route };
+
+    case 'life':
+      return { text: LIFE[cmd.topic], route: cmd.topic === 'low' ? undefined : '/(app)/journal/new' };
 
     case 'crisis':
       return {

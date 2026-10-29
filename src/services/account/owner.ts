@@ -1,3 +1,4 @@
+import { FEATURE_UNLOCKS } from '../../domain/game/progression';
 import { supabase } from '../supabase/supabaseClient';
 import { useRootStore } from '../../stores/useRootStore';
 
@@ -19,6 +20,15 @@ export async function refreshOwnerStatus(): Promise<boolean> {
   } catch {
     owner = false;
   }
-  useRootStore.getState().setIsOwner(owner);
+  const st = useRootStore.getState();
+  st.setIsOwner(owner);
+  if (owner) {
+    // The owner's account opens everything: every cosmetic unlock (no diamonds spent) and,
+    // the first time, Beta Mode on. Granted on this phone only; never sent as purchases.
+    const all = FEATURE_UNLOCKS.map((u) => u.id);
+    const missing = all.filter((id) => !st.entitlements.includes(id));
+    if (missing.length) useRootStore.setState({ entitlements: [...st.entitlements, ...missing] });
+    if (!st.ownerBootstrapped) useRootStore.setState({ betaMode: true, ownerBootstrapped: true });
+  }
   return owner;
 }

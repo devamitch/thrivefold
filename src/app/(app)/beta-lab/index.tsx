@@ -63,6 +63,15 @@ const STUDIOS: StudioProduct[] = [
     badgeVariant: 'gold',
   },
   {
+    id: 'focus-check',
+    title: 'Focus & Attention Self-check',
+    subtitle: 'WHO adult screener, one moment at a time; not saved, not a diagnosis',
+    tag: 'Self-check',
+    icon: 'bulb-outline',
+    route: '/(app)/beta-lab/focus-check',
+    badgeVariant: 'neutral',
+  },
+  {
     id: 'voice-practice',
     title: 'Voice Practice',
     subtitle: 'Hold an "aah", keep an even loudness, and say phrases clearly with the coach',

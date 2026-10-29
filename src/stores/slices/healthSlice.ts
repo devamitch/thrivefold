@@ -75,6 +75,16 @@ export interface FollowUp {
   note: string | null;
 }
 
+export interface CarePlan {
+  id: string;
+  kind: 'diet_chart' | 'workout_plan';
+  /** Dietitian, doctor or trainer, as written on the document. */
+  by: string | null;
+  savedAt: string;
+  /** The transcribed plan (meals or training days), as confirmed. */
+  data: unknown;
+}
+
 export interface DailyCheckInRecord {
   id: string;
   date: string;
@@ -178,6 +188,10 @@ export interface HealthSlice {
   /** Daily reminder notifications for medications (off by default). */
   medicationRemindersOn: boolean;
   setMedicationRemindersOn: (on: boolean) => void;
+  /** Diet charts and workout plans read from a professional's document and confirmed by the person. */
+  carePlans: CarePlan[];
+  addCarePlan: (plan: Omit<CarePlan, 'id' | 'savedAt'>) => void;
+  deleteCarePlan: (id: string) => void;
   followUps: FollowUp[];
   addFollowUp: (f: Omit<FollowUp, 'id'>) => void;
   deleteFollowUp: (id: string) => void;
@@ -443,6 +457,10 @@ export const createHealthSlice: StateCreator<
   medicationTaken: [],
   medicationRemindersOn: false,
   setMedicationRemindersOn: (medicationRemindersOn) => set({ medicationRemindersOn }),
+  carePlans: [],
+  addCarePlan: (plan) =>
+    set((state) => ({ carePlans: [{ ...plan, id: `plan_${Date.now()}`, savedAt: new Date().toISOString() }, ...state.carePlans].slice(0, 20) })),
+  deleteCarePlan: (id) => set((state) => ({ carePlans: state.carePlans.filter((p) => p.id !== id) })),
   followUps: [],
   addFollowUp: (f) =>
     set((state) => ({

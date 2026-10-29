@@ -25,7 +25,7 @@ interface Turn {
   fromModel?: boolean;
 }
 
-const SUGGESTIONS = ['How many steps today?', 'Log two glasses of water', 'Start breathing', 'Face exercises', 'What quests are left?', 'Open the eye studio'];
+const SUGGESTIONS = ['How many steps today?', 'Log two glasses of water', 'Will it rain today?', 'Start breathing', 'Stress at work', 'Relationship stress', 'Scan a prescription', 'Plan an outing'];
 
 /**
  * Thrive Coach assistant: type a request and the coach carries it out on this phone and says the
