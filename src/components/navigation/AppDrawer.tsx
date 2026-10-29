@@ -2,16 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { hapticSelection } from '../../services/haptics';
 import { usePathname, useRouter, type Href } from 'expo-router';
 import React, { memo, useCallback, useMemo, type ReactNode, type RefObject } from 'react';
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
-  type StyleProp,
-  type ViewStyle,
-} from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View, type StyleProp, type ViewStyle, Switch } from 'react-native';
 import Animated, {
   Extrapolation,
   interpolate,
@@ -176,7 +167,7 @@ export function AppDrawer({ blurTarget: _blurTarget }: { blurTarget?: RefObject<
   const { width } = useWindowDimensions();
   const { colors, typography, experience } = useTheme();
 
-  const { open, setOpen, socialOpen, user, level, currentStreak } =
+  const { open, setOpen, socialOpen, user, level, currentStreak, betaMode, setBetaMode } =
     useRootStore(
       useShallow((s) => ({
         open: s.drawerOpen,
@@ -185,6 +176,8 @@ export function AppDrawer({ blurTarget: _blurTarget }: { blurTarget?: RefObject<
         user: s.user,
         level: s.level,
         currentStreak: s.currentStreak,
+        betaMode: s.betaMode,
+        setBetaMode: s.setBetaMode,
       })),
     );
 
@@ -413,8 +406,29 @@ export function AppDrawer({ blurTarget: _blurTarget }: { blurTarget?: RefObject<
             />
           </View>
 
-          {/* Footer: Safety and Support */}
+          {/* Footer: Beta switch, then Safety and Support */}
           <Reveal index={rows.length + 2} progress={progress} style={styles.footer}>
+            <SquircleSurface radius={18} fill={palette.wash} style={[styles.footerButton, { marginBottom: 8 }]}>
+              <Ionicons name="sparkles" size={19} color="#C9A46A" />
+              <PressableScale
+                onPress={() => (betaMode ? go('/(app)/beta-lab') : undefined)}
+                style={styles.flex}
+                accessibilityRole="button"
+                accessibilityLabel="Beta features"
+              >
+                <Text style={[typography.bodyBold, { color: palette.ink }]}>Beta features</Text>
+                <Text style={[typography.caption, { color: palette.inkMuted }]}>{betaMode ? 'On · open Beta Lab' : 'Eye, voice, camera and AI extras'}</Text>
+              </PressableScale>
+              <Switch
+                value={betaMode}
+                onValueChange={(v) => {
+                  tick();
+                  setBetaMode(v);
+                }}
+                trackColor={{ true: '#C9A46A', false: undefined }}
+                accessibilityLabel="Beta features"
+              />
+            </SquircleSurface>
             <PressableScale
               onPress={() => go('/(app)/safety')}
               scaleTo={0.98}

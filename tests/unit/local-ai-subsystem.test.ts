@@ -105,28 +105,18 @@ describe('Local AI - Vector Math & Similarity Engine', () => {
 });
 
 describe('Local AI - Model Catalog & Hardware Suitability', () => {
-  test('P0: Catalog contains verified mobile models with correct metadata', () => {
-    expect(MODEL_PRESETS.length).toBeGreaterThanOrEqual(4);
-    const smol135 = getModelPresetById('smollm2-135m-instruct');
-    expect(smol135).toBeDefined();
-    expect(smol135?.parameters).toBe('135M');
-    expect(smol135?.sizeMb).toBe(90);
-    expect(smol135?.expectedSha256).toBeDefined();
-
-    const embedModel = getModelPresetById('all-minilm-l6-v2-q4');
-    expect(embedModel).toBeDefined();
-    expect(embedModel?.role).toBe('embedding');
+  test('P0: Catalog lists real downloadable models with their published SHA-256', () => {
+    expect(MODEL_PRESETS.length).toBe(2);
+    for (const m of MODEL_PRESETS) {
+      expect(m.downloadUrl).toMatch(/^https:\/\/huggingface\.co\/Qwen\//);
+      expect(m.expectedSha256).toMatch(/^[0-9a-f]{64}$/);
+    }
+    expect(getModelPresetById('qwen2.5-0.5b-instruct')?.sizeBytes).toBe(491_400_032);
   });
 
-  test('P0: Recommends conservative model under low RAM', () => {
-    const lowRam = getRecommendedModel(1800); // 1.8 GB RAM
-    expect(lowRam.id).toBe('smollm2-135m-instruct');
-
-    const midRam = getRecommendedModel(2500); // 2.5 GB RAM
-    expect(midRam.id).toBe('smollm2-360m-instruct');
-
-    const highRam = getRecommendedModel(4000); // 4.0 GB RAM
-    expect(highRam.id).toBe('qwen2.5-0.5b-instruct');
+  test('P0: Recommends the larger model only with enough RAM', () => {
+    expect(getRecommendedModel(4000).id).toBe('qwen2.5-0.5b-instruct');
+    expect(getRecommendedModel(6000).id).toBe('qwen2.5-1.5b-instruct');
   });
 });
 

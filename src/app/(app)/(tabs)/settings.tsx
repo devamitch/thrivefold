@@ -208,6 +208,9 @@ export default function SettingsScreen() {
         <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.md, marginBottom: spacing.sm }]}>
           Settings
         </Text>
+        <Link href={'/(app)/ai/model-status' as Href} asChild>
+          <SettingsRow icon="hardware-chip-outline" title="On-device AI" subtitle="Download the local language model (llama.cpp) for offline answers" />
+        </Link>
         <Link href={'/(app)/personalize' as Href} asChild>
           <SettingsRow icon="options-outline" title="Personalize" subtitle="Space, goals, pace and limits" />
         </Link>

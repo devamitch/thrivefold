@@ -49,7 +49,24 @@ class FoodCameraView(context: Context, appContext: AppContext) : ExpoView(contex
   private var provider: ProcessCameraProvider? = null
   private var imageCapture: ImageCapture? = null
   private var active = false
+  private var frontFacing = false
+  /** Plain photo mode: no food labelling, just preview and capture (selfies, documents, objects). */
+  private var labels = true
   @Volatile private var lastRun = 0L
+
+  fun setFacing(value: String) {
+    val front = value == "front"
+    if (front == frontFacing) return
+    frontFacing = front
+    if (active) {
+      stop()
+      start()
+    }
+  }
+
+  fun setLabels(value: Boolean) {
+    labels = value
+  }
 
   fun setActive(value: Boolean) {
     if (value == active) return
@@ -114,7 +131,7 @@ class FoodCameraView(context: Context, appContext: AppContext) : ExpoView(contex
           .build()
         imageCapture = capture
         p.unbindAll()
-        p.bindToLifecycle(owner, CameraSelector.DEFAULT_BACK_CAMERA, preview, analysis, capture)
+        p.bindToLifecycle(owner, if (frontFacing) CameraSelector.DEFAULT_FRONT_CAMERA else CameraSelector.DEFAULT_BACK_CAMERA, preview, analysis, capture)
         onFoodReady(mapOf<String, Any>())
       } catch (e: Exception) {
         onFoodError(mapOf("code" to "camera_unavailable", "message" to (e.message ?: "Camera could not start")))
@@ -126,7 +143,7 @@ class FoodCameraView(context: Context, appContext: AppContext) : ExpoView(contex
     try {
       val now = SystemClock.uptimeMillis()
       val c = classifier
-      if (c == null || now - lastRun < 400) return
+      if (!labels || c == null || now - lastRun < 400) return
       lastRun = now
       val bmp = image.toBitmap()
       val rot = image.imageInfo.rotationDegrees

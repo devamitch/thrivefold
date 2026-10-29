@@ -1,15 +1,14 @@
 import { useRootStore } from '../stores/useRootStore';
 
 /**
- * The one switch for beta features everywhere in the app: Beta Mode must be on, and the person
- * must be allowed to use it (a development build, or a server-confirmed owner in release).
- * A persisted `betaMode` alone never unlocks anything after sign-out or on someone else's phone.
+ * The one switch for beta features everywhere in the app: anyone can turn Beta on from the drawer.
+ * Owner-only tools (developer screens) are separate and checked on the server (tf_is_owner).
  */
 export function useBetaEnabled(): boolean {
-  return useRootStore((s) => s.betaMode && (__DEV__ || s.isOwner));
+  return useRootStore((s) => s.betaMode);
 }
 
-/** Whether the person may open Beta Lab at all (to turn Beta Mode on). */
+/** Beta Lab is open to everyone who turns Beta on. */
 export function useBetaAccess(): boolean {
-  return useRootStore((s) => __DEV__ || s.isOwner);
+  return true;
 }

@@ -20,6 +20,7 @@ import { useTheme } from '../../../theme/useTheme';
 import { recordBetaSession } from '../../../services/beta/recordSession';
 import { BetaHero } from '../../../components/beta/BetaHero';
 import { getSanctuaryIllustration } from '../../../utils/illustrationResolver';
+import { CoachGuide } from '../../../components/beta/CoachGuide';
 
 const KINDS: BetaSessionKind[] = ['breathing'];
 const LENGTHS = [1, 3, 5];
@@ -140,6 +141,16 @@ export default function BreathingScreen() {
           </>
         ) : null}
 
+        {!running ? (
+          <CoachGuide
+            steps={[
+              'Sit comfortably with your back supported and shoulders relaxed.',
+              'Breathe in through your nose as the circle grows, out slowly as it shrinks.',
+              'On hold, pause gently. Never strain or force your breath.',
+            ]}
+            tip="Longer out-breaths calm the body. Stop and breathe normally if you feel dizzy."
+          />
+        ) : null}
         <PressableScale
           onPress={running ? stop : start}
           style={[styles.cta, { backgroundColor: running ? colors.surface2 : colors.primary }]}

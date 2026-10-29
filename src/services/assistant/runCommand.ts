@@ -1,4 +1,3 @@
-import { LocalAI } from '../../../modules/local-ai';
 import { MediaPipeTools } from '../../../modules/pose-landmarker/tools';
 import { activeCalories } from '../../domain/activity/calories';
 import type { Command } from '../../domain/assistant/commands';
@@ -6,6 +5,7 @@ import { formatLocalDate } from '../../domain/calendar/universalCalendarEngine';
 import { stepsByDate } from '../../domain/interop/readings';
 import { describeCode, planWalk } from '../../domain/world/outdoor';
 import { useRootStore } from '../../stores/useRootStore';
+import { askLocal } from '../ai/localModel';
 import { alertsFor } from '../world/officialAlerts';
 import { getForecast } from '../world/weather';
 
@@ -113,31 +113,27 @@ export async function runCommand(cmd: Command): Promise<AssistantReply> {
       } catch {
         langNote = '';
       }
-      if (!LocalAI.isLoaded()) {
+      // Today's own numbers as context, so answers can be personal; it never leaves the phone.
+      const steps = stepsByDate(s.deviceReadings).get(today)?.value;
+      const context = [
+        steps ? `Steps today: ${Math.round(steps)}` : null,
+        `Water today: ${s.hydration[today] ?? 0} glasses`,
+        s.weightKg ? `Weight: ${s.weightKg} kg` : null,
+        s.heightCm ? `Height: ${s.heightCm} cm` : null,
+        s.koshProfile.preferredName ? `Call them ${s.koshProfile.preferredName}` : null,
+        s.koshProfile.allergies.length ? `Allergies: ${s.koshProfile.allergies.join(', ')}` : null,
+        s.koshProfile.foodRestrictions.length ? `Food rules: ${s.koshProfile.foodRestrictions.join(', ')}` : null,
+      ]
+        .filter(Boolean)
+        .join('. ');
+      const out = await askLocal(cmd.text, SYSTEM, context);
+      if (out === null) {
         return {
-          text: `I can open screens, log water and tell you today's numbers without a model. For open questions, load an on-device model first.${langNote}`,
+          text: `I can open screens, log water and tell you today's numbers without a model. For open questions, download the on-device model in AI settings.${langNote}`,
           needsModel: true,
         };
       }
-      try {
-        // Today's own numbers as context, so answers can be personal; it never leaves the phone.
-        const steps = stepsByDate(s.deviceReadings).get(today)?.value;
-        const context = [
-          steps ? `Steps today: ${Math.round(steps)}` : null,
-          `Water today: ${s.hydration[today] ?? 0} glasses`,
-          s.weightKg ? `Weight: ${s.weightKg} kg` : null,
-          s.heightCm ? `Height: ${s.heightCm} cm` : null,
-          s.koshProfile.preferredName ? `Call them ${s.koshProfile.preferredName}` : null,
-          s.koshProfile.allergies.length ? `Allergies: ${s.koshProfile.allergies.join(', ')}` : null,
-          s.koshProfile.foodRestrictions.length ? `Food rules: ${s.koshProfile.foodRestrictions.join(', ')}` : null,
-        ]
-          .filter(Boolean)
-          .join('. ');
-        const out = await LocalAI.generateText({ prompt: cmd.text, context, system: SYSTEM });
-        return { text: (out.trim() || "I don't have a good answer for that.") + langNote, fromModel: true };
-      } catch {
-        return { text: 'The on-device model could not answer just now.', needsModel: true };
-      }
+      return { text: out + langNote, fromModel: true };
     }
   }
 }

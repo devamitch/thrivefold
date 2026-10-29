@@ -77,6 +77,8 @@ class FoodVisionModule : Module() {
     View(FoodCameraView::class) {
       Events("onLabels", "onFoodReady", "onFoodError")
       Prop("active") { view: FoodCameraView, active: Boolean -> view.setActive(active) }
+      Prop("facing") { view: FoodCameraView, facing: String -> view.setFacing(facing) }
+      Prop("labels") { view: FoodCameraView, on: Boolean -> view.setLabels(on) }
       AsyncFunction("capture") { view: FoodCameraView, promise: Promise -> view.capture(promise) }
       OnViewDestroys { view: FoodCameraView -> view.release() }
     }

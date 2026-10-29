@@ -138,6 +138,9 @@ export interface AppSlice {
   profileAsk: { snoozedUntil: Partial<Record<'birthday' | 'height' | 'weight' | 'diet' | 'routine', number>>; lastAskedAt: number | null };
   snoozeProfileQuestion: (q: 'birthday' | 'height' | 'weight' | 'diet' | 'routine', until: number) => void;
   markProfileAsked: (at: number) => void;
+  /** The on-device language model the person downloaded and chose (llama.cpp via Llamatik), or null. */
+  localModelId: string | null;
+  setLocalModelId: (id: string | null) => void;
   /** Spoken coach cues in workouts and beta studios. On by default; off silences every line. */
   coachVoiceEnabled: boolean;
   setCoachVoiceEnabled: (on: boolean) => void;
@@ -260,6 +263,8 @@ export const createAppSlice: StateCreator<
   snoozeProfileQuestion: (q, until) =>
     set((state) => ({ profileAsk: { ...state.profileAsk, snoozedUntil: { ...state.profileAsk.snoozedUntil, [q]: until } } })),
   markProfileAsked: (at) => set((state) => ({ profileAsk: { ...state.profileAsk, lastAskedAt: at } })),
+  localModelId: null,
+  setLocalModelId: (localModelId) => set({ localModelId }),
   coachVoiceEnabled: true,
   setCoachVoiceEnabled: (coachVoiceEnabled) => set({ coachVoiceEnabled }),
   betaSessions: [],

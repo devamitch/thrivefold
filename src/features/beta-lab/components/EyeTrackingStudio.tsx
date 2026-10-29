@@ -19,6 +19,7 @@ import type { NativeSyntheticEvent } from 'react-native';
 import { PressableScale } from '../../../components/ui/PressableScale';
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import { EyeTrackerSession, type EyeState } from '../../../domain/vision/eyeTracker';
+import { EyeOverlay } from '../../../components/vision/EyeOverlay';
 import { PoseDetectionAdapter } from '../experiments/pose-detection/PoseDetectionAdapter';
 import { coachVoice } from '../../../services/ai/coachVoice';
 import { hapticLight, hapticSuccess, hapticSelection } from '../../../services/haptics';
@@ -47,8 +48,10 @@ export function EyeTrackingStudio() {
   const lastCoachLineRef = useRef(0);
   const lastAlertAtRef = useRef(0);
 
+  const [overlay, setOverlay] = useState<{ face?: number[]; w: number; h: number }>({ w: 0, h: 0 });
   const onPose = useCallback((e: NativeSyntheticEvent<PoseFrame>) => {
     const frame = e.nativeEvent;
+    setOverlay({ face: frame.face, w: frame.frameWidth, h: frame.frameHeight });
     const next = tracker.current.processFace(frame.face);
     setEyeState(next);
     // The coach says each new comfort alert once (the alert engine already applies cooldowns).
@@ -222,6 +225,7 @@ export function EyeTrackingStudio() {
       <Modal visible={active && mode === 'scanner'} animationType="fade" statusBarTranslucent onRequestClose={() => void toggleStudio()}>
         <View style={styles.full}>
           <PoseDetectionAdapter engine="default" active={active && mode === 'scanner'} facing="front" face hands={false} onPose={onPose} style={StyleSheet.absoluteFill} />
+          <EyeOverlay face={overlay.face} frameW={overlay.w} frameH={overlay.h} />
           <View style={styles.fullTop}>
             <Text style={[typography.bodyBold, { color: '#FFF' }]}>{eyeState.tracked ? 'Tracking your eyes' : 'Bring your face into view'}</Text>
           </View>

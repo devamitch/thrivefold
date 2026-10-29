@@ -21,6 +21,7 @@ import type { BetaSessionKind } from '../../../stores/slices/appSlice';
 import { useTheme } from '../../../theme/useTheme';
 import { BetaHero } from '../../../components/beta/BetaHero';
 import { getSanctuaryIllustration } from '../../../utils/illustrationResolver';
+import { CoachGuide } from '../../../components/beta/CoachGuide';
 
 type Drill = 'sustain' | 'steady' | 'pitch' | 'repeat';
 const KINDS: BetaSessionKind[] = ['voice_practice'];
@@ -216,6 +217,15 @@ export default function VoicePracticeScreen() {
           {result ? <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 12 }]}>{result}</Text> : null}
         </Card>
 
+        <CoachGuide
+          steps={[
+            'Sit or stand tall and relax your jaw and shoulders.',
+            'Take an easy breath from your belly before each try.',
+            'Use a comfortable voice: never push loudness or pitch to strain.',
+            'Hold the phone about 30 cm from your mouth in a quiet room.',
+          ]}
+          tip="Sip water between tries. Rest your voice if it feels tired or hoarse."
+        />
         <Text style={[typography.caption, { color: colors.text.muted, marginTop: 10 }]}>
           Audio is not recorded or saved; only the results are kept on this phone. This is voice practice, not speech therapy
           or a medical assessment. If your voice is hoarse for more than two weeks, see a doctor.

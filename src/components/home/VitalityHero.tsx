@@ -6,6 +6,7 @@ import { Easing, useReducedMotion, useSharedValue, withTiming } from 'react-nati
 import Svg, { Circle } from 'react-native-svg';
 
 import { useTheme } from '../../theme/useTheme';
+import { useRouter, type Href } from 'expo-router';
 import { Avatar } from '../ui/Avatar';
 import { PressableScale } from '../ui/PressableScale';
 
@@ -78,6 +79,7 @@ export function VitalityHero({
   action,
 }: VitalityHeroProps) {
   const { colors, typography, spacing } = useTheme();
+  const router = useRouter();
   const reduce = useReducedMotion();
 
   const ringColors = [colors.onPrimary, colors.onPrimaryAccent, colors.onPrimaryInfo];
@@ -147,6 +149,15 @@ export function VitalityHero({
             </Text>
           ) : null}
         </View>
+        <PressableScale
+          onPress={() => router.push('/(app)/search' as Href)}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Search or ask anything"
+          style={[styles.searchHit, { backgroundColor: colors.onPrimarySurface }]}
+        >
+          <Ionicons name="search" size={18} color={colors.onPrimary} />
+        </PressableScale>
         <PressableScale
           onPress={onAvatarPress}
           hitSlop={8}
@@ -258,6 +269,7 @@ export function VitalityHeroDecor() {
 }
 
 const styles = StyleSheet.create({
+  searchHit: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', marginRight: 10 },
   flex: { flex: 1 },
   topRow: { flexDirection: 'row', alignItems: 'flex-start' },
   eyebrow: { textTransform: 'uppercase', letterSpacing: 0.8, fontSize: 11 },

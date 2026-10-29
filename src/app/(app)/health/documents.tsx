@@ -3,6 +3,7 @@ import * as ImagePicker from 'expo-image-picker';
 import React, { useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
+import { CameraCapture } from '../../../components/camera/CameraCapture';
 import { AppHeader } from '../../../components/ui/AppHeader';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
@@ -55,16 +56,26 @@ export default function DocumentsScreen() {
     setSaved(null);
     setResult(null);
     setKind(k);
-    const perm = source === 'camera' ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (source === 'camera') {
+      setCam(k);
+      return;
+    }
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
       setError('Permission was not given.');
       return;
     }
-    const r = source === 'camera' ? await ImagePicker.launchCameraAsync({ quality: 0.9 }) : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.9 });
+    const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.9 });
     if (r.canceled || !r.assets[0]) return;
+    await read(k, r.assets[0].uri);
+  };
+
+  const [cam, setCam] = useState<DocKind | null>(null);
+  const read = async (k: DocKind, uri: string) => {
+    setKind(k);
     setBusy(true);
     try {
-      const res = await readDocument(r.assets[0].uri, k);
+      const res = await readDocument(uri, k);
       setResult(res);
       if (k === 'prescription') setChosen(((res as PrescriptionResult).medicines ?? []).map((m, i) => (m.unclear ? -1 : i)).filter((i) => i >= 0));
     } catch (e) {
@@ -196,6 +207,18 @@ export default function DocumentsScreen() {
           </Card>
         ))}
       </ScreenScrollView>
+      <CameraCapture
+        visible={cam !== null}
+        onClose={() => setCam(null)}
+        guide="document"
+        title="Photograph the page"
+        hint="Fit the whole page inside the frame, flat and well lit"
+        onPhoto={(uri) => {
+          const k = cam;
+          setCam(null);
+          if (k) void read(k, uri);
+        }}
+      />
     </ScreenContainer>
   );
 }

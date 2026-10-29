@@ -14,6 +14,10 @@ export interface FoodCameraHandle {
 
 export interface FoodCameraViewProps extends ViewProps {
   active: boolean;
+  /** Back by default; "front" for selfies. */
+  facing?: 'front' | 'back';
+  /** Live food labels (default on); off for plain photo capture. */
+  labels?: boolean;
   onLabels?: (event: NativeSyntheticEvent<{ labels: VisionLabel[] }>) => void;
   onFoodReady?: (event: NativeSyntheticEvent<Record<string, never>>) => void;
   onFoodError?: (event: NativeSyntheticEvent<{ code: string; message: string }>) => void;

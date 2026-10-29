@@ -31,6 +31,7 @@ import { ensureCameraPermission } from '../../../services/sensors/cameraPermissi
 import type { BetaSessionKind } from '../../../stores/slices/appSlice';
 import { useTheme } from '../../../theme/useTheme';
 import { getSanctuaryIllustration } from '../../../utils/illustrationResolver';
+import { CoachGuide } from '../../../components/beta/CoachGuide';
 
 /**
  * Eye games, ported from BlinkQuest's EyeGame (Gaze Pop, Direction Trail, Slider Chase, Orbit
@@ -111,6 +112,7 @@ export default function EyeGamesScreen() {
   const targetRef = useRef<Dir | null>(null);
   targetRef.current = target;
   const needCenterRef = useRef(false);
+  const saidZone = useRef<string | null>(null);
 
   const marker = { x: useSharedValue(0), y: useSharedValue(0), on: useSharedValue(0) };
   const pursuit = { x: useSharedValue(0), y: useSharedValue(0) };
@@ -150,7 +152,7 @@ export default function EyeGamesScreen() {
       // Target choice only (not a measurement), so plain randomness is fine.
       const options = DIRS.filter((d) => d !== prev);
       const t = options[Math.floor(Math.random() * options.length)];
-      void coachVoice.speak(mode === 'direction' ? `Look ${t}` : '', { priority: 2, minGapMs: 0, maxMs: 1200 });
+      void coachVoice.speak(`Look ${t}`, { priority: 2, minGapMs: 0, maxMs: 1200 });
       return t;
     });
     promptAt.current = Date.now();
@@ -257,6 +259,12 @@ export default function EyeGamesScreen() {
         const ty = mode === 'pursuitH' ? 0 : Math.sin((2 * Math.PI * t) / 6);
         pursuit.x.value = tx;
         pursuit.y.value = ty;
+        // Say where the orb is heading as it reaches each side.
+        const zone = Math.abs(tx) > 0.75 ? (tx > 0 ? 'right' : 'left') : Math.abs(ty) > 0.75 ? (ty > 0 ? 'down' : 'up') : null;
+        if (zone && zone !== saidZone.current) {
+          saidZone.current = zone;
+          void coachVoice.speak(`Look ${zone}`, { priority: 2, minGapMs: 0, maxMs: 1100 });
+        }
         const { nx, ny } = normalize(g, c);
         const err = mode === 'pursuitH' ? Math.abs(nx - tx) : Math.hypot(nx - tx, ny - ty);
         const hit = err < (mode === 'pursuitH' ? 0.5 : 0.65);
@@ -380,6 +388,15 @@ export default function EyeGamesScreen() {
           <Text style={[typography.body, { color: colors.text.secondary, marginTop: 8 }]}>
             {MODES.find((m) => m.id === mode)?.how} {DURATION_SEC} seconds, after a 5-second eye check.
           </Text>
+          <CoachGuide
+            steps={[
+              'Hold the phone at reading distance, about an arm bent at the elbow, in front of your face.',
+              'Keep your head still. Only your eyes move; turning your head does not score.',
+              'First a 5-second eye check: follow the dot to the centre, left, right, up and down.',
+              'Then follow the coach: when you hear "look right", move your eyes right until you hear "Complete".',
+            ]}
+            tip="Good, even light on your face helps. With glasses, tilt the phone slightly to avoid glare."
+          />
           {calError ? <Text style={[typography.caption, { color: colors.error, marginTop: 8 }]}>{calError}</Text> : null}
           <PressableScale onPress={() => void begin()} style={[styles.cta, { backgroundColor: colors.primary }]} accessibilityLabel="Start eye game">
             <Ionicons name="play" size={18} color={colors.text.inverse} />

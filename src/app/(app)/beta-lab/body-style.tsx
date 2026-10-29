@@ -4,8 +4,8 @@ import { useRouter, type Href } from 'expo-router';
 import React, { useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
-import { LocalAI } from '../../../../modules/local-ai';
 import { analyzePortrait, portraitVisionAvailable } from '../../../../modules/pose-landmarker/portrait';
+import { CameraCapture } from '../../../components/camera/CameraCapture';
 import { AppHeader } from '../../../components/ui/AppHeader';
 import { BetaBadge } from '../../../components/ui/Badge';
 import { Card } from '../../../components/ui/Card';
@@ -26,10 +26,12 @@ import {
   type PostureResult,
 } from '../../../domain/vision/portrait';
 import { coachVoice } from '../../../services/ai/coachVoice';
+import { askLocal } from '../../../services/ai/localModel';
 import { recordBetaSession } from '../../../services/beta/recordSession';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
 import { BetaHero } from '../../../components/beta/BetaHero';
+import { CoachGuide } from '../../../components/beta/CoachGuide';
 
 const SHAPE_LABEL: Record<FaceResult['shape'], string> = {
   oval: 'Oval', round: 'Round', square: 'Square', heart: 'Heart', oblong: 'Long (oblong)', diamond: 'Diamond',
@@ -38,19 +40,10 @@ const BMI_LABEL = { below: 'Below the usual range', healthy: 'In the usual range
 
 type Source = 'camera_front' | 'camera_back' | 'gallery';
 
-async function pickPhoto(source: Source): Promise<string | null> {
-  if (source === 'gallery') {
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) return null;
-    const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.9 });
-    return r.canceled ? null : (r.assets[0]?.uri ?? null);
-  }
-  const perm = await ImagePicker.requestCameraPermissionsAsync();
+async function pickFromGallery(): Promise<string | null> {
+  const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (!perm.granted) return null;
-  const r = await ImagePicker.launchCameraAsync({
-    quality: 0.9,
-    cameraType: source === 'camera_front' ? ImagePicker.CameraType.front : ImagePicker.CameraType.back,
-  });
+  const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.9 });
   return r.canceled ? null : (r.assets[0]?.uri ?? null);
 }
 
@@ -82,10 +75,28 @@ export default function BodyStyleScreen() {
 
   const numbers = bodyNumbers(Number(h), Number(w), age ? Number(age) : null, formula);
 
+  // The in-app camera opens for camera sources; the gallery picks a saved photo.
+  const [cam, setCam] = useState<'face' | 'body' | null>(null);
   const runFace = async (source: Source) => {
     setError(null);
-    const uri = await pickPhoto(source);
-    if (!uri) return;
+    if (source !== 'gallery') {
+      setCam('face');
+      return;
+    }
+    const uri = await pickFromGallery();
+    if (uri) await faceFrom(uri);
+  };
+  const runBody = async (source: Source) => {
+    setError(null);
+    if (source !== 'gallery') {
+      setCam('body');
+      return;
+    }
+    const uri = await pickFromGallery();
+    if (uri) await bodyFrom(uri);
+  };
+
+  const faceFrom = async (uri: string) => {
     setBusy('face');
     try {
       const a = await analyzePortrait(uri);
@@ -100,10 +111,7 @@ export default function BodyStyleScreen() {
     }
   };
 
-  const runBody = async (source: Source) => {
-    setError(null);
-    const uri = await pickPhoto(source);
-    if (!uri) return;
+  const bodyFrom = async (uri: string) => {
     setBusy('body');
     try {
       const a = await analyzePortrait(uri);
@@ -144,10 +152,6 @@ export default function BodyStyleScreen() {
 
   const askPlan = async () => {
     if (!numbers) return;
-    if (!LocalAI.isLoaded()) {
-      setPlan('To write a meal plan on this phone, load an on-device model first. Your targets above already work with the meal log.');
-      return;
-    }
     setBusy('plan');
     // The person's own food rules from their profile; allergies are hard limits.
     const k = useRootStore.getState().koshProfile;
@@ -159,11 +163,11 @@ export default function BodyStyleScreen() {
     ].join('');
     try {
       const target = numbers.energy ? `${numbers.energy.low}-${numbers.energy.high} kcal` : 'a balanced amount of energy';
-      const text = await LocalAI.generateText({
-        system: 'You are a friendly nutrition coach. Write a simple one-day meal plan in plain lines: breakfast, lunch, snack, dinner. No medical claims, no supplements.',
-        prompt: `Plan one day of everyday home meals for about ${target} with ${numbers.proteinG.low}-${numbers.proteinG.high} g protein and ${numbers.waterL} L of water.${foodRules}`,
-      });
-      setPlan(text.trim() || 'The model returned nothing; try again.');
+      const text = await askLocal(
+        `Plan one day of everyday home meals for about ${target} with ${numbers.proteinG.low}-${numbers.proteinG.high} g protein and ${numbers.waterL} L of water.${foodRules}`,
+        'You are a friendly nutrition coach. Write a simple one-day meal plan in plain lines: breakfast, lunch, snack, dinner. No medical claims, no supplements.',
+      );
+      setPlan(text ?? 'To write a meal plan on this phone, download the on-device model in Settings → On-device AI.');
     } catch {
       setPlan('The on-device model could not write a plan just now.');
     } finally {
@@ -194,6 +198,15 @@ export default function BodyStyleScreen() {
           Photos are analysed on this phone and not saved or sent. Results are estimates from one photo. Thrivefold never
           rates how anyone looks.
         </Text>
+        <CoachGuide
+          title="For the best results"
+          steps={[
+            'Face photo: look straight at the camera, hair off your face, even light, no hat or sunglasses.',
+            'Full-length photo: ask someone to take it, or prop the phone at waist height about 2 m away.',
+            'Stand facing the camera, feet hip-width apart, arms slightly away from your sides.',
+            'Fitted clothes give a truer outline; loose clothes make proportions less accurate.',
+          ]}
+        />
         {!available ? (
           <Text style={[typography.caption, { color: colors.error, marginTop: 8 }]}>Photo analysis is not available in this build.</Text>
         ) : null}
@@ -312,6 +325,19 @@ export default function BodyStyleScreen() {
           <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
         </PressableScale>
       </ScreenScrollView>
+      <CameraCapture
+        visible={cam !== null}
+        onClose={() => setCam(null)}
+        facing={cam === 'face' ? 'front' : 'back'}
+        guide={cam === 'face' ? 'face' : 'body'}
+        title={cam === 'face' ? 'Face photo' : 'Full-length photo'}
+        hint={cam === 'face' ? 'Face the camera in even light, hair off your face' : 'Stand about 2 m away, head to feet inside the outline, arms slightly out'}
+        onPhoto={(uri) => {
+          const which = cam;
+          setCam(null);
+          void (which === 'face' ? faceFrom(uri) : bodyFrom(uri));
+        }}
+      />
     </ScreenContainer>
   );
 }

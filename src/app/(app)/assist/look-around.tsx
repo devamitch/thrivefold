@@ -1,10 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import * as ImagePicker from 'expo-image-picker';
 import React, { useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
 import { MediaPipeTools, type DetectedObject } from '../../../../modules/pose-landmarker/tools';
+import { CameraCapture } from '../../../components/camera/CameraCapture';
 import { AppHeader } from '../../../components/ui/AppHeader';
 import { Button } from '../../../components/ui/Button';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
@@ -23,23 +23,20 @@ export default function LookAroundScreen() {
   const [error, setError] = useState<string | null>(null);
   const [said, setSaid] = useState<string | null>(null);
 
-  const look = async () => {
+  const [cam, setCam] = useState(false);
+  const look = (photo: string) => {
+    void analyse(photo);
+  };
+  const analyse = async (photo: string) => {
     setError(null);
-    const perm = await ImagePicker.requestCameraPermissionsAsync();
-    if (!perm.granted) {
-      setError('Camera access was not allowed.');
-      return;
-    }
-    const r = await ImagePicker.launchCameraAsync({ quality: 0.8 });
-    if (r.canceled || !r.assets[0]) return;
-    setUri(r.assets[0].uri);
+    setUri(photo);
     if (!MediaPipeTools) {
       setError('Object detection is not available on this device.');
       return;
     }
     setBusy(true);
     try {
-      const found = await MediaPipeTools.detectObjects(r.assets[0].uri);
+      const found = await MediaPipeTools.detectObjects(photo);
       setObjects(found);
       const text = describeObjects(found);
       setSaid(text);
@@ -56,7 +53,7 @@ export default function LookAroundScreen() {
     <ScreenContainer>
       <AppHeader eyebrow="ASSIST" title="What's around me" subtitle="Photo → spoken list of objects, on this phone" showBack />
       <ScreenScrollView contentContainerStyle={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xl * 2 }}>
-        <Button label="Take a photo and tell me" size="lg" onPress={() => void look()} accessibilityHint="Opens the camera, then reads out what it sees" />
+        <Button label="Take a photo and tell me" size="lg" onPress={() => setCam(true)} accessibilityHint="Opens the camera, then reads out what it sees" />
         {busy ? <ActivityIndicator color={colors.primary} style={{ marginTop: 16 }} /> : null}
         {error ? <Text style={[typography.body, { color: colors.error, marginTop: 12 }]}>{error}</Text> : null}
         {said ? (
@@ -87,6 +84,16 @@ export default function LookAroundScreen() {
           </Text>
         </View>
       </ScreenScrollView>
+      <CameraCapture
+        visible={cam}
+        onClose={() => setCam(false)}
+        title="What's around me"
+        hint="Point the camera, then press the big button"
+        onPhoto={(photo) => {
+          setCam(false);
+          look(photo);
+        }}
+      />
     </ScreenContainer>
   );
 }

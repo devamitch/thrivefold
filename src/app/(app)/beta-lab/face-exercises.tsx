@@ -27,6 +27,7 @@ import type { BetaSessionKind } from '../../../stores/slices/appSlice';
 import { BetaHero } from '../../../components/beta/BetaHero';
 import { getSanctuaryIllustration } from '../../../utils/illustrationResolver';
 import { useTheme } from '../../../theme/useTheme';
+import { CoachGuide } from '../../../components/beta/CoachGuide';
 
 const KINDS: BetaSessionKind[] = ['face_exercise'];
 const CALIBRATE_MS = 2500;
@@ -203,6 +204,16 @@ export default function FaceExercisesScreen() {
               </Text>
             </>
           )}
+          {phase === 'intro' ? (
+            <CoachGuide
+              steps={[
+                'Prop the phone at eye level, face lit evenly from the front.',
+                'Keep a relaxed face for 2 seconds while the camera learns your neutral look.',
+                'Do each movement slowly and hold it until the coach counts.',
+                'Return to neutral between reps. Stop anything that feels uncomfortable.',
+              ]}
+            />
+          ) : null}
           {denied ? (
             <Text style={[typography.caption, { color: colors.error, marginTop: 8 }]}>
               Camera access was not allowed. Allow it in Android settings to start.
