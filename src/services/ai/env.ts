@@ -1,8 +1,8 @@
 /**
  * Typed environment config — single import for all API keys.
  *
- * Every key reads from `process.env.EXPO_PUBLIC_*` which Expo injects at
- * build time from `.env.local`. Keys are never hardcoded.
+ * Only public values (Supabase URL and publishable key) come from `process.env.EXPO_PUBLIC_*`.
+ * Provider keys are never bundled; see the comment on the providers block.
  *
  * Usage:
  *   import { env } from '@/services/ai/env';
@@ -14,27 +14,24 @@ export const env = Object.freeze({
   SUPABASE_URL: process.env.EXPO_PUBLIC_SUPABASE_URL ?? '',
   SUPABASE_KEY: process.env.EXPO_PUBLIC_SUPABASE_KEY ?? '',
 
-  // ── AI providers ──
-  GEMINI_API_KEY: process.env.EXPO_PUBLIC_GEMINI_API_KEY ?? '',
-  GEMINI_API_KEY_2: process.env.EXPO_PUBLIC_GEMINI_API_KEY_2 ?? '',
-  GROQ_API_KEY: process.env.EXPO_PUBLIC_GROQ_API_KEY ?? '',
-  GROQ_API_KEY_2: process.env.EXPO_PUBLIC_GROQ_API_KEY_2 ?? '',
-  OPENROUTER_API_KEY: process.env.EXPO_PUBLIC_OPENROUTER_API_KEY ?? '',
-  CLAUDE_API_KEY: process.env.EXPO_PUBLIC_CLAUDE_API_KEY ?? process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY ?? '',
-
-  // ── Voice & Speech ──
-  SARVAM_API_KEY: process.env.EXPO_PUBLIC_SARVAM_API_KEY ?? '',
-  SARVAM_API_KEY_2: process.env.EXPO_PUBLIC_SARVAM_API_KEY_2 ?? '',
-  ELEVENLABS_API_KEY: process.env.EXPO_PUBLIC_ELEVENLABS_API_KEY ?? '',
-  DEEPGRAM_API_KEY: process.env.EXPO_PUBLIC_DEEPGRAM_API_KEY ?? '',
-
-  // ── Search & Embeddings ──
-  COHERE_API_KEY: process.env.EXPO_PUBLIC_COHERE_API_KEY ?? '',
-  VOYAGE_API_KEY: process.env.EXPO_PUBLIC_VOYAGE_API_KEY ?? '',
-  EXA_API_KEY: process.env.EXPO_PUBLIC_EXA_API_KEY ?? '',
-
-  // ── Memory / RAG ──
-  MEM0_API_KEY: process.env.EXPO_PUBLIC_MEM0_API_KEY ?? '',
+  // ── AI providers, voice, search, memory ──
+  // Never read from the build environment: EXPO_PUBLIC_* values are copied into the app bundle,
+  // where anyone can extract them. Server keys live only in Supabase Edge Function secrets; a
+  // person's own key (BYOK) comes from secure storage at runtime.
+  GEMINI_API_KEY: '',
+  GEMINI_API_KEY_2: '',
+  GROQ_API_KEY: '',
+  GROQ_API_KEY_2: '',
+  OPENROUTER_API_KEY: '',
+  CLAUDE_API_KEY: '',
+  SARVAM_API_KEY: '',
+  SARVAM_API_KEY_2: '',
+  ELEVENLABS_API_KEY: '',
+  DEEPGRAM_API_KEY: '',
+  COHERE_API_KEY: '',
+  VOYAGE_API_KEY: '',
+  EXA_API_KEY: '',
+  MEM0_API_KEY: '',
 
   // ── Device Testing Override ──
   ENABLE_ALL_FEATURES: process.env.EXPO_PUBLIC_ENABLE_ALL_FEATURES === 'true',

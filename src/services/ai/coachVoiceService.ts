@@ -9,7 +9,7 @@
 
 import * as Speech from 'expo-speech';
 import * as FileSystem from 'expo-file-system/legacy';
-import { env } from './env';
+import { pickSarvamKey } from './env';
 
 export interface VoiceCoachOptions {
   language?: 'en-IN' | 'hi-IN';
@@ -116,7 +116,7 @@ export async function synthesizeSarvamSpeech(
     return null;
   }
 
-  const key = env.SARVAM_API_KEY || env.SARVAM_API_KEY_2;
+  const key = pickSarvamKey();
   if (!key) return null;
 
   try {
