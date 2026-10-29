@@ -34,10 +34,25 @@ export default function SettingsScreen() {
   const { colors, typography, spacing, experience } = useTheme();
   const HEALTH_SPACE =
     experience === 'women_health'
-      ? { route: '/(app)/health/cycle', icon: 'water-outline' as const, title: 'Cycle', subtitle: 'Periods, symptoms and estimated phases' }
+      ? {
+          route: '/(app)/health/cycle',
+          icon: 'water-outline' as const,
+          title: 'Cycle',
+          subtitle: 'Periods, symptoms and estimated phases',
+        }
       : experience === 'men_health'
-        ? { route: '/(app)/health/men', icon: 'barbell-outline' as const, title: "Men's health", subtitle: 'Training, recovery and health basics' }
-        : { route: '/(app)/health/pride', icon: 'heart-outline' as const, title: 'Self-care', subtitle: 'Affirming care, notes and support' };
+        ? {
+            route: '/(app)/health/men',
+            icon: 'barbell-outline' as const,
+            title: "Men's health",
+            subtitle: 'Training, recovery and health basics',
+          }
+        : {
+            route: '/(app)/health/pride',
+            icon: 'heart-outline' as const,
+            title: 'Self-care',
+            subtitle: 'Affirming care, notes and support',
+          };
 
   const user = useRootStore((s) => s.user);
   const setUser = useRootStore((s) => s.setUser);
@@ -70,11 +85,13 @@ export default function SettingsScreen() {
   };
 
   // Find active avatar icon
-  const currentAvatar =
-    AVATAR_OPTIONS.find((a) => a.id === (user?.avatarSeed ?? 'lotus')) ?? AVATAR_OPTIONS[0];
+  const currentAvatar = AVATAR_OPTIONS.find((a) => a.id === (user?.avatarSeed ?? 'lotus')) ?? AVATAR_OPTIONS[0];
 
   return (
-    <ScreenContainer header={<AppHeader title="You" subtitle="Profile, spaces and settings" />} scrollMode="shell-scroll-view">
+    <ScreenContainer
+      header={<AppHeader title="You" subtitle="Profile, spaces and settings" />}
+      scrollMode="shell-scroll-view"
+    >
       <View style={[styles.content, { paddingBottom: spacing.xxl }]}>
         {/* Profile Card Header */}
         <Animated.View entering={FadeIn.duration(180)}>
@@ -88,7 +105,12 @@ export default function SettingsScreen() {
                 <View style={styles.avatarWrap}>
                   <SquircleSurface radius={22} fill={colors.primaryAlpha} style={styles.avatarCircle}>
                     {user?.photoUrl ? (
-                      <Image source={{ uri: user.photoUrl }} style={styles.avatarPhoto} contentFit="cover" accessibilityIgnoresInvertColors />
+                      <Image
+                        source={{ uri: user.photoUrl }}
+                        style={styles.avatarPhoto}
+                        contentFit="cover"
+                        accessibilityIgnoresInvertColors
+                      />
                     ) : (
                       <Ionicons name={currentAvatar.icon} size={30} color={colors.primary} />
                     )}
@@ -106,7 +128,7 @@ export default function SettingsScreen() {
                     {user?.pseudonym ?? 'Friend'}
                   </Text>
                   <PressableScale
-                    onPress={() => setIsEditingProfile(true)}
+                    onPress={() => router.push('/(app)/you/edit-profile' as Href)}
                     scaleTo={0.94}
                     accessibilityRole="button"
                     accessibilityLabel="Edit profile"
@@ -125,7 +147,11 @@ export default function SettingsScreen() {
 
                 {user?.profileSource === 'google' ? (
                   <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                    {[user.age !== null && user.age !== undefined ? `${user.age}` : null, user.gender ?? null, 'from Google']
+                    {[
+                      user.age !== null && user.age !== undefined ? `${user.age}` : null,
+                      user.gender ?? null,
+                      'from Google',
+                    ]
                       .filter(Boolean)
                       .join(' · ')}
                   </Text>
@@ -133,7 +159,10 @@ export default function SettingsScreen() {
                 <View style={styles.badgeRow}>
                   <Badge label={`Level ${level}`} variant="primary" />
                   {currentStreak > 0 ? <Badge label={`${currentStreak} day streak`} variant="primary" /> : null}
-                  <Badge label={user?.isGuest ? 'Guest' : user?.email ? 'Signed in' : 'On this phone'} variant="neutral" />
+                  <Badge
+                    label={user?.isGuest ? 'Guest' : user?.email ? 'Signed in' : 'On this phone'}
+                    variant="neutral"
+                  />
                 </View>
               </View>
             </View>
@@ -141,23 +170,17 @@ export default function SettingsScreen() {
             {/* Quick Metrics Bar */}
             <View style={[styles.metricsBar, { borderTopColor: colors.surface1 }]}>
               <View style={styles.metricItem}>
-                <Text style={[typography.captionBold, { color: colors.primary, fontSize: 16 }]}>
-                  {questsCompleted}
-                </Text>
+                <Text style={[typography.captionBold, { color: colors.primary, fontSize: 16 }]}>{questsCompleted}</Text>
                 <Text style={[typography.caption, { color: colors.text.secondary }]}>Quests</Text>
               </View>
               <View style={[styles.metricDivider, { backgroundColor: colors.surface1 }]} />
               <View style={styles.metricItem}>
-                <Text style={[typography.captionBold, { color: colors.accent, fontSize: 16 }]}>
-                  {checkInDays}
-                </Text>
+                <Text style={[typography.captionBold, { color: colors.accent, fontSize: 16 }]}>{checkInDays}</Text>
                 <Text style={[typography.caption, { color: colors.text.secondary }]}>Check-ins</Text>
               </View>
               <View style={[styles.metricDivider, { backgroundColor: colors.surface1 }]} />
               <View style={styles.metricItem}>
-                <Text style={[typography.captionBold, { color: colors.text.primary, fontSize: 16 }]}>
-                  {xp}
-                </Text>
+                <Text style={[typography.captionBold, { color: colors.text.primary, fontSize: 16 }]}>{xp}</Text>
                 <Text style={[typography.caption, { color: colors.text.secondary }]}>XP Earned</Text>
               </View>
             </View>
@@ -166,64 +189,117 @@ export default function SettingsScreen() {
 
         {__DEV__ || isOwner ? (
           <>
-            <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm }]}>
+            <Text
+              style={[
+                typography.subheading,
+                { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm },
+              ]}
+            >
               Owner
             </Text>
             <Link href={'/(app)/beta-lab' as Href} asChild>
-              <SettingsRow icon="flask-outline" title="Beta Lab" subtitle="Every beta studio, coach, voice and camera feature" />
+              <SettingsRow
+                icon="flask-outline"
+                title="Beta Lab"
+                subtitle="Every beta studio, coach, voice and camera feature"
+              />
             </Link>
             <Link href={'/(app)/dev' as Href} asChild>
-              <SettingsRow icon="construct-outline" title="Developer tools" subtitle="Beta Mode, data and diagnostics" />
+              <SettingsRow
+                icon="construct-outline"
+                title="Developer tools"
+                subtitle="Beta Mode, data and diagnostics"
+              />
             </Link>
           </>
         ) : null}
 
         {/* Section: Account & Identity */}
-        <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm }]}>
-          Account & Identity
+        <Text
+          style={[
+            typography.subheading,
+            { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm },
+          ]}
+        >
+          You
         </Text>
         <Link href={'/(app)/you/profile' as Href} asChild>
-          <SettingsRow icon="person-circle-outline" title="Your profile" subtitle="Languages, food rules, allergies, growth, accessibility" />
-        </Link>
-        <Link href={'/(app)/you/edit-profile' as Href} asChild>
-          <SettingsRow icon="create-outline" title="Full profile editor" subtitle="All-in-one multi-section editor with keyboard protection" />
+          <SettingsRow
+            icon="person-circle-outline"
+            title="Your profile"
+            subtitle="Body, food, home, languages, accessibility and emergency contacts"
+          />
         </Link>
         <Link href={'/(app)/settings/anvaykosh' as Href} asChild>
-          <SettingsRow icon="apps-outline" title="AnvayKosh & Cloud Sync" subtitle="Anvay ID, Supabase push/pull, progress and ecosystem apps" />
+          <SettingsRow
+            icon="apps-outline"
+            title="Account sync"
+            subtitle="Your profile, points and level, saved to your account"
+          />
         </Link>
 
         {/* Section: Preferences & Daily Focus */}
-        <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm }]}>
-          Preferences & Daily Focus
+        <Text
+          style={[
+            typography.subheading,
+            { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm },
+          ]}
+        >
+          Preferences
         </Text>
         <Link href={'/(app)/you/preferences' as Href} asChild>
-          <SettingsRow icon="options-outline" title="Preferences brief" subtitle="Routine length, meal style, and sensory comfort in one view" />
+          <SettingsRow
+            icon="options-outline"
+            title="Routine and comfort"
+            subtitle="Routine length, meal style and sensory comfort"
+          />
         </Link>
         <Link href={'/(app)/you/adhd-screener' as Href} asChild>
-          <SettingsRow icon="sparkles-outline" title="Focus & Attention (ADHD)" subtitle="Gentle 6-question reflection for micro-step pacing" />
+          <SettingsRow
+            icon="sparkles-outline"
+            title="Focus self-check"
+            subtitle="Six quick questions so tasks come in smaller steps"
+          />
         </Link>
         <Link href={'/(onboarding)/lifestyle-preferences' as Href} asChild>
           <SettingsRow icon="restaurant-outline" title="Food preferences" subtitle="Nutrition focus and meal timing" />
         </Link>
         <Link href={'/(app)/personalize' as Href} asChild>
-          <SettingsRow icon="compass-outline" title="Personalize space" subtitle="Space, goals, pace and limits" />
+          <SettingsRow icon="compass-outline" title="Space and goals" subtitle="Your space, goals, pace and limits" />
         </Link>
         <Link href={'/(app)/you/beliefs' as Href} asChild>
-          <SettingsRow icon="globe-outline" title="Beliefs and culture" subtitle="Optional, private, for observance reminders" />
+          <SettingsRow
+            icon="globe-outline"
+            title="Beliefs and culture"
+            subtitle="Optional, private, for observance reminders"
+          />
         </Link>
         <Link href={'/(app)/you/reminders' as Href} asChild>
-          <SettingsRow icon="notifications-outline" title="Reminders & Quiet Hours" subtitle="Quest reminders and quiet hours" />
+          <SettingsRow
+            icon="notifications-outline"
+            title="Reminders and quiet hours"
+            subtitle="When Thrive may remind you, and when not"
+          />
         </Link>
 
         {/* Section: Your spaces */}
-        <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm }]}>
+        <Text
+          style={[
+            typography.subheading,
+            { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm },
+          ]}
+        >
           Your spaces
         </Text>
         <Link href={HEALTH_SPACE.route as Href} asChild>
           <SettingsRow icon={HEALTH_SPACE.icon} title={HEALTH_SPACE.title} subtitle={HEALTH_SPACE.subtitle} />
         </Link>
         <Link href={'/(app)/calendar' as Href} asChild>
-          <SettingsRow icon="calendar-outline" title="Calendar and routine" subtitle="Your days, workouts, check-ins and plans by date" />
+          <SettingsRow
+            icon="calendar-outline"
+            title="Calendar and routine"
+            subtitle="Your days, workouts, check-ins and plans by date"
+          />
         </Link>
         {correspondenceOpen ? (
           <Link href={'/(app)/letters' as Href} asChild>
@@ -238,22 +314,39 @@ export default function SettingsScreen() {
         </Link>
 
         {/* Section: System & Security */}
-        <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm }]}>
-          System & Security
+        <Text
+          style={[
+            typography.subheading,
+            { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm },
+          ]}
+        >
+          Thrive Coach and privacy
         </Text>
         <Link href={'/(app)/ai/model-status' as Href} asChild>
-          <SettingsRow icon="hardware-chip-outline" title="On-device AI" subtitle="Download the local language model (llama.cpp) for offline answers" />
+          <SettingsRow
+            icon="hardware-chip-outline"
+            title="Offline brain"
+            subtitle="Download once so Thrive answers with no internet"
+          />
         </Link>
         <Link href={'/(app)/settings/memories' as Href} asChild>
-          <SettingsRow icon="library-outline" title="Private AI Memories" subtitle="Inspect, search, and manage on-device knowledge used by Thrive Coach" />
+          <SettingsRow
+            icon="library-outline"
+            title="What Thrive remembers"
+            subtitle="Kept on this phone. See, teach or delete"
+          />
         </Link>
         <Link href={'/(app)/settings/ai-byok' as Href} asChild>
-          <SettingsRow icon="key-outline" title="AI & API Keys (BYOK)" subtitle="Bring Your Own Key or run 100% on-device" />
+          <SettingsRow
+            icon="key-outline"
+            title="Your own AI key"
+            subtitle="Optional: use your own online AI provider"
+          />
         </Link>
         <SettingsRow
           icon="finger-print-outline"
           title="Haptic feedback"
-          subtitle="Tactile response on taps and milestone achievements (off by default)"
+          subtitle="A light tap on buttons and milestones"
           right={
             <Toggle
               value={hapticsEnabled}
@@ -263,7 +356,11 @@ export default function SettingsScreen() {
           }
         />
         <Link href={'/(app)/you/privacy' as Href} asChild>
-          <SettingsRow icon="lock-closed-outline" title="Privacy and data" subtitle="Export, connected apps, backup and safety" />
+          <SettingsRow
+            icon="lock-closed-outline"
+            title="Privacy and data"
+            subtitle="Export, connected apps, backup and safety"
+          />
         </Link>
         <Link href={'/(app)/you/account' as Href} asChild>
           <SettingsRow icon="person-circle-outline" title="Account" subtitle="Sign out, redo setup or erase" />
@@ -287,9 +384,7 @@ export default function SettingsScreen() {
         contentContainerStyle={{ paddingHorizontal: spacing.sm, paddingBottom: 24 }}
       >
         {/* Emblem Selector */}
-        <Text style={[typography.captionBold, { color: colors.text.primary, marginBottom: 8 }]}>
-          Emblem
-        </Text>
+        <Text style={[typography.captionBold, { color: colors.text.primary, marginBottom: 8 }]}>Emblem</Text>
         <View style={styles.avatarGrid}>
           {AVATAR_OPTIONS.map((a) => {
             const isSelected = selectedAvatar === a.id;
@@ -307,11 +402,7 @@ export default function SettingsScreen() {
                   strokeWidth={1}
                   style={styles.avatarOption}
                 >
-                  <Ionicons
-                    name={a.icon}
-                    size={24}
-                    color={isSelected ? colors.primary : colors.text.secondary}
-                  />
+                  <Ionicons name={a.icon} size={24} color={isSelected ? colors.primary : colors.text.secondary} />
                   <Text
                     style={[
                       typography.caption,
@@ -356,9 +447,7 @@ export default function SettingsScreen() {
           >
             <Ionicons name="create-outline" size={18} color={colors.primary} />
             <View style={{ flex: 1, marginLeft: 10 }}>
-              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                Full Profile & Section Editor
-              </Text>
+              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Full Profile & Section Editor</Text>
               <Text style={[typography.caption, { color: colors.text.secondary }]}>
                 Edit body, food rules, growth, and personal info
               </Text>
@@ -394,9 +483,7 @@ export default function SettingsScreen() {
           >
             <Ionicons name="cloud-upload-outline" size={18} color={colors.primary} />
             <View style={{ flex: 1, marginLeft: 10 }}>
-              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                AnvayKosh & Supabase Sync
-              </Text>
+              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>AnvayKosh & Supabase Sync</Text>
               <Text style={[typography.caption, { color: colors.text.secondary }]}>
                 Single-tap cloud backup and progress sync
               </Text>
@@ -404,7 +491,6 @@ export default function SettingsScreen() {
             <Ionicons name="chevron-forward" size={16} color={colors.text.muted} />
           </PressableScale>
         </View>
-
       </AppBottomSheetModal>
     </ScreenContainer>
   );
