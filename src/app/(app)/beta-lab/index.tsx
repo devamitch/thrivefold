@@ -248,12 +248,10 @@ export default function BetaLabScreen() {
                 </View>
 
                 <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                    <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                      {studio.title}
-                    </Text>
-                    <Badge label={studio.tag} variant={studio.badgeVariant ?? 'beta'} />
-                  </View>
+                  <Badge label={studio.tag} variant={studio.badgeVariant ?? 'beta'} style={{ marginBottom: 4 }} />
+                  <Text style={[typography.bodyBold, { color: colors.text.primary, marginBottom: 2 }]} numberOfLines={1}>
+                    {studio.title}
+                  </Text>
                   <Text style={[typography.caption, { color: colors.text.secondary }]} numberOfLines={2}>
                     {studio.subtitle}
                   </Text>
