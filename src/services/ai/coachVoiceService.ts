@@ -37,19 +37,10 @@ function isGuestOrTesting(): boolean {
 
 type VoiceGender = 'male' | 'female';
 
-/**
- * Which coach voice to use: the person's men's-health space gets a warm Indian woman's voice,
- * the women's-health space a warm Indian man's voice; otherwise a woman's voice.
- */
+/** Which coach voice to use. */
 function wantedGender(): VoiceGender {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { useRootStore } = require('../../stores/useRootStore');
-    const exp = useRootStore.getState?.()?.experience;
-    return exp === 'women_health' ? 'male' : 'female';
-  } catch {
-    return 'female';
-  }
+  // The calm Indian male voice is the one people liked; it is used for everyone.
+  return 'male';
 }
 
 // Google TTS Indian English voices: ena, enb, enc are female; end, ene are male.
@@ -70,10 +61,8 @@ function scoreVoice(v: Speech.Voice, want: VoiceGender): number {
   const female = has(FEMALE_MARKS);
   if (want === 'male' ? male : female) score += 60;
   if (want === 'male' ? female : male) score -= 60;
-  if (v.quality === Speech.VoiceQuality.Enhanced) score += 15;
-  // Offline voices first, so the coach speaks without internet.
-  if (id.includes('local')) score += 10;
-  if (id.includes('network')) score -= 5;
+  // Enhanced / network neural voices sound far more natural (the earlier, preferred behaviour).
+  if (v.quality === Speech.VoiceQuality.Enhanced || id.includes('network')) score += 25;
   return score;
 }
 
@@ -166,7 +155,7 @@ export async function speakCoach(
       language: opts?.language ?? 'en-IN',
       rate: opts?.rate ?? 0.95, // calm, natural pace
       // A touch brighter for the woman's voice, a touch warmer and deeper for the man's.
-      pitch: opts?.pitch ?? (voice.gender === 'male' ? 0.92 : 1.06),
+      pitch: opts?.pitch ?? (voice.gender === 'male' ? 0.94 : 1.06),
       voice: voice.id ?? undefined,
     });
   } catch {

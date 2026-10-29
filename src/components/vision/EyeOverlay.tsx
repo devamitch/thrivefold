@@ -14,6 +14,8 @@ export function EyeOverlay({
   color = '#9BD18B',
   mode = 'eyes',
   cover = false,
+  boxW,
+  boxH,
 }: {
   face: number[] | undefined;
   frameW: number;
@@ -23,8 +25,13 @@ export function EyeOverlay({
   mode?: 'eyes' | 'face' | 'both';
   /** Match a preview that fills the screen (FILL_CENTER) instead of letterboxing. */
   cover?: boolean;
+  /** Size of the camera view when it differs from the window (e.g. under a translucent status bar). */
+  boxW?: number;
+  boxH?: number;
 }) {
-  const { width, height } = useWindowDimensions();
+  const win = useWindowDimensions();
+  const width = boxW || win.width;
+  const height = boxH || win.height;
   if (!face || face.length < 84 || !frameW || !frameH) return null;
   const scale = (cover ? Math.max : Math.min)(width / frameW, height / frameH);
   const ox = (width - frameW * scale) / 2;

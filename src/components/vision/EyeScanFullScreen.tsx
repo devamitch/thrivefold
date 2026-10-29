@@ -45,6 +45,7 @@ export function EyeScanFullScreen({
   const [facing, setFacing] = useState<'front' | 'back'>('front');
   const [mode, setMode] = useState<OverlayMode>('eyes');
   const [error, setError] = useState<string | null>(null);
+  const [box, setBox] = useState({ w: 0, h: 0 });
 
   const status = error ? 'error' : paused ? 'paused' : eye.tracked ? 'tracking' : 'no_face';
   const statusLabel = { error: 'Camera problem', paused: 'Paused', tracking: 'Tracking', no_face: 'Looking for you' }[status];
@@ -60,7 +61,10 @@ export function EyeScanFullScreen({
 
   return (
     <Modal visible={visible} animationType="fade" statusBarTranslucent onRequestClose={onStop}>
-      <View style={[styles.root, { backgroundColor: colors.text.primary }]}>
+      <View
+        style={[styles.root, { backgroundColor: colors.text.primary }]}
+        onLayout={(e) => setBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}
+      >
         <PoseDetectionAdapter
           engine="default"
           active={visible && !paused}
@@ -72,7 +76,7 @@ export function EyeScanFullScreen({
           onPoseError={(e) => setError(e.nativeEvent.message)}
           style={StyleSheet.absoluteFill}
         />
-        {!paused ? <EyeOverlay face={overlay.face} frameW={overlay.w} frameH={overlay.h} mode={mode} cover /> : null}
+        {!paused ? <EyeOverlay face={overlay.face} frameW={overlay.w} frameH={overlay.h} mode={mode} cover boxW={box.w} boxH={box.h} /> : null}
 
         {/* Soft scrims keep the glass controls legible over bright scenes. */}
         <LinearGradient

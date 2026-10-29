@@ -19,7 +19,7 @@ export async function ensureLocalModel(): Promise<boolean> {
   loading ??= (async () => {
     try {
       const path = getLocalModelFilePath(id).replace(/^file:\/\//, '');
-      const r = await LocalAI.loadModel(path, false, { temperature: 0.4, maxTokens: 320, topP: 0.9, repeatPenalty: 1.1 });
+      const r = await LocalAI.loadModel(path, false, { temperature: 0.4, maxTokens: 220, topP: 0.9, repeatPenalty: 1.1 });
       return !!r?.success;
     } catch {
       return false;

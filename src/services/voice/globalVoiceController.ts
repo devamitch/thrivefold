@@ -11,6 +11,7 @@
  */
 
 import { ExpoSpeechRecognitionModule } from 'expo-speech-recognition';
+import * as Speech from 'expo-speech';
 import { coachVoice } from '../ai/coachVoice';
 import { agentEngine } from '../assistant/agentEngine';
 import type { ToolExecutionResult } from '../../domain/assistant/toolRegistry';
@@ -255,7 +256,12 @@ class GlobalVoiceController {
       this.setState('idle');
       // Conversation mode: while the assistant is open, keep listening for the next thing said.
       if (this.isOpen) {
-        await new Promise((r) => setTimeout(r, 350));
+        // Wait until the voice has really finished, so the microphone never hears the coach.
+        for (let i = 0; i < 120 && (await Speech.isSpeakingAsync().catch(() => false)); i++) {
+          await new Promise((r) => setTimeout(r, 250));
+          if (!this.isOpen) return;
+        }
+        await new Promise((r) => setTimeout(r, 400));
         if (this.isOpen && this.state === 'idle') await this.startListening();
       }
     } catch (err: any) {
