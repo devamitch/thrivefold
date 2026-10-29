@@ -3,6 +3,7 @@ import { supabase } from '../../services/supabase/supabaseClient';
 import * as Notifications from 'expo-notifications';
 import { coachVoice } from '../../services/ai/coachVoice';
 import { applyKosh, pullProfile, pushProfile } from '../../services/account/profileSync';
+import { syncProgress } from '../../services/account/progressSync';
 import React, { useEffect, useRef } from 'react';
 import { AppState, StyleSheet, View } from 'react-native';
 import { Redirect, Stack, usePathname, useRouter, type Href } from 'expo-router';
@@ -69,7 +70,7 @@ export default function AppLayout() {
   // Keep the server copy of the person's own profile current (debounced; signed-in accounts only).
   useEffect(() => {
     const key = (st: ReturnType<typeof useRootStore.getState>) =>
-      JSON.stringify([st.user?.pseudonym, st.user?.birthDate, st.experience, st.experienceConfirmed, st.isOnboarded, st.onboarding.goals, st.onboarding.constraints, st.onboarding.routineMinutes, st.onboarding.diet, st.koshProfile, st.emergencyContacts]);
+      JSON.stringify([st.user?.pseudonym, st.user?.birthDate, st.experience, st.experienceConfirmed, st.isOnboarded, st.onboarding.goals, st.onboarding.constraints, st.onboarding.routineMinutes, st.onboarding.diet, st.koshProfile, st.emergencyContacts, st.heightCm, st.weightKg, st.termsAcceptedVersion]);
     let last = key(useRootStore.getState());
     let timer: ReturnType<typeof setTimeout> | null = null;
     // On start: take anything the server has that this phone lacks, then send this phone's copy.
@@ -84,6 +85,24 @@ export default function AppLayout() {
       last = k;
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => void pushProfile(), 4000);
+    });
+    return () => {
+      unsub();
+      if (timer) clearTimeout(timer);
+    };
+  }, []);
+
+  // Points, level and streaks follow the account: merge the server ledger on start, then save
+  // whenever a reward is added (debounced).
+  useEffect(() => {
+    let last = useRootStore.getState().rewardLedger.length;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    void syncProgress();
+    const unsub = useRootStore.subscribe((st) => {
+      if (st.rewardLedger.length === last) return;
+      last = st.rewardLedger.length;
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => void syncProgress(), 5000);
     });
     return () => {
       unsub();

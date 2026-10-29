@@ -172,6 +172,8 @@ export interface QuestSlice {
   unlockAchievement: (achievementId: string) => void;
   showAchievementModal: (payload: AchievementModalPayload) => void;
   hideAchievementModal: () => void;
+  /** Adds ledger entries saved on the server (another phone or before a reinstall); keys already here are kept. */
+  mergeRemoteProgress: (ledger: LedgerEntry[], checkpoints: string[], achievements: string[]) => number;
 }
 
 const today = () => formatLocalDate(new Date());
@@ -909,6 +911,24 @@ export const createQuestSlice: StateCreator<RootState, [['zustand/persist', unkn
       set({ achievementModal: payload });
     },
     hideAchievementModal: () => set({ achievementModal: null }),
+
+    mergeRemoteProgress: (ledger, checkpoints, achievements) => {
+      const s = get();
+      const have = new Set(s.rewardLedger.map((e) => e.key));
+      const added = ledger.filter((e) => e && typeof e.key === 'string' && typeof e.xp === 'number' && !have.has(e.key));
+      const newCheckpoints = checkpoints.filter((c) => !s.completedCheckpoints.includes(c));
+      const newAchievements = achievements.filter((a) => !s.achievements.includes(a));
+      if (!added.length && !newCheckpoints.length && !newAchievements.length) return 0;
+      const modal = s.achievementModal;
+      commit({
+        rewardLedger: [...s.rewardLedger, ...added].sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+        completedCheckpoints: [...s.completedCheckpoints, ...newCheckpoints],
+        achievements: [...s.achievements, ...newAchievements],
+      });
+      // Restoring is not a new milestone; keep whatever modal was showing before.
+      set({ achievementModal: modal });
+      return added.length;
+    },
   };
 };
 

@@ -61,6 +61,7 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
     const val HAND_ASSET = "gesture_recognizer.task"
     private const val MIN_EMIT_INTERVAL_MS = 16L
     private const val TAG = "PoseCamera"
+    private const val CAMERA_TIMEOUT_MS = 8000L
     private const val STALE_MS = 500L
 
     val FACE_INDICES = intArrayOf(
@@ -89,6 +90,8 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
     addView(it, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
   }
   private var executor: ExecutorService? = null
+  private var cameraBound = false
+  private var startToken = 0
   @Volatile private var landmarker: PoseLandmarker? = null
   private var cameraProvider: ProcessCameraProvider? = null
   private var active = false
@@ -293,6 +296,15 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
       if (handsOn) handLandmarker = createHands()
       if (pose != null) post { onPoseReady(mapOf("delegate" to if (usingGpu) "gpu" else "cpu")) }
     }
+    // If Android's camera service never answers (it can hang until the phone restarts), say so
+    // instead of showing a black preview forever.
+    cameraBound = false
+    val startedFor = ++startToken
+    postDelayed({
+      if (active && !cameraBound && startedFor == startToken) {
+        onPoseError(mapOf("code" to "camera_timeout", "message" to "The camera did not start. Close other camera apps or restart the phone, then try again."))
+      }
+    }, CAMERA_TIMEOUT_MS)
     val future = ProcessCameraProvider.getInstance(context)
     future.addListener({
       try {
@@ -320,6 +332,7 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
         analysis.setAnalyzer(exec) { image -> analyse(image) }
         provider.unbindAll()
         provider.bindToLifecycle(owner, selector, preview, analysis)
+        cameraBound = true
         Log.i(TAG, "fps=$fps preview=${preview.resolutionInfo?.resolution} crop=${preview.resolutionInfo?.cropRect} analysis=${analysis.resolutionInfo?.resolution} crop=${analysis.resolutionInfo?.cropRect} rotation=${analysis.resolutionInfo?.rotationDegrees}")
       } catch (e: Exception) {
         onPoseError(mapOf("code" to "camera_unavailable", "message" to (e.message ?: "Camera could not start")))

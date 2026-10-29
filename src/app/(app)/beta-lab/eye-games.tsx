@@ -121,6 +121,7 @@ export default function EyeGamesScreen() {
   const [phase, setPhase] = useState<Phase>('intro');
   const [calStep, setCalStep] = useState(0);
   const [calError, setCalError] = useState<string | null>(null);
+  const [camError, setCamError] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(DURATION_SEC);
   const [target, setTarget] = useState<Dir | null>(null);
   const [needCenter, setNeedCenter] = useState(false);
@@ -239,6 +240,7 @@ export default function EyeGamesScreen() {
 
   const begin = async () => {
     setCalError(null);
+    setCamError(null);
     const ok = await ensureCameraPermission();
     if (!ok) {
       setCalError('Eye games need the front camera. Allow it in Android settings.');
@@ -558,12 +560,22 @@ export default function EyeGamesScreen() {
           face
           hands={false}
           onPose={onPose}
+          onPoseError={(e) => setCamError(e.nativeEvent.message)}
           style={StyleSheet.absoluteFill}
         />
       </View>
       <View style={[styles.hud, { paddingTop: insets.top + 16, paddingHorizontal: spacing.base }]}>
-        <Text style={[typography.captionBold, { color: tracking ? colors.success : colors.text.muted }]}>
-          {tracking ? 'Eyes tracked' : 'Looking for your face'}
+        <Text
+          style={[
+            typography.captionBold,
+            {
+              color: camError ? colors.error : tracking ? colors.success : colors.text.muted,
+              flex: 1,
+              marginRight: 150,
+            },
+          ]}
+        >
+          {camError ?? (tracking ? 'Eyes tracked' : 'Looking for your face')}
         </Text>
         {phase === 'playing' || phase === 'paused' ? (
           <Text style={[typography.heading, { color: colors.text.primary }]}>{secondsLeft}s</Text>
