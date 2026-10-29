@@ -37,6 +37,22 @@ export const MODEL_CATALOG: Record<string, ModelPreset> = {
     license: 'Apache-2.0',
     description: 'Better reasoning and longer answers for phones with 6 GB RAM or more. Slower to start.',
   },
+  'gemma-3-1b-it': {
+    id: 'gemma-3-1b-it',
+    name: 'Gemma 3 1B Instruct (Q4_K_M)',
+    author: 'Google',
+    parameters: '1B',
+    sizeBytes: 806_058_240,
+    sizeMb: 769,
+    minRamMb: 4000,
+    role: 'assistant',
+    // ggml-org GGUF build; size and SHA-256 from the Hugging Face LFS record, checked 2026-10-30.
+    downloadUrl: 'https://huggingface.co/ggml-org/gemma-3-1b-it-GGUF/resolve/main/gemma-3-1b-it-Q4_K_M.gguf',
+    expectedSha256: '8ccc5cd1f1b3602548715ae25a66ed73fd5dc68a210412eea643eb20eb75a135',
+    contextLength: 4096,
+    license: 'Gemma Terms of Use',
+    description: "Google's small Gemma model: warm, fluent replies and good instruction following.",
+  },
 };
 
 export const DEFAULT_CHAT_MODEL_ID = 'qwen2.5-0.5b-instruct';

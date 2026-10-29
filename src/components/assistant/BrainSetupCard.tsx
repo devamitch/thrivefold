@@ -5,6 +5,8 @@ import { StyleSheet, Text, View } from 'react-native';
 import {
   brainReady,
   cancelSetup,
+  pauseSetup,
+  resumeSetup,
   recommendedModel,
   setUpBrain,
   subscribeSetup,
@@ -68,8 +70,16 @@ export function BrainSetupCard({ compact = false }: { compact?: boolean }) {
       <View style={[styles.row, { marginTop: 10 }]}>
         {busy ? (
           setup?.phase === 'downloading' ? (
-            <Button label="Cancel" size="sm" variant="ghost" onPress={() => void cancelSetup()} />
+            <>
+              <Button label="Pause" size="sm" variant="outline" onPress={() => void pauseSetup()} />
+              <Button label="Cancel" size="sm" variant="ghost" onPress={() => void cancelSetup()} />
+            </>
           ) : null
+        ) : setup?.phase === 'paused' ? (
+          <>
+            <Button label={`Resume (${pct}%)`} size="sm" onPress={() => void resumeSetup()} />
+            <Button label="Cancel" size="sm" variant="ghost" onPress={() => void cancelSetup()} />
+          </>
         ) : (
           <Button
             label={setup?.phase === 'failed' ? 'Try again' : `Download ${model.sizeMb} MB`}

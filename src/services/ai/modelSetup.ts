@@ -5,16 +5,26 @@
  */
 import {
   LocalAI,
+  MODEL_PRESETS,
   downloadModelWithProgress,
   getRecommendedModel,
   isModelDownloaded,
   type ModelDownloadHandle,
   type ModelPreset,
 } from '../../../modules/local-ai';
+import { asyncKeyValueStorage } from '../../stores/persistStorage';
 import { useRootStore } from '../../stores/useRootStore';
 import { ensureLocalModel } from './localModel';
 
-export type SetupPhase = 'idle' | 'downloading' | 'verifying' | 'loading' | 'ready' | 'failed' | 'unsupported';
+export type SetupPhase =
+  | 'idle'
+  | 'downloading'
+  | 'paused'
+  | 'verifying'
+  | 'loading'
+  | 'ready'
+  | 'failed'
+  | 'unsupported';
 
 export interface SetupState {
   phase: SetupPhase;
@@ -25,6 +35,19 @@ export interface SetupState {
 
 let state: SetupState = { phase: 'idle', model: null, progress: 0, message: null };
 let handle: ModelDownloadHandle | null = null;
+
+// A paused download is remembered so it continues where it stopped, even after the app restarts.
+const RESUME_KEY = 'thrive.modelDownload.v1';
+type Saved = { modelId: string; resumeData: string; progress: number };
+async function readSaved(): Promise<Saved | null> {
+  try {
+    const raw = await asyncKeyValueStorage.getItem(RESUME_KEY);
+    return raw ? (JSON.parse(raw) as Saved) : null;
+  } catch {
+    return null;
+  }
+}
+const clearSaved = () => asyncKeyValueStorage.removeItem(RESUME_KEY).catch(() => undefined);
 const listeners = new Set<(s: SetupState) => void>();
 
 const emit = (patch: Partial<SetupState>) => {
@@ -70,19 +93,23 @@ export async function setUpBrain(model: ModelPreset | null = recommendedModel())
     return false;
   }
   if (state.phase === 'downloading' || state.phase === 'verifying' || state.phase === 'loading') return false;
+  const saved = await readSaved();
   const setId = useRootStore.getState().setLocalModelId;
   try {
     if (!(await isModelDownloaded(model.id))) {
-      emit({ phase: 'downloading', model, progress: 0, message: null });
+      const resume = saved?.modelId === model.id ? saved.resumeData : null;
+      emit({ phase: 'downloading', model, progress: resume ? (saved?.progress ?? 0) : 0, message: null });
       const caps = LocalAI.getDeviceCapabilities();
       handle = downloadModelWithProgress(
         model,
         caps.availableStorageBytes,
         (p) => emit({ progress: p.progress ?? 0, phase: (p.progress ?? 0) >= 1 ? 'verifying' : 'downloading' }),
         (path, hash) => LocalAI.verifyModelChecksum(path, hash),
+        resume,
       );
       await handle.promise;
       handle = null;
+      void clearSaved();
     }
     emit({ phase: 'loading', model, progress: 1 });
     if (LocalAI.isLoaded()) await LocalAI.unloadModel();
@@ -96,6 +123,7 @@ export async function setUpBrain(model: ModelPreset | null = recommendedModel())
     return true;
   } catch (e) {
     handle = null;
+    if (e instanceof Error && e.message === 'paused') return false;
     emit({ phase: 'failed', message: e instanceof Error ? e.message : 'Download failed. Try again on Wi-Fi.' });
     return false;
   }
@@ -104,5 +132,33 @@ export async function setUpBrain(model: ModelPreset | null = recommendedModel())
 export async function cancelSetup(): Promise<void> {
   await handle?.cancel();
   handle = null;
+  void clearSaved();
   emit({ phase: 'idle', progress: 0, message: null });
+}
+
+/** Pauses the download and remembers where it stopped. */
+export async function pauseSetup(): Promise<void> {
+  const model = state.model;
+  const data = await handle?.pause();
+  handle = null;
+  if (model && data) {
+    await asyncKeyValueStorage
+      .setItem(RESUME_KEY, JSON.stringify({ modelId: model.id, resumeData: data, progress: state.progress }))
+      .catch(() => undefined);
+  }
+  emit({ phase: 'paused' });
+}
+
+/** Continues a paused download (also used when the app opens). */
+export async function resumeSetup(): Promise<boolean> {
+  const saved = await readSaved();
+  const model = saved ? (MODEL_PRESETS.find((m) => m.id === saved.modelId) ?? null) : state.model;
+  return setUpBrain(model);
+}
+
+/** A download paused earlier (or cut off when the app closed), if any. */
+export async function pendingDownload(): Promise<{ model: ModelPreset; progress: number } | null> {
+  const saved = await readSaved();
+  const model = saved ? MODEL_PRESETS.find((m) => m.id === saved.modelId) : undefined;
+  return saved && model ? { model, progress: saved.progress } : null;
 }

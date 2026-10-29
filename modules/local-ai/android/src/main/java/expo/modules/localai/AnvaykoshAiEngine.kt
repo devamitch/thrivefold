@@ -67,6 +67,7 @@ class AnvaykoshAiEngine {
 
       val startTime = SystemClock.elapsedRealtime()
       val success = LlamaBridge.initGenerateModel(modelFile.absolutePath)
+      if (success) loadedPath = modelFile.absolutePath
       val durationMs = SystemClock.elapsedRealtime() - startTime
 
       if (!success) {
@@ -139,7 +140,12 @@ class AnvaykoshAiEngine {
       if (sys.isNotBlank()) add("system" to sys)
       add("user" to prompt)
     }
-    // Llamatik 0.12 has no template API, so ChatML (Qwen's format) is written out here.
+    // Llamatik 0.12 has no template API, so the loaded model's own format is written out here.
+    if (loadedPath.contains("gemma", ignoreCase = true)) {
+      // Gemma has no system role: the instructions go at the top of the user turn.
+      val user = if (sys.isNotBlank()) "$sys\n\n$prompt" else prompt
+      return "<start_of_turn>user\n$user<end_of_turn>\n<start_of_turn>model\n"
+    }
     return messages.joinToString("") { (role, text) -> "<|im_start|>$role\n$text<|im_end|>\n" } + "<|im_start|>assistant\n"
   }
 
@@ -295,8 +301,10 @@ class AnvaykoshAiEngine {
     }
   }
 
+  @Volatile private var loadedPath: String = ""
+
   companion object {
-    private val STOP_MARKERS = listOf("<|im_end|>", "<|endoftext|>", "<end_of_turn>", "<|im_start|>", "\nHuman:", "\nUser:")
+    private val STOP_MARKERS = listOf("<|im_end|>", "<|endoftext|>", "<end_of_turn>", "<|im_start|>", "<start_of_turn>", "\nHuman:", "\nUser:")
   }
 
 }

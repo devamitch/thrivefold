@@ -1,15 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 import {
   LocalAI,
   MODEL_PRESETS,
   deleteLocalModel,
-  downloadModelWithProgress,
   getRecommendedModel,
   isModelDownloaded,
-  type ModelDownloadHandle,
   type ModelPreset,
 } from '../../../../modules/local-ai';
 import { BrainSetupCard } from '../../../components/assistant/BrainSetupCard';
@@ -19,6 +17,14 @@ import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { askLocal, ensureLocalModel } from '../../../services/ai/localModel';
+import {
+  cancelSetup,
+  pauseSetup,
+  resumeSetup,
+  setUpBrain,
+  subscribeSetup,
+  type SetupState,
+} from '../../../services/ai/modelSetup';
 import { useRootStore } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
 
@@ -32,11 +38,9 @@ export default function ModelStatusScreen() {
   const chosen = useRootStore((s) => s.localModelId);
   const setChosen = useRootStore((s) => s.setLocalModelId);
   const [have, setHave] = useState<Record<string, boolean>>({});
-  const [progress, setProgress] = useState<Record<string, number>>({});
   const [error, setError] = useState<string | null>(null);
   const [state, setState] = useState<'idle' | 'loading' | 'ready' | 'testing'>(LocalAI.isLoaded() ? 'ready' : 'idle');
   const [reply, setReply] = useState<string | null>(null);
-  const handles = useRef<Record<string, ModelDownloadHandle>>({});
   const supported = LocalAI.isAvailable();
   const caps = supported ? LocalAI.getDeviceCapabilities() : null;
   const recommended = getRecommendedModel(caps?.totalRamMb ?? 4000);
@@ -50,30 +54,20 @@ export default function ModelStatusScreen() {
     void refresh();
   }, []);
 
+  // Every download goes through the one setup service: real progress, pause / resume (also after
+  // the app restarts), checksum, load and a test answer before the model is used.
+  const [setup, setSetup] = useState<SetupState | null>(null);
+  useEffect(() => subscribeSetup(setSetup), []);
+  useEffect(() => {
+    if (setup?.phase === 'ready' || setup?.phase === 'failed') {
+      void refresh();
+      if (setup.phase === 'ready') setState('ready');
+      if (setup.phase === 'failed') setError(setup.message);
+    }
+  }, [setup?.phase]); // eslint-disable-line react-hooks/exhaustive-deps
   const download = (m: ModelPreset) => {
     setError(null);
-    setProgress((p) => ({ ...p, [m.id]: 0 }));
-    const h = downloadModelWithProgress(
-      m,
-      caps?.availableStorageBytes ?? 0,
-      (info) => setProgress((p) => ({ ...p, [m.id]: info.progress ?? 0 })),
-      (path, hash) => LocalAI.verifyModelChecksum(path, hash),
-    );
-    handles.current[m.id] = h;
-    h.promise
-      .then(async () => {
-        await refresh();
-        setChosen(m.id);
-        await load();
-      })
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Download failed'))
-      .finally(() =>
-        setProgress((p) => {
-          const n = { ...p };
-          delete n[m.id];
-          return n;
-        }),
-      );
+    void setUpBrain(m);
   };
 
   const load = async () => {
@@ -129,7 +123,8 @@ export default function ModelStatusScreen() {
       </Card>
 
       {MODEL_PRESETS.map((m) => {
-        const pct = progress[m.id];
+        const active = setup?.model?.id === m.id && (setup.phase === 'downloading' || setup.phase === 'paused' || setup.phase === 'verifying' || setup.phase === 'loading');
+        const pct = active ? (setup?.progress ?? 0) : undefined;
         const downloaded = have[m.id];
         return (
           <Card key={m.id} style={styles.card}>
@@ -158,14 +153,20 @@ export default function ModelStatusScreen() {
                 </View>
                 <View style={[styles.row, { marginTop: 6 }]}>
                   <Text style={[typography.caption, styles.flex, { color: colors.text.secondary }]}>
-                    Downloading {Math.round(pct * 100)}%
+                    {setup?.phase === 'paused'
+                      ? `Paused at ${Math.round(pct * 100)}%`
+                      : setup?.phase === 'verifying'
+                        ? 'Checking the file…'
+                        : setup?.phase === 'loading'
+                          ? 'Starting it up…'
+                          : `Downloading ${Math.round(pct * 100)}%`}
                   </Text>
-                  <Button
-                    label="Cancel"
-                    size="sm"
-                    variant="ghost"
-                    onPress={() => void handles.current[m.id]?.cancel()}
-                  />
+                  {setup?.phase === 'downloading' ? (
+                    <Button label="Pause" size="sm" variant="outline" onPress={() => void pauseSetup()} />
+                  ) : setup?.phase === 'paused' ? (
+                    <Button label="Resume" size="sm" onPress={() => void resumeSetup()} />
+                  ) : null}
+                  <Button label="Cancel" size="sm" variant="ghost" onPress={() => void cancelSetup()} />
                 </View>
               </View>
             ) : downloaded ? (

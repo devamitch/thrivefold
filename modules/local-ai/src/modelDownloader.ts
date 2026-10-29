@@ -38,6 +38,8 @@ export async function getDownloadedModelSize(modelId: string): Promise<number> {
 export interface ModelDownloadHandle {
   promise: Promise<string>;
   cancel: () => Promise<void>;
+  /** Pauses and returns data that resumes the transfer later (even after the app restarts). */
+  pause: () => Promise<string | null>;
 }
 
 /**
@@ -51,7 +53,9 @@ export function downloadModelWithProgress(
   preset: ModelPreset,
   availableStorageBytes: number,
   onProgress?: DownloadProgressCallback,
-  verifyChecksumFn?: (filePath: string, expectedHash: string) => Promise<{ matches: boolean }>
+  verifyChecksumFn?: (filePath: string, expectedHash: string) => Promise<{ matches: boolean }>,
+  /** Saved by pause(); continues the same partial file instead of starting again. */
+  resumeData?: string | null,
 ): ModelDownloadHandle {
   const requiredBytesWithHeadroom = Math.round(preset.sizeBytes * 1.25);
 
@@ -65,6 +69,7 @@ export function downloadModelWithProgress(
         )
       ),
       cancel: async () => {},
+      pause: async () => null,
     };
   }
 
@@ -73,13 +78,15 @@ export function downloadModelWithProgress(
 
   let downloadResumable: FileSystem.DownloadResumable | null = null;
   let isCancelled = false;
+  let isPaused = false;
 
   const promise = (async () => {
     await ensureModelsDirectory();
 
-    // Remove any leftover partial tmp file
+    // A paused transfer continues its partial file; anything else starts clean.
     const tmpInfo = await FileSystem.getInfoAsync(tmpPath);
-    if (tmpInfo.exists) {
+    const canResume = !!resumeData && tmpInfo.exists;
+    if (tmpInfo.exists && !canResume) {
       await FileSystem.deleteAsync(tmpPath, { idempotent: true });
     }
 
@@ -97,10 +104,12 @@ export function downloadModelWithProgress(
           totalBytesWritten: written,
           totalBytesExpected: total,
         });
-      }
+      },
+      canResume ? (resumeData ?? undefined) : undefined,
     );
 
-    const result = await downloadResumable.downloadAsync();
+    const result = canResume ? await downloadResumable.resumeAsync() : await downloadResumable.downloadAsync();
+    if (isPaused) throw new Error('paused');
     if (!result || isCancelled) {
       throw new Error('Download was cancelled or interrupted.');
     }
@@ -155,7 +164,18 @@ export function downloadModelWithProgress(
     } catch {}
   };
 
-  return { promise, cancel };
+  const pause = async () => {
+    if (!downloadResumable) return null;
+    isPaused = true;
+    try {
+      await downloadResumable.pauseAsync();
+      return downloadResumable.savable().resumeData ?? null;
+    } catch {
+      return null;
+    }
+  };
+
+  return { promise, cancel, pause };
 }
 
 export async function deleteLocalModel(modelId: string): Promise<boolean> {

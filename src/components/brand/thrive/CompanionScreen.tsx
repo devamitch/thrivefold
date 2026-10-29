@@ -23,7 +23,13 @@ const PALETTE: Record<Period, { bg: string; card: string; fg: string; soft: stri
 const ACTIVITIES: Activity[] = ['wave', 'drink', 'exercise', 'jacks', 'stretch', 'yawn', 'dance', 'roll', 'clap', 'laugh', 'think', 'meditate', 'hug', 'wind', 'sob', 'tantrum', 'peek'];
 const MOODS: Mood[] = ['happy', 'joy', 'love', 'proud', 'curious', 'surprised', 'shy', 'thinking', 'bored', 'sleepy', 'sad', 'crying', 'angry', 'scared', 'dizzy'];
 
-export default function CompanionScreen({ userGender = 'other' }: { userGender?: 'male' | 'female' | 'other' }) {
+export default function CompanionScreen({
+  userGender = 'other',
+  onClose,
+}: {
+  userGender?: 'male' | 'female' | 'other';
+  onClose?: () => void;
+}) {
   const { rig, ui, actions } = useCompanion({ userGender });
   useHeartRate(actions.onHeart);
   const insets = useSafeAreaInsets();
@@ -42,6 +48,17 @@ export default function CompanionScreen({ userGender = 'other' }: { userGender?:
   return (
     <View style={[s.root, { backgroundColor: p.bg, paddingTop: insets.top + 8, paddingBottom: insets.bottom + 12 }]}>
       <View style={s.head}>
+        {onClose ? (
+          <Pressable
+            onPress={onClose}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="Close"
+            style={[s.close, { backgroundColor: p.soft }]}
+          >
+            <Text style={[s.closeText, { color: p.fg }]}>‹</Text>
+          </Pressable>
+        ) : null}
         <View style={{ flex: 1 }}>
           <Text style={[s.title, { color: p.fg }]}>Thrivefold</Text>
           <Text style={[s.sub, { color: p.fg }]} numberOfLines={1}>
@@ -117,6 +134,8 @@ export default function CompanionScreen({ userGender = 'other' }: { userGender?:
 }
 
 const s = StyleSheet.create({
+  close: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  closeText: { fontSize: 30, lineHeight: 32, marginTop: -3 },
   root: { flex: 1, paddingHorizontal: 16 },
   head: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 56 },
   title: { fontSize: 24, fontWeight: '800', letterSpacing: -0.4 },

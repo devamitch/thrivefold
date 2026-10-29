@@ -106,12 +106,13 @@ describe('Local AI - Vector Math & Similarity Engine', () => {
 
 describe('Local AI - Model Catalog & Hardware Suitability', () => {
   test('P0: Catalog lists real downloadable models with their published SHA-256', () => {
-    expect(MODEL_PRESETS.length).toBe(2);
+    expect(MODEL_PRESETS.length).toBe(3);
     for (const m of MODEL_PRESETS) {
-      expect(m.downloadUrl).toMatch(/^https:\/\/huggingface\.co\/Qwen\//);
+      expect(m.downloadUrl).toMatch(/^https:\/\/huggingface\.co\/(Qwen|ggml-org)\//);
       expect(m.expectedSha256).toMatch(/^[0-9a-f]{64}$/);
     }
     expect(getModelPresetById('qwen2.5-0.5b-instruct')?.sizeBytes).toBe(491_400_032);
+    expect(getModelPresetById('gemma-3-1b-it')?.sizeBytes).toBe(806_058_240);
   });
 
   test('P0: Recommends the larger model only with enough RAM', () => {
