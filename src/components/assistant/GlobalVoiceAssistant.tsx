@@ -18,6 +18,7 @@ import { hapticMedium, hapticSelection } from '../../services/haptics';
 import { globalVoiceController, type VoiceAssistantState } from '../../services/voice/globalVoiceController';
 import { useTheme } from '../../theme/useTheme';
 import { PressableScale } from '../ui/PressableScale';
+import { BrainSetupCard } from './BrainSetupCard';
 
 interface Turn {
   id: number;
@@ -180,6 +181,7 @@ export function GlobalVoiceAssistant() {
             contentContainerStyle={{ paddingHorizontal: spacing.base, paddingBottom: spacing.md }}
             keyboardShouldPersistTaps="handled"
           >
+            <BrainSetupCard compact={turns.length > 0} />
             {turns.length === 0 && !partial ? (
               <View style={styles.empty}>
                 <Text style={[typography.body, { color: colors.text.secondary }]}>

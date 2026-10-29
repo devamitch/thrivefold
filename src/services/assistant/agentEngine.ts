@@ -26,6 +26,37 @@ import { retrieveHybridEvidence } from '../local-ai/rag/hybridRagPipeline';
 const NEEDS_PRECISION =
   /\b(?:macro|macros|calorie|calories|kcal|protein|carbs?|fat grams|meal plan|diet plan|workout plan|weekly plan|nutrition|bmr|tdee)\b/i;
 
+/**
+ * The coach's instructions for the on-device model: who the person is (only what they told the
+ * app), what they are looking at, and firm rules so answers are specific, consistent and safe.
+ */
+export function buildCoachPrompt(s: ReturnType<typeof useRootStore.getState>, screen: string): string {
+  const k = s.koshProfile;
+  const facts = [
+    k?.preferredName || s.user?.pseudonym ? `Name: ${k?.preferredName || s.user?.pseudonym}` : null,
+    s.user?.age ? `Age: ${s.user.age}` : null,
+    s.heightCm ? `Height: ${s.heightCm} cm` : null,
+    s.weightKg ? `Weight: ${s.weightKg} kg` : null,
+    s.onboarding?.goals?.length ? `Goals: ${s.onboarding.goals.slice(0, 6).join(', ')}` : null,
+    s.onboarding?.diet ? `Diet: ${s.onboarding.diet}` : null,
+    k?.allergies?.length ? `Allergies: ${k.allergies.join(', ')}` : null,
+    k?.foodRestrictions?.length ? `Avoids: ${k.foodRestrictions.join(', ')}` : null,
+    s.onboarding?.constraints?.length ? `Limits: ${s.onboarding.constraints.slice(0, 6).join(', ')}` : null,
+    `Level ${s.level}, ${s.xp} XP, streak ${s.streak} days`,
+  ].filter(Boolean);
+  return [
+    'You are Thrive, the wellbeing coach inside the Thrivefold app, running on the person\'s phone.',
+    `About the person (they told the app this): ${facts.join('; ')}.`,
+    `They are on: ${screen}`,
+    'How to answer:',
+    '1. Answer the question first, directly, in plain words. Then give at most 3 short, specific steps if useful.',
+    '2. Use the person\'s details and the "Known from this phone" notes when relevant. Never invent numbers, records or facts.',
+    '3. If you are not sure or the information is missing, say so in one sentence and say what would help.',
+    '4. Keep it under 110 words. No markdown headings, no emoji.',
+    '5. You are not a doctor: never diagnose, never name medicine doses. For worrying symptoms, suggest a doctor; for danger, 112.',
+  ].join('\n');
+}
+
 export interface AgentMessage {
   id: string;
   sender: 'user' | 'assistant' | 'system';
@@ -242,11 +273,7 @@ class AgentEngine {
     // 5. On-Device LLM Inference (loads the downloaded model on first use)
     if (await ensureLocalModel()) {
       try {
-        const systemPrompt =
-          `You are Thrive Coach, a warm, concise on-device wellbeing assistant.\n` +
-          `Active Screen Context: ${screenSummary}\n` +
-          `User Name: ${storeState.koshProfile?.preferredName || 'Friend'}\n` +
-          `Rules: 1-3 sentences maximum. Warm, practical, non-diagnostic. Never prescribe medications.`;
+        const systemPrompt = buildCoachPrompt(storeState, screenSummary);
 
         let accumulated = '';
         const onTokenListener = (event: any) => {

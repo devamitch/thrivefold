@@ -12,6 +12,7 @@ import {
   type ModelDownloadHandle,
   type ModelPreset,
 } from '../../../../modules/local-ai';
+import { BrainSetupCard } from '../../../components/assistant/BrainSetupCard';
 import { AppHeader } from '../../../components/ui/AppHeader';
 import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
@@ -100,6 +101,9 @@ export default function ModelStatusScreen() {
         <AppHeader eyebrow="AI" title="On-device AI" subtitle="A language model that runs on this phone" showBack />
       }
     >
+      <View style={{ marginTop: 12 }}>
+        <BrainSetupCard />
+      </View>
       <Card style={styles.card}>
         <View style={styles.row}>
           <Ionicons name="hardware-chip-outline" size={22} color={colors.primary} />
