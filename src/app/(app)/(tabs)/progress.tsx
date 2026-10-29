@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter, type Href } from 'expo-router';
 import React, { useState, useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { AppHeader } from '../../../components/ui/AppHeader';
@@ -10,6 +11,7 @@ import { Badge } from '../../../components/ui/Badge';
 import { Card } from '../../../components/ui/Card';
 import { Chip } from '../../../components/ui/Chip';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
+import { AssetIllustrations } from '../../../constants/assets';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { ProgressionPanel } from '../../../components/game/ProgressionPanel';
 import { SETUP_REWARDS } from '../../../domain/game/setupProfile';
@@ -276,6 +278,8 @@ export default function ProgressScreen() {
         />
       }
       scrollMode="shell-scroll-view"
+      backgroundImage={AssetIllustrations.progressZenBg}
+      backgroundOverlayOpacity={0.92}
     >
       <View style={{ paddingBottom: spacing.xxl }}>
         <Link href={'/(app)/roadmap' as Href} asChild>
@@ -376,7 +380,14 @@ export default function ProgressScreen() {
         {activeTab === 'roadmap' && (
           <Animated.View entering={FadeIn.duration(180)}>
             {/* Roadmap Progress Summary */}
-            <Card style={[styles.roadmapBanner, { backgroundColor: colors.surface, marginTop: spacing.md }]}>
+            <Card style={[styles.roadmapBanner, { backgroundColor: colors.surface, marginTop: spacing.md, overflow: 'hidden' }]}>
+              <View style={styles.roadmapImageWrap}>
+                <Image
+                  source={require('../../../../assets/illustrations/roadmap-journey-bg.jpg')}
+                  style={styles.roadmapBannerImage}
+                  contentFit="cover"
+                />
+              </View>
               <View style={styles.rowBetween}>
                 <View>
                   <Text style={[typography.subheading, { color: colors.text.primary }]}>
@@ -683,6 +694,17 @@ const styles = StyleSheet.create({
   roadmapBanner: {
     borderRadius: 18,
     padding: 16,
+  },
+  roadmapImageWrap: {
+    width: '100%',
+    height: 100,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 12,
+  },
+  roadmapBannerImage: {
+    width: '100%',
+    height: '100%',
   },
   timelineContainer: {
     marginTop: 16,

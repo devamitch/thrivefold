@@ -4,6 +4,7 @@ import { Text, StyleSheet, View } from 'react-native';
 import { Link, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import { AssetIllustrations } from '../../../constants/assets';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
@@ -107,7 +108,11 @@ export default function InsightsScreen() {
   };
 
   return (
-    <ScreenWrapper scrollable>
+    <ScreenWrapper
+      scrollable
+      backgroundImage={AssetIllustrations.sanctuaryAmbientBg}
+      backgroundOverlayOpacity={0.92}
+    >
       <Header title="Your patterns" subtitle="Worked out on this phone from your own records" showBack />
       <View style={{ paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }}>
         <Link href={'/(app)/ai/chat' as Href} asChild>

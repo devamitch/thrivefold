@@ -29,3 +29,4 @@ export * from './AchievementModal';
 export * from './GlassOrbButton';
 export * from './Squircle';
 export * from './Avatar';
+export * from './SanctuaryImageBackground';

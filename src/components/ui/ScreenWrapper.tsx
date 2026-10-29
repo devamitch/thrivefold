@@ -1,5 +1,13 @@
 import React, { Children, isValidElement, type ReactElement, type ReactNode } from 'react';
-import { ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import {
+  ScrollView,
+  StyleSheet,
+  View,
+  type ImageSourcePropType,
+  type ImageStyle,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 
 import { AppHeader } from './AppHeader';
 import { Header, SanctuaryHeader, type HeaderProps } from './Header';
@@ -20,6 +28,17 @@ export interface ScreenWrapperProps {
   rightAction?: ReactNode;
   useLargeTitle?: boolean;
   footer?: ReactNode;
+  /**
+   * Optional full-bleed ambient background illustration (using ImageBackground).
+   * Renders behind screen content with a calm, eye-friendly theme wash.
+   */
+  backgroundImage?: ImageSourcePropType | number | string;
+  /** Opacity of the background tint wash (defaults to 0.92 for low-glare calm). */
+  backgroundOverlayOpacity?: number;
+  /** Optional blur radius for ultra-soft, low-glare ambient texture (e.g. 2..8). */
+  backgroundBlurRadius?: number;
+  /** Custom style for the background image. */
+  backgroundImageStyle?: StyleProp<ImageStyle>;
 }
 
 const isHeaderElement = (node: ReactNode): node is ReactElement<HeaderProps> =>
@@ -58,6 +77,10 @@ export const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
   showBack = false,
   rightAction,
   footer,
+  backgroundImage,
+  backgroundOverlayOpacity,
+  backgroundBlurRadius,
+  backgroundImageStyle,
 }) => {
   let headerProps: HeaderProps | null = title ? { title, subtitle, eyebrow, showBack, rightAction } : null;
   const body: ReactNode[] = [];
@@ -113,6 +136,10 @@ export const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
       scrollMode={scrollable ? 'shell-scroll-view' : 'none'}
       autoHideTabBar={!disableScrollAwareDock}
       footer={footer}
+      backgroundImage={backgroundImage}
+      backgroundOverlayOpacity={backgroundOverlayOpacity}
+      backgroundBlurRadius={backgroundBlurRadius}
+      backgroundImageStyle={backgroundImageStyle}
     >
       {body}
     </ScreenContainer>

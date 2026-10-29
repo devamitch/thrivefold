@@ -2,6 +2,7 @@ import { SquircleSurface } from '../../components/ui/SquircleSurface';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import Animated, {
   Easing,
   FadeIn,
@@ -15,6 +16,7 @@ import Animated, {
 import { AppHeader } from '../../components/ui/AppHeader';
 import { Card } from '../../components/ui/Card';
 import { ScreenContainer } from '../../components/ui/ScreenContainer';
+import { AssetIllustrations } from '../../constants/assets';
 import { currentLevelProgress, getRoadmapChapters, getRoadmapStages, getTaskById } from '../../domain/game/gameCatalogService';
 import { useRootStore, useShallow } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
@@ -58,9 +60,36 @@ export default function RoadmapScreen() {
   const enter = (i: number) => (reduceMotion ? undefined : FadeIn.duration(180));
 
   return (
-    <ScreenContainer header={<AppHeader title="Roadmap" subtitle="Where you are on the journey" showBack />} scrollMode="shell-scroll-view">
-      {/* Where you are */}
+    <ScreenContainer
+      header={<AppHeader title="Roadmap" subtitle="Where you are on the journey" showBack />}
+      scrollMode="shell-scroll-view"
+      backgroundImage={AssetIllustrations.roadmapJourneyBg}
+      backgroundOverlayOpacity={0.92}
+    >
+      {/* Hero Journey Card */}
       <Animated.View entering={enter(0)}>
+        <Card style={{ marginBottom: spacing.md, padding: 12, overflow: 'hidden' }}>
+          <View style={styles.heroWrap}>
+            <Image
+              source={require('../../../assets/illustrations/roadmap-journey-bg.jpg')}
+              style={styles.heroImage}
+              contentFit="cover"
+            />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(243, 241, 236, 0.15)' }]} />
+          </View>
+          <View style={{ marginTop: 10, paddingHorizontal: 4 }}>
+            <Text style={[typography.captionBold, { color: colors.primary, letterSpacing: 0.6 }]}>
+              SANCTUARY HORIZON · LIFE JOURNEY
+            </Text>
+            <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+              A calm trail that follows your natural rhythm. Step by step, at your own pace.
+            </Text>
+          </View>
+        </Card>
+      </Animated.View>
+
+      {/* Where you are */}
+      <Animated.View entering={enter(1)}>
         <Card style={{ padding: spacing.lg }}>
           <Text style={[typography.captionBold, { color: colors.primary }]}>
             CHAPTER {chapter.number} OF {chapters.length} · LEVEL {level}
@@ -231,6 +260,16 @@ function LevelTrail({ from, to, current, pulse }: { from: number; to: number; cu
 }
 
 const styles = StyleSheet.create({
+  heroWrap: {
+    borderRadius: 14,
+    height: 140,
+    overflow: 'hidden',
+    width: '100%',
+  },
+  heroImage: {
+    height: '100%',
+    width: '100%',
+  },
   dot: { borderRadius: 4, height: 8, width: 8 },
   fill: { borderRadius: 4, height: 8 },
   flex: { flex: 1 },

@@ -51,6 +51,10 @@ export function getSanctuaryIllustration(
         return AssetIllustrations.betaFaceExercisesMen;
       case 'voicePractice':
         return AssetIllustrations.betaVoicePracticeMen;
+      case 'breathing':
+        return AssetIllustrations.betaBreathingMen;
+      case 'outdoors':
+        return AssetIllustrations.outdoorsWalkMen;
       case 'nutrition':
         return AssetIllustrations.nutritionPlateMen;
       default:
