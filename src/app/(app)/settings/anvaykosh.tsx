@@ -93,12 +93,12 @@ export default function AnvayKoshScreen() {
       const okProgress = await pushProgress();
       hapticSuccess();
       if (okProfile || okProgress) {
-        setMessage(`Synced successfully with Supabase · Level ${level}, ${xp} XP, ${streak} day streak.`);
+        setMessage(`Saved: Level ${level}, ${xp} XP, ${streak} day streak.`);
       } else {
-        setMessage('Saved locally. Sign in with Google to push to Supabase.');
+        setMessage('Saved on this phone. Sign in with Google to save to your account.');
       }
     } catch {
-      setMessage('Supabase sync could not complete. Check your connection.');
+      setMessage('Could not save. Check your connection.');
     } finally {
       setBusy(null);
     }
@@ -112,12 +112,12 @@ export default function AnvayKoshScreen() {
       const prog = await pullProgress();
       hapticSuccess();
       if (rem || prog) {
-        setMessage('Merged latest profile and progress from Supabase.');
+        setMessage('Your saved profile and progress were added. Nothing here was replaced.');
       } else {
-        setMessage('No remote profile found. Pushed local data.');
+        setMessage('Nothing saved in your account yet. This phone\'s copy has been saved.');
       }
     } catch {
-      setMessage('Could not pull from Supabase. Check your connection.');
+      setMessage('Could not restore. Check your connection.');
     } finally {
       setBusy(null);
     }
@@ -241,7 +241,7 @@ export default function AnvayKoshScreen() {
         <View style={styles.row}>
           <Ionicons name="cloud-upload-outline" size={20} color={colors.primary} />
           <Text style={[typography.bodyBold, styles.flex, { color: colors.text.primary, marginLeft: 8 }]}>
-            Supabase Cloud & Progress Sync
+            Saved to your account
           </Text>
           <Text style={[typography.captionBold, { color: user && !user.isGuest ? colors.success : colors.text.muted }]}>
             {user && !user.isGuest ? 'Online account' : 'Local guest'}
@@ -273,13 +273,13 @@ export default function AnvayKoshScreen() {
 
         <View style={[styles.row, { gap: 8, marginTop: spacing.md }]}>
           <Button
-            label={busy === 'supabase' ? 'Pushing…' : 'Push to Supabase'}
+            label={busy === 'supabase' ? 'Saving…' : 'Save to my account'}
             onPress={syncSupabase}
             disabled={busy !== null}
             style={styles.flex}
           />
           <Button
-            label={busy === 'pull' ? 'Pulling…' : 'Pull from Cloud'}
+            label={busy === 'pull' ? 'Restoring…' : 'Restore from my account'}
             variant="outline"
             onPress={pullSupabase}
             disabled={busy !== null}
