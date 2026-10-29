@@ -41,6 +41,7 @@ class GlobalVoiceController {
   private lastTranscript = '';
   private lastTranscriptAt = 0;
   private isListeningActive = false;
+  private silentRestarts = 0;
 
   constructor() {
     this.setupSpeechListeners();
@@ -73,6 +74,7 @@ class GlobalVoiceController {
           }
           this.lastTranscript = text;
           this.lastTranscriptAt = now;
+          this.silentRestarts = 0;
 
           this.setState('transcribing');
           this.listeners.forEach((l) => l.onFinalTranscript(text));
@@ -93,19 +95,43 @@ class GlobalVoiceController {
       ExpoSpeechRecognitionModule?.addListener?.('end', () => {
         // Other screens (dictation, voice practice) use the same recogniser; ignore their sessions.
         if (!this.isListeningActive) return;
+        this.isListeningActive = false;
         if (this.state === 'listening') {
           this.setState('idle');
+          // Silence ended the recogniser: keep the conversation open a few times, then wait for a tap.
+          if (this.isOpen && this.silentRestarts < 3) {
+            this.silentRestarts += 1;
+            setTimeout(() => {
+              if (this.isOpen && this.state === 'idle') void this.startListening();
+            }, 300);
+          }
         }
-        this.isListeningActive = false;
       });
 
       ExpoSpeechRecognitionModule?.addListener?.('error', (event: any) => {
         // Other screens (dictation, voice practice) use the same recogniser; ignore their sessions.
         if (!this.isListeningActive) return;
-        const errorMsg = event.message || (event as any).error || 'Speech recognition error';
+        this.isListeningActive = false;
+        const code = String(event?.error ?? '');
+        // Hearing nothing is not a failure; the 'end' handler decides whether to listen again.
+        if (code === 'no-speech' || code === 'speech-timeout' || code === 'aborted') {
+          if (this.state === 'listening') this.setState('idle');
+          if (this.isOpen && this.silentRestarts < 3) {
+            this.silentRestarts += 1;
+            setTimeout(() => {
+              if (this.isOpen && this.state === 'idle') void this.startListening();
+            }, 300);
+          }
+          return;
+        }
+        const errorMsg =
+          code === 'network'
+            ? 'Speech needs the offline speech pack or internet. You can type instead.'
+            : code === 'not-allowed'
+              ? 'Allow the microphone in Android settings to talk.'
+              : event.message || 'Speech recognition stopped. Tap the microphone to try again.';
         this.setState('error');
         this.listeners.forEach((l) => l.onError(errorMsg));
-        this.isListeningActive = false;
       });
     } catch {
       // Degrades gracefully when running on simulator / untyped environment
@@ -137,6 +163,7 @@ class GlobalVoiceController {
    */
   async open(initialRoute?: string) {
     this.isOpen = true;
+    this.silentRestarts = 0;
     if (initialRoute) {
       agentEngine.setCurrentRoute(initialRoute);
     }
