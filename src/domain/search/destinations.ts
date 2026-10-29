@@ -29,7 +29,7 @@ export const DESTINATIONS: Destination[] = [
   { title: 'Voice practice', description: 'speech, voice exercises, pitch, pronunciation, speak clearly', route: '/(app)/beta-lab/voice-practice', icon: 'mic-outline' },
   { title: 'Hand games', description: 'finger count, gestures, hand exercises, dexterity', route: '/(app)/beta-lab/gesture-game', icon: 'hand-left-outline' },
   { title: 'Body and style', description: 'face shape, glasses frames, posture score, outfit colours, BMI, meal plan', route: '/(app)/beta-lab/body-style', icon: 'shirt-outline' },
-  { title: 'Focus self-check', description: 'attention, ADHD screener, focus problems', route: '/(app)/beta-lab/focus-check', icon: 'bulb-outline' },
+  { title: 'Focus self-check', description: 'attention, ADHD screener, focus problems', route: '/(app)/you/adhd-screener', icon: 'bulb-outline' },
   { title: "What's around me", description: 'describe objects with the camera, low vision, blind', route: '/(app)/assist/look-around', icon: 'eye-outline' },
   { title: 'Sound alerts', description: 'doorbell, alarm, baby crying, hard of hearing, deaf', route: '/(app)/assist/sound-alerts', icon: 'ear-outline' },
   { title: 'Photo cutout', description: 'remove background, cut out an object from a photo', route: '/(app)/assist/photo-cutout', icon: 'cut-outline' },

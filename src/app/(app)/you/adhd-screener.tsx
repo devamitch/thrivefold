@@ -66,26 +66,27 @@ export default function AdhdScreenerScreen() {
       scrollable
       header={
         <AppHeader
-          eyebrow="ON-DEVICE FOCUS PROFILE"
-          title="Focus & Attention"
-          subtitle="HIPAA-aligned & 100% on-device · Non-diagnostic"
+          eyebrow="YOU"
+          title="Focus self-check"
+          subtitle="Six questions · about 1 minute · skip any"
           showBack
           onBack={() => router.back()}
         />
       }
     >
       <View style={styles.container}>
-        {/* Safe, non-diagnostic HIPAA-aligned notice */}
+        {/* What this is, and what it is not */}
         <SquircleSurface radius={16} fill={colors.surface2} style={styles.noticeCard}>
           <View style={styles.row}>
             <Ionicons name="shield-checkmark-outline" size={20} color={colors.primary} />
             <Text style={[typography.bodyBold, styles.flex, { color: colors.text.primary, marginLeft: 8 }]}>
-              Local-first & Private
+              Not a diagnosis
             </Text>
           </View>
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 6 }]}>
-            A gentle self-reflection tool adapted from WHO ASRS-v1.1 to tune quest pacing and micro-habits.
-            Stays encrypted on this device and never diagnoses any medical condition. Completely optional and skippable.
+            Based on the WHO adult ADHD self-report screener (ASRS v1.1). Your answers only change how Thrive paces
+            tasks, for example smaller steps and gentler reminders. They stay on this phone. If focus problems affect
+            your life, talk to a doctor.
           </Text>
         </SquircleSurface>
 
@@ -163,7 +164,7 @@ export default function AdhdScreenerScreen() {
             {/* Progress header */}
             <View style={styles.rowBetween}>
               <Text style={[typography.subheading, { color: colors.text.primary }]}>
-                Self-Reflection Questions
+                Questions
               </Text>
               <Text style={[typography.captionBold, { color: colors.primary }]}>
                 {answeredCount}/{ADHD_QUESTIONS.length}

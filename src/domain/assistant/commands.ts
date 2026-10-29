@@ -46,7 +46,7 @@ const OPEN: { words: RegExp; route: string; label: string }[] = [
   { words: /\btrip\b|\bcheck[- ]?in on my way\b|\bgoing home\b|\bwalking home\b/, route: '/(app)/safety/trip', label: 'trip check-in' },
   { words: /\bprescription\b|\bdiet chart\b|\bfood chart\b|\bworkout plan\b|\btrainer\b|\bdietitian\b/, route: '/(app)/health/documents', label: 'documents' },
   { words: /\bmedicine|\bmedication|\btablet|\bpill|\bdoctor\b|\bappointment\b/, route: '/(app)/health/medications', label: 'medicines and follow-ups' },
-  { words: /\badhd\b|\bfocus check\b|\battention\b|\bcan'?t focus\b/, route: '/(app)/beta-lab/focus-check', label: 'the focus self-check' },
+  { words: /\badhd\b|\bfocus check\b|\battention\b|\bcan'?t focus\b/, route: '/(app)/you/adhd-screener', label: 'the focus self-check' },
   { words: /\bwhat'?s around\b|\bwhat do you see\b|\bdescribe\b|\blook around\b/, route: '/(app)/assist/look-around', label: "what's around you" },
   { words: /\bsound alert|\blisten for\b|\bdoorbell\b|\bhard of hearing\b/, route: '/(app)/assist/sound-alerts', label: 'sound alerts' },
   { words: /\bcut ?out\b|\bremove background\b/, route: '/(app)/assist/photo-cutout', label: 'photo cutout' },

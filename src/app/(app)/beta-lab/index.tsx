@@ -70,7 +70,7 @@ const STUDIOS: StudioProduct[] = [
     subtitle: 'WHO adult screener, one moment at a time; not saved, not a diagnosis',
     tag: 'Self-check',
     icon: 'bulb-outline',
-    route: '/(app)/beta-lab/focus-check',
+    route: '/(app)/you/adhd-screener',
     badgeVariant: 'neutral',
   },
   {
