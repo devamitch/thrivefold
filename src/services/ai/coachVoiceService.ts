@@ -1,8 +1,8 @@
 /**
  * Human Virtual Coach Voice Service
  *
- * Ultra-low latency on-device neural voice (expo-speech) prioritized with
- * a soothing, calm Indian male voice. Sarvam AI bulbul:v3 is strictly reserved
+ * Low-latency on-device voice (expo-speech): a warm Indian voice whose gender follows the
+ * person's space (see wantedGender). Sarvam AI bulbul:v3 is strictly reserved
  * for registered users who provide their own BYOK key (disabled for guests
  * and test runs).
  */
@@ -35,71 +35,63 @@ function isGuestOrTesting(): boolean {
   }
 }
 
+type VoiceGender = 'male' | 'female';
+
 /**
- * Score available voices to find the most soothing, calm Indian male voice.
- * Prioritizes Indian English / Hindi male voices (e.g. en-in male Google TTS, iOS Rishi).
+ * Which coach voice to use: the person's men's-health space gets a warm Indian woman's voice,
+ * the women's-health space a warm Indian man's voice; otherwise a woman's voice.
  */
-function scoreIndianMaleVoice(v: Speech.Voice): number {
+function wantedGender(): VoiceGender {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { useRootStore } = require('../../stores/useRootStore');
+    const exp = useRootStore.getState?.()?.experience;
+    return exp === 'women_health' ? 'male' : 'female';
+  } catch {
+    return 'female';
+  }
+}
+
+// Google TTS Indian English voices: ena, enb, enc are female; end, ene are male.
+const MALE_MARKS = ['male', 'rishi', '-end-', '-ene-', 'shubh', 'amartya'];
+const FEMALE_MARKS = ['female', 'neerja', 'veena', '-ena-', '-enb-', '-enc-', 'meera'];
+
+/** Prefers Indian English (then Hindi), the wanted gender, and higher-quality voices. */
+function scoreVoice(v: Speech.Voice, want: VoiceGender): number {
   const id = (v.identifier || '').toLowerCase();
   const name = (v.name || '').toLowerCase();
   const lang = (v.language || '').toLowerCase().replace('_', '-');
   let score = 0;
-
-  // Primary: Indian English or Hindi
-  if (lang.startsWith('en-in')) {
-    score += 100;
-  } else if (lang.startsWith('hi-in') || lang.startsWith('hi')) {
-    score += 60;
-  } else if (lang.startsWith('en-')) {
-    score += 20;
-  }
-
-  // Male markers in Indian TTS (Google TTS: -end-, -ene-, #male; iOS: Rishi; Android: shubh)
-  const isMale =
-    id.includes('male') ||
-    name.includes('male') ||
-    id.includes('rishi') ||
-    name.includes('rishi') ||
-    id.includes('-end-') ||
-    id.includes('-ene-') ||
-    name.includes('shubh') ||
-    id.includes('shubh');
-  if (isMale) score += 50;
-
-  // Deduct for female voices to ensure a calm male voice is selected
-  const isFemale =
-    id.includes('female') ||
-    name.includes('female') ||
-    id.includes('neerja') ||
-    name.includes('neerja') ||
-    id.includes('-ena-') ||
-    id.includes('-enb-') ||
-    id.includes('-enc-');
-  if (isFemale) score -= 40;
-
-  // Enhanced / network neural quality boost
-  if (v.quality === Speech.VoiceQuality.Enhanced || id.includes('network')) {
-    score += 25;
-  }
-
+  if (lang.startsWith('en-in')) score += 100;
+  else if (lang.startsWith('hi')) score += 60;
+  else if (lang.startsWith('en-')) score += 20;
+  const has = (marks: string[]) => marks.some((m) => id.includes(m) || name.includes(m));
+  const male = has(MALE_MARKS) && !id.includes('female') && !name.includes('female');
+  const female = has(FEMALE_MARKS);
+  if (want === 'male' ? male : female) score += 60;
+  if (want === 'male' ? female : male) score -= 60;
+  if (v.quality === Speech.VoiceQuality.Enhanced) score += 15;
+  // Offline voices first, so the coach speaks without internet.
+  if (id.includes('local')) score += 10;
+  if (id.includes('network')) score -= 5;
   return score;
 }
 
-// Find and cache the most soothing on-device Indian male voice
-async function resolveBestVoice(): Promise<string | null> {
-  if (preferredVoiceId) return preferredVoiceId;
+let cachedFor: VoiceGender | null = null;
+
+/** The best installed voice for the wanted gender, cached until the gender changes. */
+async function resolveBestVoice(): Promise<{ id: string | null; gender: VoiceGender }> {
+  const want = wantedGender();
+  if (preferredVoiceId && cachedFor === want) return { id: preferredVoiceId, gender: want };
   try {
     const voices = await Speech.getAvailableVoicesAsync();
-    if (voices && voices.length > 0) {
-      const sorted = [...voices].sort((a, b) => scoreIndianMaleVoice(b) - scoreIndianMaleVoice(a));
-      if (sorted[0] && scoreIndianMaleVoice(sorted[0]) > 0) {
-        preferredVoiceId = sorted[0].identifier;
-      }
-    }
+    const best = [...(voices ?? [])].sort((a, b) => scoreVoice(b, want) - scoreVoice(a, want))[0];
+    preferredVoiceId = best && scoreVoice(best, want) > 0 ? best.identifier : null;
+    cachedFor = want;
   } catch {
     // ignore
   }
-  return preferredVoiceId;
+  return { id: preferredVoiceId, gender: want };
 }
 
 /**
@@ -129,7 +121,7 @@ export async function synthesizeSarvamSpeech(
       body: JSON.stringify({
         inputs: [text],
         target_language_code: opts?.language ?? 'en-IN',
-        speaker: opts?.speaker ?? 'shubh',
+        speaker: opts?.speaker ?? (wantedGender() === 'male' ? 'shubh' : 'meera'),
         model: 'bulbul:v3',
       }),
     });
@@ -154,7 +146,7 @@ export async function synthesizeSarvamSpeech(
 /**
  * Spoken cue for live coaching.
  * Non-blocking, never stacks cues, uses natural cadence.
- * Always selects a soothing, calm Indian male voice.
+ * Uses the warm Indian voice chosen by wantedGender().
  * Guards stop() behind isSpeakingAsync so rapid calls don't stutter.
  */
 export async function speakCoach(
@@ -172,9 +164,10 @@ export async function speakCoach(
     const voice = await resolveBestVoice();
     Speech.speak(text, {
       language: opts?.language ?? 'en-IN',
-      rate: opts?.rate ?? 0.95,   // Calm, natural, soothing pace
-      pitch: opts?.pitch ?? 0.94, // Warm, deeper Indian male tone
-      voice: voice ?? undefined,
+      rate: opts?.rate ?? 0.95, // calm, natural pace
+      // A touch brighter for the woman's voice, a touch warmer and deeper for the man's.
+      pitch: opts?.pitch ?? (voice.gender === 'male' ? 0.92 : 1.06),
+      voice: voice.id ?? undefined,
     });
   } catch {
     // fallback plain speak with calm pitch
