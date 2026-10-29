@@ -162,3 +162,13 @@ Not done: touchless pointer control (research only), segmentation/OCR (no model 
 - **Gradle Release Build:** Previously verified -> **BUILD SUCCESSFUL**.
 
 
+
+## 2026-10-29 — coach agent, sync, backup (NOT TESTED on device: phone disconnected)
+
+- Points/level/streaks sync through the reward ledger (`thrivefold_progress`, migrations 23–24, `services/account/progressSync.ts`); union by entry key. PASS unit test.
+- Orb voice: conversation mode (re-listens after each reply), ignores other screens' recogniser sessions, offline speech preferred (`globalVoiceController.ts`).
+- Agent engine: multi-step requests (`splitSteps`), "export all metrics" / "back up everything", "remember that …", lazy local model load, local answers grounded in saved memories/knowledge, consented cloud escalation (ai-chat edge function) for macros/plans with answers saved to the knowledge store.
+- Privacy: Back up everything (file via folder picker) and Restore from a backup (non-destructive merge, `domain/privacy/backupMerge.ts`).
+- Camera: 8 s start timeout reported to the eye games / eye studio screens. Device camera service was hung (system camera also black); needs a phone restart.
+- Eye studio redesigned (activity list, plain labels, themed full-screen live check). Plan/Progress tabs: sanctuary backgrounds.
+- Not built: on-device model training/fine-tuning (not feasible on phone; "improvement" = retrieval over approved memories and learned answers), multi-app Anvay agent, Grok/Claude routing (server function uses its configured providers).
