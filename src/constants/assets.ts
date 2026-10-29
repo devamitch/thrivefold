@@ -21,6 +21,22 @@ export const AssetIllustrations = {
   wellnessMeditationMind: require('@assets/illustrations/wellness-meditation-mind.jpg'),
   wellnessDeepSleep: require('@assets/illustrations/wellness-deep-sleep.jpg'),
   wellnessEyeVision: require('@assets/illustrations/wellness-eye-vision.jpg'),
+  betaLabHub: require('@assets/illustrations/beta-lab-hub.jpg'),
+  betaFaceExercises: require('@assets/illustrations/beta-face-exercises.jpg'),
+  betaHandGames: require('@assets/illustrations/beta-hand-games.jpg'),
+  betaEyePursuit: require('@assets/illustrations/beta-eye-pursuit.jpg'),
+  betaBreathing: require('@assets/illustrations/beta-breathing.jpg'),
+  betaVoicePractice: require('@assets/illustrations/beta-voice-practice.jpg'),
+  betaBodyStyle: require('@assets/illustrations/beta-body-style.jpg'),
+  betaPoseCoach: require('@assets/illustrations/beta-pose-coach.jpg'),
+  betaCoachAssistant: require('@assets/illustrations/beta-coach-assistant.jpg'),
+  outdoorsWalk: require('@assets/illustrations/outdoors-walk.jpg'),
+  profileKosh: require('@assets/illustrations/profile-kosh.jpg'),
+  nutritionPlate: require('@assets/illustrations/nutrition-plate.jpg'),
+  activityIndoor: require('@assets/illustrations/activity-indoor.jpg'),
+  healthMen: require('@assets/illustrations/health-men.jpg'),
+  healthPride: require('@assets/illustrations/health-pride.jpg'),
+  emergencyHelp: require('@assets/illustrations/emergency-help.jpg'),
 } as const;
 
 export type AssetIllustrationsName = keyof typeof AssetIllustrations;
