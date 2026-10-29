@@ -58,6 +58,27 @@ export function buildCoachPrompt(s: ReturnType<typeof useRootStore.getState>, sc
   ].join('\n');
 }
 
+const storeState0 = () => useRootStore.getState();
+
+/** Instant replies for greetings, thanks and goodbyes (no model round trip). */
+export function quickReply(text: string, s: ReturnType<typeof useRootStore.getState>): string | null {
+  const t = text.toLowerCase().replace(/[^a-z\s']/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!t || t.split(' ').length > 5) return null;
+  const name = s.koshProfile?.preferredName || s.user?.pseudonym?.split(' ')[0] || '';
+  const hi = name ? `, ${name}` : '';
+  if (/^(hi|hello|hey|hii+|namaste|good (morning|afternoon|evening)|yo)\b/.test(t)) {
+    const h = new Date().getHours();
+    const part = h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening';
+    return `Hello${hi}. Good ${part}. What can I do for you?`;
+  }
+  if (/^(thanks|thank you|thx|great|nice|cool|awesome)\b/.test(t)) return "You're welcome. I'm here whenever you need me.";
+  if (/^(bye|goodbye|good night|see you|stop|that's all|thats all)\b/.test(t)) return 'Take care. Tap me any time.';
+  if (/^(how are you|how r u|how are u)\b/.test(t)) return "I'm well, thank you. How are you feeling today?";
+  if (/^(who are you|what are you|what is your name|your name)\b/.test(t))
+    return "I'm Mr. Minute, your Thrivefold companion. I run on this phone and help with your day, health and habits.";
+  return null;
+}
+
 export interface AgentMessage {
   id: string;
   sender: 'user' | 'assistant' | 'system';
@@ -195,6 +216,13 @@ class AgentEngine {
       const combined = replies.join(' ');
       this.finishTurn(combined, lastResult, callbacks);
       return { text: combined, toolResult: lastResult };
+    }
+
+    // Small talk answers instantly, without waiting for the model.
+    const quick = quickReply(text, storeState0());
+    if (quick) {
+      this.finishTurn(quick, undefined, callbacks);
+      return { text: quick };
     }
 
     // "Download the model": set up the on-device brain right here.

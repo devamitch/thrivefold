@@ -1,5 +1,8 @@
 /**
- * Thrive, the on-device AI, as a friendly little clock: a warm terracotta case with a sage-leaf
+ * Mr. Minute, Thrivefold's on-device AI: a calm, caring clock companion (an original character,
+ * not a copy of any film character). Warm terracotta case, sage-leaf crown, the Thrivefold mark
+ * glowing softly at the centre of the face, kind eyes under gentle brows and a neat moustache.
+ * Previously described as a friendly little clock: a warm terracotta case with a sage-leaf
  * crown, a cream face whose hands show the real time, big eyes and a smile. It keeps time for
  * you, which is what the coach does (reminders, routines, breaks).
  *
@@ -37,7 +40,7 @@ const FACE = '#FFF6EC';
 const LEAF = '#8B9A7A';
 const SUN = '#F2B86B';
 const INK = '#2B1B14';
-const CHEEK = '#FF8FA3';
+const HALO = '#7FD3E6'; // calm assistant glow while listening
 
 export type ThriveMood = 'idle' | 'listening' | 'thinking' | 'speaking';
 
@@ -141,7 +144,7 @@ export function ThriveClock({ size = 64, mood = 'idle' }: { size?: number; mood?
     const curve = 3.6 * (1 - think.value);
     const w = 5.5 - think.value * 2.4;
     return {
-      d: `M ${50 - w} 64 Q 50 ${64 + curve + open} ${50 + w} 64 Q 50 ${64 + open * 0.4 + think.value * 2.6} ${50 - w} 64 Z`,
+      d: `M ${50 - w} 65 Q 50 ${65 + curve + open} ${50 + w} 65 Q 50 ${65 + open * 0.4 + think.value * 2.6} ${50 - w} 65 Z`,
     };
   });
 
@@ -159,7 +162,7 @@ export function ThriveClock({ size = 64, mood = 'idle' }: { size?: number; mood?
     <Animated.View
       style={[{ width: size, height: size }, body]}
       accessibilityRole="image"
-      accessibilityLabel="Thrive"
+      accessibilityLabel="Mr. Minute"
     >
       <Svg width={size} height={size} viewBox="0 0 100 100">
         <Defs>
@@ -169,7 +172,7 @@ export function ThriveClock({ size = 64, mood = 'idle' }: { size?: number; mood?
           </LinearGradient>
         </Defs>
 
-        <AnimatedCircle cx={CX} cy={CY} animatedProps={ring} fill="none" stroke={SUN} strokeWidth={2} />
+        <AnimatedCircle cx={CX} cy={CY} animatedProps={ring} fill="none" stroke={HALO} strokeWidth={2.4} />
 
         {/* Crown: a little sage leaf, the Thrivefold sprout. */}
         <Path d="M50 18 V12" stroke={LEAF} strokeWidth={2.6} strokeLinecap="round" />
@@ -198,6 +201,13 @@ export function ThriveClock({ size = 64, mood = 'idle' }: { size?: number; mood?
           );
         })}
 
+        {/* The Thrivefold mark glows softly at the centre of the face. */}
+        <G opacity={0.16}>
+          <Path d="M41 46 H59 M50 46 V66" stroke={CASE_BOTTOM} strokeWidth={5} strokeLinecap="round" />
+          <Path d="M52 65 C52 57 57 53 62 51 C63 58 59 63 52 65 Z" fill={LEAF} />
+          <Circle cx={57.5} cy={45} r={2.6} fill={SUN} />
+        </G>
+
         {/* Real-time hands, behind the face features. */}
         <G opacity={0.55}>
           <Line x1={CX} y1={CY} {...handEnd(hourDeg, 13)} stroke={INK} strokeWidth={2.6} strokeLinecap="round" />
@@ -207,14 +217,20 @@ export function ThriveClock({ size = 64, mood = 'idle' }: { size?: number; mood?
         </G>
 
         {/* Face */}
-        <Ellipse cx={30} cy={60} rx={4.6} ry={3} fill={CHEEK} opacity={0.6} />
-        <Ellipse cx={70} cy={60} rx={4.6} ry={3} fill={CHEEK} opacity={0.6} />
         <AnimatedEllipse animatedProps={lEye} cy={47} fill="#FFFFFF" stroke={INK} strokeWidth={0.8} />
         <AnimatedEllipse animatedProps={rEye} cy={47} fill="#FFFFFF" stroke={INK} strokeWidth={0.8} />
         <AnimatedCircle animatedProps={lPupil} r={3.8} fill={INK} />
         <AnimatedCircle animatedProps={rPupil} r={3.8} fill={INK} />
         <AnimatedCircle animatedProps={lGlint} r={1.2} fill="#FFFFFF" />
         <AnimatedCircle animatedProps={rGlint} r={1.2} fill="#FFFFFF" />
+        {/* Gentle, caring brows and a neat moustache. */}
+        <Path d="M34 38.5 Q40 35.5 46 38" stroke={INK} strokeWidth={1.6} strokeLinecap="round" fill="none" />
+        <Path d="M54 38 Q60 35.5 66 38.5" stroke={INK} strokeWidth={1.6} strokeLinecap="round" fill="none" />
+        <Path
+          d="M50 59.5 C47 57.5 42 58 39.5 61 C43 61.8 47 61.4 50 60.4 C53 61.4 57 61.8 60.5 61 C58 58 53 57.5 50 59.5 Z"
+          fill={INK}
+          opacity={0.85}
+        />
         <AnimatedPath animatedProps={mouth} fill="#7A3524" stroke="#7A3524" strokeWidth={1.2} strokeLinejoin="round" />
 
         {/* Little feet */}

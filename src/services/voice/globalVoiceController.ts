@@ -44,6 +44,7 @@ class GlobalVoiceController {
   private lastTranscriptAt = 0;
   private isListeningActive = false;
   private silentRestarts = 0;
+  private micGranted = false;
 
   constructor() {
     this.setupSpeechListeners();
@@ -191,9 +192,13 @@ class GlobalVoiceController {
     agentEngine.cancelCurrentTurn();
 
     try {
-      this.setState('requesting_permission');
-      const perm = await ExpoSpeechRecognitionModule?.requestPermissionsAsync?.();
-      if (perm && !perm.granted) {
+      // Ask for the microphone only once; afterwards go straight to listening (no flicker).
+      if (!this.micGranted) {
+        this.setState('requesting_permission');
+        const perm = await ExpoSpeechRecognitionModule?.requestPermissionsAsync?.();
+        this.micGranted = !perm || perm.granted;
+      }
+      if (!this.micGranted) {
         this.setState('error');
         this.listeners.forEach((l) => l.onError('Microphone permission denied.'));
         return;
@@ -276,6 +281,11 @@ class GlobalVoiceController {
       }
 
       this.setState('idle');
+      // "Bye" / "stop" ends the conversation instead of listening again.
+      if (/^(bye|goodbye|good night|stop|that's all|thats all|close)\b/i.test(text.trim())) {
+        this.close();
+        return;
+      }
       // Conversation mode: while the assistant is open, keep listening for the next thing said.
       if (this.isOpen) {
         // Wait until the voice has really finished, so the microphone never hears the coach.

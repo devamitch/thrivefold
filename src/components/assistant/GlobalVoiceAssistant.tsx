@@ -168,7 +168,7 @@ export function GlobalVoiceAssistant() {
               <ThriveClock size={48} mood={mood} />
             </Animated.View>
             <View style={styles.flex}>
-              <Text style={[typography.subheading, { color: colors.text.primary }]}>Thrive Coach</Text>
+              <Text style={[typography.subheading, { color: colors.text.primary }]}>Mr. Minute</Text>
               <Text
                 style={[typography.caption, { color: error ? colors.error : colors.text.secondary }]}
                 numberOfLines={1}

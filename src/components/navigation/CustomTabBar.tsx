@@ -30,7 +30,7 @@ import { ThriveClock } from '../brand/ThriveClock';
 
 type OrbMood = 'idle' | 'listening' | 'thinking' | 'speaking';
 const ORB_LABEL: Record<OrbMood, string> = {
-  idle: 'Thrive',
+  idle: 'Mr. Minute',
   listening: 'Listening',
   thinking: 'Thinking',
   speaking: 'Speaking',
