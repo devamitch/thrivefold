@@ -14,6 +14,8 @@ export const AssetIllustrations = {
   share: require('@assets/illustrations/share.webp'),
   vaultLocked: require('@assets/illustrations/vault-locked.webp'),
   workoutYogaFlow: require('@assets/illustrations/workout-yoga-flow.jpg'),
+  workoutStrength: require('@assets/illustrations/workout-strength.jpg'),
+  workoutMobility: require('@assets/illustrations/workout-mobility.jpg'),
   workoutHiitStrength: require('@assets/illustrations/workout-hiit-strength.jpg'),
   workoutDeskReset: require('@assets/illustrations/workout-desk-reset.jpg'),
   cycleRestRestore: require('@assets/illustrations/cycle-rest-restore.jpg'),
@@ -52,6 +54,11 @@ export const AssetIllustrations = {
   todayMorningBg: require('@assets/illustrations/today-morning-bg.jpg'),
   progressZenBg: require('@assets/illustrations/progress-zen-bg.jpg'),
   sanctuaryAmbientBg: require('@assets/illustrations/sanctuary-ambient-bg.jpg'),
+  learnCommunication: require('@assets/illustrations/learn-communication.jpg'),
+  learnListeningMen: require('@assets/illustrations/learn-listening-men.jpg'),
+  learnPelvic: require('@assets/illustrations/learn-pelvic.jpg'),
+  learnPelvicMen: require('@assets/illustrations/learn-pelvic-men.jpg'),
+  learnAffirming: require('@assets/illustrations/learn-affirming.jpg'),
 } as const;
 
 export type AssetIllustrationsName = keyof typeof AssetIllustrations;

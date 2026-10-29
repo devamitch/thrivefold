@@ -1,5 +1,6 @@
 import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { Link, type Href } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -12,6 +13,7 @@ import { EXERCISES, type Equipment } from '../../../domain/fitness/workouts';
 import { movementForExercise } from '../../../domain/pose/movement';
 import { useTheme } from '../../../theme/useTheme';
 import { PressableScale } from '../../../components/ui/PressableScale';
+import { getWorkoutPlanIllustration } from '../../../utils/illustrationResolver';
 
 const EQUIP: { id: 'all' | Equipment; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -25,7 +27,7 @@ const EQUIP: { id: 'all' | Equipment; label: string }[] = [
 
 /** Every exercise, searchable, with what equipment it needs, a video and camera support. */
 export default function ExerciseLibraryScreen() {
-  const { colors, typography, spacing } = useTheme();
+  const { colors, typography, spacing, experience } = useTheme();
   const [query, setQuery] = useState('');
   const [equip, setEquip] = useState<(typeof EQUIP)[number]['id']>('all');
   const list = useMemo(() => {
@@ -61,6 +63,16 @@ export default function ExerciseLibraryScreen() {
               accessibilityRole="button"
               style={StyleSheet.flatten([styles.row, { borderBottomColor: colors.border }])}
             >
+              <View style={styles.thumbWrap}>
+                <Image
+                  source={getWorkoutPlanIllustration(item.pattern, experience)}
+                  style={styles.thumbImage}
+                  contentFit="cover"
+                  transition={120}
+                  priority="low"
+                  accessibilityIgnoresInvertColors
+                />
+              </View>
               <View style={styles.flex}>
                 <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{item.name}</Text>
                 <Text style={[typography.caption, { color: colors.text.secondary }]}>
@@ -84,4 +96,15 @@ const styles = StyleSheet.create({
   icon: { marginRight: 8 },
   input: { borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10 },
   row: { alignItems: 'center', flexDirection: 'row', paddingVertical: 12 },
+  thumbImage: {
+    height: '100%',
+    width: '100%',
+  },
+  thumbWrap: {
+    borderRadius: 10,
+    height: 44,
+    marginRight: 12,
+    overflow: 'hidden',
+    width: 44,
+  },
 });

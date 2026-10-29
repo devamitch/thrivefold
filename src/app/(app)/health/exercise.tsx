@@ -12,7 +12,7 @@ import { Header } from '../../../components/ui/Header';
 import { Card } from '../../../components/ui/Card';
 import { Chip } from '../../../components/ui/Chip';
 import { useTheme } from '../../../theme/useTheme';
-import { getSanctuaryIllustration } from '../../../utils/illustrationResolver';
+import { getSanctuaryIllustration, getWorkoutPlanIllustration } from '../../../utils/illustrationResolver';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngine';
 import { fitFor } from '../../../domain/game/setupProfile';
@@ -131,6 +131,7 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
             <Link href={`/(app)/health/coach/${suggestions[0]?.plan.id ?? 'desk_reset'}?assignmentId=${movementQuest.id}` as Href} asChild>
               <ActivityRow
                 icon="flag-outline"
+                image={getWorkoutPlanIllustration(suggestions[0]?.plan.setting ?? 'home', experience)}
                 title={movementQuest.title}
                 meta={`With the camera coach · finishing it completes the quest · +${movementQuest.xpReward} XP`}
                 done={movementQuest.isCompleted}
@@ -152,6 +153,7 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
                 <Link key={plan.id} href={`/(app)/health/coach/${plan.id}` as Href} asChild>
                   <ActivityRow
                     icon="videocam-outline"
+                    image={getWorkoutPlanIllustration(plan.setting, experience)}
                     title={plan.title}
                     meta={`${plan.minutes} min · ${reason}`}
                     action="Start"
@@ -174,6 +176,7 @@ export function WorkoutsHub({ asTab = false }: { asTab?: boolean }) {
             <Link key={plan.id} href={`/(app)/health/workout/${plan.id}` as Href} asChild>
               <ActivityRow
                 icon="barbell-outline"
+                image={getWorkoutPlanIllustration(plan.setting, experience)}
                 title={plan.title}
                 meta={`${plan.level === 'beginner' ? 'Beginner' : 'Intermediate'} · ${plan.minutes} min · ${plan.items.map((i) => exerciseById(i.exerciseId)?.name).join(', ')}`}
               />
