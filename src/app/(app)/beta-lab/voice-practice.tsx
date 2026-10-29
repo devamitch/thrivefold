@@ -11,21 +11,22 @@ import { Chip } from '../../../components/ui/Chip';
 import { PressableScale } from '../../../components/ui/PressableScale';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { ScreenScrollView } from '../../../components/ui/ScreenScrollView';
-import { PHRASES, VOICED, longestPhonation, steadiness, wordAccuracy, wordsPerMinute, type LevelSample } from '../../../domain/voice/practice';
+import { PHRASES, VOICED, levelFromDbfs, longestPhonation, noteName, pitchSteadiness, steadiness, wordAccuracy, wordsPerMinute, type LevelSample } from '../../../domain/voice/practice';
 import { coachVoice } from '../../../services/ai/coachVoice';
 import { recordBetaSession } from '../../../services/beta/recordSession';
 import { hapticSuccess } from '../../../services/haptics';
-import { useLoudness } from '../../../services/voice/useLoudness';
+import { useAudioSense } from '../../../services/voice/useAudioSense';
 import { useVoiceInput } from '../../../services/voice/useVoiceInput';
 import type { BetaSessionKind } from '../../../stores/slices/appSlice';
 import { useTheme } from '../../../theme/useTheme';
 import { BetaHero } from '../../../components/beta/BetaHero';
 import { getSanctuaryIllustration } from '../../../utils/illustrationResolver';
 
-type Drill = 'sustain' | 'steady' | 'repeat';
+type Drill = 'sustain' | 'steady' | 'pitch' | 'repeat';
 const KINDS: BetaSessionKind[] = ['voice_practice'];
 const DRILLS: Record<Drill, { title: string; how: string; seconds: number }> = {
   sustain: { title: 'Hold an "aah"', how: 'Take a comfortable breath and say "aah" for as long as is easy. Stop before it strains.', seconds: 25 },
+  pitch: { title: 'Hold a note', how: 'Hum or sing one comfortable note and keep it as steady as you can.', seconds: 12 },
   steady: { title: 'Steady voice', how: 'Count slowly from one upwards at an even, comfortable loudness. Keep the bar in the green band.', seconds: 15 },
   repeat: { title: 'Say it clearly', how: 'Read the phrase aloud clearly at a relaxed pace.', seconds: 12 },
 };
@@ -60,23 +61,40 @@ export default function VoicePracticeScreen() {
   };
   // Hold and steady use the phone's own microphone level (no speech service, works offline);
   // only "say it clearly" needs speech-to-text.
-  const loud = useLoudness(onLevel);
+  const hzs = useRef<number[]>([]);
+  const [hz, setHz] = useState(0);
+  const loud = useAudioSense({
+    onPitch: (e) => {
+      onLevel(levelFromDbfs(e.db), e.at);
+      setHz(e.hz);
+      if (e.hz > 0) hzs.current.push(e.hz);
+    },
+  });
   const voice = useVoiceInput((text) => heard.current.push(text), onLevel);
   const listening = loud.listening || voice.state === 'listening';
 
   const finish = useCallback(async () => {
     voice.stop();
-    void loud.stop();
+    loud.stop();
     setLeft(0);
     // The recogniser delivers its final text just after stopping.
     if (drill === 'repeat') await new Promise((r) => setTimeout(r, 900));
     const s = samples.current;
-    const metrics: Record<string, number> = { drill: drill === 'sustain' ? 1 : drill === 'steady' ? 2 : 3 };
+    const metrics: Record<string, number> = { drill: drill === 'sustain' ? 1 : drill === 'steady' ? 2 : drill === 'repeat' ? 3 : 4 };
     let line = '';
     if (drill === 'sustain') {
       const ms = longestPhonation(s);
       metrics.seconds = Math.round(ms / 100) / 10;
       line = ms > 0 ? `You held your voice for ${metrics.seconds} seconds.` : 'I did not hear a held sound. Try a little louder.';
+    } else if (drill === 'pitch') {
+      const p = pitchSteadiness(hzs.current);
+      if (p) {
+        metrics.medianHz = p.medianHz;
+        metrics.spreadCents = p.spreadCents;
+      }
+      line = p
+        ? `Your note was about ${noteName(p.medianHz)} at ${p.medianHz} hertz, wavering ${p.spreadCents} cents.${p.spreadCents < 30 ? ' Very steady.' : p.spreadCents < 60 ? ' Fairly steady.' : ' Try a softer, easier note.'}`
+        : 'I did not hear a clear note. Hum a little louder.';
     } else if (drill === 'steady') {
       const st = steadiness(s, BAND[0], BAND[1]);
       if (st !== null) metrics.steadiness = st;
@@ -118,11 +136,12 @@ export default function VoicePracticeScreen() {
     setResult(null);
     samples.current = [];
     heard.current = [];
+    hzs.current = [];
     firstVoiceAt.current = null;
     // The coach explains first, then the microphone opens, so it does not hear itself.
     await coachVoice.speak(DRILLS[drill].how + (drill === 'repeat' ? ` The phrase is: ${phrase}.` : ''), { priority: 3, maxMs: 9000 });
     startedAt.current = Date.now();
-    const ok = drill === 'repeat' ? await voice.start({ continuous: true, volume: true }) : await loud.start();
+    const ok = drill === 'repeat' ? await voice.start({ continuous: true, volume: true }) : await loud.start(false);
     if (ok) setLeft(DRILLS[drill].seconds);
   };
 
@@ -176,6 +195,7 @@ export default function VoicePracticeScreen() {
             <View style={[styles.fill, { width: `${meter * 100}%`, backgroundColor: drill === 'steady' && inBand ? colors.success : colors.primary }]} />
           </View>
           <Text style={[typography.caption, { color: colors.text.muted, marginTop: 4 }]}>
+            {listening && drill === 'pitch' && hz > 0 ? `${noteName(hz)} · ${Math.round(hz)} Hz · ${left}s · ` : ''}
             {listening ? `Listening · ${left}s` : drill === 'repeat' && voice.state === 'unavailable' ? 'Speech recognition is not available on this phone.' : 'Microphone off'}
             {voice.partial ? ` · "${voice.partial}"` : ''}
           </Text>
@@ -211,7 +231,9 @@ export default function VoicePracticeScreen() {
               ? `held ${s.metrics.seconds}s`
               : s.metrics.drill === 2
                 ? `steady ${s.metrics.steadiness ?? 0}%`
-                : `words ${s.metrics.wordMatch}%${s.metrics.wpm ? ` · ${s.metrics.wpm} wpm` : ''}`
+                : s.metrics.drill === 4
+                  ? `note ${s.metrics.medianHz ?? '—'} Hz · ±${s.metrics.spreadCents ?? '—'} cents`
+                  : `words ${s.metrics.wordMatch}%${s.metrics.wpm ? ` · ${s.metrics.wpm} wpm` : ''}`
           }
         />
       </ScreenScrollView>

@@ -6,6 +6,7 @@ import { Card } from '../../../components/ui/Card';
 import { Header } from '../../../components/ui/Header';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
+import { searchJournal, semanticSearchAvailable } from '../../../services/journal/semanticSearch';
 import { useTheme } from '../../../theme/useTheme';
 
 export default function JournalScreen() {
@@ -17,6 +18,24 @@ export default function JournalScreen() {
   const [newTitle, setNewTitle] = useState('');
   const [newContent, setNewContent] = useState('');
   const [, setIsComposing] = useState(false);
+  const [query, setQuery] = useState('');
+  const [found, setFound] = useState<{ entry: (typeof journalEntries)[number]; score: number }[] | null>(null);
+  const [searching, setSearching] = useState(false);
+
+  const search = async () => {
+    if (!query.trim()) {
+      setFound(null);
+      return;
+    }
+    setSearching(true);
+    try {
+      setFound(await searchJournal(query, journalEntries));
+    } catch {
+      setFound([]);
+    } finally {
+      setSearching(false);
+    }
+  };
 
   const handleSave = () => {
     if (newTitle.trim() && newContent.trim()) {
@@ -31,6 +50,33 @@ export default function JournalScreen() {
     <ScreenWrapper scrollable>
       <Header title="Journal" subtitle="Private notes, kept on this phone" showBack />
       <ScrollView style={[styles.content, { paddingHorizontal: 16, paddingBottom: 32 }]}>
+        {semanticSearchAvailable() && journalEntries.length > 1 ? (
+          <Card style={{ marginBottom: 16, padding: 16 }}>
+            <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Search by meaning</Text>
+            <TextInput
+              style={[styles.input, { color: colors.text.primary, borderColor: colors.border, marginTop: 8 }]}
+              placeholder="e.g. times I felt calm, work stress"
+              placeholderTextColor={colors.text.muted}
+              value={query}
+              onChangeText={setQuery}
+              onSubmitEditing={() => void search()}
+              returnKeyType="search"
+            />
+            <Text style={[typography.caption, { color: colors.text.muted, marginTop: 4 }]}>
+              {searching ? 'Searching on this phone…' : 'Finds entries with a similar meaning, not just the same words. On this phone only.'}
+            </Text>
+            {found
+              ? found.length
+                ? found.map((r) => (
+                    <Text key={r.entry.id} style={[typography.subbody, { color: colors.text.primary, marginTop: 8 }]}>
+                      {r.entry.title} · {new Date(r.entry.createdAt).toLocaleDateString()}
+                    </Text>
+                  ))
+                : <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 8 }]}>No close matches.</Text>
+              : null}
+          </Card>
+        ) : null}
+
         {/* Compose New Entry */}
         <Card style={{ marginBottom: 16, padding: 24 }}>
           <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: 12 }]}>

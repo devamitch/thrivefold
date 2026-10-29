@@ -6,7 +6,9 @@
     "modules": [
       "expo.modules.poselandmarker.PoseLandmarkerModule",
       "expo.modules.poselandmarker.FoodVisionModule",
-      "expo.modules.poselandmarker.PortraitVisionModule"
+      "expo.modules.poselandmarker.PortraitVisionModule",
+      "expo.modules.poselandmarker.AudioSenseModule",
+      "expo.modules.poselandmarker.MediaPipeToolsModule"
     ]
   }
 }

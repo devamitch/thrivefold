@@ -162,8 +162,7 @@
             "googleAppMeasurementOnDeviceConversion": true
           }
         }
-      ],
-      "expo-audio"
+      ]
     ],
     "experiments": {
       "tsconfigPaths": true,

@@ -86,6 +86,13 @@ export function ToolsGrid({ todayCount }: { todayCount: number }) {
         hasActivity: todayCount > 0,
       },
       {
+        icon: 'accessibility-outline',
+        label: 'Assist',
+        meta: 'See, hear, cut out, talk',
+        route: '/(app)/assist' as Href,
+        hasActivity: false,
+      },
+      {
         icon: 'document-text-outline',
         label: 'Documents',
         meta: 'Prescriptions, diet and workout plans',

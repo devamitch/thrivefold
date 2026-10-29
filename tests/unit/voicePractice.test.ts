@@ -29,3 +29,18 @@ describe('voice practice', () => {
     expect(wordsPerMinute('hi', 500)).toBeNull();
   });
 });
+
+import { levelFromDbfs, noteName, pitchSteadiness } from '../../src/domain/voice/practice';
+
+test('pitch helpers', () => {
+  expect(noteName(440)).toBe('A4');
+  expect(noteName(220)).toBe('A3');
+  expect(noteName(0)).toBeNull();
+  const steady = pitchSteadiness(new Array(20).fill(220));
+  expect(steady).toEqual({ medianHz: 220, spreadCents: 0 });
+  const wobbly = pitchSteadiness(Array.from({ length: 20 }, (_, i) => (i % 2 ? 233 : 208)));
+  expect(wobbly!.spreadCents).toBeGreaterThan(90);
+  expect(pitchSteadiness([220, 0, 0])).toBeNull();
+  expect(levelFromDbfs(-55)).toBe(0);
+  expect(levelFromDbfs(-15)).toBe(10);
+});

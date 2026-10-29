@@ -49,6 +49,14 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
     const val MODEL_ASSET = "pose_landmarker_lite.task"
     const val MODEL_VERSION = "mediapipe-pose_landmarker_lite-float16-v1"
     const val FACE_ASSET = "face_landmarker.task"
+    /** Blendshapes sent to JavaScript: eyes (gaze, blink, squint), brows, mouth and jaw. */
+    val BLEND_KEYS = setOf(
+      "eyeLookInLeft", "eyeLookOutLeft", "eyeLookUpLeft", "eyeLookDownLeft",
+      "eyeLookInRight", "eyeLookOutRight", "eyeLookUpRight", "eyeLookDownRight",
+      "eyeBlinkLeft", "eyeBlinkRight", "eyeSquintLeft", "eyeSquintRight", "eyeWideLeft", "eyeWideRight",
+      "browInnerUp", "browOuterUpLeft", "browOuterUpRight", "browDownLeft", "browDownRight",
+      "jawOpen", "mouthSmileLeft", "mouthSmileRight", "mouthPucker", "cheekPuff",
+    )
     /** Gesture recognizer bundle: MediaPipe hand landmarker plus the canned gesture classifier. */
     const val HAND_ASSET = "gesture_recognizer.task"
     private const val MIN_EMIT_INTERVAL_MS = 16L
@@ -95,6 +103,8 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
   @Volatile private var handLandmarker: GestureRecognizer? = null
   private var frameCount = 0L
   @Volatile private var latestFace: List<Double> = emptyList()
+  @Volatile private var latestBlend: Map<String, Double> = emptyMap()
+  @Volatile private var latestHead: Map<String, Double> = emptyMap()
   @Volatile private var latestFaceAt = 0L
   @Volatile private var latestHands: List<List<Double>> = emptyList()
   @Volatile private var latestHandsAt = 0L
@@ -156,7 +166,8 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
         .setBaseOptions(BaseOptions.builder().setModelAssetPath(FACE_ASSET).setDelegate(delegateFor()).build())
         .setRunningMode(RunningMode.LIVE_STREAM)
         .setNumFaces(1)
-        .setOutputFaceBlendshapes(false)
+        .setOutputFaceBlendshapes(true)
+        .setOutputFacialTransformationMatrixes(true)
         .setResultListener { result: FaceLandmarkerResult, _: MPImage -> onFace(result) }
         .setErrorListener { _ -> }
         .build(),
@@ -181,6 +192,26 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
   }
 
   private fun onFace(result: FaceLandmarkerResult) {
+    // Eye and face blendshapes (BlinkQuest gaze uses eyeLook*), and head yaw/pitch from the
+    // facial transformation matrix (column-major 4x4), to tell eye movement from head turns.
+    latestBlend = try {
+      val cats = result.faceBlendshapes().orElse(null)?.firstOrNull()
+      if (cats == null) emptyMap() else cats.filter { BLEND_KEYS.contains(it.categoryName()) }
+        .associate { it.categoryName() to it.score().toDouble() }
+    } catch (_: Exception) {
+      emptyMap()
+    }
+    latestHead = try {
+      val m = result.facialTransformationMatrixes().orElse(null)?.firstOrNull()
+      if (m == null || m.size < 16) emptyMap() else {
+        // Rotation part: r20 = m[2], r21 = m[6], r22 = m[10] (column-major).
+        val yaw = Math.toDegrees(Math.atan2(-m[2].toDouble(), Math.sqrt((m[6] * m[6] + m[10] * m[10]).toDouble())))
+        val pitch = Math.toDegrees(Math.atan2(m[6].toDouble(), m[10].toDouble()))
+        mapOf("yaw" to yaw, "pitch" to pitch)
+      }
+    } catch (_: Exception) {
+      emptyMap()
+    }
     val face = result.faceLandmarks().firstOrNull()
     latestFace = if (face == null || face.size < 478) emptyList() else {
       val out = ArrayList<Double>(FACE_INDICES.size * 2)
@@ -439,7 +470,10 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
       }
     }
     val capturedAt = System.currentTimeMillis() - (now - result.timestampMs())
-    val face = if (faceOn && now - latestFaceAt < STALE_MS) latestFace else emptyList()
+    val faceFresh = faceOn && now - latestFaceAt < STALE_MS
+    val face = if (faceFresh) latestFace else emptyList()
+    val blend = if (faceFresh) latestBlend else emptyMap()
+    val head = if (faceFresh) latestHead else emptyMap()
     val handsFresh = handsOn && now - latestHandsAt < STALE_MS
     val hands = if (handsFresh) latestHands else emptyList()
     val gestures = if (handsFresh) latestGestures else emptyList()
@@ -454,6 +488,8 @@ class PoseCameraView(context: Context, appContext: AppContext) : ExpoView(contex
           "frameWidth" to w,
           "frameHeight" to h,
           "face" to face,
+          "blendshapes" to blend,
+          "head" to head,
           "hands" to hands,
           "gestures" to gestures,
         ),

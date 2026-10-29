@@ -1,4 +1,5 @@
 import { LocalAI } from '../../../modules/local-ai';
+import { MediaPipeTools } from '../../../modules/pose-landmarker/tools';
 import { activeCalories } from '../../domain/activity/calories';
 import type { Command } from '../../domain/assistant/commands';
 import { formatLocalDate } from '../../domain/calendar/universalCalendarEngine';
@@ -29,6 +30,8 @@ const LIFE: Record<'work' | 'balance' | 'relationship' | 'low', string> = {
   low:
     "I'm sorry you're feeling low. Small things help: a short walk in daylight, water, and messaging one person you trust. If it has lasted two weeks or more, please talk to a doctor. Tele-MANAS on 14416 is free, 24 hours, in many languages. If you ever think about harming yourself, call 112 now.",
 };
+
+const LANG: Record<string, string> = { hi: 'Hindi', bn: 'Bengali', ta: 'Tamil', te: 'Telugu', mr: 'Marathi', gu: 'Gujarati', kn: 'Kannada', ml: 'Malayalam', pa: 'Punjabi', ur: 'Urdu', es: 'Spanish', fr: 'French', de: 'German' };
 
 const SYSTEM =
   'You are Thrive, a warm, brief wellbeing coach inside a health app. Answer in at most three short sentences. ' +
@@ -101,9 +104,18 @@ export async function runCommand(cmd: Command): Promise<AssistantReply> {
 
     case 'unknown': {
       if (!cmd.text) return { text: 'Say or type what you need, for example: start breathing.' };
+      // Note the language the person wrote in (on-device language detector).
+      let langNote = '';
+      try {
+        const langs = MediaPipeTools ? await MediaPipeTools.detectLanguage(cmd.text) : [];
+        const top = langs[0];
+        if (top && top.code !== 'en' && top.score > 0.7) langNote = ` (I noticed you wrote in ${LANG[top.code] ?? top.code}; I reply in English for now.)`;
+      } catch {
+        langNote = '';
+      }
       if (!LocalAI.isLoaded()) {
         return {
-          text: "I can open screens, log water and tell you today's numbers without a model. For open questions, load an on-device model first.",
+          text: `I can open screens, log water and tell you today's numbers without a model. For open questions, load an on-device model first.${langNote}`,
           needsModel: true,
         };
       }
@@ -122,7 +134,7 @@ export async function runCommand(cmd: Command): Promise<AssistantReply> {
           .filter(Boolean)
           .join('. ');
         const out = await LocalAI.generateText({ prompt: cmd.text, context, system: SYSTEM });
-        return { text: out.trim() || "I don't have a good answer for that.", fromModel: true };
+        return { text: (out.trim() || "I don't have a good answer for that.") + langNote, fromModel: true };
       } catch {
         return { text: 'The on-device model could not answer just now.', needsModel: true };
       }

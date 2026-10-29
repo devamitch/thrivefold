@@ -22,6 +22,10 @@ export interface PoseFrame {
   face?: number[];
   /** Up to two hands, each flat [x, y] * 21 (MediaPipe hand order); empty when off. */
   hands?: number[][];
+  /** Face blendshape scores 0–1 (eyeLook*, eyeBlink*, brows, mouth, jaw); empty when no face. */
+  blendshapes?: Record<string, number>;
+  /** Head rotation in degrees from the facial transformation matrix; empty when no face. */
+  head?: { yaw?: number; pitch?: number };
   /** Top canned gesture for each hand in `hands`, same order (MediaPipe gesture recognizer). */
   gestures?: { name: HandGestureName; score: number }[];
 }

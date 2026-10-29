@@ -88,3 +88,30 @@ export const PHRASES = [
   'The quick brown fox jumps over the lazy dog',
   'Peter Piper picked a peck of pickled peppers',
 ];
+
+const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+/** Nearest note name for a frequency, e.g. 220 → "A3". */
+export function noteName(hz: number): string | null {
+  if (!(hz > 20)) return null;
+  const midi = Math.round(69 + 12 * Math.log2(hz / 440));
+  return `${NOTES[((midi % 12) + 12) % 12]}${Math.floor(midi / 12) - 1}`;
+}
+
+/**
+ * How steady a held note was: the spread (standard deviation, in cents) of the voiced pitch
+ * around its median, and the median itself. Needs at least 10 voiced frames.
+ */
+export function pitchSteadiness(hzs: number[]): { medianHz: number; spreadCents: number } | null {
+  const voiced = hzs.filter((h) => h > 60 && h < 1100);
+  if (voiced.length < 10) return null;
+  const sorted = [...voiced].sort((a, b) => a - b);
+  const med = sorted[Math.floor(sorted.length / 2)];
+  const cents = voiced.map((h) => 1200 * Math.log2(h / med));
+  const mean = cents.reduce((a, b) => a + b, 0) / cents.length;
+  const sd = Math.sqrt(cents.reduce((a, b) => a + (b - mean) ** 2, 0) / cents.length);
+  return { medianHz: Math.round(med), spreadCents: Math.round(sd) };
+}
+
+/** dBFS from the phone's mic to the drills' −2 … 10 level scale. */
+export const levelFromDbfs = (db: number) => Math.max(-2, Math.min(10, (db + 55) / 4));
