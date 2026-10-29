@@ -43,8 +43,8 @@ export interface ModelDownloadHandle {
 /**
  * Downloads a model preset with:
  * 1. Pre-flight storage capacity check
- * 2. Resumable chunked transfer
- * 3. Temporary download isolation
+ * 2. Transfer into a temporary file (an interrupted download starts again from the beginning)
+ * 3. Size and SHA-256 checks that fail closed: a file that cannot be verified is never installed
  * 4. Post-download atomic rename to final target path
  */
 export function downloadModelWithProgress(
@@ -106,23 +106,26 @@ export function downloadModelWithProgress(
     }
 
     const downloadedInfo = await FileSystem.getInfoAsync(tmpPath);
-    if (!downloadedInfo.exists || (downloadedInfo.size ?? 0) === 0) {
-      throw new Error('Downloaded file is empty or corrupted.');
+    const size = downloadedInfo.exists ? (downloadedInfo.size ?? 0) : 0;
+    // The catalog records the exact artifact size; anything else (an error page, a cut-off
+    // transfer, a different file) is rejected before hashing.
+    if (size === 0 || (preset.sizeBytes > 0 && Math.abs(size - preset.sizeBytes) > preset.sizeBytes * 0.01)) {
+      await FileSystem.deleteAsync(tmpPath, { idempotent: true });
+      throw new Error('Downloaded file is not the expected model. Please try again.');
     }
 
-    // Checksum verification if verifier provided and hash is not a placeholder
-    if (verifyChecksumFn && preset.expectedSha256 && preset.expectedSha256.length === 64) {
+    // A configured checksum must be verified. If verification cannot run or does not match,
+    // the file is removed and nothing is installed (fail closed).
+    if (preset.expectedSha256) {
+      let matches = false;
       try {
-        const verifyRes = await verifyChecksumFn(tmpPath, preset.expectedSha256);
-        if (!verifyRes.matches) {
-          await FileSystem.deleteAsync(tmpPath, { idempotent: true });
-          throw new Error('Model SHA-256 integrity check failed. File has been removed.');
-        }
-      } catch (err: unknown) {
-        // If checksum function itself errors, bubble up
-        if (err instanceof Error && err.message.includes('integrity check failed')) {
-          throw err;
-        }
+        matches = !!verifyChecksumFn && (await verifyChecksumFn(tmpPath, preset.expectedSha256)).matches;
+      } catch {
+        matches = false;
+      }
+      if (!matches) {
+        await FileSystem.deleteAsync(tmpPath, { idempotent: true });
+        throw new Error('Model SHA-256 integrity check failed. File has been removed.');
       }
     }
 
