@@ -126,6 +126,34 @@ class AnvaykoshAiEngine {
   }
 
   /**
+   * Builds the prompt with the model's own chat template (Qwen uses ChatML), so the model knows
+   * where its answer ends. The library's context helpers use a different template, which made
+   * small models keep writing invented "Human:" turns.
+   */
+  private fun chatPrompt(prompt: String, context: String?, system: String?): String {
+    val sys = listOfNotNull(
+      system?.takeIf { it.isNotBlank() },
+      context?.takeIf { it.isNotBlank() }?.let { "Context:\n$it" },
+    ).joinToString("\n\n")
+    val messages = buildList {
+      if (sys.isNotBlank()) add("system" to sys)
+      add("user" to prompt)
+    }
+    // Llamatik 0.12 has no template API, so ChatML (Qwen's format) is written out here.
+    return messages.joinToString("") { (role, text) -> "<|im_start|>$role\n$text<|im_end|>\n" } + "<|im_start|>assistant\n"
+  }
+
+  /** Cuts a reply at the first end-of-turn marker the model may still print. */
+  private fun cutAtStop(text: String): String {
+    var end = text.length
+    for (m in STOP_MARKERS) {
+      val i = text.indexOf(m)
+      if (i in 0 until end) end = i
+    }
+    return text.substring(0, end).trimEnd()
+  }
+
+  /**
    * Generates complete text synchronously on the background worker.
    */
   suspend fun generateText(
@@ -139,11 +167,7 @@ class AnvaykoshAiEngine {
 
     try {
       isGenerating.set(true)
-      val result = if (!system.isNullOrBlank() || !context.isNullOrBlank()) {
-        LlamaBridge.generateWithContext(system ?: "", context ?: "", prompt)
-      } else {
-        LlamaBridge.generate(prompt)
-      }
+      val result = cutAtStop(LlamaBridge.generate(chatPrompt(prompt, context, system)))
       isGenerating.set(false)
       Result.success(result)
     } catch (e: Throwable) {
@@ -222,19 +246,38 @@ class AnvaykoshAiEngine {
       val startTime = SystemClock.elapsedRealtime()
       var tokenCount = 0
       val accumulator = java.lang.StringBuilder()
+      var sent = 0
+      var finished = false
 
       val streamCallback = object : GenStream {
         override fun onDelta(text: String) {
+          if (finished) return
           tokenCount++
           accumulator.append(text)
-          onDelta(text)
+          val clean = cutAtStop(accumulator.toString())
+          if (STOP_MARKERS.any { accumulator.indexOf(it) >= 0 }) {
+            // The model reached an end-of-turn marker: stop and finish with the clean text.
+            if (clean.length > sent) onDelta(clean.substring(sent))
+            sent = clean.length
+            try { LlamaBridge.nativeCancelGenerate() } catch (_: Throwable) {}
+            onComplete()
+            return
+          }
+          // Hold back a partial marker such as "<|im" until we know what it is.
+          val safe = accumulator.length - (accumulator.lastIndexOf("<").takeIf { it >= sent && accumulator.length - it < 16 }?.let { accumulator.length - it } ?: 0)
+          if (safe > sent) {
+            onDelta(accumulator.substring(sent, safe))
+            sent = safe
+          }
         }
 
         override fun onComplete() {
+          if (finished) return
+          finished = true
           isGenerating.set(false)
           val elapsedMs = SystemClock.elapsedRealtime() - startTime
           val tps = if (elapsedMs > 0) (tokenCount.toDouble() / (elapsedMs.toDouble() / 1000.0)) else 0.0
-          onComplete(accumulator.toString(), tokenCount, elapsedMs, tps)
+          onComplete(cutAtStop(accumulator.toString()), tokenCount, elapsedMs, tps)
         }
 
         override fun onError(message: String) {
@@ -244,16 +287,17 @@ class AnvaykoshAiEngine {
       }
 
       try {
-        if (!system.isNullOrBlank() || !context.isNullOrBlank()) {
-          LlamaBridge.generateStreamWithContext(system ?: "", context ?: "", prompt, streamCallback)
-        } else {
-          LlamaBridge.generateStream(prompt, streamCallback)
-        }
+        LlamaBridge.generateStream(chatPrompt(prompt, context, system), streamCallback)
       } catch (e: Throwable) {
         isGenerating.set(false)
         streamCallback.onError(e.message ?: "Native stream failure")
       }
     }
   }
+
+  companion object {
+    private val STOP_MARKERS = listOf("<|im_end|>", "<|endoftext|>", "<end_of_turn>", "<|im_start|>", "\nHuman:", "\nUser:")
+  }
+
 }
 

@@ -156,7 +156,7 @@ export function GlobalVoiceAssistant() {
   return (
     <Modal visible animationType="slide" transparent onRequestClose={close} statusBarTranslucent>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={[styles.backdrop, { backgroundColor: colors.scrim }]}
       >
         <PressableScale style={styles.dismissArea} onPress={close} accessibilityLabel="Close the coach" scaleTo={1}>
