@@ -77,6 +77,11 @@ export const coachVoice = {
    * Check if coach is currently speaking or just finished within the echo-guard window.
    * Used to prevent speech recognition from hearing the coach's own output.
    */
+  /** Whether the coach may speak at all (voice switched on and not blocked). */
+  canSpeak(): boolean {
+    return enabled && !blocked;
+  },
+
   isSpeaking(guardMs = 600): boolean {
     const now = Date.now();
     return now < busyUntil || now - lastEndAt < guardMs;

@@ -163,3 +163,18 @@ export async function speakCoach(
     Speech.speak(text, { rate: 0.95, pitch: 0.94 });
   }
 }
+
+/**
+ * Adds a sentence to the voice queue without interrupting what is being said, so a streamed
+ * reply is spoken sentence by sentence while the rest is still being written.
+ */
+export async function queueCoachSpeech(text: string): Promise<void> {
+  if (!text.trim()) return;
+  const voice = await resolveBestVoice();
+  Speech.speak(text, {
+    language: 'en-IN',
+    rate: 0.95,
+    pitch: voice.gender === 'male' ? 0.94 : 1.06,
+    voice: voice.id ?? undefined,
+  });
+}

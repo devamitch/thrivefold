@@ -13,6 +13,7 @@
 import { ExpoSpeechRecognitionModule } from 'expo-speech-recognition';
 import * as Speech from 'expo-speech';
 import { coachVoice } from '../ai/coachVoice';
+import { queueCoachSpeech } from '../ai/coachVoiceService';
 import { agentEngine } from '../assistant/agentEngine';
 import type { ToolExecutionResult } from '../../domain/assistant/toolRegistry';
 
@@ -207,7 +208,12 @@ class GlobalVoiceController {
         requiresOnDeviceRecognition: false,
         addsPunctuation: true,
         // Local first: use the phone's offline speech pack when it has one.
-        androidIntentOptions: { EXTRA_PREFER_OFFLINE: true },
+        androidIntentOptions: {
+          EXTRA_PREFER_OFFLINE: true,
+          // Finish listening soon after the person stops talking (Android waits ~2 s by default).
+          EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS: 900,
+          EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS: 700,
+        },
       });
     } catch (err: any) {
       this.setState('error');
@@ -240,18 +246,34 @@ class GlobalVoiceController {
     this.setState('reasoning');
 
     try {
+      // Speak while the model is still writing: each finished sentence goes to the voice queue.
+      let spoken = 0;
+      const flush = (all: string, final: boolean) => {
+        const rest = all.slice(spoken);
+        const m = final ? rest.length : Math.max(rest.lastIndexOf('. '), rest.lastIndexOf('! '), rest.lastIndexOf('? '), rest.lastIndexOf('\n')) + 1;
+        if (m <= 0) return;
+        const chunk = rest.slice(0, m).trim();
+        spoken += m;
+        if (chunk) {
+          if (this.state !== 'speaking') this.setState('speaking');
+          if (coachVoice.canSpeak()) void queueCoachSpeech(chunk);
+        }
+      };
       const result = await agentEngine.processUserInput(text, {
         onToken: (_token, accumulated) => {
           this.listeners.forEach((l) => l.onAssistantReply(accumulated));
+          flush(accumulated, false);
         },
       });
 
       this.setState('speaking');
       this.listeners.forEach((l) => l.onAssistantReply(result.text, result.toolResult));
-
-      // Speak assistant reply using centralized coach voice (priority 2)
-      // Priority 3 so a reply is never dropped by the gap rule; long replies are not cut short.
-      await coachVoice.speak(result.text, { priority: 3, maxMs: 60_000 });
+      if (spoken > 0 && result.text.startsWith(result.text.slice(0, spoken))) {
+        flush(result.text, true);
+      } else {
+        // Not streamed (a command or a rule-based reply): say it all at once.
+        await coachVoice.speak(result.text, { priority: 3, maxMs: 60_000 });
+      }
 
       this.setState('idle');
       // Conversation mode: while the assistant is open, keep listening for the next thing said.
