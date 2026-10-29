@@ -1,6 +1,7 @@
 import { MediaPipeTools } from '../../../modules/pose-landmarker/tools';
 import { activeCalories } from '../../domain/activity/calories';
 import type { Command } from '../../domain/assistant/commands';
+import { executeTool } from '../../domain/assistant/toolRegistry';
 import { formatLocalDate } from '../../domain/calendar/universalCalendarEngine';
 import { resolveLocalCoachReply } from '../../domain/coach/localCoachAI';
 import { stepsByDate } from '../../domain/interop/readings';
@@ -62,6 +63,16 @@ export async function runCommand(cmd: Command): Promise<AssistantReply> {
         route: '/(app)/safety/urgent-support',
         autoNavigate: true,
       };
+
+    case 'export': {
+      const r = await executeTool('export_data', { format: cmd.format }, { userId: 'local_user' });
+      return { text: r.message };
+    }
+
+    case 'remember': {
+      const r = await executeTool('log_journal_note', { note: cmd.note, tag: 'remembered' }, { userId: 'local_user' });
+      return { text: r.success ? 'Got it. I will remember that.' : r.message };
+    }
 
     case 'log_water': {
       s.addWaterLog(cmd.glasses * 250, today);

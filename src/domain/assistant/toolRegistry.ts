@@ -322,6 +322,27 @@ export const TOOLS: Record<string, ToolDefinition> = {
     },
   },
 
+  export_data: {
+    name: 'export_data',
+    description: 'Saves all of the person\'s records as a spreadsheet or a full backup file in a folder they choose.',
+    parameters: {
+      format: { type: 'string', description: 'spreadsheet or backup', enum: ['spreadsheet', 'backup'], required: true },
+    },
+    execute: async (params: { format: 'spreadsheet' | 'backup' }) => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const data = require('../../services/privacy/localData') as typeof import('../../services/privacy/localData');
+      const ok = params.format === 'backup' ? await data.exportRawJson() : await data.exportDataToWorkbook();
+      return {
+        success: ok,
+        message: ok
+          ? params.format === 'backup'
+            ? 'Your full backup is saved. Keep it safe; you can restore it from Privacy and data.'
+            : 'All your metrics are saved as a spreadsheet.'
+          : 'Nothing was saved. Choose a folder when Android asks, and try again.',
+      };
+    },
+  },
+
   trigger_urgent_support: {
     name: 'trigger_urgent_support',
     description: 'Provides immediate crisis helpline contacts and opens urgent support screen.',

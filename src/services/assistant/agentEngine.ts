@@ -11,12 +11,13 @@
  */
 
 import { LocalAI } from '../../../modules/local-ai';
-import { parseCommand, type Command } from '../../domain/assistant/commands';
+import { parseCommand, splitSteps, type Command } from '../../domain/assistant/commands';
 import { executeTool, type ToolExecutionResult } from '../../domain/assistant/toolRegistry';
 import { resolveScreenCapability } from '../../domain/assistant/screenRegistry';
 import { resolveLocalCoachReply } from '../../domain/coach/localCoachAI';
 import { useRootStore } from '../../stores/useRootStore';
 import { askThrive } from '../ai/cloudChat';
+import { runCommand as runLegacyCommand } from './runCommand';
 import { ensureLocalModel } from '../ai/localModel';
 import { knowledgeStore } from '../local-ai/rag/knowledgeStore';
 
@@ -146,8 +147,31 @@ class AgentEngine {
       timestamp: Date.now(),
     });
 
+    // 0. Several requests in one breath run one after another, each as its own step.
+    const steps = splitSteps(text);
+    if (steps.length > 1) {
+      const replies: string[] = [];
+      let lastResult: ToolExecutionResult | undefined;
+      for (const step of steps) {
+        const r = await this.runCommand(parseCommand(step));
+        if (r) {
+          replies.push(r.message);
+          lastResult = r;
+        }
+      }
+      const combined = replies.join(' ');
+      this.finishTurn(combined, lastResult, callbacks);
+      return { text: combined, toolResult: lastResult };
+    }
+
     // 1. Check deterministic fast-path commands first
     const cmd: Command = parseCommand(text);
+    const direct =
+      cmd.kind === 'export' || cmd.kind === 'remember' || cmd.kind === 'life' ? await this.runCommand(cmd) : null;
+    if (direct) {
+      this.finishTurn(direct.message, direct, callbacks);
+      return { text: direct.message, toolResult: direct };
+    }
 
     if (cmd.kind === 'crisis') {
       const res = await executeTool('trigger_urgent_support', {}, { userId: 'local_user' });
@@ -284,6 +308,33 @@ class AgentEngine {
 
     this.finishTurn(replyText, toolRes, callbacks);
     return { text: replyText, toolResult: toolRes };
+  }
+
+  /** One understood request as a tool call; null for requests that need the model. */
+  private async runCommand(cmd: Command): Promise<ToolExecutionResult | null> {
+    const ctx = { userId: 'local_user', currentRoute: this.activeSession.currentRoute };
+    switch (cmd.kind) {
+      case 'crisis':
+        return executeTool('trigger_urgent_support', {}, ctx);
+      case 'log_water':
+        return executeTool('log_water', { glasses: cmd.glasses }, ctx);
+      case 'open':
+        return executeTool('navigate_to_screen', { route: cmd.route, label: cmd.label }, ctx);
+      case 'ask':
+        return executeTool('get_metrics', { metric: cmd.metric }, ctx);
+      case 'export':
+        return executeTool('export_data', { format: cmd.format }, ctx);
+      case 'life': {
+        const r = await runLegacyCommand(cmd);
+        return { success: true, message: r.text, routeToOpen: r.route, autoNavigate: r.autoNavigate };
+      }
+      case 'remember': {
+        const r = await executeTool('log_journal_note', { note: cmd.note, tag: 'remembered' }, ctx);
+        return r.success ? { ...r, message: 'Got it. I will remember that.' } : r;
+      }
+      default:
+        return null;
+    }
   }
 
   private async askCloud(text: string): Promise<string | null> {

@@ -10,7 +10,22 @@ export type Command =
   | { kind: 'ask'; metric: 'steps' | 'water' | 'quests' | 'calories' | 'weather' }
   | { kind: 'crisis' }
   | { kind: 'life'; topic: LifeTopic }
+  | { kind: 'export'; format: 'spreadsheet' | 'backup' }
+  | { kind: 'remember'; note: string }
   | { kind: 'unknown'; text: string };
+
+/**
+ * Splits "log two glasses of water and then open sleep" into separate requests so each one runs
+ * as its own step. Only splits when every part is a request the rules understand.
+ */
+export function splitSteps(input: string): string[] {
+  const parts = input
+    .split(/\s*(?:,\s*and then|\band then\b|\bthen\b|\band also\b|;)\s*|\s+and\s+(?=(?:log|add|open|show|start|export|remember|go to|take me)\b)/i)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  if (parts.length < 2) return [input];
+  return parts.every((p) => parseCommand(p).kind !== 'unknown') ? parts.slice(0, 5) : [input];
+}
 
 const OPEN: { words: RegExp; route: string; label: string }[] = [
   { words: /\bbreath(e|ing)?\b|\bcalm\b|\brelax\b/, route: '/(app)/beta-lab/breathing', label: 'the breathing coach' },
@@ -57,6 +72,12 @@ export function parseCommand(input: string): Command {
   if (/\bwork[- ]life\b|\bno time for (myself|family)\b|\bbalance\b/.test(text)) return { kind: 'life', topic: 'balance' };
   if (/\b(marriage|husband|wife|partner|relationship|spouse|in-?laws)\b/.test(text) && /\b(fight|issue|problem|stress|arguing|argue|unhappy|trouble|conflict)/.test(text)) return { kind: 'life', topic: 'relationship' };
   if (/\b(feel(ing)? (low|sad|down|lonely|empty)|depressed|hopeless)\b/.test(text)) return { kind: 'life', topic: 'low' };
+
+  const remember = input.trim().match(/^(?:please\s+)?(?:remember|note|save)\s+(?:that\s+)?(.{3,300})$/i);
+  if (remember && !/\b(?:my )?(?:data|backup|everything|metrics)\b/i.test(remember[1])) return { kind: 'remember', note: remember[1].trim() };
+  if (/\b(export|download|back ?up|save a copy of)\b/.test(text) && /\b(data|metrics?|everything|records?|all|backup|spreadsheet|excel|history)\b/.test(text)) {
+    return { kind: 'export', format: /\b(back ?up|json|restore|uninstall|everything)\b/.test(text) ? 'backup' : 'spreadsheet' };
+  }
 
   const water = text.match(/\b(?:log|add|drank|had)\b.*?\b(\d+|a|an|one|two|three|four|five|six)\b\s*(?:glass|glasses|cup|cups)\b/);
   if (water || /\b(?:log|add)\b.*\bwater\b/.test(text)) {
