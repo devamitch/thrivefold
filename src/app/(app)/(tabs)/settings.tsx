@@ -10,7 +10,7 @@ import { Card } from '../../../components/ui/Card';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { useRootStore } from '../../../stores/useRootStore';
 import { canUseCorrespondence } from '../../../navigation/eligibility';
-import { SettingsRow } from '../../../components/ui/SettingsRow';
+import { SettingsGroup, SettingsRow } from '../../../components/ui/SettingsRow';
 import { AppHeader } from '../../../components/ui/AppHeader';
 import { AppBottomSheetModal, SheetFooterRow } from '../../../components/ui/AppBottomSheetModal';
 import { Button } from '../../../components/ui/Button';
@@ -189,182 +189,158 @@ export default function SettingsScreen() {
 
         {__DEV__ || isOwner ? (
           <>
-            <Text
-              style={[
-                typography.subheading,
-                { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm },
-              ]}
-            >
-              Owner
-            </Text>
-            <Link href={'/(app)/beta-lab' as Href} asChild>
-              <SettingsRow
-                icon="flask-outline"
-                title="Beta Lab"
-                subtitle="Every beta studio, coach, voice and camera feature"
-              />
-            </Link>
-            <Link href={'/(app)/dev' as Href} asChild>
-              <SettingsRow
-                icon="construct-outline"
-                title="Developer tools"
-                subtitle="Beta Mode, data and diagnostics"
-              />
-            </Link>
+            <SettingsGroup title="Owner">
+              <Link href={'/(app)/beta-lab' as Href} asChild>
+                <SettingsRow
+                  icon="flask-outline"
+                  title="Beta Lab"
+                  subtitle="Every beta studio, coach, voice and camera feature"
+                />
+              </Link>
+              <Link href={'/(app)/dev' as Href} asChild>
+                <SettingsRow
+                  icon="construct-outline"
+                  title="Developer tools"
+                  subtitle="Beta Mode, data and diagnostics"
+                />
+              </Link>
+            </SettingsGroup>
           </>
         ) : null}
 
         {/* Section: Account & Identity */}
-        <Text
-          style={[
-            typography.subheading,
-            { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm },
-          ]}
-        >
-          You
-        </Text>
-        <Link href={'/(app)/you/profile' as Href} asChild>
-          <SettingsRow
-            icon="person-circle-outline"
-            title="Your profile"
-            subtitle="Body, food, home, languages, accessibility and emergency contacts"
-          />
-        </Link>
-        <Link href={'/(app)/settings/anvaykosh' as Href} asChild>
-          <SettingsRow
-            icon="apps-outline"
-            title="Account sync"
-            subtitle="Your profile, points and level, saved to your account"
-          />
-        </Link>
+        <SettingsGroup title="You">
+          <Link href={'/(app)/you/profile' as Href} asChild>
+            <SettingsRow
+              icon="person-circle-outline"
+              title="Your profile"
+              subtitle="Body, food, home, languages, accessibility and emergency contacts"
+            />
+          </Link>
+          <Link href={'/(app)/settings/anvaykosh' as Href} asChild>
+            <SettingsRow
+              icon="apps-outline"
+              title="Account sync"
+              subtitle="Your profile, points and level, saved to your account"
+            />
+          </Link>
+        </SettingsGroup>
 
         {/* Section: Preferences & Daily Focus */}
-        <Text
-          style={[
-            typography.subheading,
-            { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm },
-          ]}
-        >
-          Preferences
-        </Text>
-        <Link href={'/(app)/you/preferences' as Href} asChild>
-          <SettingsRow
-            icon="options-outline"
-            title="Routine and comfort"
-            subtitle="Routine length, meal style and sensory comfort"
-          />
-        </Link>
-        <Link href={'/(app)/you/adhd-screener' as Href} asChild>
-          <SettingsRow
-            icon="bulb-outline"
-            title="Focus self-check"
-            subtitle="Six quick questions so tasks come in smaller steps"
-          />
-        </Link>
-        <Link href={'/(onboarding)/lifestyle-preferences' as Href} asChild>
-          <SettingsRow icon="restaurant-outline" title="Food preferences" subtitle="Nutrition focus and meal timing" />
-        </Link>
-        <Link href={'/(app)/personalize' as Href} asChild>
-          <SettingsRow icon="compass-outline" title="Space and goals" subtitle="Your space, goals, pace and limits" />
-        </Link>
-        <Link href={'/(app)/you/beliefs' as Href} asChild>
-          <SettingsRow
-            icon="globe-outline"
-            title="Beliefs and culture"
-            subtitle="Optional, private, for observance reminders"
-          />
-        </Link>
-        <Link href={'/(app)/you/reminders' as Href} asChild>
-          <SettingsRow
-            icon="notifications-outline"
-            title="Reminders and quiet hours"
-            subtitle="When Thrive may remind you, and when not"
-          />
-        </Link>
+        <SettingsGroup title="Preferences">
+          <Link href={'/(app)/you/preferences' as Href} asChild>
+            <SettingsRow
+              icon="options-outline"
+              title="Routine and comfort"
+              subtitle="Routine length, meal style and sensory comfort"
+            />
+          </Link>
+          <Link href={'/(app)/you/adhd-screener' as Href} asChild>
+            <SettingsRow
+              icon="bulb-outline"
+              title="Focus self-check"
+              subtitle="Six quick questions so tasks come in smaller steps"
+            />
+          </Link>
+          <Link href={'/(onboarding)/lifestyle-preferences' as Href} asChild>
+            <SettingsRow
+              icon="restaurant-outline"
+              title="Food preferences"
+              subtitle="Nutrition focus and meal timing"
+            />
+          </Link>
+          <Link href={'/(app)/personalize' as Href} asChild>
+            <SettingsRow icon="compass-outline" title="Space and goals" subtitle="Your space, goals, pace and limits" />
+          </Link>
+          <Link href={'/(app)/you/beliefs' as Href} asChild>
+            <SettingsRow
+              icon="globe-outline"
+              title="Beliefs and culture"
+              subtitle="Optional, private, for observance reminders"
+            />
+          </Link>
+          <Link href={'/(app)/you/reminders' as Href} asChild>
+            <SettingsRow
+              icon="notifications-outline"
+              title="Reminders and quiet hours"
+              subtitle="When Thrive may remind you, and when not"
+            />
+          </Link>
+        </SettingsGroup>
 
         {/* Section: Your spaces */}
-        <Text
-          style={[
-            typography.subheading,
-            { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm },
-          ]}
-        >
-          Your spaces
-        </Text>
-        <Link href={HEALTH_SPACE.route as Href} asChild>
-          <SettingsRow icon={HEALTH_SPACE.icon} title={HEALTH_SPACE.title} subtitle={HEALTH_SPACE.subtitle} />
-        </Link>
-        <Link href={'/(app)/calendar' as Href} asChild>
-          <SettingsRow
-            icon="calendar-outline"
-            title="Calendar and routine"
-            subtitle="Your days, workouts, check-ins and plans by date"
-          />
-        </Link>
-        {correspondenceOpen ? (
-          <Link href={'/(app)/letters' as Href} asChild>
-            <SettingsRow icon="mail-outline" title="Letters" subtitle="Slow, private correspondence" />
+        <SettingsGroup title="Your spaces">
+          <Link href={HEALTH_SPACE.route as Href} asChild>
+            <SettingsRow icon={HEALTH_SPACE.icon} title={HEALTH_SPACE.title} subtitle={HEALTH_SPACE.subtitle} />
           </Link>
-        ) : null}
-        <Link href={'/(app)/games' as Href} asChild>
-          <SettingsRow icon="game-controller-outline" title="Games" subtitle="Breathing, memory and focus" />
-        </Link>
-        <Link href={'/(app)/(tabs)/progress' as Href} asChild>
-          <SettingsRow icon="trail-sign-outline" title="Roadmap" subtitle="Chapters, levels and what unlocks next" />
-        </Link>
+          <Link href={'/(app)/calendar' as Href} asChild>
+            <SettingsRow
+              icon="calendar-outline"
+              title="Calendar and routine"
+              subtitle="Your days, workouts, check-ins and plans by date"
+            />
+          </Link>
+          {correspondenceOpen ? (
+            <Link href={'/(app)/letters' as Href} asChild>
+              <SettingsRow icon="mail-outline" title="Letters" subtitle="Slow, private correspondence" />
+            </Link>
+          ) : null}
+          <Link href={'/(app)/games' as Href} asChild>
+            <SettingsRow icon="game-controller-outline" title="Games" subtitle="Breathing, memory and focus" />
+          </Link>
+          <Link href={'/(app)/(tabs)/progress' as Href} asChild>
+            <SettingsRow icon="trail-sign-outline" title="Roadmap" subtitle="Chapters, levels and what unlocks next" />
+          </Link>
+        </SettingsGroup>
 
         {/* Section: System & Security */}
-        <Text
-          style={[
-            typography.subheading,
-            { color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm },
-          ]}
-        >
-          Thrive Coach and privacy
-        </Text>
-        <Link href={'/(app)/ai/model-status' as Href} asChild>
-          <SettingsRow
-            icon="hardware-chip-outline"
-            title="Offline brain"
-            subtitle="Download once so Thrive answers with no internet"
-          />
-        </Link>
-        <Link href={'/(app)/settings/memories' as Href} asChild>
-          <SettingsRow
-            icon="library-outline"
-            title="What Thrive remembers"
-            subtitle="Kept on this phone. See, teach or delete"
-          />
-        </Link>
-        <Link href={'/(app)/settings/ai-byok' as Href} asChild>
-          <SettingsRow
-            icon="key-outline"
-            title="Your own AI key"
-            subtitle="Optional: use your own online AI provider"
-          />
-        </Link>
-        <SettingsRow
-          icon="finger-print-outline"
-          title="Haptic feedback"
-          subtitle="A light tap on buttons and milestones"
-          right={
-            <Toggle
-              value={hapticsEnabled}
-              onValueChange={setHapticsEnabled}
-              accessibilityLabel="Enable or disable tactile haptic feedback"
+        <SettingsGroup title="Thrive Coach and privacy">
+          <Link href={'/(app)/ai/model-status' as Href} asChild>
+            <SettingsRow
+              icon="hardware-chip-outline"
+              title="Offline brain"
+              subtitle="Download once so Thrive answers with no internet"
             />
-          }
-        />
-        <Link href={'/(app)/you/privacy' as Href} asChild>
+          </Link>
+          <Link href={'/(app)/settings/memories' as Href} asChild>
+            <SettingsRow
+              icon="library-outline"
+              title="What Thrive remembers"
+              subtitle="Kept on this phone. See, teach or delete"
+            />
+          </Link>
+          <Link href={'/(app)/settings/ai-byok' as Href} asChild>
+            <SettingsRow
+              icon="key-outline"
+              title="Your own AI key"
+              subtitle="Optional: use your own online AI provider"
+            />
+          </Link>
+        </SettingsGroup>
+        <SettingsGroup title="Privacy and account">
           <SettingsRow
-            icon="lock-closed-outline"
-            title="Privacy and data"
-            subtitle="Export, connected apps, backup and safety"
+            icon="finger-print-outline"
+            title="Haptic feedback"
+            subtitle="A light tap on buttons and milestones"
+            right={
+              <Toggle
+                value={hapticsEnabled}
+                onValueChange={setHapticsEnabled}
+                accessibilityLabel="Enable or disable tactile haptic feedback"
+              />
+            }
           />
-        </Link>
-        <Link href={'/(app)/you/account' as Href} asChild>
-          <SettingsRow icon="person-circle-outline" title="Account" subtitle="Sign out, redo setup or erase" />
-        </Link>
+          <Link href={'/(app)/you/privacy' as Href} asChild>
+            <SettingsRow
+              icon="lock-closed-outline"
+              title="Privacy and data"
+              subtitle="Export, connected apps, backup and safety"
+            />
+          </Link>
+          <Link href={'/(app)/you/account' as Href} asChild>
+            <SettingsRow icon="person-circle-outline" title="Account" subtitle="Sign out, redo setup or erase" />
+          </Link>
+        </SettingsGroup>
       </View>
 
       {/* Profile Edit Bottom Sheet Modal */}
