@@ -82,6 +82,6 @@ describe('Local Coach AI Engine', () => {
     const res = resolveLocalCoachReply('What can you help me with?', baseContext);
     expect(res.topic).toBe('general');
     expect(res.text).toContain('Aarav,');
-    expect(res.text.toLowerCase()).toContain('coach');
+    expect(res.text.toLowerCase()).toContain('on-device brain');
   });
 });

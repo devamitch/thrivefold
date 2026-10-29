@@ -19,6 +19,7 @@ import { useRootStore } from '../../stores/useRootStore';
 import { askThrive } from '../ai/cloudChat';
 import { runCommand as runLegacyCommand } from './runCommand';
 import { ensureLocalModel } from '../ai/localModel';
+import { brainReady, recommendedModel, setUpBrain } from '../ai/modelSetup';
 import { knowledgeStore } from '../local-ai/rag/knowledgeStore';
 import { retrieveHybridEvidence } from '../local-ai/rag/hybridRagPipeline';
 
@@ -194,6 +195,19 @@ class AgentEngine {
       const combined = replies.join(' ');
       this.finishTurn(combined, lastResult, callbacks);
       return { text: combined, toolResult: lastResult };
+    }
+
+    // "Download the model": set up the on-device brain right here.
+    if (/^(?:please )?(?:download|install|get|set ?up)\b.*\b(?:model|brain|ai|offline)\b|^download$/i.test(text)) {
+      const model = recommendedModel();
+      const msg = !model
+        ? 'On-device AI is not available on this phone.'
+        : (await brainReady())
+          ? 'The on-device brain is already set up and answering.'
+          : `Downloading ${model.name}, ${model.sizeMb} MB. You can keep talking; I'll use it as soon as it's ready.`;
+      if (model) void setUpBrain(model);
+      this.finishTurn(msg, undefined, callbacks);
+      return { text: msg };
     }
 
     // 1. Check deterministic fast-path commands first

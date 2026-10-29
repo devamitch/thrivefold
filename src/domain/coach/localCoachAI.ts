@@ -79,10 +79,12 @@ export function buildLocalCoachContext(): LocalCoachContext {
   };
 }
 
-export function resolveLocalCoachReply(
-  prompt: string,
-  ctx?: LocalCoachContext,
-): LocalCoachReply {
+export function resolveLocalCoachReply(prompt: string, ctx?: LocalCoachContext): LocalCoachReply {
+  const r = coachReply(prompt, ctx);
+  return { ...r, text: r.text.charAt(0).toUpperCase() + r.text.slice(1) };
+}
+
+function coachReply(prompt: string, ctx?: LocalCoachContext): LocalCoachReply {
   const text = prompt.toLowerCase().trim();
   const context = ctx ?? buildLocalCoachContext();
   const greeting = context.userName ? `${context.userName}, ` : '';
@@ -252,9 +254,16 @@ export function resolveLocalCoachReply(
     };
   }
 
+  if (/^(hi|hello|hey|namaste|good (morning|afternoon|evening))\b/.test(text)) {
+    return {
+      text: `Hi${context.userName ? ` ${context.userName}` : ''}! What would you like to do? You can ask about today, log water, start a workout or breathing, or ask me anything.`,
+      topic: 'general',
+    };
+  }
+
   // 14. Default warm, grounded coach reply
   return {
-    text: `${greeting}as your wellbeing coach, I'm here to support your movement, sleep, hydration, and daily habits. Ask me for exercise form tips, today's workout, or daily stats anytime.`,
+    text: `${greeting}I can't answer that well without the on-device brain. Tap Download above and I'll answer questions like this offline. Meanwhile I can log water, show today's numbers, open any screen, or guide a workout.`,
     topic: 'general',
   };
 }
