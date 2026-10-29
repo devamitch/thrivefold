@@ -17,6 +17,7 @@ import Animated, {
   useSharedValue,
   withDelay,
   withRepeat,
+  withSequence,
   withTiming,
 } from 'react-native-reanimated';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -44,13 +45,72 @@ export interface AnimatedThrivefoldMarkProps {
   living?: boolean;
   /** Delay before the entrance starts, in ms. */
   delay?: number;
+  /**
+   * What the coach is doing, so the mark can show it: listening (the whole mark leans in and
+   * glows), thinking (the leaf turns over), speaking (the sun bobs with the voice).
+   */
+  mood?: 'idle' | 'listening' | 'thinking' | 'speaking';
+  /** Now and then wave the leaf or hop, like a small character. Off by default. */
+  personality?: boolean;
 }
 
-export function AnimatedThrivefoldMark({ size = 96, entrance = true, living = true, delay = 0 }: AnimatedThrivefoldMarkProps) {
+export function AnimatedThrivefoldMark({
+  size = 96,
+  entrance = true,
+  living = true,
+  delay = 0,
+  mood = 'idle',
+  personality = false,
+}: AnimatedThrivefoldMarkProps) {
   const reduceMotion = useReducedMotion();
   const enter = useSharedValue(entrance && !reduceMotion ? 0 : 1);
   const breath = useSharedValue(0);
   const sway = useSharedValue(0);
+  const lean = useSharedValue(0); // listening
+  const turn = useSharedValue(0); // thinking
+  const talk = useSharedValue(0); // speaking
+  const hop = useSharedValue(0); // personality
+  const wave = useSharedValue(0); // personality
+
+  useEffect(() => {
+    if (reduceMotion) return;
+    cancelAnimation(lean);
+    cancelAnimation(turn);
+    cancelAnimation(talk);
+    const loop = (ms: number) =>
+      withRepeat(withTiming(1, { duration: ms, easing: Easing.inOut(Easing.sin) }), -1, true);
+    lean.value = mood === 'listening' ? loop(700) : withTiming(0, { duration: 250 });
+    turn.value =
+      mood === 'thinking'
+        ? withRepeat(withTiming(1, { duration: 1400, easing: Easing.linear }), -1, false)
+        : withTiming(0, { duration: 250 });
+    talk.value = mood === 'speaking' ? loop(220) : withTiming(0, { duration: 200 });
+  }, [mood, reduceMotion, lean, turn, talk]);
+
+  useEffect(() => {
+    if (!personality || reduceMotion) return;
+    let n = 0;
+    const iv = setInterval(() => {
+      n += 1;
+      if (n % 2)
+        wave.value = withSequence(
+          withTiming(1, { duration: 260 }),
+          withTiming(-0.6, { duration: 260 }),
+          withTiming(0.4, { duration: 220 }),
+          withTiming(0, { duration: 260 }),
+        );
+      else
+        hop.value = withSequence(
+          withTiming(1, { duration: 180, easing: Easing.out(Easing.quad) }),
+          withTiming(0, { duration: 320, easing: Easing.bounce }),
+        );
+    }, 7000);
+    return () => clearInterval(iv);
+  }, [personality, reduceMotion, wave, hop]);
+
+  const bodyStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: -size * 0.1 * hop.value }, { scale: 1 + 0.06 * lean.value }],
+  }));
 
   useEffect(() => {
     if (reduceMotion) {
@@ -59,8 +119,14 @@ export function AnimatedThrivefoldMark({ size = 96, entrance = true, living = tr
     }
     if (entrance) enter.value = withDelay(delay, withTiming(1, { duration: 1100, easing: Easing.out(Easing.cubic) }));
     if (living) {
-      breath.value = withDelay(delay + 700, withRepeat(withTiming(1, { duration: BREATH_MS, easing: Easing.inOut(Easing.sin) }), -1, true));
-      sway.value = withDelay(delay + 900, withRepeat(withTiming(1, { duration: SWAY_MS, easing: Easing.inOut(Easing.sin) }), -1, true));
+      breath.value = withDelay(
+        delay + 700,
+        withRepeat(withTiming(1, { duration: BREATH_MS, easing: Easing.inOut(Easing.sin) }), -1, true),
+      );
+      sway.value = withDelay(
+        delay + 900,
+        withRepeat(withTiming(1, { duration: SWAY_MS, easing: Easing.inOut(Easing.sin) }), -1, true),
+      );
     }
     return () => {
       cancelAnimation(enter);
@@ -78,21 +144,23 @@ export function AnimatedThrivefoldMark({ size = 96, entrance = true, living = tr
     opacity: interpolate(enter.value, [0.2, 0.5], [0, 1], 'clamp'),
     transform: [
       { scale: interpolate(enter.value, [0.2, 0.85], [0.2, 1], 'clamp') },
-      { rotate: `${interpolate(enter.value, [0.2, 0.85], [-24, 0], 'clamp') + (sway.value - 0.5) * 7}deg` },
+      {
+        rotate: `${interpolate(enter.value, [0.2, 0.85], [-24, 0], 'clamp') + (sway.value - 0.5) * 7 + wave.value * 22 + Math.sin(turn.value * Math.PI * 2) * 14}deg`,
+      },
     ],
   }));
 
   const sunStyle = useAnimatedStyle(() => ({
     opacity: interpolate(enter.value, [0.45, 0.75], [0, 1], 'clamp'),
     transform: [
-      { translateY: interpolate(enter.value, [0.45, 1], [size * 0.16, 0], 'clamp') },
-      { scale: 1 + 0.07 * breath.value },
+      { translateY: interpolate(enter.value, [0.45, 1], [size * 0.16, 0], 'clamp') - size * 0.04 * talk.value },
+      { scale: 1 + 0.07 * breath.value + 0.12 * talk.value },
     ],
   }));
 
   const glowStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(enter.value, [0.7, 1], [0, 1], 'clamp') * (0.12 + 0.22 * breath.value),
-    transform: [{ scale: 1.15 + 0.45 * breath.value }],
+    opacity: interpolate(enter.value, [0.7, 1], [0, 1], 'clamp') * (0.12 + 0.22 * breath.value + 0.3 * lean.value),
+    transform: [{ scale: 1.15 + 0.45 * breath.value + 0.6 * lean.value }],
   }));
 
   const box = { width: size, height: size };
@@ -103,8 +171,10 @@ export function AnimatedThrivefoldMark({ size = 96, entrance = true, living = tr
   );
 
   return (
-    <View style={box} accessibilityRole="image" accessibilityLabel="Thrivefold">
-      <Animated.View style={[StyleSheet.absoluteFill, tStyle]}>{layer(<Path d={T_PATH} fill={T_COLOR} />)}</Animated.View>
+    <Animated.View style={[box, bodyStyle]} accessibilityRole="image" accessibilityLabel="Thrivefold">
+      <Animated.View style={[StyleSheet.absoluteFill, tStyle]}>
+        {layer(<Path d={T_PATH} fill={T_COLOR} />)}
+      </Animated.View>
       <Animated.View style={[StyleSheet.absoluteFill, styles.leafOrigin, leafStyle]}>
         {layer(
           <>
@@ -113,9 +183,13 @@ export function AnimatedThrivefoldMark({ size = 96, entrance = true, living = tr
           </>,
         )}
       </Animated.View>
-      <Animated.View style={[StyleSheet.absoluteFill, styles.sunOrigin, glowStyle]}>{layer(<Circle cx={585} cy={421} r={42} fill={SUN_COLOR} />)}</Animated.View>
-      <Animated.View style={[StyleSheet.absoluteFill, styles.sunOrigin, sunStyle]}>{layer(<Circle cx={585} cy={421} r={42} fill={SUN_COLOR} />)}</Animated.View>
-    </View>
+      <Animated.View style={[StyleSheet.absoluteFill, styles.sunOrigin, glowStyle]}>
+        {layer(<Circle cx={585} cy={421} r={42} fill={SUN_COLOR} />)}
+      </Animated.View>
+      <Animated.View style={[StyleSheet.absoluteFill, styles.sunOrigin, sunStyle]}>
+        {layer(<Circle cx={585} cy={421} r={42} fill={SUN_COLOR} />)}
+      </Animated.View>
+    </Animated.View>
   );
 }
 

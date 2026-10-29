@@ -11,10 +11,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { Tabs } from 'expo-router';
 import { router } from 'expo-router';
-import { memo, useCallback, useEffect, useMemo, type ComponentProps } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState, type ComponentProps } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, {
   Easing,
+  FadeIn,
   interpolateColor,
   useAnimatedStyle,
   useReducedMotion,
@@ -25,16 +26,20 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { ClipPath, Defs, Path } from 'react-native-svg';
 import { hapticMedium, hapticSelection } from '../../services/haptics';
 import { globalVoiceController } from '../../services/voice/globalVoiceController';
+import { AnimatedThrivefoldMark } from '../brand/AnimatedThrivefoldMark';
+
+type OrbMood = 'idle' | 'listening' | 'thinking' | 'speaking';
+const ORB_LABEL: Record<OrbMood, string> = {
+  idle: 'Thrive',
+  listening: 'Listening',
+  thinking: 'Thinking',
+  speaking: 'Speaking',
+};
 
 import { useTheme } from '../../theme/useTheme';
 import { PressableScale } from '../ui/PressableScale';
 
-import {
-  hideTabBar,
-  showTabBar,
-  tabBarScrollProgress,
-  useScrollAwareTabBar,
-} from './useScrollAwareDock';
+import { hideTabBar, showTabBar, tabBarScrollProgress, useScrollAwareTabBar } from './useScrollAwareDock';
 
 import { getExperienceIcons } from '../../theme/icons';
 import { useLayout } from '../../theme/layout';
@@ -118,12 +123,7 @@ function wavePath(cx: number): string {
 function buildTopEdge(w: number): string[] {
   const T = HUMP_H;
   const r = TOP_R;
-  return [
-    `A ${r} ${r} 0 0 1 ${r} ${T}`,
-    wavePath(w / 2),
-    `L ${w - r} ${T}`,
-    `A ${r} ${r} 0 0 1 ${w} ${T + r}`,
-  ];
+  return [`A ${r} ${r} 0 0 1 ${r} ${T}`, wavePath(w / 2), `L ${w - r} ${T}`, `A ${r} ${r} 0 0 1 ${w} ${T + r}`];
 }
 
 function buildBarPath(w: number, h: number, bottomR = 0): string {
@@ -207,10 +207,7 @@ const TabButton = memo(function TabButton({
       <Animated.View style={[styles.iconWrap, iconStyle]}>
         <Ionicons name={iconName} size={ICON_SIZE} color={iconColor} />
       </Animated.View>
-      <Animated.Text
-        style={[styles.label, labelStyle, fontFamily ? { fontFamily } : null]}
-        numberOfLines={1}
-      >
+      <Animated.Text style={[styles.label, labelStyle, fontFamily ? { fontFamily } : null]} numberOfLines={1}>
         {label}
       </Animated.Text>
     </PressableScale>
@@ -236,10 +233,7 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
   const barPath = useMemo(() => buildBarPath(barW, barH, 0), [barW, barH]);
   const rimPath = useMemo(() => buildRimPath(barW), [barW]);
 
-  const routes = useMemo(
-    () => state.routes.filter((route) => DEFAULT_ROUTES.includes(route.name)),
-    [state.routes],
-  );
+  const routes = useMemo(() => state.routes.filter((route) => DEFAULT_ROUTES.includes(route.name)), [state.routes]);
 
   // Split: left 2 tabs, center orb slot, right 3 tabs
   const half = Math.ceil(routes.length / 2);
@@ -272,6 +266,29 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
       }
     },
     [navigation],
+  );
+
+  // The orb shows what the coach is doing.
+  const [mood, setMood] = useState<OrbMood>('idle');
+  useEffect(
+    () =>
+      globalVoiceController.subscribe({
+        onStateChange: (st) =>
+          setMood(
+            st === 'listening'
+              ? 'listening'
+              : st === 'reasoning' || st === 'transcribing'
+                ? 'thinking'
+                : st === 'speaking'
+                  ? 'speaking'
+                  : 'idle',
+          ),
+        onPartialTranscript: () => undefined,
+        onFinalTranscript: () => undefined,
+        onAssistantReply: () => undefined,
+        onError: () => undefined,
+      }),
+    [],
   );
 
   // The orb is the coach: tap to talk (it keeps listening until closed). Hold for the check-in.
@@ -307,11 +324,7 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
   };
 
   return (
-    <Animated.View
-      testID="tab-bar"
-      pointerEvents="box-none"
-      style={[styles.dock, containerAnimStyle]}
-    >
+    <Animated.View testID="tab-bar" pointerEvents="box-none" style={[styles.dock, containerAnimStyle]}>
       <View style={{ width: barW, height: barH, alignSelf: 'center' }} pointerEvents="box-none">
         <Svg width={barW} height={barH} style={StyleSheet.absoluteFill} pointerEvents="none">
           <Defs>
@@ -329,9 +342,7 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
         <View style={[styles.row, { paddingHorizontal: bleed }]} accessibilityRole="tablist">
           <View style={styles.side}>{left.map((route, i) => renderTab(route, i))}</View>
           <View style={styles.centerSlot} />
-          <View style={styles.side}>
-            {right.map((route, i) => renderTab(route, i + left.length))}
-          </View>
+          <View style={styles.side}>{right.map((route, i) => renderTab(route, i + left.length))}</View>
         </View>
 
         {/* Central Action Orb with brand logo */}
@@ -352,18 +363,25 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
             scaleTo={0.94}
             style={styles.orbButton}
           >
-            <View style={[styles.centerOrb, { backgroundColor: colors.dockActive }]}>
-              <Ionicons name={experienceIcons.orb.icon} size={26} color={colors.dock} />
+            <View
+              style={[
+                styles.centerOrb,
+                {
+                  backgroundColor: colors.background,
+                  borderColor: mood === 'idle' ? colors.dockActive : colors.primary,
+                },
+              ]}
+            >
+              <AnimatedThrivefoldMark size={CENTER_SIZE - 8} entrance={false} mood={mood} personality />
             </View>
 
             <Animated.Text
-              style={[
-                styles.scanLabel,
-                { color: colors.dockActive, fontFamily: typography.label.fontFamily },
-              ]}
+              key={mood}
+              entering={reduceMotion ? undefined : FadeIn.duration(220)}
+              style={[styles.scanLabel, { color: colors.dockActive, fontFamily: typography.label.fontFamily }]}
               numberOfLines={1}
             >
-              {experienceIcons.orb.label}
+              {ORB_LABEL[mood]}
             </Animated.Text>
           </PressableScale>
         </Animated.View>
@@ -380,6 +398,7 @@ const styles = StyleSheet.create({
     height: CENTER_SIZE,
     justifyContent: 'center',
     width: CENTER_SIZE,
+    borderWidth: 2,
   },
   centerSlot: {
     width: CENTER_SLOT,
