@@ -1,5 +1,11 @@
 # Thrivefold — Agent Contract
 
+> **Start here (every agent, every session):** read `../../Docs/PRODUCTION_DELIVERY_PLAYBOOK.md`
+> (strict operating rules, truth rules, design and functionality standards, bug finding, release),
+> then `docs/REQUIREMENTS_STATUS.md` (live status — update it with evidence) and
+> `docs/PRODUCT_COMPLETION_PLAN.md`. Skill: `.agents/skills/production-delivery`.
+> Never claim anything you did not observe on a phone or in command output.
+
 Single source of truth for every AI coding tool and contributor (Claude, Antigravity/Gemini,
 Codex, Copilot, Cursor). Tool files (`CLAUDE.md`, `GEMINI.md`, `.github/copilot-instructions.md`)
 only point here. Skills with step-by-step methods live in `.agents/skills/*/SKILL.md`
