@@ -15,7 +15,7 @@ import { ScreenContainer } from '../../components/ui/ScreenContainer';
 import { TextField } from '../../components/ui/TextField';
 import { articlesFor } from '../../content/learn';
 import { speakCoachLine, stopCoachSpeech } from '../../services/ai/coachVoiceService';
-import { onlineLibrary, SOURCE_LABEL, type LibraryItem, type LibrarySource } from '../../services/learn/onlineLibrary';
+import { SOURCE_LABEL, useLibraryQuery, type LibraryItem, type LibrarySource } from '../../services/learn/onlineLibrary';
 import { useTheme } from '../../theme/useTheme';
 
 const SOURCES: (LibrarySource | 'all')[] = ['all', 'wikipedia', 'openlibrary', 'gutenberg', 'archive'];
@@ -34,24 +34,14 @@ export default function LearnLibraryScreen() {
   const [topic, setTopic] = useState(topics[0] ?? 'Sleep');
   const [query, setQuery] = useState('');
   const [source, setSource] = useState<LibrarySource | 'all'>('all');
-  const [items, setItems] = useState<LibraryItem[]>(() => onlineLibrary.cached(topics[0]));
-  const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
   const [speaking, setSpeaking] = useState<string | null>(null);
+  const library = useLibraryQuery(topic);
+  const items = useMemo(() => library.data ?? [], [library.data]);
+  const loading = library.isFetching;
+  const load = (t: string) => setTopic(t);
 
-  const load = useCallback(async (t: string) => {
-    setTopic(t);
-    setItems(onlineLibrary.cached(t));
-    setLoading(true);
-    const fresh = await onlineLibrary.fetchTopic(t).catch(() => onlineLibrary.cached(t));
-    setItems(fresh);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    void load(topics[0] ?? 'Sleep');
-    return () => stopCoachSpeech();
-  }, [load, topics]);
+  useEffect(() => () => stopCoachSpeech(), []);
 
   const shown = useMemo(() => (source === 'all' ? items : items.filter((i) => i.source === source)), [items, source]);
 
@@ -123,7 +113,7 @@ export default function LearnLibraryScreen() {
         <TextField
           value={query}
           onChangeText={setQuery}
-          onSubmitEditing={() => query.trim() && void load(query.trim())}
+          onSubmitEditing={() => query.trim() && load(query.trim())}
           placeholder="Search any topic"
           returnKeyType="search"
           accessibilityLabel="Search the library"
@@ -132,7 +122,7 @@ export default function LearnLibraryScreen() {
         />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips} keyboardShouldPersistTaps="handled">
           {topics.map((t) => (
-            <Chip key={t} label={t} selected={topic === t} onPress={() => void load(t)} />
+            <Chip key={t} label={t} selected={topic === t} onPress={() => load(t)} />
           ))}
         </ScrollView>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips}>

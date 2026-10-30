@@ -78,3 +78,22 @@ Rules for any new ecosystem code:
    `EXPO_PUBLIC_*` is public. Never print `.env*` values.
 9. Android 11+ `<queries>` for peer packages only when a real feature needs them.
 10. Use the AnvayKosh icon from `assets/brand/anvaykosh-icon.svg` / `AnvayKoshIcon` (no background).
+
+## Engineering standards (all agents, all features)
+
+1. **Network data goes through TanStack Query.** Every server or public-API read uses
+   `useQuery` / `useMutation` with the app's single `queryClient` (`src/services/supabase/queryClient.ts`,
+   persisted, `networkMode: 'offlineFirst'`, backoff retries). Put the fetch function in a service
+   file and a typed hook next to it (`useXxxQuery`), with stable query keys
+   (`['library', topic]`). No ad-hoc `fetch` + `useState(loading)` in screens.
+2. **Reuse before you write.** Use the shared components in `src/components/ui`
+   (`ScreenContainer`, `AppHeader`, `Card`, `Chip`, `Button`, `TextField`, `PressableScale`,
+   `AppBottomSheetModal`, `CustomAlert` via `showAlert`, `ImageViewer`, `SettingsRow`, `Toggle`,
+   `Badge`) and the root providers (`useCoach`, the voice service, the chat store). A second
+   component that does the same job as an existing one is a bug.
+3. **Lists:** FlashList for anything that can grow; page from SQLite instead of loading all rows.
+4. **States:** every screen handles loading, empty, error and offline with real copy; no inert
+   buttons, no fake data.
+5. **Theme:** tokens only (no raw hex in screens), light and dark checked, contrast checked.
+6. **Production ready means:** compile, lint, tests and a release build pass, the feature was used
+   on a real Android phone, and logcat showed no `FATAL` or `ReactNativeJS` errors.

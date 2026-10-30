@@ -34,6 +34,10 @@ export default function RootLayout() {
       persistOptions={{
         persister: queryPersister,
         maxAge: PERSIST_MAX_AGE,
+        // Queries whose data already lives in SQLite opt out with `meta: { persist: false }`.
+        dehydrateOptions: {
+          shouldDehydrateQuery: (q) => q.state.status === 'success' && q.meta?.persist !== false,
+        },
       }}
     >
       <GestureHandlerRootView style={styles.container}>

@@ -8,6 +8,7 @@
  * (public-domain books), Internet Archive (open texts). YouTube is reached through the existing
  * Watch screen, which searches by query.
  */
+import { useQuery } from '@tanstack/react-query';
 import * as Network from 'expo-network';
 import * as SQLite from 'expo-sqlite';
 
@@ -235,3 +236,19 @@ export const onlineLibrary = {
     return n;
   },
 };
+
+/** Typed hook: cached items show at once (and offline); a fresh fetch runs at most daily per topic. */
+export function useLibraryQuery(topic: string) {
+  return useQuery({
+    queryKey: ['library', topic],
+    queryFn: () => onlineLibrary.fetchTopic(topic),
+    initialData: () => {
+      const cached = onlineLibrary.cached(topic);
+      return cached.length ? cached : undefined;
+    },
+    initialDataUpdatedAt: () => onlineLibrary.cached(topic, 1)[0]?.fetchedAt,
+    staleTime: DAY_MS,
+    // Results already live in SQLite; don't also persist them in the query cache.
+    meta: { persist: false },
+  });
+}
