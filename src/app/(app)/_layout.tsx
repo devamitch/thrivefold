@@ -4,6 +4,7 @@ import * as Notifications from 'expo-notifications';
 import { coachVoice } from '../../services/ai/coachVoice';
 import { applyKosh, pullProfile, pushProfile } from '../../services/account/profileSync';
 import { syncProgress } from '../../services/account/progressSync';
+import { refreshAppKnowledge } from '../../services/assistant/appKnowledge';
 import { brainReady, getSetupState, pendingDownload, resumeSetup, setUpBrain } from '../../services/ai/modelSetup';
 import React, { useEffect, useRef } from 'react';
 import { AppState, StyleSheet, View } from 'react-native';
@@ -123,6 +124,19 @@ export default function AppLayout() {
       });
     }, 15_000);
     return () => clearTimeout(t);
+  }, []);
+
+  // The coach's local knowledge (screens, Learn, the last week) follows the app on start and
+  // whenever it comes back; only changed documents are rewritten.
+  useEffect(() => {
+    const t = setTimeout(() => void refreshAppKnowledge(), 6_000);
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') void refreshAppKnowledge();
+    });
+    return () => {
+      clearTimeout(t);
+      sub.remove();
+    };
   }, []);
 
   // Tapping a reminder (medicine, appointment, trip check-in) opens its screen.

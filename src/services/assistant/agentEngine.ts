@@ -22,6 +22,7 @@ import { ensureLocalModel } from '../ai/localModel';
 import { brainReady, recommendedModel, setUpBrain } from '../ai/modelSetup';
 import { knowledgeStore } from '../local-ai/rag/knowledgeStore';
 import { retrieveHybridEvidence } from '../local-ai/rag/hybridRagPipeline';
+import { recentDaysLines, standingLines } from '../../domain/assistant/appKnowledge';
 
 /** Questions where exact numbers matter (macros, calories, doses of a plan): worth a stronger model. */
 const NEEDS_PRECISION =
@@ -45,9 +46,11 @@ export function buildCoachPrompt(s: ReturnType<typeof useRootStore.getState>, sc
     s.onboarding?.constraints?.length ? `Limits: ${s.onboarding.constraints.slice(0, 6).join(', ')}` : null,
     `Level ${s.level}, ${s.xp} XP, streak ${s.streak} days`,
   ].filter(Boolean);
+  const recent = [...recentDaysLines(s, new Date(), 3), ...standingLines(s).slice(0, -1)];
   return [
     'You are Thrive, the wellbeing coach inside the Thrivefold app, running on the person\'s phone.',
     `About the person (they told the app this): ${facts.join('; ')}.`,
+    recent.length ? `From their logs on this phone:\n${recent.join('\n')}` : 'Nothing logged in the last 3 days.',
     `They are on: ${screen}`,
     'How to answer:',
     '1. Answer the question first, directly, in plain words. Then give at most 3 short, specific steps if useful.',

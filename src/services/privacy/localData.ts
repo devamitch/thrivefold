@@ -351,4 +351,10 @@ export function eraseLocalData(): void {
   } catch {
     // Safe fallback
   }
+  try {
+    const { knowledgeStore } = require('../local-ai/rag/knowledgeStore');
+    void knowledgeStore.clearAllDocuments('local_user').catch(() => undefined);
+  } catch {
+    // No knowledge store on this platform.
+  }
 }
