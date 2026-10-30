@@ -298,6 +298,32 @@ class AgentEngine {
       return { text: res.message, toolResult: res };
     }
 
+    // Questions about a file the person read in the chat: quote the file's own lines (with page),
+    // and let the on-device model phrase the answer only from those lines.
+    const fileLines = await thriveRag.fileLines(text);
+    if (fileLines.length) {
+      const quote = fileLines.map((l) => `"${l.line}" (${l.file}, page ${l.page})`).join('\n');
+      let answer = '';
+      if (await ensureLocalModel()) {
+        try {
+          answer = (
+            await LocalAI.generateText({
+              prompt: text,
+              context: fileLines.map((l) => l.line).join('\n'),
+              system:
+                "Answer in one or two sentences using only these lines from the person's own file. " +
+                'If they do not answer the question, say the file does not say. Never add numbers that are not in the lines.',
+            })
+          ).trim();
+        } catch {
+          answer = '';
+        }
+      }
+      const msg = `${answer ? `${answer}\n\n` : ''}From your file:\n${quote}`;
+      this.finishTurn(msg, undefined, callbacks);
+      return { text: msg };
+    }
+
     // "Where do I…": answer from the app's own screen list (exact, instant) with an Open button.
     const place = findScreenFor(text);
     if (place) {

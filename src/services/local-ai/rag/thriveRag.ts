@@ -12,6 +12,7 @@
 import type { Embeddings, GetResult, LLM, Message, QueryResult, VectorStore } from 'react-native-rag';
 
 import { LocalAI } from '../../../../modules/local-ai';
+import { bestFileLines, type FileLine } from '../../../domain/ai/fileEvidence';
 import { asyncKeyValueStorage } from '../../../stores/persistStorage';
 import { answerWithHybridRag, retrieveHybridEvidence, type RagEvidenceHit, type RagResponse } from './hybridRagPipeline';
 import { knowledgeStore, type KnowledgeDocument } from './knowledgeStore';
@@ -158,6 +159,16 @@ export const thriveRag = {
     return retrieveHybridEvidence(USER, query, topK);
   },
 
+  /** Lines from files the person read in the chat that answer the question (quoted, with page). */
+  async fileLines(query: string, max = 3): Promise<FileLine[]> {
+    try {
+      const docs = (await knowledgeStore.listDocuments(USER)).filter((d) => d.sourceType === 'imported_file');
+      return bestFileLines(docs.map((d) => ({ name: d.title, text: d.rawText })), query, max);
+    } catch {
+      return [];
+    }
+  },
+
   /** Evidence lines for a prompt ("- title: text"), best matches first. */
   async contextFor(query: string, maxChars = 1500, topK = 4): Promise<string> {
     try {
@@ -166,6 +177,8 @@ export const thriveRag = {
         // Fused RRF scores are small (one list alone tops out near 1/61 ≈ 0.016), so any fixed cut
         // above that dropped every hit; candidates already matched a keyword or the meaning.
         .filter((h) => h.hybridScore > 0)
+        // Past chat lines are a last resort: they can repeat an earlier wrong answer back to the model.
+        .filter((h, _i, all) => h.document.title !== 'Your conversations with the coach' || all.length === 1)
         // Document chunks are short already: pass them whole so page markers and numbers survive.
         .map((h) => `- ${h.document.title}: ${h.document.sourceType === 'user_document' ? h.document.content.replace(/\s+/g, ' ') : h.snippet}`)
         .join('\n')
