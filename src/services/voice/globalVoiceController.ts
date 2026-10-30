@@ -45,6 +45,7 @@ class GlobalVoiceController {
   private isListeningActive = false;
   private silentRestarts = 0;
   private micGranted = false;
+  private restartTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     this.setupSpeechListeners();
@@ -99,16 +100,7 @@ class GlobalVoiceController {
         // Other screens (dictation, voice practice) use the same recogniser; ignore their sessions.
         if (!this.isListeningActive) return;
         this.isListeningActive = false;
-        if (this.state === 'listening') {
-          this.setState('idle');
-          // Silence ended the recogniser: keep the conversation open a few times, then wait for a tap.
-          if (this.isOpen && this.silentRestarts < 3) {
-            this.silentRestarts += 1;
-            setTimeout(() => {
-              if (this.isOpen && this.state === 'idle') void this.startListening();
-            }, 300);
-          }
-        }
+        if (this.state === 'listening') this.quietRestart();
       });
 
       ExpoSpeechRecognitionModule?.addListener?.('error', (event: any) => {
@@ -118,13 +110,7 @@ class GlobalVoiceController {
         const code = String(event?.error ?? '');
         // Hearing nothing is not a failure; the 'end' handler decides whether to listen again.
         if (code === 'no-speech' || code === 'speech-timeout' || code === 'aborted') {
-          if (this.state === 'listening') this.setState('idle');
-          if (this.isOpen && this.silentRestarts < 3) {
-            this.silentRestarts += 1;
-            setTimeout(() => {
-              if (this.isOpen && this.state === 'idle') void this.startListening();
-            }, 300);
-          }
+          if (this.state === 'listening') this.quietRestart();
           return;
         }
         const errorMsg =
@@ -188,6 +174,7 @@ class GlobalVoiceController {
    * Requests permission and starts microphone capture.
    */
   async startListening() {
+    this.silentRestarts = 0;
     coachVoice.stop(); // Barge-in interruption
     agentEngine.cancelCurrentTurn();
 
@@ -205,31 +192,63 @@ class GlobalVoiceController {
       }
 
       this.setState('listening');
-      this.isListeningActive = true;
-      ExpoSpeechRecognitionModule?.start?.({
-        lang: Intl.DateTimeFormat().resolvedOptions().locale || 'en-US',
-        interimResults: true,
-        continuous: false,
-        requiresOnDeviceRecognition: false,
-        addsPunctuation: true,
-        // Local first: use the phone's offline speech pack when it has one.
-        androidIntentOptions: {
-          EXTRA_PREFER_OFFLINE: true,
-          // Finish listening soon after the person stops talking (Android waits ~2 s by default).
-          EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS: 900,
-          EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS: 700,
-        },
-      });
+      this.beginRecognition();
     } catch (err: any) {
       this.setState('error');
       this.listeners.forEach((l) => l.onError(err.message || 'Could not start voice recognizer.'));
     }
   }
 
+  /** Starts the recogniser itself (no state change), shared by first start and quiet restarts. */
+  private beginRecognition() {
+    this.isListeningActive = true;
+    ExpoSpeechRecognitionModule?.start?.({
+      lang: Intl.DateTimeFormat().resolvedOptions().locale || 'en-US',
+      interimResults: true,
+      continuous: false,
+      requiresOnDeviceRecognition: false,
+      addsPunctuation: true,
+      // Local first: use the phone's offline speech pack when it has one.
+      androidIntentOptions: {
+        EXTRA_PREFER_OFFLINE: true,
+        // Finish listening soon after the person stops talking (Android waits ~2 s by default).
+        EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS: 900,
+        EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS: 700,
+      },
+    });
+  }
+
+  /**
+   * Silence ended the recogniser. While the conversation is open, start again without flipping
+   * the screen to "idle" and back (that flicker made the microphone feel broken). After a few
+   * quiet rounds it rests until the person taps the microphone.
+   */
+  private quietRestart() {
+    if (this.restartTimer) return;
+    if (!this.isOpen || this.silentRestarts >= 6) {
+      if (this.state === 'listening') this.setState('idle');
+      return;
+    }
+    this.silentRestarts += 1;
+    this.restartTimer = setTimeout(() => {
+      this.restartTimer = null;
+      if (!this.isOpen || this.state !== 'listening') return;
+      try {
+        this.beginRecognition();
+      } catch {
+        this.setState('idle');
+      }
+    }, 150);
+  }
+
   /**
    * Stops listening.
    */
   stopListening() {
+    if (this.restartTimer) {
+      clearTimeout(this.restartTimer);
+      this.restartTimer = null;
+    }
     if (this.isListeningActive) {
       try {
         ExpoSpeechRecognitionModule?.stop?.();
