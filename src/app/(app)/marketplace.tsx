@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import { Dimensions, Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { AppHeader } from '../../components/ui/AppHeader';
 import { AppBottomSheetModal } from '../../components/ui/AppBottomSheetModal';
@@ -207,6 +207,8 @@ GalleryGridItem.displayName = 'GalleryGridItem';
  */
 export default function MarketplaceScreen() {
   const { colors, typography, spacing } = useTheme();
+  const isMarketplaceEnabled = __DEV__ || process.env.EXPO_PUBLIC_ENABLE_MARKETPLACE === 'true';
+
   const {
     diamonds,
     tickets,
@@ -267,6 +269,28 @@ export default function MarketplaceScreen() {
       if (src) Image.loadAsync(src).catch(() => {});
     });
   }, []);
+
+  if (!isMarketplaceEnabled) {
+    return (
+      <ScreenContainer style={styles.flex}>
+        <AppHeader title="Sanctuary Marketplace" showBack />
+        <View style={styles.disabledContainer}>
+          <Ionicons name="sparkles" size={56} color={colors.primary} />
+          <Text style={[typography.heading, { color: colors.text.primary, marginTop: 16, textAlign: 'center' }]}>
+            Marketplace Coming Soon
+          </Text>
+          <Text
+            style={[
+              typography.body,
+              { color: colors.text.secondary, marginTop: 8, textAlign: 'center', maxWidth: 300, lineHeight: 22 },
+            ]}
+          >
+            The mindful reward exchange and 3D Treasury are receiving finishing touches for our next update. Your gems, tokens, and streak progress are safely recorded.
+          </Text>
+        </View>
+      </ScreenContainer>
+    );
+  }
 
   const promptUnlock = useCallback(
     (item: MarketItem | WellnessPlan, defaultCurrency: 'gems' | 'tokens' | 'tickets' = 'gems') => {
@@ -1332,23 +1356,23 @@ export default function MarketplaceScreen() {
       {inspectArt && (
         <Modal visible transparent animationType="fade" onRequestClose={() => setInspectArt(null)}>
           <View style={[styles.modalScrim, { backgroundColor: colors.scrim }]}>
-            <PressableScale
+            <Pressable
               style={StyleSheet.absoluteFill}
               onPress={() => setInspectArt(null)}
               accessibilityRole="button"
               accessibilityLabel="Close inspection modal"
             />
-            <View style={[styles.modalCard, { backgroundColor: colors.background }]} pointerEvents="box-none">
+            <View style={[styles.modalCard, { backgroundColor: colors.background }]}>
               <View style={styles.modalCardHeader}>
                 <Badge label={inspectArt.category} variant="gold" />
-                <PressableScale
+                <Pressable
                   onPress={() => setInspectArt(null)}
                   accessibilityRole="button"
                   accessibilityLabel="Close"
-                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                  hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
                 >
                   <Ionicons name="close-circle" size={26} color={colors.text.muted} />
-                </PressableScale>
+                </Pressable>
               </View>
               <Image
                 source={'source' in inspectArt ? inspectArt.source : getItemAsset(inspectArt.assetKey)}
@@ -1556,5 +1580,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.1)',
     alignItems: 'center',
+  },
+  disabledContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
   },
 });

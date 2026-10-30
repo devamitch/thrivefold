@@ -229,3 +229,7 @@ blinkquest-*.json
 .bundle/
 vendor/bundle/
 !google-services.json
+!credentials.json
+!setu-upload.jks
+!setu-511211-f490a061589b.json
+

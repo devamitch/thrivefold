@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import React, { useEffect, useState } from 'react';
-import { Modal, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
   cancelAnimation,
@@ -17,7 +17,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { RewardAssets } from '../../constants/assets';
-import type { LevelChest } from '../../domain/game/rewards';
+import { chestKey, type LevelChest } from '../../domain/game/rewards';
 import { hapticHeavy, hapticSuccess } from '../../services/haptics/hapticFeedback';
 import { useRootStore } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
@@ -55,8 +55,12 @@ function getCardAsset(cardId: string) {
  * closing early never loses it. Runs on the UI thread and respects reduced motion.
  */
 export function LootBoxModal({ chest, onClose }: { chest: LevelChest | null; onClose: () => void }) {
-  const { colors, typography, spacing } = useTheme();
+  const { colors, typography } = useTheme();
   const openChest = useRootStore((s) => s.openChest);
+  const userLevel = useRootStore((s) => s.level);
+  const isClaimed = useRootStore((s) =>
+    chest ? s.rewardLedger.some((e) => e.key === chestKey(chest.level)) : false,
+  );
   const reduced = useReducedMotion();
   const [stage, setStage] = useState<Stage>('idle');
 
@@ -95,7 +99,7 @@ export function LootBoxModal({ chest, onClose }: { chest: LevelChest | null; onC
 
   const open = () => {
     if (!chest || stage !== 'idle') return;
-    // Attempt real reward credit if eligible. If user level is below or already claimed, still allow visual opening / inspection demo!
+    // Credit reward if eligible
     openChest(chest.level);
     setStage('opening');
     hapticHeavy();
@@ -103,10 +107,15 @@ export function LootBoxModal({ chest, onClose }: { chest: LevelChest | null; onC
     bob.set(withTiming(0, { duration: 120 }));
     const rattle = reduced ? 0 : 6;
     tilt.set(
-      withSequence(...Array.from({ length: rattle }, (_, i) => withTiming(i % 2 ? -9 : 9, { duration: 70 })), withTiming(0, { duration: 70 })),
+      withSequence(
+        ...Array.from({ length: rattle }, (_, i) => withTiming(i % 2 ? -9 : 9, { duration: 70 })),
+        withTiming(0, { duration: 70 }),
+      ),
     );
     const burstAt = reduced ? 0 : rattle * 70 + 70;
-    chestScale.set(withDelay(burstAt, withSequence(withTiming(1.2, { duration: 160 }), withTiming(0.0, { duration: 240 }))));
+    chestScale.set(
+      withDelay(burstAt, withSequence(withTiming(1.2, { duration: 160 }), withTiming(0.0, { duration: 240 }))),
+    );
     raysOpacity.set(withDelay(burstAt, withTiming(1, { duration: 200 })));
     rays.set(reduced ? 0 : withRepeat(withTiming(360, { duration: 6000, easing: Easing.linear }), -1, false));
     flip.set(
@@ -132,19 +141,38 @@ export function LootBoxModal({ chest, onClose }: { chest: LevelChest | null; onC
   if (!chest) return null;
   const chestArt = getChestAssets(chest.level);
   const cardArt = getCardAsset(chest.card.id);
+  const isEligible = userLevel >= chest.level;
 
   return (
     <Modal visible transparent animationType="fade" statusBarTranslucent onRequestClose={onClose}>
       <View style={[styles.scrim, { backgroundColor: colors.scrim }]}>
-        <PressableScale
+        <Pressable
           style={StyleSheet.absoluteFill}
           onPress={stage === 'opening' || stage === 'burst' ? undefined : onClose}
           accessibilityRole="button"
           accessibilityLabel="Close loot box dialog"
         />
-        <View style={[styles.panel, { backgroundColor: colors.background }]} pointerEvents="box-none">
-          <Text style={[typography.heading, { color: colors.text.primary, textAlign: 'center' }]}>{chest.title}</Text>
-          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>Level {chest.level} reached</Text>
+        <View style={[styles.panel, { backgroundColor: colors.background }]}>
+          <Pressable
+            onPress={onClose}
+            hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
+            style={styles.closeBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Close"
+          >
+            <Ionicons name="close" size={22} color={colors.text.secondary} />
+          </Pressable>
+
+          <Text style={[typography.heading, { color: colors.text.primary, textAlign: 'center' }]}>
+            {chest.title}
+          </Text>
+          <Text style={[typography.caption, { color: isClaimed ? colors.primary : colors.text.secondary, marginTop: 4 }]}>
+            {isClaimed
+              ? 'Already Claimed • Reliquary Card in Vault'
+              : isEligible
+              ? `Level ${chest.level} Unlocked • Tap to Open`
+              : `Requires Level ${chest.level} (Current: Level ${userLevel})`}
+          </Text>
 
           <View style={styles.stage}>
             <Animated.View style={[styles.rays, raysStyle]} pointerEvents="none">
@@ -162,7 +190,12 @@ export function LootBoxModal({ chest, onClose }: { chest: LevelChest | null; onC
               ))}
             </Animated.View>
             <Animated.View style={chestStyle}>
-              <PressableScale onPress={open} disabled={stage !== 'idle'} accessibilityRole="button" accessibilityLabel={`Open ${chest.title}`}>
+              <PressableScale
+                onPress={open}
+                disabled={stage !== 'idle'}
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${chest.title}`}
+              >
                 <View style={styles.chest}>
                   <Image
                     source={stage === 'burst' || stage === 'revealed' ? chestArt.burst : chestArt.closed}
@@ -186,7 +219,9 @@ export function LootBoxModal({ chest, onClose }: { chest: LevelChest | null; onC
               >
                 <Image source={cardArt} style={styles.cardCover} contentFit="cover" transition={150} cachePolicy="memory-disk" />
                 <View style={styles.cardFooter}>
-                  <Text style={[typography.captionBold, { color: colors.primary }]}>{chest.card.rarity.toUpperCase()} CARD</Text>
+                  <Text style={[typography.captionBold, { color: colors.primary }]}>
+                    {chest.card.rarity.toUpperCase()} CARD
+                  </Text>
                   <Text style={[typography.subheading, { color: colors.text.primary, textAlign: 'center' }]} numberOfLines={1}>
                     {chest.card.title}
                   </Text>
@@ -200,9 +235,13 @@ export function LootBoxModal({ chest, onClose }: { chest: LevelChest | null; onC
           </View>
 
           {stage === 'idle' ? (
-            <Text style={[typography.body, { color: colors.text.secondary }]}>Tap the chest to unlock your loot</Text>
+            <Text style={[typography.body, { color: colors.text.secondary }]}>
+              {isClaimed
+                ? 'Tap the chest to replay the opening inspection'
+                : 'Tap the chest to unlock your loot'}
+            </Text>
           ) : stage === 'revealed' ? (
-            <Button label="Claim & Continue" onPress={onClose} />
+            <Button label={isClaimed ? 'Done' : 'Claim & Continue'} onPress={onClose} />
           ) : (
             <View style={{ height: 44 }} />
           )}
@@ -213,7 +252,26 @@ export function LootBoxModal({ chest, onClose }: { chest: LevelChest | null; onC
 }
 
 const styles = StyleSheet.create({
-  panel: { width: '100%', maxWidth: 380, alignItems: 'center', borderRadius: 28, paddingVertical: 24, paddingHorizontal: 16 },
+  panel: {
+    width: '100%',
+    maxWidth: 380,
+    alignItems: 'center',
+    borderRadius: 28,
+    paddingVertical: 24,
+    paddingHorizontal: 16,
+    position: 'relative',
+  },
+  closeBtn: {
+    position: 'absolute',
+    top: 18,
+    right: 18,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
   scrim: {
     flex: 1,
     alignItems: 'center',

@@ -16,16 +16,26 @@
     "production": {
       "autoIncrement": true,
       "channel": "production",
-      "credentialsSource": "local"
+      "credentialsSource": "local",
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://kwrdugillyakxgvgbrsu.supabase.co"
+      }
     }
   },
   "submit": {
     "production": {
       "android": {
-        "serviceAccountKeyPath": "./blinkquest-play-service-account.json",
-        "track": "internal"
+        "serviceAccountKeyPath": "./setu-511211-f490a061589b.json",
+        "track": "internal",
+        "releaseStatus": "completed"
+      }
+    },
+    "alpha": {
+      "android": {
+        "serviceAccountKeyPath": "./setu-511211-f490a061589b.json",
+        "track": "alpha",
+        "releaseStatus": "completed"
       }
     }
   }
 }
-
