@@ -817,7 +817,7 @@ const styles = StyleSheet.create({
   openRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8 },
   tableWrap: { marginTop: 10 },
   actions: { flexDirection: 'row', gap: 18, marginTop: 10 },
-  attach: { paddingLeft: 12, paddingRight: 2, justifyContent: 'center' },
+  attach: { paddingLeft: 12, paddingRight: 2, paddingBottom: 11 },
   tableRow: { flexDirection: 'row', borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 6 },
   tableCell: { flex: 1, paddingRight: 8 },
   composer: {
