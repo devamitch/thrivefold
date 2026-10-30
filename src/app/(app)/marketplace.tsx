@@ -14,6 +14,10 @@ import { TextField } from '../../components/ui/TextField';
 import { LootBoxModal } from '../../components/game/LootBoxModal';
 import { RewardAssets } from '../../constants/assets';
 import {
+  MASTER_GENERATED_ARTIFACTS,
+  type MasterArtifact,
+} from '../../constants/masterRewardAssets';
+import {
   ACTION_REWARDS,
   chestKey,
   EDITORIAL_ARTWORKS,
@@ -73,14 +77,19 @@ function getItemAsset(assetKey?: string) {
   return null;
 }
 
-type TabType = 'market' | 'reliquary' | 'gallery';
+type TabType = 'market' | 'reliquary' | 'gallery' | 'vault';
+type VaultFilter = 'All' | 'Cinematic Banners' | 'Reliquary Chests' | 'Collector Cards' | 'Currencies & Tokens' | 'Physical Gear';
+
+const HERO_BANNERS = MASTER_GENERATED_ARTIFACTS.filter((a) => a.category === 'Cinematic Banners').slice(0, 4);
 
 /**
- * Thrivefold Grand Marketplace & Treasury Showcase:
- * - Treasury Wallet with Gems, Tickets, and Tokens.
- * - Tab 1: Marketplace & Gear (Stickers, Status, Care Plans, Real Physical Gear).
- * - Tab 2: Milestone Reliquaries (The 5 Tier Chests with Closed & Burst 3D views + 4 Collector Cards).
- * - Tab 3: Artisanal Gallery (Complete 11-piece museum Gouache Editorial Art collection).
+ * Thrivefold Grand Marketplace, Economic Treasury & Complete Asset Exhibition:
+ * - Treasury Wallet with Amber Gems, Sanctuary Tickets, and Golden Marketplace Tokens.
+ * - Interactive Hero Showcase featuring wide cinematic promo keyframes.
+ * - Tab 1: Marketplace & Gear (Stickers with dual-currency unlock, Status, Care Plans, Real Gear).
+ * - Tab 2: Milestone Reliquaries (The 5 Chest Tiers with Dual Closed & Burst 3D views + 4 Collector Cards).
+ * - Tab 3: Artisanal Gouache Gallery (The 11 museum-grade raw editorial artworks).
+ * - Tab 4: Master 3D Artifacts Vault (All 37 high-resolution 3D renders, medallions, posters & composites).
  */
 export default function MarketplaceScreen() {
   const { colors, typography, spacing } = useTheme();
@@ -101,9 +110,10 @@ export default function MarketplaceScreen() {
   );
 
   const [activeTab, setActiveTab] = useState<TabType>('market');
+  const [vaultFilter, setVaultFilter] = useState<VaultFilter>('All');
   const opened = useMemo(() => ledger.filter((e) => e.kind === 'chest_reward').map((e) => e.key), [ledger]);
   const [chest, setChest] = useState<LevelChest | null>(null);
-  const [inspectArt, setInspectArt] = useState<EditorialArt | null>(null);
+  const [inspectArt, setInspectArt] = useState<EditorialArt | MasterArtifact | null>(null);
   const multiplier = streakMultiplier(streak);
   const cards = LEVEL_CHESTS.filter((c) => owned.includes(c.card.id)).map((c) => c.card);
   const stock = useGearStock();
@@ -237,6 +247,11 @@ export default function MarketplaceScreen() {
     }
   };
 
+  const filteredVault = useMemo(() => {
+    if (vaultFilter === 'All') return MASTER_GENERATED_ARTIFACTS;
+    return MASTER_GENERATED_ARTIFACTS.filter((a) => a.category === vaultFilter);
+  }, [vaultFilter]);
+
   const validOrder = fullName.trim().length > 1 && /^[+\d][\d\s-]{5,19}$/.test(phone.trim()) && address.trim().length >= 8;
 
   return (
@@ -245,7 +260,7 @@ export default function MarketplaceScreen() {
       scrollMode="shell-scroll-view"
     >
       {/* 3-Pillar Treasury Wallet */}
-      <Card style={[styles.walletCard, { marginBottom: spacing.md }]}>
+      <Card style={[styles.walletCard, { marginBottom: spacing.sm }]}>
         <View style={styles.walletHeader}>
           <Text style={[typography.captionBold, { color: colors.primary }]}>WELLNESS TREASURY</Text>
           {multiplier > 1 && (
@@ -300,24 +315,40 @@ export default function MarketplaceScreen() {
         </View>
       </Card>
 
-      {/* Segment Navigation */}
-      <View style={[styles.segmentContainer, { backgroundColor: colors.surface1, marginBottom: spacing.lg }]}>
+      {/* Hero Showcase Carousel */}
+      <View style={{ marginBottom: spacing.md }}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.heroScroll}
+        >
+          {HERO_BANNERS.map((banner) => (
+            <PressableScale
+              key={banner.id}
+              onPress={() => setInspectArt(banner)}
+              style={styles.heroBannerWrap}
+            >
+              <Image source={banner.source} style={styles.heroBannerImg} contentFit="cover" />
+              <View style={styles.heroOverlay}>
+                <Badge label="Cinematic Showcase" variant="gold" />
+                <Text style={[typography.subheading, { color: '#FFF', marginTop: 4 }]} numberOfLines={1}>
+                  {banner.title}
+                </Text>
+              </View>
+            </PressableScale>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* 4-Tab Navigation Segments */}
+      <View style={[styles.segmentContainer, { backgroundColor: colors.surface1, marginBottom: spacing.md }]}>
         <PressableScale
           style={[styles.segmentTab, activeTab === 'market' && { backgroundColor: colors.surface }]}
           onPress={() => setActiveTab('market')}
         >
-          <Ionicons
-            name="bag-handle-outline"
-            size={18}
-            color={activeTab === 'market' ? colors.primary : colors.text.secondary}
-          />
-          <Text
-            style={[
-              typography.captionBold,
-              { color: activeTab === 'market' ? colors.text.primary : colors.text.secondary },
-            ]}
-          >
-            Marketplace
+          <Ionicons name="bag-handle-outline" size={16} color={activeTab === 'market' ? colors.primary : colors.text.secondary} />
+          <Text style={[typography.captionBold, { color: activeTab === 'market' ? colors.text.primary : colors.text.secondary }]}>
+            Market
           </Text>
         </PressableScale>
 
@@ -325,18 +356,9 @@ export default function MarketplaceScreen() {
           style={[styles.segmentTab, activeTab === 'reliquary' && { backgroundColor: colors.surface }]}
           onPress={() => setActiveTab('reliquary')}
         >
-          <Ionicons
-            name="gift-outline"
-            size={18}
-            color={activeTab === 'reliquary' ? colors.primary : colors.text.secondary}
-          />
-          <Text
-            style={[
-              typography.captionBold,
-              { color: activeTab === 'reliquary' ? colors.text.primary : colors.text.secondary },
-            ]}
-          >
-            Chests & Cards
+          <Ionicons name="gift-outline" size={16} color={activeTab === 'reliquary' ? colors.primary : colors.text.secondary} />
+          <Text style={[typography.captionBold, { color: activeTab === 'reliquary' ? colors.text.primary : colors.text.secondary }]}>
+            Chests
           </Text>
         </PressableScale>
 
@@ -344,23 +366,24 @@ export default function MarketplaceScreen() {
           style={[styles.segmentTab, activeTab === 'gallery' && { backgroundColor: colors.surface }]}
           onPress={() => setActiveTab('gallery')}
         >
-          <Ionicons
-            name="color-palette-outline"
-            size={18}
-            color={activeTab === 'gallery' ? colors.primary : colors.text.secondary}
-          />
-          <Text
-            style={[
-              typography.captionBold,
-              { color: activeTab === 'gallery' ? colors.text.primary : colors.text.secondary },
-            ]}
-          >
-            Art Gallery
+          <Ionicons name="color-palette-outline" size={16} color={activeTab === 'gallery' ? colors.primary : colors.text.secondary} />
+          <Text style={[typography.captionBold, { color: activeTab === 'gallery' ? colors.text.primary : colors.text.secondary }]}>
+            Gouache
+          </Text>
+        </PressableScale>
+
+        <PressableScale
+          style={[styles.segmentTab, activeTab === 'vault' && { backgroundColor: colors.surface }]}
+          onPress={() => setActiveTab('vault')}
+        >
+          <Ionicons name="sparkles-outline" size={16} color={activeTab === 'vault' ? colors.primary : colors.text.secondary} />
+          <Text style={[typography.captionBold, { color: activeTab === 'vault' ? colors.text.primary : colors.text.secondary }]}>
+            3D Vault
           </Text>
         </PressableScale>
       </View>
 
-      {/* TAB 1: MARKETPLACE (Stickers, Status, Plans, Gear) */}
+      {/* TAB 1: MARKETPLACE & GEAR */}
       {activeTab === 'market' && (
         <View>
           {/* Your Owned Collection Shelf */}
@@ -406,7 +429,7 @@ export default function MarketplaceScreen() {
             </View>
           )}
 
-          {/* Digital Habit Stickers with Illustrated Art */}
+          {/* Digital Habit Stickers */}
           <View style={{ marginBottom: spacing.lg }}>
             <View style={styles.sectionHead}>
               <Ionicons name="happy-outline" size={20} color={colors.primary} />
@@ -460,7 +483,7 @@ export default function MarketplaceScreen() {
             })}
           </View>
 
-          {/* Sanctuary Status & Boosters */}
+          {/* Sanctuary Status & Badges */}
           <View style={{ marginBottom: spacing.lg }}>
             <View style={styles.sectionHead}>
               <Ionicons name="ribbon-outline" size={20} color={colors.primary} />
@@ -565,7 +588,7 @@ export default function MarketplaceScreen() {
             })}
           </View>
 
-          {/* Real Physical Workout Gear */}
+          {/* Real Workout Gear */}
           <View style={{ marginBottom: spacing.lg }}>
             <View style={styles.sectionHead}>
               <Ionicons name="barbell-outline" size={20} color={colors.primary} />
@@ -649,7 +672,7 @@ export default function MarketplaceScreen() {
         </View>
       )}
 
-      {/* TAB 2: MILESTONE RELIQUARIES (The 5 Tier Chests + 4 Collector Cards) */}
+      {/* TAB 2: MILESTONE RELIQUARIES */}
       {activeTab === 'reliquary' && (
         <View style={{ marginBottom: spacing.xl }}>
           <View style={styles.sectionHead}>
@@ -677,7 +700,7 @@ export default function MarketplaceScreen() {
                   Guaranteed Reward: +{c.gems} Amber Gems & exclusive {c.card.title} ({c.card.rarity} Card)
                 </Text>
 
-                {/* Side-by-Side Dual Chest State Display */}
+                {/* Dual Chest State Display */}
                 <View style={styles.dualChestRow}>
                   <View style={styles.chestStateCol}>
                     <Image source={chestArt.closed} style={styles.largeChestImg} contentFit="contain" />
@@ -709,7 +732,7 @@ export default function MarketplaceScreen() {
         </View>
       )}
 
-      {/* TAB 3: ARTISANAL GALLERY (11 Gouache Masterpieces) */}
+      {/* TAB 3: ARTISANAL GOUACHE GALLERY */}
       {activeTab === 'gallery' && (
         <View style={{ marginBottom: spacing.xl }}>
           <View style={styles.sectionHead}>
@@ -735,13 +758,82 @@ export default function MarketplaceScreen() {
                     <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 4 }]} numberOfLines={1}>
                       {art.title}
                     </Text>
-                    <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]} numberOfLines={2}>
+                    <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
                       {art.description}
                     </Text>
                   </View>
                 </PressableScale>
               );
             })}
+          </View>
+        </View>
+      )}
+
+      {/* TAB 4: MASTER 3D ARTIFACTS VAULT (All 37 Generated Assets Showcase) */}
+      {activeTab === 'vault' && (
+        <View style={{ marginBottom: spacing.xl }}>
+          <View style={styles.sectionHead}>
+            <Ionicons name="sparkles-outline" size={20} color={colors.primary} />
+            <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>
+              Master 3D Artifacts Vault ({filteredVault.length})
+            </Text>
+          </View>
+          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2, marginBottom: spacing.md }]}>
+            Explore all 37 custom 3D volumetric renders, medallions, split composites, and posters. Tap any asset to inspect in studio lighting.
+          </Text>
+
+          {/* Filter Chips */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterPillsScroll}>
+            {(['All', 'Cinematic Banners', 'Reliquary Chests', 'Collector Cards', 'Currencies & Tokens', 'Physical Gear'] as VaultFilter[]).map((f) => (
+              <PressableScale
+                key={f}
+                onPress={() => setVaultFilter(f)}
+                style={[
+                  styles.filterPill,
+                  {
+                    backgroundColor: vaultFilter === f ? colors.primary : colors.surface1,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    typography.captionBold,
+                    { color: vaultFilter === f ? colors.onPrimary : colors.text.secondary },
+                  ]}
+                >
+                  {f}
+                </Text>
+              </PressableScale>
+            ))}
+          </ScrollView>
+
+          {/* Master 3D Artifacts Grid */}
+          <View style={styles.vaultGrid}>
+            {filteredVault.map((artifact) => (
+              <PressableScale
+                key={artifact.id}
+                onPress={() => setInspectArt(artifact)}
+                style={[styles.vaultCard, { backgroundColor: colors.surface }]}
+              >
+                <Image
+                  source={artifact.source}
+                  style={[
+                    styles.vaultImg,
+                    { height: (artifact.aspectRatio ?? 1.5) < 1.0 ? 220 : 160 },
+                  ]}
+                  contentFit="cover"
+                />
+                <View style={styles.vaultMeta}>
+                  <Badge label={artifact.category} variant="primary" />
+                  <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 4 }]} numberOfLines={1}>
+                    {artifact.title}
+                  </Text>
+                  <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]} numberOfLines={2}>
+                    {artifact.description}
+                  </Text>
+                </View>
+              </PressableScale>
+            ))}
           </View>
         </View>
       )}
@@ -767,21 +859,25 @@ export default function MarketplaceScreen() {
         Habit adherence is capped daily to prevent farming. Streaks multiply earnings: 3 days ×1.2, 7 days ×1.5, 30 days ×2.5. Real data only, no in-app purchases.
       </Text>
 
-      {/* Full-Screen Art Inspection Modal */}
+      {/* Full-Screen Art / 3D Artifact Inspection Modal */}
       {inspectArt && (
         <Modal visible transparent animationType="fade" onRequestClose={() => setInspectArt(null)}>
           <View style={[styles.modalScrim, { backgroundColor: colors.scrim }]}>
             <View style={[styles.modalCard, { backgroundColor: colors.background }]}>
-              <Image source={getItemAsset(inspectArt.assetKey)} style={styles.modalArtImg} contentFit="cover" />
+              <Image
+                source={'source' in inspectArt ? inspectArt.source : getItemAsset(inspectArt.assetKey)}
+                style={styles.modalArtImg}
+                contentFit="contain"
+              />
               <View style={styles.modalBody}>
                 <View style={styles.rowBetween}>
                   <Badge label={inspectArt.category} variant="primary" />
-                  <Text style={[typography.caption, { color: colors.text.muted }]}>Editorial Study</Text>
+                  <Text style={[typography.caption, { color: colors.text.muted }]}>Full Studio Resolution</Text>
                 </View>
                 <Text style={[typography.heading, { color: colors.text.primary, marginTop: 8 }]}>{inspectArt.title}</Text>
                 <Text style={[typography.body, { color: colors.text.secondary, marginTop: 6 }]}>{inspectArt.description}</Text>
                 <Text style={[typography.caption, { color: colors.text.muted, marginTop: 8 }]}>
-                  Medium: Opaque natural gouache on textured Arches 300gsm watercolor paper. Finished with debossed geometric T-leaf insignia.
+                  Asset Spec: High-fidelity 60fps render with volumetric rim lighting, debossed T-leaf emblem watermark, and Nordic-Japanese palette harmony.
                 </Text>
                 <View style={{ marginTop: spacing.lg }}>
                   <Button label="Close Inspection" onPress={() => setInspectArt(null)} />
@@ -792,7 +888,7 @@ export default function MarketplaceScreen() {
         </Modal>
       )}
 
-      {/* Loot Box Modal */}
+      {/* Loot Box Opening Modal */}
       <LootBoxModal key={chest?.level ?? 0} chest={chest} onClose={() => setChest(null)} />
 
       {/* Doorstep Delivery Order Sheet */}
@@ -851,6 +947,23 @@ const styles = StyleSheet.create({
   forgeBar: { flexDirection: 'row', alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth },
   forgeButtons: { flexDirection: 'row', gap: 6 },
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  heroScroll: { gap: 12, paddingVertical: 4 },
+  heroBannerWrap: {
+    width: width * 0.78,
+    height: 140,
+    borderRadius: 18,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  heroBannerImg: { width: '100%', height: '100%' },
+  heroOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 10,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
   segmentContainer: {
     flexDirection: 'row',
     borderRadius: 14,
@@ -862,7 +975,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
+    gap: 4,
     paddingVertical: 10,
     borderRadius: 10,
   },
@@ -965,6 +1078,30 @@ const styles = StyleSheet.create({
     height: 180,
   },
   galleryMeta: {
+    padding: 14,
+  },
+  filterPillsScroll: {
+    gap: 8,
+    paddingBottom: 12,
+  },
+  filterPill: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  vaultGrid: {
+    gap: 14,
+  },
+  vaultCard: {
+    borderRadius: 18,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.06)',
+  },
+  vaultImg: {
+    width: '100%',
+  },
+  vaultMeta: {
     padding: 14,
   },
   modalScrim: {
