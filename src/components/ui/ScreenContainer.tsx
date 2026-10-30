@@ -1,3 +1,4 @@
+import { useKeyboardInset } from '../../hooks/useKeyboardInset';
 import { SquircleSurface } from './SquircleSurface';
 import React, { isValidElement, useContext, useEffect, type ReactNode } from 'react';
 import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
@@ -173,7 +174,15 @@ export function ScreenContainer({
   const containerProps = safeArea
     ? { edges: ownsTopInset ? (['left', 'right'] as const) : (['top', 'left', 'right'] as const) }
     : {};
-  const rootStyle = [styles.root, { backgroundColor: colors.background }, style];
+  // Edge-to-edge Android does not resize for the keyboard: shrink the screen by the keyboard's
+  // height so the focused field scrolls into view above it (one mechanism for every screen).
+  const keyboardInset = useKeyboardInset();
+  const rootStyle = [
+    styles.root,
+    { backgroundColor: colors.background },
+    keyboardInset > 0 ? { paddingBottom: keyboardInset } : null,
+    style,
+  ];
 
   const resolvedScrollMode = scrollMode ?? (scrollable ? 'shell-scroll-view' : 'external');
 

@@ -1,7 +1,7 @@
+import { useKeyboardInset } from '../../hooks/useKeyboardInset';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
@@ -83,6 +83,8 @@ export function AppBottomSheetModal({
   const { colors, typography } = useTheme();
   const insets = useSafeAreaInsets();
   const reduceMotion = useReducedMotion();
+  // Lifts the sheet above the keyboard on Android too (edge-to-edge: no window resize).
+  const keyboardInset = useKeyboardInset();
 
   // When the body is taller than the sheet it scrolls internally and dismissal moves to the
   // handle and header.
@@ -205,10 +207,8 @@ export function AppBottomSheetModal({
           />
         </Animated.View>
 
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          enabled={avoidKeyboard}
-          style={styles.keyboardAvoid}
+        <View
+          style={[styles.keyboardAvoid, avoidKeyboard && keyboardInset > 0 ? { paddingBottom: keyboardInset } : null]}
           pointerEvents="box-none"
         >
           <Animated.View
@@ -345,7 +345,7 @@ export function AppBottomSheetModal({
               </View>
             ) : null}
           </Animated.View>
-        </KeyboardAvoidingView>
+        </View>
       </GestureHandlerRootView>
     </Modal>
   );

@@ -5,9 +5,9 @@
  * open a screen close the sheet and go there. Typing works too, and typing never turns the
  * microphone on.
  *
- * Keyboard: the sheet lifts with the keyboard on both platforms (KeyboardAvoidingView with
- * "padding"; Android is edge-to-edge, so it no longer resizes on its own) and grows to use the
- * space above the keyboard while the field is focused.
+ * Keyboard: the sheet is lifted by the keyboard's height (Android is edge-to-edge and no longer
+ * resizes on its own) and shrinks to the space above it; the chat list is inverted so it stays
+ * on the newest message.
  */
 
 import { Ionicons } from '@expo/vector-icons';

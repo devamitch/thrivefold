@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+
+import { useKeyboardInset } from '../../hooks/useKeyboardInset';
 import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SquircleSurface } from '../../components/ui/SquircleSurface';
@@ -36,6 +38,7 @@ export default function SignInScreen() {
 
   const introSeen = useRootStore((s) => s.introSeen);
   const setIntroSeen = useRootStore((s) => s.setIntroSeen);
+  const keyboardInset = useKeyboardInset();
   const [step, setStep] = useState<Step>('account');
 
   const [pseudonym, setPseudonym] = useState('');
@@ -421,10 +424,7 @@ export default function SignInScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.root, { backgroundColor: colors.background }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
+    <View style={[styles.root, { backgroundColor: colors.background, paddingBottom: keyboardInset }]}>
       <ScrollView
         contentContainerStyle={{
           paddingTop: insets.top + spacing.md,
@@ -536,7 +536,7 @@ export default function SignInScreen() {
         ) : null}
         {legal}
       </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
