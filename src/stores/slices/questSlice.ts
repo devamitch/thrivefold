@@ -188,6 +188,10 @@ export interface QuestSlice {
   forgeToken: (fromTickets?: boolean) => { ok: boolean; reason?: string };
   /** Spends gems or tokens on a marketplace item; returns false when there aren't enough or it's owned. */
   buyMarketItem: (itemId: string, currency?: 'gems' | 'tokens') => { ok: boolean; reason?: 'owned' | 'insufficient' | 'unknown' };
+  /** Active equipped sticker or badge shown on profile/avatar. */
+  activeSticker: string | null;
+  /** Sets active sticker or toggles off if same. */
+  setActiveSticker: (stickerId: string | null) => void;
   /** Sanctuary tickets owned. */
   tickets: number;
   /** Golden marketplace tokens owned. */
@@ -422,6 +426,7 @@ export const createQuestSlice: StateCreator<RootState, [['zustand/persist', unkn
     tickets: 0,
     tokens: 0,
     marketOwned: [],
+    activeSticker: null,
     streak: 0,
     questsCompleted: 0,
     achievements: [],
@@ -1090,6 +1095,13 @@ export const createQuestSlice: StateCreator<RootState, [['zustand/persist', unkn
 
     setEmblem: (emblem) => {
       if (ownedEmblems(get().entitlements).includes(emblem)) set({ selectedEmblem: emblem });
+    },
+
+    setActiveSticker: (stickerId) => {
+      set((st) => ({ activeSticker: st.activeSticker === stickerId ? null : stickerId }));
+      if (stickerId) {
+        get().showToast({ type: 'success', message: 'Sticker equipped to your profile!' });
+      }
     },
 
     resolveSync: (key) => set((st) => ({ pendingSync: st.pendingSync.filter((i) => i.key !== key) })),

@@ -95,7 +95,8 @@ export function LootBoxModal({ chest, onClose }: { chest: LevelChest | null; onC
 
   const open = () => {
     if (!chest || stage !== 'idle') return;
-    if (!openChest(chest.level)) return onClose();
+    // Attempt real reward credit if eligible. If user level is below or already claimed, still allow visual opening / inspection demo!
+    openChest(chest.level);
     setStage('opening');
     hapticHeavy();
     cancelAnimation(bob);
@@ -135,7 +136,13 @@ export function LootBoxModal({ chest, onClose }: { chest: LevelChest | null; onC
   return (
     <Modal visible transparent animationType="fade" statusBarTranslucent onRequestClose={onClose}>
       <View style={[styles.scrim, { backgroundColor: colors.scrim }]}>
-        <View style={[styles.panel, { backgroundColor: colors.background }]}>
+        <PressableScale
+          style={StyleSheet.absoluteFill}
+          onPress={stage === 'opening' || stage === 'burst' ? undefined : onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Close loot box dialog"
+        />
+        <View style={[styles.panel, { backgroundColor: colors.background }]} pointerEvents="box-none">
           <Text style={[typography.heading, { color: colors.text.primary, textAlign: 'center' }]}>{chest.title}</Text>
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>Level {chest.level} reached</Text>
 

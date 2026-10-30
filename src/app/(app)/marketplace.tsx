@@ -207,12 +207,27 @@ GalleryGridItem.displayName = 'GalleryGridItem';
  */
 export default function MarketplaceScreen() {
   const { colors, typography, spacing } = useTheme();
-  const { diamonds, tickets, tokens, owned, buy, forgeTicket, forgeToken, showAlert, streak, ledger } = useRootStore(
+  const {
+    diamonds,
+    tickets,
+    tokens,
+    owned,
+    activeSticker,
+    setActiveSticker,
+    buy,
+    forgeTicket,
+    forgeToken,
+    showAlert,
+    streak,
+    ledger,
+  } = useRootStore(
     useShallow((s) => ({
       diamonds: s.diamonds,
       tickets: s.tickets,
       tokens: s.tokens,
       owned: s.marketOwned,
+      activeSticker: s.activeSticker,
+      setActiveSticker: s.setActiveSticker,
       buy: s.buyMarketItem,
       forgeTicket: s.forgeTicket,
       forgeToken: s.forgeToken,
@@ -484,7 +499,15 @@ export default function MarketplaceScreen() {
       {/* 3-Pillar Treasury Wallet */}
       <Card style={[styles.walletCard, { marginBottom: spacing.sm }]}>
         <View style={styles.walletHeader}>
-          <Text style={[typography.captionBold, { color: colors.primary }]}>WELLNESS TREASURY</Text>
+          <View style={styles.row}>
+            <Text style={[typography.captionBold, { color: colors.primary }]}>WELLNESS TREASURY</Text>
+            {activeSticker && (
+              <Badge
+                label={`Equipped: ${MARKET.find((m) => m.id === activeSticker)?.title ?? activeSticker}`}
+                variant="neutral"
+              />
+            )}
+          </View>
           {multiplier > 1 && (
             <Badge label={`${streak}d Streak · ×${multiplier} Rewards`} variant="primary" />
           )}
@@ -711,8 +734,22 @@ export default function MarketplaceScreen() {
 
                 {MARKET.filter((m) => !m.physical && owned.includes(m.id)).map((m) => {
                   const art = getItemAsset(m.assetKey);
+                  const isEquipped = activeSticker === m.id;
                   return (
-                    <View key={m.id} style={[styles.stickerItem, { backgroundColor: colors.surface }]}>
+                    <PressableScale
+                      key={m.id}
+                      onPress={() => setActiveSticker(m.id)}
+                      style={[
+                        styles.stickerItem,
+                        {
+                          backgroundColor: colors.surface,
+                          borderColor: isEquipped ? colors.primary : colors.border,
+                          borderWidth: isEquipped ? 2 : 1,
+                        },
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Equip ${m.title}`}
+                    >
                       {art ? (
                         <Image
                           source={art}
@@ -735,8 +772,11 @@ export default function MarketplaceScreen() {
                       >
                         {m.title}
                       </Text>
-                      <Badge label="Unlocked" variant="success" />
-                    </View>
+                      <Badge
+                        label={isEquipped ? 'Active Badge' : 'Tap to Equip'}
+                        variant={isEquipped ? 'primary' : 'success'}
+                      />
+                    </PressableScale>
                   );
                 })}
               </ScrollView>
@@ -783,7 +823,12 @@ export default function MarketplaceScreen() {
                     </Text>
                   </View>
                   {have ? (
-                    <Badge label="Owned" variant="success" />
+                    <Button
+                      label={activeSticker === m.id ? 'Equipped' : 'Equip Sticker'}
+                      size="sm"
+                      variant={activeSticker === m.id ? 'primary' : 'outline'}
+                      onPress={() => setActiveSticker(m.id)}
+                    />
                   ) : (
                     <View style={styles.actionRow}>
                       <Button
@@ -843,7 +888,12 @@ export default function MarketplaceScreen() {
                     </Text>
                   </View>
                   {have ? (
-                    <Badge label="Active" variant="success" />
+                    <Button
+                      label={activeSticker === m.id ? 'Equipped' : 'Set as Title'}
+                      size="sm"
+                      variant={activeSticker === m.id ? 'primary' : 'outline'}
+                      onPress={() => setActiveSticker(m.id)}
+                    />
                   ) : (
                     <View style={styles.actionRow}>
                       <Button
@@ -1277,7 +1327,24 @@ export default function MarketplaceScreen() {
       {inspectArt && (
         <Modal visible transparent animationType="fade" onRequestClose={() => setInspectArt(null)}>
           <View style={[styles.modalScrim, { backgroundColor: colors.scrim }]}>
-            <View style={[styles.modalCard, { backgroundColor: colors.background }]}>
+            <PressableScale
+              style={StyleSheet.absoluteFill}
+              onPress={() => setInspectArt(null)}
+              accessibilityRole="button"
+              accessibilityLabel="Close inspection modal"
+            />
+            <View style={[styles.modalCard, { backgroundColor: colors.background }]} pointerEvents="box-none">
+              <View style={styles.modalCardHeader}>
+                <Badge label={inspectArt.category} variant="gold" />
+                <PressableScale
+                  onPress={() => setInspectArt(null)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Close"
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                >
+                  <Ionicons name="close-circle" size={26} color={colors.text.muted} />
+                </PressableScale>
+              </View>
               <Image
                 source={'source' in inspectArt ? inspectArt.source : getItemAsset(inspectArt.assetKey)}
                 style={{ width: Math.min(CONTENT_WIDTH, 360), height: 260, borderRadius: 16 }}
@@ -1286,7 +1353,6 @@ export default function MarketplaceScreen() {
                 cachePolicy="memory-disk"
               />
               <View style={styles.modalBody}>
-                <Badge label={inspectArt.category} variant="gold" />
                 <Text style={[typography.heading, { color: colors.text.primary, marginTop: 6 }]}>
                   {inspectArt.title}
                 </Text>
@@ -1460,6 +1526,13 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     padding: 16,
     alignItems: 'center',
+  },
+  modalCardHeader: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
   },
   modalBody: {
     padding: 16,
