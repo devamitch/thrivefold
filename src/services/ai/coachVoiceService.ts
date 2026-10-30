@@ -39,8 +39,24 @@ type VoiceGender = 'male' | 'female';
 
 /** Which coach voice to use. */
 function wantedGender(): VoiceGender {
-  // The calm Indian male voice is the one people liked; it is used for everyone.
-  return 'male';
+  // The person's own choice in Settings; the calm Indian male voice by default.
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { useRootStore } = require('../../stores/useRootStore');
+    return useRootStore.getState?.()?.coachVoiceGender === 'female' ? 'female' : 'male';
+  } catch {
+    return 'male';
+  }
+}
+
+function chosenRate(): number {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { useRootStore } = require('../../stores/useRootStore');
+    return useRootStore.getState?.()?.coachVoiceRate ?? 0.95;
+  } catch {
+    return 0.95;
+  }
 }
 
 // Google TTS Indian English voices: ena, enb, enc are female; end, ene are male.
@@ -153,7 +169,7 @@ export async function speakCoach(
     const voice = await resolveBestVoice();
     Speech.speak(text, {
       language: opts?.language ?? 'en-IN',
-      rate: opts?.rate ?? 0.95, // calm, natural pace
+      rate: opts?.rate ?? chosenRate(),
       // A touch brighter for the woman's voice, a touch warmer and deeper for the man's.
       pitch: opts?.pitch ?? (voice.gender === 'male' ? 0.94 : 1.06),
       voice: voice.id ?? undefined,
@@ -173,7 +189,7 @@ export async function queueCoachSpeech(text: string): Promise<void> {
   const voice = await resolveBestVoice();
   Speech.speak(text, {
     language: 'en-IN',
-    rate: 0.95,
+    rate: chosenRate(),
     pitch: voice.gender === 'male' ? 0.94 : 1.06,
     voice: voice.id ?? undefined,
   });

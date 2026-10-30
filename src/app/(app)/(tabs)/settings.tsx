@@ -295,6 +295,13 @@ export default function SettingsScreen() {
 
         {/* Section: System & Security */}
         <SettingsGroup title="Thrive Coach and privacy">
+          <Link href={'/(app)/you/voice' as Href} asChild>
+            <SettingsRow
+              icon="mic-outline"
+              title="Voice and conversation"
+              subtitle="Voice, speed, text only, conversation mode"
+            />
+          </Link>
           <Link href={'/(app)/ai/model-status' as Href} asChild>
             <SettingsRow
               icon="hardware-chip-outline"

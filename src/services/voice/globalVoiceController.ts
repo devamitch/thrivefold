@@ -308,7 +308,7 @@ class GlobalVoiceController {
         return;
       }
       // Conversation mode: while the assistant is open, keep listening for the next thing said.
-      if (this.isOpen) {
+      if (this.isOpen && conversationModeOn()) {
         // Wait until the voice has really finished, so the microphone never hears the coach.
         for (let i = 0; i < 120 && (await Speech.isSpeakingAsync().catch(() => false)); i++) {
           await new Promise((r) => setTimeout(r, 250));
@@ -321,6 +321,16 @@ class GlobalVoiceController {
       this.setState('error');
       this.listeners.forEach((l) => l.onError(err.message || 'Error processing request'));
     }
+  }
+}
+
+function conversationModeOn(): boolean {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { useRootStore } = require('../../stores/useRootStore');
+    return useRootStore.getState?.()?.conversationMode !== false;
+  } catch {
+    return true;
   }
 }
 

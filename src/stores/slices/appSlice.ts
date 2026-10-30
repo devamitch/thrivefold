@@ -161,6 +161,15 @@ export interface AppSlice {
   /** Spoken coach cues in workouts and beta studios. On by default; off silences every line. */
   coachVoiceEnabled: boolean;
   setCoachVoiceEnabled: (on: boolean) => void;
+  /** The coach voice the person chose (never inferred from anything else). */
+  coachVoiceGender: 'male' | 'female';
+  setCoachVoiceGender: (g: 'male' | 'female') => void;
+  /** Speech rate, 0.8 (slower) to 1.15 (faster). */
+  coachVoiceRate: number;
+  setCoachVoiceRate: (r: number) => void;
+  /** Keep listening after each reply until the conversation is closed. */
+  conversationMode: boolean;
+  setConversationMode: (on: boolean) => void;
   /** Finished beta studio sessions (derived numbers only, never frames), newest first. */
   betaSessions: BetaSession[];
   addBetaSession: (session: Omit<BetaSession, 'id'>) => void;
@@ -286,6 +295,12 @@ export const createAppSlice: StateCreator<
   setLocalModelId: (localModelId) => set({ localModelId }),
   coachVoiceEnabled: true,
   setCoachVoiceEnabled: (coachVoiceEnabled) => set({ coachVoiceEnabled }),
+  coachVoiceGender: 'male',
+  setCoachVoiceGender: (coachVoiceGender) => set({ coachVoiceGender }),
+  coachVoiceRate: 0.95,
+  setCoachVoiceRate: (r) => set({ coachVoiceRate: Math.min(1.15, Math.max(0.8, r)) }),
+  conversationMode: true,
+  setConversationMode: (conversationMode) => set({ conversationMode }),
   betaSessions: [],
   addBetaSession: (session) =>
     set((state) => ({
