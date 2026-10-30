@@ -38,7 +38,7 @@ export const DESTINATIONS: Destination[] = [
   { title: 'Trip check-in', description: 'safe trip, share location, going home', route: '/(app)/safety/trip', icon: 'shield-checkmark-outline' },
   { title: 'Urgent support', description: 'crisis, helpline, suicide, emergency 112, Tele-MANAS', route: '/(app)/safety/urgent-support', icon: 'heart-outline' },
   { title: 'On-device AI', description: 'download local language model, llama, offline AI', route: '/(app)/ai/model-status', icon: 'hardware-chip-outline' },
-  { title: 'Learn', description: 'health articles, lessons, read aloud, progress', route: '/(app)/learn', icon: 'school-outline' },
+  { title: 'Learn', description: 'health lessons, continue reading, read aloud, progress, search books and articles', route: '/(app)/learn', icon: 'school-outline' },
   { title: 'Library', description: 'encyclopedia articles, books, free e-books, archive, offline reading', route: '/(app)/learn-library', icon: 'library-outline' },
   { title: 'Beta Lab', description: 'all beta features, experiments', route: '/(app)/beta-lab', icon: 'flask-outline' },
   { title: 'Settings', description: 'account, privacy, reminders, preferences', route: '/(app)/(tabs)/settings', icon: 'settings-outline' },
