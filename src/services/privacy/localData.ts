@@ -355,6 +355,7 @@ export function eraseLocalData(): void {
     const { thriveRag } = require('../local-ai/rag/thriveRag');
     void thriveRag.clear().catch(() => undefined);
     require('../ai/aiInteractionStore').wipeAiInteractions();
+    require('../assistant/chatStore').chatStore.clear();
   } catch {
     // No knowledge store on this platform.
   }

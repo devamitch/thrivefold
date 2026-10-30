@@ -176,7 +176,7 @@ export interface AppSlice {
   /** Which role the one coach takes (coach, health guide, speech, nutrition, friend, reader). */
   coachPersona: PersonaId;
   setCoachPersona: (p: PersonaId) => void;
-  /** The coach conversation, kept across closing the sheet and restarts (newest last, ≤100). */
+  /** Legacy: the conversation before it moved to SQLite (chatStore); imported once, then emptied. */
   coachTurns: {
     id: string;
     who: 'you' | 'coach';

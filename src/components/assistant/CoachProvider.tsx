@@ -22,6 +22,7 @@ import type { PersonaId } from '../../domain/assistant/personas';
 import { speakCoachLine, stopCoachSpeech } from '../../services/ai/coachVoiceService';
 import { agentEngine } from '../../services/assistant/agentEngine';
 import { refreshAppKnowledge } from '../../services/assistant/appKnowledge';
+import { chatStore } from '../../services/assistant/chatStore';
 import { thriveRag } from '../../services/local-ai/rag/thriveRag';
 import { syncCareReminders } from '../../services/notifications/careReminders';
 import { globalVoiceController } from '../../services/voice/globalVoiceController';
@@ -65,7 +66,6 @@ export function CoachProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const routeRef = useRef(routeOf(pathname));
   const isOnboarded = useRootStore((s) => s.isOnboarded);
-  const turnCount = useRootStore((s) => s.coachTurns.length);
   const signedIn = useRootStore((s) => s.isAuthenticated);
   const medications = useRootStore((s) => s.medications);
   const medsRemindersOn = useRootStore((s) => s.medicationRemindersOn);
@@ -92,10 +92,17 @@ export function CoachProvider({ children }: { children: React.ReactNode }) {
   }, [isOnboarded]);
 
   useEffect(() => {
-    if (!isOnboarded || turnCount === 0) return;
-    const t = setTimeout(() => void refreshAppKnowledge(), 8_000);
-    return () => clearTimeout(t);
-  }, [isOnboarded, turnCount]);
+    if (!isOnboarded) return;
+    let t: ReturnType<typeof setTimeout> | null = null;
+    const unsub = chatStore.subscribe(() => {
+      if (t) clearTimeout(t);
+      t = setTimeout(() => void refreshAppKnowledge(), 8_000);
+    });
+    return () => {
+      unsub();
+      if (t) clearTimeout(t);
+    };
+  }, [isOnboarded]);
 
   // Reminders follow the records, whichever screen (or the chat) changed them.
   useEffect(() => {

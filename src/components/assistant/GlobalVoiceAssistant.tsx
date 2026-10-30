@@ -15,7 +15,6 @@ import { router, usePathname, type Href } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Dimensions,
-  FlatList,
   Keyboard,
   Modal,
   Platform,
@@ -27,6 +26,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
   Easing,
@@ -53,20 +53,13 @@ import { PERSONAS } from '../../domain/assistant/personas';
 import { plainText } from '../../domain/assistant/plainText';
 import type { ChatTable } from '../../domain/assistant/chatActions';
 import { setChatActionHooks } from '../../services/assistant/chatActions';
+import { CHAT_PAGE, chatStore, type ChatMessage } from '../../services/assistant/chatStore';
 import { Chip } from '../ui/Chip';
 import { PressableScale } from '../ui/PressableScale';
 import { BrainSetupCard } from './BrainSetupCard';
 
-interface Turn {
-  id: string;
-  who: 'you' | 'coach';
-  text: string;
-  route?: string;
-  at: number;
-  table?: ChatTable;
-}
+type Turn = ChatMessage;
 
-const MAX_TURNS = 100;
 const newId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
 
 const STATUS: Record<VoiceAssistantState, string> = {
@@ -89,12 +82,17 @@ export function GlobalVoiceAssistant() {
   const [visible, setVisible] = useState(false);
   const [voiceState, setVoiceState] = useState<VoiceAssistantState>('idle');
   const [partial, setPartial] = useState('');
-  // The conversation survives closing the sheet and app restarts (saved in the store).
-  const [turns, setTurns] = useState<Turn[]>(() => useRootStore.getState().coachTurns);
+  // The conversation lives in SQLite: the newest page loads now, older pages as you scroll up.
+  const [turns, setTurns] = useState<Turn[]>(() => {
+    const legacy = useRootStore.getState().coachTurns;
+    if (legacy.length && chatStore.importLegacy(legacy)) useRootStore.getState().setCoachTurns([]);
+    return chatStore.page();
+  });
+  const hasOlder = useRef(true);
   const [typed, setTyped] = useState('');
   const [focused, setFocused] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const list = useRef<FlatList<Turn>>(null);
+  const list = useRef<FlashListRef<Turn>>(null);
   const input = useRef<TextInput>(null);
   const [kb, setKb] = useState(0);
 
@@ -116,11 +114,21 @@ export function GlobalVoiceAssistant() {
     };
   }, []);
 
-  // Save the conversation shortly after it changes (not on every streamed token).
+  // Save new and growing messages shortly after they change (not on every streamed token). Only
+  // the newest few can change, so older pages are never rewritten.
   useEffect(() => {
-    const id = setTimeout(() => useRootStore.getState().setCoachTurns(turns), 600);
+    const id = setTimeout(() => chatStore.upsert(turns.slice(-3)), 600);
     return () => clearTimeout(id);
   }, [turns]);
+
+  const loadOlder = useCallback(() => {
+    if (!hasOlder.current) return;
+    setTurns((t) => {
+      const older = chatStore.page(t[0]?.at);
+      if (older.length < CHAT_PAGE) hasOlder.current = false;
+      return older.length ? [...older, ...t] : t;
+    });
+  }, []);
 
   // Streamed tokens: keep only the newest text and render it at most once per frame.
   const pendingReply = useRef<{ reply: string; tool?: ToolExecutionResult } | null>(null);
@@ -165,7 +173,7 @@ export function GlobalVoiceAssistant() {
         setPartial('');
         setError(null);
         setTurns((t) =>
-          [...t, { id: newId(), who: 'you' as const, text, at: Date.now() }].slice(-MAX_TURNS),
+          [...t, { id: newId(), who: 'you' as const, text, at: Date.now() }],
         );
       },
       onAssistantReply: (reply, tool?: ToolExecutionResult) => {
@@ -191,7 +199,7 @@ export function GlobalVoiceAssistant() {
               return [
                 ...t,
                 { id: newId(), who: 'coach' as const, text: next.reply, route, table, at: Date.now() },
-              ].slice(-MAX_TURNS);
+              ];
             });
           });
         }
@@ -233,7 +241,7 @@ export function GlobalVoiceAssistant() {
   const clearHistory = () => {
     hapticSelection();
     setTurns([]);
-    useRootStore.getState().setCoachTurns([]);
+    chatStore.clear();
   };
 
   // "Clear the chat" and "close" said in the chat act on this sheet.
@@ -242,7 +250,7 @@ export function GlobalVoiceAssistant() {
       closeSheet: close,
       clearChat: () => {
         setTurns([]);
-        useRootStore.getState().setCoachTurns([]);
+        chatStore.clear();
       },
     });
   }, [close]);
@@ -279,7 +287,12 @@ export function GlobalVoiceAssistant() {
     router.push(route as Href);
   };
 
-  const reversed = React.useMemo(() => [...turns].reverse(), [turns]);
+  // Keep the newest message in view when the keyboard opens and the sheet gets shorter.
+  useEffect(() => {
+    if (!kb || !turns.length) return;
+    const t = setTimeout(() => list.current?.scrollToEnd({ animated: true }), 80);
+    return () => clearTimeout(t);
+  }, [kb, turns.length]);
   const renderTurn = useCallback(
     ({ item }: { item: Turn }) => <TurnRow turn={item} onOpen={go} />,
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -491,17 +504,19 @@ export function GlobalVoiceAssistant() {
                   </View>
                 </View>
               ) : (
-                <FlatList
+                <FlashList
                   ref={list}
-                  // Newest at the bottom: the list is inverted, so it stays on the latest message
-                  // when the keyboard opens or a reply streams in.
-                  inverted
-                  data={reversed}
+                  // A real chat: oldest first, opens at the newest message, keeps its place when
+                  // older pages load above, and follows new replies while you are at the bottom.
+                  data={turns}
                   keyExtractor={(t) => t.id}
                   renderItem={renderTurn}
-                  initialNumToRender={12}
-                  windowSize={7}
-                  removeClippedSubviews
+                  maintainVisibleContentPosition={{
+                    startRenderingFromBottom: true,
+                    autoscrollToBottomThreshold: 0.25,
+                  }}
+                  onStartReached={loadOlder}
+                  onStartReachedThreshold={0.3}
                   style={styles.flex}
                   contentContainerStyle={{
                     paddingHorizontal: spacing.base,
@@ -509,7 +524,8 @@ export function GlobalVoiceAssistant() {
                   }}
                   keyboardShouldPersistTaps="handled"
                   keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
-                  ListHeaderComponent={
+                  ListHeaderComponent={<BrainSetupCard compact />}
+                  ListFooterComponent={
                     <>
                       {showThinking ? (
                         <View
@@ -539,7 +555,6 @@ export function GlobalVoiceAssistant() {
                       ) : null}
                     </>
                   }
-                  ListFooterComponent={<BrainSetupCard compact />}
                 />
               )}
 

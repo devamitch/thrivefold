@@ -54,15 +54,16 @@ function getDb(): SQLite.SQLiteDatabase | null {
 }
 
 /**
- * Keeps every coach turn (what the person said, what came back, and who answered) on this phone
+ * Keeps every coach turn (what the person said, what came back, who answered and how long it took)
+ * on this phone
  * only. Unlike recordAiInteraction, nothing is sent to a server.
  */
-export function logCoachTurnLocally(prompt: string, response: string, provider: string): void {
+export function logCoachTurnLocally(prompt: string, response: string, provider: string, latencyMs = 0): void {
   try {
     getDb()?.runSync(
       `INSERT INTO ai_interactions (id, created_at, user_id, provider, model, prompt, response, latency_ms, status)
-       VALUES (?, ?, 'local_user', ?, 'coach', ?, ?, 0, 'success')`,
-      [`turn_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`, new Date().toISOString(), provider, prompt, response],
+       VALUES (?, ?, 'local_user', ?, 'coach', ?, ?, ?, 'success')`,
+      [`turn_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`, new Date().toISOString(), provider, prompt, response, Math.max(0, Math.round(latencyMs))],
     );
   } catch {
     // The chat still works without the log.

@@ -115,6 +115,8 @@ export interface AgentTurnCallbacks {
 }
 
 class AgentEngine {
+  /** When the current turn started, so each reply's time is recorded on the phone. */
+  private turnStartedAt = 0;
   private activeSession: AgentSessionState = {
     sessionId: `session_${Date.now()}`,
     messages: [],
@@ -196,6 +198,7 @@ class AgentEngine {
     rawText: string,
     callbacks?: AgentTurnCallbacks
   ): Promise<{ text: string; toolResult?: ToolExecutionResult }> {
+    this.turnStartedAt = Date.now();
     const text = rawText.trim();
     if (!text) {
       return { text: 'How can I assist you with your wellbeing today?' };
@@ -482,7 +485,7 @@ class AgentEngine {
     });
 
     const asked = [...this.activeSession.messages].reverse().find((m) => m.sender === 'user')?.text ?? '';
-    logCoachTurnLocally(asked, text, toolResult ? 'app' : LocalAI.isLoaded() ? 'on_device' : 'rules');
+    logCoachTurnLocally(asked, text, toolResult ? 'app' : LocalAI.isLoaded() ? 'on_device' : 'rules', Date.now() - this.turnStartedAt);
 
     callbacks?.onComplete?.(text, toolResult);
   }

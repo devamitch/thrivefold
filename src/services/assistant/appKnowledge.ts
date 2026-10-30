@@ -10,6 +10,7 @@ import { foodById } from '../../domain/nutrition/foods';
 import { DESTINATIONS } from '../../domain/search/destinations';
 import { useRootStore } from '../../stores/useRootStore';
 import { thriveRag } from '../local-ai/rag/thriveRag';
+import { chatStore } from './chatStore';
 
 let running: Promise<number> | null = null;
 
@@ -20,7 +21,7 @@ export function currentAppDocs(now = new Date()): KnowledgeDoc[] {
     screensDoc(DESTINATIONS),
     ...learnDocs(ARTICLES),
     recentDaysDoc(s, now),
-    chatDoc(s.coachTurns),
+    chatDoc(chatStore.page(undefined, 60)),
     ...storeDocs(s, now, (id) => foodById(id)?.name),
   ];
 }
