@@ -107,8 +107,11 @@ export default function LearnScreen() {
                   accessibilityIgnoresInvertColors
                 />
               </PressableScale>
-              <View style={styles.badgeOverlay}>
-                <Badge label={art.category} variant="primary" />
+              <View style={styles.badgeOverlay} pointerEvents="box-none">
+                {/* Solid chip so the category stays readable on any picture (no grey band). */}
+                <View style={[styles.categoryChip, { backgroundColor: colors.background }]}>
+                  <Badge label={art.category} variant="primary" />
+                </View>
                 <View style={styles.pillRow}>
                   <PressableScale
                     accessibilityRole="button"
@@ -217,9 +220,9 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
   },
+  categoryChip: { borderRadius: 999 },
   badgeOverlay: {
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.28)',
     flexDirection: 'row',
     justifyContent: 'space-between',
     left: 0,
