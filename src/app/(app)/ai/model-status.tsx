@@ -135,6 +135,11 @@ export default function ModelStatusScreen() {
                 <Text style={[typography.caption, { color: colors.text.muted, marginTop: 2 }]}>
                   {m.sizeMb} MB · needs about {Math.round(m.minRamMb / 1024)} GB RAM · {m.license}
                 </Text>
+                {m.needsNewerRuntime ? (
+                  <Text style={[typography.caption, { color: colors.warning, marginTop: 2 }]}>
+                    New architecture: may not start on this app&apos;s current AI engine. It is tested right after download.
+                  </Text>
+                ) : null}
               </View>
               {m.id === recommended.id ? <Badge label="Best for this phone" variant="gold" /> : null}
             </View>

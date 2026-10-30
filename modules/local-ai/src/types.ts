@@ -48,6 +48,12 @@ export interface ModelPreset {
   contextLength: number;
   license: string;
   description: string;
+  /**
+   * The bundled llama.cpp (Llamatik 0.12) predates this architecture: it is listed so it can be
+   * tried, and the app test-answers it after download, but it may not start until the engine is
+   * updated (or the LiteRT-LM runtime is added).
+   */
+  needsNewerRuntime?: boolean;
 }
 
 export interface ModelLoadOptions {

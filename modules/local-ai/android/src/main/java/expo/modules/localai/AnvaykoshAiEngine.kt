@@ -146,7 +146,15 @@ class AnvaykoshAiEngine {
       val user = if (sys.isNotBlank()) "$sys\n\n$prompt" else prompt
       return "<start_of_turn>user\n$user<end_of_turn>\n<start_of_turn>model\n"
     }
-    return messages.joinToString("") { (role, text) -> "<|im_start|>$role\n$text<|im_end|>\n" } + "<|im_start|>assistant\n"
+    if (loadedPath.contains("llama", ignoreCase = true)) {
+      return "<|begin_of_text|>" + messages.joinToString("") { (role, text) ->
+        "<|start_header_id|>$role<|end_header_id|>\n\n$text<|eot_id|>"
+      } + "<|start_header_id|>assistant<|end_header_id|>\n\n"
+    }
+    // ChatML: Qwen 2.5 / 3, LFM2 and SmolLM all use it. Qwen 3 thinks out loud by default; an
+    // empty think block (its own "thinking off" template) makes it answer straight away.
+    val noThink = if (loadedPath.contains("qwen3", ignoreCase = true)) "<think>\n\n</think>\n\n" else ""
+    return messages.joinToString("") { (role, text) -> "<|im_start|>$role\n$text<|im_end|>\n" } + "<|im_start|>assistant\n" + noThink
   }
 
   /** Cuts a reply at the first end-of-turn marker the model may still print. */
@@ -304,7 +312,7 @@ class AnvaykoshAiEngine {
   @Volatile private var loadedPath: String = ""
 
   companion object {
-    private val STOP_MARKERS = listOf("<|im_end|>", "<|endoftext|>", "<end_of_turn>", "<|im_start|>", "<start_of_turn>", "\nHuman:", "\nUser:")
+    private val STOP_MARKERS = listOf("<|eot_id|>", "<|start_header_id|>", "<|im_end|>", "<|endoftext|>", "<end_of_turn>", "<|im_start|>", "<start_of_turn>", "\nHuman:", "\nUser:")
   }
 
 }

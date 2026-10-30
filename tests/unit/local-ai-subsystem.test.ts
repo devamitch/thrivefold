@@ -106,13 +106,17 @@ describe('Local AI - Vector Math & Similarity Engine', () => {
 
 describe('Local AI - Model Catalog & Hardware Suitability', () => {
   test('P0: Catalog lists real downloadable models with their published SHA-256', () => {
-    expect(MODEL_PRESETS.length).toBe(3);
+    expect(MODEL_PRESETS.length).toBe(8);
     for (const m of MODEL_PRESETS) {
-      expect(m.downloadUrl).toMatch(/^https:\/\/huggingface\.co\/(Qwen|ggml-org)\//);
+      expect(m.downloadUrl).toMatch(/^https:\/\/huggingface\.co\/(Qwen|ggml-org|unsloth|bartowski|LiquidAI)\/.+\.gguf$/);
+      expect(m.sizeMb).toBe(Math.round(m.sizeBytes / 1024 / 1024));
       expect(m.expectedSha256).toMatch(/^[0-9a-f]{64}$/);
     }
     expect(getModelPresetById('qwen2.5-0.5b-instruct')?.sizeBytes).toBe(491_400_032);
     expect(getModelPresetById('gemma-3-1b-it')?.sizeBytes).toBe(806_058_240);
+    expect(getModelPresetById('gemma-4-e2b-it')?.sizeBytes).toBe(2_841_481_184);
+    // Architectures newer than the bundled llama.cpp are flagged, never silently offered as ready.
+    expect(getModelPresetById('gemma-4-e2b-it')?.needsNewerRuntime).toBe(true);
   });
 
   test('P0: Recommends the larger model only with enough RAM', () => {
