@@ -17,6 +17,7 @@ DONE (seen on the phone), BUILT (in the build, not yet seen on the phone), TODO,
 | Steady microphone (no idle flicker between rounds, permission asked once) | BUILT |
 | "Bye" / "stop" closes the conversation | BUILT |
 | Calm Indian male voice (the earlier one) | BUILT |
+| Voice settings: speak or text only, Indian male / female (chosen, never inferred), speed, preview, conversation mode | BUILT |
 | Real bottom sheet: drag down to dismiss, springs back | BUILT |
 | Commands: open screens, log water, numbers, export, remember, several in one go | BUILT (parsing tested) |
 | Online AI for macros/plans with consent, answers saved locally | BUILT |
@@ -41,7 +42,7 @@ DONE (seen on the phone), BUILT (in the build, not yet seen on the phone), TODO,
 | Edit profile in five steps | BUILT |
 | Eye check full screen (BlinkQuest style), Close works, no crash | DONE |
 | Eye outlines on the real eyes | BUILT (fixed the offset; not re-checked facing the camera) |
-| Blink count accuracy (read 54/min) | TODO |
+| Blink count accuracy (read 54/min) | BUILT (rate only after 20 s observed; per-person adaptive thresholds; 40 ms / 150 ms debounce) |
 | No sparkle icons | DONE |
 | Learn tab: images per item (men / women), articles from an API, voice intro, shared-element image viewer | TODO |
 | Beta hero redesign; smoother dashboard animations | TODO |
