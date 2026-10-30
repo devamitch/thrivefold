@@ -21,7 +21,8 @@ DONE (seen on the phone), BUILT (in the build, not yet seen on the phone), TODO,
 | Real bottom sheet: drag down to dismiss, springs back | BUILT |
 | Commands: open screens, log water, numbers, export, remember, several in one go | BUILT (parsing tested) |
 | Online AI for macros/plans with consent, answers saved locally | BUILT |
-| Talks on its own, constant monitoring, heart rate from watch | TODO (Health Connect hook exists in brand/thrive/heart.ts, not wired) |
+| Heart-rate questions answered from connected readings (Health Connect / strap), with date and source | BUILT |
+| Talks on its own, constant background monitoring | TODO |
 
 ## On-device models
 | Requirement | Status |
@@ -29,7 +30,7 @@ DONE (seen on the phone), BUILT (in the build, not yet seen on the phone), TODO,
 | Light model downloads quietly on first open, verified and test-answered | DONE (Qwen 0.5B, 469 MB) |
 | Gemma 3 1B in Settings | BUILT, not yet downloaded on the phone |
 | Pause / resume, resume after reopening | BUILT |
-| Keep downloading after the app is closed | TODO (needs Android DownloadManager) |
+| Keep downloading after the app is closed | BUILT (Android DownloadManager; picked up again on app open; SHA-256 checked before install) |
 | Keep models after uninstall; share across AnvayKosh apps | TODO (only small models via brand/thrive/modelStore.ts) |
 | Train models on the phone | NOT POSSIBLE — retrieval over saved knowledge instead |
 
@@ -44,7 +45,9 @@ DONE (seen on the phone), BUILT (in the build, not yet seen on the phone), TODO,
 | Eye outlines on the real eyes | BUILT (fixed the offset; not re-checked facing the camera) |
 | Blink count accuracy (read 54/min) | BUILT (rate only after 20 s observed; per-person adaptive thresholds; 40 ms / 150 ms debounce) |
 | No sparkle icons | DONE |
-| Learn tab: images per item (men / women), articles from an API, voice intro, shared-element image viewer | TODO |
+| Learn: image per item (men / women versions), Listen intro | DONE (existing) |
+| Learn: full-screen image viewer growing from the picture, pinch / double-tap zoom, swipe to close | BUILT |
+| Learn: articles from an external API | TODO (needs a chosen source with usage rights) |
 | Beta hero redesign; smoother dashboard animations | TODO |
 
 ## Account and data
@@ -54,4 +57,9 @@ DONE (seen on the phone), BUILT (in the build, not yet seen on the phone), TODO,
 | Profile saved and restored | DONE |
 | Backup to a file and restore | BUILT |
 | Provider keys out of the app bundle | BUILT (old builds still contain them: rotate the 13 keys) |
-| Full AnvayKosh ID across all apps | TODO (needs Neev / HarmonyBloom changes; owner approval) |
+| Full AnvayKosh ID across all apps | PLANNED (docs/ANVAY_ID_PLAN.md; approved; needs App Link domain and signing SHA-256s) |
+
+## Validation (2026-10-30)
+pnpm compile PASS · pnpm lint PASS · pnpm test 490/490 PASS · pnpm test:db 175/175 PASS ·
+expo-doctor 19/20 (expo 55.0.31 vs 55.0.32 patch; not upgraded per AGENTS.md rule 1) ·
+release APK `android/app/build/outputs/apk/release/app-release.apk` built and installed on ZD2225KYKD.
