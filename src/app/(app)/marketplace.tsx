@@ -75,6 +75,25 @@ export default function MarketplaceScreen() {
         </View>
       </Card>
 
+      {/* What the person already has: stickers on a shelf, status as a badge. */}
+      {owned.length ? (
+        <View style={{ marginBottom: spacing.lg }}>
+          <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: spacing.sm }]}>Your collection</Text>
+          <View style={styles.shelf}>
+            {MARKET.filter((m) => !m.physical && owned.includes(m.id)).map((m) => (
+              <View key={m.id} style={[styles.sticker, { backgroundColor: colors.surface }]}>
+                <View style={[styles.stickerIcon, { backgroundColor: colors.surface2 }]}>
+                  <Ionicons name={m.icon as keyof typeof Ionicons.glyphMap} size={26} color={colors.primary} />
+                </View>
+                <Text style={[typography.caption, { color: colors.text.primary, textAlign: 'center' }]} numberOfLines={2}>
+                  {m.title}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      ) : null}
+
       {TIERS.map(({ tier, title, icon, note }) => (
         <View key={tier} style={{ marginBottom: spacing.lg }}>
           <View style={styles.sectionHead}>
@@ -89,6 +108,9 @@ export default function MarketplaceScreen() {
             const short = diamonds < m.cost;
             return (
               <Card key={m.id} style={[styles.item, { marginTop: spacing.sm }]}>
+                <View style={[styles.stickerIcon, { backgroundColor: colors.surface2 }]}>
+                  <Ionicons name={m.icon as keyof typeof Ionicons.glyphMap} size={22} color={colors.primary} />
+                </View>
                 <View style={styles.flex}>
                   <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{m.title}</Text>
                   <Text style={[typography.caption, { color: colors.text.secondary }]}>{m.description}</Text>
@@ -162,5 +184,8 @@ const styles = StyleSheet.create({
   balance: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16 },
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   item: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
+  shelf: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  sticker: { width: 96, alignItems: 'center', gap: 6, borderRadius: 14, padding: 10 },
+  stickerIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   earnRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6 },
 });

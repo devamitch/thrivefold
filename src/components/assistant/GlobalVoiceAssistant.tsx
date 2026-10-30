@@ -52,6 +52,7 @@ import { useRootStore } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
 import { AnvayCompanion } from '../brand/AnvayCompanion';
 import { PERSONAS } from '../../domain/assistant/personas';
+import { hasSanctuaryStatus } from '../../domain/game/rewards';
 import { dailyBrief, type BriefInput } from '../../domain/assistant/dailyBrief';
 import { plainText } from '../../domain/assistant/plainText';
 import { LANGUAGES, languageOf } from '../../domain/languages';
@@ -283,6 +284,7 @@ export function GlobalVoiceAssistant() {
     [],
   );
 
+  const sanctuary = useRootStore((st) => hasSanctuaryStatus(st.marketOwned));
   const coachLanguage = useRootStore((st) => st.coachLanguage);
   const setCoachLanguage = useRootStore((st) => st.setCoachLanguage);
   const [langOpen, setLangOpen] = useState(false);
@@ -578,9 +580,15 @@ export function GlobalVoiceAssistant() {
                       <AnvayCompanion size={48} mood={mood} />
                     </View>
                     <View style={styles.flex}>
-                      <Text style={[typography.subheading, { color: colors.text.primary }]}>
-                        Anvay
-                      </Text>
+                      <View style={styles.statusRow}>
+                        <Text style={[typography.subheading, { color: colors.text.primary }]}>Anvay</Text>
+                        {sanctuary ? (
+                          <View style={[styles.sanctuary, { backgroundColor: colors.surface2 }]} accessibilityLabel="Sanctuary status">
+                            <Ionicons name="ribbon" size={12} color={colors.primary} />
+                            <Text style={[typography.caption, { color: colors.primary }]}>Sanctuary</Text>
+                          </View>
+                        ) : null}
+                      </View>
                       <View style={styles.statusRow}>
                         <View style={[styles.dot, { backgroundColor: dotColor }]} />
                         <Text
@@ -1046,6 +1054,7 @@ const TurnRow = React.memo(function TurnRow({
 
 const styles = StyleSheet.create({
   personaRow: { flexGrow: 0, marginBottom: 4 },
+  sanctuary: { flexDirection: 'row', alignItems: 'center', gap: 3, borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2, marginLeft: 8 },
   flex: { flex: 1 },
   avoid: { flex: 1, justifyContent: 'flex-end' },
   sheet: {

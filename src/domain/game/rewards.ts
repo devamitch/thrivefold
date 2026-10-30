@@ -30,6 +30,8 @@ export type MarketTier = 'sticker' | 'status' | 'gear';
 
 export interface MarketItem {
   id: string;
+  /** Ionicons glyph shown for the item until illustrated art ships. */
+  icon: string;
   tier: MarketTier;
   title: string;
   description: string;
@@ -42,16 +44,16 @@ export interface MarketItem {
 export const TIER_COST: Record<MarketTier, number> = { sticker: 100, status: 500, gear: 10_000 };
 
 export const MARKET: MarketItem[] = [
-  { id: 'sticker_zen_fox', tier: 'sticker', title: 'Meditating Zen Fox', description: 'Profile sticker for calm streaks.', cost: TIER_COST.sticker },
-  { id: 'sticker_hydration_drop', tier: 'sticker', title: 'Living Hydration Drop', description: 'For people who never skip water.', cost: TIER_COST.sticker },
-  { id: 'sticker_slumber_moon', tier: 'sticker', title: 'Slumber Moon', description: 'A sleepy moon for early nights.', cost: TIER_COST.sticker },
-  { id: 'sticker_stride_shoes', tier: 'sticker', title: 'Morning Stride Shoes', description: 'For daily walkers.', cost: TIER_COST.sticker },
-  { id: 'status_sanctuary', tier: 'status', title: 'Sanctuary status', description: 'A status badge on your profile and coach, for steady habits.', cost: TIER_COST.status },
-  { id: 'gear_pushup_bars', tier: 'gear', title: 'Push-up bars', description: 'A pair of push-up bars, delivered to you.', cost: TIER_COST.gear, physical: true },
-  { id: 'gear_gyroball', tier: 'gear', title: 'Gyroball wrist trainer', description: 'Wrist and grip strength, delivered to you.', cost: TIER_COST.gear, physical: true },
-  { id: 'gear_dumbbells', tier: 'gear', title: 'Dumbbells', description: 'A pair of dumbbells, delivered to you.', cost: TIER_COST.gear, physical: true },
-  { id: 'gear_barbell', tier: 'gear', title: 'Barbell', description: 'A home barbell, delivered to you.', cost: TIER_COST.gear, physical: true },
-  { id: 'gear_stationery', tier: 'gear', title: 'Stationery kit', description: 'Journal and stationery set, delivered to you.', cost: TIER_COST.gear, physical: true },
+  { id: 'sticker_zen_fox', icon: 'leaf', tier: 'sticker', title: 'Meditating Zen Fox', description: 'Profile sticker for calm streaks.', cost: TIER_COST.sticker },
+  { id: 'sticker_hydration_drop', icon: 'water', tier: 'sticker', title: 'Living Hydration Drop', description: 'For people who never skip water.', cost: TIER_COST.sticker },
+  { id: 'sticker_slumber_moon', icon: 'moon', tier: 'sticker', title: 'Slumber Moon', description: 'A sleepy moon for early nights.', cost: TIER_COST.sticker },
+  { id: 'sticker_stride_shoes', icon: 'walk', tier: 'sticker', title: 'Morning Stride Shoes', description: 'For daily walkers.', cost: TIER_COST.sticker },
+  { id: 'status_sanctuary', icon: 'ribbon', tier: 'status', title: 'Sanctuary status', description: 'A Sanctuary badge next to Anvay in the coach, for steady habits.', cost: TIER_COST.status },
+  { id: 'gear_pushup_bars', icon: 'barbell', tier: 'gear', title: 'Push-up bars', description: 'A pair of push-up bars, delivered to you.', cost: TIER_COST.gear, physical: true },
+  { id: 'gear_gyroball', icon: 'disc', tier: 'gear', title: 'Gyroball wrist trainer', description: 'Wrist and grip strength, delivered to you.', cost: TIER_COST.gear, physical: true },
+  { id: 'gear_dumbbells', icon: 'barbell', tier: 'gear', title: 'Dumbbells', description: 'A pair of dumbbells, delivered to you.', cost: TIER_COST.gear, physical: true },
+  { id: 'gear_barbell', icon: 'barbell', tier: 'gear', title: 'Barbell', description: 'A home barbell, delivered to you.', cost: TIER_COST.gear, physical: true },
+  { id: 'gear_stationery', icon: 'book', tier: 'gear', title: 'Stationery kit', description: 'Journal and stationery set, delivered to you.', cost: TIER_COST.gear, physical: true },
 ];
 
 /** How many of an action were already paid on a day (from ledger keys `action:<kind>:<date>:<id>`). */
@@ -68,3 +70,6 @@ export function canEarn(keys: readonly string[], kind: ActionKind, date: string,
   if (actionsPaidOn(keys, kind, date) >= ACTION_REWARDS[kind].perDay) return { awarded: false, reason: 'daily_limit' };
   return { awarded: true, gems: ACTION_REWARDS[kind].gems };
 }
+
+/** True once the person holds Sanctuary status. */
+export const hasSanctuaryStatus = (owned: readonly string[]) => owned.includes('status_sanctuary');
