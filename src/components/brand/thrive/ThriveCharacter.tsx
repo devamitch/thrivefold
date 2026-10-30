@@ -65,11 +65,11 @@ const RAD = Math.PI / 180;
 function Limb({ sx, sy, sol, foot = false }: { sx: number; sy: number; sol: SharedValue<Sol>; foot?: boolean }) {
   const path = useDerivedValue(() => {
     const s = sol.value;
-    const p = Skia.Path.Make();
+    const p = Skia.PathBuilder.Make();
     p.moveTo(sx, sy);
     p.lineTo(s.ex, s.ey);
     p.lineTo(s.hx, s.hy);
-    return p;
+    return p.build();
   });
   const end = useDerivedValue(() => [
     { translateX: sol.value.hx },
@@ -93,9 +93,9 @@ function RoundedRectLike({ rect }: { rect: SharedValue<ReturnType<typeof Skia.XY
 // Big round baby eyes. Everything is drawn inside the head (head spans y 236..486).
 function Eye({ cx, cy, side, r }: { cx: number; cy: number; side: -1 | 1; r: Rig }) {
   const clip = useMemo(() => {
-    const p = Skia.Path.Make();
+    const p = Skia.PathBuilder.Make();
     p.addOval(Skia.XYWHRect(cx - 21, cy - 24, 42, 48));
-    return p;
+    return p.build();
   }, [cx, cy]);
   const open = useDerivedValue(() => Math.max(0, r.eyeOpen.value) * (1 - r.blink.value));
   const close = useDerivedValue(() => 1 - Math.min(1, open.value));
@@ -118,10 +118,10 @@ function Eye({ cx, cy, side, r }: { cx: number; cy: number; side: -1 | 1; r: Rig
   const squintCy = useDerivedValue(() => cy + 60 - r.squint.value * 34);
   const squintOp = useDerivedValue(() => Math.min(1, r.squint.value * 1.4));
   const lash = useDerivedValue(() => {
-    const p = Skia.Path.Make();
+    const p = Skia.PathBuilder.Make();
     p.moveTo(cx - 19, cy);
     p.quadTo(cx, cy + 2 + close.value * 12, cx + 19, cy);
-    return p;
+    return p.build();
   });
   const lashOp = useDerivedValue(() => Math.max(0, close.value - 0.5) * 2);
   return (
@@ -159,12 +159,12 @@ function Face({ r, t }: { r: Rig; t: SharedValue<number> }) {
     const endY = cy - c * 10;
     const mid = cy + c * 14;
     const midLow = mid + open * 26;
-    const p = Skia.Path.Make();
+    const p = Skia.PathBuilder.Make();
     p.moveTo(cx - w, endY);
     p.quadTo(cx, 2 * mid - endY, cx + w, endY);
     p.quadTo(cx, 2 * midLow - endY, cx - w, endY);
     p.close();
-    return p;
+    return p.build();
   });
   const mouthFillOp = useDerivedValue(() => Math.min(1, (r.mouthOpen.value + r.talk.value * 0.3) * 6));
   const blushOp = useDerivedValue(() => 0.4 + r.blush.value * 0.4);
@@ -227,11 +227,11 @@ function Streak({ i, r, t }: { i: number; r: Rig; t: SharedValue<number> }) {
   const path = useDerivedValue(() => {
     const p = ((t.value / 900) + i / 6) % 1;
     const x = 860 - p * 760, y = 170 + i * 120; // stays inside the 900 window
-    const q = Skia.Path.Make();
+    const q = Skia.PathBuilder.Make();
     q.moveTo(x, y);
     q.quadTo(x - 40, y - 14, x - 80, y);
     q.quadTo(x - 120, y + 14, x - 160, y);
-    return q;
+    return q.build();
   });
   const op = useDerivedValue(() => r.wind.value * 0.5);
   return <Path path={path} style="stroke" strokeWidth={7} strokeCap="round" color="#B9C4CE" opacity={op} />;
@@ -318,16 +318,16 @@ export function ThriveCharacter({ rig, size = 280, halo, onPress, entrance = tru
   const waterY = useDerivedValue(() => 28 - 54 * r.cupFill.value);
   const waterH = useDerivedValue(() => 54 * r.cupFill.value);
   const barPath = useDerivedValue(() => {
-    const p = Skia.Path.Make();
+    const p = Skia.PathBuilder.Make();
     p.moveTo(LA.value.hx - 44, LA.value.hy);
     p.lineTo(RA.value.hx + 44, RA.value.hy);
-    return p;
+    return p.build();
   });
   const platePath = useDerivedValue(() => {
-    const p = Skia.Path.Make();
+    const p = Skia.PathBuilder.Make();
     p.moveTo(LA.value.hx - 44, LA.value.hy - 36); p.lineTo(LA.value.hx - 44, LA.value.hy + 36);
     p.moveTo(RA.value.hx + 44, RA.value.hy - 36); p.lineTo(RA.value.hx + 44, RA.value.hy + 36);
-    return p;
+    return p.build();
   });
   const glassTf = useDerivedValue(() => [{ translateY: (1 - r.glasses.value) * -60 }]);
   const anger = useDerivedValue(() => [{ translateX: 700 }, { translateY: 270 }, { scale: 1 + 0.15 * Math.sin(t.value / 90) }]);

@@ -180,9 +180,9 @@ function GlassBody({
   const r = size / 2;
   const centre = vec(r, r);
   const clip = useMemo(() => {
-    const path = Skia.Path.Make();
+    const path = Skia.PathBuilder.Make();
     path.addCircle(r, r, r);
-    return path;
+    return path.build();
   }, [r]);
 
   const highlightCentre = useDerivedValue(() =>

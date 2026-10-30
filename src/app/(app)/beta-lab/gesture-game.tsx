@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   center: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
   },

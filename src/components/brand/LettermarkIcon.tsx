@@ -1,6 +1,6 @@
-import { Image } from 'expo-image';
+import { Image, type ImageProps } from 'expo-image';
 import React, { memo } from 'react';
-import { ImageSourcePropType, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
+import { StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -29,7 +29,7 @@ export interface LettermarkMeta {
   bgColor: string;
   fgColor: string;
   category: string;
-  source: ImageSourcePropType;
+  source: ImageProps['source'];
 }
 
 export const LETTERMARK_MAP: Record<LettermarkCategoryKey, LettermarkMeta> = {

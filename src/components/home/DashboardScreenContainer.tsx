@@ -172,7 +172,7 @@ export function DashboardScreenContainer({
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle={barStyle} translucent backgroundColor="transparent" animated />
+      <StatusBar barStyle={barStyle} animated />
 
       <Animated.ScrollView
         ref={scrollRef}

@@ -127,7 +127,8 @@
         "expo-build-properties",
         {
           "android": {
-            "minSdkVersion": 26
+            "minSdkVersion": 26,
+            "extraProguardRules": "# Custom Expo modules (created by name; props bound by reflection).\n-keep class expo.modules.setusquircle.** { *; }\n-keep class expo.modules.localai.** { *; }\n-keep class expo.modules.poselandmarker.** { *; }\n-keep class expo.modules.stepcounter.** { *; }\n# Llamatik (llama.cpp): native code calls back into Kotlin and is found with Class.forName.\n-keep class com.llamatik.** { *; }\n-keep interface com.llamatik.** { *; }\n-dontwarn com.llamatik.**\n# MediaPipe tasks: JNI callbacks and protobuf read by reflection.\n-keep class com.google.mediapipe.** { *; }\n-keep class com.google.protobuf.** { *; }\n-dontwarn com.google.mediapipe.**\n-dontwarn com.google.protobuf.**"
           }
         }
       ],

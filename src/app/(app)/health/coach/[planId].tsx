@@ -17,7 +17,6 @@ import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from '
 import {
   ActivityIndicator,
   BackHandler,
-  InteractionManager,
   PermissionsAndroid,
   Platform,
   StatusBar,
@@ -456,7 +455,7 @@ export default function CoachScreen() {
       setArmed(true);
       setTimeout(() => setCountdown(4), 1600);
     }
-    InteractionManager.runAfterInteractions(() => setTimeout(() => setVideoMounted(true), 400));
+    requestIdleCallback(() => setTimeout(() => setVideoMounted(true), 400));
   };
 
   const beginSet = useCallback(() => {

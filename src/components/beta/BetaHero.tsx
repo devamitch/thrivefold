@@ -2,6 +2,7 @@ import { Image, type ImageSource } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import type { ViewInstance } from 'react-native';
 
 import { useTheme } from '../../theme/useTheme';
 import { ImageViewer, type ViewerOrigin } from '../ui/ImageViewer';
@@ -13,7 +14,7 @@ import { PressableScale } from '../ui/PressableScale';
  */
 export function BetaHero({ source, label }: { source: ImageSource | number; label: string }) {
   const { colors } = useTheme();
-  const ref = useRef<View | null>(null);
+  const ref = useRef<ViewInstance | null>(null);
   const [origin, setOrigin] = useState<ViewerOrigin | null>(null);
 
   return (

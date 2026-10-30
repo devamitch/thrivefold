@@ -82,19 +82,19 @@ export function ProgressRing({
 
   const r = (size - stroke) / 2;
   const circle = React.useMemo(() => {
-    const p = Skia.Path.Make();
+    const p = Skia.PathBuilder.Make();
     p.addCircle(size / 2, size / 2, r);
-    return p;
+    return p.build();
   }, [size, r]);
   const arc = useDerivedValue(() => {
-    const p = Skia.Path.Make();
+    const p = Skia.PathBuilder.Make();
     const sweep = Math.max(0.001, Math.min(1, t.value)) * 360;
     p.addArc(
       { x: stroke / 2, y: stroke / 2, width: size - stroke, height: size - stroke },
       -90,
       sweep,
     );
-    return p;
+    return p.build();
   });
 
   return (

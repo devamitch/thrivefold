@@ -5,8 +5,6 @@ Codex, Copilot, Cursor). Tool files (`CLAUDE.md`, `GEMINI.md`, `.github/copilot-
 only point here. Skills with step-by-step methods live in `.agents/skills/*/SKILL.md`
 (`.claude/skills` is a symlink to the same folder).
 
-Authoritative product spec: `../../thrivefold_ultimate_master_build_prompt_v2.md`.
-
 ## 1. Product in one paragraph
 
 Thrivefold is an Expo (SDK 55) React Native, Android-first, local-first health and wellbeing
@@ -51,18 +49,6 @@ live yet. It is not a medical device and never diagnoses.
 | Backend              | `supabase/migrations/*` (not deployed; needs its own project)                                                                                                                     |
 | Dev tools            | `src/app/(app)/dev.tsx` (development builds only; linked from You)                                                                                                                |
 
-## 4. Commands
-
-```sh
-pnpm compile      # strict tsc
-pnpm lint         # eslint (expo config)
-pnpm test         # jest unit tests
-pnpm test:db      # migrations + RLS checks on real Postgres (PGlite)
-CI=1 pnpm dlx expo-doctor
-CI=1 pnpm exec expo prebuild --platform android --no-install   # after app.json/asset/font changes
-cd android && ./gradlew --no-daemon :app:assembleRelease -PreactNativeArchitectures=arm64-v8a
-```
-
 ## 5. Definition of done
 
 Behaviour seen working on an emulator or device (release build for startup/splash), all
@@ -79,6 +65,7 @@ was removed because it put user data in URLs and trusted any caller. `src/app/+n
 sends old `unified-vault`, `auth/callback` and `sso` links to Home unread. Do not restore it.
 
 Rules for any new ecosystem code:
+
 1. OAuth 2.1 authorization code + PKCE via the system browser and verified App Links. Validate
    issuer, audience, state, nonce, expiry. One-time codes only in URLs.
 2. Never put profile/health data, tokens or keys in a URL, QR, push, log or analytics event.

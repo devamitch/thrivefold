@@ -292,12 +292,12 @@ export const PoseOverlay = memo(function PoseOverlay({
   const geo = useDerivedValue(() => {
     if (present.value <= 0.01) return EMPTY_PATHS;
 
-    const bones = Skia.Path.Make();
-    const joints = Skia.Path.Make();
-    const rings = Skia.Path.Make();
-    const torso = Skia.Path.Make();
-    const fault = Skia.Path.Make();
-    const arc = Skia.Path.Make();
+    const bones = Skia.PathBuilder.Make();
+    const joints = Skia.PathBuilder.Make();
+    const rings = Skia.PathBuilder.Make();
+    const torso = Skia.PathBuilder.Make();
+    const fault = Skia.PathBuilder.Make();
+    const arc = Skia.PathBuilder.Make();
 
     const s = shown.value;
     const m = layerBits.value;
@@ -390,7 +390,7 @@ export const PoseOverlay = memo(function PoseOverlay({
         arc.addArc({ x: X(b) - r, y: Y(b) - r, width: r * 2, height: r * 2 }, start, sweep);
       }
     }
-    return { bones, joints, rings, torso, fault, arc };
+    return { bones: bones.build(), joints: joints.build(), rings: rings.build(), torso: torso.build(), fault: fault.build(), arc: arc.build() };
   });
 
   const bonesP = useDerivedValue(() => geo.value.bones);
@@ -401,8 +401,8 @@ export const PoseOverlay = memo(function PoseOverlay({
   const arcP = useDerivedValue(() => geo.value.arc);
 
   const guide = useDerivedValue(() => {
-    const path = Skia.Path.Make();
-    if (present.value >= 0.8) return path;
+    const path = Skia.PathBuilder.Make();
+    if (present.value >= 0.8) return path.build();
     const bw = Math.min(width * 0.7, 320);
     const bh = Math.min(height * 0.7, 560);
     const l = (width - bw) / 2;
@@ -422,7 +422,7 @@ export const PoseOverlay = memo(function PoseOverlay({
     path.moveTo(l + arm, b);
     path.lineTo(l, b);
     path.lineTo(l, b - arm);
-    return path;
+    return path.build();
   });
   const guideOpacity = useDerivedValue(() => (1 - present.value) * 0.5);
 

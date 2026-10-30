@@ -65,8 +65,8 @@ export function TrendAreaChart({ points, onCheckIn }: Props) {
     const built = groups
       .filter((g) => g.length > 1)
       .map((g) => {
-        const line = Skia.Path.Make();
-        const area = Skia.Path.Make();
+        const line = Skia.PathBuilder.Make();
+        const area = Skia.PathBuilder.Make();
         line.moveTo(g[0].x, g[0].y);
         area.moveTo(g[0].x, H);
         area.lineTo(g[0].x, g[0].y);
@@ -77,7 +77,7 @@ export function TrendAreaChart({ points, onCheckIn }: Props) {
         }
         area.lineTo(g[g.length - 1].x, H);
         area.close();
-        return { line, area };
+        return { line: line.build(), area: area.build() };
       });
 
     return { runs: built, dots: all.filter((p): p is Pt => p !== null) };

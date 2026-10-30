@@ -3,6 +3,7 @@ import { Image, type ImageSource } from 'expo-image';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, type Href } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
+import type { ViewInstance } from 'react-native';
 import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 
 import { AppHeader } from '../../components/ui/AppHeader';
@@ -24,7 +25,7 @@ export default function LearnScreen() {
   const [open, setOpen] = useState<string | null>(null);
   const [speakingId, setSpeakingId] = useState<string | null>(null);
   const articles = articlesFor(experience);
-  const imageRefs = useRef<Record<string, View | null>>({});
+  const imageRefs = useRef<Record<string, ViewInstance | null>>({});
   const [viewer, setViewer] = useState<{ source: ImageSource | number; origin: ViewerOrigin; caption: string } | null>(
     null,
   );
@@ -80,7 +81,7 @@ export default function LearnScreen() {
             {/* Top Article Illustration Banner */}
             <View style={styles.imageWrap}>
               <PressableScale
-                ref={(r: View | null) => {
+                ref={(r: ViewInstance | null) => {
                   imageRefs.current[art.id] = r;
                 }}
                 onPress={() => openImage(art.id, artImage, art.title)}

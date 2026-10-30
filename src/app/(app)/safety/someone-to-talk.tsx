@@ -8,6 +8,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import type { ScrollViewInstance } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -78,7 +79,7 @@ export default function SomeoneToTalkScreen() {
   // Sensory Grounding State
   const [sensoryStepIndex, setSensoryStepIndex] = useState(0);
 
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
 
   // Stop voice on unmount
   useEffect(() => {

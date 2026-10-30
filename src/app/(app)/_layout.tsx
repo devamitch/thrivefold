@@ -7,6 +7,7 @@ import { syncProgress } from '../../services/account/progressSync';
 import { brainReady, getSetupState, pendingDownload, resumeSetup, setUpBrain } from '../../services/ai/modelSetup';
 import React, { useEffect, useRef } from 'react';
 import { AppState, StyleSheet, View } from 'react-native';
+import type { ViewInstance } from 'react-native';
 import { Redirect, Stack, usePathname, useRouter, type Href } from 'expo-router';
 import { restorableRoute } from '../../navigation/restore';
 
@@ -198,7 +199,7 @@ export default function AppLayout() {
 
   const { colors } = useTheme();
   // The screens are the blur target for the frosted drawer behind them.
-  const sceneRef = useRef<View>(null);
+  const sceneRef = useRef<ViewInstance>(null);
 
   if (!isAuthenticated) {
     return <Redirect href="/(auth)/sign-in" />;

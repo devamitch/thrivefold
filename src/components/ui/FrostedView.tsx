@@ -9,6 +9,7 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
+import type { ViewInstance } from 'react-native';
 import Animated, {
   Easing,
   ReduceMotion,
@@ -28,7 +29,7 @@ export interface FrostedViewProps {
   intensity?: number;
   tone?: FrostTone;
   tintOpacity?: number;
-  blurTarget?: RefObject<View | null>;
+  blurTarget?: RefObject<ViewInstance | null>;
   pointerEvents?: 'auto' | 'none' | 'box-none' | 'box-only';
   animated?: boolean;
   interactive?: boolean;
@@ -283,7 +284,7 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   border: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderWidth: StyleSheet.hairlineWidth,
   },
   shimmer: {

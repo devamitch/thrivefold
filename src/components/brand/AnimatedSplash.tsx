@@ -1,7 +1,7 @@
 import * as SplashScreen from 'expo-splash-screen';
 import { Image } from 'expo-image';
 import React, { useEffect, useRef } from 'react';
-import { InteractionManager, StyleSheet, useWindowDimensions } from 'react-native';
+import { StyleSheet, useWindowDimensions } from 'react-native';
 import Animated, {
   Easing,
   runOnJS,
@@ -58,7 +58,8 @@ export function AnimatedSplash({ onDone }: { onDone: () => void }) {
       held = true;
       if (settled) begin();
     }, hold);
-    const task = InteractionManager.runAfterInteractions(() => {
+    // RN 0.88 removed InteractionManager; the first idle moment means the first screen is drawn.
+    const idle = requestIdleCallback(() => {
       settled = true;
       if (held) begin();
     });
@@ -66,7 +67,7 @@ export function AnimatedSplash({ onDone }: { onDone: () => void }) {
     return () => {
       clearTimeout(holdTimer);
       clearTimeout(cap);
-      task.cancel();
+      cancelIdleCallback(idle);
     };
   }, [reduceMotion, word, exit, onDone]);
 

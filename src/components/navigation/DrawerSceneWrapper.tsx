@@ -11,6 +11,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import type { ViewInstance } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   cancelAnimation,
@@ -54,7 +55,7 @@ export function DrawerSceneWrapper({
   blurTarget,
 }: {
   children: ReactNode;
-  blurTarget: RefObject<View | null>;
+  blurTarget: RefObject<ViewInstance | null>;
 }) {
   const { width } = useWindowDimensions();
   const { colors } = useTheme();

@@ -2,15 +2,15 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
-    "baseUrl": ".",
+    "types": ["node", "jest"],
     "paths": {
-      "@/*": ["src/*", "./src/*"],
-      "@assets/*": ["assets/*", "./assets/*"],
-      "setu-squircle": ["modules/setu-squircle"],
-      "setu-squircle/*": ["modules/setu-squircle/*"],
-      "pose-landmarker": ["modules/pose-landmarker"]
+      "@/*": ["./src/*"],
+      "@assets/*": ["./assets/*"],
+      "setu-squircle": ["./modules/setu-squircle"],
+      "setu-squircle/*": ["./modules/setu-squircle/*"],
+      "pose-landmarker": ["./modules/pose-landmarker"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"],
-  "exclude": ["node_modules", "supabase/functions"]
+  "exclude": ["node_modules", "supabase/functions", "**/* copy.ts", "**/* copy.tsx"]
 }

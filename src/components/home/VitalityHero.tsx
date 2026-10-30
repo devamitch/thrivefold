@@ -106,9 +106,9 @@ export function VitalityHero({
   const paths = useMemo(
     () =>
       ARCS.map(({ r }) => {
-        const p = Skia.Path.Make();
+        const p = Skia.PathBuilder.Make();
         p.addArc({ x: RING / 2 - r, y: RING / 2 - r, width: r * 2, height: r * 2 }, START, SWEEP);
-        return p;
+        return p.build();
       }),
     [],
   );

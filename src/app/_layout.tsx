@@ -78,10 +78,6 @@ const styles = StyleSheet.create({
 function ThemedStatusBar() {
   const { isDark } = useTheme();
   return (
-    <StatusBar
-      barStyle={isDark ? 'light-content' : 'dark-content'}
-      translucent
-      backgroundColor="transparent"
-    />
+    <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
   );
 }

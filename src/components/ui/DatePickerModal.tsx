@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { hapticSelection } from '../../services/haptics';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import type { ScrollViewInstance } from 'react-native';
 
 import { formatLocalDate, parseLocalDate } from '../../domain/calendar/universalCalendarEngine';
 import { useTheme } from '../../theme/useTheme';
@@ -50,7 +51,7 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
   const [month, setMonth] = useState(start.getMonth());
   const [selected, setSelected] = useState(value || formatLocalDate(new Date()));
   const [mode, setMode] = useState<View3>(initialView);
-  const yearScroll = useRef<ScrollView>(null);
+  const yearScroll = useRef<ScrollViewInstance>(null);
 
   useEffect(() => {
     if (!visible) return;

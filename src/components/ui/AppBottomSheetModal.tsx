@@ -421,7 +421,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
   backdrop: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(10, 10, 10, 0.52)',
   },
   headerActions: {

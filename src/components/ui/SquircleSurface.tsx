@@ -24,6 +24,7 @@ import {
   type ViewProps,
   type ViewStyle,
 } from 'react-native';
+import type { ViewInstance } from 'react-native';
 
 export type SquircleShape = 'squircle' | 'rounded' | 'pill' | 'circle';
 
@@ -78,7 +79,7 @@ export interface SquircleSurfaceProps extends ViewProps {
    * is expensive to redraw while scrolling.
    */
   clipContent?: boolean;
-  ref?: React.Ref<View>;
+  ref?: React.Ref<ViewInstance>;
 }
 
 export const SquircleSurface = memo(function SquircleSurface({

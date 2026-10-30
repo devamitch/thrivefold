@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, type Href } from 'expo-router';
 import React, { useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TextInput, View } from 'react-native';
+import type { TextInputInstance } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { MediaPipeTools, cosine } from '../../../modules/pose-landmarker/tools';
@@ -32,7 +33,7 @@ export default function SearchScreen() {
   const [results, setResults] = useState<Result[]>([]);
   const [answer, setAnswer] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const input = useRef<TextInput>(null);
+  const input = useRef<TextInputInstance>(null);
   const store = useRootStore;
   const voice = useVoiceInput((text) => {
     setQ(text);

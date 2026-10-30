@@ -2,6 +2,10 @@ import { Image } from 'expo-image';
 import React, { forwardRef, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, type ViewStyle } from 'react-native';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
+
+// react-native-webview 14's combined iOS/Android/Windows prop types collapse to `never` under
+// TypeScript 6; the Android props used below are valid at runtime.
+const WebViewView = WebView as unknown as React.ComponentType<Record<string, unknown>>;
 import { FrostedView } from '../ui';
 import { SquircleSurface } from '../ui/SquircleSurface';
 
@@ -112,7 +116,7 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandle, Props>(function You
 
   return (
     <SquircleSurface style={[styles.root, style]}>
-      <WebView
+      <WebViewView
         ref={web}
         source={source}
         originWhitelist={['*']}

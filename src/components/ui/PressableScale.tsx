@@ -25,7 +25,8 @@ import {
   type View,
   type ViewStyle,
 } from 'react-native';
-import { Pressable as GHPressable } from 'react-native-gesture-handler';
+import type { ViewInstance } from 'react-native';
+import { Touchable as GHPressable } from 'react-native-gesture-handler';
 
 import Animated, {
   Easing,
@@ -54,7 +55,7 @@ export interface PressableScaleProps extends Omit<PressableProps, 'style'> {
   disabledOpacity?: number;
   /** Gesture Handler touchable (default) or React Native's Pressable. */
   touch?: 'touchable' | 'pressable';
-  ref?: Ref<View>;
+  ref?: Ref<ViewInstance>;
 }
 
 export const PressableScale = memo(function PressableScale({

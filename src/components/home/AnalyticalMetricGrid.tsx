@@ -194,9 +194,10 @@ function Tile({
 }) {
   const { colors, typography, spacing } = useTheme();
   const { track, arc } = useMemo(() => {
-    const t = Skia.Path.Make();
+    const t = Skia.PathBuilder.Make();
     t.addArc({ x: DIAL / 2 - DIAL_R, y: DIAL / 2 - DIAL_R, width: DIAL_R * 2, height: DIAL_R * 2 }, -90, 359.9);
-    return { track: t, arc: t.copy() };
+    const track = t.build();
+    return { track, arc: track.copy() };
   }, []);
 
   return (

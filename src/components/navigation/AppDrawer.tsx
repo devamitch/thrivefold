@@ -3,6 +3,7 @@ import { hapticSelection } from '../../services/haptics';
 import { usePathname, useRouter, type Href } from 'expo-router';
 import React, { memo, useCallback, useMemo, type ReactNode, type RefObject } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View, type StyleProp, type ViewStyle, Switch } from 'react-native';
+import type { ViewInstance } from 'react-native';
 import Animated, {
   Extrapolation,
   interpolate,
@@ -160,7 +161,7 @@ type Row =
   | { kind: 'title'; key: string; title: string; index: number }
   | { kind: 'item'; key: string; item: DrawerItem; index: number };
 
-export function AppDrawer({ blurTarget: _blurTarget }: { blurTarget?: RefObject<View | null> }) {
+export function AppDrawer({ blurTarget: _blurTarget }: { blurTarget?: RefObject<ViewInstance | null> }) {
   const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
@@ -459,7 +460,7 @@ export function AppDrawer({ blurTarget: _blurTarget }: { blurTarget?: RefObject<
 
 const styles = StyleSheet.create({
   root: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     zIndex: 0,
   },
   panel: {

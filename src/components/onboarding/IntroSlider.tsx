@@ -9,9 +9,10 @@ import { SquircleSurface } from '../ui/SquircleSurface';
  * - Reduced motion: parallax and scale are off, fades remain.
  * - No worklet callbacks into JS: the exit fade is a timing animation plus a JS timer.
  */
-import { Image } from 'expo-image';
+import { Image, type ImageProps } from 'expo-image';
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { BackHandler, ScrollView, StatusBar, StyleSheet, Text, useWindowDimensions, type ImageSourcePropType, type NativeScrollEvent, type NativeSyntheticEvent, View } from 'react-native';
+import { BackHandler, ScrollView, StatusBar, StyleSheet, Text, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent, View } from 'react-native';
+import type { ScrollViewInstance } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -37,7 +38,7 @@ interface IntroSlide {
   eyebrow: string;
   title: string;
   description: string;
-  image: ImageSourcePropType;
+  image: ImageProps['source'];
 }
 
 const SLIDES: readonly IntroSlide[] = [
@@ -84,7 +85,7 @@ export function IntroSlider({ onFinish }: { onFinish: () => void }) {
   const reducedMotion = useReducedMotion();
   const { colors, typography, isDark } = useTheme();
 
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
   const activeRef = useRef(0);
   const finishedRef = useRef(false);
   const exitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -180,7 +181,7 @@ export function IntroSlider({ onFinish }: { onFinish: () => void }) {
 
   return (
     <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       <Animated.View style={[styles.root, rootStyle]}>
         <View style={[styles.header, { paddingTop: insets.top + 12, paddingHorizontal: side }]}>
           <AnimatedThrivefoldMark size={30} entrance={false} />
@@ -406,5 +407,5 @@ const styles = StyleSheet.create({
   dot: { height: DOT, borderRadius: DOT / 2 },
   skip: { paddingVertical: 10, paddingLeft: 16 },
   cta: { height: CTA_HEIGHT, borderRadius: 18, borderCurve: 'continuous', overflow: 'hidden' },
-  ctaLabel: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
+  ctaLabel: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
 });

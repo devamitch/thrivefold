@@ -728,7 +728,7 @@ const styles = StyleSheet.create({
   },
   fullBottom: { position: 'absolute', bottom: 0, left: 0, right: 0, alignItems: 'center' },
   controlsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-evenly', alignSelf: 'stretch' },
-  frameGuide: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
+  frameGuide: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
   frameBox: { width: '78%', aspectRatio: 1, borderRadius: 36, borderWidth: 2 },
   shutter: {
     width: 72,
