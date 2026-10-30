@@ -101,5 +101,13 @@
     "react-test-renderer": "19.2.0",
     "ts-jest": "^29.1.1",
     "typescript": "~6.0.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@firebase/util",
+      "@parcel/watcher",
+      "protobufjs",
+      "unrs-resolver"
+    ]
   }
 }
