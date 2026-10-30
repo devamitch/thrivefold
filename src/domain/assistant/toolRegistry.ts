@@ -127,9 +127,32 @@ export const TOOLS: Record<string, ToolDefinition> = {
         enum: ['steps', 'water', 'calories', 'quests', 'summary'],
       },
     },
-    execute: async (params: { metric: 'steps' | 'water' | 'calories' | 'quests' | 'summary' }) => {
+    execute: async (params: { metric: 'steps' | 'water' | 'calories' | 'quests' | 'heart' | 'summary' }) => {
       const store = useRootStore.getState();
       const today = formatLocalDate(new Date());
+
+      if (params.metric === 'heart') {
+        // Only real readings from a connected source (Health Connect or a heart-rate strap).
+        const hr = store.deviceReadings
+          .filter((r) => r.kind === 'heart_rate_avg')
+          .sort((a, b) => b.date.localeCompare(a.date))[0];
+        if (!hr) {
+          return {
+            success: true,
+            message:
+              'I have no heart-rate readings yet. Connect Health Connect or a heart-rate strap in Health, Connected apps, and I can tell you.',
+            routeToOpen: '/(app)/health/integrations',
+          };
+        }
+        const when = hr.date === today ? 'today' : `on ${hr.date}`;
+        const src = hr.source === 'ble_heart_rate' ? 'your heart-rate strap' : 'Health Connect';
+        const range = hr.min && hr.max ? `, between ${Math.round(hr.min)} and ${Math.round(hr.max)}` : '';
+        return {
+          success: true,
+          message: `Your average heart rate ${when} was ${Math.round(hr.value)} beats a minute${range}, from ${src}.`,
+          data: { bpm: hr.value, date: hr.date, source: hr.source },
+        };
+      }
 
       if (params.metric === 'steps') {
         const stepVal = stepsByDate(store.deviceReadings).get(today)?.value ?? 0;

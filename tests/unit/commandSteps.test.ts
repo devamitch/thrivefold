@@ -16,3 +16,10 @@ describe('assistant commands', () => {
     expect(splitSteps('why do I feel tired and then sleepy')).toEqual(['why do I feel tired and then sleepy']);
   });
 });
+
+describe('heart-rate questions', () => {
+  it('routes heart-rate questions to the heart metric', () => {
+    expect(parseCommand("what's my heart rate")).toEqual({ kind: 'ask', metric: 'heart' });
+    expect(parseCommand('how is my pulse today')).toEqual({ kind: 'ask', metric: 'heart' });
+  });
+});
