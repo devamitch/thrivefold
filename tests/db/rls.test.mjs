@@ -643,5 +643,25 @@ await as('anon');
 r = await q(`select * from public.thrivefold_progress`);
 check('anon cannot read progress', !!r.error || r.rows?.length === 0, r.error);
 
+// Migration 25: gear requests (limited stock, own rows only, one open request per item)
+await as('service');
+await db.exec(`update public.thrivefold_gear_stock set remaining = 1 where item_id = 'gear_gyroball'`);
+await as('A');
+const gear = (item) => q(`insert into public.thrivefold_gear_requests (item_id, gems, full_name, phone, address) values ('${item}', 10000, 'Person A', '9876543210', '12 Long Street, Pune 411001') returning status`);
+r = await gear('gear_gyroball');
+check('a person can request gear in stock', !r.error && r.rows?.[0]?.status === 'requested', r.error ?? JSON.stringify(r.rows));
+r = await gear('gear_gyroball');
+check('no second open request for the same item', !!r.error, r.error);
+r = await gear('gear_dumbbells');
+check('out-of-stock gear is refused', !!r.error && /out_of_stock/.test(String(r.error)), r.error);
+r = await q(`insert into public.thrivefold_gear_requests (item_id, gems, full_name, phone, address, status) values ('gear_barbell', 10000, 'Person A', '9876543210', '12 Long Street, Pune 411001', 'shipped')`);
+check('a person cannot mark their own request shipped', !!r.error, r.error);
+await as('B');
+r = await q(`select count(*)::int as n from public.thrivefold_gear_requests`);
+check('others cannot see delivery details', r.rows?.[0]?.n === 0, JSON.stringify(r.rows));
+await as('service');
+r = await q(`select remaining from public.thrivefold_gear_stock where item_id = 'gear_gyroball'`);
+check('stock went down by one', r.rows?.[0]?.remaining === 0, JSON.stringify(r.rows));
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

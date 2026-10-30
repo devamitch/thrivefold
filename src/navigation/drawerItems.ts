@@ -34,6 +34,8 @@ export const DRAWER_SECTIONS: DrawerSection[] = [
       { label: 'Calendar', icon: 'calendar-outline', route: '/(app)/calendar' },
       { label: 'Check in', icon: 'sunny-outline', route: '/(app)/check-in' },
       { label: 'Quests', icon: 'ribbon-outline', route: '/(app)/quests' },
+      { label: 'Routines', icon: 'alarm-outline', route: '/(app)/routines' },
+      { label: 'Marketplace', icon: 'diamond-outline', route: '/(app)/marketplace' },
       { label: 'Train', icon: 'fitness-outline', route: '/(app)/train' },
       { label: 'Games', icon: 'game-controller-outline', route: '/(app)/games' },
     ],

@@ -1,3 +1,4 @@
+import { ACTION_REWARDS, canEarn, MARKET, type ActionKind, type EarnResult } from '../../domain/game/rewards';
 import type { StateCreator } from 'zustand';
 
 import type { RootState } from '../rootTypes';
@@ -160,6 +161,12 @@ export interface QuestSlice {
   claimPracticeReward: (sessionKey: string, scoreBonus: number) => { awarded: boolean; xp: number };
   /** Pays a finished workout once: base XP, or ten times that with good camera-checked form. */
   claimWorkoutReward: (sessionId: string, form: WorkoutFormEvidence | null) => { awarded: boolean; xp: number; reason?: 'daily_limit' | 'duplicate' };
+  /** Gems for a real action (taking a medicine, a photo, a profile detail…), once per item per day, capped. */
+  earnForAction: (kind: ActionKind, sourceId: string) => EarnResult;
+  /** Spends gems on a marketplace item; returns false when there aren't enough or it's owned. */
+  buyMarketItem: (itemId: string) => { ok: boolean; reason?: 'owned' | 'insufficient' | 'unknown' };
+  /** Marketplace items the person owns (stickers, status) or requested (gear). */
+  marketOwned: string[];
   /** Awards incremental XP and streak milestone bonuses for daily check-in once per date. */
   claimCheckInReward: (date: string, streak: number) => { awarded: boolean; xp: number; streakBonus: number; milestoneBonus: number };
   skipDailyTask: (assignmentId: string, reason?: string) => boolean;
@@ -382,6 +389,7 @@ export const createQuestSlice: StateCreator<RootState, [['zustand/persist', unkn
     xp: 0,
     level: 1,
     diamonds: 0,
+    marketOwned: [],
     streak: 0,
     questsCompleted: 0,
     achievements: [],
@@ -684,6 +692,53 @@ export const createQuestSlice: StateCreator<RootState, [['zustand/persist', unkn
         }),
       });
       return { awarded: true, xp };
+    },
+
+    earnForAction: (kind, sourceId) => {
+      const state = get();
+      const date = today();
+      const res = canEarn(state.rewardLedger.map((e) => e.key), kind, date, sourceId);
+      if (!res.awarded) return res;
+      const key = `action:${kind}:${date}:${sourceId}`;
+      commit({
+        rewardLedger: appendLedger(state.rewardLedger, {
+          key,
+          kind: 'action_reward',
+          xp: 0,
+          diamonds: res.gems,
+          taskPoints: 0,
+          gameDate: date,
+          sourceId: `${kind}:${sourceId}`,
+          policyVersion: ECONOMY_VERSION,
+          createdAt: new Date().toISOString(),
+        }),
+      });
+      get().showToast({ type: 'success', message: `+${res.gems} gems · ${ACTION_REWARDS[kind].label}` });
+      return res;
+    },
+
+    buyMarketItem: (itemId) => {
+      const state = get();
+      const item = MARKET.find((m) => m.id === itemId);
+      if (!item) return { ok: false, reason: 'unknown' };
+      if (!item.physical && state.marketOwned.includes(itemId)) return { ok: false, reason: 'owned' };
+      if (state.diamonds < item.cost) return { ok: false, reason: 'insufficient' };
+      const key = item.physical ? `market:${itemId}:${Date.now()}` : `market:${itemId}`;
+      commit({
+        rewardLedger: appendLedger(state.rewardLedger, {
+          key,
+          kind: 'market_spend',
+          xp: 0,
+          diamonds: -item.cost,
+          taskPoints: 0,
+          gameDate: today(),
+          sourceId: itemId,
+          policyVersion: ECONOMY_VERSION,
+          createdAt: new Date().toISOString(),
+        }),
+        marketOwned: state.marketOwned.includes(itemId) ? state.marketOwned : [...state.marketOwned, itemId],
+      });
+      return { ok: true };
     },
 
     claimWorkoutReward: (sessionId, form) => {

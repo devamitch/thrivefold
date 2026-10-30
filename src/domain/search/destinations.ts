@@ -40,6 +40,8 @@ export const DESTINATIONS: Destination[] = [
   { title: 'On-device AI', description: 'download local language model, llama, offline AI', route: '/(app)/ai/model-status', icon: 'hardware-chip-outline' },
   { title: 'Learn', description: 'health lessons, continue reading, read aloud, progress, search books and articles', route: '/(app)/learn', icon: 'school-outline' },
   { title: 'Library', description: 'encyclopedia articles, books, free e-books, archive, offline reading', route: '/(app)/learn-library', icon: 'library-outline' },
+  { title: 'Routines', description: 'reminders, schedule nudges, water every hours, daily check-in, wind-down', route: '/(app)/routines', icon: 'alarm-outline' },
+  { title: 'Marketplace', description: 'spend gems, stickers, status, real workout gear rewards', route: '/(app)/marketplace', icon: 'diamond-outline' },
   { title: 'Beta Lab', description: 'all beta features, experiments', route: '/(app)/beta-lab', icon: 'flask-outline' },
   { title: 'Settings', description: 'account, privacy, reminders, preferences', route: '/(app)/(tabs)/settings', icon: 'settings-outline' },
 ];

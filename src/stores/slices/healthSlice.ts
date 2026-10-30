@@ -365,6 +365,7 @@ export const createHealthSlice: StateCreator<
   saveMealLog: (meal) => {
     const id = `meal_${Date.now()}`;
     set((state) => ({ mealLogs: [{ ...meal, id }, ...state.mealLogs].slice(0, 1000) }));
+    if (meal.photoUri) setTimeout(() => get().earnForAction('meal_photo', id), 0);
     return id;
   },
   deleteMealLog: (id) => set((state) => ({ mealLogs: state.mealLogs.filter((m) => m.id !== id) })),
@@ -468,12 +469,14 @@ export const createHealthSlice: StateCreator<
     })),
   deleteFollowUp: (id) => set((state) => ({ followUps: state.followUps.filter((f) => f.id !== id) })),
 
-  addMedication: (entry) =>
+  addMedication: (entry) => {
     set((state) => ({
       medications: [...state.medications, { ...entry, id: `med_${Date.now()}_${Math.random().toString(36).slice(2, 6)}` }].sort(
         (a, b) => a.time.localeCompare(b.time),
       ),
-    })),
+    }));
+    setTimeout(() => get().earnForAction('med_added', entry.name.toLowerCase()), 0);
+  },
 
   deleteMedication: (id) =>
     set((state) => ({
@@ -481,15 +484,15 @@ export const createHealthSlice: StateCreator<
       medicationTaken: state.medicationTaken.filter((k) => !k.endsWith(`|${id}`)),
     })),
 
-  toggleMedicationTaken: (id, date) =>
-    set((state) => {
-      const key = `${date}|${id}`;
-      return {
-        medicationTaken: state.medicationTaken.includes(key)
-          ? state.medicationTaken.filter((k) => k !== key)
-          : [...state.medicationTaken, key].slice(-2000),
-      };
-    }),
+  toggleMedicationTaken: (id, date) => {
+    const key = `${date}|${id}`;
+    const taking = !get().medicationTaken.includes(key);
+    set((state) => ({
+      medicationTaken: taking ? [...state.medicationTaken, key].slice(-2000) : state.medicationTaken.filter((k) => k !== key),
+    }));
+    // Gems once per medicine per day (unticking and ticking again pays nothing more).
+    if (taking) setTimeout(() => get().earnForAction('med_taken', id), 0);
+  },
 
   saveWorkoutSession: (session) => {
     const id = `wk_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;

@@ -20,7 +20,17 @@ export const ECONOMY_VERSION = economy.version;
 
 // ---------------------------------------------------------------- ledger
 
-export type LedgerKind = 'task_reward' | 'setup_reward' | 'workout_reward' | 'practice_reward' | 'daily_goal' | 'level_clear' | 'unlock_spend' | 'legacy_import';
+export type LedgerKind =
+  | 'task_reward'
+  | 'setup_reward'
+  | 'workout_reward'
+  | 'practice_reward'
+  | 'daily_goal'
+  | 'level_clear'
+  | 'unlock_spend'
+  | 'legacy_import'
+  | 'action_reward'
+  | 'market_spend';
 
 export interface LedgerEntry {
   /** Idempotency key: the same key is never applied twice. */
