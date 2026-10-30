@@ -98,6 +98,10 @@ export class EyeTrackerSession {
   private blinkTimestamps: number[] = [];
   private lastBlinkAt = Date.now();
   private sessionStartedAt = Date.now();
+  /** Typical open-eye EAR for this person and camera angle, learned while the eyes are open. */
+  private openBaseline = 0;
+  private closedAt = 0;
+  private firstTrackedAt = 0;
   private lastFrameAt = Date.now();
   private currentAlert: EyeAlert | null = null;
   private alertEngine: EyeAlertEngine;
@@ -114,6 +118,9 @@ export class EyeTrackerSession {
     this.blinkTimestamps = [];
     this.lastBlinkAt = Date.now();
     this.sessionStartedAt = Date.now();
+    this.openBaseline = 0;
+    this.closedAt = 0;
+    this.firstTrackedAt = 0;
     this.lastFrameAt = Date.now();
     this.currentAlert = null;
     this.alertEngine.reset();
@@ -156,14 +163,27 @@ export class EyeTrackerSession {
     const earRight = calculateEAR(facePoints, 16);
     const earAvg = (earLeft + earRight) / 2;
 
-    // Blink hysteresis
-    if (!this.isEyeClosed && earAvg < EAR_CLOSED_THRESHOLD) {
+    // Blink hysteresis, relative to this person's own open-eye level (absolute EAR thresholds
+    // misfire with different eye shapes, glasses and camera angles). A blink must stay closed for
+    // at least 40 ms and blinks are at least 150 ms apart, so landmark jitter is not counted.
+    if (!this.firstTrackedAt) this.firstTrackedAt = now;
+    if (!this.isEyeClosed && earAvg > 0) {
+      this.openBaseline = this.openBaseline ? this.openBaseline * 0.95 + earAvg * 0.05 : earAvg;
+    }
+    const closeAt = this.openBaseline ? Math.min(EAR_CLOSED_THRESHOLD, this.openBaseline * 0.62) : EAR_CLOSED_THRESHOLD;
+    const openAt = this.openBaseline ? Math.min(EAR_OPEN_THRESHOLD, this.openBaseline * 0.82) : EAR_OPEN_THRESHOLD;
+    if (!this.isEyeClosed && earAvg < closeAt) {
       this.isEyeClosed = true;
-    } else if (this.isEyeClosed && earAvg > EAR_OPEN_THRESHOLD) {
+      this.closedAt = now;
+    } else if (this.isEyeClosed && earAvg > openAt) {
       this.isEyeClosed = false;
-      this.blinkCount += 1;
-      this.lastBlinkAt = now;
-      this.blinkTimestamps.push(now);
+      const longEnough = now - this.closedAt >= 40;
+      const apart = now - (this.blinkTimestamps[this.blinkTimestamps.length - 1] ?? 0) >= 150;
+      if (longEnough && apart) {
+        this.blinkCount += 1;
+        this.lastBlinkAt = now;
+        this.blinkTimestamps.push(now);
+      }
     }
 
     // Keep timestamps from the last 60 seconds
@@ -242,9 +262,14 @@ export class EyeTrackerSession {
     };
   }
 
+  /**
+   * Blinks per minute over the time actually observed (up to the last 60 s). Before 20 s of
+   * tracking there is not enough to call it a rate, so 0 is returned and screens show the count.
+   */
   private computeBlinkRate(now: number): number {
-    if (this.blinkTimestamps.length < 2) return this.blinkTimestamps.length;
-    const windowMs = Math.max(10_000, now - this.blinkTimestamps[0]);
-    return Math.round(this.blinkTimestamps.length / (windowMs / 60_000));
+    if (!this.firstTrackedAt) return 0;
+    const observed = Math.min(60_000, now - this.firstTrackedAt);
+    if (observed < 20_000) return 0;
+    return Math.round(this.blinkTimestamps.length / (observed / 60_000));
   }
 }
