@@ -6,6 +6,7 @@
  */
 import { itemFood, type MealItem } from '../nutrition/foods';
 import { DESTINATIONS } from '../search/destinations';
+import { parseRoutineRequest, routineTimes, type Routine } from '../routines';
 
 export interface ChatTable {
   title: string;
@@ -16,7 +17,8 @@ export interface ChatTable {
 }
 
 export type ChatAction =
-  | { kind: 'show'; what: 'meds' | 'followups' | 'today' | 'meals' | 'plans' | 'screens' | 'week' }
+  | { kind: 'show'; what: 'meds' | 'followups' | 'today' | 'meals' | 'plans' | 'screens' | 'week' | 'routines' | 'gems' }
+  | { kind: 'routine_add'; routine: Omit<Routine, 'id' | 'enabled'> }
   | { kind: 'guide'; job: 'prescription' | 'meal_photo' | 'medicine_add' | 'rep_count' }
   | { kind: 'reminders'; on: boolean }
   | { kind: 'sign_out' }
@@ -30,6 +32,8 @@ export function parseChatAction(input: string): ChatAction | null {
   if (!t) return null;
 
   if (/^(?:please )?(?:log ?out|sign ?out|log me out|sign me out)\b/.test(t)) return { kind: 'sign_out' };
+  const routine = parseRoutineRequest(input);
+  if (routine) return { kind: 'routine_add', routine };
   if (/^(?:quit|exit|close|bye bye|close (?:this|the chat|chat|coach))$/.test(t)) return { kind: 'close' };
   if (/\b(?:clear|delete|erase|wipe)\b.*\b(?:chat|conversation|history|messages)\b/.test(t)) return { kind: 'clear_chat' };
 
@@ -60,6 +64,8 @@ export function parseChatAction(input: string): ChatAction | null {
     if (/\b(?:this week|last week|my week|last 7 days)\b/.test(t)) return { kind: 'show', what: 'week' };
     if (/\b(?:today'?s? (?:tasks|plan|quests)|my (?:tasks|quests|plan) (?:for )?today|to ?do)\b/.test(t)) return { kind: 'show', what: 'today' };
     if (/\b(?:screens?|features?|routes?|what can you do|everything you can)\b/.test(t)) return { kind: 'show', what: 'screens' };
+    if (/\b(?:routines?|reminders)\b/.test(t)) return { kind: 'show', what: 'routines' };
+    if (/\b(?:gems?|diamonds?|rewards?|points)\b/.test(t)) return { kind: 'show', what: 'gems' };
   }
   if (/\bwhat can you do\b/.test(t)) return { kind: 'show', what: 'screens' };
   return null;
@@ -76,6 +82,8 @@ export interface TableInput {
   carePlans: { kind: string; by: string | null; savedAt: string }[];
   checkInHistory: { date: string; mood: number; energy: number; sleepHours: number }[];
   hydration: Record<string, number>;
+  routines?: Routine[];
+  diamonds?: number;
 }
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -136,6 +144,24 @@ export function buildTable(what: Extract<ChatAction, { kind: 'show' }>['what'], 
       }
       return { title: 'Your last 7 days', columns: ['Day', 'Mood', 'Energy', 'Sleep', 'Water'], rows, route: '/(app)/(tabs)/progress' };
     }
+    case 'routines':
+      return {
+        title: 'Your routines',
+        columns: ['Routine', 'When', 'On'],
+        rows: (s.routines ?? []).map((r) => [r.title, routineTimes(r).join(', '), r.enabled ? 'Yes' : 'Off']),
+        route: '/(app)/routines',
+      };
+    case 'gems':
+      return {
+        title: `You have ${s.diamonds ?? 0} gems`,
+        columns: ['Reward', 'Gems'],
+        rows: [
+          ['Sticker', '100'],
+          ['Sanctuary status', '500'],
+          ['Real workout gear (limited)', '10,000'],
+        ],
+        route: '/(app)/marketplace',
+      };
     case 'screens':
       return {
         title: 'What I can open for you',

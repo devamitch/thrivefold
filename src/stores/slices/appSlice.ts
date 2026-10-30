@@ -1,4 +1,5 @@
 import type { PersonaId } from '../../domain/assistant/personas';
+import type { Routine } from '../../domain/routines';
 import type { StateCreator } from 'zustand';
 
 import type { RootState } from '../rootTypes';
@@ -178,6 +179,11 @@ export interface AppSlice {
   /** Language Anvay replies, listens and speaks in (ML Kit code, see domain/languages). */
   coachLanguage: string;
   setCoachLanguage: (code: string) => void;
+  /** Scheduled routine nudges (water, check-in, wind-down, custom…). */
+  routines: Routine[];
+  addRoutine: (r: Omit<Routine, 'id' | 'enabled'>) => string;
+  updateRoutine: (id: string, patch: Partial<Routine>) => void;
+  removeRoutine: (id: string) => void;
   /** Learn articles the person finished, with when (local, never synced). */
   learnRead: Record<string, number>;
   setLearnRead: (id: string, read: boolean) => void;
@@ -278,13 +284,15 @@ export const createAppSlice: StateCreator<
   setCloudAiConsent: (cloudAiConsent) => set({ cloudAiConsent }),
   userApiKeys: {},
   aiDeliveryMode: 'local_only',
-  setUserApiKey: (provider, key) =>
+  setUserApiKey: (provider, key) => {
     set((state) => ({
       userApiKeys: {
         ...state.userApiKeys,
         [provider]: key.trim(),
       },
-    })),
+    }));
+    if (key.trim()) setTimeout(() => get().earnForAction('own_key', provider), 0);
+  },
   clearUserApiKey: (provider) =>
     set((state) => {
       const next = { ...state.userApiKeys };
@@ -296,13 +304,21 @@ export const createAppSlice: StateCreator<
   betaMode: false,
   setBetaMode: (betaMode) => set({ betaMode }),
   koshProfile: EMPTY_KOSH,
-  updateKoshProfile: (patch, source = 'user') =>
+  updateKoshProfile: (patch, source = 'user') => {
     set((state) => {
       const at = new Date().toISOString();
       const sources = { ...state.koshProfile.fieldSources };
       for (const k of Object.keys(patch)) if (k !== 'fieldSources') (sources as Record<string, unknown>)[k] = { source, at };
       return { koshProfile: { ...state.koshProfile, ...patch, fieldSources: sources } };
-    }),
+    });
+    // Sharing a profile detail (typed by the person, not imported) earns gems once per field.
+    if (source === 'user') {
+      for (const k of Object.keys(patch)) {
+        const v = (patch as Record<string, unknown>)[k];
+        if (k !== 'fieldSources' && v && (!Array.isArray(v) || v.length)) setTimeout(() => get().earnForAction('profile_detail', k), 0);
+      }
+    }
+  },
   emergencyContacts: [],
   setEmergencyContacts: (emergencyContacts) => set({ emergencyContacts: emergencyContacts.slice(0, 5) }),
   trip: null,
@@ -330,15 +346,26 @@ export const createAppSlice: StateCreator<
   coachPersona: 'coach',
   coachLanguage: 'en',
   setCoachLanguage: (coachLanguage) => set({ coachLanguage }),
+  routines: [],
+  addRoutine: (r) => {
+    const id = `rt_${Date.now().toString(36)}`;
+    set((st) => ({ routines: [...st.routines, { ...r, id, enabled: true }].slice(0, 40) }));
+    return id;
+  },
+  updateRoutine: (id, patch) => set((st) => ({ routines: st.routines.map((r) => (r.id === id ? { ...r, ...patch } : r)) })),
+  removeRoutine: (id) => set((st) => ({ routines: st.routines.filter((r) => r.id !== id) })),
   setCoachPersona: (coachPersona) => set({ coachPersona }),
   learnRead: {},
-  setLearnRead: (id, read) =>
+  setLearnRead: (id, read) => {
+    const was = !!get().learnRead[id];
     set((st) => {
       const next = { ...st.learnRead };
       if (read) next[id] = Date.now();
       else delete next[id];
       return { learnRead: next };
-    }),
+    });
+    if (read && !was) setTimeout(() => get().earnForAction('learn_read', id), 0);
+  },
   coachTurns: [],
   setCoachTurns: (coachTurns) => set({ coachTurns: coachTurns.slice(-100) }),
   setConversationMode: (conversationMode) => set({ conversationMode }),

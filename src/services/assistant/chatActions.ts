@@ -48,6 +48,17 @@ export async function runChatAction(action: ChatAction): Promise<ChatActionResul
         : `${table.title}: nothing saved yet.`;
       return { success: true, message, data: { table }, routeToOpen: table.route };
     }
+    case 'routine_add': {
+      const r = action.routine;
+      s.addRoutine(r);
+      const when = r.everyHours ? `every ${r.everyHours} hours from ${r.time} until ${r.until}` : `at ${r.time}`;
+      const days = r.days.length ? ' on the days you said' : ' every day';
+      return {
+        success: true,
+        message: `Done: I'll remind you to ${r.title.toLowerCase()} ${when}${days}. Opening the reminder earns a gem.`,
+        routeToOpen: '/(app)/routines',
+      };
+    }
     case 'guide': {
       const g = GUIDES[action.job];
       go(g.route);

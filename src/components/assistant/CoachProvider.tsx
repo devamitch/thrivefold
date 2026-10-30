@@ -27,6 +27,7 @@ import { onlineLibrary } from '../../services/learn/onlineLibrary';
 import { chatStore } from '../../services/assistant/chatStore';
 import { thriveRag } from '../../services/local-ai/rag/thriveRag';
 import { syncCareReminders } from '../../services/notifications/careReminders';
+import { syncRoutineReminders } from '../../services/notifications/routineReminders';
 import { globalVoiceController } from '../../services/voice/globalVoiceController';
 import { useRootStore } from '../../stores/useRootStore';
 
@@ -122,6 +123,14 @@ export function CoachProvider({ children }: { children: React.ReactNode }) {
     }, 30_000);
     return () => clearTimeout(t);
   }, [isOnboarded, experience]);
+
+  // Routine nudges follow the routine list (screen or chat).
+  const routines = useRootStore((s) => s.routines);
+  useEffect(() => {
+    if (!signedIn) return;
+    const t = setTimeout(() => void syncRoutineReminders(routines), 1_000);
+    return () => clearTimeout(t);
+  }, [signedIn, routines]);
 
   // Reminders follow the records, whichever screen (or the chat) changed them.
   useEffect(() => {

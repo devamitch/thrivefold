@@ -129,7 +129,10 @@ export default function AppLayout() {
   // Tapping a reminder (medicine, appointment, trip check-in) opens its screen.
   useEffect(() => {
     const open = (data: unknown) => {
-      const route = (data as { route?: unknown } | undefined)?.route;
+      const d = data as { route?: unknown; kind?: unknown; routineId?: unknown } | undefined;
+      // Opening a routine nudge counts as keeping it today (gems once per routine per day).
+      if (d?.kind === 'routine' && typeof d.routineId === 'string') useRootStore.getState().earnForAction('routine_done', d.routineId);
+      const route = d?.route;
       if (typeof route === 'string' && route.startsWith('/(app)/')) router.push(route as Href);
     };
     const last = Notifications.getLastNotificationResponse();
