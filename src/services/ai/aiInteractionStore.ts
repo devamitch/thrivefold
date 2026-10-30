@@ -54,6 +54,22 @@ function getDb(): SQLite.SQLiteDatabase | null {
 }
 
 /**
+ * Keeps every coach turn (what the person said, what came back, and who answered) on this phone
+ * only. Unlike recordAiInteraction, nothing is sent to a server.
+ */
+export function logCoachTurnLocally(prompt: string, response: string, provider: string): void {
+  try {
+    getDb()?.runSync(
+      `INSERT INTO ai_interactions (id, created_at, user_id, provider, model, prompt, response, latency_ms, status)
+       VALUES (?, ?, 'local_user', ?, 'coach', ?, ?, 0, 'success')`,
+      [`turn_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`, new Date().toISOString(), provider, prompt, response],
+    );
+  } catch {
+    // The chat still works without the log.
+  }
+}
+
+/**
  * Log an AI interaction to SQLite, and attempt background Supabase sync if online.
  */
 export async function recordAiInteraction(record: {
@@ -165,4 +181,13 @@ export function checkCloudAiPermission(opts: {
   }
 
   return { allowed: true };
+}
+
+/** Deletes every saved AI turn on this phone (erase all data). */
+export function wipeAiInteractions(): void {
+  try {
+    getDb()?.runSync('DELETE FROM ai_interactions');
+  } catch {
+    // Nothing saved yet.
+  }
 }

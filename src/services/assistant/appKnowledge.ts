@@ -1,10 +1,12 @@
 /**
- * Keeps the coach's local knowledge current: every screen, every Learn article, a summary of the
- * person's last week and the coach conversation go into Thrive RAG, where hybrid retrieval
+ * Keeps the coach's local knowledge current: every screen, every Learn article, the person's own
+ * records from the store (profile, meals, workouts, vitals, journal, calendar, care, cycle,
+ * memories; never sign-in details) and the coach conversation go into Thrive RAG, where hybrid retrieval
  * (keywords plus vectors) finds them. Only changed documents are replaced; nothing leaves the phone.
  */
 import { ARTICLES } from '../../content/learn';
-import { chatDoc, hashText, learnDocs, recentDaysDoc, screensDoc, type KnowledgeDoc } from '../../domain/assistant/appKnowledge';
+import { chatDoc, hashText, learnDocs, recentDaysDoc, screensDoc, storeDocs, type KnowledgeDoc } from '../../domain/assistant/appKnowledge';
+import { foodById } from '../../domain/nutrition/foods';
 import { DESTINATIONS } from '../../domain/search/destinations';
 import { useRootStore } from '../../stores/useRootStore';
 import { thriveRag } from '../local-ai/rag/thriveRag';
@@ -14,7 +16,13 @@ let running: Promise<number> | null = null;
 /** All documents the app provides right now. */
 export function currentAppDocs(now = new Date()): KnowledgeDoc[] {
   const s = useRootStore.getState();
-  return [screensDoc(DESTINATIONS), ...learnDocs(ARTICLES), recentDaysDoc(s, now), chatDoc(s.coachTurns)];
+  return [
+    screensDoc(DESTINATIONS),
+    ...learnDocs(ARTICLES),
+    recentDaysDoc(s, now),
+    chatDoc(s.coachTurns),
+    ...storeDocs(s, now, (id) => foodById(id)?.name),
+  ];
 }
 
 /**
