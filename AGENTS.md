@@ -1,5 +1,10 @@
 # Thrivefold — Agent Contract
 
+> **Think first.** Understand what the owner actually wants (read for meaning; messages are quick
+> and repeated), plan before the first command, and use your full judgement — tests and lint are
+> tools, not the goal; never play dumb or hide behind a rule. Only the hard safety rules never bend.
+> Details: `../../Docs/PRODUCTION_DELIVERY_PLAYBOOK.md` §0.
+
 > **Start here (every agent, every session):** read `../../Docs/PRODUCTION_DELIVERY_PLAYBOOK.md`
 > (strict operating rules, truth rules, design and functionality standards, bug finding, release),
 > then `docs/REQUIREMENTS_STATUS.md` (live status — update it with evidence) and
