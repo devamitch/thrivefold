@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { useMutation } from '@tanstack/react-query';
 import React, { useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
@@ -64,7 +65,6 @@ export default function DocumentsScreen() {
     })),
   );
   const [kind, setKind] = useState<DocKind | null>(null);
-  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<unknown>(null);
   const [chosen, setChosen] = useState<number[]>([]);
@@ -93,21 +93,23 @@ export default function DocumentsScreen() {
   };
 
   const [cam, setCam] = useState<DocKind | null>(null);
-  const read = async (k: DocKind, uri: string) => {
-    setKind(k);
-    setBusy(true);
-    try {
-      const res = await readDocument(uri, k);
+  // Server reads go through TanStack Query (retries, offline handling, one code path).
+  const reader = useMutation({
+    mutationFn: ({ k, uri }: { k: DocKind; uri: string }) => readDocument(uri, k),
+    onMutate: ({ k }) => {
+      setKind(k);
+      setError(null);
+    },
+    onSuccess: (res, { k }) => {
       setResult(res);
       if (k === 'prescription')
-        setChosen(
-          ((res as PrescriptionResult).medicines ?? []).map((m, i) => (m.unclear ? -1 : i)).filter((i) => i >= 0),
-        );
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not read the photo.');
-    } finally {
-      setBusy(false);
-    }
+        setChosen(((res as PrescriptionResult).medicines ?? []).map((m, i) => (m.unclear ? -1 : i)).filter((i) => i >= 0));
+    },
+    onError: (e) => setError(e instanceof Error ? e.message : 'Could not read the photo.'),
+  });
+  const busy = reader.isPending;
+  const read = async (k: DocKind, uri: string) => {
+    await reader.mutateAsync({ k, uri }).catch(() => undefined);
   };
 
   const savePrescription = () => {

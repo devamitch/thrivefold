@@ -5,6 +5,7 @@
  */
 import { LocalAI, getLocalModelFilePath, getModelPresetById, isModelDownloaded } from '../../../modules/local-ai';
 import { useRootStore } from '../../stores/useRootStore';
+import { importedFileOf, importedPath, isImportedId } from './modelImport';
 
 let loading: Promise<boolean> | null = null;
 
@@ -15,10 +16,12 @@ export async function ensureLocalModel(): Promise<boolean> {
   if (!LocalAI.isAvailable()) return false;
   if (LocalAI.isLoaded()) return true;
   const id = useRootStore.getState().localModelId;
-  if (!id || !getModelPresetById(id) || !(await isModelDownloaded(id))) return false;
+  if (!id) return false;
+  const imported = isImportedId(id);
+  if (!imported && (!getModelPresetById(id) || !(await isModelDownloaded(id)))) return false;
   loading ??= (async () => {
     try {
-      const path = getLocalModelFilePath(id).replace(/^file:\/\//, '');
+      const path = (imported ? importedPath(importedFileOf(id)) : getLocalModelFilePath(id)).replace(/^file:\/\//, '');
       const r = await LocalAI.loadModel(path, false, { temperature: 0.4, maxTokens: 220, topP: 0.9, repeatPenalty: 1.1 });
       return !!r?.success;
     } catch {

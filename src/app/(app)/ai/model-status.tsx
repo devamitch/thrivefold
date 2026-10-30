@@ -17,6 +17,7 @@ import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { askLocal, ensureLocalModel } from '../../../services/ai/localModel';
+import { deleteImportedModel, importModelFile, listImportedModels, type ImportedModel } from '../../../services/ai/modelImport';
 import {
   cancelSetup,
   pauseSetup,
@@ -45,10 +46,29 @@ export default function ModelStatusScreen() {
   const caps = supported ? LocalAI.getDeviceCapabilities() : null;
   const recommended = getRecommendedModel(caps?.totalRamMb ?? 4000);
 
+  const [imported, setImported] = useState<ImportedModel[]>([]);
+  const [importing, setImporting] = useState(false);
   const refresh = async () => {
     const out: Record<string, boolean> = {};
     for (const m of MODEL_PRESETS) out[m.id] = await isModelDownloaded(m.id);
     setHave(out);
+    setImported(await listImportedModels());
+  };
+  const importModel = async () => {
+    setError(null);
+    setImporting(true);
+    try {
+      const id = await importModelFile();
+      if (id) {
+        await refresh();
+        setChosen(id);
+        await load();
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not import this file.');
+    } finally {
+      setImporting(false);
+    }
   };
   useEffect(() => {
     void refresh();
@@ -120,6 +140,49 @@ export default function ModelStatusScreen() {
           Thrive Coach, global search and meal plans use it. Without a model, commands and today&apos;s numbers still
           work.
         </Text>
+      </Card>
+
+      <Card style={styles.card}>
+        <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Your own model</Text>
+        <Text style={[typography.caption, { color: colors.text.secondary }]}>
+          Import a .gguf model file from this phone (llama.cpp format). It is copied once into the app and works offline.
+        </Text>
+        {imported.map((m) => (
+          <View key={m.id} style={[styles.row, { marginTop: 10 }]}>
+            <View style={styles.flex}>
+              <Text style={[typography.body, { color: colors.text.primary }]} numberOfLines={1}>
+                {m.fileName}
+              </Text>
+              <Text style={[typography.caption, { color: colors.text.muted }]}>{m.sizeMb} MB · imported</Text>
+            </View>
+            <Button
+              label={chosen === m.id && state === 'ready' ? 'In use' : 'Use'}
+              size="sm"
+              disabled={chosen === m.id && state === 'ready'}
+              onPress={() => {
+                setChosen(m.id);
+                void load();
+              }}
+            />
+            <Button
+              label="Delete"
+              size="sm"
+              variant="ghost"
+              onPress={async () => {
+                if (chosen === m.id) {
+                  await LocalAI.unloadModel().catch(() => false);
+                  setChosen(null);
+                  setState('idle');
+                }
+                await deleteImportedModel(m.id);
+                void refresh();
+              }}
+            />
+          </View>
+        ))}
+        <View style={{ marginTop: 10 }}>
+          <Button label={importing ? 'Copying…' : 'Import a model file'} size="sm" variant="outline" disabled={importing} onPress={() => void importModel()} />
+        </View>
       </Card>
 
       {MODEL_PRESETS.map((m) => {
