@@ -256,7 +256,7 @@ export const MASTER_GENERATED_ARTIFACTS: MasterArtifact[] = [
     title: 'Minimalist Terracotta T-Leaf Seal',
     category: 'Currencies & Tokens',
     description: 'Pure geometric tree trunk with twin sage leaf arch in warm terracotta and cream.',
-    source: require('@assets/rewards/thrivefold_all_generated_images/images/image(20261030-114841).png'),
+    source: require('@assets/rewards/thrivefold_all_generated_images/images/a_highly_detailed_glossy_cinematic_fantasy_achie.png'),
     aspectRatio: 1.0,
   },
 
@@ -326,4 +326,14 @@ export const MASTER_GENERATED_ARTIFACTS: MasterArtifact[] = [
     aspectRatio: 1.5,
   },
 ];
+
+const MASTER_MAP = new Map<string, any>(
+  MASTER_GENERATED_ARTIFACTS.map((a) => [a.id, a.source]),
+);
+
+export function getMasterArtifactSource(id?: string): any | null {
+  if (!id) return null;
+  return MASTER_MAP.get(id) ?? null;
+}
+
 

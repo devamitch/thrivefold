@@ -161,6 +161,8 @@ export function LootBoxModal({ chest, onClose }: { chest: LevelChest | null; onC
                     source={stage === 'burst' || stage === 'revealed' ? chestArt.burst : chestArt.closed}
                     style={styles.chestImg}
                     contentFit="contain"
+                    transition={150}
+                    cachePolicy="memory-disk"
                   />
                 </View>
               </PressableScale>
@@ -175,14 +177,14 @@ export function LootBoxModal({ chest, onClose }: { chest: LevelChest | null; onC
                   },
                 ]}
               >
-                <Image source={cardArt} style={styles.cardCover} contentFit="cover" />
+                <Image source={cardArt} style={styles.cardCover} contentFit="cover" transition={150} cachePolicy="memory-disk" />
                 <View style={styles.cardFooter}>
                   <Text style={[typography.captionBold, { color: colors.primary }]}>{chest.card.rarity.toUpperCase()} CARD</Text>
                   <Text style={[typography.subheading, { color: colors.text.primary, textAlign: 'center' }]} numberOfLines={1}>
                     {chest.card.title}
                   </Text>
                   <View style={styles.gems}>
-                    <Image source={RewardAssets.currencies.amberGem} style={styles.gemIcon} contentFit="contain" />
+                    <Image source={RewardAssets.currencies.amberGem} style={styles.gemIcon} contentFit="contain" transition={150} cachePolicy="memory-disk" />
                     <Text style={[typography.bodyBold, { color: colors.text.primary }]}>+{chest.gems} Amber Gems</Text>
                   </View>
                 </View>
@@ -252,7 +254,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cardCover: {
-    width: '100%',
+    width: 220,
     height: 220,
   },
   cardFooter: {

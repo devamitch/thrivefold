@@ -19,7 +19,7 @@ import { Card } from '../../components/ui/Card';
 import { PressableScale } from '../../components/ui/PressableScale';
 import { ScreenContainer } from '../../components/ui/ScreenContainer';
 import { LootBoxModal } from '../../components/game/LootBoxModal';
-import { RewardAssets } from '../../constants/assets';
+import { AssetIllustrations, RewardAssets } from '../../constants/assets';
 import { currentLevelProgress, getRoadmapChapters, getRoadmapStages, getTaskById } from '../../domain/game/gameCatalogService';
 import { chestKey, LEVEL_CHESTS, type LevelChest } from '../../domain/game/rewards';
 import { useRootStore, useShallow } from '../../stores/useRootStore';
@@ -82,8 +82,40 @@ export default function RoadmapScreen() {
   // Next milestone chest on the journey
   const nextMilestone = LEVEL_CHESTS.find((c) => !opened.includes(chestKey(c.level)));
 
+  // Preload essential journey visual assets on mount
+  useEffect(() => {
+    const essential = [
+      AssetIllustrations.roadmapJourneyBg,
+      RewardAssets.chests.tier1.closed,
+      RewardAssets.chests.tier1.burst,
+      RewardAssets.chests.tier2.closed,
+      RewardAssets.chests.tier2.burst,
+      RewardAssets.currencies.amberGem,
+    ];
+    essential.forEach((src) => {
+      Image.loadAsync(src).catch(() => {});
+    });
+  }, []);
+
   return (
     <ScreenContainer header={<AppHeader title="Roadmap" subtitle="Where you are on the journey" showBack />} scrollMode="shell-scroll-view">
+      {/* Cinematic Journey Hero Banner */}
+      <View style={styles.heroBannerWrap}>
+        <Image
+          source={AssetIllustrations.roadmapJourneyBg}
+          style={styles.heroBanner}
+          contentFit="cover"
+          transition={150}
+          cachePolicy="memory-disk"
+        />
+        <View style={styles.heroOverlay}>
+          <Badge label={`Chapter ${chapter.number} · ${chapter.title}`} variant="gold" />
+          <Text style={[typography.subheading, { color: '#FFFFFF', marginTop: 4 }]} numberOfLines={1}>
+            {chapter.outcome}
+          </Text>
+        </View>
+      </View>
+
       {/* Where you are */}
       <Animated.View entering={enter(0)}>
         <Card style={{ padding: spacing.lg }}>
@@ -118,6 +150,8 @@ export default function RoadmapScreen() {
               source={getChestAssets(nextMilestone.level).closed}
               style={styles.milestoneImg}
               contentFit="contain"
+              transition={150}
+              cachePolicy="memory-disk"
             />
             <View style={styles.flex}>
               <View style={styles.row}>
@@ -181,6 +215,8 @@ export default function RoadmapScreen() {
                     source={chestDone ? getChestAssets(chestInStage.level).burst : getChestAssets(chestInStage.level).closed}
                     style={styles.stageChestIcon}
                     contentFit="contain"
+                    transition={150}
+                    cachePolicy="memory-disk"
                   />
                   <View style={styles.flex}>
                     <Text style={[typography.captionBold, { color: colors.text.primary }]}>
@@ -354,8 +390,8 @@ const styles = StyleSheet.create({
     borderRadius: 18,
   },
   milestoneImg: {
-    width: 48,
-    height: 48,
+    width: 60,
+    height: 60,
   },
   stageChestCallout: {
     flexDirection: 'row',
@@ -367,7 +403,26 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   stageChestIcon: {
-    width: 38,
-    height: 38,
+    width: 44,
+    height: 44,
+  },
+  heroBannerWrap: {
+    height: 130,
+    borderRadius: 18,
+    overflow: 'hidden',
+    marginBottom: 14,
+    position: 'relative',
+  },
+  heroBanner: {
+    width: '100%',
+    height: 130,
+  },
+  heroOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 12,
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
 });

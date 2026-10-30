@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
+import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
-import React, { useMemo, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { Dimensions, Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { AppHeader } from '../../components/ui/AppHeader';
@@ -14,6 +15,7 @@ import { TextField } from '../../components/ui/TextField';
 import { LootBoxModal } from '../../components/game/LootBoxModal';
 import { RewardAssets } from '../../constants/assets';
 import {
+  getMasterArtifactSource,
   MASTER_GENERATED_ARTIFACTS,
   type MasterArtifact,
 } from '../../constants/masterRewardAssets';
@@ -38,7 +40,13 @@ import { useGearStock, useMyGearRequests, useRequestGear } from '../../services/
 import { useRootStore, useShallow } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
 
-const { width } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const HORIZONTAL_PADDING = 16;
+const CONTENT_WIDTH = SCREEN_WIDTH - HORIZONTAL_PADDING * 2;
+const HERO_CARD_WIDTH = Math.round(SCREEN_WIDTH * 0.82);
+const HERO_CARD_HEIGHT = 150;
+const GRID_COL_WIDTH = Math.floor((CONTENT_WIDTH - 12) / 2);
+const GRID_IMG_HEIGHT = 120;
 
 function getChestAssets(level: number) {
   if (level >= 100) return RewardAssets.chests.tier5;
@@ -65,11 +73,16 @@ function getCardAsset(cardId: string) {
 
 function getItemAsset(assetKey?: string) {
   if (!assetKey) return null;
+  const master = getMasterArtifactSource(assetKey);
+  if (master) return master;
   if (assetKey in RewardAssets.marketplace) {
     return RewardAssets.marketplace[assetKey as keyof typeof RewardAssets.marketplace];
   }
   if (assetKey in RewardAssets.currencies) {
     return RewardAssets.currencies[assetKey as keyof typeof RewardAssets.currencies];
+  }
+  if (assetKey in RewardAssets.cards) {
+    return RewardAssets.cards[assetKey as keyof typeof RewardAssets.cards];
   }
   if (assetKey in RewardAssets.editorial) {
     return RewardAssets.editorial[assetKey as keyof typeof RewardAssets.editorial];
@@ -78,22 +91,123 @@ function getItemAsset(assetKey?: string) {
 }
 
 type TabType = 'market' | 'reliquary' | 'gallery' | 'vault';
-type VaultFilter = 'All' | 'Cinematic Banners' | 'Reliquary Chests' | 'Collector Cards' | 'Currencies & Tokens' | 'Physical Gear';
+type VaultFilter =
+  | 'All'
+  | 'Cinematic Banners'
+  | 'Reliquary Chests'
+  | 'Collector Cards'
+  | 'Currencies & Tokens'
+  | 'Physical Gear';
 
-const HERO_BANNERS = MASTER_GENERATED_ARTIFACTS.filter((a) => a.category === 'Cinematic Banners').slice(0, 4);
+const HERO_BANNERS = MASTER_GENERATED_ARTIFACTS.filter(
+  (a) => a.category === 'Cinematic Banners',
+).slice(0, 4);
+
+/** Memoized grid item for the 3D Vault FlashList */
+const VaultGridItem = memo(
+  ({
+    item,
+    onPress,
+    colors,
+    typography,
+  }: {
+    item: MasterArtifact;
+    onPress: (art: MasterArtifact) => void;
+    colors: any;
+    typography: any;
+  }) => (
+    <PressableScale
+      onPress={() => onPress(item)}
+      style={[styles.gridCard, { width: GRID_COL_WIDTH, backgroundColor: colors.surface }]}
+      accessibilityRole="button"
+      accessibilityLabel={`View ${item.title}`}
+    >
+      <Image
+        source={item.source}
+        style={{
+          width: GRID_COL_WIDTH,
+          height: GRID_IMG_HEIGHT,
+          borderTopLeftRadius: 16,
+          borderTopRightRadius: 16,
+        }}
+        contentFit="cover"
+        transition={150}
+        cachePolicy="memory-disk"
+      />
+      <View style={styles.gridCardMeta}>
+        <Badge label={item.category} variant="primary" />
+        <Text style={[typography.captionBold, { color: colors.text.primary, marginTop: 4 }]} numberOfLines={1}>
+          {item.title}
+        </Text>
+        <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]} numberOfLines={2}>
+          {item.description}
+        </Text>
+      </View>
+    </PressableScale>
+  ),
+);
+VaultGridItem.displayName = 'VaultGridItem';
+
+/** Memoized grid item for the Gouache Gallery FlashList */
+const GalleryGridItem = memo(
+  ({
+    item,
+    onPress,
+    colors,
+    typography,
+  }: {
+    item: EditorialArt;
+    onPress: (art: EditorialArt) => void;
+    colors: any;
+    typography: any;
+  }) => {
+    const source = getItemAsset(item.assetKey);
+    return (
+      <PressableScale
+        onPress={() => onPress(item)}
+        style={[styles.gridCard, { width: GRID_COL_WIDTH, backgroundColor: colors.surface }]}
+        accessibilityRole="button"
+        accessibilityLabel={`View ${item.title}`}
+      >
+        <Image
+          source={source}
+          style={{
+            width: GRID_COL_WIDTH,
+            height: GRID_IMG_HEIGHT,
+            borderTopLeftRadius: 16,
+            borderTopRightRadius: 16,
+          }}
+          contentFit="cover"
+          transition={150}
+          cachePolicy="memory-disk"
+        />
+        <View style={styles.gridCardMeta}>
+          <Badge label={item.category} variant="primary" />
+          <Text style={[typography.captionBold, { color: colors.text.primary, marginTop: 4 }]} numberOfLines={1}>
+            {item.title}
+          </Text>
+          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]} numberOfLines={2}>
+            {item.description}
+          </Text>
+        </View>
+      </PressableScale>
+    );
+  },
+);
+GalleryGridItem.displayName = 'GalleryGridItem';
 
 /**
- * Thrivefold Grand Marketplace, Economic Treasury & Complete Asset Exhibition:
- * - Treasury Wallet with Amber Gems, Sanctuary Tickets, and Golden Marketplace Tokens.
- * - Interactive Hero Showcase featuring wide cinematic promo keyframes.
- * - Tab 1: Marketplace & Gear (Stickers with dual-currency unlock, Status, Care Plans, Real Gear).
- * - Tab 2: Milestone Reliquaries (The 5 Chest Tiers with Dual Closed & Burst 3D views + 4 Collector Cards).
- * - Tab 3: Artisanal Gouache Gallery (The 11 museum-grade raw editorial artworks).
- * - Tab 4: Master 3D Artifacts Vault (All 37 high-resolution 3D renders, medallions, posters & composites).
+ * Thrivefold Grand Marketplace, Treasury & Visual Exhibition
+ * - 3-Pillar Treasury: Amber Gems, Silver Tickets, Golden Tokens with on-device Currency Forge
+ * - Hero Carousel: Wide cinematic promotional keyframes with zero-delay preloaded rendering
+ * - Tab 1 (Market): Habit Stickers, Status Badges, Structured Care Plans, Real Physical Gear
+ * - Tab 2 (Chests & Cards): The 5 Reliquary Chests (Closed + Burst views) and 4 Collector Cards
+ * - Tab 3 (Gallery): 11 museum-grade Scandinavian-Japanese gouache studies in FlashList
+ * - Tab 4 (3D Vault): All 36 custom 3D renders with filter pills and full-screen inspection
  */
 export default function MarketplaceScreen() {
   const { colors, typography, spacing } = useTheme();
-  const { diamonds, tickets, tokens, owned, buy, forgeTicket, forgeToken, showAlert, level, streak, ledger } = useRootStore(
+  const { diamonds, tickets, tokens, owned, buy, forgeTicket, forgeToken, showAlert, streak, ledger } = useRootStore(
     useShallow((s) => ({
       diamonds: s.diamonds,
       tickets: s.tickets,
@@ -103,7 +217,6 @@ export default function MarketplaceScreen() {
       forgeTicket: s.forgeTicket,
       forgeToken: s.forgeToken,
       showAlert: s.showAlert,
-      level: s.level,
       streak: s.streak,
       ledger: s.rewardLedger,
     })),
@@ -111,7 +224,6 @@ export default function MarketplaceScreen() {
 
   const [activeTab, setActiveTab] = useState<TabType>('market');
   const [vaultFilter, setVaultFilter] = useState<VaultFilter>('All');
-  const opened = useMemo(() => ledger.filter((e) => e.kind === 'chest_reward').map((e) => e.key), [ledger]);
   const [chest, setChest] = useState<LevelChest | null>(null);
   const [inspectArt, setInspectArt] = useState<EditorialArt | MasterArtifact | null>(null);
   const multiplier = streakMultiplier(streak);
@@ -126,43 +238,63 @@ export default function MarketplaceScreen() {
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
 
-  const promptUnlock = (item: MarketItem | WellnessPlan, defaultCurrency: 'gems' | 'tokens' = 'gems') => {
-    if ('physical' in item && item.physical) {
-      setPayMethod(defaultCurrency);
-      setGear(item);
-      return;
-    }
-    if (item.id.startsWith('plan_')) {
-      setPayMethod(defaultCurrency);
-      setGear(item);
-      return;
-    }
-
-    const priceText = defaultCurrency === 'tokens'
-      ? `${item.tokenCost ?? 1} Token${(item.tokenCost ?? 1) > 1 ? 's' : ''}`
-      : `${item.cost.toLocaleString()} Gems`;
-
-    const userBalance = defaultCurrency === 'tokens' ? `${tokens} Tokens` : `${diamonds.toLocaleString()} Gems`;
-
-    showAlert({
-      title: `Unlock ${item.title}?`,
-      message: `Price: ${priceText}. Your wallet balance: ${userBalance}.`,
-      confirmText: 'Unlock',
-      onConfirm: () => {
-        const r = buy(item.id, defaultCurrency);
-        if (!r.ok) {
-          showAlert({
-            title: 'Not unlocked',
-            message: r.reason === 'insufficient' ? `Not enough ${defaultCurrency} yet.` : 'You already have this.',
-            confirmText: 'OK',
-            cancelText: null,
-          });
-        }
-      },
+  // Preload primary visual assets on mount so they paint instantly
+  useEffect(() => {
+    const critical = [
+      RewardAssets.currencies.amberGem,
+      RewardAssets.currencies.marketplaceToken,
+      RewardAssets.currencies.sanctuaryPass,
+      RewardAssets.chests.tier1.closed,
+      RewardAssets.chests.tier1.burst,
+      ...HERO_BANNERS.map((b) => b.source),
+    ];
+    critical.forEach((src) => {
+      if (src) Image.loadAsync(src).catch(() => {});
     });
-  };
+  }, []);
 
-  const handleForgeTicket = () => {
+  const promptUnlock = useCallback(
+    (item: MarketItem | WellnessPlan, defaultCurrency: 'gems' | 'tokens' = 'gems') => {
+      if ('physical' in item && item.physical) {
+        setPayMethod(defaultCurrency);
+        setGear(item);
+        return;
+      }
+      if (item.id.startsWith('plan_')) {
+        setPayMethod(defaultCurrency);
+        setGear(item);
+        return;
+      }
+
+      const priceText =
+        defaultCurrency === 'tokens'
+          ? `${item.tokenCost ?? 1} Token${(item.tokenCost ?? 1) > 1 ? 's' : ''}`
+          : `${item.cost.toLocaleString()} Gems`;
+
+      const userBalance =
+        defaultCurrency === 'tokens' ? `${tokens} Tokens` : `${diamonds.toLocaleString()} Gems`;
+
+      showAlert({
+        title: `Unlock ${item.title}?`,
+        message: `Price: ${priceText}. Your wallet balance: ${userBalance}.`,
+        confirmText: 'Unlock',
+        onConfirm: () => {
+          const r = buy(item.id, defaultCurrency);
+          if (!r.ok) {
+            showAlert({
+              title: 'Not unlocked',
+              message: r.reason === 'insufficient' ? `Not enough ${defaultCurrency} yet.` : 'You already have this.',
+              confirmText: 'OK',
+              cancelText: null,
+            });
+          }
+        },
+      });
+    },
+    [diamonds, tokens, buy, showAlert],
+  );
+
+  const handleForgeTicket = useCallback(() => {
     if (diamonds < TICKET_FORGE_GEMS) {
       showAlert({
         title: 'Need More Gems',
@@ -178,64 +310,137 @@ export default function MarketplaceScreen() {
       confirmText: 'Forge',
       onConfirm: () => {
         forgeTicket();
+        showAlert({
+          title: 'Ticket Forged',
+          message: '1 Sanctuary Ticket has been forged into your wallet.',
+          confirmText: 'Awesome',
+          cancelText: null,
+        });
       },
     });
-  };
+  }, [diamonds, forgeTicket, showAlert]);
 
-  const handleForgeToken = (fromTickets: boolean) => {
-    if (fromTickets) {
-      if (tickets < TOKEN_FORGE_TICKETS) {
+  const handleForgeToken = useCallback(
+    (useTickets: boolean) => {
+      if (useTickets) {
+        if (tickets < TOKEN_FORGE_TICKETS) {
+          showAlert({
+            title: 'Need More Tickets',
+            message: `Forging 1 Marketplace Token requires ${TOKEN_FORGE_TICKETS} Tickets. You currently have ${tickets}.`,
+            confirmText: 'Got it',
+            cancelText: null,
+          });
+          return;
+        }
         showAlert({
-          title: 'Need More Tickets',
-          message: `Forging 1 Golden Marketplace Token requires ${TOKEN_FORGE_TICKETS} Sanctuary Tickets. You currently have ${tickets}.`,
-          confirmText: 'Got it',
-          cancelText: null,
+          title: 'Forge Marketplace Token?',
+          message: `Convert ${TOKEN_FORGE_TICKETS} Sanctuary Tickets into 1 Golden Marketplace Token?`,
+          confirmText: 'Forge',
+          onConfirm: () => {
+            forgeToken(true);
+            showAlert({
+              title: 'Token Forged',
+              message: '1 Golden Marketplace Token added to your treasury.',
+              confirmText: 'Great',
+              cancelText: null,
+            });
+          },
         });
-        return;
-      }
-      showAlert({
-        title: 'Forge Marketplace Token?',
-        message: `Convert ${TOKEN_FORGE_TICKETS} Sanctuary Tickets into 1 Golden Marketplace Token?`,
-        confirmText: 'Forge',
-        onConfirm: () => {
-          forgeToken(true);
-        },
-      });
-    } else {
-      if (diamonds < TOKEN_FORGE_GEMS) {
+      } else {
+        if (diamonds < TOKEN_FORGE_GEMS) {
+          showAlert({
+            title: 'Need More Gems',
+            message: `Forging 1 Token directly requires ${TOKEN_FORGE_GEMS.toLocaleString()} Amber Gems. You currently have ${diamonds}.`,
+            confirmText: 'Got it',
+            cancelText: null,
+          });
+          return;
+        }
         showAlert({
-          title: 'Need More Gems',
-          message: `Directly forging 1 Golden Marketplace Token requires ${TOKEN_FORGE_GEMS} Amber Gems. You currently have ${diamonds}.`,
-          confirmText: 'Got it',
-          cancelText: null,
+          title: 'Forge Marketplace Token?',
+          message: `Convert ${TOKEN_FORGE_GEMS.toLocaleString()} Amber Gems into 1 Golden Marketplace Token?`,
+          confirmText: 'Forge',
+          onConfirm: () => {
+            forgeToken(false);
+            showAlert({
+              title: 'Token Forged',
+              message: '1 Golden Marketplace Token added to your treasury.',
+              confirmText: 'Great',
+              cancelText: null,
+            });
+          },
         });
-        return;
       }
-      showAlert({
-        title: 'Forge Marketplace Token?',
-        message: `Convert ${TOKEN_FORGE_GEMS} Amber Gems directly into 1 Golden Marketplace Token?`,
-        confirmText: 'Forge',
-        onConfirm: () => {
-          forgeToken(false);
-        },
-      });
-    }
-  };
+    },
+    [diamonds, tickets, forgeToken, showAlert],
+  );
 
-  const sendOrderRequest = async () => {
+  const confirmGearRequest = async () => {
     if (!gear) return;
+    const isTokenPay = payMethod === 'tokens';
+    const costGems = gear.cost;
+    const costTokens = gear.tokenCost ?? 10;
+
+    if (isTokenPay && tokens < costTokens) {
+      showAlert({
+        title: 'Not enough Tokens',
+        message: `This requires ${costTokens} Tokens. You have ${tokens}.`,
+        confirmText: 'OK',
+        cancelText: null,
+      });
+      return;
+    }
+    if (!isTokenPay && diamonds < costGems) {
+      showAlert({
+        title: 'Not enough Gems',
+        message: `This requires ${costGems.toLocaleString()} Gems. You have ${diamonds.toLocaleString()}.`,
+        confirmText: 'OK',
+        cancelText: null,
+      });
+      return;
+    }
+
     try {
-      const isToken = payMethod === 'tokens';
-      const costGems = isToken ? 0 : gear.cost;
+      if (gear.id.startsWith('plan_')) {
+        const res = buy(gear.id, isTokenPay ? 'tokens' : 'gems');
+        if (res.ok) {
+          setGear(null);
+          showAlert({
+            title: 'Plan Enrolled',
+            message: `You have successfully enrolled in ${gear.title}. All pathway milestones and daily routines are active.`,
+            confirmText: 'Start Plan',
+            cancelText: null,
+          });
+        }
+        return;
+      }
+
+      const available = stock.data ? (stock.data[gear.id] ?? 0) : 0;
+      if (available <= 0) {
+        showAlert({
+          title: 'Out of stock',
+          message: 'This gear is temporarily out of stock. Stock is replenished on the 1st of each month.',
+          confirmText: 'OK',
+          cancelText: null,
+        });
+        return;
+      }
+
       await requestGear.mutateAsync({
         itemId: gear.id,
         gems: costGems,
-        fullName,
-        phone,
-        address,
+        fullName: fullName.trim(),
+        phone: phone.trim(),
+        address: address.trim(),
       });
-      buy(gear.id, payMethod);
+
+      buy(gear.id, isTokenPay ? 'tokens' : 'gems');
+
       setGear(null);
+      setFullName('');
+      setPhone('');
+      setAddress('');
+
       showAlert({
         title: 'Request Confirmed',
         message: 'Your order has been recorded. The Thrivefold wellness team will reach out regarding delivery.',
@@ -252,7 +457,24 @@ export default function MarketplaceScreen() {
     return MASTER_GENERATED_ARTIFACTS.filter((a) => a.category === vaultFilter);
   }, [vaultFilter]);
 
-  const validOrder = fullName.trim().length > 1 && /^[+\d][\d\s-]{5,19}$/.test(phone.trim()) && address.trim().length >= 8;
+  const validOrder =
+    fullName.trim().length > 1 &&
+    /^[+\d][\d\s-]{5,19}$/.test(phone.trim()) &&
+    address.trim().length >= 8;
+
+  const renderVaultItem = useCallback(
+    ({ item }: { item: MasterArtifact }) => (
+      <VaultGridItem item={item} onPress={setInspectArt} colors={colors} typography={typography} />
+    ),
+    [colors, typography],
+  );
+
+  const renderGalleryItem = useCallback(
+    ({ item }: { item: EditorialArt }) => (
+      <GalleryGridItem item={item} onPress={setInspectArt} colors={colors} typography={typography} />
+    ),
+    [colors, typography],
+  );
 
   return (
     <ScreenContainer
@@ -270,15 +492,29 @@ export default function MarketplaceScreen() {
 
         <View style={styles.currencyRow}>
           <View style={styles.currencyCol}>
-            <Image source={RewardAssets.currencies.amberGem} style={styles.currencyIcon} contentFit="contain" />
-            <Text style={[typography.heading, { color: colors.text.primary, marginTop: 4 }]}>{diamonds.toLocaleString()}</Text>
+            <Image
+              source={RewardAssets.currencies.amberGem}
+              style={styles.currencyIcon}
+              contentFit="contain"
+              transition={150}
+              cachePolicy="memory-disk"
+            />
+            <Text style={[typography.heading, { color: colors.text.primary, marginTop: 4 }]}>
+              {diamonds.toLocaleString()}
+            </Text>
             <Text style={[typography.caption, { color: colors.text.secondary }]}>Amber Gems</Text>
           </View>
 
           <View style={[styles.walletDivider, { backgroundColor: colors.border }]} />
 
           <View style={styles.currencyCol}>
-            <Image source={RewardAssets.currencies.sanctuaryPass} style={styles.currencyIcon} contentFit="contain" />
+            <Image
+              source={RewardAssets.currencies.sanctuaryPass}
+              style={styles.currencyIcon}
+              contentFit="contain"
+              transition={150}
+              cachePolicy="memory-disk"
+            />
             <Text style={[typography.heading, { color: colors.text.primary, marginTop: 4 }]}>{tickets}</Text>
             <Text style={[typography.caption, { color: colors.text.secondary }]}>Tickets</Text>
           </View>
@@ -286,7 +522,13 @@ export default function MarketplaceScreen() {
           <View style={[styles.walletDivider, { backgroundColor: colors.border }]} />
 
           <View style={styles.currencyCol}>
-            <Image source={RewardAssets.currencies.marketplaceToken} style={styles.currencyIcon} contentFit="contain" />
+            <Image
+              source={RewardAssets.currencies.marketplaceToken}
+              style={styles.currencyIcon}
+              contentFit="contain"
+              transition={150}
+              cachePolicy="memory-disk"
+            />
             <Text style={[typography.heading, { color: colors.text.primary, marginTop: 4 }]}>{tokens}</Text>
             <Text style={[typography.caption, { color: colors.text.secondary }]}>Tokens</Text>
           </View>
@@ -327,8 +569,16 @@ export default function MarketplaceScreen() {
               key={banner.id}
               onPress={() => setInspectArt(banner)}
               style={styles.heroBannerWrap}
+              accessibilityRole="button"
+              accessibilityLabel={`View ${banner.title}`}
             >
-              <Image source={banner.source} style={styles.heroBannerImg} contentFit="cover" />
+              <Image
+                source={banner.source}
+                style={styles.heroBannerImg}
+                contentFit="cover"
+                transition={150}
+                cachePolicy="memory-disk"
+              />
               <View style={styles.heroOverlay}>
                 <Badge label="Cinematic Showcase" variant="gold" />
                 <Text style={[typography.subheading, { color: '#FFF', marginTop: 4 }]} numberOfLines={1}>
@@ -346,8 +596,17 @@ export default function MarketplaceScreen() {
           style={[styles.segmentTab, activeTab === 'market' && { backgroundColor: colors.surface }]}
           onPress={() => setActiveTab('market')}
         >
-          <Ionicons name="bag-handle-outline" size={16} color={activeTab === 'market' ? colors.primary : colors.text.secondary} />
-          <Text style={[typography.captionBold, { color: activeTab === 'market' ? colors.text.primary : colors.text.secondary }]}>
+          <Ionicons
+            name="bag-handle-outline"
+            size={16}
+            color={activeTab === 'market' ? colors.primary : colors.text.secondary}
+          />
+          <Text
+            style={[
+              typography.captionBold,
+              { color: activeTab === 'market' ? colors.text.primary : colors.text.secondary },
+            ]}
+          >
             Market
           </Text>
         </PressableScale>
@@ -356,8 +615,17 @@ export default function MarketplaceScreen() {
           style={[styles.segmentTab, activeTab === 'reliquary' && { backgroundColor: colors.surface }]}
           onPress={() => setActiveTab('reliquary')}
         >
-          <Ionicons name="gift-outline" size={16} color={activeTab === 'reliquary' ? colors.primary : colors.text.secondary} />
-          <Text style={[typography.captionBold, { color: activeTab === 'reliquary' ? colors.text.primary : colors.text.secondary }]}>
+          <Ionicons
+            name="gift-outline"
+            size={16}
+            color={activeTab === 'reliquary' ? colors.primary : colors.text.secondary}
+          />
+          <Text
+            style={[
+              typography.captionBold,
+              { color: activeTab === 'reliquary' ? colors.text.primary : colors.text.secondary },
+            ]}
+          >
             Chests
           </Text>
         </PressableScale>
@@ -366,9 +634,18 @@ export default function MarketplaceScreen() {
           style={[styles.segmentTab, activeTab === 'gallery' && { backgroundColor: colors.surface }]}
           onPress={() => setActiveTab('gallery')}
         >
-          <Ionicons name="color-palette-outline" size={16} color={activeTab === 'gallery' ? colors.primary : colors.text.secondary} />
-          <Text style={[typography.captionBold, { color: activeTab === 'gallery' ? colors.text.primary : colors.text.secondary }]}>
-            Gouache
+          <Ionicons
+            name="color-palette-outline"
+            size={16}
+            color={activeTab === 'gallery' ? colors.primary : colors.text.secondary}
+          />
+          <Text
+            style={[
+              typography.captionBold,
+              { color: activeTab === 'gallery' ? colors.text.primary : colors.text.secondary },
+            ]}
+          >
+            Gallery
           </Text>
         </PressableScale>
 
@@ -376,31 +653,55 @@ export default function MarketplaceScreen() {
           style={[styles.segmentTab, activeTab === 'vault' && { backgroundColor: colors.surface }]}
           onPress={() => setActiveTab('vault')}
         >
-          <Ionicons name="sparkles-outline" size={16} color={activeTab === 'vault' ? colors.primary : colors.text.secondary} />
-          <Text style={[typography.captionBold, { color: activeTab === 'vault' ? colors.text.primary : colors.text.secondary }]}>
+          <Ionicons
+            name="cube-outline"
+            size={16}
+            color={activeTab === 'vault' ? colors.primary : colors.text.secondary}
+          />
+          <Text
+            style={[
+              typography.captionBold,
+              { color: activeTab === 'vault' ? colors.text.primary : colors.text.secondary },
+            ]}
+          >
             3D Vault
           </Text>
         </PressableScale>
       </View>
 
-      {/* TAB 1: MARKETPLACE & GEAR */}
+      {/* TAB 1: MAIN MARKETPLACE */}
       {activeTab === 'market' && (
         <View>
-          {/* Your Owned Collection Shelf */}
-          {owned.length > 0 && (
-            <View style={{ marginBottom: spacing.lg }}>
+          {/* Unlocked Collection Shelf */}
+          {(cards.length > 0 || owned.length > 0) && (
+            <View style={{ marginBottom: spacing.md }}>
               <View style={styles.sectionHead}>
-                <Ionicons name="albums-outline" size={20} color={colors.primary} />
-                <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>Your Collection Shelf</Text>
+                <Ionicons name="sparkles" size={18} color={colors.primary} />
+                <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>
+                  Your Sanctuary Relics
+                </Text>
+                <Badge label={`${cards.length} Cards · ${owned.length} Items`} variant="neutral" />
               </View>
 
-              <View style={[styles.shelf, { marginTop: spacing.sm }]}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.shelfScroll}>
                 {cards.map((c) => {
                   const cardArt = getCardAsset(c.id);
                   return (
                     <View key={c.id} style={[styles.cardItem, { backgroundColor: colors.surface }]}>
-                      <Image source={cardArt} style={styles.cardItemImg} contentFit="cover" />
-                      <Text style={[typography.captionBold, { color: colors.text.primary, textAlign: 'center', marginTop: 4 }]} numberOfLines={1}>
+                      <Image
+                        source={cardArt}
+                        style={styles.cardItemImg}
+                        contentFit="cover"
+                        transition={150}
+                        cachePolicy="memory-disk"
+                      />
+                      <Text
+                        style={[
+                          typography.captionBold,
+                          { color: colors.text.primary, textAlign: 'center', marginTop: 4 },
+                        ]}
+                        numberOfLines={1}
+                      >
                         {c.title}
                       </Text>
                       <Text style={[typography.caption, { color: colors.primary }]}>{c.rarity}</Text>
@@ -413,28 +714,45 @@ export default function MarketplaceScreen() {
                   return (
                     <View key={m.id} style={[styles.stickerItem, { backgroundColor: colors.surface }]}>
                       {art ? (
-                        <Image source={art} style={styles.stickerImg} contentFit="contain" />
+                        <Image
+                          source={art}
+                          style={styles.stickerImg}
+                          contentFit="contain"
+                          transition={150}
+                          cachePolicy="memory-disk"
+                        />
                       ) : (
                         <View style={[styles.stickerIconBg, { backgroundColor: colors.surface2 }]}>
                           <Ionicons name={m.icon as keyof typeof Ionicons.glyphMap} size={28} color={colors.primary} />
                         </View>
                       )}
-                      <Text style={[typography.captionBold, { color: colors.text.primary, textAlign: 'center', marginTop: 4 }]} numberOfLines={2}>
+                      <Text
+                        style={[
+                          typography.captionBold,
+                          { color: colors.text.primary, textAlign: 'center', marginTop: 4 },
+                        ]}
+                        numberOfLines={1}
+                      >
                         {m.title}
                       </Text>
+                      <Badge label="Unlocked" variant="success" />
                     </View>
                   );
                 })}
-              </View>
+              </ScrollView>
             </View>
           )}
 
-          {/* Digital Habit Stickers */}
-          <View style={{ marginBottom: spacing.lg }}>
+          {/* Section: Habit Stickers */}
+          <View style={{ marginBottom: spacing.md }}>
             <View style={styles.sectionHead}>
-              <Ionicons name="happy-outline" size={20} color={colors.primary} />
-              <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>Digital Habit Stickers</Text>
-              <Text style={[typography.caption, { color: colors.text.muted }]}>100 Gems or 1 Token</Text>
+              <Ionicons name="pricetags-outline" size={18} color={colors.primary} />
+              <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>
+                Habit Stickers
+              </Text>
+              <Text style={[typography.caption, { color: colors.text.muted }]}>
+                {TIER_COST.sticker} Gems or 1 Token
+              </Text>
             </View>
 
             {MARKET.filter((m) => m.tier === 'sticker').map((m) => {
@@ -446,7 +764,13 @@ export default function MarketplaceScreen() {
                 <Card key={m.id} style={[styles.itemCard, { marginTop: spacing.sm }]}>
                   <View style={[styles.stickerThumb, { backgroundColor: colors.surface2 }]}>
                     {art ? (
-                      <Image source={art} style={styles.itemImgThumb} contentFit="contain" />
+                      <Image
+                        source={art}
+                        style={styles.itemImgThumb}
+                        contentFit="contain"
+                        transition={150}
+                        cachePolicy="memory-disk"
+                      />
                     ) : (
                       <Ionicons name={m.icon as keyof typeof Ionicons.glyphMap} size={28} color={colors.primary} />
                     )}
@@ -463,14 +787,14 @@ export default function MarketplaceScreen() {
                   ) : (
                     <View style={styles.actionRow}>
                       <Button
-                        label={`${m.cost} 💎`}
+                        label={`${m.cost} Gems`}
                         size="sm"
                         variant={shortGems ? 'outline' : 'primary'}
                         disabled={shortGems}
                         onPress={() => promptUnlock(m, 'gems')}
                       />
                       <Button
-                        label="1 🪙"
+                        label="1 Token"
                         size="sm"
                         variant={shortTokens ? 'outline' : 'primary'}
                         disabled={shortTokens}
@@ -483,12 +807,16 @@ export default function MarketplaceScreen() {
             })}
           </View>
 
-          {/* Sanctuary Status & Badges */}
-          <View style={{ marginBottom: spacing.lg }}>
+          {/* Section: Status & Passes */}
+          <View style={{ marginBottom: spacing.md }}>
             <View style={styles.sectionHead}>
-              <Ionicons name="ribbon-outline" size={20} color={colors.primary} />
-              <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>Sanctuary Status & Badges</Text>
-              <Text style={[typography.caption, { color: colors.text.muted }]}>500 Gems or 1 Ticket</Text>
+              <Ionicons name="ribbon-outline" size={18} color={colors.primary} />
+              <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>
+                Sanctuary Status
+              </Text>
+              <Text style={[typography.caption, { color: colors.text.muted }]}>
+                {TIER_COST.status} Gems or 1 Ticket
+              </Text>
             </View>
 
             {MARKET.filter((m) => m.tier === 'status').map((m) => {
@@ -499,26 +827,34 @@ export default function MarketplaceScreen() {
               return (
                 <Card key={m.id} style={[styles.itemCard, { marginTop: spacing.sm }]}>
                   <View style={[styles.stickerThumb, { backgroundColor: colors.surface2 }]}>
-                    <Image source={art ?? RewardAssets.currencies.sanctuaryPass} style={{ width: 44, height: 44 }} contentFit="contain" />
+                    <Image
+                      source={art ?? RewardAssets.currencies.sanctuaryPass}
+                      style={{ width: 44, height: 44 }}
+                      contentFit="contain"
+                      transition={150}
+                      cachePolicy="memory-disk"
+                    />
                   </View>
                   <View style={styles.flex}>
                     <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{m.title}</Text>
                     <Text style={[typography.caption, { color: colors.text.secondary }]}>{m.description}</Text>
-                    <Text style={[typography.caption, { color: colors.primary, marginTop: 2 }]}>500 Gems · or 1 Sanctuary Ticket</Text>
+                    <Text style={[typography.caption, { color: colors.primary, marginTop: 2 }]}>
+                      500 Gems · or 1 Sanctuary Ticket
+                    </Text>
                   </View>
                   {have ? (
                     <Badge label="Active" variant="success" />
                   ) : (
                     <View style={styles.actionRow}>
                       <Button
-                        label="500 💎"
+                        label="500 Gems"
                         size="sm"
                         variant={shortGems ? 'outline' : 'primary'}
                         disabled={shortGems}
                         onPress={() => promptUnlock(m, 'gems')}
                       />
                       <Button
-                        label="1 🎫"
+                        label="1 Ticket"
                         size="sm"
                         variant={shortTickets ? 'outline' : 'primary'}
                         disabled={shortTickets}
@@ -531,54 +867,60 @@ export default function MarketplaceScreen() {
             })}
           </View>
 
-          {/* Wellness Plans */}
-          <View style={{ marginBottom: spacing.lg }}>
+          {/* Section: Wellness Care Plans */}
+          <View style={{ marginBottom: spacing.md }}>
             <View style={styles.sectionHead}>
-              <Ionicons name="fitness-outline" size={20} color={colors.primary} />
-              <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>Wellness & Nutrition Plans</Text>
-              <Text style={[typography.caption, { color: colors.text.muted }]}>Tokens or Gems</Text>
+              <Ionicons name="fitness-outline" size={18} color={colors.primary} />
+              <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>
+                Wellness Care Plans
+              </Text>
+              <Badge label="Structured Pathways" variant="gold" />
             </View>
 
             {WELLNESS_PLANS.map((p) => {
+              const enrolled = owned.includes(p.id);
               const assetImg = getItemAsset(p.assetKey);
-              const have = owned.includes(p.id);
-              const shortGems = diamonds < p.cost;
               const shortTokens = tokens < p.tokenCost;
               return (
                 <Card key={p.id} style={[styles.itemCard, { marginTop: spacing.sm }]}>
                   <View style={[styles.gearThumb, { backgroundColor: colors.surface2 }]}>
                     {assetImg ? (
-                      <Image source={assetImg} style={{ width: 56, height: 56, borderRadius: 10 }} contentFit="cover" />
+                      <Image
+                        source={assetImg}
+                        style={{ width: 56, height: 56, borderRadius: 10 }}
+                        contentFit="cover"
+                        transition={150}
+                        cachePolicy="memory-disk"
+                      />
                     ) : (
                       <Ionicons name={p.icon as keyof typeof Ionicons.glyphMap} size={28} color={colors.primary} />
                     )}
                   </View>
                   <View style={styles.flex}>
                     <View style={styles.row}>
-                      <Text style={[typography.bodyBold, styles.flex, { color: colors.text.primary }]}>{p.title}</Text>
                       <Badge label={p.category} variant="primary" />
                     </View>
-                    <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>{p.description}</Text>
+                    <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 2 }]}>{p.title}</Text>
+                    <Text style={[typography.caption, { color: colors.text.secondary }]}>{p.description}</Text>
                     <Text style={[typography.captionBold, { color: colors.primary, marginTop: 4 }]}>
-                      {p.tokenCost} Tokens · or {p.cost.toLocaleString()} Gems
+                      {p.cost.toLocaleString()} Gems · or {p.tokenCost} Tokens
                     </Text>
                   </View>
-                  {have ? (
+                  {enrolled ? (
                     <Badge label="Enrolled" variant="success" />
                   ) : (
                     <View style={styles.actionCol}>
                       <Button
-                        label={`${p.tokenCost} 🪙`}
+                        label={`${p.tokenCost} Tokens`}
                         size="sm"
                         variant={shortTokens ? 'outline' : 'primary'}
                         disabled={shortTokens}
                         onPress={() => promptUnlock(p, 'tokens')}
                       />
                       <Button
-                        label="Order"
+                        label={`${(p.cost / 1000).toFixed(1)}k Gems`}
                         size="sm"
-                        variant={shortGems ? 'outline' : 'primary'}
-                        disabled={shortGems}
+                        variant="outline"
                         onPress={() => promptUnlock(p, 'gems')}
                       />
                     </View>
@@ -588,25 +930,36 @@ export default function MarketplaceScreen() {
             })}
           </View>
 
-          {/* Real Workout Gear */}
+          {/* Section: Physical Merchandise Gear */}
           <View style={{ marginBottom: spacing.lg }}>
             <View style={styles.sectionHead}>
-              <Ionicons name="barbell-outline" size={20} color={colors.primary} />
-              <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>Real Workout Gear</Text>
-              <Text style={[typography.caption, { color: colors.text.muted }]}>Doorstep Delivery</Text>
+              <Ionicons name="cube-outline" size={18} color={colors.primary} />
+              <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>
+                Real Physical Gear
+              </Text>
+              <Badge label="Limited Stock" variant="neutral" />
             </View>
+            <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+              Delivered directly to your door. Real accessories funded strictly through verified health adherence.
+            </Text>
 
-            {MARKET.filter((m) => m.tier === 'gear').map((m) => {
-              const assetImg = getItemAsset(m.assetKey);
-              const left = stock.data?.[m.id];
-              const soldOut = left === 0;
+            {MARKET.filter((m) => m.physical).map((m) => {
+              const req = requests.data?.find((r) => r.item_id === m.id);
+              const inStock = stock.data ? (stock.data[m.id] ?? 0) : 0;
               const shortGems = diamonds < m.cost;
+              const assetImg = getItemAsset(m.assetKey);
               const shortTokens = tokens < (m.tokenCost ?? 10);
               return (
                 <Card key={m.id} style={[styles.itemCard, { marginTop: spacing.sm }]}>
                   <View style={[styles.gearThumb, { backgroundColor: colors.surface2 }]}>
                     {assetImg ? (
-                      <Image source={assetImg} style={styles.gearThumbImg} contentFit="contain" />
+                      <Image
+                        source={assetImg}
+                        style={styles.gearThumbImg}
+                        contentFit="contain"
+                        transition={150}
+                        cachePolicy="memory-disk"
+                      />
                     ) : (
                       <Ionicons name={m.icon as keyof typeof Ionicons.glyphMap} size={28} color={colors.primary} />
                     )}
@@ -614,117 +967,117 @@ export default function MarketplaceScreen() {
                   <View style={styles.flex}>
                     <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{m.title}</Text>
                     <Text style={[typography.caption, { color: colors.text.secondary }]}>{m.description}</Text>
-                    <Text style={[typography.captionBold, { color: colors.primary, marginTop: 2 }]}>
-                      {m.tokenCost ?? 10} Tokens · or {m.cost.toLocaleString()} Gems
-                    </Text>
-                    <Text
-                      style={[
-                        typography.caption,
-                        {
-                          color: soldOut ? colors.error : colors.text.muted,
-                          marginTop: 2,
-                        },
-                      ]}
-                    >
-                      {stock.isLoading
-                        ? 'Checking inventory…'
-                        : left === undefined
-                          ? 'Stock verified upon request'
-                          : soldOut
-                            ? 'Temporarily Out of Stock'
-                            : `${left} available`}
-                    </Text>
+                    <View style={[styles.row, { gap: 8, marginTop: 4 }]}>
+                      <Text style={[typography.captionBold, { color: colors.primary }]}>
+                        {m.cost.toLocaleString()} Gems · or {m.tokenCost ?? 10} Tokens
+                      </Text>
+                      <Text style={[typography.caption, { color: inStock > 0 ? colors.text.muted : colors.error }]}>
+                        {inStock > 0 ? `${inStock} left this month` : 'Out of stock'}
+                      </Text>
+                    </View>
                   </View>
-                  <View style={styles.actionCol}>
-                    <Button
-                      label={`${m.tokenCost ?? 10} 🪙`}
-                      size="sm"
-                      variant={shortTokens ? 'outline' : 'primary'}
-                      disabled={shortTokens || soldOut}
-                      onPress={() => promptUnlock(m, 'tokens')}
-                    />
-                    <Button
-                      label="Order"
-                      size="sm"
-                      variant={shortGems ? 'outline' : 'primary'}
-                      disabled={shortGems || soldOut}
-                      onPress={() => promptUnlock(m, 'gems')}
-                    />
-                  </View>
+                  {req ? (
+                    <Badge label={req.status === 'pending' ? 'Requested' : req.status} variant="neutral" />
+                  ) : (
+                    <View style={styles.actionCol}>
+                      <Button
+                        label={`${m.tokenCost ?? 10} Tokens`}
+                        size="sm"
+                        variant={shortTokens ? 'outline' : 'primary'}
+                        disabled={inStock <= 0 || (shortGems && shortTokens)}
+                        onPress={() => promptUnlock(m, 'tokens')}
+                      />
+                      <Button
+                        label="Use Gems"
+                        size="sm"
+                        variant="outline"
+                        disabled={inStock <= 0 || shortGems}
+                        onPress={() => promptUnlock(m, 'gems')}
+                      />
+                    </View>
+                  )}
                 </Card>
               );
             })}
           </View>
-
-          {requests.data && requests.data.length > 0 && (
-            <View style={{ marginBottom: spacing.lg }}>
-              <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: spacing.sm }]}>Your Gear Orders</Text>
-              {requests.data.map((r) => (
-                <Card key={r.id} style={[styles.itemCard, { marginBottom: spacing.sm }]}>
-                  <Text style={[typography.body, styles.flex, { color: colors.text.primary }]}>
-                    {MARKET.find((m) => m.id === r.item_id)?.title ?? r.item_id}
-                  </Text>
-                  <Badge label={r.status} variant="primary" />
-                </Card>
-              ))}
-            </View>
-          )}
         </View>
       )}
 
-      {/* TAB 2: MILESTONE RELIQUARIES */}
+      {/* TAB 2: MILESTONE RELIQUARY CHESTS & COLLECTOR CARDS */}
       {activeTab === 'reliquary' && (
-        <View style={{ marginBottom: spacing.xl }}>
+        <View style={{ marginBottom: spacing.lg }}>
           <View style={styles.sectionHead}>
-            <Ionicons name="trophy-outline" size={20} color={colors.primary} />
-            <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>The 5 Milestone Chest Tiers</Text>
+            <Ionicons name="gift" size={20} color={colors.primary} />
+            <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>
+              Milestone Reliquary Troves
+            </Text>
+            <Badge label="5 Tiers" variant="gold" />
           </View>
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2, marginBottom: spacing.md }]}>
-            Hand-crafted 3D reliquaries unlocked automatically as you hit milestone health levels.
+            Earned exclusively by reaching journey milestones on your Roadmap. Tap any chest to preview full loot animations and card drops.
           </Text>
 
           {LEVEL_CHESTS.map((c) => {
             const chestArt = getChestAssets(c.level);
             const cardArt = getCardAsset(c.card.id);
-            const isDone = opened.includes(chestKey(c.level));
-            const isReady = !isDone && level >= c.level;
+            const isUnlocked = ledger.some((e) => e.kind === 'chest_reward' && e.key === chestKey(c.level));
             return (
-              <Card key={c.level} style={[styles.reliquaryCard, { marginBottom: spacing.md, borderColor: isReady ? colors.primary : colors.border }]}>
-                <View style={styles.reliquaryTop}>
-                  <Badge label={`Tier Milestone · Level ${c.level}`} variant={isDone ? 'success' : isReady ? 'primary' : 'neutral'} />
-                  {isReady && <Badge label="Ready to Open" variant="gold" />}
+              <Card key={c.level} style={[styles.reliquaryCard, { marginBottom: spacing.md }]}>
+                <View style={styles.rowBetween}>
+                  <View style={styles.flex}>
+                    <Text style={[typography.captionBold, { color: colors.primary }]}>
+                      MILESTONE · LEVEL {c.level}
+                    </Text>
+                    <Text style={[typography.heading, { color: colors.text.primary, marginTop: 2 }]}>
+                      {c.title}
+                    </Text>
+                  </View>
+                  <Badge label={isUnlocked ? 'Claimed' : `Level ${c.level}`} variant={isUnlocked ? 'success' : 'neutral'} />
                 </View>
 
-                <Text style={[typography.heading, { color: colors.text.primary, marginTop: 8 }]}>{c.title}</Text>
-                <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                  Guaranteed Reward: +{c.gems} Amber Gems & exclusive {c.card.title} ({c.card.rarity} Card)
+                <Text style={[typography.caption, { color: colors.text.secondary, marginVertical: spacing.sm }]}>
+                  +{c.gems} Amber Gems · Unlocks the {c.card.title} ({c.card.rarity}) Collector Card.
                 </Text>
 
                 {/* Dual Chest State Display */}
                 <View style={styles.dualChestRow}>
                   <View style={styles.chestStateCol}>
-                    <Image source={chestArt.closed} style={styles.largeChestImg} contentFit="contain" />
+                    <Image
+                      source={chestArt.closed}
+                      style={styles.largeChestImg}
+                      contentFit="contain"
+                      transition={150}
+                      cachePolicy="memory-disk"
+                    />
                     <Text style={[typography.captionBold, { color: colors.text.muted, marginTop: 4 }]}>Closed State</Text>
                   </View>
                   <View style={styles.chestStateCol}>
-                    <Image source={chestArt.burst} style={styles.largeChestImg} contentFit="contain" />
+                    <Image
+                      source={chestArt.burst}
+                      style={styles.largeChestImg}
+                      contentFit="contain"
+                      transition={150}
+                      cachePolicy="memory-disk"
+                    />
                     <Text style={[typography.captionBold, { color: colors.primary, marginTop: 4 }]}>Burst Eruption</Text>
                   </View>
                 </View>
 
                 {/* Card Drop Preview */}
                 <View style={[styles.cardDropPreview, { backgroundColor: colors.surface1 }]}>
-                  <Image source={cardArt} style={styles.miniCardImg} contentFit="cover" />
+                  <Image
+                    source={cardArt}
+                    style={styles.miniCardImg}
+                    contentFit="cover"
+                    transition={150}
+                    cachePolicy="memory-disk"
+                  />
                   <View style={styles.flex}>
                     <Text style={[typography.captionBold, { color: colors.primary }]}>{c.card.rarity.toUpperCase()} COLLECTOR CARD</Text>
                     <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{c.card.title}</Text>
                     <Text style={[typography.caption, { color: colors.text.secondary }]}>Debossed geometric watermark seal</Text>
                   </View>
-                  {isReady ? (
-                    <Button label="Open" size="sm" onPress={() => setChest(c)} />
-                  ) : (
-                    <Badge label={isDone ? 'Claimed' : `Lvl ${c.level}`} variant={isDone ? 'success' : 'neutral'} />
-                  )}
+                  <Button label="Inspect Loot" size="sm" variant="outline" onPress={() => setChest(c)} />
                 </View>
               </Card>
             );
@@ -734,130 +1087,191 @@ export default function MarketplaceScreen() {
 
       {/* TAB 3: ARTISANAL GOUACHE GALLERY */}
       {activeTab === 'gallery' && (
-        <View style={{ marginBottom: spacing.xl }}>
+        <View style={{ marginBottom: spacing.lg }}>
           <View style={styles.sectionHead}>
-            <Ionicons name="brush-outline" size={20} color={colors.primary} />
-            <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>Artisanal Gouache Gallery</Text>
+            <Ionicons name="color-palette" size={20} color={colors.primary} />
+            <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>
+              Artisanal Gouache Gallery
+            </Text>
+            <Badge label="11 Studies" variant="primary" />
           </View>
           <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2, marginBottom: spacing.md }]}>
             Hand-painted Scandinavian-Japanese gouache on textured cotton paper. Tap any artwork to inspect full details.
           </Text>
 
-          <View style={styles.galleryGrid}>
-            {EDITORIAL_ARTWORKS.map((art) => {
-              const imageSource = getItemAsset(art.assetKey);
-              return (
-                <PressableScale
-                  key={art.id}
-                  onPress={() => setInspectArt(art)}
-                  style={[styles.galleryCard, { backgroundColor: colors.surface }]}
-                >
-                  <Image source={imageSource} style={styles.galleryImg} contentFit="cover" />
-                  <View style={styles.galleryMeta}>
-                    <Badge label={art.category} variant="primary" />
-                    <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 4 }]} numberOfLines={1}>
-                      {art.title}
-                    </Text>
-                    <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                      {art.description}
-                    </Text>
-                  </View>
-                </PressableScale>
-              );
-            })}
+          <View style={{ minHeight: 400 }}>
+            <FlashList
+              data={EDITORIAL_ARTWORKS}
+              keyExtractor={(item) => item.id}
+              renderItem={renderGalleryItem}
+              numColumns={2}
+              scrollEnabled={false}
+              ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+            />
           </View>
         </View>
       )}
 
-      {/* TAB 4: MASTER 3D ARTIFACTS VAULT (All 37 Generated Assets Showcase) */}
+      {/* TAB 4: 3D ARTIFACTS VAULT */}
       {activeTab === 'vault' && (
-        <View style={{ marginBottom: spacing.xl }}>
+        <View style={{ marginBottom: spacing.lg }}>
           <View style={styles.sectionHead}>
-            <Ionicons name="sparkles-outline" size={20} color={colors.primary} />
+            <Ionicons name="cube" size={20} color={colors.primary} />
             <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>
-              Master 3D Artifacts Vault ({filteredVault.length})
+              Master 3D Artifacts Vault
             </Text>
+            <Badge label={`${filteredVault.length} Renders`} variant="gold" />
           </View>
-          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2, marginBottom: spacing.md }]}>
-            Explore all 37 custom 3D volumetric renders, medallions, split composites, and posters. Tap any asset to inspect in studio lighting.
+          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2, marginBottom: spacing.sm }]}>
+            All 36 high-resolution 3D volumetric renders, medallions, vouchers, and composite promotional keyframes.
           </Text>
 
-          {/* Filter Chips */}
+          {/* Filter Pills */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterPillsScroll}>
-            {(['All', 'Cinematic Banners', 'Reliquary Chests', 'Collector Cards', 'Currencies & Tokens', 'Physical Gear'] as VaultFilter[]).map((f) => (
+            {(
+              [
+                'All',
+                'Cinematic Banners',
+                'Reliquary Chests',
+                'Collector Cards',
+                'Currencies & Tokens',
+                'Physical Gear',
+              ] as VaultFilter[]
+            ).map((filter) => (
               <PressableScale
-                key={f}
-                onPress={() => setVaultFilter(f)}
+                key={filter}
+                onPress={() => setVaultFilter(filter)}
                 style={[
                   styles.filterPill,
                   {
-                    backgroundColor: vaultFilter === f ? colors.primary : colors.surface1,
+                    backgroundColor: vaultFilter === filter ? colors.primary : colors.surface,
+                    borderColor: colors.border,
                   },
                 ]}
               >
                 <Text
                   style={[
                     typography.captionBold,
-                    { color: vaultFilter === f ? colors.onPrimary : colors.text.secondary },
+                    { color: vaultFilter === filter ? colors.onPrimary : colors.text.secondary },
                   ]}
                 >
-                  {f}
+                  {filter}
                 </Text>
               </PressableScale>
             ))}
           </ScrollView>
 
-          {/* Master 3D Artifacts Grid */}
-          <View style={styles.vaultGrid}>
-            {filteredVault.map((artifact) => (
-              <PressableScale
-                key={artifact.id}
-                onPress={() => setInspectArt(artifact)}
-                style={[styles.vaultCard, { backgroundColor: colors.surface }]}
-              >
-                <Image
-                  source={artifact.source}
-                  style={[
-                    styles.vaultImg,
-                    { height: (artifact.aspectRatio ?? 1.5) < 1.0 ? 220 : 160 },
-                  ]}
-                  contentFit="cover"
-                />
-                <View style={styles.vaultMeta}>
-                  <Badge label={artifact.category} variant="primary" />
-                  <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 4 }]} numberOfLines={1}>
-                    {artifact.title}
-                  </Text>
-                  <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]} numberOfLines={2}>
-                    {artifact.description}
-                  </Text>
-                </View>
-              </PressableScale>
-            ))}
+          {/* Master 3D Artifacts Grid via FlashList */}
+          <View style={{ minHeight: 600 }}>
+            <FlashList
+              data={filteredVault}
+              keyExtractor={(item) => item.id}
+              renderItem={renderVaultItem}
+              numColumns={2}
+              scrollEnabled={false}
+              ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+            />
           </View>
         </View>
       )}
 
       {/* Everyday Earning Guide */}
-      <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: spacing.sm }]}>Everyday Habit Earnings</Text>
+      <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: spacing.sm }]}>
+        Everyday Habit Earnings
+      </Text>
       {Object.values(ACTION_REWARDS).map((a) => (
         <View key={a.label} style={styles.earnRow}>
           <Text style={[typography.body, styles.flex, { color: colors.text.secondary }]}>{a.label}</Text>
           <Text style={[typography.bodyBold, { color: colors.primary }]}>+{a.gems} Gems</Text>
         </View>
       ))}
-      <Text
-        style={[
-          typography.caption,
-          {
-            color: colors.text.muted,
-            marginTop: spacing.sm,
-            marginBottom: spacing.xl,
-          },
-        ]}
-      >
-        Habit adherence is capped daily to prevent farming. Streaks multiply earnings: 3 days ×1.2, 7 days ×1.5, 30 days ×2.5. Real data only, no in-app purchases.
+      <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.sm, marginBottom: spacing.xl }]}>
+        Rewards never reset. Streaks add up to a 2.5× multiplier. Everything here is earned through verified wellness habits.
       </Text>
+
+      {/* Loot Box Inspection Modal */}
+      <LootBoxModal key={chest?.level ?? 0} chest={chest} onClose={() => setChest(null)} />
+
+      {/* Physical Delivery Request Bottom Sheet */}
+      <AppBottomSheetModal
+        visible={gear !== null}
+        onClose={() => setGear(null)}
+        title={gear?.title ?? 'Claim Reward'}
+        subtitle="Delivery request"
+      >
+        <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: spacing.sm }]}>
+          {gear && gear.id.startsWith('plan_')
+            ? 'Enrolling unlocks 30 daily coaching routines, personalized diet plans, and verified tracking.'
+            : 'Shipped to you at zero cost. We will text you tracking when your package leaves.'}
+        </Text>
+
+        <View style={styles.orderSummary}>
+          <Text style={[typography.captionBold, { color: colors.text.secondary }]}>Payment Selection</Text>
+          <View style={[styles.row, { gap: 10, marginTop: 6 }]}>
+            <PressableScale
+              style={[
+                styles.payChoice,
+                payMethod === 'gems' && { borderColor: colors.primary, backgroundColor: colors.primaryAlpha },
+              ]}
+              onPress={() => setPayMethod('gems')}
+            >
+              <Text style={[typography.captionBold, { color: payMethod === 'gems' ? colors.primary : colors.text.primary }]}>
+                {gear ? gear.cost.toLocaleString() : 0} Gems
+              </Text>
+              <Text style={[typography.caption, { color: colors.text.muted }]}>Balance: {diamonds.toLocaleString()}</Text>
+            </PressableScale>
+
+            <PressableScale
+              style={[
+                styles.payChoice,
+                payMethod === 'tokens' && { borderColor: colors.primary, backgroundColor: colors.primaryAlpha },
+              ]}
+              onPress={() => setPayMethod('tokens')}
+            >
+              <Text style={[typography.captionBold, { color: payMethod === 'tokens' ? colors.primary : colors.text.primary }]}>
+                {gear ? (gear.tokenCost ?? 10) : 10} Tokens
+              </Text>
+              <Text style={[typography.caption, { color: colors.text.muted }]}>Balance: {tokens}</Text>
+            </PressableScale>
+          </View>
+        </View>
+
+        {gear && !gear.id.startsWith('plan_') && (
+          <View style={{ gap: spacing.sm, marginTop: spacing.md }}>
+            <TextField
+              label="Full name"
+              value={fullName}
+              onChangeText={setFullName}
+              placeholder="First and last name"
+              autoCapitalize="words"
+            />
+            <TextField
+              label="Phone"
+              value={phone}
+              onChangeText={setPhone}
+              placeholder="+91 or phone with country code"
+              keyboardType="phone-pad"
+            />
+            <TextField
+              label="Delivery address"
+              value={address}
+              onChangeText={setAddress}
+              placeholder="Flat/house, street, city, pin code"
+              multiline
+              numberOfLines={3}
+            />
+          </View>
+        )}
+
+        <View style={{ marginTop: spacing.md, gap: spacing.sm }}>
+          <Button
+            label={gear && gear.id.startsWith('plan_') ? 'Enroll in Pathway' : 'Submit Delivery Request'}
+            onPress={confirmGearRequest}
+            disabled={Boolean(gear && !gear.id.startsWith('plan_') && !validOrder)}
+          />
+          <Button label="Cancel" variant="outline" onPress={() => setGear(null)} />
+        </View>
+      </AppBottomSheetModal>
 
       {/* Full-Screen Art / 3D Artifact Inspection Modal */}
       {inspectArt && (
@@ -866,70 +1280,27 @@ export default function MarketplaceScreen() {
             <View style={[styles.modalCard, { backgroundColor: colors.background }]}>
               <Image
                 source={'source' in inspectArt ? inspectArt.source : getItemAsset(inspectArt.assetKey)}
-                style={styles.modalArtImg}
+                style={{ width: Math.min(CONTENT_WIDTH, 360), height: 260, borderRadius: 16 }}
                 contentFit="contain"
+                transition={150}
+                cachePolicy="memory-disk"
               />
               <View style={styles.modalBody}>
-                <View style={styles.rowBetween}>
-                  <Badge label={inspectArt.category} variant="primary" />
-                  <Text style={[typography.caption, { color: colors.text.muted }]}>Full Studio Resolution</Text>
-                </View>
-                <Text style={[typography.heading, { color: colors.text.primary, marginTop: 8 }]}>{inspectArt.title}</Text>
-                <Text style={[typography.body, { color: colors.text.secondary, marginTop: 6 }]}>{inspectArt.description}</Text>
-                <Text style={[typography.caption, { color: colors.text.muted, marginTop: 8 }]}>
-                  Asset Spec: High-fidelity 60fps render with volumetric rim lighting, debossed T-leaf emblem watermark, and Nordic-Japanese palette harmony.
+                <Badge label={inspectArt.category} variant="gold" />
+                <Text style={[typography.heading, { color: colors.text.primary, marginTop: 6 }]}>
+                  {inspectArt.title}
                 </Text>
-                <View style={{ marginTop: spacing.lg }}>
-                  <Button label="Close Inspection" onPress={() => setInspectArt(null)} />
+                <Text style={[typography.body, { color: colors.text.secondary, marginTop: 6 }]}>
+                  {inspectArt.description}
+                </Text>
+                <View style={{ marginTop: spacing.md }}>
+                  <Button label="Done" onPress={() => setInspectArt(null)} />
                 </View>
               </View>
             </View>
           </View>
         </Modal>
       )}
-
-      {/* Loot Box Opening Modal */}
-      <LootBoxModal key={chest?.level ?? 0} chest={chest} onClose={() => setChest(null)} />
-
-      {/* Doorstep Delivery Order Sheet */}
-      <AppBottomSheetModal
-        visible={!!gear}
-        onClose={() => setGear(null)}
-        title={gear ? `Order ${gear.title}` : ''}
-      >
-        <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: spacing.sm }]}>
-          Payment method:{' '}
-          <Text style={typography.captionBold}>
-            {payMethod === 'tokens' ? `${gear?.tokenCost ?? 1} Token(s)` : `${gear?.cost.toLocaleString()} Gems`}
-          </Text>
-          . Your delivery information is end-to-end private and reviewed solely by the Thrivefold fulfillment team.
-        </Text>
-        <TextField label="Full recipient name" value={fullName} onChangeText={setFullName} autoComplete="name" />
-        <TextField
-          label="Phone number (for courier dispatch)"
-          value={phone}
-          onChangeText={setPhone}
-          keyboardType="phone-pad"
-          containerStyle={{ marginTop: spacing.sm }}
-        />
-        <TextField
-          label="Doorstep delivery address"
-          value={address}
-          onChangeText={setAddress}
-          multiline
-          containerStyle={{ marginTop: spacing.sm }}
-        />
-        {requestGear.error ? (
-          <Text style={[typography.caption, { color: colors.error, marginTop: spacing.sm }]}>{requestGear.error.message}</Text>
-        ) : null}
-        <View style={{ marginTop: spacing.md, marginBottom: spacing.sm }}>
-          <Button
-            label={requestGear.isPending ? 'Submitting Order…' : 'Confirm & Dispatch'}
-            disabled={!validOrder || requestGear.isPending}
-            onPress={() => void sendOrderRequest()}
-          />
-        </View>
-      </AppBottomSheetModal>
     </ScreenContainer>
   );
 }
@@ -938,9 +1309,9 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   row: { flexDirection: 'row', alignItems: 'center' },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  walletCard: { padding: 16 },
-  walletHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
-  currencyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' },
+  walletCard: { padding: 16, borderRadius: 20 },
+  walletHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  currencyRow: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' },
   currencyCol: { alignItems: 'center', flex: 1 },
   currencyIcon: { width: 36, height: 36 },
   walletDivider: { width: 1, height: 48, opacity: 0.3 },
@@ -949,13 +1320,13 @@ const styles = StyleSheet.create({
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   heroScroll: { gap: 12, paddingVertical: 4 },
   heroBannerWrap: {
-    width: width * 0.78,
-    height: 140,
+    width: HERO_CARD_WIDTH,
+    height: HERO_CARD_HEIGHT,
     borderRadius: 18,
     overflow: 'hidden',
     position: 'relative',
   },
-  heroBannerImg: { width: '100%', height: '100%' },
+  heroBannerImg: { width: HERO_CARD_WIDTH, height: HERO_CARD_HEIGHT },
   heroOverlay: {
     position: 'absolute',
     bottom: 0,
@@ -976,16 +1347,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
-    paddingVertical: 10,
+    paddingVertical: 8,
     borderRadius: 10,
   },
-  shelf: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  shelfScroll: { gap: 10, paddingVertical: 6 },
   cardItem: {
-    width: 100,
-    borderRadius: 14,
-    overflow: 'hidden',
-    padding: 6,
+    width: 96,
     alignItems: 'center',
+    borderRadius: 14,
+    padding: 8,
   },
   cardItemImg: { width: 88, height: 120, borderRadius: 10 },
   stickerItem: {
@@ -994,7 +1364,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 10,
   },
-  stickerImg: { width: 48, height: 48, borderRadius: 12 },
+  stickerImg: { width: 52, height: 52, borderRadius: 12 },
   stickerIconBg: {
     width: 48,
     height: 48,
@@ -1011,12 +1381,11 @@ const styles = StyleSheet.create({
   stickerThumb: {
     width: 52,
     height: 52,
-    borderRadius: 14,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
   },
-  itemImgThumb: { width: 44, height: 44, borderRadius: 8 },
+  itemImgThumb: { width: 48, height: 48, borderRadius: 10 },
   gearThumb: {
     width: 60,
     height: 60,
@@ -1032,18 +1401,12 @@ const styles = StyleSheet.create({
   reliquaryCard: {
     padding: 16,
     borderRadius: 22,
-    borderWidth: 1.5,
-  },
-  reliquaryTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
   },
   dualChestRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    marginVertical: 14,
+    marginVertical: 12,
   },
   chestStateCol: {
     alignItems: 'center',
@@ -1060,25 +1423,9 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   miniCardImg: {
-    width: 48,
-    height: 68,
+    width: 52,
+    height: 72,
     borderRadius: 8,
-  },
-  galleryGrid: {
-    gap: 14,
-  },
-  galleryCard: {
-    borderRadius: 18,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.06)',
-  },
-  galleryImg: {
-    width: '100%',
-    height: 180,
-  },
-  galleryMeta: {
-    padding: 14,
   },
   filterPillsScroll: {
     gap: 8,
@@ -1088,21 +1435,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
+    borderWidth: 1,
   },
-  vaultGrid: {
-    gap: 14,
-  },
-  vaultCard: {
+  gridCard: {
     borderRadius: 18,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.06)',
+    marginRight: 10,
   },
-  vaultImg: {
-    width: '100%',
-  },
-  vaultMeta: {
-    padding: 14,
+  gridCardMeta: {
+    padding: 10,
   },
   modalScrim: {
     flex: 1,
@@ -1115,12 +1458,25 @@ const styles = StyleSheet.create({
     maxWidth: 420,
     borderRadius: 24,
     overflow: 'hidden',
-  },
-  modalArtImg: {
-    width: '100%',
-    height: 260,
+    padding: 16,
+    alignItems: 'center',
   },
   modalBody: {
-    padding: 20,
+    padding: 16,
+    width: '100%',
+  },
+  orderSummary: {
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.08)',
+  },
+  payChoice: {
+    flex: 1,
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.1)',
+    alignItems: 'center',
   },
 });
