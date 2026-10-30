@@ -79,11 +79,7 @@ export default function DocumentsScreen() {
       setCam(k);
       return;
     }
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) {
-      setError('Permission was not given.');
-      return;
-    }
+    // The system photo picker needs no storage permission.
     const r = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       quality: 0.9,

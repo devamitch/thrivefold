@@ -90,7 +90,8 @@ class FoodCameraView(context: Context, appContext: AppContext) : ExpoView(contex
       return
     }
     val exec = Executors.newSingleThreadExecutor().also { executor = it }
-    exec.execute {
+    // The food model loads only when labels are wanted; a plain photo camera never needs it.
+    if (labels) exec.execute {
       classifier = try {
         FoodClassifier.create(context)
       } catch (e: Throwable) {

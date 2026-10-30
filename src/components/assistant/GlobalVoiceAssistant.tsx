@@ -60,7 +60,8 @@ import * as Clipboard from 'expo-clipboard';
 import { speakCoachLine, stopCoachSpeech } from '../../services/ai/coachVoiceService';
 import type { ChatTable } from '../../domain/assistant/chatActions';
 import { setChatActionHooks } from '../../services/assistant/chatActions';
-import { pickFile, readAttachment, takePhoto, type PickedFile } from '../../services/assistant/chatAttachments';
+import { pickFile, readAttachment, type PickedFile } from '../../services/assistant/chatAttachments';
+import { CameraCapture } from '../camera/CameraCapture';
 import { Image } from 'expo-image';
 import { thriveRag } from '../../services/local-ai/rag/thriveRag';
 import { CHAT_PAGE, chatStore, type ChatMessage } from '../../services/assistant/chatStore';
@@ -392,10 +393,17 @@ export function GlobalVoiceAssistant() {
   // A picked file waits above the composer until sent, so nothing is read by accident. Whatever
   // is typed alongside becomes the question about it.
   const [pending, setPending] = useState<PickedFile | null>(null);
+  // Camera: the same in-app camera as meal and document photos (CameraX inside Thrivefold; the
+  // system camera can close the app on low-memory phones).
+  const [camOpen, setCamOpen] = useState(false);
   const attach = async (camera: boolean) => {
     hapticSelection();
     Keyboard.dismiss();
-    const file = await (camera ? takePhoto() : pickFile()).catch(() => null);
+    if (camera) {
+      setCamOpen(true);
+      return;
+    }
+    const file = await pickFile().catch(() => null);
     if (file) setPending(file);
   };
   const sendAttachment = () => {
@@ -823,12 +831,14 @@ export function GlobalVoiceAssistant() {
                   {/* Attach a photo (tap: gallery, hold: camera): prescriptions, diet charts, plans. */}
                   <PressableScale
                     onPress={() => void attach(false)}
-                    onLongPress={() => void attach(true)}
                     hitSlop={8}
                     style={styles.attach}
-                    accessibilityLabel="Attach a photo. Hold to use the camera"
+                    accessibilityLabel="Attach a file: PDF, photo or text"
                   >
                     <Ionicons name="attach" size={22} color={colors.text.secondary} />
+                  </PressableScale>
+                  <PressableScale onPress={() => void attach(true)} hitSlop={8} style={styles.camBtn} accessibilityLabel="Take a photo">
+                    <Ionicons name="camera-outline" size={22} color={colors.text.secondary} />
                   </PressableScale>
                   <TextInput
                     style={[typography.body, styles.input, { color: colors.text.primary }]}
@@ -883,6 +893,17 @@ export function GlobalVoiceAssistant() {
             </Animated.View>
           </View>
         </View>
+        <CameraCapture
+          visible={camOpen}
+          onClose={() => setCamOpen(false)}
+          guide="document"
+          title="Take a photo"
+          hint="A prescription, medicine strip, report or anything to read. Hold it flat in good light."
+          onPhoto={(uri) => {
+            setCamOpen(false);
+            setPending({ uri, name: 'Photo', mime: 'image/jpeg', kind: 'image' });
+          }}
+        />
       </GestureHandlerRootView>
     </Modal>
   );
@@ -1078,6 +1099,7 @@ const styles = StyleSheet.create({
   bubbleImage: { width: 180, height: 180, borderRadius: 12, marginTop: 8 },
   // Mirrors the Send/Mic button on the right: same 48 dp box, bottom-aligned with one line of text.
   attach: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
+  camBtn: { width: 36, height: 48, alignItems: 'center', justifyContent: 'center', marginLeft: -6 },
   tableRow: { flexDirection: 'row', borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 6 },
   tableCell: { flex: 1, paddingRight: 8 },
   composer: {

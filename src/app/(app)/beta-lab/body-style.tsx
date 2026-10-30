@@ -50,8 +50,7 @@ const BMI_LABEL = {
 type Source = 'camera_front' | 'camera_back' | 'gallery';
 
 async function pickFromGallery(): Promise<string | null> {
-  const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (!perm.granted) return null;
+  // The system photo picker needs no storage permission.
   const r = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ['images'],
     quality: 0.9,

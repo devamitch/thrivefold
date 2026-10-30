@@ -55,8 +55,8 @@ export function CameraCapture({ visible, onClose, onPhoto, facing = 'back', titl
   };
 
   const gallery = async () => {
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) return;
+    // The system photo picker needs no permission; asking for storage access fails silently here
+    // (the app does not declare it), which made this button do nothing.
     const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.9 });
     if (!r.canceled && r.assets[0]) onPhoto(r.assets[0].uri);
   };
@@ -66,7 +66,10 @@ export function CameraCapture({ visible, onClose, onPhoto, facing = 'back', titl
       <GestureHandlerRootView style={styles.ghRoot}>
         <View style={styles.root}>
           {FoodCameraView && allowed ? (
-            <FoodCameraView ref={ref} active={visible} facing={side} labels={false} style={StyleSheet.absoluteFill} onFoodError={(e) => setError(e.nativeEvent.message)} />
+            <FoodCameraView ref={ref} active={visible} facing={side} labels={false} style={StyleSheet.absoluteFill} onFoodError={(e) => {
+                // Taking a photo never needs the food model; only camera errors matter here.
+                if ((e.nativeEvent as { code?: string }).code !== 'model_unavailable') setError(e.nativeEvent.message);
+              }} />
           ) : (
             <View style={styles.center}>
               <Text style={styles.light}>{allowed === false ? 'Camera access was not allowed. Allow it in Android settings, or choose a photo.' : 'Starting the camera…'}</Text>

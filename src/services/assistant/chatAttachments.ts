@@ -83,6 +83,7 @@ export async function readAttachment(file: PickedFile, question: string): Promis
   }
 
   const pages = doc.pages.length;
+  useRootStore.getState().earnForAction('document_read', hashText(text));
   const { duplicate } = await thriveRag
     .rememberDocument(file.name, doc.pages, hashText(text))
     .catch(() => ({ duplicate: false, id: '' }));

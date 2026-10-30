@@ -9,6 +9,9 @@ import { Card } from '../../../components/ui/Card';
 import { Header } from '../../../components/ui/Header';
 import { Button } from '../../../components/ui/Button';
 import { TextField } from '../../../components/ui/TextField';
+import { CameraCapture } from '../../../components/camera/CameraCapture';
+import { LocalAI, scriptForLanguage } from '../../../../modules/local-ai';
+import { parseMedicineLabel } from '../../../domain/health/medicineLabel';
 import { useTheme } from '../../../theme/useTheme';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { formatLocalDate } from '../../../domain/calendar/universalCalendarEngine';
@@ -56,6 +59,28 @@ export default function MedicationsScreen() {
     void syncCareReminders(medications, remindersOn, followUps).then((ok) => setPermissionDenied(!ok));
   }, [medications, remindersOn, followUps]);
 
+  // Photograph the strip or box: read on the phone, suggest name and strength to check.
+  const [cam, setCam] = useState(false);
+  const [reading, setReading] = useState(false);
+  const [labelNote, setLabelNote] = useState<string | null>(null);
+  const readLabel = async (uri: string) => {
+    setCam(false);
+    setReading(true);
+    setLabelNote(null);
+    try {
+      const doc = await LocalAI.extractDocumentText(uri, 'image/jpeg', scriptForLanguage(useRootStore.getState().coachLanguage));
+      const guess = parseMedicineLabel(doc.pages.map((p) => p.text).join('\n'));
+      if (guess.name) setName(guess.name);
+      if (guess.strength && !dose) setDose(guess.strength);
+      setLabelNote(guess.name ? 'Filled from the photo. Check the name and dose against the label.' : 'Could not find a clear name. Type it as written on the label.');
+      useRootStore.getState().earnForAction('med_photo', `${guess.name ?? 'label'}:${Date.now() >> 22}`);
+    } catch (e) {
+      setLabelNote(e instanceof Error ? e.message : 'Could not read the photo.');
+    } finally {
+      setReading(false);
+    }
+  };
+
   const save = () => {
     if (!valid) return;
     addMedication({ name: name.trim(), dose: dose.trim(), time });
@@ -83,7 +108,15 @@ export default function MedicationsScreen() {
 
         {adding ? (
           <Card style={{ marginTop: spacing.sm }}>
-            <TextField label="Name" value={name} onChangeText={setName} placeholder="As written on the label" />
+            <Button
+              label={reading ? 'Reading the label…' : 'Photograph the label'}
+              size="sm"
+              variant="outline"
+              disabled={reading}
+              onPress={() => setCam(true)}
+            />
+            {labelNote ? <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 6 }]}>{labelNote}</Text> : null}
+            <TextField label="Name" value={name} onChangeText={setName} placeholder="As written on the label" containerStyle={{ marginTop: spacing.sm }} />
             <TextField label="Dose (optional)" value={dose} onChangeText={setDose} placeholder="e.g. 1 tablet" containerStyle={{ marginTop: spacing.sm }} />
             <TextField
               label="Time (24-hour)"
@@ -227,6 +260,14 @@ export default function MedicationsScreen() {
         }}
         onClose={() => setFuPicker(false)}
         title="Follow-up date"
+      />
+      <CameraCapture
+        visible={cam}
+        onClose={() => setCam(false)}
+        guide="document"
+        title="Photograph the medicine"
+        hint="Fill the frame with the strip or box name, in good light"
+        onPhoto={(uri) => void readLabel(uri)}
       />
     </ScreenWrapper>
   );

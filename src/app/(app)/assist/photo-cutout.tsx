@@ -36,8 +36,7 @@ export default function PhotoCutoutScreen() {
   const w = width - 32;
 
   const pick = async () => {
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) return;
+    // The system photo picker needs no storage permission.
     const r = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       quality: 0.9,
