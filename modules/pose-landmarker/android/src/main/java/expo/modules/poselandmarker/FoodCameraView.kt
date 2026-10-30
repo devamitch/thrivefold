@@ -95,6 +95,7 @@ class FoodCameraView(context: Context, appContext: AppContext) : ExpoView(contex
       classifier = try {
         FoodClassifier.create(context)
       } catch (e: Throwable) {
+        android.util.Log.w("FoodCameraView", "Food model could not load", e)
         post { onFoodError(mapOf("code" to "model_unavailable", "message" to (e.message ?: "Model could not load"))) }
         null
       }
