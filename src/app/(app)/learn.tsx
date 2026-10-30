@@ -11,6 +11,7 @@ import { Badge } from '../../components/ui/Badge';
 import { Card } from '../../components/ui/Card';
 import { ScreenContainer } from '../../components/ui/ScreenContainer';
 import { articlesFor, type Article } from '../../content/learn';
+import { useRootStore } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
 import { PressableScale } from '../../components/ui/PressableScale';
 import { ImageViewer, type ViewerOrigin } from '../../components/ui/ImageViewer';
@@ -52,10 +53,11 @@ export default function LearnScreen() {
     setSpeakingId(art.id);
 
     const introText = `In this lesson, you will learn about: ${art.title}. ${art.body.join(' ')}`;
+    const { coachVoiceRate, coachVoiceGender } = useRootStore.getState();
     Speech.speak(introText, {
       language: 'en-IN',
-      rate: 0.94,
-      pitch: 0.95,
+      rate: coachVoiceRate,
+      pitch: coachVoiceGender === 'female' ? 1.06 : 0.94,
       onDone: () => setSpeakingId(null),
       onStopped: () => setSpeakingId(null),
       onError: () => setSpeakingId(null),

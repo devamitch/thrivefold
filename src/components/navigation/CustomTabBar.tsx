@@ -11,7 +11,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { Tabs } from 'expo-router';
 import { router } from 'expo-router';
-import { memo, useCallback, useEffect, useMemo, useState, type ComponentProps } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useState, type ComponentProps } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, {
   Easing,
@@ -28,12 +28,14 @@ import { hapticMedium, hapticSelection } from '../../services/haptics';
 import { globalVoiceController } from '../../services/voice/globalVoiceController';
 import { AnvayCompanion } from '../brand/AnvayCompanion';
 
-type OrbMood = 'idle' | 'listening' | 'thinking' | 'speaking';
+type OrbMood = 'idle' | 'listening' | 'thinking' | 'speaking' | 'success' | 'error';
 const ORB_LABEL: Record<OrbMood, string> = {
   idle: 'Anvay',
   listening: 'Listening',
   thinking: 'Thinking',
   speaking: 'Speaking',
+  success: 'Done',
+  error: 'Try again',
 };
 
 import { useTheme } from '../../theme/useTheme';
@@ -270,26 +272,40 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
 
   // The orb shows what the coach is doing.
   const [mood, setMood] = useState<OrbMood>('idle');
-  useEffect(
-    () =>
-      globalVoiceController.subscribe({
-        onStateChange: (st) =>
-          setMood(
-            st === 'listening'
-              ? 'listening'
-              : st === 'reasoning' || st === 'transcribing'
-                ? 'thinking'
-                : st === 'speaking'
-                  ? 'speaking'
+  // A finished action or an error shows briefly (1.6 s), then the orb returns to its live state.
+  const flashUntil = React.useRef(0);
+  useEffect(() => {
+    const flash = (m: OrbMood) => {
+      flashUntil.current = Date.now() + 1600;
+      setMood(m);
+      setTimeout(() => {
+        if (Date.now() >= flashUntil.current) setMood((cur) => (cur === m ? 'idle' : cur));
+      }, 1650);
+    };
+    return globalVoiceController.subscribe({
+      onStateChange: (st) => {
+        if (Date.now() < flashUntil.current && st === 'idle') return;
+        setMood(
+          st === 'listening'
+            ? 'listening'
+            : st === 'reasoning' || st === 'transcribing'
+              ? 'thinking'
+              : st === 'speaking'
+                ? 'speaking'
+                : st === 'error'
+                  ? 'error'
                   : 'idle',
-          ),
-        onPartialTranscript: () => undefined,
-        onFinalTranscript: () => undefined,
-        onAssistantReply: () => undefined,
-        onError: () => undefined,
-      }),
-    [],
-  );
+        );
+      },
+      onPartialTranscript: () => undefined,
+      onFinalTranscript: () => undefined,
+      onAssistantReply: (_reply, tool) => {
+        if (tool && tool.success === false) flash('error');
+        else if (tool?.success) flash('success');
+      },
+      onError: () => flash('error'),
+    });
+  }, []);
 
   // The orb is the coach: tap to talk (it keeps listening until closed). Hold for the check-in.
   const handleOrbPress = useCallback(() => {

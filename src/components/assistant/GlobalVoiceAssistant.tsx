@@ -183,7 +183,9 @@ export function GlobalVoiceAssistant() {
         ? ('thinking' as const)
         : voiceState === 'speaking'
           ? ('speaking' as const)
-          : ('idle' as const);
+          : voiceState === 'error'
+            ? ('error' as const)
+            : ('idle' as const);
 
   return (
     <Modal visible animationType="slide" transparent onRequestClose={close} statusBarTranslucent>

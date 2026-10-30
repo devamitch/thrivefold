@@ -35,6 +35,7 @@ const PISTA = '#7A8A6D';
 const FACE = '#FFF4EA';
 const INK = '#2B1B14';
 const HALO = '#7FD3E6';
+const SUCCESS = '#8FCB8A';
 
 // The AnvayKosh mark (assets/brand/anvaykosh-icon.svg), same paths and transform.
 const SHACKLE =
@@ -44,7 +45,7 @@ const BODY =
 const LEAF =
   'M3096 4933 c-9 -60 -7 -574 4 -728 45 -624 260 -1125 650 -1516 269 -270 554 -424 895 -484 150 -26 365 -34 914 -35 l525 0 -80 73 c-319 291 -451 530 -558 1004 -90 396 -211 630 -450 868 -265 264 -619 441 -1101 550 -162 37 -282 70 -389 107 -89 32 -315 139 -372 177 -31 21 -31 21 -38 -16z';
 
-export type AnvayMood = 'idle' | 'listening' | 'thinking' | 'speaking';
+export type AnvayMood = 'idle' | 'listening' | 'thinking' | 'speaking' | 'success' | 'error';
 
 const LOOP_MS = 8000;
 const clamp = Extrapolation.CLAMP;
@@ -64,6 +65,8 @@ export function AnvayCompanion({ size = 64, mood = 'idle' }: { size?: number; mo
   const talk = useSharedValue(0);
   const lean = useSharedValue(0);
   const think = useSharedValue(0);
+  const happy = useSharedValue(0); // success: a little hop and a bigger smile
+  const sad = useSharedValue(0); // error: a small, sorry frown
 
   useEffect(() => {
     if (reduce) return;
@@ -79,13 +82,15 @@ export function AnvayCompanion({ size = 64, mood = 'idle' }: { size?: number; mo
     talk.value = mood === 'speaking' ? loop(160) : withTiming(0, { duration: 180 });
     lean.value = mood === 'listening' ? loop(900) : withTiming(0, { duration: 250 });
     think.value = withTiming(mood === 'thinking' ? 1 : 0, { duration: 300 });
-  }, [mood, reduce, talk, lean, think]);
+    happy.value = withTiming(mood === 'success' ? 1 : 0, { duration: mood === 'success' ? 220 : 400 });
+    sad.value = withTiming(mood === 'error' ? 1 : 0, { duration: 300 });
+  }, [mood, reduce, talk, lean, think, happy, sad]);
 
   const body = useAnimatedStyle(() => {
     const b = Math.sin(t.value * Math.PI * 2 * 3);
     return {
       transform: [
-        { translateY: -b * size * 0.012 - lean.value * size * 0.025 },
+        { translateY: -b * size * 0.012 - lean.value * size * 0.025 - happy.value * size * 0.04 },
         { scale: 1 + b * 0.012 + lean.value * 0.03 },
       ],
     };
@@ -122,7 +127,7 @@ export function AnvayCompanion({ size = 64, mood = 'idle' }: { size?: number; mo
 
   const mouth = useAnimatedProps(() => {
     const o = talk.value * 16;
-    const curve = 14 * (1 - think.value);
+    const curve = (14 + happy.value * 8) * (1 - think.value) - sad.value * 26;
     const w = 24 - think.value * 10;
     const y = FY + 46;
     return {
@@ -136,12 +141,16 @@ export function AnvayCompanion({ size = 64, mood = 'idle' }: { size?: number; mo
     originX: 560,
     originY: 760,
   }));
-  const halo = useAnimatedProps(() => ({ r: 300 + lean.value * 14, opacity: lean.value * 0.45 }));
+  const halo = useAnimatedProps(() => ({
+    r: 300 + lean.value * 14 + happy.value * 10,
+    opacity: Math.max(lean.value * 0.45, happy.value * 0.5, sad.value * 0.35),
+  }));
+  const haloColor = mood === 'success' ? SUCCESS : mood === 'error' ? TERRACOTTA : HALO;
 
   return (
     <Animated.View style={[{ width: size, height: size }, body]} accessibilityRole="image" accessibilityLabel="Anvay">
       <Svg width={size} height={size} viewBox="199 183 636 636">
-        <AnimatedCircle cx={517} cy={501} animatedProps={halo} fill="none" stroke={HALO} strokeWidth={12} />
+        <AnimatedCircle cx={517} cy={501} animatedProps={halo} fill="none" stroke={haloColor} strokeWidth={12} />
 
         {/* Face looking out through the shackle */}
         <Circle cx={FX} cy={FY + 4} r={112} fill={FACE} />
