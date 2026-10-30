@@ -8,13 +8,12 @@
 
 import { Ionicons } from '@expo/vector-icons';
 import { hapticLight, hapticMedium } from '../../services/haptics';
-import * as Speech from 'expo-speech';
 import React, { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { gestureIntroSpeech } from '../../domain/pose/coachVoice';
 import { voiceCommandResponseSpeech, type VoiceCommand } from '../../domain/coach/voiceCommands';
-import { speakCoach } from '../../services/ai/coachVoiceService';
+import { speakCoach, stopCoachSpeech } from '../../services/ai/coachVoiceService';
 import { useTheme } from '../../theme/useTheme';
 import { AppBottomSheetModal, SheetFooterRow } from '../ui/AppBottomSheetModal';
 import { Button } from '../ui/Button';
@@ -141,7 +140,7 @@ export function GestureRemoteGuideModal({
     try {
       hapticLight();
       if (isSpeaking) {
-        Speech.stop();
+        stopCoachSpeech();
         setIsSpeaking(false);
       } else {
         setIsSpeaking(true);
@@ -174,7 +173,7 @@ export function GestureRemoteGuideModal({
 
   const handleClose = () => {
     if (isSpeaking) {
-      Speech.stop();
+      stopCoachSpeech();
       setIsSpeaking(false);
     }
     onClose();

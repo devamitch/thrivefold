@@ -14,9 +14,7 @@
  *
  * Put at: src/services/ai/coachVoice.ts
  */
-import * as Speech from 'expo-speech';
-
-import { speakCoach } from '@/services/ai/coachVoiceService';
+import { speakCoach, stopCoachSpeech } from '@/services/ai/coachVoiceService';
 
 export type VoicePriority = 1 | 2 | 3;
 
@@ -54,11 +52,7 @@ function stopNow() {
   busyUntil = 0;
   busyPriority = 0;
   lastEndAt = Date.now();
-  try {
-    void Speech.stop();
-  } catch {
-    // ignore
-  }
+  stopCoachSpeech();
   notify(false);
 }
 
@@ -107,11 +101,7 @@ export const coachVoice = {
 
     if (now < busyUntil) {
       if (priority <= busyPriority) return; // never talk over an equal/higher line
-      try {
-        void Speech.stop();
-      } catch {
-        // ignore
-      }
+      stopCoachSpeech();
     } else if (priority < 3 && now - lastEndAt < minGapMs) {
       return;
     }

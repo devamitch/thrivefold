@@ -202,3 +202,63 @@ export async function queueCoachSpeech(text: string): Promise<void> {
     });
   });
 }
+
+export interface CoachLineOptions {
+  language?: string;
+  /** Overrides the person's chosen speed (for example a slower, calming pace). */
+  rate?: number;
+  pitch?: number;
+  /** Stop what is playing first (default). False adds the line after it. */
+  interrupt?: boolean;
+  onStart?: () => void;
+  /** Called once when the line ends, is stopped or fails. */
+  onEnd?: () => void;
+}
+
+/**
+ * Speaks one line in the person's chosen coach voice, interrupting anything playing. Every screen
+ * that talks goes through here (or queueCoachSpeech), so the voice is the same everywhere.
+ */
+export async function speakCoachLine(text: string, opts: CoachLineOptions = {}): Promise<void> {
+  const content = text.trim();
+  if (!content) {
+    opts.onEnd?.();
+    return;
+  }
+  if (opts.interrupt !== false) Speech.stop();
+  const voice = await resolveBestVoice();
+  let ended = false;
+  const end = () => {
+    if (ended) return;
+    ended = true;
+    opts.onEnd?.();
+  };
+  try {
+    Speech.speak(content, {
+      language: opts.language ?? 'en-IN',
+      rate: opts.rate ?? chosenRate(),
+      pitch: opts.pitch ?? (voice.gender === 'male' ? 0.94 : 1.06),
+      voice: voice.id ?? undefined,
+      onStart: opts.onStart,
+      onDone: end,
+      onStopped: end,
+      onError: end,
+    });
+  } catch {
+    end();
+  }
+}
+
+/** Stops whatever the coach is saying, on any screen. */
+export function stopCoachSpeech(): void {
+  try {
+    void Speech.stop();
+  } catch {
+    // Nothing playing or no speech engine.
+  }
+}
+
+/** Whether the system voice is talking right now. */
+export function isCoachSpeechPlaying(): Promise<boolean> {
+  return Speech.isSpeakingAsync().catch(() => false);
+}

@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef } from 'react';
-import * as Speech from 'expo-speech';
+import { useCallback, useRef } from 'react';
+
+import { isCoachSpeechPlaying, speakCoachLine } from '../../../services/ai/coachVoiceService';
 
 // The speech-recognition native module may be missing (Expo Go, or a build made before it was added).
 // Loading it defensively means the character and TTS keep working instead of crashing the screen.
@@ -17,25 +18,6 @@ export type Coach = 'male' | 'female';
 /** Coach voice is the opposite gender of the user (female voice by default). */
 export const coachFor = (g?: 'male' | 'female' | 'other'): Coach => (g === 'female' ? 'male' : 'female');
 
-// Voice name hints for Indian English. Verify on your device; the first match wins.
-const FEMALE = /veena|lekha|heera|neerja|swara|female|en-in-x-(ena|enc)\b|-x-hia/i;
-const MALE = /rishi|ravi|prabhat|madhur|male|en-in-x-(end|ene)\b|-x-hic/i;
-
-async function pickVoice(lang: string, coach: Coach): Promise<string | undefined> {
-  try {
-    const all = await Speech.getAvailableVoicesAsync();
-    const norm = (l?: string) => (l ?? '').toLowerCase().replace('_', '-');
-    const inLang = all.filter((v) => norm(v.language).startsWith(norm(lang)));
-    const pool = inLang.length ? inLang : all.filter((v) => norm(v.language).startsWith('en'));
-    const re = coach === 'female' ? FEMALE : MALE;
-    const best = pool.filter((v) => re.test(`${v.name} ${v.identifier}`));
-    const ranked = (best.length ? best : []).sort((a, b) => (b.quality === 'Enhanced' ? 1 : 0) - (a.quality === 'Enhanced' ? 1 : 0));
-    return ranked[0]?.identifier;
-  } catch {
-    return undefined;
-  }
-}
-
 export interface VoiceHandlers {
   lang?: string;
   coach?: Coach;
@@ -52,17 +34,9 @@ export function useVoice(h: VoiceHandlers) {
   const hRef = useRef(h);
   hRef.current = h;
   const lang = h.lang ?? 'en-IN';
-  const coach = h.coach ?? 'female';
   const want = useRef(false);
   const running = useRef(false);
   const speaking = useRef(false);
-  const voiceId = useRef<string | undefined>(undefined);
-
-  useEffect(() => {
-    let alive = true;
-    pickVoice(lang, coach).then((id) => { if (alive) voiceId.current = id; });
-    return () => { alive = false; };
-  }, [lang, coach]);
 
   const begin = useCallback(() => {
     if (!Mod) return;
@@ -115,27 +89,24 @@ export function useVoice(h: VoiceHandlers) {
     if (!running.current) hRef.current.onEnd();
   }, []);
 
+  // One coach voice everywhere: the person's chosen voice and speed from the speech service.
   const speak = useCallback((text: string, interrupt = false) => {
     if (want.current && running.current) { try { Mod?.abort(); } catch { /* ignore */ } }
-    if (interrupt) Speech.stop();
     const finish = () => {
-      Speech.isSpeakingAsync().then((still) => {
+      isCoachSpeechPlaying().then((still) => {
         if (still) return;
         speaking.current = false;
         hRef.current.onSpeaking(false);
         if (want.current && !running.current) setTimeout(begin, 250);
       }).catch(() => {});
     };
-    const id = voiceId.current;
-    Speech.speak(text, {
+    void speakCoachLine(text, {
       language: lang,
-      ...(id ? { voice: id, rate: 0.96 } : { rate: 0.96, pitch: coach === 'female' ? 1.12 : 0.85 }),
+      interrupt,
       onStart: () => { speaking.current = true; hRef.current.onSpeaking(true); },
-      onDone: finish,
-      onStopped: finish,
-      onError: finish,
+      onEnd: finish,
     });
-  }, [lang, coach, begin]);
+  }, [lang, begin]);
 
   return { start, stop, speak };
 }

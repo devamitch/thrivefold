@@ -7,11 +7,10 @@
 
 import { hapticLight, hapticSuccess } from '../../services/haptics';
 import { useKeepAwake } from 'expo-keep-awake';
-import * as Speech from 'expo-speech';
 import { poseModelVersion } from 'pose-landmarker';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { speakCoach } from '@/services/ai/coachVoiceService';
+import { speakCoach, stopCoachSpeech } from '@/services/ai/coachVoiceService';
 
 import { formatLocalDate } from '@/domain/calendar/universalCalendarEngine';
 import { exerciseById, planById, type LoggedSet } from '@/domain/fitness/workouts';
@@ -168,7 +167,7 @@ export function useCoachSession({ planId, assignmentId }: UseCoachSessionOpts) {
 
   useEffect(
     () => () => {
-      Speech.stop();
+      stopCoachSpeech();
     },
     [],
   );

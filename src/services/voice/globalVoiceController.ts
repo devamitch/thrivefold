@@ -16,11 +16,10 @@
  *  - A stale turn can never act after the sheet was closed or the person interrupted.
  */
 
-import * as Speech from 'expo-speech';
 import { ExpoSpeechRecognitionModule } from 'expo-speech-recognition';
 import type { ToolExecutionResult } from '../../domain/assistant/toolRegistry';
 import { coachVoice } from '../ai/coachVoice';
-import { queueCoachSpeech } from '../ai/coachVoiceService';
+import { isCoachSpeechPlaying, queueCoachSpeech } from '../ai/coachVoiceService';
 import { agentEngine } from '../assistant/agentEngine';
 
 export type VoiceAssistantState =
@@ -479,7 +478,7 @@ class GlobalVoiceController {
     // Belt and braces: the engine may still be finishing the tail of the last sentence.
     for (
       let i = 0;
-      i < 12 && token === this.turnToken && (await Speech.isSpeakingAsync().catch(() => false));
+      i < 12 && token === this.turnToken && (await isCoachSpeechPlaying());
       i++
     ) {
       await sleep(250);

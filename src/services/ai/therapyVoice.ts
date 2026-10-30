@@ -8,7 +8,7 @@
  * interruptibility for calming distressed users.
  */
 
-import * as Speech from 'expo-speech';
+import { speakCoachLine, stopCoachSpeech } from './coachVoiceService';
 
 let isSpeaking = false;
 let currentRequestId = 0;
@@ -26,11 +26,7 @@ export interface TherapyVoiceOptions {
 export function stopTherapyVoice(): void {
   currentRequestId++;
   isSpeaking = false;
-  try {
-    Speech.stop();
-  } catch {
-    // ignore
-  }
+  stopCoachSpeech();
 }
 
 /**
@@ -43,35 +39,20 @@ export async function speakTherapy(
   const content = text.trim();
   if (!content) return;
 
-  const reqId = ++currentRequestId;
   stopTherapyVoice();
+  const reqId = ++currentRequestId;
   isSpeaking = true;
 
-  try {
-    Speech.speak(content, {
-      rate: options.rate ?? 0.82, // Slower, calming pace
-      pitch: options.pitch ?? 0.98,
-      onDone: () => {
-        if (currentRequestId === reqId) {
-          isSpeaking = false;
-          options.onDone?.();
-        }
-      },
-      onStopped: () => {
-        if (currentRequestId === reqId) {
-          isSpeaking = false;
-          options.onStopped?.();
-        }
-      },
-      onError: () => {
-        if (currentRequestId === reqId) {
-          isSpeaking = false;
-        }
-      },
-    });
-  } catch {
-    isSpeaking = false;
-  }
+  // The person's chosen coach voice, at a slower and warmer pace.
+  await speakCoachLine(content, {
+    rate: options.rate ?? 0.82,
+    pitch: options.pitch,
+    onEnd: () => {
+      if (currentRequestId !== reqId) return;
+      isSpeaking = false;
+      options.onDone?.();
+    },
+  });
 }
 
 export function isTherapyVoiceActive(): boolean {

@@ -1,6 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image, type ImageSource } from 'expo-image';
-import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, type Href } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
@@ -11,6 +10,7 @@ import { Badge } from '../../components/ui/Badge';
 import { Card } from '../../components/ui/Card';
 import { ScreenContainer } from '../../components/ui/ScreenContainer';
 import { articlesFor, type Article } from '../../content/learn';
+import { speakCoachLine, stopCoachSpeech } from '../../services/ai/coachVoiceService';
 import { useRootStore } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
 import { PressableScale } from '../../components/ui/PressableScale';
@@ -38,30 +38,21 @@ export default function LearnScreen() {
   // Stop any active speech on unmount
   useEffect(() => {
     return () => {
-      Speech.stop().catch(() => {});
+      stopCoachSpeech();
     };
   }, []);
 
   const toggleVoice = useCallback((art: Article) => {
     if (speakingId === art.id) {
-      Speech.stop().catch(() => {});
+      stopCoachSpeech();
       setSpeakingId(null);
       return;
     }
 
-    Speech.stop().catch(() => {});
     setSpeakingId(art.id);
-
     const introText = `In this lesson, you will learn about: ${art.title}. ${art.body.join(' ')}`;
-    const { coachVoiceRate, coachVoiceGender } = useRootStore.getState();
-    Speech.speak(introText, {
-      language: 'en-IN',
-      rate: coachVoiceRate,
-      pitch: coachVoiceGender === 'female' ? 1.06 : 0.94,
-      onDone: () => setSpeakingId(null),
-      onStopped: () => setSpeakingId(null),
-      onError: () => setSpeakingId(null),
-    });
+    // The previous article's "stopped" arrives after this one starts; only clear our own id.
+    void speakCoachLine(introText, { onEnd: () => setSpeakingId((cur) => (cur === art.id ? null : cur)) });
   }, [speakingId]);
 
   return (
