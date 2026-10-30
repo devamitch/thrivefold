@@ -23,4 +23,13 @@ dependencies {
   implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0'
   // On-device text recognition with the Latin model bundled in the APK (works offline).
   implementation 'com.google.mlkit:text-recognition:16.0.1'
+  // On-device translation and language detection (pair models download once, then offline).
+  implementation 'com.google.mlkit:translate:17.0.3'
+  implementation 'com.google.mlkit:language-id:17.0.6'
+  // Chinese, Japanese, Korean and Devanagari text via Google Play services (small APK; the
+  // script model downloads once on first use).
+  implementation 'com.google.android.gms:play-services-mlkit-text-recognition-chinese:16.0.1'
+  implementation 'com.google.android.gms:play-services-mlkit-text-recognition-japanese:16.0.1'
+  implementation 'com.google.android.gms:play-services-mlkit-text-recognition-korean:16.0.1'
+  implementation 'com.google.android.gms:play-services-mlkit-text-recognition-devanagari:16.0.1'
 }

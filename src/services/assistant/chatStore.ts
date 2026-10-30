@@ -19,6 +19,10 @@ export interface ChatMessage {
   attachment?: { uri: string; name: string; kind: 'image' | 'pdf' | 'file' };
   /** A progress line ("Reading…") that the next reply replaces; never rated or shared. */
   transient?: boolean;
+  /** The coach reply this message answers (shown as a quote). */
+  quote?: string;
+  /** On-device translation of this message, when the person asked for one. */
+  translation?: { lang: string; text: string };
 }
 
 export const CHAT_PAGE = 30;
@@ -45,6 +49,7 @@ function getDb(): SQLite.SQLiteDatabase | null {
     const cols = db.getAllSync<{ name: string }>('PRAGMA table_info(coach_messages)').map((c) => c.name);
     if (!cols.includes('feedback')) db.execSync('ALTER TABLE coach_messages ADD COLUMN feedback TEXT');
     if (!cols.includes('attachment_json')) db.execSync('ALTER TABLE coach_messages ADD COLUMN attachment_json TEXT');
+    if (!cols.includes('extra_json')) db.execSync('ALTER TABLE coach_messages ADD COLUMN extra_json TEXT');
     return db;
   } catch {
     return null;
@@ -60,6 +65,7 @@ type Row = {
   at: number;
   feedback: 'up' | 'down' | null;
   attachment_json: string | null;
+  extra_json: string | null;
 };
 
 const fromRow = (r: Row): ChatMessage => ({
@@ -71,6 +77,7 @@ const fromRow = (r: Row): ChatMessage => ({
   at: r.at,
   feedback: r.feedback ?? undefined,
   attachment: r.attachment_json ? (JSON.parse(r.attachment_json) as ChatMessage['attachment']) : undefined,
+  ...(r.extra_json ? (JSON.parse(r.extra_json) as Pick<ChatMessage, 'quote' | 'translation'>) : {}),
 });
 
 const notify = () => listeners.forEach((l) => l());
@@ -84,8 +91,8 @@ export const chatStore = {
       d.withTransactionSync(() => {
         for (const m of messages) {
           d.runSync(
-            `INSERT OR REPLACE INTO coach_messages (id, who, text, route, table_json, at, feedback, attachment_json)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT OR REPLACE INTO coach_messages (id, who, text, route, table_json, at, feedback, attachment_json, extra_json)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
               m.id,
               m.who,
@@ -95,6 +102,7 @@ export const chatStore = {
               m.at,
               m.feedback ?? null,
               m.attachment ? JSON.stringify(m.attachment) : null,
+              m.quote || m.translation ? JSON.stringify({ quote: m.quote, translation: m.translation }) : null,
             ],
           );
         }

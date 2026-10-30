@@ -49,6 +49,19 @@ function wantedGender(): VoiceGender {
   }
 }
 
+/** Speech locale for the coach's chosen reply language. */
+function chosenLocale(): string {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { useRootStore } = require('../../stores/useRootStore');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { languageOf } = require('../../domain/languages');
+    return languageOf(useRootStore.getState?.()?.coachLanguage).locale;
+  } catch {
+    return 'en-IN';
+  }
+}
+
 function chosenRate(): number {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -172,7 +185,8 @@ export async function speakCoach(
       rate: opts?.rate ?? chosenRate(),
       // A touch brighter for the woman's voice, a touch warmer and deeper for the man's.
       pitch: opts?.pitch ?? (voice.gender === 'male' ? 0.94 : 1.06),
-      voice: voice.id ?? undefined,
+      // The picked voice is an Indian English one; other languages use the engine's own voice.
+      voice: chosenLocale().startsWith('en') ? (voice.id ?? undefined) : undefined,
     });
   } catch {
     // fallback plain speak with calm pitch
@@ -192,10 +206,11 @@ export async function queueCoachSpeech(text: string): Promise<void> {
   await new Promise<void>((resolve) => {
     const done = () => resolve();
     Speech.speak(text, {
-      language: 'en-IN',
+      language: chosenLocale(),
       rate: chosenRate(),
       pitch: voice.gender === 'male' ? 0.94 : 1.06,
-      voice: voice.id ?? undefined,
+      // The picked voice is an Indian English one; other languages use the engine's own voice.
+      voice: chosenLocale().startsWith('en') ? (voice.id ?? undefined) : undefined,
       onDone: done,
       onStopped: done,
       onError: done,
@@ -235,10 +250,11 @@ export async function speakCoachLine(text: string, opts: CoachLineOptions = {}):
   };
   try {
     Speech.speak(content, {
-      language: opts.language ?? 'en-IN',
+      language: opts.language ?? chosenLocale(),
       rate: opts.rate ?? chosenRate(),
       pitch: opts.pitch ?? (voice.gender === 'male' ? 0.94 : 1.06),
-      voice: voice.id ?? undefined,
+      // The picked voice is an Indian English one; other languages use the engine's own voice.
+      voice: chosenLocale().startsWith('en') ? (voice.id ?? undefined) : undefined,
       onStart: opts.onStart,
       onDone: end,
       onStopped: end,

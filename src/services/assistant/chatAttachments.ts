@@ -12,7 +12,8 @@
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 
-import { LocalAI, type ExtractedDocument } from '../../../modules/local-ai';
+import { LocalAI, scriptForLanguage, type ExtractedDocument } from '../../../modules/local-ai';
+import { useRootStore } from '../../stores/useRootStore';
 import { hashText } from '../../domain/assistant/appKnowledge';
 import { thriveRag } from '../local-ai/rag/thriveRag';
 import { globalVoiceController } from '../voice/globalVoiceController';
@@ -70,7 +71,7 @@ export async function readAttachment(file: PickedFile, question: string): Promis
 
   let doc: ExtractedDocument;
   try {
-    doc = await LocalAI.extractDocumentText(file.uri, file.mime);
+    doc = await LocalAI.extractDocumentText(file.uri, file.mime, scriptForLanguage(useRootStore.getState().coachLanguage));
   } catch (e) {
     post.postReply(`I could not read ${file.name}: ${e instanceof Error ? e.message : 'unknown error'}`);
     return;

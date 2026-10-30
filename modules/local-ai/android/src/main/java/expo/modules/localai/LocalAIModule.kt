@@ -373,7 +373,7 @@ class LocalAIModule : Module() {
      * Reads the text of a picked file (PDF, photo, text, HTML) on the phone, page by page.
      * The file is read in place through its content URI; nothing is copied or uploaded.
      */
-    AsyncFunction("extractDocumentText") { uri: String, mime: String?, promise: Promise ->
+    AsyncFunction("extractDocumentText") { uri: String, mime: String?, script: String?, promise: Promise ->
       val ctx = appContext.reactContext
       if (ctx == null) {
         promise.reject("no_context", "ReactContext is unavailable", null)
@@ -381,11 +381,22 @@ class LocalAIModule : Module() {
       }
       Thread({
         try {
-          promise.resolve(DocumentTextExtractor.extract(ctx, uri, mime))
+          promise.resolve(DocumentTextExtractor.extract(ctx, uri, mime, script))
         } catch (e: Throwable) {
           promise.reject("extract_failed", e.message ?: "Could not read this file", e)
         }
       }, "AnvaykoshDocReader").start()
+    }
+
+    /** Translates text on the phone (ML Kit; the language model downloads once, then offline). */
+    AsyncFunction("translateText") { text: String, target: String, source: String?, promise: Promise ->
+      Thread({
+        try {
+          promise.resolve(OnDeviceTranslator.translate(text, target, source))
+        } catch (e: Throwable) {
+          promise.reject("translate_failed", e.message ?: "Could not translate", e)
+        }
+      }, "AnvaykoshTranslate").start()
     }
 
     Function("chunkDocument") { text: String, targetChunkSize: Int?, overlapChars: Int? ->

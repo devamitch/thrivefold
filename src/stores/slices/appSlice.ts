@@ -175,6 +175,9 @@ export interface AppSlice {
   setSpeakReplies: (on: boolean) => void;
   /** Which role the one coach takes (coach, health guide, speech, nutrition, friend, reader). */
   coachPersona: PersonaId;
+  /** Language Anvay replies, listens and speaks in (ML Kit code, see domain/languages). */
+  coachLanguage: string;
+  setCoachLanguage: (code: string) => void;
   /** Learn articles the person finished, with when (local, never synced). */
   learnRead: Record<string, number>;
   setLearnRead: (id: string, read: boolean) => void;
@@ -325,6 +328,8 @@ export const createAppSlice: StateCreator<
   speakReplies: false,
   setSpeakReplies: (speakReplies) => set({ speakReplies }),
   coachPersona: 'coach',
+  coachLanguage: 'en',
+  setCoachLanguage: (coachLanguage) => set({ coachLanguage }),
   setCoachPersona: (coachPersona) => set({ coachPersona }),
   learnRead: {},
   setLearnRead: (id, read) =>

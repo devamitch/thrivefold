@@ -10,6 +10,11 @@ import android.provider.OpenableColumns
 import com.google.android.gms.tasks.Tasks
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.TextRecognizer
+import com.google.mlkit.vision.text.chinese.ChineseTextRecognizerOptions
+import com.google.mlkit.vision.text.devanagari.DevanagariTextRecognizerOptions
+import com.google.mlkit.vision.text.japanese.JapaneseTextRecognizerOptions
+import com.google.mlkit.vision.text.korean.KoreanTextRecognizerOptions
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 
 /**
@@ -38,7 +43,11 @@ object DocumentTextExtractor {
       null
     } ?: uri.lastPathSegment
 
-  fun extract(ctx: Context, uriString: String, mimeHint: String?): Map<String, Any?> {
+  /** Script to read: latin (default), chinese, japanese, korean or devanagari. */
+  @Volatile private var script: String = "latin"
+
+  fun extract(ctx: Context, uriString: String, mimeHint: String?, scriptHint: String? = null): Map<String, Any?> {
+    script = scriptHint ?: "latin"
     val uri = Uri.parse(uriString)
     val name = displayName(ctx, uri)
     val mime = mimeHint ?: ctx.contentResolver.getType(uri) ?: guessMime(name)
@@ -53,6 +62,7 @@ object DocumentTextExtractor {
       "name" to name,
       "mime" to mime,
       "method" to method,
+      "script" to script,
       "pages" to pages.map { mapOf("page" to it.page, "text" to it.text) },
     )
   }
@@ -114,9 +124,18 @@ object DocumentTextExtractor {
     } ?: throw IllegalArgumentException("Can't read this image.")
   }
 
-  /** Runs on a worker thread (never the UI thread); ML Kit's Latin model is bundled, so it is offline. */
+  private fun recognizer(): TextRecognizer = when (script) {
+    // Non-Latin scripts come through Google Play services (downloaded once, then offline).
+    "chinese" -> TextRecognition.getClient(ChineseTextRecognizerOptions.Builder().build())
+    "japanese" -> TextRecognition.getClient(JapaneseTextRecognizerOptions.Builder().build())
+    "korean" -> TextRecognition.getClient(KoreanTextRecognizerOptions.Builder().build())
+    "devanagari" -> TextRecognition.getClient(DevanagariTextRecognizerOptions.Builder().build())
+    else -> TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+  }
+
+  /** Runs on a worker thread (never the UI thread). The Latin model is bundled (offline). */
   private fun ocr(bitmap: Bitmap): String {
-    val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+    val recognizer = recognizer()
     return try {
       Tasks.await(recognizer.process(InputImage.fromBitmap(bitmap, 0))).text
     } finally {

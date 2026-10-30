@@ -21,6 +21,18 @@ export * from './src/modelCatalog';
 export * from './src/modelDownloader';
 export * from './src/useLocalAI';
 
+/** Writing system for on-device text recognition. */
+export type OcrScript = 'latin' | 'chinese' | 'japanese' | 'korean' | 'devanagari';
+
+/** The script to read for a language code (ML Kit), Latin otherwise. */
+export function scriptForLanguage(code: string | null | undefined): OcrScript {
+  if (code === 'zh') return 'chinese';
+  if (code === 'ja') return 'japanese';
+  if (code === 'ko') return 'korean';
+  if (code === 'hi' || code === 'mr' || code === 'ne') return 'devanagari';
+  return 'latin';
+}
+
 /** Text read from a picked file on the phone, one entry per page. */
 export interface ExtractedDocument {
   name: string | null;
@@ -145,7 +157,8 @@ interface LocalAINative {
     overlapChars?: number
   ): DocumentChunkResult[];
   computeTermFrequencies(text: string): Record<string, number>;
-  extractDocumentText?(uri: string, mime: string | null): Promise<ExtractedDocument>;
+  extractDocumentText?(uri: string, mime: string | null, script: string | null): Promise<ExtractedDocument>;
+  translateText?(text: string, target: string, source: string | null): Promise<{ text: string; source: string; target: string }>;
 
   addListener(eventName: string, listener: (event: unknown) => void): { remove: () => void };
   removeAllListeners(eventName: string): void;
@@ -341,10 +354,16 @@ class LocalAIService {
     return native.embed(text);
   }
 
+  /** Translates on the phone (ML Kit). The first use of a language downloads its model once. */
+  async translateText(text: string, target: string, source?: string | null): Promise<{ text: string; source: string; target: string }> {
+    if (!native?.translateText) throw new Error('Translation needs the latest app build.');
+    return native.translateText(text, target, source ?? null);
+  }
+
   /** Reads a picked file's text on the phone (PDF and photos via offline OCR). */
-  async extractDocumentText(uri: string, mime?: string | null): Promise<ExtractedDocument> {
+  async extractDocumentText(uri: string, mime?: string | null, script?: OcrScript | null): Promise<ExtractedDocument> {
     if (!native?.extractDocumentText) throw new Error('Reading files needs the latest app build.');
-    return native.extractDocumentText(uri, mime ?? null);
+    return native.extractDocumentText(uri, mime ?? null, script ?? null);
   }
 
   /**

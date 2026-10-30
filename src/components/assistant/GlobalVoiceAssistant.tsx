@@ -54,6 +54,10 @@ import { AnvayCompanion } from '../brand/AnvayCompanion';
 import { PERSONAS } from '../../domain/assistant/personas';
 import { dailyBrief, type BriefInput } from '../../domain/assistant/dailyBrief';
 import { plainText } from '../../domain/assistant/plainText';
+import { LANGUAGES, languageOf } from '../../domain/languages';
+import { LocalAI } from '../../../modules/local-ai';
+import * as Clipboard from 'expo-clipboard';
+import { speakCoachLine, stopCoachSpeech } from '../../services/ai/coachVoiceService';
 import type { ChatTable } from '../../domain/assistant/chatActions';
 import { setChatActionHooks } from '../../services/assistant/chatActions';
 import { pickFile, readAttachment, takePhoto, type PickedFile } from '../../services/assistant/chatAttachments';
@@ -198,8 +202,11 @@ export function GlobalVoiceAssistant() {
       onFinalTranscript: (text) => {
         setPartial('');
         setError(null);
+        const quote = pendingQuote.current;
+        pendingQuote.current = null;
+        const shown = quote ? text.replace(/^About your earlier reply ".*?": /s, '') : text;
         setTurns((t) =>
-          [...t, { id: newId(), who: 'you' as const, text, at: Date.now() }],
+          [...t, { id: newId(), who: 'you' as const, text: shown, quote: quote ?? undefined, at: Date.now() }],
         );
       },
       onAssistantReply: (reply, tool?: ToolExecutionResult) => {
@@ -275,6 +282,9 @@ export function GlobalVoiceAssistant() {
     [],
   );
 
+  const coachLanguage = useRootStore((st) => st.coachLanguage);
+  const setCoachLanguage = useRootStore((st) => st.setCoachLanguage);
+  const [langOpen, setLangOpen] = useState(false);
   const persona = useRootStore((st) => st.coachPersona);
   const setPersona = useRootStore((st) => st.setCoachPersona);
 
@@ -296,6 +306,7 @@ export function GlobalVoiceAssistant() {
   }, [close]);
 
   const lastSent = useRef({ text: '', at: 0 });
+  const pendingQuote = useRef<string | null>(null);
   const send = (text: string) => {
     if (pending) return sendAttachment();
     const t = text.trim();
@@ -305,6 +316,14 @@ export function GlobalVoiceAssistant() {
     lastSent.current = { text: t, at: Date.now() };
     hapticSelection();
     setTyped('');
+    if (replyTo) {
+      // A reply to a specific answer: the coach gets that answer as context; the chat shows a quote.
+      const quote = plainText(replyTo.text).slice(0, 280);
+      setReplyTo(null);
+      pendingQuote.current = quote;
+      void globalVoiceController.handleFinalUtterance(`About your earlier reply "${quote}": ${t}`, 'text');
+      return;
+    }
     // The controller reports the message back through onFinalTranscript.
     void globalVoiceController.handleFinalUtterance(t, 'text');
   };
@@ -396,10 +415,66 @@ export function GlobalVoiceAssistant() {
     void Share.share({ message: plainText(text) }).catch(() => undefined);
   }, []);
 
+  // Per-reply tools: listen, translate on the phone, reply to it, copy.
+  const [speakingId, setSpeakingId] = useState<string | null>(null);
+  const listen = useCallback((t: Turn) => {
+    hapticSelection();
+    setSpeakingId((cur) => {
+      if (cur === t.id) {
+        stopCoachSpeech();
+        return null;
+      }
+      void speakCoachLine(plainText(t.translation?.text ?? t.text), { onEnd: () => setSpeakingId((c) => (c === t.id ? null : c)) });
+      return t.id;
+    });
+  }, []);
+  const translateTurn = useCallback(async (t: Turn) => {
+    hapticSelection();
+    if (t.translation) {
+      setTurns((all) => all.map((m) => (m.id === t.id ? { ...m, translation: undefined } : m)));
+      return;
+    }
+    const target = useRootStore.getState().coachLanguage === 'en' ? 'hi' : useRootStore.getState().coachLanguage;
+    try {
+      const r = await LocalAI.translateText(t.text, target);
+      setTurns((all) => {
+        const next = all.map((m) => (m.id === t.id ? { ...m, translation: { lang: target, text: r.text } } : m));
+        const changed = next.find((m) => m.id === t.id);
+        if (changed) chatStore.upsert([changed]);
+        return next;
+      });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not translate.');
+    }
+  }, []);
+  const [replyTo, setReplyTo] = useState<Turn | null>(null);
+  const replyToTurn = useCallback((t: Turn) => {
+    hapticSelection();
+    setReplyTo(t);
+    setTimeout(() => input.current?.focus(), 50);
+  }, []);
+  const copy = useCallback((t: Turn) => {
+    hapticSelection();
+    void Clipboard.setStringAsync(plainText(t.translation?.text ?? t.text));
+    useRootStore.getState().showToast({ type: 'success', message: 'Copied' });
+  }, []);
+
   const renderTurn = useCallback(
-    ({ item }: { item: Turn }) => <TurnRow turn={item} onOpen={go} onRate={rate} onShare={share} />,
+    ({ item }: { item: Turn }) => (
+      <TurnRow
+        turn={item}
+        onOpen={go}
+        onRate={rate}
+        onShare={share}
+        onListen={listen}
+        onTranslate={translateTurn}
+        onReply={replyToTurn}
+        onCopy={copy}
+        speaking={speakingId === item.id}
+      />
+    ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [speakingId],
   );
 
   // A real sheet: drag the handle or header down to dismiss; it springs back if not far enough.
@@ -523,6 +598,15 @@ export function GlobalVoiceAssistant() {
                       </PressableScale>
                     ) : null}
                     <PressableScale
+                      onPress={() => setLangOpen((v) => !v)}
+                      hitSlop={8}
+                      accessibilityLabel={`Reply language: ${languageOf(coachLanguage).label}`}
+                      style={[styles.langBtn, { marginRight: 14, borderColor: colors.surface3 }]}
+                    >
+                      <Ionicons name="language-outline" size={18} color={colors.text.secondary} />
+                      <Text style={[typography.captionBold, { color: colors.text.secondary }]}>{coachLanguage.toUpperCase()}</Text>
+                    </PressableScale>
+                    <PressableScale
                       onPress={() => go('/(app)/settings/memories')}
                       hitSlop={8}
                       accessibilityLabel="Memory"
@@ -541,8 +625,30 @@ export function GlobalVoiceAssistant() {
                 </View>
               </GestureDetector>
 
+              {langOpen ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled"
+                  style={styles.personaRow}
+                  contentContainerStyle={{ paddingHorizontal: spacing.base }}
+                >
+                  {LANGUAGES.map((l) => (
+                    <Chip
+                      key={l.code}
+                      label={l.native}
+                      selected={coachLanguage === l.code}
+                      onPress={() => {
+                        hapticSelection();
+                        setCoachLanguage(l.code);
+                        setLangOpen(false);
+                      }}
+                    />
+                  ))}
+                </ScrollView>
+              ) : null}
               {/* One companion, several roles: the voice, memory and rules stay the same. */}
-              <ScrollView
+              {langOpen ? null : <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
@@ -561,7 +667,7 @@ export function GlobalVoiceAssistant() {
                     icon={<Ionicons name={p.icon as keyof typeof Ionicons.glyphMap} size={15} color={persona === p.id ? colors.onPrimary : colors.text.secondary} />}
                   />
                 ))}
-              </ScrollView>
+              </ScrollView>}
 
               {turns.length === 0 && !partial ? (
                 // Empty conversation: a plain view (no inverted-list flip quirks).
@@ -673,6 +779,16 @@ export function GlobalVoiceAssistant() {
                   },
                 ]}
               >
+                {replyTo ? (
+                  <View style={[styles.replyBar, { backgroundColor: colors.surface, borderLeftColor: colors.primary }]}>
+                    <Text style={[typography.caption, styles.flex, { color: colors.text.secondary }]} numberOfLines={2}>
+                      Replying to: {plainText(replyTo.text)}
+                    </Text>
+                    <PressableScale onPress={() => setReplyTo(null)} hitSlop={10} accessibilityLabel="Cancel reply">
+                      <Ionicons name="close" size={18} color={colors.text.muted} />
+                    </PressableScale>
+                  </View>
+                ) : null}
                 {pending ? (
                   <View style={[styles.pending, { backgroundColor: colors.surface }]}>
                     {pending.kind === 'image' ? (
@@ -811,11 +927,21 @@ const TurnRow = React.memo(function TurnRow({
   onOpen,
   onRate,
   onShare,
+  onListen,
+  onTranslate,
+  onReply,
+  onCopy,
+  speaking,
 }: {
   turn: Turn;
   onOpen: (route: string) => void;
   onRate: (id: string, fb: 'up' | 'down') => void;
   onShare: (text: string) => void;
+  onListen: (t: Turn) => void;
+  onTranslate: (t: Turn) => void;
+  onReply: (t: Turn) => void;
+  onCopy: (t: Turn) => void;
+  speaking: boolean;
 }) {
   const { colors, typography } = useTheme();
   const mine = turn.who === 'you';
@@ -829,9 +955,24 @@ const TurnRow = React.memo(function TurnRow({
         turn.table?.rows.length ? styles.wide : null,
       ]}
     >
+      {turn.quote ? (
+        <View style={[styles.quote, { borderLeftColor: mine ? colors.text.inverse : colors.primary }]}>
+          <Text style={[typography.caption, { color: mine ? colors.text.inverse : colors.text.secondary }]} numberOfLines={2}>
+            {turn.quote}
+          </Text>
+        </View>
+      ) : null}
       <Text style={[typography.body, { color: mine ? colors.text.inverse : colors.text.primary }]}>
         {mine ? turn.text : plainText(turn.text)}
       </Text>
+      {turn.translation ? (
+        <View style={[styles.translated, { borderTopColor: mine ? colors.text.inverse : colors.surface3 }]}>
+          <Text style={[typography.caption, { color: mine ? colors.text.inverse : colors.text.muted }]}>
+            {languageOf(turn.translation.lang).native}, translated on this phone
+          </Text>
+          <Text style={[typography.body, { color: mine ? colors.text.inverse : colors.text.primary }]}>{turn.translation.text}</Text>
+        </View>
+      ) : null}
       {turn.attachment?.kind === 'image' ? (
         <Image source={{ uri: turn.attachment.uri }} style={styles.bubbleImage} contentFit="cover" accessibilityLabel={turn.attachment.name} />
       ) : turn.attachment ? (
@@ -860,6 +1001,18 @@ const TurnRow = React.memo(function TurnRow({
           </PressableScale>
           <PressableScale onPress={() => onRate(turn.id, 'down')} hitSlop={8} accessibilityLabel="Not helpful" accessibilityState={{ selected: turn.feedback === 'down' }}>
             <Ionicons name={turn.feedback === 'down' ? 'thumbs-down' : 'thumbs-down-outline'} size={16} color={turn.feedback === 'down' ? colors.primary : colors.text.muted} />
+          </PressableScale>
+          <PressableScale onPress={() => onListen(turn)} hitSlop={8} accessibilityLabel={speaking ? 'Stop reading' : 'Read this reply aloud'}>
+            <Ionicons name={speaking ? 'stop-circle' : 'volume-high-outline'} size={16} color={speaking ? colors.primary : colors.text.muted} />
+          </PressableScale>
+          <PressableScale onPress={() => onTranslate(turn)} hitSlop={8} accessibilityLabel="Translate this reply">
+            <Ionicons name="language-outline" size={16} color={turn.translation ? colors.primary : colors.text.muted} />
+          </PressableScale>
+          <PressableScale onPress={() => onReply(turn)} hitSlop={8} accessibilityLabel="Reply to this">
+            <Ionicons name="arrow-undo-outline" size={16} color={colors.text.muted} />
+          </PressableScale>
+          <PressableScale onPress={() => onCopy(turn)} hitSlop={8} accessibilityLabel="Copy this reply">
+            <Ionicons name="copy-outline" size={16} color={colors.text.muted} />
           </PressableScale>
           <PressableScale onPress={() => onShare(turn.text)} hitSlop={8} accessibilityLabel="Share this reply">
             <Ionicons name="share-outline" size={16} color={colors.text.muted} />
@@ -913,7 +1066,11 @@ const styles = StyleSheet.create({
   theirs: { alignSelf: 'flex-start', borderBottomLeftRadius: 6 },
   openRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8 },
   tableWrap: { marginTop: 10 },
-  actions: { flexDirection: 'row', gap: 18, marginTop: 10 },
+  actions: { flexDirection: 'row', gap: 18, marginTop: 10, flexWrap: 'wrap' },
+  translated: { marginTop: 8, paddingTop: 8, borderTopWidth: StyleSheet.hairlineWidth, gap: 2 },
+  quote: { borderLeftWidth: 3, paddingLeft: 8, marginBottom: 6 },
+  replyBar: { flexDirection: 'row', alignItems: 'center', gap: 8, borderLeftWidth: 3, borderRadius: 10, padding: 8, marginBottom: 8 },
+  langBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderRadius: 14, paddingHorizontal: 8, paddingVertical: 4 },
   pending: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderRadius: 16, marginBottom: 8 },
   pendingThumb: { width: 48, height: 48, borderRadius: 10 },
   pendingIcon: { alignItems: 'center', justifyContent: 'center' },

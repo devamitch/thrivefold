@@ -17,7 +17,9 @@
  */
 
 import { ExpoSpeechRecognitionModule } from 'expo-speech-recognition';
+import { LocalAI } from '../../../modules/local-ai';
 import { plainText } from '../../domain/assistant/plainText';
+import { languageOf } from '../../domain/languages';
 import type { ToolExecutionResult } from '../../domain/assistant/toolRegistry';
 import { coachVoice } from '../ai/coachVoice';
 import { isCoachSpeechPlaying, queueCoachSpeech } from '../ai/coachVoiceService';
@@ -331,7 +333,7 @@ class GlobalVoiceController {
     log('start', this.lang ?? deviceLocale());
     try {
       ExpoSpeechRecognitionModule?.start?.({
-        lang: this.lang ?? deviceLocale(),
+        lang: this.lang ?? (replyLanguage() !== 'en' ? languageOf(replyLanguage()).locale : deviceLocale()),
         interimResults: true,
         continuous: false,
         requiresOnDeviceRecognition: false,
@@ -429,7 +431,7 @@ class GlobalVoiceController {
         spoken += m;
         if (chunk) {
           if (this.state !== 'speaking') this.setState('speaking');
-          if (speakRepliesOn()) {
+          if (speakRepliesOn() && replyLanguage() === 'en') {
             speechJobs.push(queueCoachSpeech(plainText(chunk)).catch(() => undefined));
           }
         }
@@ -445,13 +447,21 @@ class GlobalVoiceController {
       // Closed, or the person interrupted, while the answer was being written.
       if (token !== this.turnToken) return;
 
+      // Another reply language: translate the finished reply on the phone, then speak that.
+      const lang = replyLanguage();
+      let finalText = result.text;
+      if (lang !== 'en' && finalText.trim()) {
+        finalText = await LocalAI.translateText(finalText, lang, 'en').then((r) => r.text).catch(() => finalText);
+        if (token !== this.turnToken) return;
+      }
+
       this.setState('speaking');
-      this.listeners.forEach((l) => l.onAssistantReply(result.text, result.toolResult));
-      if (spoken > 0) {
+      this.listeners.forEach((l) => l.onAssistantReply(finalText, result.toolResult));
+      if (spoken > 0 && lang === 'en') {
         flush(result.text, true);
-      } else if (speakRepliesOn()) {
-        // Not streamed (a command or a rule-based reply): say it all at once.
-        speechJobs.push(queueCoachSpeech(plainText(result.text)).catch(() => undefined));
+      } else if (speakRepliesOn() && (spoken === 0 || lang !== 'en')) {
+        // Not streamed, or translated: say it all at once.
+        speechJobs.push(queueCoachSpeech(plainText(finalText)).catch(() => undefined));
       }
 
       // Stay in "speaking" until the voice has really finished.
@@ -523,3 +533,13 @@ function conversationModeOn(): boolean {
 }
 
 export const globalVoiceController = new GlobalVoiceController();
+
+function replyLanguage(): string {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { useRootStore } = require('../../stores/useRootStore');
+    return useRootStore.getState?.()?.coachLanguage || 'en';
+  } catch {
+    return 'en';
+  }
+}
