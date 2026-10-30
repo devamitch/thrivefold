@@ -21,7 +21,9 @@ import { AppState } from 'react-native';
 import type { PersonaId } from '../../domain/assistant/personas';
 import { speakCoachLine, stopCoachSpeech } from '../../services/ai/coachVoiceService';
 import { agentEngine } from '../../services/assistant/agentEngine';
+import { articlesFor } from '../../content/learn';
 import { refreshAppKnowledge } from '../../services/assistant/appKnowledge';
+import { onlineLibrary } from '../../services/learn/onlineLibrary';
 import { chatStore } from '../../services/assistant/chatStore';
 import { thriveRag } from '../../services/local-ai/rag/thriveRag';
 import { syncCareReminders } from '../../services/notifications/careReminders';
@@ -108,6 +110,18 @@ export function CoachProvider({ children }: { children: React.ReactNode }) {
       if (t) clearTimeout(t);
     };
   }, [isOnboarded]);
+
+  // Once a day, when online, the Learn library refreshes this person's topics (topic words only go
+  // out) and the summaries become coach knowledge.
+  const experience = useRootStore((s) => s.experience);
+  useEffect(() => {
+    if (!isOnboarded) return;
+    const t = setTimeout(() => {
+      const topics = [...new Set(articlesFor(experience).map((a) => a.category))];
+      void onlineLibrary.refreshDaily(topics).catch(() => 0);
+    }, 30_000);
+    return () => clearTimeout(t);
+  }, [isOnboarded, experience]);
 
   // Reminders follow the records, whichever screen (or the chat) changed them.
   useEffect(() => {

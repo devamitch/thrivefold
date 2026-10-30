@@ -94,6 +94,19 @@ export default function LearnScreen() {
         </Text>
       </Card>
 
+      <Link href={'/(app)/learn-library' as Href} asChild>
+        <PressableScale style={[styles.libraryCard, { backgroundColor: colors.surface, marginBottom: spacing.md }]} accessibilityRole="link">
+          <Ionicons name="library-outline" size={22} color={colors.primary} />
+          <View style={styles.flex}>
+            <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Library</Text>
+            <Text style={[typography.caption, { color: colors.text.secondary }]}>
+              Encyclopedia articles, books and free e-books on your topics. Saved for offline reading.
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
+        </PressableScale>
+      </Link>
+
       {/* Progress is real: only articles marked read (or listened to the end) count. */}
       <View style={[styles.progressRow, { marginBottom: spacing.sm }]}>
         <Text style={[typography.captionBold, { color: colors.text.secondary }]}>
@@ -294,6 +307,7 @@ const styles = StyleSheet.create({
   },
   categoryChip: { borderRadius: 999 },
   chips: { flexGrow: 0, marginBottom: 8 },
+  libraryCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 16 },
   progressRow: { gap: 6 },
   track: { height: 6, borderRadius: 3, overflow: 'hidden' },
   fill: { height: 6, borderRadius: 3 },
