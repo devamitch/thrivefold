@@ -381,7 +381,7 @@ export default function SettingsScreen() {
           <SettingsRow
             icon="cloud-download-outline"
             title="Check for updates"
-            subtitle={updateStatusText ?? `v1.0.5 · Tap to check for instant updates`}
+            subtitle={updateStatusText ?? `v1.0.6 · Tap to check for instant updates`}
             onPress={handleCheckUpdates}
             right={
               checkingUpdates ? (

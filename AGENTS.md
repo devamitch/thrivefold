@@ -18,7 +18,7 @@ only point here. Skills with step-by-step methods live in `.agents/skills/*/SKIL
 
 ## 1. Product in one paragraph
 
-Thrivefold is an Expo (SDK 55) React Native, Android-first, local-first health and wellbeing
+Thrivefold is an Expo (SDK 58) React Native, Android-first, local-first health and wellbeing
 app with three self-selected experiences (women's health, men's health, LGBTQ+ wellbeing).
 Daily check-ins, cycle tracking, journaling, gentle routines and deterministic on-device
 suggestions work without any account or cloud. Social features (slow chip-only letters,

@@ -24,6 +24,7 @@ const KIND_LABEL: Record<LedgerEntry['kind'], string> = {
   practice_reward: 'Practice',
   action_reward: 'Everyday actions',
   market_spend: 'Marketplace',
+  chest_reward: 'Level chest',
 };
 
 /** Level, diamonds, unlocks, emblem and reward history, all derived from the reward ledger. */

@@ -30,7 +30,8 @@ export type LedgerKind =
   | 'unlock_spend'
   | 'legacy_import'
   | 'action_reward'
-  | 'market_spend';
+  | 'market_spend'
+  | 'chest_reward';
 
 export interface LedgerEntry {
   /** Idempotency key: the same key is never applied twice. */

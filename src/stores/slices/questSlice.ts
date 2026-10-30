@@ -1,4 +1,21 @@
-import { ACTION_REWARDS, canEarn, MARKET, type ActionKind, type EarnResult } from '../../domain/game/rewards';
+import {
+  ACTION_REWARDS,
+  canEarn,
+  chestKey,
+  LEVEL_CHESTS,
+  MARKET,
+  ownedFromLedger,
+  ticketsFromLedger,
+  tokensFromLedger,
+  TICKET_FORGE_GEMS,
+  TOKEN_FORGE_TICKETS,
+  TOKEN_FORGE_GEMS,
+  WELLNESS_PLANS,
+  withStreak,
+  type ActionKind,
+  type EarnResult,
+  type LevelChest,
+} from '../../domain/game/rewards';
 import type { StateCreator } from 'zustand';
 
 import type { RootState } from '../rootTypes';
@@ -163,8 +180,18 @@ export interface QuestSlice {
   claimWorkoutReward: (sessionId: string, form: WorkoutFormEvidence | null) => { awarded: boolean; xp: number; reason?: 'daily_limit' | 'duplicate' };
   /** Gems for a real action (taking a medicine, a photo, a profile detail…), once per item per day, capped. */
   earnForAction: (kind: ActionKind, sourceId: string) => EarnResult;
-  /** Spends gems on a marketplace item; returns false when there aren't enough or it's owned. */
-  buyMarketItem: (itemId: string) => { ok: boolean; reason?: 'owned' | 'insufficient' | 'unknown' };
+  /** Opens the milestone chest for a reached level once; returns its contents. */
+  openChest: (level: number) => LevelChest | null;
+  /** Forges 500 Amber Gems into 1 Sanctuary Ticket. */
+  forgeTicket: () => { ok: boolean; reason?: string };
+  /** Forges 5 Sanctuary Tickets or 2,500 Amber Gems into 1 Golden Marketplace Token. */
+  forgeToken: (fromTickets?: boolean) => { ok: boolean; reason?: string };
+  /** Spends gems or tokens on a marketplace item; returns false when there aren't enough or it's owned. */
+  buyMarketItem: (itemId: string, currency?: 'gems' | 'tokens') => { ok: boolean; reason?: 'owned' | 'insufficient' | 'unknown' };
+  /** Sanctuary tickets owned. */
+  tickets: number;
+  /** Golden marketplace tokens owned. */
+  tokens: number;
   /** Marketplace items the person owns (stickers, status) or requested (gear). */
   marketOwned: string[];
   /** Awards incremental XP and streak milestone bonuses for daily check-in once per date. */
@@ -225,7 +252,7 @@ function derive(
   state: Pick<QuestSlice, 'rewardLedger' | 'dailyAssignments' | 'dailyPointsTarget' | 'completedCheckpoints'>,
 ): Pick<
   QuestSlice,
-  'xp' | 'level' | 'diamonds' | 'streak' | 'questsCompleted' | 'todayQuests' | 'dailyPoints' | 'dailyGoalReached'
+  'xp' | 'level' | 'diamonds' | 'tickets' | 'tokens' | 'streak' | 'questsCompleted' | 'todayQuests' | 'dailyPoints' | 'dailyGoalReached' | 'marketOwned'
 > {
   const date = today();
   const totals = ledgerTotals(state.rewardLedger);
@@ -235,11 +262,14 @@ function derive(
     xp: totals.xp,
     level: progress.level,
     diamonds: totals.diamonds,
+    tickets: ticketsFromLedger(state.rewardLedger),
+    tokens: tokensFromLedger(state.rewardLedger),
     streak: goalStreak(state.rewardLedger, date),
     questsCompleted: state.rewardLedger.filter((e) => e.kind === 'task_reward').length,
     todayQuests: state.dailyAssignments.filter((a) => a.assignedDate === date).map(projectQuest),
     dailyPoints,
     dailyGoalReached: state.dailyPointsTarget > 0 && dailyPoints >= state.dailyPointsTarget,
+    marketOwned: ownedFromLedger(state.rewardLedger),
   };
 }
 
@@ -389,6 +419,8 @@ export const createQuestSlice: StateCreator<RootState, [['zustand/persist', unkn
     xp: 0,
     level: 1,
     diamonds: 0,
+    tickets: 0,
+    tokens: 0,
     marketOwned: [],
     streak: 0,
     questsCompleted: 0,
@@ -699,13 +731,14 @@ export const createQuestSlice: StateCreator<RootState, [['zustand/persist', unkn
       const date = today();
       const res = canEarn(state.rewardLedger.map((e) => e.key), kind, date, sourceId);
       if (!res.awarded) return res;
+      const gems = withStreak(res.gems, state.streak);
       const key = `action:${kind}:${date}:${sourceId}`;
       commit({
         rewardLedger: appendLedger(state.rewardLedger, {
           key,
           kind: 'action_reward',
           xp: 0,
-          diamonds: res.gems,
+          diamonds: gems,
           taskPoints: 0,
           gameDate: date,
           sourceId: `${kind}:${sourceId}`,
@@ -713,15 +746,120 @@ export const createQuestSlice: StateCreator<RootState, [['zustand/persist', unkn
           createdAt: new Date().toISOString(),
         }),
       });
-      get().showToast({ type: 'success', message: `+${res.gems} gems · ${ACTION_REWARDS[kind].label}` });
-      return res;
+      const bonus = gems > res.gems ? ` · ${state.streak}-day streak bonus` : '';
+      get().showToast({ type: 'success', message: `+${gems} gems · ${ACTION_REWARDS[kind].label}${bonus}` });
+      return { awarded: true, gems };
     },
 
-    buyMarketItem: (itemId) => {
+    openChest: (level) => {
       const state = get();
-      const item = MARKET.find((m) => m.id === itemId);
+      const chest = LEVEL_CHESTS.find((c) => c.level === level);
+      const key = chestKey(level);
+      if (!chest || state.level < level || state.rewardLedger.some((e) => e.key === key)) return null;
+      commit({
+        rewardLedger: appendLedger(state.rewardLedger, {
+          key,
+          kind: 'chest_reward',
+          xp: 0,
+          diamonds: chest.gems,
+          taskPoints: 0,
+          gameDate: today(),
+          sourceId: chest.card.id,
+          policyVersion: ECONOMY_VERSION,
+          createdAt: new Date().toISOString(),
+        }),
+      });
+      return chest;
+    },
+
+    forgeTicket: () => {
+      const state = get();
+      if (state.diamonds < TICKET_FORGE_GEMS) return { ok: false, reason: 'insufficient_gems' };
+      const key = `forge:ticket:${Date.now()}`;
+      commit({
+        rewardLedger: appendLedger(state.rewardLedger, {
+          key,
+          kind: 'market_spend',
+          xp: 0,
+          diamonds: -TICKET_FORGE_GEMS,
+          taskPoints: 0,
+          gameDate: today(),
+          sourceId: 'forge_ticket',
+          policyVersion: ECONOMY_VERSION,
+          createdAt: new Date().toISOString(),
+        }),
+      });
+      get().showToast({ type: 'success', message: 'Forged 1 Sanctuary Ticket!' });
+      return { ok: true };
+    },
+
+    forgeToken: (fromTickets) => {
+      const state = get();
+      if (fromTickets) {
+        if (state.tickets < TOKEN_FORGE_TICKETS) return { ok: false, reason: 'insufficient_tickets' };
+        const key = `forge:token:ticket:${Date.now()}`;
+        commit({
+          rewardLedger: appendLedger(state.rewardLedger, {
+            key,
+            kind: 'market_spend',
+            xp: 0,
+            diamonds: 0,
+            taskPoints: 0,
+            gameDate: today(),
+            sourceId: 'token_forged_from_tickets',
+            policyVersion: ECONOMY_VERSION,
+            createdAt: new Date().toISOString(),
+          }),
+        });
+        get().showToast({ type: 'success', message: 'Forged 1 Golden Marketplace Token!' });
+        return { ok: true };
+      }
+      if (state.diamonds < TOKEN_FORGE_GEMS) return { ok: false, reason: 'insufficient_gems' };
+      const key = `forge:token:gem:${Date.now()}`;
+      commit({
+        rewardLedger: appendLedger(state.rewardLedger, {
+          key,
+          kind: 'market_spend',
+          xp: 0,
+          diamonds: -TOKEN_FORGE_GEMS,
+          taskPoints: 0,
+          gameDate: today(),
+          sourceId: 'forge_token',
+          policyVersion: ECONOMY_VERSION,
+          createdAt: new Date().toISOString(),
+        }),
+      });
+      get().showToast({ type: 'success', message: 'Forged 1 Golden Marketplace Token!' });
+      return { ok: true };
+    },
+
+    buyMarketItem: (itemId, currency = 'gems') => {
+      const state = get();
+      const item = MARKET.find((m) => m.id === itemId) ?? (WELLNESS_PLANS.find((p) => p.id === itemId) as unknown as typeof MARKET[0]);
       if (!item) return { ok: false, reason: 'unknown' };
       if (!item.physical && state.marketOwned.includes(itemId)) return { ok: false, reason: 'owned' };
+
+      if (currency === 'tokens') {
+        const requiredTokens = item.tokenCost ?? 1;
+        if (state.tokens < requiredTokens) return { ok: false, reason: 'insufficient' };
+        const key = item.physical ? `market:token:${itemId}:${Date.now()}` : `market:token:${itemId}`;
+        commit({
+          rewardLedger: appendLedger(state.rewardLedger, {
+            key,
+            kind: 'market_spend',
+            xp: 0,
+            diamonds: 0,
+            taskPoints: 0,
+            gameDate: today(),
+            sourceId: `token_spent:${itemId}:${requiredTokens}`,
+            policyVersion: ECONOMY_VERSION,
+            createdAt: new Date().toISOString(),
+          }),
+        });
+        get().showToast({ type: 'success', message: `Unlocked ${item.title} with ${requiredTokens} Token${requiredTokens > 1 ? 's' : ''}!` });
+        return { ok: true };
+      }
+
       if (state.diamonds < item.cost) return { ok: false, reason: 'insufficient' };
       const key = item.physical ? `market:${itemId}:${Date.now()}` : `market:${itemId}`;
       commit({
@@ -736,8 +874,8 @@ export const createQuestSlice: StateCreator<RootState, [['zustand/persist', unkn
           policyVersion: ECONOMY_VERSION,
           createdAt: new Date().toISOString(),
         }),
-        marketOwned: state.marketOwned.includes(itemId) ? state.marketOwned : [...state.marketOwned, itemId],
       });
+      get().showToast({ type: 'success', message: `Unlocked ${item.title}!` });
       return { ok: true };
     },
 

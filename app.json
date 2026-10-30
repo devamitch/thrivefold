@@ -3,7 +3,7 @@
     "name": "Thrivefold",
     "slug": "thrivefold",
     "scheme": "thrivefold",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/images/app-icon-all.png",
@@ -18,7 +18,7 @@
     },
     "android": {
       "package": "com.amit.thrivefold",
-      "versionCode": 6,
+      "versionCode": 7,
       "allowBackup": false,
       "icon": "./assets/images/app-icon-android-legacy.png",
       "adaptiveIcon": {
@@ -57,7 +57,7 @@
     },
     "ios": {
       "bundleIdentifier": "com.amit.thrivefold",
-      "buildNumber": "3",
+      "buildNumber": "4",
       "supportsTablet": true,
       "config": {
         "usesNonExemptEncryption": false
