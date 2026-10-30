@@ -169,6 +169,12 @@ export interface AppSlice {
   setCoachVoiceRate: (r: number) => void;
   /** Keep listening after each reply until the conversation is closed. */
   conversationMode: boolean;
+  /** Read Anvay's replies aloud. Off by default: replies are text unless the person turns this on. */
+  speakReplies: boolean;
+  setSpeakReplies: (on: boolean) => void;
+  /** The coach conversation, kept across closing the sheet and restarts (newest last, ≤100). */
+  coachTurns: { id: string; who: 'you' | 'coach'; text: string; route?: string; at: number }[];
+  setCoachTurns: (turns: AppSlice['coachTurns']) => void;
   setConversationMode: (on: boolean) => void;
   /** Finished beta studio sessions (derived numbers only, never frames), newest first. */
   betaSessions: BetaSession[];
@@ -299,7 +305,12 @@ export const createAppSlice: StateCreator<
   setCoachVoiceGender: (coachVoiceGender) => set({ coachVoiceGender }),
   coachVoiceRate: 0.95,
   setCoachVoiceRate: (r) => set({ coachVoiceRate: Math.min(1.15, Math.max(0.8, r)) }),
-  conversationMode: true,
+  // Off by default: an automatic "listen again" without spoken replies feels like a ghost mic.
+  conversationMode: false,
+  speakReplies: false,
+  setSpeakReplies: (speakReplies) => set({ speakReplies }),
+  coachTurns: [],
+  setCoachTurns: (coachTurns) => set({ coachTurns: coachTurns.slice(-100) }),
   setConversationMode: (conversationMode) => set({ conversationMode }),
   betaSessions: [],
   addBetaSession: (session) =>

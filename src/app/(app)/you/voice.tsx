@@ -8,7 +8,7 @@ import { Chip } from '../../../components/ui/Chip';
 import { ScreenContainer } from '../../../components/ui/ScreenContainer';
 import { SettingsGroup, SettingsRow } from '../../../components/ui/SettingsRow';
 import { Toggle } from '../../../components/ui/Toggle';
-import { coachVoice } from '../../../services/ai/coachVoice';
+import { queueCoachSpeech } from '../../../services/ai/coachVoiceService';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
 
@@ -23,8 +23,8 @@ export default function VoiceSettingsScreen() {
   const { colors, typography, spacing } = useTheme();
   const s = useRootStore(
     useShallow((st) => ({
-      on: st.coachVoiceEnabled,
-      setOn: st.setCoachVoiceEnabled,
+      on: st.speakReplies,
+      setOn: st.setSpeakReplies,
       gender: st.coachVoiceGender,
       setGender: st.setCoachVoiceGender,
       rate: st.coachVoiceRate,
@@ -35,7 +35,7 @@ export default function VoiceSettingsScreen() {
   );
 
   const preview = () =>
-    void coachVoice.speak("Hello, I'm Anvay. I'll keep my answers short and clear.", { priority: 3, maxMs: 8000 });
+    void queueCoachSpeech("Hello, I'm Anvay. I'll keep my answers short and clear.");
 
   return (
     <ScreenContainer
