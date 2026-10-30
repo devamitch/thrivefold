@@ -102,3 +102,26 @@ describe('store documents', () => {
     expect(docs.some((d) => d.key === 'me:cycle')).toBe(false);
   });
 });
+
+describe('chat attachments', () => {
+  // The service imports native modules; the pure helpers are tested through a light mock.
+  jest.mock('expo-image-picker', () => ({}));
+  jest.mock('../../src/services/documents/docReader', () => ({ readDocument: jest.fn(), timeFromTiming: () => [] }));
+  jest.mock('../../src/services/local-ai/rag/thriveRag', () => ({ thriveRag: {} }));
+  jest.mock('../../src/services/voice/globalVoiceController', () => ({ globalVoiceController: {} }));
+  jest.mock('../../src/stores/useRootStore', () => ({ useRootStore: { getState: () => ({}) } }));
+
+  it('guesses the document kind from what was typed', () => {
+    const { guessKind } = require('../../src/services/assistant/chatAttachments');
+    expect(guessKind('')).toBe('prescription');
+    expect(guessKind('my dietitian chart')).toBe('diet_chart');
+    expect(guessKind('trainer workout plan')).toBe('workout_plan');
+  });
+
+  it('shows missing fields as not written, never guessed', () => {
+    const { prescriptionTable } = require('../../src/services/assistant/chatAttachments');
+    const t = prescriptionTable({ doctor: 'Dr Rao', medicines: [{ name: 'Metformin', strength: '500 mg', unclear: false }, { name: 'X', unclear: true }] });
+    expect(t.rows[0]).toEqual(['Metformin', '500 mg', 'not written', 'not written']);
+    expect(t.rows[1][0]).toBe('X (unclear)');
+  });
+});

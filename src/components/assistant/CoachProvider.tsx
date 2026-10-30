@@ -15,7 +15,7 @@
  * Screens use `useCoach()` instead of building their own assistant.
  */
 import { usePathname } from 'expo-router';
-import React, { createContext, useContext, useEffect, useMemo, useRef } from 'react';
+import React, { createContext, Suspense, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
 import type { PersonaId } from '../../domain/assistant/personas';
@@ -27,7 +27,12 @@ import { thriveRag } from '../../services/local-ai/rag/thriveRag';
 import { syncCareReminders } from '../../services/notifications/careReminders';
 import { globalVoiceController } from '../../services/voice/globalVoiceController';
 import { useRootStore } from '../../stores/useRootStore';
-import { GlobalVoiceAssistant } from './GlobalVoiceAssistant';
+
+// The sheet (list, composer, companion art) is loaded and mounted only once it is first opened,
+// so app start does not pay for it.
+const GlobalVoiceAssistant = React.lazy(() =>
+  import('./GlobalVoiceAssistant').then((m) => ({ default: m.GlobalVoiceAssistant })),
+);
 
 export interface CoachApi {
   /** Opens the sheet. `listen: false` opens it ready to type, microphone off. */
@@ -114,12 +119,25 @@ export function CoachProvider({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(t);
   }, [signedIn, medications, medsRemindersOn, followUps]);
 
+  const [sheetWanted, setSheetWanted] = useState(false);
+  useEffect(
+    () =>
+      globalVoiceController.subscribeOpen((open) => {
+        if (open) setSheetWanted(true);
+      }),
+    [],
+  );
+
   const api = useMemo(() => makeApi(() => routeRef.current), []);
 
   return (
     <CoachContext.Provider value={api}>
       {children}
-      {signedIn && isOnboarded ? <GlobalVoiceAssistant /> : null}
+      {signedIn && isOnboarded && sheetWanted ? (
+        <Suspense fallback={null}>
+          <GlobalVoiceAssistant />
+        </Suspense>
+      ) : null}
     </CoachContext.Provider>
   );
 }

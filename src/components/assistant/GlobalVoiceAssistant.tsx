@@ -18,6 +18,7 @@ import {
   Keyboard,
   Modal,
   Platform,
+  Share,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -26,6 +27,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import type { TextInputInstance } from 'react-native';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
@@ -53,6 +55,8 @@ import { PERSONAS } from '../../domain/assistant/personas';
 import { plainText } from '../../domain/assistant/plainText';
 import type { ChatTable } from '../../domain/assistant/chatActions';
 import { setChatActionHooks } from '../../services/assistant/chatActions';
+import { handleAttachedPhoto, pickPhoto } from '../../services/assistant/chatAttachments';
+import { thriveRag } from '../../services/local-ai/rag/thriveRag';
 import { CHAT_PAGE, chatStore, type ChatMessage } from '../../services/assistant/chatStore';
 import { Chip } from '../ui/Chip';
 import { PressableScale } from '../ui/PressableScale';
@@ -93,7 +97,7 @@ export function GlobalVoiceAssistant() {
   const [focused, setFocused] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const list = useRef<FlashListRef<Turn>>(null);
-  const input = useRef<TextInput>(null);
+  const input = useRef<TextInputInstance>(null);
   const [kb, setKb] = useState(0);
 
   // Edge-to-edge Android does not resize a Modal for the keyboard, so the sheet is lifted by the
@@ -293,8 +297,42 @@ export function GlobalVoiceAssistant() {
     const t = setTimeout(() => list.current?.scrollToEnd({ animated: true }), 80);
     return () => clearTimeout(t);
   }, [kb, turns.length]);
+  // 👍 keeps the answer in local knowledge so similar questions reuse it; 👎 is remembered so the
+  // reply is not reused. Tapping the same rating again clears it.
+  const rate = useCallback((id: string, fb: 'up' | 'down') => {
+    hapticSelection();
+    setTurns((t) => {
+      const i = t.findIndex((m) => m.id === id);
+      if (i < 0) return t;
+      const next = { ...t[i], feedback: t[i].feedback === fb ? undefined : fb };
+      chatStore.upsert([next]);
+      if (next.feedback === 'up') {
+        const asked = [...t.slice(0, i)].reverse().find((m) => m.who === 'you')?.text ?? '';
+        void thriveRag
+          .remember(asked.slice(0, 80) || 'Helpful answer', `Question: ${asked}\nAnswer: ${next.text}`, 'wellness_guide', {
+            source: 'liked_reply',
+            messageId: id,
+          })
+          .catch(() => undefined);
+      }
+      return [...t.slice(0, i), next, ...t.slice(i + 1)];
+    });
+  }, []);
+  const attach = async (camera: boolean) => {
+    hapticSelection();
+    Keyboard.dismiss();
+    const uri = await pickPhoto(camera);
+    if (!uri) return;
+    const note = typed;
+    setTyped('');
+    await handleAttachedPhoto(uri, note);
+  };
+  const share = useCallback((text: string) => {
+    void Share.share({ message: plainText(text) }).catch(() => undefined);
+  }, []);
+
   const renderTurn = useCallback(
-    ({ item }: { item: Turn }) => <TurnRow turn={item} onOpen={go} />,
+    ({ item }: { item: Turn }) => <TurnRow turn={item} onOpen={go} onRate={rate} onShare={share} />,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
@@ -579,6 +617,16 @@ export function GlobalVoiceAssistant() {
                     },
                   ]}
                 >
+                  {/* Attach a photo (tap: gallery, hold: camera): prescriptions, diet charts, plans. */}
+                  <PressableScale
+                    onPress={() => void attach(false)}
+                    onLongPress={() => void attach(true)}
+                    hitSlop={8}
+                    style={styles.attach}
+                    accessibilityLabel="Attach a photo. Hold to use the camera"
+                  >
+                    <Ionicons name="attach" size={22} color={colors.text.secondary} />
+                  </PressableScale>
                   <TextInput
                     style={[typography.body, styles.input, { color: colors.text.primary }]}
                     placeholder={listening ? 'Listening… or type' : 'Message Anvay'}
@@ -674,9 +722,13 @@ function TurnTable({ table }: { table: ChatTable }) {
 const TurnRow = React.memo(function TurnRow({
   turn,
   onOpen,
+  onRate,
+  onShare,
 }: {
   turn: Turn;
   onOpen: (route: string) => void;
+  onRate: (id: string, fb: 'up' | 'down') => void;
+  onShare: (text: string) => void;
 }) {
   const { colors, typography } = useTheme();
   const mine = turn.who === 'you';
@@ -703,6 +755,19 @@ const TurnRow = React.memo(function TurnRow({
           <Text style={[typography.captionBold, { color: colors.primary }]}>Open</Text>
           <Ionicons name="arrow-forward" size={14} color={colors.primary} />
         </PressableScale>
+      ) : null}
+      {!mine && turn.text ? (
+        <View style={styles.actions}>
+          <PressableScale onPress={() => onRate(turn.id, 'up')} hitSlop={8} accessibilityLabel="Helpful" accessibilityState={{ selected: turn.feedback === 'up' }}>
+            <Ionicons name={turn.feedback === 'up' ? 'thumbs-up' : 'thumbs-up-outline'} size={16} color={turn.feedback === 'up' ? colors.primary : colors.text.muted} />
+          </PressableScale>
+          <PressableScale onPress={() => onRate(turn.id, 'down')} hitSlop={8} accessibilityLabel="Not helpful" accessibilityState={{ selected: turn.feedback === 'down' }}>
+            <Ionicons name={turn.feedback === 'down' ? 'thumbs-down' : 'thumbs-down-outline'} size={16} color={turn.feedback === 'down' ? colors.primary : colors.text.muted} />
+          </PressableScale>
+          <PressableScale onPress={() => onShare(turn.text)} hitSlop={8} accessibilityLabel="Share this reply">
+            <Ionicons name="share-outline" size={16} color={colors.text.muted} />
+          </PressableScale>
+        </View>
       ) : null}
     </View>
   );
@@ -751,6 +816,8 @@ const styles = StyleSheet.create({
   theirs: { alignSelf: 'flex-start', borderBottomLeftRadius: 6 },
   openRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8 },
   tableWrap: { marginTop: 10 },
+  actions: { flexDirection: 'row', gap: 18, marginTop: 10 },
+  attach: { paddingLeft: 12, paddingRight: 2, justifyContent: 'center' },
   tableRow: { flexDirection: 'row', borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 6 },
   tableCell: { flex: 1, paddingRight: 8 },
   composer: {

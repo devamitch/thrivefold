@@ -13,6 +13,10 @@ export interface ChatMessage {
   route?: string;
   table?: ChatTable;
   at: number;
+  /** The person's rating of a coach reply. */
+  feedback?: 'up' | 'down';
+  /** A file the person attached (local uri on this phone). */
+  attachment?: { uri: string; name: string; kind: 'image' | 'pdf' | 'file' };
 }
 
 export const CHAT_PAGE = 30;
@@ -35,13 +39,26 @@ function getDb(): SQLite.SQLiteDatabase | null {
       );
       CREATE INDEX IF NOT EXISTS idx_coach_messages_at ON coach_messages(at);
     `);
+    // Columns added after the first release of this table.
+    const cols = db.getAllSync<{ name: string }>('PRAGMA table_info(coach_messages)').map((c) => c.name);
+    if (!cols.includes('feedback')) db.execSync('ALTER TABLE coach_messages ADD COLUMN feedback TEXT');
+    if (!cols.includes('attachment_json')) db.execSync('ALTER TABLE coach_messages ADD COLUMN attachment_json TEXT');
     return db;
   } catch {
     return null;
   }
 }
 
-type Row = { id: string; who: 'you' | 'coach'; text: string; route: string | null; table_json: string | null; at: number };
+type Row = {
+  id: string;
+  who: 'you' | 'coach';
+  text: string;
+  route: string | null;
+  table_json: string | null;
+  at: number;
+  feedback: 'up' | 'down' | null;
+  attachment_json: string | null;
+};
 
 const fromRow = (r: Row): ChatMessage => ({
   id: r.id,
@@ -50,6 +67,8 @@ const fromRow = (r: Row): ChatMessage => ({
   route: r.route ?? undefined,
   table: r.table_json ? (JSON.parse(r.table_json) as ChatTable) : undefined,
   at: r.at,
+  feedback: r.feedback ?? undefined,
+  attachment: r.attachment_json ? (JSON.parse(r.attachment_json) as ChatMessage['attachment']) : undefined,
 });
 
 const notify = () => listeners.forEach((l) => l());
@@ -63,8 +82,18 @@ export const chatStore = {
       d.withTransactionSync(() => {
         for (const m of messages) {
           d.runSync(
-            `INSERT OR REPLACE INTO coach_messages (id, who, text, route, table_json, at) VALUES (?, ?, ?, ?, ?, ?)`,
-            [m.id, m.who, m.text, m.route ?? null, m.table ? JSON.stringify(m.table) : null, m.at],
+            `INSERT OR REPLACE INTO coach_messages (id, who, text, route, table_json, at, feedback, attachment_json)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              m.id,
+              m.who,
+              m.text,
+              m.route ?? null,
+              m.table ? JSON.stringify(m.table) : null,
+              m.at,
+              m.feedback ?? null,
+              m.attachment ? JSON.stringify(m.attachment) : null,
+            ],
           );
         }
       });
@@ -83,6 +112,15 @@ export const chatStore = {
         ? d.getAllSync<Row>(`SELECT * FROM coach_messages WHERE at < ? ORDER BY at DESC LIMIT ?`, [before, limit])
         : d.getAllSync<Row>(`SELECT * FROM coach_messages ORDER BY at DESC LIMIT ?`, [limit]);
       return rows.reverse().map(fromRow);
+    } catch {
+      return [];
+    }
+  },
+
+  /** Rated replies (newest first), so good answers can be reused and poor ones avoided. */
+  rated(feedback: 'up' | 'down', limit = 50): ChatMessage[] {
+    try {
+      return (getDb()?.getAllSync<Row>('SELECT * FROM coach_messages WHERE feedback = ? ORDER BY at DESC LIMIT ?', [feedback, limit]) ?? []).map(fromRow);
     } catch {
       return [];
     }

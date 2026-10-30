@@ -214,6 +214,17 @@ class GlobalVoiceController {
     this.openListeners.forEach((cb) => cb(open));
   }
 
+  /**
+   * Adds messages to the open conversation from outside a spoken or typed turn (attachments,
+   * confirmations that finished later). Nothing is sent to a model.
+   */
+  postUserMessage(text: string) {
+    this.listeners.forEach((l) => l.onFinalTranscript(text));
+  }
+  postReply(text: string, tool?: ToolExecutionResult) {
+    this.listeners.forEach((l) => l.onAssistantReply(text, tool));
+  }
+
   /* ── Open / close ─────────────────────────────────────────────────────────────────────── */
 
   /**
