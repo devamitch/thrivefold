@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
+import { Image, type ImageSource } from 'expo-image';
 import * as Speech from 'expo-speech';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, type Href } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
@@ -13,6 +13,7 @@ import { ScreenContainer } from '../../components/ui/ScreenContainer';
 import { articlesFor, type Article } from '../../content/learn';
 import { useTheme } from '../../theme/useTheme';
 import { PressableScale } from '../../components/ui/PressableScale';
+import { ImageViewer, type ViewerOrigin } from '../../components/ui/ImageViewer';
 import { getArticleIllustration } from '../../utils/illustrationResolver';
 
 /** Plain-language health basics for the selected experience; tap an article to read it. */
@@ -22,6 +23,16 @@ export default function LearnScreen() {
   const [open, setOpen] = useState<string | null>(null);
   const [speakingId, setSpeakingId] = useState<string | null>(null);
   const articles = articlesFor(experience);
+  const imageRefs = useRef<Record<string, View | null>>({});
+  const [viewer, setViewer] = useState<{ source: ImageSource | number; origin: ViewerOrigin; caption: string } | null>(
+    null,
+  );
+  // The viewer grows out of the tapped picture: measure where it is on screen first.
+  const openImage = (id: string, source: ImageSource | number, caption: string) => {
+    const node = imageRefs.current[id];
+    if (!node) return;
+    node.measureInWindow((x, y, width, height) => setViewer({ source, caption, origin: { x, y, width, height } }));
+  };
 
   // Stop any active speech on unmount
   useEffect(() => {
@@ -75,14 +86,25 @@ export default function LearnScreen() {
           >
             {/* Top Article Illustration Banner */}
             <View style={styles.imageWrap}>
-              <Image
-                source={artImage}
-                style={styles.cardImage}
-                contentFit="cover"
-                transition={150}
-                priority="low"
-                accessibilityIgnoresInvertColors
-              />
+              <PressableScale
+                ref={(r: View | null) => {
+                  imageRefs.current[art.id] = r;
+                }}
+                onPress={() => openImage(art.id, artImage, art.title)}
+                scaleTo={0.98}
+                style={StyleSheet.absoluteFill}
+                accessibilityRole="imagebutton"
+                accessibilityLabel={`${art.title}. Open the picture full screen`}
+              >
+                <Image
+                  source={artImage}
+                  style={styles.cardImage}
+                  contentFit="cover"
+                  transition={150}
+                  priority="low"
+                  accessibilityIgnoresInvertColors
+                />
+              </PressableScale>
               <View style={styles.badgeOverlay}>
                 <Badge label={art.category} variant="primary" />
                 <View style={styles.pillRow}>
@@ -176,6 +198,12 @@ export default function LearnScreen() {
           </Card>
         );
       })}
+      <ImageViewer
+        source={viewer?.source ?? null}
+        origin={viewer?.origin ?? null}
+        caption={viewer?.caption}
+        onClose={() => setViewer(null)}
+      />
     </ScreenContainer>
   );
 }
