@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import React, { useMemo, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Dimensions, Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { AppHeader } from '../../components/ui/AppHeader';
 import { AppBottomSheetModal } from '../../components/ui/AppBottomSheetModal';
@@ -16,6 +16,7 @@ import { RewardAssets } from '../../constants/assets';
 import {
   ACTION_REWARDS,
   chestKey,
+  EDITORIAL_ARTWORKS,
   LEVEL_CHESTS,
   MARKET,
   streakMultiplier,
@@ -24,6 +25,7 @@ import {
   TOKEN_FORGE_GEMS,
   TOKEN_FORGE_TICKETS,
   WELLNESS_PLANS,
+  type EditorialArt,
   type LevelChest,
   type MarketItem,
   type WellnessPlan,
@@ -31,6 +33,8 @@ import {
 import { useGearStock, useMyGearRequests, useRequestGear } from '../../services/rewards/gear';
 import { useRootStore, useShallow } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
+
+const { width } = Dimensions.get('window');
 
 function getChestAssets(level: number) {
   if (level >= 100) return RewardAssets.chests.tier5;
@@ -63,16 +67,20 @@ function getItemAsset(assetKey?: string) {
   if (assetKey in RewardAssets.currencies) {
     return RewardAssets.currencies[assetKey as keyof typeof RewardAssets.currencies];
   }
+  if (assetKey in RewardAssets.editorial) {
+    return RewardAssets.editorial[assetKey as keyof typeof RewardAssets.editorial];
+  }
   return null;
 }
 
+type TabType = 'market' | 'reliquary' | 'gallery';
+
 /**
- * Thrivefold Open Marketplace & Economic Treasury (Spec §2, §4, §5):
- * - Real Amber Gems earned by verified daily habits (never bought for fiat money).
- * - Currency Forge: 500 Gems ➔ 1 Sanctuary Ticket; 5 Tickets (or 2,500 Gems) ➔ 1 Marketplace Token.
- * - Digital Habit Stickers: purchasable with either 100 Gems OR 1 Token.
- * - Milestone Chests: level-tiered loot drops with illustrated 3D chests & collectible cards.
- * - Real Workout Gear & Verified Wellness Plans: physical doorstep delivery & telehealth appointments.
+ * Thrivefold Grand Marketplace & Treasury Showcase:
+ * - Treasury Wallet with Gems, Tickets, and Tokens.
+ * - Tab 1: Marketplace & Gear (Stickers, Status, Care Plans, Real Physical Gear).
+ * - Tab 2: Milestone Reliquaries (The 5 Tier Chests with Closed & Burst 3D views + 4 Collector Cards).
+ * - Tab 3: Artisanal Gallery (Complete 11-piece museum Gouache Editorial Art collection).
  */
 export default function MarketplaceScreen() {
   const { colors, typography, spacing } = useTheme();
@@ -92,8 +100,10 @@ export default function MarketplaceScreen() {
     })),
   );
 
+  const [activeTab, setActiveTab] = useState<TabType>('market');
   const opened = useMemo(() => ledger.filter((e) => e.kind === 'chest_reward').map((e) => e.key), [ledger]);
   const [chest, setChest] = useState<LevelChest | null>(null);
+  const [inspectArt, setInspectArt] = useState<EditorialArt | null>(null);
   const multiplier = streakMultiplier(streak);
   const cards = LEVEL_CHESTS.filter((c) => owned.includes(c.card.id)).map((c) => c.card);
   const stock = useGearStock();
@@ -223,7 +233,7 @@ export default function MarketplaceScreen() {
         cancelText: null,
       });
     } catch {
-      // Handled by mutation error state
+      // Handled by mutation
     }
   };
 
@@ -231,7 +241,7 @@ export default function MarketplaceScreen() {
 
   return (
     <ScreenContainer
-      header={<AppHeader title="Marketplace" subtitle="Spend hard-earned gems and tokens on wellness gear" showBack />}
+      header={<AppHeader title="Marketplace" subtitle="Spend gems & tokens on authentic wellness gear" showBack />}
       scrollMode="shell-scroll-view"
     >
       {/* 3-Pillar Treasury Wallet */}
@@ -239,12 +249,11 @@ export default function MarketplaceScreen() {
         <View style={styles.walletHeader}>
           <Text style={[typography.captionBold, { color: colors.primary }]}>WELLNESS TREASURY</Text>
           {multiplier > 1 && (
-            <Badge label={`${streak}d Streak · ×${multiplier} XP & Gems`} variant="primary" />
+            <Badge label={`${streak}d Streak · ×${multiplier} Rewards`} variant="primary" />
           )}
         </View>
 
         <View style={styles.currencyRow}>
-          {/* Amber Gems */}
           <View style={styles.currencyCol}>
             <Image source={RewardAssets.currencies.amberGem} style={styles.currencyIcon} contentFit="contain" />
             <Text style={[typography.heading, { color: colors.text.primary, marginTop: 4 }]}>{diamonds.toLocaleString()}</Text>
@@ -253,7 +262,6 @@ export default function MarketplaceScreen() {
 
           <View style={[styles.walletDivider, { backgroundColor: colors.border }]} />
 
-          {/* Sanctuary Tickets */}
           <View style={styles.currencyCol}>
             <Image source={RewardAssets.currencies.sanctuaryPass} style={styles.currencyIcon} contentFit="contain" />
             <Text style={[typography.heading, { color: colors.text.primary, marginTop: 4 }]}>{tickets}</Text>
@@ -262,7 +270,6 @@ export default function MarketplaceScreen() {
 
           <View style={[styles.walletDivider, { backgroundColor: colors.border }]} />
 
-          {/* Marketplace Tokens */}
           <View style={styles.currencyCol}>
             <Image source={RewardAssets.currencies.marketplaceToken} style={styles.currencyIcon} contentFit="contain" />
             <Text style={[typography.heading, { color: colors.text.primary, marginTop: 4 }]}>{tokens}</Text>
@@ -270,7 +277,6 @@ export default function MarketplaceScreen() {
           </View>
         </View>
 
-        {/* Currency Forge Row */}
         <View style={[styles.forgeBar, { borderTopColor: colors.border, marginTop: spacing.md, paddingTop: spacing.sm }]}>
           <Text style={[typography.caption, { color: colors.text.muted, flex: 1 }]}>
             Forge: 500 Gems ➔ 1 Ticket · 5 Tickets ➔ 1 Token
@@ -294,338 +300,453 @@ export default function MarketplaceScreen() {
         </View>
       </Card>
 
-      {/* Milestone Chests Shelf */}
-      <View style={{ marginBottom: spacing.lg }}>
-        <View style={styles.sectionHead}>
-          <Ionicons name="gift-outline" size={20} color={colors.primary} />
-          <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>Milestone Chests</Text>
-          <Text style={[typography.caption, { color: colors.text.muted }]}>You are level {level}</Text>
-        </View>
-        <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2, marginBottom: spacing.sm }]}>
-          Guaranteed loot drops with Amber Gems and exclusive collector cards as you advance.
-        </Text>
+      {/* Segment Navigation */}
+      <View style={[styles.segmentContainer, { backgroundColor: colors.surface1, marginBottom: spacing.lg }]}>
+        <PressableScale
+          style={[styles.segmentTab, activeTab === 'market' && { backgroundColor: colors.surface }]}
+          onPress={() => setActiveTab('market')}
+        >
+          <Ionicons
+            name="bag-handle-outline"
+            size={18}
+            color={activeTab === 'market' ? colors.primary : colors.text.secondary}
+          />
+          <Text
+            style={[
+              typography.captionBold,
+              { color: activeTab === 'market' ? colors.text.primary : colors.text.secondary },
+            ]}
+          >
+            Marketplace
+          </Text>
+        </PressableScale>
 
-        <View style={styles.chestShelf}>
+        <PressableScale
+          style={[styles.segmentTab, activeTab === 'reliquary' && { backgroundColor: colors.surface }]}
+          onPress={() => setActiveTab('reliquary')}
+        >
+          <Ionicons
+            name="gift-outline"
+            size={18}
+            color={activeTab === 'reliquary' ? colors.primary : colors.text.secondary}
+          />
+          <Text
+            style={[
+              typography.captionBold,
+              { color: activeTab === 'reliquary' ? colors.text.primary : colors.text.secondary },
+            ]}
+          >
+            Chests & Cards
+          </Text>
+        </PressableScale>
+
+        <PressableScale
+          style={[styles.segmentTab, activeTab === 'gallery' && { backgroundColor: colors.surface }]}
+          onPress={() => setActiveTab('gallery')}
+        >
+          <Ionicons
+            name="color-palette-outline"
+            size={18}
+            color={activeTab === 'gallery' ? colors.primary : colors.text.secondary}
+          />
+          <Text
+            style={[
+              typography.captionBold,
+              { color: activeTab === 'gallery' ? colors.text.primary : colors.text.secondary },
+            ]}
+          >
+            Art Gallery
+          </Text>
+        </PressableScale>
+      </View>
+
+      {/* TAB 1: MARKETPLACE (Stickers, Status, Plans, Gear) */}
+      {activeTab === 'market' && (
+        <View>
+          {/* Your Owned Collection Shelf */}
+          {owned.length > 0 && (
+            <View style={{ marginBottom: spacing.lg }}>
+              <View style={styles.sectionHead}>
+                <Ionicons name="albums-outline" size={20} color={colors.primary} />
+                <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>Your Collection Shelf</Text>
+              </View>
+
+              <View style={[styles.shelf, { marginTop: spacing.sm }]}>
+                {cards.map((c) => {
+                  const cardArt = getCardAsset(c.id);
+                  return (
+                    <View key={c.id} style={[styles.cardItem, { backgroundColor: colors.surface }]}>
+                      <Image source={cardArt} style={styles.cardItemImg} contentFit="cover" />
+                      <Text style={[typography.captionBold, { color: colors.text.primary, textAlign: 'center', marginTop: 4 }]} numberOfLines={1}>
+                        {c.title}
+                      </Text>
+                      <Text style={[typography.caption, { color: colors.primary }]}>{c.rarity}</Text>
+                    </View>
+                  );
+                })}
+
+                {MARKET.filter((m) => !m.physical && owned.includes(m.id)).map((m) => {
+                  const art = getItemAsset(m.assetKey);
+                  return (
+                    <View key={m.id} style={[styles.stickerItem, { backgroundColor: colors.surface }]}>
+                      {art ? (
+                        <Image source={art} style={styles.stickerImg} contentFit="contain" />
+                      ) : (
+                        <View style={[styles.stickerIconBg, { backgroundColor: colors.surface2 }]}>
+                          <Ionicons name={m.icon as keyof typeof Ionicons.glyphMap} size={28} color={colors.primary} />
+                        </View>
+                      )}
+                      <Text style={[typography.captionBold, { color: colors.text.primary, textAlign: 'center', marginTop: 4 }]} numberOfLines={2}>
+                        {m.title}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+          )}
+
+          {/* Digital Habit Stickers with Illustrated Art */}
+          <View style={{ marginBottom: spacing.lg }}>
+            <View style={styles.sectionHead}>
+              <Ionicons name="happy-outline" size={20} color={colors.primary} />
+              <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>Digital Habit Stickers</Text>
+              <Text style={[typography.caption, { color: colors.text.muted }]}>100 Gems or 1 Token</Text>
+            </View>
+
+            {MARKET.filter((m) => m.tier === 'sticker').map((m) => {
+              const have = owned.includes(m.id);
+              const art = getItemAsset(m.assetKey);
+              const shortGems = diamonds < m.cost;
+              const shortTokens = tokens < (m.tokenCost ?? 1);
+              return (
+                <Card key={m.id} style={[styles.itemCard, { marginTop: spacing.sm }]}>
+                  <View style={[styles.stickerThumb, { backgroundColor: colors.surface2 }]}>
+                    {art ? (
+                      <Image source={art} style={styles.itemImgThumb} contentFit="contain" />
+                    ) : (
+                      <Ionicons name={m.icon as keyof typeof Ionicons.glyphMap} size={28} color={colors.primary} />
+                    )}
+                  </View>
+                  <View style={styles.flex}>
+                    <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{m.title}</Text>
+                    <Text style={[typography.caption, { color: colors.text.secondary }]}>{m.description}</Text>
+                    <Text style={[typography.caption, { color: colors.primary, marginTop: 2 }]}>
+                      {m.cost} Gems · or {m.tokenCost ?? 1} Token
+                    </Text>
+                  </View>
+                  {have ? (
+                    <Badge label="Owned" variant="success" />
+                  ) : (
+                    <View style={styles.actionRow}>
+                      <Button
+                        label={`${m.cost} 💎`}
+                        size="sm"
+                        variant={shortGems ? 'outline' : 'primary'}
+                        disabled={shortGems}
+                        onPress={() => promptUnlock(m, 'gems')}
+                      />
+                      <Button
+                        label="1 🪙"
+                        size="sm"
+                        variant={shortTokens ? 'outline' : 'primary'}
+                        disabled={shortTokens}
+                        onPress={() => promptUnlock(m, 'tokens')}
+                      />
+                    </View>
+                  )}
+                </Card>
+              );
+            })}
+          </View>
+
+          {/* Sanctuary Status & Boosters */}
+          <View style={{ marginBottom: spacing.lg }}>
+            <View style={styles.sectionHead}>
+              <Ionicons name="ribbon-outline" size={20} color={colors.primary} />
+              <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>Sanctuary Status & Badges</Text>
+              <Text style={[typography.caption, { color: colors.text.muted }]}>500 Gems or 1 Ticket</Text>
+            </View>
+
+            {MARKET.filter((m) => m.tier === 'status').map((m) => {
+              const have = owned.includes(m.id);
+              const art = getItemAsset(m.assetKey);
+              const shortGems = diamonds < m.cost;
+              const shortTickets = tickets < 1;
+              return (
+                <Card key={m.id} style={[styles.itemCard, { marginTop: spacing.sm }]}>
+                  <View style={[styles.stickerThumb, { backgroundColor: colors.surface2 }]}>
+                    <Image source={art ?? RewardAssets.currencies.sanctuaryPass} style={{ width: 44, height: 44 }} contentFit="contain" />
+                  </View>
+                  <View style={styles.flex}>
+                    <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{m.title}</Text>
+                    <Text style={[typography.caption, { color: colors.text.secondary }]}>{m.description}</Text>
+                    <Text style={[typography.caption, { color: colors.primary, marginTop: 2 }]}>500 Gems · or 1 Sanctuary Ticket</Text>
+                  </View>
+                  {have ? (
+                    <Badge label="Active" variant="success" />
+                  ) : (
+                    <View style={styles.actionRow}>
+                      <Button
+                        label="500 💎"
+                        size="sm"
+                        variant={shortGems ? 'outline' : 'primary'}
+                        disabled={shortGems}
+                        onPress={() => promptUnlock(m, 'gems')}
+                      />
+                      <Button
+                        label="1 🎫"
+                        size="sm"
+                        variant={shortTickets ? 'outline' : 'primary'}
+                        disabled={shortTickets}
+                        onPress={() => promptUnlock(m, 'tokens')}
+                      />
+                    </View>
+                  )}
+                </Card>
+              );
+            })}
+          </View>
+
+          {/* Wellness Plans */}
+          <View style={{ marginBottom: spacing.lg }}>
+            <View style={styles.sectionHead}>
+              <Ionicons name="fitness-outline" size={20} color={colors.primary} />
+              <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>Wellness & Nutrition Plans</Text>
+              <Text style={[typography.caption, { color: colors.text.muted }]}>Tokens or Gems</Text>
+            </View>
+
+            {WELLNESS_PLANS.map((p) => {
+              const assetImg = getItemAsset(p.assetKey);
+              const have = owned.includes(p.id);
+              const shortGems = diamonds < p.cost;
+              const shortTokens = tokens < p.tokenCost;
+              return (
+                <Card key={p.id} style={[styles.itemCard, { marginTop: spacing.sm }]}>
+                  <View style={[styles.gearThumb, { backgroundColor: colors.surface2 }]}>
+                    {assetImg ? (
+                      <Image source={assetImg} style={{ width: 56, height: 56, borderRadius: 10 }} contentFit="cover" />
+                    ) : (
+                      <Ionicons name={p.icon as keyof typeof Ionicons.glyphMap} size={28} color={colors.primary} />
+                    )}
+                  </View>
+                  <View style={styles.flex}>
+                    <View style={styles.row}>
+                      <Text style={[typography.bodyBold, styles.flex, { color: colors.text.primary }]}>{p.title}</Text>
+                      <Badge label={p.category} variant="primary" />
+                    </View>
+                    <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>{p.description}</Text>
+                    <Text style={[typography.captionBold, { color: colors.primary, marginTop: 4 }]}>
+                      {p.tokenCost} Tokens · or {p.cost.toLocaleString()} Gems
+                    </Text>
+                  </View>
+                  {have ? (
+                    <Badge label="Enrolled" variant="success" />
+                  ) : (
+                    <View style={styles.actionCol}>
+                      <Button
+                        label={`${p.tokenCost} 🪙`}
+                        size="sm"
+                        variant={shortTokens ? 'outline' : 'primary'}
+                        disabled={shortTokens}
+                        onPress={() => promptUnlock(p, 'tokens')}
+                      />
+                      <Button
+                        label="Order"
+                        size="sm"
+                        variant={shortGems ? 'outline' : 'primary'}
+                        disabled={shortGems}
+                        onPress={() => promptUnlock(p, 'gems')}
+                      />
+                    </View>
+                  )}
+                </Card>
+              );
+            })}
+          </View>
+
+          {/* Real Physical Workout Gear */}
+          <View style={{ marginBottom: spacing.lg }}>
+            <View style={styles.sectionHead}>
+              <Ionicons name="barbell-outline" size={20} color={colors.primary} />
+              <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>Real Workout Gear</Text>
+              <Text style={[typography.caption, { color: colors.text.muted }]}>Doorstep Delivery</Text>
+            </View>
+
+            {MARKET.filter((m) => m.tier === 'gear').map((m) => {
+              const assetImg = getItemAsset(m.assetKey);
+              const left = stock.data?.[m.id];
+              const soldOut = left === 0;
+              const shortGems = diamonds < m.cost;
+              const shortTokens = tokens < (m.tokenCost ?? 10);
+              return (
+                <Card key={m.id} style={[styles.itemCard, { marginTop: spacing.sm }]}>
+                  <View style={[styles.gearThumb, { backgroundColor: colors.surface2 }]}>
+                    {assetImg ? (
+                      <Image source={assetImg} style={styles.gearThumbImg} contentFit="contain" />
+                    ) : (
+                      <Ionicons name={m.icon as keyof typeof Ionicons.glyphMap} size={28} color={colors.primary} />
+                    )}
+                  </View>
+                  <View style={styles.flex}>
+                    <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{m.title}</Text>
+                    <Text style={[typography.caption, { color: colors.text.secondary }]}>{m.description}</Text>
+                    <Text style={[typography.captionBold, { color: colors.primary, marginTop: 2 }]}>
+                      {m.tokenCost ?? 10} Tokens · or {m.cost.toLocaleString()} Gems
+                    </Text>
+                    <Text
+                      style={[
+                        typography.caption,
+                        {
+                          color: soldOut ? colors.error : colors.text.muted,
+                          marginTop: 2,
+                        },
+                      ]}
+                    >
+                      {stock.isLoading
+                        ? 'Checking inventory…'
+                        : left === undefined
+                          ? 'Stock verified upon request'
+                          : soldOut
+                            ? 'Temporarily Out of Stock'
+                            : `${left} available`}
+                    </Text>
+                  </View>
+                  <View style={styles.actionCol}>
+                    <Button
+                      label={`${m.tokenCost ?? 10} 🪙`}
+                      size="sm"
+                      variant={shortTokens ? 'outline' : 'primary'}
+                      disabled={shortTokens || soldOut}
+                      onPress={() => promptUnlock(m, 'tokens')}
+                    />
+                    <Button
+                      label="Order"
+                      size="sm"
+                      variant={shortGems ? 'outline' : 'primary'}
+                      disabled={shortGems || soldOut}
+                      onPress={() => promptUnlock(m, 'gems')}
+                    />
+                  </View>
+                </Card>
+              );
+            })}
+          </View>
+
+          {requests.data && requests.data.length > 0 && (
+            <View style={{ marginBottom: spacing.lg }}>
+              <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: spacing.sm }]}>Your Gear Orders</Text>
+              {requests.data.map((r) => (
+                <Card key={r.id} style={[styles.itemCard, { marginBottom: spacing.sm }]}>
+                  <Text style={[typography.body, styles.flex, { color: colors.text.primary }]}>
+                    {MARKET.find((m) => m.id === r.item_id)?.title ?? r.item_id}
+                  </Text>
+                  <Badge label={r.status} variant="primary" />
+                </Card>
+              ))}
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* TAB 2: MILESTONE RELIQUARIES (The 5 Tier Chests + 4 Collector Cards) */}
+      {activeTab === 'reliquary' && (
+        <View style={{ marginBottom: spacing.xl }}>
+          <View style={styles.sectionHead}>
+            <Ionicons name="trophy-outline" size={20} color={colors.primary} />
+            <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>The 5 Milestone Chest Tiers</Text>
+          </View>
+          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2, marginBottom: spacing.md }]}>
+            Hand-crafted 3D reliquaries unlocked automatically as you hit milestone health levels.
+          </Text>
+
           {LEVEL_CHESTS.map((c) => {
-            const done = opened.includes(chestKey(c.level));
-            const ready = !done && level >= c.level;
             const chestArt = getChestAssets(c.level);
+            const cardArt = getCardAsset(c.card.id);
+            const isDone = opened.includes(chestKey(c.level));
+            const isReady = !isDone && level >= c.level;
             return (
-              <PressableScale
-                key={c.level}
-                disabled={!ready}
-                disabledOpacity={done ? 0.7 : 0.45}
-                onPress={() => setChest(c)}
-                accessibilityRole="button"
-                accessibilityLabel={ready ? `Open ${c.title}` : `${c.title}, level ${c.level}`}
-                style={[
-                  styles.chestItem,
-                  {
-                    backgroundColor: ready ? colors.primaryAlpha : colors.surface,
-                    borderColor: ready ? colors.primary : 'transparent',
-                    borderWidth: ready ? 1.5 : 0,
-                  },
-                ]}
-              >
-                <Image
-                  source={done ? chestArt.burst : chestArt.closed}
-                  style={styles.chestThumbnail}
-                  contentFit="contain"
-                />
-                <Text style={[typography.captionBold, { color: colors.text.primary, marginTop: 4 }]}>Level {c.level}</Text>
-                <Text style={[typography.caption, { color: colors.text.secondary, textAlign: 'center' }]} numberOfLines={1}>
-                  {done ? 'Opened' : ready ? 'Tap to open' : `+${c.gems} gems`}
+              <Card key={c.level} style={[styles.reliquaryCard, { marginBottom: spacing.md, borderColor: isReady ? colors.primary : colors.border }]}>
+                <View style={styles.reliquaryTop}>
+                  <Badge label={`Tier Milestone · Level ${c.level}`} variant={isDone ? 'success' : isReady ? 'primary' : 'neutral'} />
+                  {isReady && <Badge label="Ready to Open" variant="gold" />}
+                </View>
+
+                <Text style={[typography.heading, { color: colors.text.primary, marginTop: 8 }]}>{c.title}</Text>
+                <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                  Guaranteed Reward: +{c.gems} Amber Gems & exclusive {c.card.title} ({c.card.rarity} Card)
                 </Text>
-              </PressableScale>
+
+                {/* Side-by-Side Dual Chest State Display */}
+                <View style={styles.dualChestRow}>
+                  <View style={styles.chestStateCol}>
+                    <Image source={chestArt.closed} style={styles.largeChestImg} contentFit="contain" />
+                    <Text style={[typography.captionBold, { color: colors.text.muted, marginTop: 4 }]}>Closed State</Text>
+                  </View>
+                  <View style={styles.chestStateCol}>
+                    <Image source={chestArt.burst} style={styles.largeChestImg} contentFit="contain" />
+                    <Text style={[typography.captionBold, { color: colors.primary, marginTop: 4 }]}>Burst Eruption</Text>
+                  </View>
+                </View>
+
+                {/* Card Drop Preview */}
+                <View style={[styles.cardDropPreview, { backgroundColor: colors.surface1 }]}>
+                  <Image source={cardArt} style={styles.miniCardImg} contentFit="cover" />
+                  <View style={styles.flex}>
+                    <Text style={[typography.captionBold, { color: colors.primary }]}>{c.card.rarity.toUpperCase()} COLLECTOR CARD</Text>
+                    <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{c.card.title}</Text>
+                    <Text style={[typography.caption, { color: colors.text.secondary }]}>Debossed geometric watermark seal</Text>
+                  </View>
+                  {isReady ? (
+                    <Button label="Open" size="sm" onPress={() => setChest(c)} />
+                  ) : (
+                    <Badge label={isDone ? 'Claimed' : `Lvl ${c.level}`} variant={isDone ? 'success' : 'neutral'} />
+                  )}
+                </View>
+              </Card>
             );
           })}
         </View>
-      </View>
+      )}
 
-      {/* Your Collection Shelf (Cards & Stickers) */}
-      {owned.length > 0 && (
-        <View style={{ marginBottom: spacing.lg }}>
+      {/* TAB 3: ARTISANAL GALLERY (11 Gouache Masterpieces) */}
+      {activeTab === 'gallery' && (
+        <View style={{ marginBottom: spacing.xl }}>
           <View style={styles.sectionHead}>
-            <Ionicons name="albums-outline" size={20} color={colors.primary} />
-            <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>Your Collection Shelf</Text>
+            <Ionicons name="brush-outline" size={20} color={colors.primary} />
+            <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>Artisanal Gouache Gallery</Text>
           </View>
+          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2, marginBottom: spacing.md }]}>
+            Hand-painted Scandinavian-Japanese gouache on textured cotton paper. Tap any artwork to inspect full details.
+          </Text>
 
-          <View style={[styles.shelf, { marginTop: spacing.sm }]}>
-            {/* Owned Cards */}
-            {cards.map((c) => {
-              const cardArt = getCardAsset(c.id);
+          <View style={styles.galleryGrid}>
+            {EDITORIAL_ARTWORKS.map((art) => {
+              const imageSource = getItemAsset(art.assetKey);
               return (
-                <View key={c.id} style={[styles.cardItem, { backgroundColor: colors.surface }]}>
-                  <Image source={cardArt} style={styles.cardItemImg} contentFit="cover" />
-                  <Text style={[typography.captionBold, { color: colors.text.primary, textAlign: 'center', marginTop: 4 }]} numberOfLines={1}>
-                    {c.title}
-                  </Text>
-                  <Text style={[typography.caption, { color: colors.primary }]}>{c.rarity}</Text>
-                </View>
+                <PressableScale
+                  key={art.id}
+                  onPress={() => setInspectArt(art)}
+                  style={[styles.galleryCard, { backgroundColor: colors.surface }]}
+                >
+                  <Image source={imageSource} style={styles.galleryImg} contentFit="cover" />
+                  <View style={styles.galleryMeta}>
+                    <Badge label={art.category} variant="primary" />
+                    <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 4 }]} numberOfLines={1}>
+                      {art.title}
+                    </Text>
+                    <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]} numberOfLines={2}>
+                      {art.description}
+                    </Text>
+                  </View>
+                </PressableScale>
               );
             })}
-
-            {/* Owned Stickers & Status */}
-            {MARKET.filter((m) => !m.physical && owned.includes(m.id)).map((m) => (
-              <View key={m.id} style={[styles.stickerItem, { backgroundColor: colors.surface }]}>
-                <View style={[styles.stickerIconBg, { backgroundColor: colors.surface2 }]}>
-                  <Ionicons name={m.icon as keyof typeof Ionicons.glyphMap} size={28} color={colors.primary} />
-                </View>
-                <Text style={[typography.captionBold, { color: colors.text.primary, textAlign: 'center', marginTop: 4 }]} numberOfLines={2}>
-                  {m.title}
-                </Text>
-              </View>
-            ))}
           </View>
         </View>
       )}
 
-      {/* Digital Habit Stickers Section (Buy with Gems OR Tokens) */}
-      <View style={{ marginBottom: spacing.lg }}>
-        <View style={styles.sectionHead}>
-          <Ionicons name="happy-outline" size={20} color={colors.primary} />
-          <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>Digital Habit Stickers</Text>
-          <Text style={[typography.caption, { color: colors.text.muted }]}>100 Gems or 1 Token</Text>
-        </View>
-        <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2, marginBottom: spacing.xs }]}>
-          Earned stickers attach to coach messages and slow letters.
-        </Text>
-
-        {MARKET.filter((m) => m.tier === 'sticker').map((m) => {
-          const have = owned.includes(m.id);
-          const shortGems = diamonds < m.cost;
-          const shortTokens = tokens < (m.tokenCost ?? 1);
-          return (
-            <Card key={m.id} style={[styles.itemCard, { marginTop: spacing.sm }]}>
-              <View style={[styles.stickerThumb, { backgroundColor: colors.surface2 }]}>
-                <Ionicons name={m.icon as keyof typeof Ionicons.glyphMap} size={28} color={colors.primary} />
-              </View>
-              <View style={styles.flex}>
-                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{m.title}</Text>
-                <Text style={[typography.caption, { color: colors.text.secondary }]}>{m.description}</Text>
-                <Text style={[typography.caption, { color: colors.primary, marginTop: 2 }]}>
-                  {m.cost} Gems · or {m.tokenCost ?? 1} Token
-                </Text>
-              </View>
-              {have ? (
-                <Badge label="Owned" variant="success" />
-              ) : (
-                <View style={styles.actionRow}>
-                  <Button
-                    label={`${m.cost} 💎`}
-                    size="sm"
-                    variant={shortGems ? 'outline' : 'primary'}
-                    disabled={shortGems}
-                    onPress={() => promptUnlock(m, 'gems')}
-                  />
-                  <Button
-                    label="1 🪙"
-                    size="sm"
-                    variant={shortTokens ? 'outline' : 'primary'}
-                    disabled={shortTokens}
-                    onPress={() => promptUnlock(m, 'tokens')}
-                  />
-                </View>
-              )}
-            </Card>
-          );
-        })}
-      </View>
-
-      {/* Sanctuary Status & Boosters */}
-      <View style={{ marginBottom: spacing.lg }}>
-        <View style={styles.sectionHead}>
-          <Ionicons name="ribbon-outline" size={20} color={colors.primary} />
-          <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>Sanctuary Status & Badges</Text>
-          <Text style={[typography.caption, { color: colors.text.muted }]}>500 Gems or 1 Ticket</Text>
-        </View>
-
-        {MARKET.filter((m) => m.tier === 'status').map((m) => {
-          const have = owned.includes(m.id);
-          const shortGems = diamonds < m.cost;
-          const shortTickets = tickets < 1;
-          return (
-            <Card key={m.id} style={[styles.itemCard, { marginTop: spacing.sm }]}>
-              <View style={[styles.stickerThumb, { backgroundColor: colors.surface2 }]}>
-                <Image source={RewardAssets.currencies.sanctuaryPass} style={{ width: 42, height: 42 }} contentFit="contain" />
-              </View>
-              <View style={styles.flex}>
-                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{m.title}</Text>
-                <Text style={[typography.caption, { color: colors.text.secondary }]}>{m.description}</Text>
-                <Text style={[typography.caption, { color: colors.primary, marginTop: 2 }]}>500 Gems · or 1 Sanctuary Ticket</Text>
-              </View>
-              {have ? (
-                <Badge label="Active" variant="success" />
-              ) : (
-                <View style={styles.actionRow}>
-                  <Button
-                    label="500 💎"
-                    size="sm"
-                    variant={shortGems ? 'outline' : 'primary'}
-                    disabled={shortGems}
-                    onPress={() => promptUnlock(m, 'gems')}
-                  />
-                  <Button
-                    label="1 🎫"
-                    size="sm"
-                    variant={shortTickets ? 'outline' : 'primary'}
-                    disabled={shortTickets}
-                    onPress={() => promptUnlock(m, 'tokens')}
-                  />
-                </View>
-              )}
-            </Card>
-          );
-        })}
-      </View>
-
-      {/* Wellness & Nutrition Plans Section */}
-      <View style={{ marginBottom: spacing.lg }}>
-        <View style={styles.sectionHead}>
-          <Ionicons name="fitness-outline" size={20} color={colors.primary} />
-          <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>Wellness & Nutrition Plans</Text>
-          <Text style={[typography.caption, { color: colors.text.muted }]}>Tokens or Gems</Text>
-        </View>
-        <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2, marginBottom: spacing.xs }]}>
-          Verified doctor consultations, organic whole-food meal boxes, and movement pathways.
-        </Text>
-
-        {WELLNESS_PLANS.map((p) => {
-          const assetImg = getItemAsset(p.assetKey);
-          const have = owned.includes(p.id);
-          const shortGems = diamonds < p.cost;
-          const shortTokens = tokens < p.tokenCost;
-          return (
-            <Card key={p.id} style={[styles.itemCard, { marginTop: spacing.sm }]}>
-              <View style={[styles.stickerThumb, { backgroundColor: colors.surface2 }]}>
-                {assetImg ? (
-                  <Image source={assetImg} style={{ width: 44, height: 44, borderRadius: 8 }} contentFit="contain" />
-                ) : (
-                  <Ionicons name={p.icon as keyof typeof Ionicons.glyphMap} size={26} color={colors.primary} />
-                )}
-              </View>
-              <View style={styles.flex}>
-                <View style={styles.row}>
-                  <Text style={[typography.bodyBold, styles.flex, { color: colors.text.primary }]}>{p.title}</Text>
-                  <Badge label={p.category} variant="primary" />
-                </View>
-                <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>{p.description}</Text>
-                <Text style={[typography.captionBold, { color: colors.primary, marginTop: 4 }]}>
-                  {p.tokenCost} Tokens · or {p.cost.toLocaleString()} Gems
-                </Text>
-              </View>
-              {have ? (
-                <Badge label="Enrolled" variant="success" />
-              ) : (
-                <View style={styles.actionCol}>
-                  <Button
-                    label={`${p.tokenCost} 🪙`}
-                    size="sm"
-                    variant={shortTokens ? 'outline' : 'primary'}
-                    disabled={shortTokens}
-                    onPress={() => promptUnlock(p, 'tokens')}
-                  />
-                  <Button
-                    label={`${(p.cost / 1000).toFixed(0)}k 💎`}
-                    size="sm"
-                    variant="outline"
-                    disabled={shortGems}
-                    onPress={() => promptUnlock(p, 'gems')}
-                  />
-                </View>
-              )}
-            </Card>
-          );
-        })}
-      </View>
-
-      {/* Real Physical Workout Gear Section */}
-      <View style={{ marginBottom: spacing.lg }}>
-        <View style={styles.sectionHead}>
-          <Ionicons name="barbell-outline" size={20} color={colors.primary} />
-          <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>Real Workout Gear</Text>
-          <Text style={[typography.caption, { color: colors.text.muted }]}>Doorstep Delivery</Text>
-        </View>
-        <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2, marginBottom: spacing.xs }]}>
-          Limited stock hand-crafted physical items delivered directly to your doorstep.
-        </Text>
-
-        {MARKET.filter((m) => m.tier === 'gear').map((m) => {
-          const assetImg = getItemAsset(m.assetKey);
-          const left = stock.data?.[m.id];
-          const soldOut = left === 0;
-          const shortGems = diamonds < m.cost;
-          const shortTokens = tokens < (m.tokenCost ?? 10);
-          return (
-            <Card key={m.id} style={[styles.itemCard, { marginTop: spacing.sm }]}>
-              <View style={[styles.gearThumb, { backgroundColor: colors.surface2 }]}>
-                {assetImg ? (
-                  <Image source={assetImg} style={styles.gearThumbImg} contentFit="contain" />
-                ) : (
-                  <Ionicons name={m.icon as keyof typeof Ionicons.glyphMap} size={28} color={colors.primary} />
-                )}
-              </View>
-              <View style={styles.flex}>
-                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{m.title}</Text>
-                <Text style={[typography.caption, { color: colors.text.secondary }]}>{m.description}</Text>
-                <Text style={[typography.captionBold, { color: colors.primary, marginTop: 2 }]}>
-                  {m.tokenCost ?? 10} Tokens · or {m.cost.toLocaleString()} Gems
-                </Text>
-                <Text
-                  style={[
-                    typography.caption,
-                    {
-                      color: soldOut ? colors.error : colors.text.muted,
-                      marginTop: 2,
-                    },
-                  ]}
-                >
-                  {stock.isLoading
-                    ? 'Checking inventory…'
-                    : left === undefined
-                      ? 'Stock verified upon request'
-                      : soldOut
-                        ? 'Temporarily Out of Stock'
-                        : `${left} available`}
-                </Text>
-              </View>
-              <View style={styles.actionCol}>
-                <Button
-                  label={`${m.tokenCost ?? 10} 🪙`}
-                  size="sm"
-                  variant={shortTokens ? 'outline' : 'primary'}
-                  disabled={shortTokens || soldOut}
-                  onPress={() => promptUnlock(m, 'tokens')}
-                />
-                <Button
-                  label="Order"
-                  size="sm"
-                  variant={shortGems ? 'outline' : 'primary'}
-                  disabled={shortGems || soldOut}
-                  onPress={() => promptUnlock(m, 'gems')}
-                />
-              </View>
-            </Card>
-          );
-        })}
-      </View>
-
-      {/* Your Submitted Gear Requests */}
-      {requests.data && requests.data.length > 0 && (
-        <View style={{ marginBottom: spacing.lg }}>
-          <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: spacing.sm }]}>Your Gear Orders</Text>
-          {requests.data.map((r) => (
-            <Card key={r.id} style={[styles.itemCard, { marginBottom: spacing.sm }]}>
-              <Text style={[typography.body, styles.flex, { color: colors.text.primary }]}>
-                {MARKET.find((m) => m.id === r.item_id)?.title ?? r.item_id}
-              </Text>
-              <Badge label={r.status} variant="primary" />
-            </Card>
-          ))}
-        </View>
-      )}
-
-      {/* Everyday Habit Earning Guide */}
+      {/* Everyday Earning Guide */}
       <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: spacing.sm }]}>Everyday Habit Earnings</Text>
       {Object.values(ACTION_REWARDS).map((a) => (
         <View key={a.label} style={styles.earnRow}>
@@ -646,10 +767,35 @@ export default function MarketplaceScreen() {
         Habit adherence is capped daily to prevent farming. Streaks multiply earnings: 3 days ×1.2, 7 days ×1.5, 30 days ×2.5. Real data only, no in-app purchases.
       </Text>
 
-      {/* Milestone Loot Box Opening Modal */}
+      {/* Full-Screen Art Inspection Modal */}
+      {inspectArt && (
+        <Modal visible transparent animationType="fade" onRequestClose={() => setInspectArt(null)}>
+          <View style={[styles.modalScrim, { backgroundColor: colors.scrim }]}>
+            <View style={[styles.modalCard, { backgroundColor: colors.background }]}>
+              <Image source={getItemAsset(inspectArt.assetKey)} style={styles.modalArtImg} contentFit="cover" />
+              <View style={styles.modalBody}>
+                <View style={styles.rowBetween}>
+                  <Badge label={inspectArt.category} variant="primary" />
+                  <Text style={[typography.caption, { color: colors.text.muted }]}>Editorial Study</Text>
+                </View>
+                <Text style={[typography.heading, { color: colors.text.primary, marginTop: 8 }]}>{inspectArt.title}</Text>
+                <Text style={[typography.body, { color: colors.text.secondary, marginTop: 6 }]}>{inspectArt.description}</Text>
+                <Text style={[typography.caption, { color: colors.text.muted, marginTop: 8 }]}>
+                  Medium: Opaque natural gouache on textured Arches 300gsm watercolor paper. Finished with debossed geometric T-leaf insignia.
+                </Text>
+                <View style={{ marginTop: spacing.lg }}>
+                  <Button label="Close Inspection" onPress={() => setInspectArt(null)} />
+                </View>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
+
+      {/* Loot Box Modal */}
       <LootBoxModal key={chest?.level ?? 0} chest={chest} onClose={() => setChest(null)} />
 
-      {/* Doorstep Delivery Order Modal */}
+      {/* Doorstep Delivery Order Sheet */}
       <AppBottomSheetModal
         visible={!!gear}
         onClose={() => setGear(null)}
@@ -695,6 +841,7 @@ export default function MarketplaceScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   row: { flexDirection: 'row', alignItems: 'center' },
+  rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   walletCard: { padding: 16 },
   walletHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
   currencyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' },
@@ -704,15 +851,21 @@ const styles = StyleSheet.create({
   forgeBar: { flexDirection: 'row', alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth },
   forgeButtons: { flexDirection: 'row', gap: 6 },
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  chestShelf: { flexDirection: 'row', justifyContent: 'space-between', gap: 8, marginTop: 8 },
-  chestItem: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 4,
-    borderRadius: 16,
+  segmentContainer: {
+    flexDirection: 'row',
+    borderRadius: 14,
+    padding: 4,
+    gap: 4,
   },
-  chestThumbnail: { width: 52, height: 52 },
+  segmentTab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
   shelf: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   cardItem: {
     width: 100,
@@ -728,6 +881,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 10,
   },
+  stickerImg: { width: 48, height: 48, borderRadius: 12 },
   stickerIconBg: {
     width: 48,
     height: 48,
@@ -747,7 +901,9 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
+  itemImgThumb: { width: 44, height: 44, borderRadius: 8 },
   gearThumb: {
     width: 60,
     height: 60,
@@ -760,4 +916,74 @@ const styles = StyleSheet.create({
   actionRow: { flexDirection: 'row', gap: 6 },
   actionCol: { alignItems: 'flex-end', gap: 6 },
   earnRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6 },
+  reliquaryCard: {
+    padding: 16,
+    borderRadius: 22,
+    borderWidth: 1.5,
+  },
+  reliquaryTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  dualChestRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    marginVertical: 14,
+  },
+  chestStateCol: {
+    alignItems: 'center',
+  },
+  largeChestImg: {
+    width: 130,
+    height: 130,
+  },
+  cardDropPreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 10,
+    borderRadius: 14,
+  },
+  miniCardImg: {
+    width: 48,
+    height: 68,
+    borderRadius: 8,
+  },
+  galleryGrid: {
+    gap: 14,
+  },
+  galleryCard: {
+    borderRadius: 18,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.06)',
+  },
+  galleryImg: {
+    width: '100%',
+    height: 180,
+  },
+  galleryMeta: {
+    padding: 14,
+  },
+  modalScrim: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 420,
+    borderRadius: 24,
+    overflow: 'hidden',
+  },
+  modalArtImg: {
+    width: '100%',
+    height: 260,
+  },
+  modalBody: {
+    padding: 20,
+  },
 });

@@ -109,6 +109,19 @@ export const RewardAssets = {
     cricketKit: require('@assets/rewards/marketplace/cricket_kit_junior.png'),
     mealThali: require('@assets/rewards/marketplace/ayurvedic_meal_thali.jpg'),
   },
+  editorial: {
+    chestWooden: require('@assets/rewards/raw_editorial/chest_wooden_gouache.jpg'),
+    chestTerracotta: require('@assets/rewards/raw_editorial/chest_terracotta_gouache.jpg'),
+    chestGolden: require('@assets/rewards/raw_editorial/chest_golden_gouache.jpg'),
+    gemAmber: require('@assets/rewards/raw_editorial/gem_amber_gouache.jpg'),
+    tokenCoin: require('@assets/rewards/raw_editorial/token_coin_gouache.jpg'),
+    passTicket: require('@assets/rewards/raw_editorial/pass_ticket_gouache.jpg'),
+    pushupBars: require('@assets/rewards/raw_editorial/pushup_bars_gouache.jpg'),
+    healthJournal: require('@assets/rewards/raw_editorial/journal_linen_gouache.jpg'),
+    mealThali: require('@assets/rewards/raw_editorial/meal_thali_voucher_gouache.jpg'),
+    cardGroundedSeeker: require('@assets/rewards/raw_editorial/card_grounded_seeker_gouache.jpg'),
+    cardSanctuarySentinel: require('@assets/rewards/raw_editorial/card_sanctuary_sentinel_gouache.jpg'),
+  },
 } as const;
 
 export const Assets = {

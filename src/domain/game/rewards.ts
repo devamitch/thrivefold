@@ -40,24 +40,69 @@ export interface MarketItem {
   ticketCost?: number;
   /** Real items: limited stock, delivered by the Thrivefold team. */
   physical?: boolean;
-  assetKey?: 'pushupBars' | 'gyroball' | 'healthJournal' | 'cricketKit' | 'mealThali';
+  assetKey?:
+    | 'pushupBars'
+    | 'gyroball'
+    | 'healthJournal'
+    | 'cricketKit'
+    | 'mealThali'
+    | 'sanctuaryPass'
+    | 'booster2x'
+    | 'goldenGem'
+    | 'bronzeMedallion'
+    | 'amberGem'
+    | 'cardGroundedSeeker'
+    | 'cardSanctuarySentinel';
 }
 
 /** Gem prices set by the owner: stickers 100, status 500, real accessories 10,000. */
 export const TIER_COST: Record<MarketTier, number> = { sticker: 100, status: 500, gear: 10_000 };
 
 export const MARKET: MarketItem[] = [
-  { id: 'sticker_zen_fox', icon: 'leaf', tier: 'sticker', title: 'Meditating Zen Fox', description: 'Profile sticker for calm streaks.', cost: TIER_COST.sticker, tokenCost: 1 },
-  { id: 'sticker_hydration_drop', icon: 'water', tier: 'sticker', title: 'Living Hydration Drop', description: 'For people who never skip water.', cost: TIER_COST.sticker, tokenCost: 1 },
-  { id: 'sticker_slumber_moon', icon: 'moon', tier: 'sticker', title: 'Slumber Moon', description: 'A sleepy moon for early nights.', cost: TIER_COST.sticker, tokenCost: 1 },
-  { id: 'sticker_stride_shoes', icon: 'walk', tier: 'sticker', title: 'Morning Stride Shoes', description: 'For daily walkers.', cost: TIER_COST.sticker, tokenCost: 1 },
-  { id: 'status_sanctuary', icon: 'ribbon', tier: 'status', title: 'Sanctuary status', description: 'A Sanctuary badge next to Anvay in the coach, for steady habits.', cost: TIER_COST.status, ticketCost: 1, tokenCost: 1 },
+  { id: 'sticker_zen_fox', icon: 'leaf', tier: 'sticker', title: 'Meditating Zen Fox', description: 'Profile sticker for calm streaks.', cost: TIER_COST.sticker, tokenCost: 1, assetKey: 'cardGroundedSeeker' },
+  { id: 'sticker_hydration_drop', icon: 'water', tier: 'sticker', title: 'Living Hydration Drop', description: 'For people who never skip water.', cost: TIER_COST.sticker, tokenCost: 1, assetKey: 'amberGem' },
+  { id: 'sticker_slumber_moon', icon: 'moon', tier: 'sticker', title: 'Slumber Moon', description: 'A sleepy moon for early nights.', cost: TIER_COST.sticker, tokenCost: 1, assetKey: 'goldenGem' },
+  { id: 'sticker_stride_shoes', icon: 'walk', tier: 'sticker', title: 'Morning Stride Shoes', description: 'For daily walkers.', cost: TIER_COST.sticker, tokenCost: 1, assetKey: 'bronzeMedallion' },
+  { id: 'status_sanctuary', icon: 'ribbon', tier: 'status', title: 'Sanctuary status', description: 'A Sanctuary badge next to Anvay in the coach, for steady habits.', cost: TIER_COST.status, ticketCost: 1, tokenCost: 1, assetKey: 'sanctuaryPass' },
   { id: 'gear_pushup_bars', icon: 'barbell', tier: 'gear', title: 'Push-up bars', description: 'Ergonomic solid beechwood parallettes, delivered to you.', cost: TIER_COST.gear, tokenCost: 10, physical: true, assetKey: 'pushupBars' },
   { id: 'gear_gyroball', icon: 'disc', tier: 'gear', title: 'Gyroball wrist trainer', description: 'High-precision autostart metal gyroball, delivered to you.', cost: TIER_COST.gear, tokenCost: 12, physical: true, assetKey: 'gyroball' },
   { id: 'gear_stationery', icon: 'book', tier: 'gear', title: 'Stationery kit', description: 'Hardcover linen journal and stationery set, delivered to you.', cost: TIER_COST.gear, tokenCost: 10, physical: true, assetKey: 'healthJournal' },
   { id: 'gear_cricket', icon: 'baseball-outline', tier: 'gear', title: 'Junior cricket set', description: 'English willow junior bat and leather ball set, delivered to you.', cost: TIER_COST.gear, tokenCost: 20, physical: true, assetKey: 'cricketKit' },
-  { id: 'gear_dumbbells', icon: 'barbell', tier: 'gear', title: 'Dumbbells', description: 'A pair of dumbbells, delivered to you.', cost: TIER_COST.gear, tokenCost: 10, physical: true },
-  { id: 'gear_barbell', icon: 'barbell', tier: 'gear', title: 'Barbell', description: 'A home barbell, delivered to you.', cost: TIER_COST.gear, tokenCost: 15, physical: true },
+  { id: 'gear_dumbbells', icon: 'barbell', tier: 'gear', title: 'Dumbbells', description: 'A pair of dumbbells, delivered to you.', cost: TIER_COST.gear, tokenCost: 10, physical: true, assetKey: 'gyroball' },
+  { id: 'gear_barbell', icon: 'barbell', tier: 'gear', title: 'Barbell', description: 'A home barbell, delivered to you.', cost: TIER_COST.gear, tokenCost: 15, physical: true, assetKey: 'pushupBars' },
+];
+
+export interface EditorialArt {
+  id: string;
+  title: string;
+  category: string;
+  description: string;
+  assetKey:
+    | 'chestWooden'
+    | 'chestTerracotta'
+    | 'chestGolden'
+    | 'gemAmber'
+    | 'tokenCoin'
+    | 'passTicket'
+    | 'pushupBars'
+    | 'healthJournal'
+    | 'mealThali'
+    | 'cardGroundedSeeker'
+    | 'cardSanctuarySentinel';
+}
+
+export const EDITORIAL_ARTWORKS: EditorialArt[] = [
+  { id: 'art_chest_wooden', title: 'Scandinavian Beechwood Relic', category: 'Chest Study', description: 'Gouache on textured cotton paper depicting the Level 5 Wooden Sanctuary Chest.', assetKey: 'chestWooden' },
+  { id: 'art_chest_terracotta', title: 'Terracotta Sanctuary Vault', category: 'Vault Study', description: 'Hexagonal ceramic vault with brushed oxidized copper trims and mechanical dial.', assetKey: 'chestTerracotta' },
+  { id: 'art_chest_golden', title: 'Champagne Gold Sunburst Trove', category: 'Trove Study', description: 'Octagonal reliquary forged from brushed gold and frosted ivory glass.', assetKey: 'chestGolden' },
+  { id: 'art_gem_amber', title: 'Amber Habit Core Crystal', category: 'Currency Study', description: 'Emerald-cut warm amber crystal with internal light refractions.', assetKey: 'gemAmber' },
+  { id: 'art_token_coin', title: 'Minted Bronze-Gold Token', category: 'Coin Study', description: 'High-relief commemorative token with debossed Thrivefold geometric seal.', assetKey: 'tokenCoin' },
+  { id: 'art_pass_ticket', title: 'Letterpress Sanctuary Pass', category: 'Voucher Study', description: 'Sage-green passport ticket with guilloche patterns and gold-foil emblem.', assetKey: 'passTicket' },
+  { id: 'art_pushup_bars', title: 'Solid Beechwood Parallettes', category: 'Equipment Study', description: 'Ergonomic parallettes with natural rubber feet and laser-engraved T-leaf.', assetKey: 'pushupBars' },
+  { id: 'art_journal', title: 'Sage Linen Health Journal', category: 'Stationery Study', description: 'A5 hardcover reflection journal bound in natural sage bookcloth.', assetKey: 'healthJournal' },
+  { id: 'art_meal_thali', title: 'Ayurvedic Wholesome Thali', category: 'Nutrition Study', description: 'Balanced traditional meal plate of seasonal legumes, grains and vegetables.', assetKey: 'mealThali' },
+  { id: 'art_card_seeker', title: 'Grounded Seeker Tarot Archetype', category: 'Collector Card', description: 'Circular earthen labyrinth mandala with brushed bronze foil border.', assetKey: 'cardGroundedSeeker' },
+  { id: 'art_card_sentinel', title: 'Sanctuary Sentinel Shield', category: 'Collector Card', description: 'Heraldic silver shield with olive branch on brushed sage silk.', assetKey: 'cardSanctuarySentinel' },
 ];
 
 export interface WellnessPlan {
