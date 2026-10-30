@@ -55,7 +55,8 @@ import { PERSONAS } from '../../domain/assistant/personas';
 import { plainText } from '../../domain/assistant/plainText';
 import type { ChatTable } from '../../domain/assistant/chatActions';
 import { setChatActionHooks } from '../../services/assistant/chatActions';
-import { handleAttachedPhoto, pickPhoto } from '../../services/assistant/chatAttachments';
+import { pickFile, readAttachment, takePhoto, type PickedFile } from '../../services/assistant/chatAttachments';
+import { Image } from 'expo-image';
 import { thriveRag } from '../../services/local-ai/rag/thriveRag';
 import { CHAT_PAGE, chatStore, type ChatMessage } from '../../services/assistant/chatStore';
 import { Chip } from '../ui/Chip';
@@ -189,9 +190,15 @@ export function GlobalVoiceAssistant() {
             pendingReply.current = null;
             if (!next) return;
             const route = next.tool?.routeToOpen;
-            const table = (next.tool?.data as { table?: ChatTable } | undefined)?.table;
+            const data = next.tool?.data as { table?: ChatTable; transient?: boolean } | undefined;
+            const table = data?.table;
+            const transient = data?.transient || undefined;
             setTurns((t) => {
               const last = t[t.length - 1];
+              // A progress line ("Reading…") is replaced by whatever comes next.
+              if (last?.who === 'coach' && last.transient) {
+                return [...t.slice(0, -1), { ...last, text: next.reply, route, table, transient }];
+              }
               // Streaming updates the coach's current reply in place (same id).
               if (
                 last?.who === 'coach' &&
@@ -202,7 +209,7 @@ export function GlobalVoiceAssistant() {
               }
               return [
                 ...t,
-                { id: newId(), who: 'coach' as const, text: next.reply, route, table, at: Date.now() },
+                { id: newId(), who: 'coach' as const, text: next.reply, route, table, transient, at: Date.now() },
               ];
             });
           });
@@ -261,6 +268,7 @@ export function GlobalVoiceAssistant() {
 
   const lastSent = useRef({ text: '', at: 0 });
   const send = (text: string) => {
+    if (pending) return sendAttachment();
     const t = text.trim();
     if (!t) return;
     // A hardware Enter can fire submit twice, and a double tap sends twice: one message only.
@@ -318,14 +326,27 @@ export function GlobalVoiceAssistant() {
       return [...t.slice(0, i), next, ...t.slice(i + 1)];
     });
   }, []);
+  // A picked file waits above the composer until sent, so nothing is read by accident. Whatever
+  // is typed alongside becomes the question about it.
+  const [pending, setPending] = useState<PickedFile | null>(null);
   const attach = async (camera: boolean) => {
     hapticSelection();
     Keyboard.dismiss();
-    const uri = await pickPhoto(camera);
-    if (!uri) return;
-    const note = typed;
+    const file = await (camera ? takePhoto() : pickFile()).catch(() => null);
+    if (file) setPending(file);
+  };
+  const sendAttachment = () => {
+    if (!pending) return;
+    hapticSelection();
+    const file = pending;
+    const question = typed.trim();
+    setPending(null);
     setTyped('');
-    await handleAttachedPhoto(uri, note);
+    setTurns((t) => [
+      ...t,
+      { id: newId(), who: 'you' as const, text: question || file.name, at: Date.now(), attachment: { uri: file.uri, name: file.name, kind: file.kind } },
+    ]);
+    void readAttachment(file, question);
   };
   const share = useCallback((text: string) => {
     void Share.share({ message: plainText(text) }).catch(() => undefined);
@@ -375,7 +396,7 @@ export function GlobalVoiceAssistant() {
             ? ('error' as const)
             : ('idle' as const);
 
-  const hasText = typed.trim().length > 0;
+  const hasText = typed.trim().length > 0 || pending !== null;
   const showThinking =
     (voiceState === 'reasoning' || voiceState === 'transcribing') &&
     turns[turns.length - 1]?.who === 'you';
@@ -608,6 +629,28 @@ export function GlobalVoiceAssistant() {
                   },
                 ]}
               >
+                {pending ? (
+                  <View style={[styles.pending, { backgroundColor: colors.surface }]}>
+                    {pending.kind === 'image' ? (
+                      <Image source={{ uri: pending.uri }} style={styles.pendingThumb} contentFit="cover" accessibilityLabel={pending.name} />
+                    ) : (
+                      <View style={[styles.pendingThumb, styles.pendingIcon, { backgroundColor: colors.surface2 }]}>
+                        <Ionicons name={pending.kind === 'pdf' ? 'document-text-outline' : 'document-outline'} size={26} color={colors.text.secondary} />
+                      </View>
+                    )}
+                    <View style={styles.flex}>
+                      <Text style={[typography.bodyBold, { color: colors.text.primary }]} numberOfLines={1}>
+                        {pending.name}
+                      </Text>
+                      <Text style={[typography.caption, { color: colors.text.secondary }]} numberOfLines={2}>
+                        Read on this phone. Type a question, or just send for a summary.
+                      </Text>
+                    </View>
+                    <PressableScale onPress={() => setPending(null)} hitSlop={10} accessibilityLabel="Remove the file">
+                      <Ionicons name="close-circle" size={22} color={colors.text.muted} />
+                    </PressableScale>
+                  </View>
+                ) : null}
                 <View
                   style={[
                     styles.pill,
@@ -745,6 +788,16 @@ const TurnRow = React.memo(function TurnRow({
       <Text style={[typography.body, { color: mine ? colors.text.inverse : colors.text.primary }]}>
         {mine ? turn.text : plainText(turn.text)}
       </Text>
+      {turn.attachment?.kind === 'image' ? (
+        <Image source={{ uri: turn.attachment.uri }} style={styles.bubbleImage} contentFit="cover" accessibilityLabel={turn.attachment.name} />
+      ) : turn.attachment ? (
+        <View style={styles.fileChip}>
+          <Ionicons name="document-text-outline" size={18} color={mine ? colors.text.inverse : colors.text.secondary} />
+          <Text style={[typography.caption, { color: mine ? colors.text.inverse : colors.text.secondary, flexShrink: 1 }]} numberOfLines={1}>
+            {turn.attachment.name}
+          </Text>
+        </View>
+      ) : null}
       {turn.table ? <TurnTable table={turn.table} /> : null}
       {turn.route ? (
         <PressableScale
@@ -756,7 +809,7 @@ const TurnRow = React.memo(function TurnRow({
           <Ionicons name="arrow-forward" size={14} color={colors.primary} />
         </PressableScale>
       ) : null}
-      {!mine && turn.text ? (
+      {!mine && turn.text && !turn.transient ? (
         <View style={styles.actions}>
           <PressableScale onPress={() => onRate(turn.id, 'up')} hitSlop={8} accessibilityLabel="Helpful" accessibilityState={{ selected: turn.feedback === 'up' }}>
             <Ionicons name={turn.feedback === 'up' ? 'thumbs-up' : 'thumbs-up-outline'} size={16} color={turn.feedback === 'up' ? colors.primary : colors.text.muted} />
@@ -817,7 +870,13 @@ const styles = StyleSheet.create({
   openRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8 },
   tableWrap: { marginTop: 10 },
   actions: { flexDirection: 'row', gap: 18, marginTop: 10 },
-  attach: { paddingLeft: 12, paddingRight: 2, paddingBottom: 11 },
+  pending: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderRadius: 16, marginBottom: 8 },
+  pendingThumb: { width: 48, height: 48, borderRadius: 10 },
+  pendingIcon: { alignItems: 'center', justifyContent: 'center' },
+  fileChip: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
+  bubbleImage: { width: 180, height: 180, borderRadius: 12, marginTop: 8 },
+  // Mirrors the Send/Mic button on the right: same 48 dp box, bottom-aligned with one line of text.
+  attach: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
   tableRow: { flexDirection: 'row', borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 6 },
   tableCell: { flex: 1, paddingRight: 8 },
   composer: {
@@ -831,11 +890,11 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 26,
     borderWidth: 1,
-    paddingLeft: 18,
+    paddingLeft: 4,
     paddingRight: 4,
   },
   // Grows with the text up to about four lines.
-  input: { flex: 1, minHeight: 44, maxHeight: 112, paddingVertical: 10, textAlignVertical: 'center' },
+  input: { flex: 1, minHeight: 48, maxHeight: 112, paddingVertical: 12, paddingHorizontal: 2, textAlignVertical: 'center' },
   actionWrap: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
   ring: { position: 'absolute', width: 48, height: 48, borderRadius: 24 },
   action: {

@@ -369,6 +369,25 @@ class LocalAIModule : Module() {
     /**
      * Fast native semantic chunking for document ingestion & offline RAG.
      */
+    /**
+     * Reads the text of a picked file (PDF, photo, text, HTML) on the phone, page by page.
+     * The file is read in place through its content URI; nothing is copied or uploaded.
+     */
+    AsyncFunction("extractDocumentText") { uri: String, mime: String?, promise: Promise ->
+      val ctx = appContext.reactContext
+      if (ctx == null) {
+        promise.reject("no_context", "ReactContext is unavailable", null)
+        return@AsyncFunction
+      }
+      Thread({
+        try {
+          promise.resolve(DocumentTextExtractor.extract(ctx, uri, mime))
+        } catch (e: Throwable) {
+          promise.reject("extract_failed", e.message ?: "Could not read this file", e)
+        }
+      }, "AnvaykoshDocReader").start()
+    }
+
     Function("chunkDocument") { text: String, targetChunkSize: Int?, overlapChars: Int? ->
       val chunks = AnvaykoshDocumentProcessor.chunkDocument(
         text = text,

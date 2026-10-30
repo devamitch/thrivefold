@@ -158,13 +158,16 @@ export const thriveRag = {
     return retrieveHybridEvidence(USER, query, topK);
   },
 
-  /** Evidence lines for a prompt ("- title: snippet"), weak matches dropped. */
+  /** Evidence lines for a prompt ("- title: text"), best matches first. */
   async contextFor(query: string, maxChars = 1500, topK = 4): Promise<string> {
     try {
       const hits = await retrieveHybridEvidence(USER, query, topK);
       return hits
-        .filter((h) => h.hybridScore >= 0.05)
-        .map((h) => `- ${h.document.title}: ${h.snippet}`)
+        // Fused RRF scores are small (one list alone tops out near 1/61 ≈ 0.016), so any fixed cut
+        // above that dropped every hit; candidates already matched a keyword or the meaning.
+        .filter((h) => h.hybridScore > 0)
+        // Document chunks are short already: pass them whole so page markers and numbers survive.
+        .map((h) => `- ${h.document.title}: ${h.document.sourceType === 'user_document' ? h.document.content.replace(/\s+/g, ' ') : h.snippet}`)
         .join('\n')
         .slice(0, maxChars);
     } catch {
@@ -180,6 +183,26 @@ export const thriveRag = {
   /** Saves free text (a note, a cloud answer, a scanned document) for later retrieval. */
   remember(title: string, text: string, sourceType: KnowledgeDocument['sourceType'] = 'user_note', metadata?: Record<string, unknown>) {
     return knowledgeStore.ingestDocument(USER, { title, text, sourceType, metadata });
+  },
+
+  /**
+   * Adds a file the person read in the chat (its extracted text, never the file itself). Pages are
+   * marked "[page N]" so answers can cite them. A file with the same text is not added twice.
+   */
+  async rememberDocument(name: string, pages: { page: number; text: string }[], hash: string): Promise<{ id: string; duplicate: boolean }> {
+    const existing = (await knowledgeStore.listDocuments(USER)).find((d) => d.metadata?.hash === hash);
+    if (existing) return { id: existing.id, duplicate: true };
+    const text = pages
+      .filter((p) => p.text.trim())
+      .map((p) => `[${name}, page ${p.page}]\n${p.text.trim()}`)
+      .join('\n\n');
+    const doc = await knowledgeStore.ingestDocument(USER, {
+      title: name,
+      text,
+      sourceType: 'imported_file',
+      metadata: { source: 'chat_attachment', hash, pages: pages.length, at: new Date().toISOString() },
+    });
+    return { id: doc.id, duplicate: false };
   },
 
   /**

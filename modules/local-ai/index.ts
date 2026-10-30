@@ -21,6 +21,14 @@ export * from './src/modelCatalog';
 export * from './src/modelDownloader';
 export * from './src/useLocalAI';
 
+/** Text read from a picked file on the phone, one entry per page. */
+export interface ExtractedDocument {
+  name: string | null;
+  mime: string;
+  method: 'text' | 'pdf-ocr' | 'image-ocr';
+  pages: { page: number; text: string }[];
+}
+
 export interface DocumentChunkResult {
   index: number;
   text: string;
@@ -137,6 +145,7 @@ interface LocalAINative {
     overlapChars?: number
   ): DocumentChunkResult[];
   computeTermFrequencies(text: string): Record<string, number>;
+  extractDocumentText?(uri: string, mime: string | null): Promise<ExtractedDocument>;
 
   addListener(eventName: string, listener: (event: unknown) => void): { remove: () => void };
   removeAllListeners(eventName: string): void;
@@ -330,6 +339,12 @@ class LocalAIService {
       throw new Error('LocalAI native module is unavailable on this platform.');
     }
     return native.embed(text);
+  }
+
+  /** Reads a picked file's text on the phone (PDF and photos via offline OCR). */
+  async extractDocumentText(uri: string, mime?: string | null): Promise<ExtractedDocument> {
+    if (!native?.extractDocumentText) throw new Error('Reading files needs the latest app build.');
+    return native.extractDocumentText(uri, mime ?? null);
   }
 
   /**

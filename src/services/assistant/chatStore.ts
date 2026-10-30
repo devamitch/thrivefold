@@ -17,6 +17,8 @@ export interface ChatMessage {
   feedback?: 'up' | 'down';
   /** A file the person attached (local uri on this phone). */
   attachment?: { uri: string; name: string; kind: 'image' | 'pdf' | 'file' };
+  /** A progress line ("Reading…") that the next reply replaces; never rated or shared. */
+  transient?: boolean;
 }
 
 export const CHAT_PAGE = 30;

@@ -1,155 +1,110 @@
 /**
- * Files attached in the coach chat. A photo of a prescription, diet chart or workout plan is read
- * by the Thrivefold server only after the person agrees (the photo leaves the phone), shown back
- * as a table to check, and saved to their records only after a second confirmation.
+ * Files attached in the coach chat, read entirely on the phone.
+ *
+ * - PDFs, photos, screenshots, text, Markdown, CSV, JSON and HTML are read in place through the
+ *   system picker's content URI (no copy is made, nothing is uploaded). PDFs and photos go through
+ *   the offline text recogniser in the native module, page by page.
+ * - Only the extracted text is kept, in Thrive RAG, marked with the file name and page so later
+ *   answers can cite it. The same file read twice is recognised and not stored again.
+ * - With an on-device model loaded, the coach writes a short summary; without one it shows what it
+ *   read and says it can answer questions from it.
  */
+import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 
-import type { ChatTable } from '../../domain/assistant/chatActions';
-import {
-  readDocument,
-  timeFromTiming,
-  type DietChartResult,
-  type DocKind,
-  type PrescriptionResult,
-  type WorkoutPlanResult,
-} from '../documents/docReader';
+import { LocalAI, type ExtractedDocument } from '../../../modules/local-ai';
+import { hashText } from '../../domain/assistant/appKnowledge';
 import { thriveRag } from '../local-ai/rag/thriveRag';
 import { globalVoiceController } from '../voice/globalVoiceController';
-import { useRootStore } from '../../stores/useRootStore';
 
-const LABEL: Record<DocKind, string> = { prescription: 'prescription', diet_chart: 'diet chart', workout_plan: 'workout plan' };
-
-/** What the photo most likely is, from what the person typed with it. */
-export function guessKind(text: string): DocKind {
-  const t = text.toLowerCase();
-  if (/\b(diet|meal|food) ?(chart|plan)?\b|\bdietitian\b/.test(t)) return 'diet_chart';
-  if (/\b(workout|training|gym|exercise) ?(plan|chart)?\b|\btrainer\b/.test(t)) return 'workout_plan';
-  return 'prescription';
+export interface PickedFile {
+  uri: string;
+  name: string;
+  mime: string | null;
+  kind: 'image' | 'pdf' | 'file';
 }
 
-export function prescriptionTable(p: PrescriptionResult): ChatTable {
-  return {
-    title: `Prescription${p.doctor ? ` from ${p.doctor}` : ''}${p.date ? `, ${p.date}` : ''}`,
-    columns: ['Medicine', 'Dose', 'When', 'For how long'],
-    rows: p.medicines.map((m) => [
-      `${m.name}${m.unclear ? ' (unclear)' : ''}`,
-      [m.strength, m.dose].filter(Boolean).join(' ') || 'not written',
-      [m.frequency, m.timing].filter(Boolean).join(', ') || 'not written',
-      m.duration ?? 'not written',
-    ]),
-    route: '/(app)/health/medications',
-  };
+export const SUPPORTED_TYPES = ['application/pdf', 'image/*', 'text/*', 'application/json'];
+
+export function kindOf(mime: string | null, name: string): PickedFile['kind'] {
+  if (mime === 'application/pdf' || /\.pdf$/i.test(name)) return 'pdf';
+  if (mime?.startsWith('image/') || /\.(png|jpe?g|webp|heic)$/i.test(name)) return 'image';
+  return 'file';
 }
 
-/** Picks a photo (gallery, or camera when `camera`), returns its local uri. */
-export async function pickPhoto(camera = false): Promise<string | null> {
-  const perm = camera ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (!perm.granted) return null;
-  const opts: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 0.8 };
-  const r = camera ? await ImagePicker.launchCameraAsync(opts) : await ImagePicker.launchImageLibraryAsync(opts);
-  return r.canceled || !r.assets[0] ? null : r.assets[0].uri;
+/** Any supported file from the system picker, without copying it into the app. */
+export async function pickFile(): Promise<PickedFile | null> {
+  const r = await DocumentPicker.getDocumentAsync({ type: SUPPORTED_TYPES, copyToCacheDirectory: false, multiple: false });
+  const a = r.canceled ? null : r.assets[0];
+  if (!a) return null;
+  return { uri: a.uri, name: a.name, mime: a.mimeType ?? null, kind: kindOf(a.mimeType ?? null, a.name) };
 }
 
-const ask = (title: string, message: string, confirmText: string) =>
-  new Promise<boolean>((resolve) =>
-    useRootStore.getState().showAlert({
-      title,
-      message,
-      confirmText,
-      onConfirm: () => resolve(true),
-      onCancel: () => resolve(false),
-    }),
-  );
+/** A photo taken now (the camera writes one temporary file; nothing else is kept). */
+export async function takePhoto(): Promise<PickedFile | null> {
+  if (!(await ImagePicker.requestCameraPermissionsAsync()).granted) return null;
+  const r = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.85 });
+  const a = r.canceled ? null : r.assets[0];
+  if (!a) return null;
+  return { uri: a.uri, name: a.fileName ?? 'Photo', mime: a.mimeType ?? 'image/jpeg', kind: 'image' };
+}
 
-/** The whole flow for one attached photo. Never throws. */
-export async function handleAttachedPhoto(uri: string, typed: string): Promise<void> {
-  const kind = guessKind(typed);
+/** All page text joined, blank pages dropped, whitespace tidied. */
+export function documentText(doc: Pick<ExtractedDocument, 'pages'>): string {
+  return doc.pages
+    .map((p) => p.text.replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim())
+    .filter(Boolean)
+    .join('\n\n');
+}
+
+/** A few readable lines for the reply when no on-device model is loaded. */
+export function preview(text: string, max = 420): string {
+  const t = text.replace(/\s+/g, ' ').trim();
+  return t.length > max ? `${t.slice(0, max).replace(/\s\S*$/, '')}…` : t;
+}
+
+/** Reads one picked file and reports in the chat. Never throws. */
+export async function readAttachment(file: PickedFile, question: string): Promise<void> {
   const post = globalVoiceController;
-  post.postUserMessage(typed.trim() || `Attached a photo of a ${LABEL[kind]}.`);
+  post.postReply(`Reading ${file.name} on this phone…`, { success: true, message: '', data: { transient: true } });
 
-  const agreed = await ask(
-    `Read this ${LABEL[kind]}?`,
-    'The photo is sent to the Thrivefold server to read the text, and is not kept there. Nothing is saved until you check it.',
-    'Read it',
-  );
-  if (!agreed) {
-    post.postReply(`Okay, I did not send it. You can still type what it says and I will help.`);
-    return;
-  }
-
-  post.postReply(`Reading your ${LABEL[kind]}…`);
-  let result: unknown;
+  let doc: ExtractedDocument;
   try {
-    result = await readDocument(uri, kind);
+    doc = await LocalAI.extractDocumentText(file.uri, file.mime);
   } catch (e) {
-    post.postReply(`I could not read it: ${e instanceof Error ? e.message : 'unknown error'}. Try a flat photo in good light.`);
+    post.postReply(`I could not read ${file.name}: ${e instanceof Error ? e.message : 'unknown error'}`);
+    return;
+  }
+  const text = documentText(doc);
+  if (!text) {
+    post.postReply(`I found no readable text in ${file.name}. For photos, try a sharper picture in good light.`);
     return;
   }
 
-  const s = useRootStore.getState();
-  if (kind === 'prescription') {
-    const p = result as PrescriptionResult;
-    if (!p.medicines?.length) {
-      post.postReply('I could not find any medicines on it. Try another photo, closer and flat.');
-      return;
-    }
-    const table = prescriptionTable(p);
-    const unclear = p.medicines.filter((m) => m.unclear).length;
-    post.postReply(
-      `I found ${p.medicines.length} ${p.medicines.length === 1 ? 'medicine' : 'medicines'}. Check each one against the paper` +
-        (unclear ? `; ${unclear} ${unclear === 1 ? 'is' : 'are'} unclear and will not be saved` : '') +
-        '. I never change a dose: ask your doctor or pharmacist if anything looks wrong.' +
-        (p.followUp ? ` Follow-up noted: ${p.followUp}.` : ''),
-      { success: true, message: '', data: { table }, routeToOpen: table.route },
-    );
-    const clear = p.medicines.filter((m) => !m.unclear);
-    if (!clear.length) return;
-    const save = await ask('Add these to your medicines?', `${clear.length} ${clear.length === 1 ? 'medicine' : 'medicines'} with daily reminders at the times written.`, 'Add');
-    if (!save) {
-      post.postReply('Not saved. Tap Open to add them yourself whenever you like.');
-      return;
-    }
-    let n = 0;
-    for (const m of clear) {
-      const times = timeFromTiming(m.timing, m.frequency);
-      const dose = [m.strength, m.dose, m.duration ? `for ${m.duration}` : null].filter(Boolean).join(' · ');
-      for (const time of times.length ? times : ['08:00']) {
-        s.addMedication({ name: m.name.slice(0, 60), dose: dose.slice(0, 80), time });
-        n++;
-      }
-    }
-    s.setMedicationRemindersOn(true);
-    void thriveRag
-      .remember(table.title, table.rows.map((r) => r.join(' | ')).join('\n'), 'medical_reference', { source: 'prescription_scan' })
-      .catch(() => undefined);
-    post.postReply(`Added ${n} medicine ${n === 1 ? 'time' : 'times'} with reminders. Check each time matches what your doctor said.`, {
-      success: true,
-      message: '',
-      routeToOpen: '/(app)/health/medications',
-    });
-    return;
-  }
+  const pages = doc.pages.length;
+  const { duplicate } = await thriveRag
+    .rememberDocument(file.name, doc.pages, hashText(text))
+    .catch(() => ({ duplicate: false, id: '' }));
+  const where = `${pages} ${pages === 1 ? 'page' : 'pages'}${doc.method === 'text' ? '' : ', read with on-device text recognition'}`;
+  const kept = duplicate ? 'I had already saved this file, so nothing new was stored.' : 'I kept its text in your private knowledge on this phone (not the file).';
 
-  const plan = result as DietChartResult | WorkoutPlanResult;
-  const table: ChatTable =
-    kind === 'diet_chart'
-      ? {
-          title: `Diet chart${plan.by ? ` from ${plan.by}` : ''}`,
-          columns: ['When', 'Meal', 'Items'],
-          rows: (plan as DietChartResult).meals.map((m) => [m.time ?? '', m.label, m.items.join(', ')]),
-          route: '/(app)/health/documents',
-        }
-      : {
-          title: `Workout plan${plan.by ? ` from ${plan.by}` : ''}`,
-          columns: ['Day', 'Exercises'],
-          rows: (plan as WorkoutPlanResult).days.map((d) => [d.day, d.exercises.map((e) => `${e.name}${e.sets ? ` ${e.sets}x${e.reps ?? ''}` : ''}`).join(', ')]),
-          route: '/(app)/health/documents',
-        };
-  post.postReply(`Here is what I read. Check it against the paper.`, { success: true, message: '', data: { table } });
-  const save = await ask(`Save this ${LABEL[kind]}?`, 'It is kept on this phone so I can plan with it.', 'Save');
-  if (!save) return post.postReply('Not saved.');
-  s.addCarePlan({ kind, by: plan.by ?? null, data: plan });
-  void thriveRag.remember(table.title, table.rows.map((r) => r.join(' | ')).join('\n'), 'wellness_guide', { source: kind }).catch(() => undefined);
-  post.postReply(`Saved your ${LABEL[kind]}.`, { success: true, message: '', routeToOpen: '/(app)/health/documents' });
+  if (LocalAI.isLoaded()) {
+    try {
+      const ask = question.trim() || 'Summarise this document in plain words: what it is, the key points, and anything that needs action.';
+      const answer = await LocalAI.generateText({
+        prompt: ask,
+        context: `Document "${file.name}" (${pages} pages):\n${text.slice(0, 3500)}`,
+        system:
+          'Answer only from the document text. Name the page when you can. If the answer is not in the text, say so. ' +
+          'Never invent doses or numbers. Keep it under 120 words. No markdown.',
+      });
+      post.postReply(`${answer.trim()}\n\n(${file.name}, ${where}. ${kept})`);
+      return;
+    } catch {
+      // Fall back to the plain reply below.
+    }
+  }
+  post.postReply(
+    `Read ${file.name} (${where}). ${kept} Ask me anything about it.\n\n"${preview(text)}"`,
+  );
 }

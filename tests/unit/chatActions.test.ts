@@ -104,24 +104,24 @@ describe('store documents', () => {
 });
 
 describe('chat attachments', () => {
-  // The service imports native modules; the pure helpers are tested through a light mock.
+  // The service imports native modules; the pure helpers are tested with light mocks.
+  jest.mock('expo-document-picker', () => ({}));
   jest.mock('expo-image-picker', () => ({}));
-  jest.mock('../../src/services/documents/docReader', () => ({ readDocument: jest.fn(), timeFromTiming: () => [] }));
+  jest.mock('../../modules/local-ai', () => ({ LocalAI: {} }));
   jest.mock('../../src/services/local-ai/rag/thriveRag', () => ({ thriveRag: {} }));
   jest.mock('../../src/services/voice/globalVoiceController', () => ({ globalVoiceController: {} }));
-  jest.mock('../../src/stores/useRootStore', () => ({ useRootStore: { getState: () => ({}) } }));
 
-  it('guesses the document kind from what was typed', () => {
-    const { guessKind } = require('../../src/services/assistant/chatAttachments');
-    expect(guessKind('')).toBe('prescription');
-    expect(guessKind('my dietitian chart')).toBe('diet_chart');
-    expect(guessKind('trainer workout plan')).toBe('workout_plan');
+  it('recognises the kind of a picked file', () => {
+    const { kindOf } = require('../../src/services/assistant/chatAttachments');
+    expect(kindOf('application/pdf', 'x')).toBe('pdf');
+    expect(kindOf(null, 'Report.PDF')).toBe('pdf');
+    expect(kindOf('image/jpeg', 'a')).toBe('image');
+    expect(kindOf('text/plain', 'notes.txt')).toBe('file');
   });
 
-  it('shows missing fields as not written, never guessed', () => {
-    const { prescriptionTable } = require('../../src/services/assistant/chatAttachments');
-    const t = prescriptionTable({ doctor: 'Dr Rao', medicines: [{ name: 'Metformin', strength: '500 mg', unclear: false }, { name: 'X', unclear: true }] });
-    expect(t.rows[0]).toEqual(['Metformin', '500 mg', 'not written', 'not written']);
-    expect(t.rows[1][0]).toBe('X (unclear)');
+  it('joins page text, dropping blank pages and extra spaces', () => {
+    const { documentText, preview } = require('../../src/services/assistant/chatAttachments');
+    expect(documentText({ pages: [{ page: 1, text: 'Hello   world' }, { page: 2, text: '   ' }, { page: 3, text: 'Bye' }] })).toBe('Hello world\n\nBye');
+    expect(preview('one two three four', 9)).toBe('one two…');
   });
 });
