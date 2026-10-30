@@ -28,7 +28,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Circle, Defs, Ellipse, G, Line, LinearGradient, Path, Stop } from 'react-native-svg';
 
-const AnimatedEllipse = Animated.createAnimatedComponent(Ellipse);
+const AnimatedG = Animated.createAnimatedComponent(G);
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 const AnimatedLine = Animated.createAnimatedComponent(Line);
@@ -107,11 +107,16 @@ export function ThriveClock({ size = 64, mood = 'idle' }: { size?: number; mood?
     };
   });
 
-  const eyeProps = (cx: number) => {
+  // Blinks swap the open eye for a closed lid line (opacity only: reliable on every device).
+  const openProps = () => {
     'worklet';
     const blink = interpolate(t.value, BLINK_K, BLINK_V, clamp);
-    const wide = 1 + lean.value * 0.14;
-    return { cx, rx: 6.4 * wide, ry: 7.4 * wide * Math.max(0.08, 1 - blink) };
+    return { opacity: blink > 0.5 ? 0 : 1 };
+  };
+  const shutProps = () => {
+    'worklet';
+    const blink = interpolate(t.value, BLINK_K, BLINK_V, clamp);
+    return { opacity: blink > 0.5 ? 1 : 0 };
   };
   const look = () => {
     'worklet';
@@ -122,18 +127,16 @@ export function ThriveClock({ size = 64, mood = 'idle' }: { size?: number; mood?
   };
   const pupilProps = (cx: number) => {
     'worklet';
-    const blink = interpolate(t.value, BLINK_K, BLINK_V, clamp);
     const l = look();
-    return { cx: cx + l.x, cy: 47 + l.y, opacity: blink > 0.6 ? 0 : 1 };
+    return { cx: cx + l.x, cy: 47 + l.y };
   };
   const glintProps = (cx: number) => {
     'worklet';
-    const blink = interpolate(t.value, BLINK_K, BLINK_V, clamp);
     const l = look();
-    return { cx: cx + l.x - 1.3, cy: 45.6 + l.y, opacity: blink > 0.6 ? 0 : 1 };
+    return { cx: cx + l.x - 1.3, cy: 45.6 + l.y };
   };
-  const lEye = useAnimatedProps(() => eyeProps(40));
-  const rEye = useAnimatedProps(() => eyeProps(60));
+  const eyesOpen = useAnimatedProps(openProps);
+  const eyesShut = useAnimatedProps(shutProps);
   const lPupil = useAnimatedProps(() => pupilProps(40));
   const rPupil = useAnimatedProps(() => pupilProps(60));
   const lGlint = useAnimatedProps(() => glintProps(40));
@@ -217,12 +220,18 @@ export function ThriveClock({ size = 64, mood = 'idle' }: { size?: number; mood?
         </G>
 
         {/* Face */}
-        <AnimatedEllipse animatedProps={lEye} cy={47} fill="#FFFFFF" stroke={INK} strokeWidth={0.8} />
-        <AnimatedEllipse animatedProps={rEye} cy={47} fill="#FFFFFF" stroke={INK} strokeWidth={0.8} />
-        <AnimatedCircle animatedProps={lPupil} r={3.8} fill={INK} />
-        <AnimatedCircle animatedProps={rPupil} r={3.8} fill={INK} />
-        <AnimatedCircle animatedProps={lGlint} r={1.2} fill="#FFFFFF" />
-        <AnimatedCircle animatedProps={rGlint} r={1.2} fill="#FFFFFF" />
+        <AnimatedG animatedProps={eyesOpen}>
+          <Ellipse cx={40} cy={47} rx={6.4} ry={7.4} fill="#FFFFFF" stroke={INK} strokeWidth={0.8} />
+          <Ellipse cx={60} cy={47} rx={6.4} ry={7.4} fill="#FFFFFF" stroke={INK} strokeWidth={0.8} />
+          <AnimatedCircle animatedProps={lPupil} r={3.8} fill={INK} />
+          <AnimatedCircle animatedProps={rPupil} r={3.8} fill={INK} />
+          <AnimatedCircle animatedProps={lGlint} r={1.2} fill="#FFFFFF" />
+          <AnimatedCircle animatedProps={rGlint} r={1.2} fill="#FFFFFF" />
+        </AnimatedG>
+        <AnimatedG animatedProps={eyesShut}>
+          <Path d="M34 48 Q40 51 46 48" stroke={INK} strokeWidth={1.6} strokeLinecap="round" fill="none" />
+          <Path d="M54 48 Q60 51 66 48" stroke={INK} strokeWidth={1.6} strokeLinecap="round" fill="none" />
+        </AnimatedG>
         {/* Gentle, caring brows and a neat moustache. */}
         <Path d="M34 38.5 Q40 35.5 46 38" stroke={INK} strokeWidth={1.6} strokeLinecap="round" fill="none" />
         <Path d="M54 38 Q60 35.5 66 38.5" stroke={INK} strokeWidth={1.6} strokeLinecap="round" fill="none" />
