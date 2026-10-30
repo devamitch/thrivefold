@@ -88,7 +88,6 @@
       "expo-router",
       "expo-updates",
       "./plugins/withLocalReleaseSigning.js",
-      "./plugins/withAndroidAgpFix.js",
       [
         "expo-location",
         {
@@ -171,7 +170,8 @@
             "googleAppMeasurementOnDeviceConversion": true
           }
         }
-      ]
+      ],
+      "./plugins/withAndroidAgpFix.js"
     ],
     "experiments": {
       "tsconfigPaths": true,
