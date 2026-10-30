@@ -3,16 +3,22 @@
     "name": "Thrivefold",
     "slug": "thrivefold",
     "scheme": "thrivefold",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/images/app-icon-all.png",
     "assetBundlePatterns": [
       "**/*"
     ],
+    "updates": {
+      "url": "https://u.expo.dev/c8672e6c-cf56-450a-a097-eed822317968"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "android": {
       "package": "com.amit.thrivefold",
-      "versionCode": 5,
+      "versionCode": 6,
       "allowBackup": false,
       "icon": "./assets/images/app-icon-android-legacy.png",
       "adaptiveIcon": {
@@ -80,7 +86,9 @@
     },
     "plugins": [
       "expo-router",
+      "expo-updates",
       "./plugins/withLocalReleaseSigning.js",
+      "./plugins/withAndroidAgpFix.js",
       [
         "expo-location",
         {

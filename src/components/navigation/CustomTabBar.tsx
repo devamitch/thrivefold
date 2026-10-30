@@ -28,23 +28,28 @@ import { hapticMedium, hapticSelection } from '../../services/haptics';
 import { globalVoiceController } from '../../services/voice/globalVoiceController';
 import { AnvayCompanion } from '../brand/AnvayCompanion';
 
+import { useTheme } from '../../theme/useTheme';
+import { PressableScale } from '../ui/PressableScale';
+
+import {
+  hideTabBar,
+  showTabBar,
+  tabBarScrollProgress,
+  useScrollAwareTabBar,
+} from './useScrollAwareDock';
+
+import { getExperienceIcons } from '../../theme/icons';
+import { useLayout } from '../../theme/layout';
+
 type OrbMood = 'idle' | 'listening' | 'thinking' | 'speaking' | 'success' | 'error';
 const ORB_LABEL: Record<OrbMood, string> = {
-  idle: 'Anvay',
+  idle: 'Thriving',
   listening: 'Listening',
   thinking: 'Thinking',
   speaking: 'Speaking',
   success: 'Done',
   error: 'Try again',
 };
-
-import { useTheme } from '../../theme/useTheme';
-import { PressableScale } from '../ui/PressableScale';
-
-import { hideTabBar, showTabBar, tabBarScrollProgress, useScrollAwareTabBar } from './useScrollAwareDock';
-
-import { getExperienceIcons } from '../../theme/icons';
-import { useLayout } from '../../theme/layout';
 
 export { hideTabBar, showTabBar, tabBarScrollProgress, useScrollAwareTabBar };
 
@@ -125,7 +130,12 @@ function wavePath(cx: number): string {
 function buildTopEdge(w: number): string[] {
   const T = HUMP_H;
   const r = TOP_R;
-  return [`A ${r} ${r} 0 0 1 ${r} ${T}`, wavePath(w / 2), `L ${w - r} ${T}`, `A ${r} ${r} 0 0 1 ${w} ${T + r}`];
+  return [
+    `A ${r} ${r} 0 0 1 ${r} ${T}`,
+    wavePath(w / 2),
+    `L ${w - r} ${T}`,
+    `A ${r} ${r} 0 0 1 ${w} ${T + r}`,
+  ];
 }
 
 function buildBarPath(w: number, h: number, bottomR = 0): string {
@@ -209,7 +219,10 @@ const TabButton = memo(function TabButton({
       <Animated.View style={[styles.iconWrap, iconStyle]}>
         <Ionicons name={iconName} size={ICON_SIZE} color={iconColor} />
       </Animated.View>
-      <Animated.Text style={[styles.label, labelStyle, fontFamily ? { fontFamily } : null]} numberOfLines={1}>
+      <Animated.Text
+        style={[styles.label, labelStyle, fontFamily ? { fontFamily } : null]}
+        numberOfLines={1}
+      >
         {label}
       </Animated.Text>
     </PressableScale>
@@ -217,7 +230,7 @@ const TabButton = memo(function TabButton({
 });
 
 /* ── Main CustomTabBar Component ───────────────────────────────── */
-export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+export function CustomTabBar({ state, descriptors }: BottomTabBarProps) {
   const { colors, typography, experience } = useTheme();
   const experienceIcons = useMemo(() => getExperienceIcons(experience), [experience]);
   const insets = useSafeAreaInsets();
@@ -235,7 +248,10 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
   const barPath = useMemo(() => buildBarPath(barW, barH, 0), [barW, barH]);
   const rimPath = useMemo(() => buildRimPath(barW), [barW]);
 
-  const routes = useMemo(() => state.routes.filter((route) => DEFAULT_ROUTES.includes(route.name)), [state.routes]);
+  const routes = useMemo(
+    () => state.routes.filter((route) => DEFAULT_ROUTES.includes(route.name)),
+    [state.routes],
+  );
 
   // Split: left 2 tabs, center orb slot, right 3 tabs
   const half = Math.ceil(routes.length / 2);
@@ -259,15 +275,14 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
   });
 
   const onTabPress = useCallback(
-    (key: string, name: string, focused: boolean) => {
-      const event = navigation.emit({ type: 'tabPress', target: key, canPreventDefault: true });
-      if (event.defaultPrevented) return;
+    (_key: string, name: string, focused: boolean) => {
+      // Expo Router 58 no longer hands the tab bar a navigation object; navigate by route.
       if (!focused) {
         hapticSelection();
-        navigation.navigate(name);
+        router.navigate((name === 'index' ? '/(app)/(tabs)' : `/(app)/(tabs)/${name}`) as never);
       }
     },
-    [navigation],
+    [],
   );
 
   // The orb shows what the coach is doing.
@@ -311,7 +326,9 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
   const handleOrbPress = useCallback(() => {
     hapticMedium();
     const name = state.routes[state.index]?.name;
-    void globalVoiceController.open(!name || name === 'index' ? '/(app)/(tabs)' : `/(app)/(tabs)/${name}`);
+    void globalVoiceController.open(
+      !name || name === 'index' ? '/(app)/(tabs)' : `/(app)/(tabs)/${name}`,
+    );
   }, [state]);
 
   const handleOrbLongPress = useCallback(() => {
@@ -340,7 +357,11 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
   };
 
   return (
-    <Animated.View testID="tab-bar" pointerEvents="box-none" style={[styles.dock, containerAnimStyle]}>
+    <Animated.View
+      testID="tab-bar"
+      pointerEvents="box-none"
+      style={[styles.dock, containerAnimStyle]}
+    >
       <View style={{ width: barW, height: barH, alignSelf: 'center' }} pointerEvents="box-none">
         <Svg width={barW} height={barH} style={StyleSheet.absoluteFill} pointerEvents="none">
           <Defs>
@@ -358,7 +379,9 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
         <View style={[styles.row, { paddingHorizontal: bleed }]} accessibilityRole="tablist">
           <View style={styles.side}>{left.map((route, i) => renderTab(route, i))}</View>
           <View style={styles.centerSlot} />
-          <View style={styles.side}>{right.map((route, i) => renderTab(route, i + left.length))}</View>
+          <View style={styles.side}>
+            {right.map((route, i) => renderTab(route, i + left.length))}
+          </View>
         </View>
 
         {/* Central Action Orb with brand logo */}
@@ -387,14 +410,17 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
               ]}
             >
               <View pointerEvents="none">
-                <AnvayCompanion size={CENTER_SIZE + 6} mood={mood} />
+                <AnvayCompanion size={CENTER_SIZE - 10} mood={mood} />
               </View>
             </View>
 
             <Animated.Text
               key={mood}
               entering={reduceMotion ? undefined : FadeIn.duration(220)}
-              style={[styles.scanLabel, { color: colors.dockActive, fontFamily: typography.label.fontFamily }]}
+              style={[
+                styles.scanLabel,
+                { color: colors.dockActive, fontFamily: typography.label.fontFamily },
+              ]}
               numberOfLines={1}
             >
               {ORB_LABEL[mood]}
@@ -424,7 +450,7 @@ const styles = StyleSheet.create({
     left: '50%',
     marginLeft: -CENTER_SIZE / 2,
     position: 'absolute',
-    top: ORB_CENTER_Y - CENTER_SIZE / 2,
+    top: ORB_CENTER_Y + 18 - CENTER_SIZE / 2,
     width: CENTER_SIZE,
     borderRadius: CENTER_SIZE / 2,
   },
@@ -467,7 +493,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
     lineHeight: LABEL_LINE,
-    marginTop: SCAN_LABEL_GAP,
+    marginTop: SCAN_LABEL_GAP - 19,
     width: CENTER_SLOT,
     textAlign: 'center',
   },

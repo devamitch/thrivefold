@@ -14,6 +14,10 @@ jest.mock('expo-file-system/legacy', () => ({
   createDownloadResumable: jest.fn(),
 }));
 
+jest.mock('expo-document-picker', () => ({
+  getDocumentAsync: jest.fn(),
+}));
+
 jest.mock('react-native-mmkv', () => {
   const store = new Map();
   return {

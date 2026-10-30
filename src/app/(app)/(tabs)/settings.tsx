@@ -1,3 +1,4 @@
+import * as Updates from 'expo-updates';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Link, useRouter, type Href } from 'expo-router';
@@ -71,6 +72,34 @@ export default function SettingsScreen() {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editedName, setEditedName] = useState(user?.pseudonym ?? '');
   const [selectedAvatar, setSelectedAvatar] = useState(user?.avatarSeed ?? 'lotus');
+
+  // Expo Updates state
+  const [checkingUpdates, setCheckingUpdates] = useState(false);
+  const [updateStatusText, setUpdateStatusText] = useState<string | null>(null);
+
+  const handleCheckUpdates = async () => {
+    if (__DEV__) {
+      setUpdateStatusText('Updates are disabled in development mode');
+      return;
+    }
+    try {
+      setCheckingUpdates(true);
+      setUpdateStatusText('Checking for updates...');
+      const check = await Updates.checkForUpdateAsync();
+      if (check.isAvailable) {
+        setUpdateStatusText('Downloading update...');
+        await Updates.fetchUpdateAsync();
+        setUpdateStatusText('Update ready. Restarting app...');
+        await Updates.reloadAsync();
+      } else {
+        setUpdateStatusText('Up to date');
+      }
+    } catch (e) {
+      setUpdateStatusText('Could not check updates');
+    } finally {
+      setCheckingUpdates(false);
+    }
+  };
 
   const handleSaveProfile = () => {
     if (!editedName.trim()) return;
@@ -347,6 +376,21 @@ export default function SettingsScreen() {
           <Link href={'/(app)/you/account' as Href} asChild>
             <SettingsRow icon="person-circle-outline" title="Account" subtitle="Sign out, redo setup or erase" />
           </Link>
+        </SettingsGroup>
+        <SettingsGroup title="App updates & version">
+          <SettingsRow
+            icon="cloud-download-outline"
+            title="Check for updates"
+            subtitle={updateStatusText ?? `v1.0.5 · Tap to check for instant updates`}
+            onPress={handleCheckUpdates}
+            right={
+              checkingUpdates ? (
+                <Badge label="Checking" variant="info" />
+              ) : (
+                <Ionicons name="refresh-outline" size={18} color={colors.text.secondary} />
+              )
+            }
+          />
         </SettingsGroup>
       </View>
 

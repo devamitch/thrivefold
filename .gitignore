@@ -227,3 +227,5 @@ blinkquest-*.json
 !.agents/
 !.claude/skills
 *.zip
+.bundle/
+vendor/bundle/
