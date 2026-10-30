@@ -1,6 +1,32 @@
 import { buildTable, GUIDES, matchMedicine, parseChatAction, type TableInput } from '../../src/domain/assistant/chatActions';
 import { storeDocs, type StoreDocsInput } from '../../src/domain/assistant/appKnowledge';
 
+jest.mock('react-native', () => ({
+  Platform: { OS: 'android' },
+  AppState: { addEventListener: jest.fn() },
+}));
+
+jest.mock('react-native-mmkv', () => ({
+  MMKV: jest.fn().mockImplementation(() => ({
+    getString: jest.fn(),
+    set: jest.fn(),
+    delete: jest.fn(),
+    contains: jest.fn(),
+    clearAll: jest.fn(),
+  })),
+}));
+
+jest.mock('expo-secure-store', () => ({
+  getItemAsync: jest.fn(async () => null),
+  setItemAsync: jest.fn(async () => {}),
+  deleteItemAsync: jest.fn(async () => {}),
+}));
+
+jest.mock('expo-crypto', () => ({
+  getRandomBytesAsync: jest.fn(async (len: number) => new Uint8Array(len)),
+  digestStringAsync: jest.fn(async () => 'mock-hash'),
+}));
+
 const NOW = new Date(2026, 9, 30, 10);
 
 describe('chat actions', () => {

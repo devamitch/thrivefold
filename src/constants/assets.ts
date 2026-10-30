@@ -63,12 +63,61 @@ export const AssetIllustrations = {
 
 export type AssetIllustrationsName = keyof typeof AssetIllustrations;
 
+/** Reward and gamification assets: chests, gems, tokens, cards, and marketplace merchandise. */
+export const RewardAssets = {
+  chests: {
+    tier1: {
+      closed: require('@assets/rewards/chests/tier1_beechwood_closed.png'),
+      burst: require('@assets/rewards/chests/tier1_beechwood_burst.png'),
+    },
+    tier2: {
+      closed: require('@assets/rewards/chests/chest_wide_01_closed.png'),
+      burst: require('@assets/rewards/chests/chest_wide_01_burst.png'),
+    },
+    tier3: {
+      closed: require('@assets/rewards/chests/chest_wide_03_closed.png'),
+      burst: require('@assets/rewards/chests/chest_wide_03_burst.png'),
+    },
+    tier4: {
+      closed: require('@assets/rewards/chests/chest_wide_04_closed.png'),
+      burst: require('@assets/rewards/chests/chest_wide_04_burst.png'),
+    },
+    tier5: {
+      closed: require('@assets/rewards/chests/chest_wide_05_closed.png'),
+      burst: require('@assets/rewards/chests/chest_wide_05_burst.png'),
+    },
+  },
+  currencies: {
+    amberGem: require('@assets/rewards/currencies/gem_amber_habit.png'),
+    goldenGem: require('@assets/rewards/currencies/gem_mythic_gold.png'),
+    marketplaceToken: require('@assets/rewards/currencies/token_marketplace_coin.png'),
+    bronzeMedallion: require('@assets/rewards/currencies/token_bronze_medallion.png'),
+    sanctuaryPass: require('@assets/rewards/currencies/pass_sanctuary_ticket.png'),
+    goldVoucher: require('@assets/rewards/currencies/pass_gold_voucher.png'),
+    booster2x: require('@assets/rewards/currencies/booster_2x_talisman.png'),
+  },
+  cards: {
+    groundedSeeker: require('@assets/rewards/cards/card_grounded_seeker.png'),
+    sanctuarySentinel: require('@assets/rewards/cards/card_sanctuary_sentinel.png'),
+    mindfulVoyager: require('@assets/rewards/cards/card_mindful_voyager_3d.png'),
+    apexThrivemaster: require('@assets/rewards/cards/card_apex_thrivemaster_3d.png'),
+  },
+  marketplace: {
+    pushupBars: require('@assets/rewards/marketplace/beechwood_pushup_bars.png'),
+    gyroball: require('@assets/rewards/marketplace/gyroball_wrist_exerciser.png'),
+    healthJournal: require('@assets/rewards/marketplace/linen_health_journal.png'),
+    cricketKit: require('@assets/rewards/marketplace/cricket_kit_junior.png'),
+    mealThali: require('@assets/rewards/marketplace/ayurvedic_meal_thali.jpg'),
+  },
+} as const;
+
 export const Assets = {
   brand: {
     logo: require('@assets/images/logo.png'),
     appIcon: require('@assets/images/app-icon-all.png'),
   },
   illustrations: AssetIllustrations,
+  rewards: RewardAssets,
   icons: ProductIcons,
 } as const;
 
