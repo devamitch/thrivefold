@@ -7,6 +7,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect } from 'react';
 import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -71,82 +72,86 @@ export function CustomAlert() {
       visible
       onRequestClose={handleCancel}
     >
-      <View style={styles.overlay}>
-        <Animated.View
-          style={[StyleSheet.absoluteFill, { backgroundColor: colors.scrim }, backdropStyle]}
-        >
-          <FrostedView
-            tone="dark"
-            tintOpacity={0.5}
-            intensity={35}
-            style={StyleSheet.absoluteFill}
-            pointerEvents="none"
-          />
-
-          <Pressable
-            style={StyleSheet.absoluteFill}
-            onPress={handleCancel}
-            accessibilityLabel="Dismiss"
-          />
-        </Animated.View>
-
-        <Animated.View
-          style={[styles.dialog, dialogStyle]}
-          accessibilityViewIsModal
-          accessibilityRole="alert"
-        >
-          <FrostedView
-            tone="surface"
-            intensity={95}
-            tintOpacity={Platform.OS === 'android' ? 0.92 : 0.82}
-            style={[
-              styles.content,
-              {
-                borderRadius: 28,
-                borderColor: colors.border,
-                borderWidth: StyleSheet.hairlineWidth,
-              },
-            ]}
+      <GestureHandlerRootView style={styles.ghRoot}>
+        <View style={styles.overlay}>
+          <Animated.View
+            style={[StyleSheet.absoluteFill, { backgroundColor: colors.scrim }, backdropStyle]}
           >
-            {/* Header Icon Badge */}
-            <View style={[styles.iconBadge, { backgroundColor: iconBg }]}>
-              <Ionicons name={iconName} size={24} color={iconColor} />
-            </View>
+            <FrostedView
+              tone="dark"
+              tintOpacity={0.5}
+              intensity={35}
+              style={StyleSheet.absoluteFill}
+              pointerEvents="none"
+            />
 
-            <Text style={[typography.subheading, styles.title, { color: colors.text.primary }]}>
-              {alert.title}
-            </Text>
+            <Pressable
+              style={StyleSheet.absoluteFill}
+              onPress={handleCancel}
+              accessibilityLabel="Dismiss"
+            />
+          </Animated.View>
 
-            {alert.message ? (
-              <Text style={[typography.body, styles.message, { color: colors.text.secondary }]}>
-                {alert.message}
+          <Animated.View
+            style={[styles.dialog, dialogStyle]}
+            accessibilityViewIsModal
+            accessibilityRole="alert"
+          >
+            <FrostedView
+              tone="surface"
+              intensity={95}
+              tintOpacity={Platform.OS === 'android' ? 0.92 : 0.82}
+              style={[
+                styles.content,
+                {
+                  borderRadius: 28,
+                  borderColor: colors.border,
+                  borderWidth: StyleSheet.hairlineWidth,
+                },
+              ]}
+            >
+              {/* Header Icon Badge */}
+              <View style={[styles.iconBadge, { backgroundColor: iconBg }]}>
+                <Ionicons name={iconName} size={24} color={iconColor} />
+              </View>
+
+              <Text style={[typography.subheading, styles.title, { color: colors.text.primary }]}>
+                {alert.title}
               </Text>
-            ) : null}
 
-            <View style={styles.actions}>
-              {alert.cancelText !== null ? (
-                <Button
-                  label={alert.cancelText || 'Cancel'}
-                  variant="secondary"
-                  style={styles.button}
-                  onPress={handleCancel}
-                />
+              {alert.message ? (
+                <Text style={[typography.body, styles.message, { color: colors.text.secondary }]}>
+                  {alert.message}
+                </Text>
               ) : null}
-              <Button
-                label={alert.confirmText || 'Confirm'}
-                variant={alert.destructive ? 'danger' : 'primary'}
-                style={styles.button}
-                onPress={handleConfirm}
-              />
-            </View>
-          </FrostedView>
-        </Animated.View>
-      </View>
+
+              <View style={styles.actions}>
+                {alert.cancelText !== null ? (
+                  <Button
+                    label={alert.cancelText || 'Cancel'}
+                    variant="secondary"
+                    style={styles.button}
+                    onPress={handleCancel}
+                  />
+                ) : null}
+                <Button
+                  label={alert.confirmText || 'Confirm'}
+                  variant={alert.destructive ? 'danger' : 'primary'}
+                  style={styles.button}
+                  onPress={handleConfirm}
+                />
+              </View>
+            </FrostedView>
+          </Animated.View>
+        </View>
+      </GestureHandlerRootView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  // Android gives a Modal its own window; gestures there need their own root.
+  ghRoot: { flex: 1 },
   overlay: {
     alignItems: 'center',
     flex: 1,

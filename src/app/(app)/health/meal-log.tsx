@@ -5,6 +5,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Link, useRouter, type Href } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Linking, Modal, StyleSheet, Text, TextInput, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
@@ -372,71 +373,73 @@ export default function MealLogScreen() {
         navigationBarTranslucent
         onRequestClose={() => setScanning(false)}
       >
-        <View style={[styles.full, { backgroundColor: colors.callBackground }]}>
-          {FoodCameraView && scanning ? (
-            <FoodCameraView
-              ref={camera}
-              style={StyleSheet.absoluteFill}
-              active={scanning}
-              onFoodReady={() => setCameraReady(true)}
-              onLabels={(e) => setLiveLabels(e.nativeEvent.labels)}
-              onFoodError={() => {
-                setScanning(false);
-                setNotice({ message: 'The camera could not start. Pick a photo from the gallery instead.' });
-              }}
-            />
-          ) : null}
-          {/* Framing guide */}
-          <View pointerEvents="none" style={styles.frameGuide}>
-            <View style={[styles.frameBox, { borderColor: colors.callSurfaceStrong }]} />
-          </View>
-          <View style={[styles.fullTop, { paddingTop: insets.top + 12 }]}>
-            <PressableScale
-              onPress={() => setScanning(false)}
-              accessibilityRole="button"
-              accessibilityLabel="Close camera"
-              style={[styles.roundBtn, { backgroundColor: colors.callSurface }]}
-            >
-              <Ionicons name="close" size={22} color={colors.callText} />
-            </PressableScale>
-            <View style={[styles.liveChipFull, { backgroundColor: colors.callSurface }]}>
-              {!cameraReady ? <ActivityIndicator size="small" color={colors.callText} /> : null}
-              <Text style={[typography.captionBold, { color: colors.callText }]} numberOfLines={1}>
-                {!cameraReady
-                  ? 'Starting camera'
-                  : liveTop
-                    ? `Looks like ${liveTop.label} · ${Math.round(liveTop.score * 100)}%`
-                    : 'Fit your plate in the frame'}
+        <GestureHandlerRootView style={styles.ghRoot}>
+          <View style={[styles.full, { backgroundColor: colors.callBackground }]}>
+            {FoodCameraView && scanning ? (
+              <FoodCameraView
+                ref={camera}
+                style={StyleSheet.absoluteFill}
+                active={scanning}
+                onFoodReady={() => setCameraReady(true)}
+                onLabels={(e) => setLiveLabels(e.nativeEvent.labels)}
+                onFoodError={() => {
+                  setScanning(false);
+                  setNotice({ message: 'The camera could not start. Pick a photo from the gallery instead.' });
+                }}
+              />
+            ) : null}
+            {/* Framing guide */}
+            <View pointerEvents="none" style={styles.frameGuide}>
+              <View style={[styles.frameBox, { borderColor: colors.callSurfaceStrong }]} />
+            </View>
+            <View style={[styles.fullTop, { paddingTop: insets.top + 12 }]}>
+              <PressableScale
+                onPress={() => setScanning(false)}
+                accessibilityRole="button"
+                accessibilityLabel="Close camera"
+                style={[styles.roundBtn, { backgroundColor: colors.callSurface }]}
+              >
+                <Ionicons name="close" size={22} color={colors.callText} />
+              </PressableScale>
+              <View style={[styles.liveChipFull, { backgroundColor: colors.callSurface }]}>
+                {!cameraReady ? <ActivityIndicator size="small" color={colors.callText} /> : null}
+                <Text style={[typography.captionBold, { color: colors.callText }]} numberOfLines={1}>
+                  {!cameraReady
+                    ? 'Starting camera'
+                    : liveTop
+                      ? `Looks like ${liveTop.label} · ${Math.round(liveTop.score * 100)}%`
+                      : 'Fit your plate in the frame'}
+                </Text>
+              </View>
+              <View style={styles.roundBtn} />
+            </View>
+            <View style={[styles.fullBottom, { paddingBottom: insets.bottom + 24 }]}>
+              <Text style={[typography.caption, { color: colors.callMuted, marginBottom: 16 }]}>
+                Recognised on this phone. Nothing is sent until you ask for AI.
               </Text>
-            </View>
-            <View style={styles.roundBtn} />
-          </View>
-          <View style={[styles.fullBottom, { paddingBottom: insets.bottom + 24 }]}>
-            <Text style={[typography.caption, { color: colors.callMuted, marginBottom: 16 }]}>
-              Recognised on this phone. Nothing is sent until you ask for AI.
-            </Text>
-            <View style={styles.controlsRow}>
-              <PressableScale
-                onPress={pickFromGallery}
-                accessibilityRole="button"
-                accessibilityLabel="Choose from gallery"
-                style={[styles.roundBtnLg, { backgroundColor: colors.callSurface }]}
-              >
-                <Ionicons name="images-outline" size={22} color={colors.callText} />
-              </PressableScale>
-              <PressableScale
-                onPress={shoot}
-                disabled={!cameraReady}
-                accessibilityRole="button"
-                accessibilityLabel="Take photo"
-                style={[styles.shutter, { borderColor: colors.callText, opacity: cameraReady ? 1 : 0.5 }]}
-              >
-                <View style={[styles.shutterInner, { backgroundColor: colors.callText }]} />
-              </PressableScale>
-              <View style={styles.roundBtnLg} />
+              <View style={styles.controlsRow}>
+                <PressableScale
+                  onPress={pickFromGallery}
+                  accessibilityRole="button"
+                  accessibilityLabel="Choose from gallery"
+                  style={[styles.roundBtnLg, { backgroundColor: colors.callSurface }]}
+                >
+                  <Ionicons name="images-outline" size={22} color={colors.callText} />
+                </PressableScale>
+                <PressableScale
+                  onPress={shoot}
+                  disabled={!cameraReady}
+                  accessibilityRole="button"
+                  accessibilityLabel="Take photo"
+                  style={[styles.shutter, { borderColor: colors.callText, opacity: cameraReady ? 1 : 0.5 }]}
+                >
+                  <View style={[styles.shutterInner, { backgroundColor: colors.callText }]} />
+                </PressableScale>
+                <View style={styles.roundBtnLg} />
+              </View>
             </View>
           </View>
-        </View>
+        </GestureHandlerRootView>
       </Modal>
 
       {notice ? (
@@ -675,6 +678,8 @@ export default function MealLogScreen() {
 }
 
 const styles = StyleSheet.create({
+  // Android gives a Modal its own window; gestures there need their own root.
+  ghRoot: { flex: 1 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   flex: { flex: 1 },
   row: { alignItems: 'center', flexDirection: 'row' },

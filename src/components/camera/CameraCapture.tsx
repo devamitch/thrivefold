@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useRef, useState } from 'react';
 import { ActivityIndicator, Modal, StyleSheet, Text, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FoodCameraView, type FoodCameraHandle } from '../../../modules/pose-landmarker/food';
@@ -62,50 +63,54 @@ export function CameraCapture({ visible, onClose, onPhoto, facing = 'back', titl
 
   return (
     <Modal visible={visible} animationType="slide" statusBarTranslucent onShow={() => void onShow()} onRequestClose={onClose}>
-      <View style={styles.root}>
-        {FoodCameraView && allowed ? (
-          <FoodCameraView ref={ref} active={visible} facing={side} labels={false} style={StyleSheet.absoluteFill} onFoodError={(e) => setError(e.nativeEvent.message)} />
-        ) : (
-          <View style={styles.center}>
-            <Text style={styles.light}>{allowed === false ? 'Camera access was not allowed. Allow it in Android settings, or choose a photo.' : 'Starting the camera…'}</Text>
+      <GestureHandlerRootView style={styles.ghRoot}>
+        <View style={styles.root}>
+          {FoodCameraView && allowed ? (
+            <FoodCameraView ref={ref} active={visible} facing={side} labels={false} style={StyleSheet.absoluteFill} onFoodError={(e) => setError(e.nativeEvent.message)} />
+          ) : (
+            <View style={styles.center}>
+              <Text style={styles.light}>{allowed === false ? 'Camera access was not allowed. Allow it in Android settings, or choose a photo.' : 'Starting the camera…'}</Text>
+            </View>
+          )}
+
+          {guide === 'face' ? <View pointerEvents="none" style={[styles.guide, styles.faceGuide]} /> : null}
+          {guide === 'body' ? <View pointerEvents="none" style={[styles.guide, styles.bodyGuide]} /> : null}
+          {guide === 'document' ? <View pointerEvents="none" style={[styles.guide, styles.docGuide]} /> : null}
+
+          <View style={[styles.top, { paddingTop: insets.top + 10 }]}>
+            <PressableScale onPress={onClose} accessibilityLabel="Close camera" style={styles.round}>
+              <Ionicons name="close" size={24} color="#FFF" />
+            </PressableScale>
+            <Text style={[styles.light, styles.title]}>{title}</Text>
+            <View style={styles.round} />
           </View>
-        )}
+          {hint ? (
+            <View style={styles.hintWrap}>
+              <Text style={[styles.light, styles.hint]}>{hint}</Text>
+            </View>
+          ) : null}
+          {error ? <Text style={[styles.light, styles.error]}>{error}</Text> : null}
 
-        {guide === 'face' ? <View pointerEvents="none" style={[styles.guide, styles.faceGuide]} /> : null}
-        {guide === 'body' ? <View pointerEvents="none" style={[styles.guide, styles.bodyGuide]} /> : null}
-        {guide === 'document' ? <View pointerEvents="none" style={[styles.guide, styles.docGuide]} /> : null}
-
-        <View style={[styles.top, { paddingTop: insets.top + 10 }]}>
-          <PressableScale onPress={onClose} accessibilityLabel="Close camera" style={styles.round}>
-            <Ionicons name="close" size={24} color="#FFF" />
-          </PressableScale>
-          <Text style={[styles.light, styles.title]}>{title}</Text>
-          <View style={styles.round} />
-        </View>
-        {hint ? (
-          <View style={styles.hintWrap}>
-            <Text style={[styles.light, styles.hint]}>{hint}</Text>
+          <View style={[styles.bottom, { paddingBottom: insets.bottom + 24 }]}>
+            <PressableScale onPress={() => void gallery()} accessibilityLabel="Choose from gallery" style={styles.round}>
+              <Ionicons name="images-outline" size={24} color="#FFF" />
+            </PressableScale>
+            <PressableScale onPress={() => void shoot()} accessibilityLabel="Take photo" style={styles.shutter}>
+              {busy ? <ActivityIndicator color="#000" /> : <View style={styles.shutterInner} />}
+            </PressableScale>
+            <PressableScale onPress={() => setSide((s) => (s === 'front' ? 'back' : 'front'))} accessibilityLabel="Switch camera" style={styles.round}>
+              <Ionicons name="camera-reverse-outline" size={24} color="#FFF" />
+            </PressableScale>
           </View>
-        ) : null}
-        {error ? <Text style={[styles.light, styles.error]}>{error}</Text> : null}
-
-        <View style={[styles.bottom, { paddingBottom: insets.bottom + 24 }]}>
-          <PressableScale onPress={() => void gallery()} accessibilityLabel="Choose from gallery" style={styles.round}>
-            <Ionicons name="images-outline" size={24} color="#FFF" />
-          </PressableScale>
-          <PressableScale onPress={() => void shoot()} accessibilityLabel="Take photo" style={styles.shutter}>
-            {busy ? <ActivityIndicator color="#000" /> : <View style={styles.shutterInner} />}
-          </PressableScale>
-          <PressableScale onPress={() => setSide((s) => (s === 'front' ? 'back' : 'front'))} accessibilityLabel="Switch camera" style={styles.round}>
-            <Ionicons name="camera-reverse-outline" size={24} color="#FFF" />
-          </PressableScale>
         </View>
-      </View>
+      </GestureHandlerRootView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  // Android gives a Modal its own window; gestures there need their own root.
+  ghRoot: { flex: 1 },
   root: { flex: 1, backgroundColor: '#000' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
   light: { color: '#FFFFFF' },

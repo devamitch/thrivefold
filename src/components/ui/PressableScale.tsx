@@ -8,6 +8,12 @@
  *
  * It is a Pressable in every other respect. Accessibility props are forwarded rather than
  * re-declared, so screen readers and accessibility tools treat it as a native interactive control.
+ *
+ * `touch="touchable"` (default) uses Gesture Handler's native Pressable: the touch is recognised
+ * on the UI thread and negotiates with scroll views, sheets and pan gestures, so a press inside a
+ * draggable sheet or a list no longer fights the drag. `touch="pressable"` keeps React Native's
+ * own Pressable for the rare place that needs the JS responder system. Inside a React Native
+ * `Modal`, wrap the content in `GestureHandlerRootView` (Android needs a root per window).
  */
 import React, { memo, useCallback, useEffect, useMemo, type Ref } from 'react';
 import {
@@ -19,6 +25,8 @@ import {
   type View,
   type ViewStyle,
 } from 'react-native';
+import { Pressable as GHPressable } from 'react-native-gesture-handler';
+
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -28,6 +36,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+const AnimatedTouchable = Animated.createAnimatedComponent(GHPressable);
 
 /** Crisp and tactile timing curves: predictable and direct, never floaty or bouncy. */
 const PRESS_IN_TIMING = { duration: 80, easing: Easing.out(Easing.cubic) } as const;
@@ -43,6 +52,8 @@ export interface PressableScaleProps extends Omit<PressableProps, 'style'> {
   scaleTo?: number;
   /** Opacity while `disabled`. Pass 1 when the caller styles the disabled look itself. */
   disabledOpacity?: number;
+  /** Gesture Handler touchable (default) or React Native's Pressable. */
+  touch?: 'touchable' | 'pressable';
   ref?: Ref<View>;
 }
 
@@ -50,6 +61,7 @@ export const PressableScale = memo(function PressableScale({
   style,
   scaleTo = 0.97,
   disabledOpacity = 0.45,
+  touch = 'touchable',
   disabled,
   onPressIn,
   onPressOut,
@@ -96,17 +108,37 @@ export const PressableScale = memo(function PressableScale({
     [style, animatedStyle, disabled, disabledOpacity],
   );
 
+  const reset = () => {
+    pressed.value = reduceMotion ? 0 : withTiming(0, PRESS_OUT_TIMING);
+  };
+
+  if (touch === 'pressable') {
+    return (
+      <AnimatedPressable
+        ref={ref}
+        accessibilityRole="button"
+        {...rest}
+        disabled={disabled}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onResponderTerminate={reset}
+        style={composedStyle}
+      />
+    );
+  }
+
+  // Same props; Gesture Handler's event carries the same nativeEvent fields callers read.
+  const touchableProps = rest as unknown as React.ComponentProps<typeof GHPressable>;
   return (
-    <AnimatedPressable
+    <AnimatedTouchable
       ref={ref}
       accessibilityRole="button"
-      {...rest}
+      {...touchableProps}
       disabled={disabled}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      onResponderTerminate={() => {
-        pressed.value = reduceMotion ? 0 : withTiming(0, PRESS_OUT_TIMING);
-      }}
+      onPressIn={handlePressIn as unknown as React.ComponentProps<typeof GHPressable>['onPressIn']}
+      onPressOut={
+        handlePressOut as unknown as React.ComponentProps<typeof GHPressable>['onPressOut']
+      }
       style={composedStyle}
     />
   );

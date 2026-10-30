@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { hapticLight, hapticMedium, hapticSuccess } from '../../../services/haptics';
 import React, { useEffect, useState } from 'react';
 import { Modal, StyleSheet, Text, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Image } from 'expo-image';
 
 import { Badge } from '../../../components/ui/Badge';
@@ -199,178 +200,184 @@ export default function GamesScreen() {
 
         {/* Breathing Exercise Modal */}
         <Modal visible={activeSession === 'game_breathe'} transparent animationType="fade">
-          <View style={[styles.modalOverlay, { backgroundColor: colors.scrim }]}>
-            <View style={[styles.modalCard, { backgroundColor: colors.surface }]}>
-              <View style={styles.modalHeader}>
-                <Text style={[typography.subheading, { color: colors.text.primary }]}>
-                  Harmonic Box Breathing
-                </Text>
-                <PressableScale onPress={() => setActiveSession(null)}>
-                  <Ionicons name="close-circle-outline" size={26} color={colors.text.muted} />
-                </PressableScale>
-              </View>
-
-              <View style={styles.orbWrapper}>
-                <View
-                  style={[
-                    styles.breathingOrb,
-                    {
-                      backgroundColor: colors.primaryAlpha,
-                      transform: [
-                        {
-                          scale:
-                            breathPhase === 'Inhale'
-                              ? 1.25
-                              : breathPhase === 'Hold'
-                              ? 1.25
-                              : 0.95,
-                        },
-                      ],
-                    },
-                  ]}
-                >
-                  <Text style={[typography.heading, { color: colors.primary }]}>{breathPhase}</Text>
-                  <Text style={[typography.display, { color: colors.primary, marginTop: 4 }]}>
-                    {breathTimer}
+          <GestureHandlerRootView style={styles.ghRoot}>
+            <View style={[styles.modalOverlay, { backgroundColor: colors.scrim }]}>
+              <View style={[styles.modalCard, { backgroundColor: colors.surface }]}>
+                <View style={styles.modalHeader}>
+                  <Text style={[typography.subheading, { color: colors.text.primary }]}>
+                    Harmonic Box Breathing
                   </Text>
+                  <PressableScale onPress={() => setActiveSession(null)}>
+                    <Ionicons name="close-circle-outline" size={26} color={colors.text.muted} />
+                  </PressableScale>
                 </View>
+
+                <View style={styles.orbWrapper}>
+                  <View
+                    style={[
+                      styles.breathingOrb,
+                      {
+                        backgroundColor: colors.primaryAlpha,
+                        transform: [
+                          {
+                            scale:
+                              breathPhase === 'Inhale'
+                                ? 1.25
+                                : breathPhase === 'Hold'
+                                ? 1.25
+                                : 0.95,
+                          },
+                        ],
+                      },
+                    ]}
+                  >
+                    <Text style={[typography.heading, { color: colors.primary }]}>{breathPhase}</Text>
+                    <Text style={[typography.display, { color: colors.primary, marginTop: 4 }]}>
+                      {breathTimer}
+                    </Text>
+                  </View>
+                </View>
+
+                <Text style={[typography.caption, { color: colors.text.secondary, textAlign: 'center', marginTop: 12 }]}>
+                  Completed Cycles: {cycleCount} · Inhale for 4, hold for 4, exhale for 4, rest for 4.
+                </Text>
+
+                <Button
+                  label="End Session"
+                  variant="ghost"
+                  size="md"
+                  style={{ marginTop: 20 }}
+                  onPress={() => setActiveSession(null)}
+                />
               </View>
-
-              <Text style={[typography.caption, { color: colors.text.secondary, textAlign: 'center', marginTop: 12 }]}>
-                Completed Cycles: {cycleCount} · Inhale for 4, hold for 4, exhale for 4, rest for 4.
-              </Text>
-
-              <Button
-                label="End Session"
-                variant="ghost"
-                size="md"
-                style={{ marginTop: 20 }}
-                onPress={() => setActiveSession(null)}
-              />
             </View>
-          </View>
+          </GestureHandlerRootView>
         </Modal>
 
         {/* Memory Game Modal */}
         <Modal visible={activeSession === 'game_memory'} transparent animationType="fade">
-          <View style={[styles.modalOverlay, { backgroundColor: colors.scrim }]}>
-            <View style={[styles.modalCard, { backgroundColor: colors.surface }]}>
-              <View style={styles.modalHeader}>
-                <Text style={[typography.subheading, { color: colors.text.primary }]}>
-                  Flora Memory Match
-                </Text>
-                <PressableScale onPress={() => setActiveSession(null)}>
-                  <Ionicons name="close-circle-outline" size={26} color={colors.text.muted} />
-                </PressableScale>
-              </View>
-
-              <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: 16 }]}>
-                Pairs Found: {matchedPairs} of {INITIAL_CARDS.length}
-              </Text>
-
-              <View style={styles.grid}>
-                {cards.map((c, i) => {
-                  const isFlipped = flippedIndices.includes(i) || c.matched;
-                  return (
-                    <PressableScale
-                      key={c.id}
-                      onPress={() => handleCardPress(i)}
-                      style={[
-                        styles.gridTile,
-                        {
-                          backgroundColor: c.matched
-                            ? colors.primaryAlpha
-                            : isFlipped
-                            ? colors.surface1
-                            : colors.surface1,
-                        },
-                      ]}
-                    >
-                      {isFlipped ? (
-                        <>
-                          <Ionicons name={c.icon} size={24} color={colors.primary} />
-                          <Text style={[typography.caption, { color: colors.text.primary, fontSize: 10, marginTop: 2 }]}>
-                            {c.label}
-                          </Text>
-                        </>
-                      ) : (
-                        <Ionicons name="cube-outline" size={20} color={colors.text.muted} />
-                      )}
-                    </PressableScale>
-                  );
-                })}
-              </View>
-
-              {matchedPairs === INITIAL_CARDS.length && (
-                <View style={{ alignItems: 'center', marginTop: 16 }}>
-                  <Text style={[typography.bodyBold, { color: colors.primary }]}>
-                    All Flora Matched!
+          <GestureHandlerRootView style={styles.ghRoot}>
+            <View style={[styles.modalOverlay, { backgroundColor: colors.scrim }]}>
+              <View style={[styles.modalCard, { backgroundColor: colors.surface }]}>
+                <View style={styles.modalHeader}>
+                  <Text style={[typography.subheading, { color: colors.text.primary }]}>
+                    Flora Memory Match
                   </Text>
-                  <Button
-                    label="Play Again"
-                    size="sm"
-                    variant="outline"
-                    onPress={initMemoryGame}
-                    style={{ marginTop: 8 }}
-                  />
+                  <PressableScale onPress={() => setActiveSession(null)}>
+                    <Ionicons name="close-circle-outline" size={26} color={colors.text.muted} />
+                  </PressableScale>
                 </View>
-              )}
 
-              <Button
-                label="Close"
-                variant="ghost"
-                size="md"
-                style={{ marginTop: 16 }}
-                onPress={() => setActiveSession(null)}
-              />
+                <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: 16 }]}>
+                  Pairs Found: {matchedPairs} of {INITIAL_CARDS.length}
+                </Text>
+
+                <View style={styles.grid}>
+                  {cards.map((c, i) => {
+                    const isFlipped = flippedIndices.includes(i) || c.matched;
+                    return (
+                      <PressableScale
+                        key={c.id}
+                        onPress={() => handleCardPress(i)}
+                        style={[
+                          styles.gridTile,
+                          {
+                            backgroundColor: c.matched
+                              ? colors.primaryAlpha
+                              : isFlipped
+                              ? colors.surface1
+                              : colors.surface1,
+                          },
+                        ]}
+                      >
+                        {isFlipped ? (
+                          <>
+                            <Ionicons name={c.icon} size={24} color={colors.primary} />
+                            <Text style={[typography.caption, { color: colors.text.primary, fontSize: 10, marginTop: 2 }]}>
+                              {c.label}
+                            </Text>
+                          </>
+                        ) : (
+                          <Ionicons name="cube-outline" size={20} color={colors.text.muted} />
+                        )}
+                      </PressableScale>
+                    );
+                  })}
+                </View>
+
+                {matchedPairs === INITIAL_CARDS.length && (
+                  <View style={{ alignItems: 'center', marginTop: 16 }}>
+                    <Text style={[typography.bodyBold, { color: colors.primary }]}>
+                      All Flora Matched!
+                    </Text>
+                    <Button
+                      label="Play Again"
+                      size="sm"
+                      variant="outline"
+                      onPress={initMemoryGame}
+                      style={{ marginTop: 8 }}
+                    />
+                  </View>
+                )}
+
+                <Button
+                  label="Close"
+                  variant="ghost"
+                  size="md"
+                  style={{ marginTop: 16 }}
+                  onPress={() => setActiveSession(null)}
+                />
+              </View>
             </View>
-          </View>
+          </GestureHandlerRootView>
         </Modal>
 
         {/* Sensory Grounding Modal */}
         <Modal visible={activeSession === 'game_focus'} transparent animationType="fade">
-          <View style={[styles.modalOverlay, { backgroundColor: colors.scrim }]}>
-            <View style={[styles.modalCard, { backgroundColor: colors.surface }]}>
-              <View style={styles.modalHeader}>
-                <Text style={[typography.subheading, { color: colors.text.primary }]}>
-                  Sensory Grounding
-                </Text>
-                <PressableScale onPress={() => setActiveSession(null)}>
-                  <Ionicons name="close-circle-outline" size={26} color={colors.text.muted} />
-                </PressableScale>
-              </View>
+          <GestureHandlerRootView style={styles.ghRoot}>
+            <View style={[styles.modalOverlay, { backgroundColor: colors.scrim }]}>
+              <View style={[styles.modalCard, { backgroundColor: colors.surface }]}>
+                <View style={styles.modalHeader}>
+                  <Text style={[typography.subheading, { color: colors.text.primary }]}>
+                    Sensory Grounding
+                  </Text>
+                  <PressableScale onPress={() => setActiveSession(null)}>
+                    <Ionicons name="close-circle-outline" size={26} color={colors.text.muted} />
+                  </PressableScale>
+                </View>
 
-              <View style={[styles.groundingStepBox, { backgroundColor: colors.surface1 }]}>
-                <Text style={[typography.display, { color: colors.primary, fontSize: 36 }]}>
-                  {groundingPrompts[groundingStep].count}
-                </Text>
-                <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 8, textAlign: 'center' }]}>
-                  {groundingPrompts[groundingStep].label}
-                </Text>
-                <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 6, textAlign: 'center' }]}>
-                  {groundingPrompts[groundingStep].hint}
-                </Text>
-              </View>
+                <View style={[styles.groundingStepBox, { backgroundColor: colors.surface1 }]}>
+                  <Text style={[typography.display, { color: colors.primary, fontSize: 36 }]}>
+                    {groundingPrompts[groundingStep].count}
+                  </Text>
+                  <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 8, textAlign: 'center' }]}>
+                    {groundingPrompts[groundingStep].label}
+                  </Text>
+                  <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 6, textAlign: 'center' }]}>
+                    {groundingPrompts[groundingStep].hint}
+                  </Text>
+                </View>
 
-              <View style={{ flexDirection: 'row', gap: 10, marginTop: 20 }}>
-                {groundingStep < groundingPrompts.length - 1 ? (
-                  <Button
-                    label="Next Step"
-                    size="md"
-                    style={{ flex: 1 }}
-                    onPress={() => setGroundingStep((s) => s + 1)}
-                  />
-                ) : (
-                  <Button
-                    label="Complete Grounding"
-                    size="md"
-                    style={{ flex: 1 }}
-                    onPress={() => setActiveSession(null)}
-                  />
-                )}
+                <View style={{ flexDirection: 'row', gap: 10, marginTop: 20 }}>
+                  {groundingStep < groundingPrompts.length - 1 ? (
+                    <Button
+                      label="Next Step"
+                      size="md"
+                      style={{ flex: 1 }}
+                      onPress={() => setGroundingStep((s) => s + 1)}
+                    />
+                  ) : (
+                    <Button
+                      label="Complete Grounding"
+                      size="md"
+                      style={{ flex: 1 }}
+                      onPress={() => setActiveSession(null)}
+                    />
+                  )}
+                </View>
               </View>
             </View>
-          </View>
+          </GestureHandlerRootView>
         </Modal>
       </View>
     </ScreenWrapper>
@@ -378,6 +385,8 @@ export default function GamesScreen() {
 }
 
 const styles = StyleSheet.create({
+  // Android gives a Modal its own window; gestures there need their own root.
+  ghRoot: { flex: 1 },
   breathingOrb: {
     alignItems: 'center',
     borderRadius: 80,
