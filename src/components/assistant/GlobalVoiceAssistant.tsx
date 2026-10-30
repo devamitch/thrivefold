@@ -128,9 +128,15 @@ export function GlobalVoiceAssistant() {
       ? withRepeat(withTiming(1, { duration: 1100, easing: Easing.out(Easing.quad) }), -1, false)
       : withTiming(0, { duration: 150 });
   }, [listening, ring]);
+  // The voice orb: while listening, a second ring follows the loudness of the person's voice.
+  const level = useSharedValue(0);
   const ringStyle = useAnimatedStyle(() => ({
     opacity: ring.value === 0 ? 0 : (1 - ring.value) * 0.5,
     transform: [{ scale: 1 + ring.value * 0.55 }],
+  }));
+  const levelStyle = useAnimatedStyle(() => ({
+    opacity: listening ? 0.35 : 0,
+    transform: [{ scale: 1 + level.value * 0.7 }],
   }));
 
   const close = useCallback(() => {
@@ -187,6 +193,10 @@ export function GlobalVoiceAssistant() {
         }
       },
       onError: (e) => setError(e),
+      // Android reports roughly -2..10 dB; map to 0..1 and ease toward it.
+      onAudioLevel: (db) => {
+        level.value = withTiming(Math.min(1, Math.max(0, (db + 2) / 12)), { duration: 120 });
+      },
     });
     return () => {
       unsub();
@@ -525,6 +535,10 @@ export function GlobalVoiceAssistant() {
                     <Animated.View
                       pointerEvents="none"
                       style={[styles.ring, { backgroundColor: colors.error }, ringStyle]}
+                    />
+                    <Animated.View
+                      pointerEvents="none"
+                      style={[styles.ring, { backgroundColor: colors.primary }, levelStyle]}
                     />
                     <PressableScale
                       accessibilityRole="button"
