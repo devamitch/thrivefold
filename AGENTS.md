@@ -18,7 +18,10 @@ live yet. It is not a medical device and never diagnoses.
 
 ## 2. Hard rules
 
-1. **pnpm only.** Keep `react-native-worklets` at 0.7.4. Don't upgrade packages without evidence.
+1. **pnpm only. Keep dependencies current and working.** Upgrade with `pnpm exec expo install --fix`
+   (or `expo install <pkg>`) so native packages stay on the versions the Expo SDK supports
+   (Reanimated, Worklets, Gesture Handler, Screens). Going past the SDK's versions is allowed when
+   a fix needs it: rebuild, run every command in §4, and check the app on a device before committing.
 2. **Real data only.** No seeded records, fake people, `Math.random()` metrics, simulated
    success, or buttons that do nothing. Empty state or honest "not available yet" instead.
 3. **No payments** in this release (REQ-014): no SDKs, plans, prices, credits or upsell copy.
