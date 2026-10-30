@@ -1,11 +1,12 @@
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useState } from 'react';
 import { StatusBar, StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useRootStore } from '../stores/useRootStore';
 import { useTheme } from '../theme/useTheme';
+import { preloadAllAppImages } from '../utils/imagePreloader';
 
 // import { BlurRoot } from '@/components/ui';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
@@ -23,6 +24,10 @@ SplashScreen.preventAutoHideAsync().catch(() => undefined);
 export default function RootLayout() {
   const [splash, setSplash] = useState(true);
   const resetDailyQuotaIfNewDay = useRootStore((s) => s.resetDailyQuotaIfNewDay);
+
+  useLayoutEffect(() => {
+    preloadAllAppImages();
+  }, []);
 
   useEffect(() => {
     resetDailyQuotaIfNewDay();
