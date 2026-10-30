@@ -10,7 +10,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, usePathname, type Href } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import Animated, {
+  Easing,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { resolveScreenCapability } from '../../domain/assistant/screenRegistry';
 import type { ToolExecutionResult } from '../../domain/assistant/toolRegistry';
@@ -140,6 +149,30 @@ export function GlobalVoiceAssistant() {
     router.push(route as Href);
   };
 
+  // A real sheet: drag the handle or header down to dismiss; it springs back if not far enough.
+  const dragY = useSharedValue(0);
+  useEffect(() => {
+    if (visible) dragY.value = 0;
+  }, [visible, dragY]);
+  const sheetDrag = Gesture.Pan()
+    .activeOffsetY(8)
+    .failOffsetY(-12)
+    .onUpdate((e) => {
+      'worklet';
+      dragY.value = e.translationY > 0 ? e.translationY : e.translationY * 0.15;
+    })
+    .onEnd((e) => {
+      'worklet';
+      if (e.translationY > 120 || e.velocityY > 900) {
+        dragY.value = withTiming(900, { duration: 200 }, (done) => {
+          if (done) runOnJS(close)();
+        });
+      } else {
+        dragY.value = withSpring(0, { damping: 20, stiffness: 220 });
+      }
+    });
+  const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: dragY.value }] }));
+
   if (!visible) return null;
   const screen = resolveScreenCapability(pathname);
   const listening = voiceState === 'listening';
@@ -154,6 +187,7 @@ export function GlobalVoiceAssistant() {
 
   return (
     <Modal visible animationType="slide" transparent onRequestClose={close} statusBarTranslucent>
+      <GestureHandlerRootView style={styles.flex}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={[styles.backdrop, { backgroundColor: colors.scrim }]}
@@ -161,7 +195,9 @@ export function GlobalVoiceAssistant() {
         <PressableScale style={styles.dismissArea} onPress={close} accessibilityLabel="Close the coach" scaleTo={1}>
           <View />
         </PressableScale>
-        <View style={[styles.sheet, { backgroundColor: colors.background }]}>
+        <Animated.View style={[styles.sheet, { backgroundColor: colors.background }, sheetStyle]}>
+          <GestureDetector gesture={sheetDrag}>
+          <View>
           <View style={[styles.grabber, { backgroundColor: colors.surface3 }]} />
           <View style={[styles.header, { paddingHorizontal: spacing.base }]}>
             <Animated.View style={[styles.miniOrb, orbStyle]}>
@@ -183,6 +219,8 @@ export function GlobalVoiceAssistant() {
               <Ionicons name="close" size={24} color={colors.text.secondary} />
             </PressableScale>
           </View>
+          </View>
+          </GestureDetector>
 
           <ScrollView
             ref={scroll}
@@ -273,8 +311,9 @@ export function GlobalVoiceAssistant() {
               />
             </PressableScale>
           </View>
-        </View>
+        </Animated.View>
       </KeyboardAvoidingView>
+      </GestureHandlerRootView>
     </Modal>
   );
 }

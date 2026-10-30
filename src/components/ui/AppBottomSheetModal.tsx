@@ -112,9 +112,12 @@ export function AppBottomSheetModal({
     }
   }, [visible, reduceMotion, screenHeight, translateY]);
 
-  const dragPan = Gesture.Pan()
-    .activeOffsetY([12, 1000])
-    .failOffsetY([-15, 0])
+  // One gesture instance per detector: Gesture Handler cannot attach the same object twice, and
+  // the old failOffsetY([-15, 0]) failed on every downward drag, so swiping never dismissed.
+  const makePan = () =>
+    Gesture.Pan()
+    .activeOffsetY(10)
+    .failOffsetY(-15)
     .failOffsetX([-35, 35])
     .shouldCancelWhenOutside(false)
     .onUpdate((e) => {
@@ -136,6 +139,8 @@ export function AppBottomSheetModal({
         translateY.value = withTiming(0, SETTLE);
       }
     });
+  const headerPan = makePan();
+  const bodyPan = makePan();
 
   const sheetAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],
@@ -232,7 +237,7 @@ export function AppBottomSheetModal({
             />
 
             <View style={styles.header}>
-              <GestureDetector gesture={dragPan}>
+              <GestureDetector gesture={headerPan}>
                 <View style={styles.headerDragArea}>
                   {showHandle ? (
                     <View style={styles.handleContainer} hitSlop={{ top: 12, bottom: 12, left: 30, right: 30 }}>
@@ -318,7 +323,7 @@ export function AppBottomSheetModal({
             {bodyScrolls ? (
               renderBody()
             ) : (
-              <GestureDetector gesture={dragPan}>
+              <GestureDetector gesture={bodyPan}>
                 {renderBody()}
               </GestureDetector>
             )}
