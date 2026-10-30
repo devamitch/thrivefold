@@ -22,6 +22,8 @@ DONE (seen on the phone), BUILT (in the build, not yet seen on the phone), TODO,
 | Commands: open screens, log water, numbers, export, remember, several in one go | BUILT (parsing tested) |
 | Online AI for macros/plans with consent, answers saved locally | BUILT |
 | Heart-rate questions answered from connected readings (Health Connect / strap), with date and source | BUILT |
+| Knows every screen, every Learn article and your last week (check-ins, water, meals, steps, journal, medicines, quests) from local data; refreshed on start and on return | BUILT (unit-tested; not yet asked on the phone) |
+| One voice for every screen (coach, Learn, therapy, companion, workouts) through `coachVoiceService` | BUILT |
 | Talks on its own, constant background monitoring | TODO |
 
 ## On-device models
@@ -60,6 +62,6 @@ DONE (seen on the phone), BUILT (in the build, not yet seen on the phone), TODO,
 | Full AnvayKosh ID across all apps | PLANNED (docs/ANVAY_ID_PLAN.md; approved; needs App Link domain and signing SHA-256s) |
 
 ## Validation (2026-10-30)
-pnpm compile PASS · pnpm lint PASS · pnpm test 490/490 PASS · pnpm test:db 175/175 PASS ·
+pnpm compile PASS · pnpm lint PASS · pnpm test 496/496 PASS · pnpm test:db 175/175 PASS ·
 expo-doctor 19/20 (expo 55.0.31 vs 55.0.32 patch; not upgraded per AGENTS.md rule 1) ·
 release APK `android/app/build/outputs/apk/release/app-release.apk` built and installed on ZD2225KYKD.
