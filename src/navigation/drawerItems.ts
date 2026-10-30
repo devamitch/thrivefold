@@ -35,7 +35,7 @@ export const DRAWER_SECTIONS: DrawerSection[] = [
       { label: 'Check in', icon: 'sunny-outline', route: '/(app)/check-in' },
       { label: 'Quests', icon: 'ribbon-outline', route: '/(app)/quests' },
       { label: 'Routines', icon: 'alarm-outline', route: '/(app)/routines' },
-      { label: 'Marketplace', icon: 'diamond-outline', route: '/(app)/marketplace' },
+      // { label: 'Marketplace', icon: 'diamond-outline', route: '/(app)/marketplace' },
       { label: 'Train', icon: 'fitness-outline', route: '/(app)/train' },
       { label: 'Games', icon: 'game-controller-outline', route: '/(app)/games' },
     ],
@@ -43,14 +43,33 @@ export const DRAWER_SECTIONS: DrawerSection[] = [
   {
     title: 'Health',
     items: [
-      { label: 'Cycle', icon: 'water-outline', route: '/(app)/health/cycle', only: ['women_health'] },
-      { label: "Men's health", icon: 'barbell-outline', route: '/(app)/health/men', only: ['men_health'] },
-      { label: 'Self-care', icon: 'heart-outline', route: '/(app)/health/pride', only: ['pride_wellbeing'] },
+      {
+        label: 'Cycle',
+        icon: 'water-outline',
+        route: '/(app)/health/cycle',
+        only: ['women_health'],
+      },
+      {
+        label: "Men's health",
+        icon: 'barbell-outline',
+        route: '/(app)/health/men',
+        only: ['men_health'],
+      },
+      {
+        label: 'Self-care',
+        icon: 'heart-outline',
+        route: '/(app)/health/pride',
+        only: ['pride_wellbeing'],
+      },
       { label: 'Food', icon: 'nutrition-outline', route: '/(app)/health/nutrition' },
       { label: 'Sleep', icon: 'moon-outline', route: '/(app)/health/sleep' },
       { label: 'Medications', icon: 'medkit-outline', route: '/(app)/health/medications' },
       { label: 'Journal', icon: 'book-outline', route: '/(app)/journal' },
-      { label: 'Someone to talk to', icon: 'heart-circle-outline', route: '/(app)/safety/someone-to-talk' },
+      {
+        label: 'Someone to talk to',
+        icon: 'heart-circle-outline',
+        route: '/(app)/safety/someone-to-talk',
+      },
       { label: 'Health Connect', icon: 'pulse-outline', route: '/(app)/health/integrations' },
       { label: 'All health tools', icon: 'apps-outline', route: '/(app)/health' },
     ],
@@ -68,7 +87,12 @@ export const DRAWER_SECTIONS: DrawerSection[] = [
     items: [
       { label: 'Letters', icon: 'mail-outline', route: '/(app)/letters', social: true },
       { label: 'Circles', icon: 'people-outline', route: '/(app)/circles', minLevel: 6 },
-      { label: 'Organizations', icon: 'business-outline', route: '/(app)/organizations', minLevel: 6 },
+      {
+        label: 'Organizations',
+        icon: 'business-outline',
+        route: '/(app)/organizations',
+        minLevel: 6,
+      },
     ],
   },
 ];

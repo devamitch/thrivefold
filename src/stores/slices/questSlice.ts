@@ -186,8 +186,8 @@ export interface QuestSlice {
   forgeTicket: () => { ok: boolean; reason?: string };
   /** Forges 5 Sanctuary Tickets or 2,500 Amber Gems into 1 Golden Marketplace Token. */
   forgeToken: (fromTickets?: boolean) => { ok: boolean; reason?: string };
-  /** Spends gems or tokens on a marketplace item; returns false when there aren't enough or it's owned. */
-  buyMarketItem: (itemId: string, currency?: 'gems' | 'tokens') => { ok: boolean; reason?: 'owned' | 'insufficient' | 'unknown' };
+  /** Spends gems, tickets or tokens on a marketplace item; returns false when there aren't enough or it's owned. */
+  buyMarketItem: (itemId: string, currency?: 'gems' | 'tokens' | 'tickets') => { ok: boolean; reason?: 'owned' | 'insufficient' | 'unknown' };
   /** Active equipped sticker or badge shown on profile/avatar. */
   activeSticker: string | null;
   /** Sets active sticker or toggles off if same. */
@@ -843,6 +843,27 @@ export const createQuestSlice: StateCreator<RootState, [['zustand/persist', unkn
       const item = MARKET.find((m) => m.id === itemId) ?? (WELLNESS_PLANS.find((p) => p.id === itemId) as unknown as typeof MARKET[0]);
       if (!item) return { ok: false, reason: 'unknown' };
       if (!item.physical && state.marketOwned.includes(itemId)) return { ok: false, reason: 'owned' };
+
+      if (currency === 'tickets') {
+        const requiredTickets = item.ticketCost ?? 1;
+        if (state.tickets < requiredTickets) return { ok: false, reason: 'insufficient' };
+        const key = item.physical ? `market:ticket:${itemId}:${Date.now()}` : `market:ticket:${itemId}`;
+        commit({
+          rewardLedger: appendLedger(state.rewardLedger, {
+            key,
+            kind: 'market_spend',
+            xp: 0,
+            diamonds: 0,
+            taskPoints: 0,
+            gameDate: today(),
+            sourceId: `ticket_spent:${itemId}:${requiredTickets}`,
+            policyVersion: ECONOMY_VERSION,
+            createdAt: new Date().toISOString(),
+          }),
+        });
+        get().showToast({ type: 'success', message: `Unlocked ${item.title} with ${requiredTickets} Ticket${requiredTickets > 1 ? 's' : ''}!` });
+        return { ok: true };
+      }
 
       if (currency === 'tokens') {
         const requiredTokens = item.tokenCost ?? 1;

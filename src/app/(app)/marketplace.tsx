@@ -269,25 +269,30 @@ export default function MarketplaceScreen() {
   }, []);
 
   const promptUnlock = useCallback(
-    (item: MarketItem | WellnessPlan, defaultCurrency: 'gems' | 'tokens' = 'gems') => {
+    (item: MarketItem | WellnessPlan, defaultCurrency: 'gems' | 'tokens' | 'tickets' = 'gems') => {
       if ('physical' in item && item.physical) {
-        setPayMethod(defaultCurrency);
+        setPayMethod(defaultCurrency === 'tickets' ? 'tokens' : defaultCurrency);
         setGear(item);
         return;
       }
       if (item.id.startsWith('plan_')) {
-        setPayMethod(defaultCurrency);
+        setPayMethod(defaultCurrency === 'tickets' ? 'tokens' : defaultCurrency);
         setGear(item);
         return;
       }
 
-      const priceText =
-        defaultCurrency === 'tokens'
-          ? `${item.tokenCost ?? 1} Token${(item.tokenCost ?? 1) > 1 ? 's' : ''}`
-          : `${item.cost.toLocaleString()} Gems`;
+      let priceText = `${item.cost.toLocaleString()} Gems`;
+      let userBalance = `${diamonds.toLocaleString()} Gems`;
 
-      const userBalance =
-        defaultCurrency === 'tokens' ? `${tokens} Tokens` : `${diamonds.toLocaleString()} Gems`;
+      if (defaultCurrency === 'tokens') {
+        const cost = item.tokenCost ?? 1;
+        priceText = `${cost} Token${cost > 1 ? 's' : ''}`;
+        userBalance = `${tokens} Tokens`;
+      } else if (defaultCurrency === 'tickets') {
+        const cost = ('ticketCost' in item && item.ticketCost) ? item.ticketCost : 1;
+        priceText = `${cost} Ticket${cost > 1 ? 's' : ''}`;
+        userBalance = `${tickets} Tickets`;
+      }
 
       showAlert({
         title: `Unlock ${item.title}?`,
@@ -306,7 +311,7 @@ export default function MarketplaceScreen() {
         },
       });
     },
-    [diamonds, tokens, buy, showAlert],
+    [diamonds, tokens, tickets, buy, showAlert],
   );
 
   const handleForgeTicket = useCallback(() => {
@@ -908,7 +913,7 @@ export default function MarketplaceScreen() {
                         size="sm"
                         variant={shortTickets ? 'outline' : 'primary'}
                         disabled={shortTickets}
-                        onPress={() => promptUnlock(m, 'tokens')}
+                        onPress={() => promptUnlock(m, 'tickets')}
                       />
                     </View>
                   )}
