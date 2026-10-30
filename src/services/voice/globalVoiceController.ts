@@ -17,6 +17,7 @@
  */
 
 import { ExpoSpeechRecognitionModule } from 'expo-speech-recognition';
+import { plainText } from '../../domain/assistant/plainText';
 import type { ToolExecutionResult } from '../../domain/assistant/toolRegistry';
 import { coachVoice } from '../ai/coachVoice';
 import { isCoachSpeechPlaying, queueCoachSpeech } from '../ai/coachVoiceService';
@@ -219,14 +220,17 @@ class GlobalVoiceController {
    * Opens the assistant. The sheet shows immediately; the microphone follows a moment later.
    * Opening again while it is already open never starts a second recogniser.
    */
-  async open(initialRoute?: string) {
+  async open(initialRoute?: string, opts: { listen?: boolean } = {}) {
+    const listen = opts.listen !== false;
     if (initialRoute) agentEngine.setCurrentRoute(initialRoute);
     if (this.isOpen) {
-      if (this.state === 'idle') await this.startListening();
+      if (listen && this.state === 'idle') await this.startListening();
       return;
     }
     this.isOpen = true;
     this.notifyOpen(true);
+    // Opened to type (a link or a button, not the orb): the microphone stays off until tapped.
+    if (!listen) return;
     await sleep(OPEN_SETTLE_MS);
     if (!this.isOpen) return;
     await this.startListening({ retries: OPEN_RETRIES });
@@ -415,7 +419,7 @@ class GlobalVoiceController {
         if (chunk) {
           if (this.state !== 'speaking') this.setState('speaking');
           if (speakRepliesOn()) {
-            speechJobs.push(queueCoachSpeech(chunk).catch(() => undefined));
+            speechJobs.push(queueCoachSpeech(plainText(chunk)).catch(() => undefined));
           }
         }
       };
@@ -436,7 +440,7 @@ class GlobalVoiceController {
         flush(result.text, true);
       } else if (speakRepliesOn()) {
         // Not streamed (a command or a rule-based reply): say it all at once.
-        speechJobs.push(queueCoachSpeech(result.text).catch(() => undefined));
+        speechJobs.push(queueCoachSpeech(plainText(result.text)).catch(() => undefined));
       }
 
       // Stay in "speaking" until the voice has really finished.

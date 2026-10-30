@@ -14,7 +14,6 @@ import { ErrorBoundary } from '../components/ErrorBoundary';
 import { AchievementModal } from '../components/ui/AchievementModal';
 import { CustomAlert } from '../components/ui/CustomAlert';
 import { MindfulNotificationBanner } from '../components/ui/MindfulNotificationBanner';
-import { GlobalVoiceAssistant } from '../components/assistant/GlobalVoiceAssistant';
 import { PERSIST_MAX_AGE, queryClient, queryPersister } from '../services/supabase/queryClient';
 
 // The animated splash hides the native one once it is drawn on top of it.
@@ -56,7 +55,6 @@ export default function RootLayout() {
             <MindfulNotificationBanner />
             <CustomAlert />
             <AchievementModal />
-            <GlobalVoiceAssistant />
             {splash ? <AnimatedSplash onDone={() => setSplash(false)} /> : null}
           </ErrorBoundary>
           {/* </BlurRoot> */}

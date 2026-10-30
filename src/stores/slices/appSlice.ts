@@ -1,3 +1,4 @@
+import type { PersonaId } from '../../domain/assistant/personas';
 import type { StateCreator } from 'zustand';
 
 import type { RootState } from '../rootTypes';
@@ -172,6 +173,9 @@ export interface AppSlice {
   /** Read Anvay's replies aloud. Off by default: replies are text unless the person turns this on. */
   speakReplies: boolean;
   setSpeakReplies: (on: boolean) => void;
+  /** Which role the one coach takes (coach, health guide, speech, nutrition, friend, reader). */
+  coachPersona: PersonaId;
+  setCoachPersona: (p: PersonaId) => void;
   /** The coach conversation, kept across closing the sheet and restarts (newest last, ≤100). */
   coachTurns: { id: string; who: 'you' | 'coach'; text: string; route?: string; at: number }[];
   setCoachTurns: (turns: AppSlice['coachTurns']) => void;
@@ -309,6 +313,8 @@ export const createAppSlice: StateCreator<
   conversationMode: false,
   speakReplies: false,
   setSpeakReplies: (speakReplies) => set({ speakReplies }),
+  coachPersona: 'coach',
+  setCoachPersona: (coachPersona) => set({ coachPersona }),
   coachTurns: [],
   setCoachTurns: (coachTurns) => set({ coachTurns: coachTurns.slice(-100) }),
   setConversationMode: (conversationMode) => set({ conversationMode }),

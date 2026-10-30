@@ -20,8 +20,9 @@ import { askThrive } from '../ai/cloudChat';
 import { runCommand as runLegacyCommand } from './runCommand';
 import { ensureLocalModel } from '../ai/localModel';
 import { brainReady, recommendedModel, setUpBrain } from '../ai/modelSetup';
-import { knowledgeStore } from '../local-ai/rag/knowledgeStore';
-import { retrieveHybridEvidence } from '../local-ai/rag/hybridRagPipeline';
+import { thriveRag } from '../local-ai/rag/thriveRag';
+import { personaFor } from '../../domain/assistant/personas';
+import { findScreenFor } from '../../domain/search/destinations';
 import { recentDaysLines, standingLines } from '../../domain/assistant/appKnowledge';
 
 /** Questions where exact numbers matter (macros, calories, doses of a plan): worth a stronger model. */
@@ -48,7 +49,8 @@ export function buildCoachPrompt(s: ReturnType<typeof useRootStore.getState>, sc
   ].filter(Boolean);
   const recent = [...recentDaysLines(s, new Date(), 3), ...standingLines(s).slice(0, -1)];
   return [
-    'You are Thrive, the wellbeing coach inside the Thrivefold app, running on the person\'s phone.',
+    'You are Anvay, the one companion inside the Thrivefold app, running on the person\'s phone.',
+    personaFor(s.coachPersona).focus,
     `About the person (they told the app this): ${facts.join('; ')}.`,
     recent.length ? `From their logs on this phone:\n${recent.join('\n')}` : 'Nothing logged in the last 3 days.',
     `They are on: ${screen}`,
@@ -278,6 +280,15 @@ class AgentEngine {
       return { text: res.message, toolResult: res };
     }
 
+    // "Where do I…": answer from the app's own screen list (exact, instant) with an Open button.
+    const place = findScreenFor(text);
+    if (place) {
+      const msg = `That's in ${place.title}: ${place.description}.`;
+      const res: ToolExecutionResult = { success: true, message: msg, routeToOpen: place.route };
+      this.finishTurn(msg, res, callbacks);
+      return { text: msg, toolResult: res };
+    }
+
     // 2. Local RAG Query: Check if the user is asking about personal memory, exercise form, or saved documents
     if (
       /\b(?:remember|recall|journal|memory|notes|past|history|exercise|workout|how to do|technique|form|routine|guide|document|article)\b/i.test(
@@ -331,17 +342,7 @@ class AgentEngine {
         const sub = LocalAI.onToken(onTokenListener);
         // Ground the model in what the phone already knows: saved memories, documents and answers
         // learned earlier from the cloud coach. This is how replies get better over time.
-        let evidence = '';
-        try {
-          const hits = await retrieveHybridEvidence('local_user', text, 3);
-          evidence = hits
-            .filter((h) => h.hybridScore >= 0.05)
-            .map((h) => `- ${h.document.title}: ${h.snippet}`)
-            .join('\n')
-            .slice(0, 1500);
-        } catch {
-          // Retrieval is optional; answer from the screen context alone.
-        }
+        const evidence = await thriveRag.contextFor(text);
         LocalAI.startStream(
           turnId,
           text,
@@ -436,12 +437,10 @@ class AgentEngine {
       const { reply } = await askThrive(turns.length ? turns : [{ role: 'user', content: text }]);
       const answer = reply?.trim();
       if (!answer) return null;
-      void knowledgeStore
-        .ingestDocument('local_user', {
-          title: text.slice(0, 80),
-          text: `Question: ${text}\nAnswer: ${answer}`,
-          sourceType: 'wellness_guide',
-          metadata: { source: 'cloud_coach', at: new Date().toISOString() },
+      void thriveRag
+        .remember(text.slice(0, 80), `Question: ${text}\nAnswer: ${answer}`, 'wellness_guide', {
+          source: 'cloud_coach',
+          at: new Date().toISOString(),
         })
         .catch(() => undefined);
       return answer;

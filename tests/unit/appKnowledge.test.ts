@@ -1,5 +1,6 @@
 import { ARTICLES } from '../../src/content/learn';
 import {
+  chatDoc,
   hashText,
   lastDays,
   learnDocs,
@@ -9,7 +10,9 @@ import {
   standingLines,
   type RecentDaysInput,
 } from '../../src/domain/assistant/appKnowledge';
-import { DESTINATIONS } from '../../src/domain/search/destinations';
+import { DESTINATIONS, findScreenFor } from '../../src/domain/search/destinations';
+import { plainText } from '../../src/domain/assistant/plainText';
+import { PERSONAS, personaFor } from '../../src/domain/assistant/personas';
 
 const NOW = new Date(2026, 9, 30, 10, 0, 0);
 
@@ -85,4 +88,36 @@ describe('app knowledge documents', () => {
     expect(hashText('abc')).toBe(hashText('abc'));
     expect(hashText('abc')).not.toBe(hashText('abd'));
   });
+
+  it('keeps the coach conversation, newest last, and says when there is none', () => {
+    expect(chatDoc([]).text).toBe('No conversations with the coach yet.');
+    const at = new Date(2026, 9, 30, 9).getTime();
+    const doc = chatDoc([
+      { who: 'you', text: 'How did  I sleep?', at },
+      { who: 'coach', text: 'You slept 7.5 hours.', at },
+    ]);
+    expect(doc.text).toBe('2026-10-30 You asked: How did I sleep?\n2026-10-30 Coach said: You slept 7.5 hours.');
+  });
+
+  it('has one focus per role and falls back to the coach', () => {
+    expect(new Set(PERSONAS.map((p) => p.id)).size).toBe(PERSONAS.length);
+    expect(personaFor(undefined).id).toBe('coach');
+    expect(personaFor('health').focus).toMatch(/never diagnose/i);
+  });
+});
+
+describe('coach helpers', () => {
+  it('finds the screen for "where do I" questions', () => {
+    expect(findScreenFor('where do I add my medicines')?.route).toBe('/(app)/health/medications');
+    expect(findScreenFor('how do I log water')?.route).toBe('/(app)/health/nutrition');
+    expect(findScreenFor('what is a good bedtime')).toBeNull();
+  });
+
+  it('turns markdown into plain text', () => {
+    expect(plainText('Go to the **Medicines** section.\n- one\n## Head')).toBe('Go to the Medicines section.\n• one\nHead');
+  });
+});
+
+it('leaves how-to coaching questions to the coach', () => {
+  expect(findScreenFor('How do I do squats?')).toBeNull();
 });

@@ -50,3 +50,36 @@ export function keywordScore(query: string, d: Destination): number {
   const hit = words.filter((w) => hay.includes(w) || hay.split(/\W+/).some((h) => h.startsWith(w))).length;
   return hit / words.length + (d.title.toLowerCase().startsWith(query.toLowerCase().trim()) ? 0.5 : 0);
 }
+
+// Finding a place in the app, not how to do something ("how do I do squats" is a coaching question).
+const WHERE =
+  /\b(?:where|which (?:screen|page|tab))\b|\bhow (?:do|can) i (?:add|log|see|find|open|track|record|set|enter|save|view|change|turn|connect|export|scan)\b/i;
+const STOP = new Set(
+  'where which screen page tab how do does can to i my me the a an in on of for is are add log see find open track record set put write check enter keep save view show'.split(' '),
+);
+
+/**
+ * "Where do I add my medicines?" → the screen for it, from the same catalogue global search uses.
+ * Null when the question is not about finding a place in the app or nothing matches well.
+ */
+export function findScreenFor(question: string): Destination | null {
+  if (!WHERE.test(question)) return null;
+  const topic = question
+    .toLowerCase()
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter((w) => w.length > 1 && !STOP.has(w))
+    // "medicines" → "medicine": the catalogue words are mostly singular.
+    .map((w) => (w.length > 4 && w.endsWith('s') ? w.slice(0, -1) : w))
+    .join(' ');
+  if (!topic) return null;
+  let best: Destination | null = null;
+  let bestScore = 0;
+  for (const d of DESTINATIONS) {
+    const score = keywordScore(topic, d);
+    if (score > bestScore) {
+      best = d;
+      bestScore = score;
+    }
+  }
+  return bestScore >= 0.5 ? best : null;
+}

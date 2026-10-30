@@ -20,6 +20,7 @@ import {
   Modal,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -48,6 +49,9 @@ import {
 import { useRootStore } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
 import { AnvayCompanion } from '../brand/AnvayCompanion';
+import { PERSONAS } from '../../domain/assistant/personas';
+import { plainText } from '../../domain/assistant/plainText';
+import { Chip } from '../ui/Chip';
 import { PressableScale } from '../ui/PressableScale';
 import { BrainSetupCard } from './BrainSetupCard';
 
@@ -218,6 +222,9 @@ export function GlobalVoiceAssistant() {
       }),
     [],
   );
+
+  const persona = useRootStore((st) => st.coachPersona);
+  const setPersona = useRootStore((st) => st.setCoachPersona);
 
   const clearHistory = () => {
     hapticSelection();
@@ -398,6 +405,28 @@ export function GlobalVoiceAssistant() {
                   </View>
                 </View>
               </GestureDetector>
+
+              {/* One companion, several roles: the voice, memory and rules stay the same. */}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                style={styles.personaRow}
+                contentContainerStyle={{ paddingHorizontal: spacing.base }}
+              >
+                {PERSONAS.map((p) => (
+                  <Chip
+                    key={p.id}
+                    label={p.label}
+                    selected={persona === p.id}
+                    onPress={() => {
+                      hapticSelection();
+                      setPersona(p.id);
+                    }}
+                    icon={<Ionicons name={p.icon as keyof typeof Ionicons.glyphMap} size={15} color={persona === p.id ? colors.onPrimary : colors.text.secondary} />}
+                  />
+                ))}
+              </ScrollView>
 
               {turns.length === 0 && !partial ? (
                 // Empty conversation: a plain view (no inverted-list flip quirks).
@@ -594,7 +623,7 @@ const TurnRow = React.memo(function TurnRow({
       ]}
     >
       <Text style={[typography.body, { color: mine ? colors.text.inverse : colors.text.primary }]}>
-        {turn.text}
+        {mine ? turn.text : plainText(turn.text)}
       </Text>
       {turn.route ? (
         <PressableScale
@@ -611,6 +640,7 @@ const TurnRow = React.memo(function TurnRow({
 });
 
 const styles = StyleSheet.create({
+  personaRow: { flexGrow: 0, marginBottom: 4 },
   flex: { flex: 1 },
   avoid: { flex: 1, justifyContent: 'flex-end' },
   sheet: {
