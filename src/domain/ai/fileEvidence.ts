@@ -53,5 +53,7 @@ export function bestFileLines(files: { name: string; text: string }[], query: st
       score: l.score + (nameHit ? 1 : 0),
     }));
   });
-  return all.filter((l) => l.score >= 2).sort((a, b) => b.score - a.score).slice(0, max);
+  const strong = all.filter((l) => l.score >= 2).sort((a, b) => b.score - a.score);
+  // Only lines as good as the best one: weaker lines (a title, a name) add noise, not evidence.
+  return strong.filter((l) => l.score >= (strong[0]?.score ?? 0)).slice(0, max);
 }

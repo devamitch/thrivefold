@@ -16,3 +16,8 @@ describe('file evidence', () => {
     expect(bestFileLines(files, 'what should I eat tonight')).toEqual([]);
   });
 });
+
+it('quotes only the best lines', () => {
+  const lines = bestFileLines([{ name: 'blood-report.pdf', text: '[blood-report.pdf, page 1]\nBlood test report\nRepeat test in 3 months.' }], 'blood report when to repeat the test');
+  expect(lines.map((l) => l.line)).toEqual(['Repeat test in 3 months.']);
+});
