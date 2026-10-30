@@ -49,7 +49,7 @@ export function BrainSetupCard({ compact = false }: { compact?: boolean }) {
       {!compact || busy ? (
         <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>
           {setup?.phase === 'downloading'
-            ? `Downloading ${model.name}: ${pct}% of ${model.sizeMb} MB`
+            ? `Downloading ${model.name}: ${pct}% of ${model.sizeMb} MB${setup.durable ? '. It keeps going if you close the app.' : ''}`
             : setup?.phase === 'verifying'
               ? 'Checking the file is genuine…'
               : setup?.phase === 'loading'
@@ -71,7 +71,10 @@ export function BrainSetupCard({ compact = false }: { compact?: boolean }) {
         {busy ? (
           setup?.phase === 'downloading' ? (
             <>
-              <Button label="Pause" size="sm" variant="outline" onPress={() => void pauseSetup()} />
+              {/* Android's download service keeps going in the background; it has no pause. */}
+              {setup?.durable ? null : (
+                <Button label="Pause" size="sm" variant="outline" onPress={() => void pauseSetup()} />
+              )}
               <Button label="Cancel" size="sm" variant="ghost" onPress={() => void cancelSetup()} />
             </>
           ) : null

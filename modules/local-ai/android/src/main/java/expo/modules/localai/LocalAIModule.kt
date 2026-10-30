@@ -80,6 +80,58 @@ class LocalAIModule : Module() {
     /**
      * Verifies post-download file integrity against an expected SHA-256 hash.
      */
+    // ---- Durable downloads through Android's DownloadManager: they keep going after the app is
+    // closed or killed, and survive restarts. Files land in this app's own external files folder
+    // (removed on uninstall); JS verifies the SHA-256 and moves the file into place.
+    Function("dmEnqueue") { url: String, fileName: String, title: String ->
+      val ctx = appContext.reactContext ?: throw IllegalStateException("No context")
+      val dm = ctx.getSystemService(android.content.Context.DOWNLOAD_SERVICE) as android.app.DownloadManager
+      val dir = ctx.getExternalFilesDir("model_downloads") ?: throw IllegalStateException("No storage")
+      File(dir, fileName).delete()
+      val req = android.app.DownloadManager.Request(android.net.Uri.parse(url))
+        .setTitle(title)
+        .setDescription("On-device AI model for Thrivefold")
+        .setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_VISIBLE)
+        .setDestinationInExternalFilesDir(ctx, "model_downloads", fileName)
+        .setAllowedOverMetered(true)
+        .setAllowedOverRoaming(false)
+      dm.enqueue(req).toDouble()
+    }
+
+    Function("dmQuery") { id: Double ->
+      val ctx = appContext.reactContext ?: throw IllegalStateException("No context")
+      val dm = ctx.getSystemService(android.content.Context.DOWNLOAD_SERVICE) as android.app.DownloadManager
+      val c = dm.query(android.app.DownloadManager.Query().setFilterById(id.toLong()))
+      c.use {
+        if (!it.moveToFirst()) return@Function mapOf("status" to "missing")
+        val st = it.getInt(it.getColumnIndexOrThrow(android.app.DownloadManager.COLUMN_STATUS))
+        val done = it.getLong(it.getColumnIndexOrThrow(android.app.DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR))
+        val total = it.getLong(it.getColumnIndexOrThrow(android.app.DownloadManager.COLUMN_TOTAL_SIZE_BYTES))
+        val local = it.getString(it.getColumnIndexOrThrow(android.app.DownloadManager.COLUMN_LOCAL_URI)) ?: ""
+        val reason = it.getInt(it.getColumnIndexOrThrow(android.app.DownloadManager.COLUMN_REASON))
+        val status = when (st) {
+          android.app.DownloadManager.STATUS_SUCCESSFUL -> "done"
+          android.app.DownloadManager.STATUS_FAILED -> "failed"
+          android.app.DownloadManager.STATUS_PAUSED -> "paused"
+          android.app.DownloadManager.STATUS_PENDING -> "pending"
+          else -> "running"
+        }
+        mapOf(
+          "status" to status,
+          "bytes" to done.toDouble(),
+          "total" to total.toDouble(),
+          "localUri" to local,
+          "reason" to reason,
+        )
+      }
+    }
+
+    Function("dmRemove") { id: Double ->
+      val ctx = appContext.reactContext ?: return@Function false
+      val dm = ctx.getSystemService(android.content.Context.DOWNLOAD_SERVICE) as android.app.DownloadManager
+      dm.remove(id.toLong()) > 0
+    }
+
     AsyncFunction("verifyModelChecksum") { filePath: String, expectedSha256: String, promise: Promise ->
       engine.scope.launch {
         try {

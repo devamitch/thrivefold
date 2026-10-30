@@ -161,7 +161,7 @@ export default function ModelStatusScreen() {
                           ? 'Starting it up…'
                           : `Downloading ${Math.round(pct * 100)}%`}
                   </Text>
-                  {setup?.phase === 'downloading' ? (
+                  {setup?.phase === 'downloading' && !setup.durable ? (
                     <Button label="Pause" size="sm" variant="outline" onPress={() => void pauseSetup()} />
                   ) : setup?.phase === 'paused' ? (
                     <Button label="Resume" size="sm" onPress={() => void resumeSetup()} />

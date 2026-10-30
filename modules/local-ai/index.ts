@@ -107,6 +107,9 @@ interface LocalAINative {
   getRuntimeStatus(): RuntimeStatus;
   getDeviceCapabilities(): DeviceCapabilities;
   verifyModelChecksum(filePath: string, expectedSha256: string): Promise<ChecksumVerifyResult>;
+  dmEnqueue?(url: string, fileName: string, title: string): number;
+  dmQuery?(id: number): DurableDownloadState;
+  dmRemove?(id: number): boolean;
   listCachedModels(): CachedModelFile[];
   deleteCachedModel(fileName: string): boolean;
   isLoaded(): boolean;
@@ -383,6 +386,26 @@ class LocalAIService {
     return native.addListener('onModelLoadProgress', callback as (e: unknown) => void);
   }
 }
+
+export interface DurableDownloadState {
+  status: 'pending' | 'running' | 'paused' | 'done' | 'failed' | 'missing';
+  bytes?: number;
+  total?: number;
+  localUri?: string;
+  reason?: number;
+}
+
+/**
+ * Android DownloadManager: downloads that keep going when the app is closed or killed and are
+ * picked up again when it reopens. Null where the native function is missing (older builds).
+ */
+export const DurableDownloads = native?.dmEnqueue
+  ? {
+      enqueue: (url: string, fileName: string, title: string) => native.dmEnqueue!(url, fileName, title),
+      query: (id: number): DurableDownloadState => native.dmQuery!(id),
+      remove: (id: number) => native.dmRemove!(id),
+    }
+  : null;
 
 export const LocalAI = new LocalAIService();
 export default LocalAI;
