@@ -299,6 +299,21 @@ export function GlobalVoiceAssistant() {
     router.push(route as Href);
   };
 
+  // Open at the newest message, and jump to it whenever the person sends something (their own
+  // message must never land off-screen, whatever was scrolled before).
+  const lastWho = turns[turns.length - 1]?.who;
+  useEffect(() => {
+    if (!visible || !turns.length) return;
+    const t = setTimeout(() => list.current?.scrollToEnd({ animated: false }), 60);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible]);
+  useEffect(() => {
+    if (lastWho !== 'you') return;
+    const t = setTimeout(() => list.current?.scrollToEnd({ animated: true }), 60);
+    return () => clearTimeout(t);
+  }, [turns.length, lastWho]);
+
   // Keep the newest message in view when the keyboard opens and the sheet gets shorter.
   useEffect(() => {
     if (!kb || !turns.length) return;

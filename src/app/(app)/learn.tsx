@@ -1,14 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image, type ImageSource } from 'expo-image';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, type Href } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { ViewInstance } from 'react-native';
 import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 
 import { AppHeader } from '../../components/ui/AppHeader';
 import { Badge } from '../../components/ui/Badge';
 import { Card } from '../../components/ui/Card';
+import { Chip } from '../../components/ui/Chip';
+import { TextField } from '../../components/ui/TextField';
+import { useCoach } from '../../components/assistant/CoachProvider';
 import { ScreenContainer } from '../../components/ui/ScreenContainer';
 import { articlesFor, type Article } from '../../content/learn';
 import { speakCoachLine, stopCoachSpeech } from '../../services/ai/coachVoiceService';
@@ -24,7 +27,22 @@ export default function LearnScreen() {
   const reduceMotion = useReducedMotion();
   const [open, setOpen] = useState<string | null>(null);
   const [speakingId, setSpeakingId] = useState<string | null>(null);
-  const articles = articlesFor(experience);
+  const all = useMemo(() => articlesFor(experience), [experience]);
+  const read = useRootStore((s) => s.learnRead);
+  const setRead = useRootStore((s) => s.setLearnRead);
+  const coach = useCoach();
+  const [category, setCategory] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
+  const categories = useMemo(() => [...new Set(all.map((a) => a.category))], [all]);
+  // Filter by topic and by words in the title or text; unread articles first so "continue" is on top.
+  const articles = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return all
+      .filter((a) => !category || a.category === category)
+      .filter((a) => !q || a.title.toLowerCase().includes(q) || a.body.some((p) => p.toLowerCase().includes(q)))
+      .sort((a, b) => Number(!!read[a.id]) - Number(!!read[b.id]));
+  }, [all, category, query, read]);
+  const readCount = all.filter((a) => read[a.id]).length;
   const imageRefs = useRef<Record<string, ViewInstance | null>>({});
   const [viewer, setViewer] = useState<{ source: ImageSource | number; origin: ViewerOrigin; caption: string } | null>(
     null,
@@ -53,8 +71,17 @@ export default function LearnScreen() {
     setSpeakingId(art.id);
     const introText = `In this lesson, you will learn about: ${art.title}. ${art.body.join(' ')}`;
     // The previous article's "stopped" arrives after this one starts; only clear our own id.
-    void speakCoachLine(introText, { onEnd: () => setSpeakingId((cur) => (cur === art.id ? null : cur)) });
+    void speakCoachLine(introText, {
+      onEnd: () =>
+        setSpeakingId((cur) => {
+          // Listening to the end counts as read.
+          if (cur === art.id) useRootStore.getState().setLearnRead(art.id, true);
+          return cur === art.id ? null : cur;
+        }),
+    });
   }, [speakingId]);
+
+  const ask = (art: Article) => coach.ask(`Explain the Learn article "${art.title}" simply, and what I can do about it.`);
 
   return (
     <ScreenContainer
@@ -66,6 +93,36 @@ export default function LearnScreen() {
           General information based on public health guidance (NHS, WHO, CDC). Not medical advice and not a diagnosis.
         </Text>
       </Card>
+
+      {/* Progress is real: only articles marked read (or listened to the end) count. */}
+      <View style={[styles.progressRow, { marginBottom: spacing.sm }]}>
+        <Text style={[typography.captionBold, { color: colors.text.secondary }]}>
+          {readCount} of {all.length} read
+        </Text>
+        <View style={[styles.track, { backgroundColor: colors.surface2 }]}>
+          <View style={[styles.fill, { backgroundColor: colors.primary, width: `${all.length ? (readCount / all.length) * 100 : 0}%` }]} />
+        </View>
+      </View>
+      <TextField
+        value={query}
+        onChangeText={setQuery}
+        placeholder="Search articles"
+        returnKeyType="search"
+        accessibilityLabel="Search Learn articles"
+        leftIcon={<Ionicons name="search" size={18} color={colors.text.muted} />}
+        containerStyle={{ marginBottom: spacing.sm }}
+      />
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips} keyboardShouldPersistTaps="handled">
+        <Chip label="All" selected={!category} onPress={() => setCategory(null)} />
+        {categories.map((c) => (
+          <Chip key={c} label={c} selected={category === c} onPress={() => setCategory(category === c ? null : c)} />
+        ))}
+      </ScrollView>
+      {articles.length === 0 ? (
+        <Text style={[typography.body, { color: colors.text.secondary, textAlign: 'center', marginVertical: spacing.lg }]}>
+          No articles match. Try another word or topic.
+        </Text>
+      ) : null}
 
       {articles.map((art) => {
         const expanded = open === art.id;
@@ -132,6 +189,7 @@ export default function LearnScreen() {
                 <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>
                   {art.title}
                 </Text>
+                {read[art.id] ? <Ionicons name="checkmark-circle" size={20} color={colors.success} style={{ marginRight: 8 }} /> : null}
                 <Ionicons
                   name={expanded ? 'chevron-up' : 'chevron-down'}
                   size={20}
@@ -181,6 +239,28 @@ export default function LearnScreen() {
                     </PressableScale>
                   </View>
 
+                  <View style={[styles.actionRow, { marginTop: spacing.md }]}>
+                    <PressableScale
+                      accessibilityRole="button"
+                      onPress={() => ask(art)}
+                      style={[styles.listenFullBtn, { backgroundColor: colors.surface1 }]}
+                    >
+                      <Ionicons name="chatbubble-ellipses-outline" size={16} color={colors.primary} />
+                      <Text style={[typography.captionBold, { color: colors.primary, marginLeft: 6 }]}>Ask Anvay about this</Text>
+                    </PressableScale>
+                    <PressableScale
+                      accessibilityRole="button"
+                      accessibilityState={{ checked: !!read[art.id] }}
+                      onPress={() => setRead(art.id, !read[art.id])}
+                      style={[styles.listenFullBtn, { backgroundColor: read[art.id] ? colors.primary : colors.surface1 }]}
+                    >
+                      <Ionicons name={read[art.id] ? 'checkmark' : 'checkmark-done-outline'} size={16} color={read[art.id] ? colors.onPrimary : colors.primary} />
+                      <Text style={[typography.captionBold, { color: read[art.id] ? colors.onPrimary : colors.primary, marginLeft: 6 }]}>
+                        {read[art.id] ? 'Read' : 'Mark as read'}
+                      </Text>
+                    </PressableScale>
+                  </View>
+
                   {art.seekHelp ? (
                     <View style={[styles.help, { backgroundColor: colors.warningSurface, marginTop: spacing.md }]}>
                       <Ionicons name="medkit-outline" size={18} color={colors.warning} />
@@ -213,6 +293,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   categoryChip: { borderRadius: 999 },
+  chips: { flexGrow: 0, marginBottom: 8 },
+  progressRow: { gap: 6 },
+  track: { height: 6, borderRadius: 3, overflow: 'hidden' },
+  fill: { height: 6, borderRadius: 3 },
   badgeOverlay: {
     alignItems: 'center',
     flexDirection: 'row',

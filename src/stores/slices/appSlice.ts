@@ -175,6 +175,9 @@ export interface AppSlice {
   setSpeakReplies: (on: boolean) => void;
   /** Which role the one coach takes (coach, health guide, speech, nutrition, friend, reader). */
   coachPersona: PersonaId;
+  /** Learn articles the person finished, with when (local, never synced). */
+  learnRead: Record<string, number>;
+  setLearnRead: (id: string, read: boolean) => void;
   setCoachPersona: (p: PersonaId) => void;
   /** Legacy: the conversation before it moved to SQLite (chatStore); imported once, then emptied. */
   coachTurns: {
@@ -323,6 +326,14 @@ export const createAppSlice: StateCreator<
   setSpeakReplies: (speakReplies) => set({ speakReplies }),
   coachPersona: 'coach',
   setCoachPersona: (coachPersona) => set({ coachPersona }),
+  learnRead: {},
+  setLearnRead: (id, read) =>
+    set((st) => {
+      const next = { ...st.learnRead };
+      if (read) next[id] = Date.now();
+      else delete next[id];
+      return { learnRead: next };
+    }),
   coachTurns: [],
   setCoachTurns: (coachTurns) => set({ coachTurns: coachTurns.slice(-100) }),
   setConversationMode: (conversationMode) => set({ conversationMode }),

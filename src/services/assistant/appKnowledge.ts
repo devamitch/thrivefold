@@ -14,6 +14,18 @@ import { chatStore } from './chatStore';
 
 let running: Promise<number> | null = null;
 
+/** Which Learn articles the person finished, so the coach can build on them. */
+function learnProgressDoc(read: Record<string, number>): KnowledgeDoc {
+  const done = ARTICLES.filter((a) => read[a.id]);
+  return {
+    key: 'me:learn',
+    title: 'Your Learn progress',
+    text: done.length
+      ? `Learn articles you have read (${done.length} of ${ARTICLES.length}): ${done.map((a) => a.title).join('; ')}.`
+      : 'You have not marked any Learn articles as read yet.',
+  };
+}
+
 /** All documents the app provides right now. */
 export function currentAppDocs(now = new Date()): KnowledgeDoc[] {
   const s = useRootStore.getState();
@@ -23,6 +35,7 @@ export function currentAppDocs(now = new Date()): KnowledgeDoc[] {
     recentDaysDoc(s, now),
     chatDoc(chatStore.page(undefined, 60)),
     ...storeDocs(s, now, (id) => foodById(id)?.name),
+    learnProgressDoc(s.learnRead),
   ];
 }
 
