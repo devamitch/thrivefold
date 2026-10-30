@@ -13,7 +13,7 @@ import { useRootStore } from '../../stores/useRootStore';
 import { formatLocalDate } from '../calendar/universalCalendarEngine';
 import { stepsByDate } from '../interop/readings';
 import { activeCalories } from '../activity/calories';
-import { answerWithHybridRag } from '../../services/local-ai/rag/hybridRagPipeline';
+import { thriveRag } from '../../services/local-ai/rag/thriveRag';
 import { memoryStore } from '../../services/local-ai/memory/memoryStore';
 import { knowledgeStore } from '../../services/local-ai/rag/knowledgeStore';
 import { lookupMedicine, analyzePrescriptionText } from '../../services/ai/medicineResearch';
@@ -224,7 +224,7 @@ export const TOOLS: Record<string, ToolDefinition> = {
       },
     },
     execute: async (params: { query: string }, context: ToolExecutionContext) => {
-      const res = await answerWithHybridRag(context.userId || 'local_user', params.query);
+      const res = await thriveRag.answer(params.query);
       return {
         success: true,
         message: res.answer,

@@ -143,7 +143,7 @@ export async function retrieveHybridEvidence(
     knowledgeChunkDocs = chunks.map((c) => ({
       id: c.id,
       sourceType: 'user_document' as const,
-      title: `Doc Chunk ${c.chunkIndex + 1}`,
+      title: c.documentTitle ?? `Doc Chunk ${c.chunkIndex + 1}`,
       content: c.content,
       date: c.createdAt,
       embedding: c.embedding,

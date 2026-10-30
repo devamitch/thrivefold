@@ -352,8 +352,8 @@ export function eraseLocalData(): void {
     // Safe fallback
   }
   try {
-    const { knowledgeStore } = require('../local-ai/rag/knowledgeStore');
-    void knowledgeStore.clearAllDocuments('local_user').catch(() => undefined);
+    const { thriveRag } = require('../local-ai/rag/thriveRag');
+    void thriveRag.clear().catch(() => undefined);
   } catch {
     // No knowledge store on this platform.
   }

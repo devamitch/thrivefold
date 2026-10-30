@@ -24,6 +24,8 @@ export interface KnowledgeChunk {
   tokenEstimate: number;
   embedding?: number[];
   createdAt: string;
+  /** Title of the document the chunk came from, so evidence says where it is from. */
+  documentTitle?: string;
 }
 
 export interface KnowledgeChunkHit {
@@ -170,10 +172,11 @@ export class KnowledgeStore {
   async getAllChunks(userId: string): Promise<KnowledgeChunk[]> {
     const database = getDb();
     const rows = database.getAllSync<any>(
-      `SELECT id, document_id, user_id, chunk_index, content, start_offset, end_offset, token_estimate, embedding_json, created_at
-       FROM rag_chunks
-       WHERE user_id = ?
-       ORDER BY document_id, chunk_index ASC`,
+      `SELECT c.id, c.document_id, c.user_id, c.chunk_index, c.content, c.start_offset, c.end_offset,
+              c.token_estimate, c.embedding_json, c.created_at, d.title AS document_title
+       FROM rag_chunks c LEFT JOIN rag_documents d ON d.id = c.document_id
+       WHERE c.user_id = ?
+       ORDER BY c.document_id, c.chunk_index ASC`,
       [userId]
     );
 
@@ -188,6 +191,7 @@ export class KnowledgeStore {
       tokenEstimate: r.token_estimate,
       embedding: r.embedding_json ? JSON.parse(r.embedding_json) : undefined,
       createdAt: r.created_at,
+      documentTitle: r.document_title ?? undefined,
     }));
   }
 

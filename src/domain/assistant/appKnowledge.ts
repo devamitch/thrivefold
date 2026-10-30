@@ -136,3 +136,16 @@ export function hashText(text: string): string {
   }
   return (h >>> 0).toString(16);
 }
+
+/** The coach conversation so far (newest last), so "what did you tell me about sleep" works. */
+export function chatDoc(turns: { who: 'you' | 'coach'; text: string; at: number }[], max = 60): KnowledgeDoc {
+  const lines = turns.slice(-max).map((t) => {
+    const d = new Date(t.at);
+    return `${dayKey(d)} ${t.who === 'you' ? 'You asked' : 'Coach said'}: ${t.text.replace(/\s+/g, ' ').trim()}`;
+  });
+  return {
+    key: 'me:chat',
+    title: 'Your conversations with the coach',
+    text: lines.length ? lines.join('\n') : 'No conversations with the coach yet.',
+  };
+}

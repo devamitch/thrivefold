@@ -11,7 +11,7 @@ import { TextField } from '../../../components/ui/TextField';
 import { hapticSuccess } from '../../../services/haptics';
 import { memoryStore } from '../../../services/local-ai/memory/memoryStore';
 import type { UserMemory } from '../../../services/local-ai/memory/types';
-import { answerWithHybridRag } from '../../../services/local-ai/rag/hybridRagPipeline';
+import { thriveRag } from '../../../services/local-ai/rag/thriveRag';
 import { knowledgeStore, type KnowledgeDocument } from '../../../services/local-ai/rag/knowledgeStore';
 import { useRootStore } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
@@ -81,7 +81,7 @@ export default function MemoriesScreen() {
     if (q.length < 3) return;
     setAsking(true);
     try {
-      const r = await answerWithHybridRag(USER, q);
+      const r = await thriveRag.answer(q);
       setAnswer({ text: r.answer, sources: r.isGrounded ? r.citations : [] });
     } catch {
       setAnswer({ text: 'Searching your memory failed. Try again.', sources: [] });
