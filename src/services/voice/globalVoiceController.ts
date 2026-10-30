@@ -255,7 +255,9 @@ class GlobalVoiceController {
       let spoken = 0;
       const flush = (all: string, final: boolean) => {
         const rest = all.slice(spoken);
-        const m = final ? rest.length : Math.max(rest.lastIndexOf('. '), rest.lastIndexOf('! '), rest.lastIndexOf('? '), rest.lastIndexOf('\n')) + 1;
+        let m = final ? rest.length : Math.max(rest.lastIndexOf('. '), rest.lastIndexOf('! '), rest.lastIndexOf('? '), rest.lastIndexOf('\n')) + 1;
+        // Start talking early: a long first clause is spoken at its comma instead of waiting.
+        if (!final && m <= 0 && rest.length > 70) m = rest.lastIndexOf(', ') + 1;
         if (m <= 0) return;
         const chunk = rest.slice(0, m).trim();
         spoken += m;

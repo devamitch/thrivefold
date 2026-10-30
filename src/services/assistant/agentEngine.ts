@@ -75,7 +75,7 @@ export function quickReply(text: string, s: ReturnType<typeof useRootStore.getSt
   if (/^(bye|goodbye|good night|see you|stop|that's all|thats all)\b/.test(t)) return 'Take care. Tap me any time.';
   if (/^(how are you|how r u|how are u)\b/.test(t)) return "I'm well, thank you. How are you feeling today?";
   if (/^(who are you|what are you|what is your name|your name)\b/.test(t))
-    return "I'm Mr. Minute, your Thrivefold companion. I run on this phone and help with your day, health and habits.";
+    return "I'm Anvay, your Thrivefold companion. I run on this phone and help with your day, health and habits.";
   return null;
 }
 

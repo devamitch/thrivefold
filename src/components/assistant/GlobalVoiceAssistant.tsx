@@ -18,7 +18,7 @@ import { hapticMedium, hapticSelection } from '../../services/haptics';
 import { globalVoiceController, type VoiceAssistantState } from '../../services/voice/globalVoiceController';
 import { useTheme } from '../../theme/useTheme';
 import { PressableScale } from '../ui/PressableScale';
-import { ThriveClock } from '../brand/ThriveClock';
+import { AnvayCompanion } from '../brand/AnvayCompanion';
 import { BrainSetupCard } from './BrainSetupCard';
 
 interface Turn {
@@ -165,10 +165,10 @@ export function GlobalVoiceAssistant() {
           <View style={[styles.grabber, { backgroundColor: colors.surface3 }]} />
           <View style={[styles.header, { paddingHorizontal: spacing.base }]}>
             <Animated.View style={[styles.miniOrb, orbStyle]}>
-              <ThriveClock size={48} mood={mood} />
+              <AnvayCompanion size={48} mood={mood} />
             </Animated.View>
             <View style={styles.flex}>
-              <Text style={[typography.subheading, { color: colors.text.primary }]}>Mr. Minute</Text>
+              <Text style={[typography.subheading, { color: colors.text.primary }]}>Anvay</Text>
               <Text
                 style={[typography.caption, { color: error ? colors.error : colors.text.secondary }]}
                 numberOfLines={1}
@@ -195,7 +195,7 @@ export function GlobalVoiceAssistant() {
               <View style={styles.empty}>
                 {/* The whole character, never cropped, reacting to the conversation. */}
                 <View style={styles.buddy} pointerEvents="none">
-                  <ThriveClock size={140} mood={mood} />
+                  <AnvayCompanion size={140} mood={mood} />
                 </View>
                 <Text style={[typography.body, { color: colors.text.secondary }]}>
                   Talk naturally. Ask a question, or say things like &quot;log two glasses of water and then open

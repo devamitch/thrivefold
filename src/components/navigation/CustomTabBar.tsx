@@ -26,11 +26,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { ClipPath, Defs, Path } from 'react-native-svg';
 import { hapticMedium, hapticSelection } from '../../services/haptics';
 import { globalVoiceController } from '../../services/voice/globalVoiceController';
-import { ThriveClock } from '../brand/ThriveClock';
+import { AnvayCompanion } from '../brand/AnvayCompanion';
 
 type OrbMood = 'idle' | 'listening' | 'thinking' | 'speaking';
 const ORB_LABEL: Record<OrbMood, string> = {
-  idle: 'Mr. Minute',
+  idle: 'Anvay',
   listening: 'Listening',
   thinking: 'Thinking',
   speaking: 'Speaking',
@@ -371,7 +371,7 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
               ]}
             >
               <View pointerEvents="none">
-                <ThriveClock size={CENTER_SIZE + 6} mood={mood} />
+                <AnvayCompanion size={CENTER_SIZE + 6} mood={mood} />
               </View>
             </View>
 
