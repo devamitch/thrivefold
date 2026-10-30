@@ -8,7 +8,7 @@
  * (public-domain books), Internet Archive (open texts). YouTube is reached through the existing
  * Watch screen, which searches by query.
  */
-import { useQuery } from '@tanstack/react-query';
+import { useQueries } from '@tanstack/react-query';
 import * as Network from 'expo-network';
 import * as SQLite from 'expo-sqlite';
 
@@ -164,6 +164,14 @@ async function fromArchive(topic: string): Promise<Omit<LibraryItem, 'fetchedAt'
   }));
 }
 
+export const LIBRARY_SOURCES: LibrarySource[] = ['wikipedia', 'openlibrary', 'gutenberg', 'archive'];
+const FETCHERS: Record<LibrarySource, (topic: string) => Promise<Omit<LibraryItem, 'fetchedAt'>[]>> = {
+  wikipedia: fromWikipedia,
+  openlibrary: fromOpenLibrary,
+  gutenberg: fromGutenberg,
+  archive: fromArchive,
+};
+
 type Row = { id: string; source: LibrarySource; topic: string; title: string; summary: string; url: string; byline: string | null; image: string | null; fetched_at: number };
 const fromRow = (r: Row): LibraryItem => ({
   id: r.id,
@@ -192,13 +200,17 @@ export const onlineLibrary = {
     }
   },
 
-  /** Fetches a topic from every source (when online), caches it and returns what was found. */
-  async fetchTopic(topic: string): Promise<LibraryItem[]> {
+  /** Cached items for one topic and source (shown instantly, and offline). */
+  cachedSource(topic: string, source: LibrarySource): LibraryItem[] {
+    return this.cached(topic).filter((i) => i.source === source);
+  },
+
+  /** Fetches one source for a topic (when online), caches it, and adds it to coach knowledge. */
+  async fetchSource(topic: string, source: LibrarySource): Promise<LibraryItem[]> {
     const net = await Network.getNetworkStateAsync().catch(() => null);
-    if (!net?.isInternetReachable) return this.cached(topic);
-    const parts = await Promise.all([fromWikipedia(topic), fromOpenLibrary(topic), fromGutenberg(topic), fromArchive(topic)]);
+    if (!net?.isInternetReachable) return this.cachedSource(topic, source);
     const now = Date.now();
-    const items = parts.flat().map((i) => ({ ...i, fetchedAt: now }));
+    const items = (await FETCHERS[source](topic).catch(() => [])).map((i) => ({ ...i, fetchedAt: now }));
     const d = getDb();
     if (d && items.length) {
       try {
@@ -218,10 +230,16 @@ export const onlineLibrary = {
     const text = items.map((i) => `${i.title} (${SOURCE_LABEL[i.source]}${i.byline ? `, ${i.byline}` : ''}): ${i.summary}`).join('\n\n');
     if (text) {
       void thriveRag
-        .rememberDocument(`Library: ${topic}`, [{ page: 1, text }], hashText(text))
+        .rememberDocument(`Library: ${topic} (${SOURCE_LABEL[source]})`, [{ page: 1, text }], hashText(text))
         .catch(() => undefined);
     }
-    return items.length ? items : this.cached(topic);
+    return items.length ? items : this.cachedSource(topic, source);
+  },
+
+  /** Every source for a topic, in parallel. */
+  async fetchTopic(topic: string): Promise<LibraryItem[]> {
+    const parts = await Promise.all(LIBRARY_SOURCES.map((src) => this.fetchSource(topic, src)));
+    return parts.flat();
   },
 
   /** Refreshes each topic at most once a day, only when online. Never throws. */
@@ -237,18 +255,30 @@ export const onlineLibrary = {
   },
 };
 
-/** Typed hook: cached items show at once (and offline); a fresh fetch runs at most daily per topic. */
-export function useLibraryQuery(topic: string) {
-  return useQuery({
-    queryKey: ['library', topic],
-    queryFn: () => onlineLibrary.fetchTopic(topic),
-    initialData: () => {
-      const cached = onlineLibrary.cached(topic);
-      return cached.length ? cached : undefined;
-    },
-    initialDataUpdatedAt: () => onlineLibrary.cached(topic, 1)[0]?.fetchedAt,
-    staleTime: DAY_MS,
-    // Results already live in SQLite; don't also persist them in the query cache.
-    meta: { persist: false },
+/**
+ * One query per source, so encyclopedia results show while slower sources (the Archive) are still
+ * loading. Cached rows show at once and offline; each source refreshes at most daily per topic.
+ */
+export function useLibraryQueries(topic: string) {
+  const results = useQueries({
+    queries: LIBRARY_SOURCES.map((source) => ({
+      queryKey: ['library', topic, source],
+      queryFn: () => onlineLibrary.fetchSource(topic, source),
+      initialData: () => {
+        const cached = onlineLibrary.cachedSource(topic, source);
+        return cached.length ? cached : undefined;
+      },
+      initialDataUpdatedAt: () => onlineLibrary.cachedSource(topic, source)[0]?.fetchedAt,
+      staleTime: DAY_MS,
+      enabled: topic.trim().length > 1,
+      // Results already live in SQLite; don't also persist them in the query cache.
+      meta: { persist: false },
+    })),
   });
+  return {
+    items: results.flatMap((r) => r.data ?? []),
+    loading: results.some((r) => r.isFetching),
+    pendingSources: LIBRARY_SOURCES.filter((_, i) => results[i].isFetching),
+    refetch: () => results.forEach((r) => void r.refetch()),
+  };
 }

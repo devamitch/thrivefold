@@ -132,9 +132,19 @@ export default function LearnScreen() {
         ))}
       </ScrollView>
       {articles.length === 0 ? (
-        <Text style={[typography.body, { color: colors.text.secondary, textAlign: 'center', marginVertical: spacing.lg }]}>
-          No articles match. Try another word or topic.
+        <Text style={[typography.body, { color: colors.text.secondary, textAlign: 'center', marginVertical: spacing.md }]}>
+          No built-in article matches.
         </Text>
+      ) : null}
+      {/* One search for everything: built-in lessons above, the online library one tap away. */}
+      {query.trim().length > 1 ? (
+        <Link href={`/(app)/learn-library?${new URLSearchParams({ q: query.trim() }).toString()}` as Href} asChild>
+          <PressableScale style={[styles.libraryCard, { backgroundColor: colors.surface, marginBottom: spacing.md }]} accessibilityRole="link">
+            <Ionicons name="search" size={20} color={colors.primary} />
+            <Text style={[typography.bodyBold, styles.flex, { color: colors.text.primary }]}>Search the library for “{query.trim()}”</Text>
+            <Ionicons name="chevron-forward" size={18} color={colors.text.muted} />
+          </PressableScale>
+        </Link>
       ) : null}
 
       {articles.map((art) => {

@@ -1,6 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { ActivityIndicator, Linking, StyleSheet, Text, View } from 'react-native';
+import { router } from 'expo-router';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+
+import { readerHref } from '../../../services/learn/reader';
 
 import { AppHeader } from '../../../components/ui/AppHeader';
 import { Badge } from '../../../components/ui/Badge';
@@ -401,11 +404,11 @@ export default function AiByokScreen() {
                 ) : null}
 
                 <PressableScale
-                  onPress={() => Linking.openURL(provider.docsUrl)}
+                  onPress={() => router.push(readerHref(provider.docsUrl, 'Get a key'))}
                   style={{ marginLeft: 'auto', paddingVertical: 6 }}
                 >
                   <Text style={[typography.captionBold, { color: colors.primary }]}>
-                    Get Key ↗
+                    Get key
                   </Text>
                 </PressableScale>
               </View>
