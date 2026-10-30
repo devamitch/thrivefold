@@ -187,10 +187,18 @@ export async function speakCoach(
 export async function queueCoachSpeech(text: string): Promise<void> {
   if (!text.trim()) return;
   const voice = await resolveBestVoice();
-  Speech.speak(text, {
-    language: 'en-IN',
-    rate: chosenRate(),
-    pitch: voice.gender === 'male' ? 0.94 : 1.06,
-    voice: voice.id ?? undefined,
+  // Resolves when this sentence has actually been spoken (or stopped), so callers can wait for
+  // the voice to finish before opening the microphone again.
+  await new Promise<void>((resolve) => {
+    const done = () => resolve();
+    Speech.speak(text, {
+      language: 'en-IN',
+      rate: chosenRate(),
+      pitch: voice.gender === 'male' ? 0.94 : 1.06,
+      voice: voice.id ?? undefined,
+      onDone: done,
+      onStopped: done,
+      onError: done,
+    });
   });
 }
