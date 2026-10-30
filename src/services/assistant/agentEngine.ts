@@ -23,11 +23,18 @@ import { brainReady, recommendedModel, setUpBrain } from '../ai/modelSetup';
 import { thriveRag } from '../local-ai/rag/thriveRag';
 import { personaFor } from '../../domain/assistant/personas';
 import { findScreenFor } from '../../domain/search/destinations';
+import { parseChatAction } from '../../domain/assistant/chatActions';
+import { runChatAction } from './chatActions';
+import { logCoachTurnLocally } from '../ai/aiInteractionStore';
 import { recentDaysLines, standingLines } from '../../domain/assistant/appKnowledge';
 
-/** Questions where exact numbers matter (macros, calories, doses of a plan): worth a stronger model. */
+/**
+ * Hard questions (exact numbers, medicines, trips and real-life plans) go to the online coach when
+ * the person allowed it. Each answer is saved in Thrive RAG, so next time, or offline, the local
+ * model answers similar questions from it.
+ */
 const NEEDS_PRECISION =
-  /\b(?:macro|macros|calorie|calories|kcal|protein|carbs?|fat grams|meal plan|diet plan|workout plan|weekly plan|nutrition|bmr|tdee)\b/i;
+  /\b(?:macro|macros|calorie|calories|kcal|protein|carbs?|fat grams|meal plan|diet plan|workout plan|weekly plan|nutrition|bmr|tdee|side effects?|interactions?|what is .{2,30} (?:used|taken) for|trip|travel|itinerary|outing|plan (?:a|my) (?:day|week|trip|visit|weekend)|how to get to|budget)\b/i;
 
 /**
  * The coach's instructions for the on-device model: who the person is (only what they told the
@@ -280,6 +287,14 @@ class AgentEngine {
       return { text: res.message, toolResult: res };
     }
 
+    // Chat actions: tables of their records, guided jobs, and confirmed sign-out / deletes.
+    const action = parseChatAction(text);
+    if (action) {
+      const res = await runChatAction(action);
+      this.finishTurn(res.message, res, callbacks);
+      return { text: res.message, toolResult: res };
+    }
+
     // "Where do I…": answer from the app's own screen list (exact, instant) with an Open button.
     const place = findScreenFor(text);
     if (place) {
@@ -465,6 +480,9 @@ class AgentEngine {
       toolResult,
       isStreaming: false,
     });
+
+    const asked = [...this.activeSession.messages].reverse().find((m) => m.sender === 'user')?.text ?? '';
+    logCoachTurnLocally(asked, text, toolResult ? 'app' : LocalAI.isLoaded() ? 'on_device' : 'rules');
 
     callbacks?.onComplete?.(text, toolResult);
   }

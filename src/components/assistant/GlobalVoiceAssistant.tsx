@@ -51,6 +51,8 @@ import { useTheme } from '../../theme/useTheme';
 import { AnvayCompanion } from '../brand/AnvayCompanion';
 import { PERSONAS } from '../../domain/assistant/personas';
 import { plainText } from '../../domain/assistant/plainText';
+import type { ChatTable } from '../../domain/assistant/chatActions';
+import { setChatActionHooks } from '../../services/assistant/chatActions';
 import { Chip } from '../ui/Chip';
 import { PressableScale } from '../ui/PressableScale';
 import { BrainSetupCard } from './BrainSetupCard';
@@ -61,6 +63,7 @@ interface Turn {
   text: string;
   route?: string;
   at: number;
+  table?: ChatTable;
 }
 
 const MAX_TURNS = 100;
@@ -174,6 +177,7 @@ export function GlobalVoiceAssistant() {
             pendingReply.current = null;
             if (!next) return;
             const route = next.tool?.routeToOpen;
+            const table = (next.tool?.data as { table?: ChatTable } | undefined)?.table;
             setTurns((t) => {
               const last = t[t.length - 1];
               // Streaming updates the coach's current reply in place (same id).
@@ -186,7 +190,7 @@ export function GlobalVoiceAssistant() {
               }
               return [
                 ...t,
-                { id: newId(), who: 'coach' as const, text: next.reply, route, at: Date.now() },
+                { id: newId(), who: 'coach' as const, text: next.reply, route, table, at: Date.now() },
               ].slice(-MAX_TURNS);
             });
           });
@@ -232,9 +236,24 @@ export function GlobalVoiceAssistant() {
     useRootStore.getState().setCoachTurns([]);
   };
 
+  // "Clear the chat" and "close" said in the chat act on this sheet.
+  useEffect(() => {
+    setChatActionHooks({
+      closeSheet: close,
+      clearChat: () => {
+        setTurns([]);
+        useRootStore.getState().setCoachTurns([]);
+      },
+    });
+  }, [close]);
+
+  const lastSent = useRef({ text: '', at: 0 });
   const send = (text: string) => {
     const t = text.trim();
     if (!t) return;
+    // A hardware Enter can fire submit twice, and a double tap sends twice: one message only.
+    if (lastSent.current.text === t && Date.now() - lastSent.current.at < 1200) return;
+    lastSent.current = { text: t, at: Date.now() };
     hapticSelection();
     setTyped('');
     // The controller reports the message back through onFinalTranscript.
@@ -603,6 +622,39 @@ export function GlobalVoiceAssistant() {
   );
 }
 
+/** Records shown in the chat as a small table (first rows; the Open link shows the rest). */
+const TABLE_ROWS = 12;
+function TurnTable({ table }: { table: ChatTable }) {
+  const { colors, typography } = useTheme();
+  if (!table.rows.length) return null;
+  const rows = table.rows.slice(0, TABLE_ROWS);
+  return (
+    <View style={styles.tableWrap}>
+      <View style={[styles.tableRow, { borderBottomColor: colors.surface3 }]}>
+        {table.columns.map((c) => (
+          <Text key={c} style={[typography.captionBold, styles.tableCell, { color: colors.text.secondary }]}>
+            {c}
+          </Text>
+        ))}
+      </View>
+      {rows.map((r, i) => (
+        <View key={i} style={[styles.tableRow, { borderBottomColor: colors.surface3 }]}>
+          {r.map((cell, j) => (
+            <Text key={j} style={[typography.caption, styles.tableCell, { color: colors.text.primary }]} numberOfLines={3}>
+              {cell}
+            </Text>
+          ))}
+        </View>
+      ))}
+      {table.rows.length > TABLE_ROWS ? (
+        <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 6 }]}>
+          and {table.rows.length - TABLE_ROWS} more
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
 /** One message bubble. Memoized: a streamed reply re-renders only its own row. */
 const TurnRow = React.memo(function TurnRow({
   turn,
@@ -620,11 +672,13 @@ const TurnRow = React.memo(function TurnRow({
         mine
           ? [styles.mine, { backgroundColor: colors.primary }]
           : [styles.theirs, { backgroundColor: colors.surface }],
+        turn.table?.rows.length ? styles.wide : null,
       ]}
     >
       <Text style={[typography.body, { color: mine ? colors.text.inverse : colors.text.primary }]}>
         {mine ? turn.text : plainText(turn.text)}
       </Text>
+      {turn.table ? <TurnTable table={turn.table} /> : null}
       {turn.route ? (
         <PressableScale
           onPress={() => onOpen(turn.route!)}
@@ -678,8 +732,12 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   mine: { alignSelf: 'flex-end', borderBottomRightRadius: 6 },
+  wide: { maxWidth: '100%', width: '100%' },
   theirs: { alignSelf: 'flex-start', borderBottomLeftRadius: 6 },
   openRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8 },
+  tableWrap: { marginTop: 10 },
+  tableRow: { flexDirection: 'row', borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 6 },
+  tableCell: { flex: 1, paddingRight: 8 },
   composer: {
     paddingTop: 10,
     borderTopWidth: StyleSheet.hairlineWidth,

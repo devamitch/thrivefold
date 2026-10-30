@@ -177,7 +177,15 @@ export interface AppSlice {
   coachPersona: PersonaId;
   setCoachPersona: (p: PersonaId) => void;
   /** The coach conversation, kept across closing the sheet and restarts (newest last, ≤100). */
-  coachTurns: { id: string; who: 'you' | 'coach'; text: string; route?: string; at: number }[];
+  coachTurns: {
+    id: string;
+    who: 'you' | 'coach';
+    text: string;
+    route?: string;
+    at: number;
+    /** Records the coach showed as a table (medicines, follow-ups, quests…). */
+    table?: { title: string; columns: string[]; rows: string[][] };
+  }[];
   setCoachTurns: (turns: AppSlice['coachTurns']) => void;
   setConversationMode: (on: boolean) => void;
   /** Finished beta studio sessions (derived numbers only, never frames), newest first. */
