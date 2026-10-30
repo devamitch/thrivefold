@@ -4,7 +4,6 @@ import * as Notifications from 'expo-notifications';
 import { coachVoice } from '../../services/ai/coachVoice';
 import { applyKosh, pullProfile, pushProfile } from '../../services/account/profileSync';
 import { syncProgress } from '../../services/account/progressSync';
-import { CoachProvider } from '../../components/assistant/CoachProvider';
 import { brainReady, getSetupState, pendingDownload, resumeSetup, setUpBrain } from '../../services/ai/modelSetup';
 import React, { useEffect, useRef } from 'react';
 import { AppState, StyleSheet, View } from 'react-native';
@@ -205,44 +204,41 @@ export default function AppLayout() {
     return <Redirect href="/(auth)/sign-in" />;
   }
 
-  // One coach above every signed-in screen: its sheet, voice and knowledge survive navigation.
   return (
-    <CoachProvider>
-      <View style={[styles.root, { backgroundColor: colors.dock }]}>
-        <AppDrawer blurTarget={sceneRef} />
-        <DrawerSceneWrapper blurTarget={sceneRef}>
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              animation: 'slide_from_right',
-            }}
-          >
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="health" />
-            <Stack.Screen name="quests" />
-            <Stack.Screen name="games" />
-            <Stack.Screen name="journal" />
-            <Stack.Screen name="learn" />
-            <Stack.Screen name="dev" />
-            <Stack.Screen name="ai" />
-            <Stack.Screen name="circles" />
-            <Stack.Screen name="letters" />
-            <Stack.Screen name="social" />
-            <Stack.Screen name="organizations" />
-            <Stack.Screen name="safety" />
-            <Stack.Screen name="check-in" />
-            <Stack.Screen name="beta-lab" />
-            <Stack.Screen name="calendar" />
-            <Stack.Screen name="settings" />
-            <Stack.Screen name="personalize" />
-            <Stack.Screen name="roadmap" />
-            <Stack.Screen name="train" />
-            <Stack.Screen name="you" />
-            <Stack.Screen name="watch" options={{ animation: 'slide_from_bottom' }} />
-          </Stack>
-        </DrawerSceneWrapper>
-      </View>
-    </CoachProvider>
+    <View style={[styles.root, { backgroundColor: colors.dock }]}>
+      <AppDrawer blurTarget={sceneRef} />
+      <DrawerSceneWrapper blurTarget={sceneRef}>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            animation: 'slide_from_right',
+          }}
+        >
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="health" />
+          <Stack.Screen name="quests" />
+          <Stack.Screen name="games" />
+          <Stack.Screen name="journal" />
+          <Stack.Screen name="learn" />
+          <Stack.Screen name="dev" />
+          <Stack.Screen name="ai" />
+          <Stack.Screen name="circles" />
+          <Stack.Screen name="letters" />
+          <Stack.Screen name="social" />
+          <Stack.Screen name="organizations" />
+          <Stack.Screen name="safety" />
+          <Stack.Screen name="check-in" />
+          <Stack.Screen name="beta-lab" />
+          <Stack.Screen name="calendar" />
+          <Stack.Screen name="settings" />
+          <Stack.Screen name="personalize" />
+          <Stack.Screen name="roadmap" />
+          <Stack.Screen name="train" />
+          <Stack.Screen name="you" />
+          <Stack.Screen name="watch" options={{ animation: 'slide_from_bottom' }} />
+        </Stack>
+      </DrawerSceneWrapper>
+    </View>
   );
 }
 

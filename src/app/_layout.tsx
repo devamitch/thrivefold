@@ -9,6 +9,7 @@ import { useTheme } from '../theme/useTheme';
 
 // import { BlurRoot } from '@/components/ui';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { CoachProvider } from '../components/assistant/CoachProvider';
 import { AnimatedSplash } from '../components/brand/AnimatedSplash';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { AchievementModal } from '../components/ui/AchievementModal';
@@ -39,22 +40,25 @@ export default function RootLayout() {
         <SafeAreaProvider>
           {/* <BlurRoot> */}
           <ErrorBoundary>
-            <ThemedStatusBar />
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                animation: 'slide_from_right',
-              }}
-            >
-              <Stack.Screen name="index" />
-              <Stack.Screen name="(public)" />
-              <Stack.Screen name="(auth)" />
-              <Stack.Screen name="(onboarding)" />
-              <Stack.Screen name="(app)" />
-            </Stack>
-            <MindfulNotificationBanner />
-            <CustomAlert />
-            <AchievementModal />
+            {/* One Anvay coach for the whole app: sheet, voice, knowledge and data routines. */}
+            <CoachProvider>
+              <ThemedStatusBar />
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  animation: 'slide_from_right',
+                }}
+              >
+                <Stack.Screen name="index" />
+                <Stack.Screen name="(public)" />
+                <Stack.Screen name="(auth)" />
+                <Stack.Screen name="(onboarding)" />
+                <Stack.Screen name="(app)" />
+              </Stack>
+              <MindfulNotificationBanner />
+              <CustomAlert />
+              <AchievementModal />
+            </CoachProvider>
             {splash ? <AnimatedSplash onDone={() => setSplash(false)} /> : null}
           </ErrorBoundary>
           {/* </BlurRoot> */}

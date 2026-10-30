@@ -24,6 +24,12 @@ DONE (seen on the phone), BUILT (in the build, not yet seen on the phone), TODO,
 | Heart-rate questions answered from connected readings (Health Connect / strap), with date and source | BUILT |
 | Knows every screen, every Learn article and your last week (check-ins, water, meals, steps, journal, medicines, quests) from local data; refreshed on start and on return | BUILT (unit-tested; not yet asked on the phone) |
 | One voice for every screen (coach, Learn, therapy, companion, workouts) through `coachVoiceService` | BUILT |
+| One coach for the whole app: `CoachProvider` in the root layout (sheet, voice, knowledge, reminders); old beta Thrive Coach opens it | DONE |
+| Thrive RAG (`services/local-ai/rag/thriveRag.ts`) on react-native-rag contracts over llama.cpp + SQLite; indexes screens, Learn, profile, meals, workouts, vitals, journal, calendar, care, cycle, memories, chat (no sign-in data) | BUILT (unit-tested; table and guides seen on the phone) |
+| Chat shows records as tables (medicines, follow-ups, quests, meals, week, screens), guides jobs (prescription scan, meal photo, rep counter), confirms sign-out / deletes in the app alert | DONE (medicines, screens, sign-out, prescription seen on the phone) |
+| Roles: Coach, Health guide, Speech practice, Nutrition, Friend, Reader | DONE |
+| Hard questions (numbers, medicines, trips, plans) to the online coach with consent; answers saved locally for next time and offline | BUILT |
+| Every coach turn kept on the phone (SQLite `ai_interactions`, never uploaded) | BUILT |
 | Talks on its own, constant background monitoring | TODO |
 
 ## On-device models
@@ -62,6 +68,6 @@ DONE (seen on the phone), BUILT (in the build, not yet seen on the phone), TODO,
 | Full AnvayKosh ID across all apps | PLANNED (docs/ANVAY_ID_PLAN.md; approved; needs App Link domain and signing SHA-256s) |
 
 ## Validation (2026-10-30)
-pnpm compile PASS · pnpm lint PASS · pnpm test 496/496 PASS · pnpm test:db 175/175 PASS ·
+pnpm compile PASS · pnpm lint PASS · pnpm test 520/520 PASS · pnpm test:db 175/175 PASS ·
 expo-doctor 19/20 (expo 55.0.31 vs 55.0.32 patch; not upgraded per AGENTS.md rule 1) ·
 release APK `android/app/build/outputs/apk/release/app-release.apk` built and installed on ZD2225KYKD.
