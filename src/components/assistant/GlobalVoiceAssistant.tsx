@@ -52,6 +52,7 @@ import { useRootStore } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
 import { AnvayCompanion } from '../brand/AnvayCompanion';
 import { PERSONAS } from '../../domain/assistant/personas';
+import { dailyBrief, type BriefInput } from '../../domain/assistant/dailyBrief';
 import { plainText } from '../../domain/assistant/plainText';
 import type { ChatTable } from '../../domain/assistant/chatActions';
 import { setChatActionHooks } from '../../services/assistant/chatActions';
@@ -78,6 +79,26 @@ const STATUS: Record<VoiceAssistantState, string> = {
 };
 
 const SHEET_RATIO = 0.78;
+
+function briefInput(): BriefInput {
+  const st = useRootStore.getState();
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const today = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  return {
+    name: st.koshProfile?.preferredName || st.user?.pseudonym?.split(' ')[0] || null,
+    hour: d.getHours(),
+    today,
+    checkedInToday: st.checkInHistory.some((c) => c.date === today),
+    waterGlasses: st.hydration[today] ?? 0,
+    waterTarget: st.hydrationTargetGlasses,
+    openQuests: st.todayQuests.filter((q) => !q.isCompleted && q.status !== 'skipped').map((q) => q.title),
+    medicines: st.medications,
+    medicationTaken: st.medicationTaken,
+    nowHHMM: `${pad(d.getHours())}:${pad(d.getMinutes())}`,
+    followUps: st.followUps,
+  };
+}
 
 export function GlobalVoiceAssistant() {
   const { colors, typography, spacing } = useTheme();
@@ -238,6 +259,14 @@ export function GlobalVoiceAssistant() {
           setError(null);
           setPartial('');
           setTyped('');
+          // First open of the day: Anvay starts with a short brief from the person's own data.
+          setTurns((t) => {
+            const last = t[t.length - 1];
+            const today = new Date().toDateString();
+            if (t.some((m) => m.who === 'coach' && new Date(m.at).toDateString() === today)) return t;
+            if (last && new Date(last.at).toDateString() === today) return t;
+            return [...t, { id: newId(), who: 'coach' as const, text: dailyBrief(briefInput()), at: Date.now() }];
+          });
         } else {
           setFocused(false);
         }
