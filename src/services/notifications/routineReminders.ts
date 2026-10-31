@@ -8,15 +8,21 @@ import { Platform } from 'react-native';
 
 import { routineTimes, type Routine } from '../../domain/routines';
 
-const CHANNEL = 'routines';
+const CHANNEL = 'routines_alarm';
 export const ROUTINE_KIND = 'routine';
 
 async function ensure(): Promise<boolean> {
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync(CHANNEL, {
-      name: 'Routines',
-      importance: Notifications.AndroidImportance.DEFAULT,
-      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PRIVATE,
+      name: 'Routine Alarms',
+      importance: Notifications.AndroidImportance.MAX,
+      sound: 'default',
+      vibrationPattern: [0, 500, 250, 500],
+      enableLights: true,
+      lightColor: '#D06543',
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+      bypassDnd: true,
+      showBadge: true,
     });
   }
   const current = await Notifications.getPermissionsAsync();
@@ -27,22 +33,40 @@ async function ensure(): Promise<boolean> {
 export async function syncRoutineReminders(routines: Routine[]): Promise<boolean> {
   try {
     const all = await Notifications.getAllScheduledNotificationsAsync();
-    await Promise.all(all.filter((n) => n.content.data?.kind === ROUTINE_KIND).map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier)));
+    await Promise.all(
+      all
+        .filter((n) => n.content.data?.kind === ROUTINE_KIND)
+        .map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier)),
+    );
     const active = routines.filter((r) => r.enabled);
     if (!active.length) return true;
     if (!(await ensure())) return false;
+
     for (const r of active) {
       for (const time of routineTimes(r)) {
         const [hour, minute] = time.split(':').map(Number);
         const content = {
-          title: r.title,
-          body: 'Tap to open Thrivefold.',
-          data: { kind: ROUTINE_KIND, routineId: r.id, route: r.route ?? '/(app)/(tabs)' },
+          title: `⏰ ${r.title}`,
+          body: `Time for your ${r.title} routine. Tap to check in and earn gems.`,
+          sound: 'default',
+          priority: Notifications.AndroidNotificationPriority.MAX,
+          vibrate: [0, 500, 250, 500],
+          data: {
+            kind: ROUTINE_KIND,
+            routineId: r.id,
+            route: r.route ?? '/(app)/(tabs)',
+            scheduledTime: time,
+          },
         };
         if (!r.days.length) {
           await Notifications.scheduleNotificationAsync({
             content,
-            trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour, minute, channelId: CHANNEL },
+            trigger: {
+              type: Notifications.SchedulableTriggerInputTypes.DAILY,
+              hour,
+              minute,
+              channelId: CHANNEL,
+            },
           });
         } else {
           for (const day of r.days) {
@@ -50,7 +74,13 @@ export async function syncRoutineReminders(routines: Routine[]): Promise<boolean
             const weekday = (day % 7) + 1;
             await Notifications.scheduleNotificationAsync({
               content,
-              trigger: { type: Notifications.SchedulableTriggerInputTypes.WEEKLY, weekday, hour, minute, channelId: CHANNEL },
+              trigger: {
+                type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+                weekday,
+                hour,
+                minute,
+                channelId: CHANNEL,
+              },
             });
           }
         }

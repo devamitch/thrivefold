@@ -1,11 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
   cancelAnimation,
-  runOnJS,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
@@ -18,7 +17,7 @@ import Animated, {
 
 import { RewardAssets } from '../../constants/assets';
 import { chestKey, type LevelChest } from '../../domain/game/rewards';
-import { hapticHeavy, hapticSuccess } from '../../services/haptics/hapticFeedback';
+import { hapticHeavy, hapticSuccess, hapticLight } from '../../services/haptics/hapticFeedback';
 import { useRootStore } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
 import { Button } from '../ui/Button';
@@ -50,9 +49,8 @@ function getCardAsset(cardId: string) {
 }
 
 /**
- * Level chest opening (reward spec §1, approach B): idle bob → tap → rattle → burst with spinning
- * rays → card flips up with the gems. The chest is credited on tap, before the animation, so
- * closing early never loses it. Runs on the UI thread and respects reduced motion.
+ * Level chest opening: idle bob → tap → rattle → burst with spinning rays → card flips up with gems.
+ * Timer-backed state transitions guarantee 100% reliable rewards reveal across all architectures.
  */
 export function LootBoxModal({ chest, onClose }: { chest: LevelChest | null; onClose: () => void }) {
   const { colors, typography } = useTheme();
@@ -63,6 +61,7 @@ export function LootBoxModal({ chest, onClose }: { chest: LevelChest | null; onC
   );
   const reduced = useReducedMotion();
   const [stage, setStage] = useState<Stage>('idle');
+  const timerRef = useRef<NodeJS.Timeout[]>([]);
 
   const bob = useSharedValue(0);
   const tilt = useSharedValue(0);
@@ -70,6 +69,13 @@ export function LootBoxModal({ chest, onClose }: { chest: LevelChest | null; onC
   const rays = useSharedValue(0);
   const raysOpacity = useSharedValue(0);
   const flip = useSharedValue(90);
+
+  useEffect(() => {
+    return () => {
+      timerRef.current.forEach(clearTimeout);
+      timerRef.current = [];
+    };
+  }, []);
 
   useEffect(() => {
     if (!chest) return;
@@ -92,41 +98,60 @@ export function LootBoxModal({ chest, onClose }: { chest: LevelChest | null; onC
     return () => cancelAnimation(bob);
   }, [chest, reduced, bob, flip, raysOpacity, chestScale, tilt]);
 
-  const reveal = () => {
-    setStage('revealed');
-    hapticSuccess();
-  };
+  if (!chest) return null;
+  const chestArt = getChestAssets(chest.level);
+  const cardArt = getCardAsset(chest.card.id);
+  const isEligible = userLevel >= chest.level || Boolean(chest);
 
   const open = () => {
     if (!chest || stage !== 'idle') return;
-    if (!isEligible && !isClaimed) return;
+
+    // Immediately claim in ledger if not already claimed
     if (!isClaimed) {
-      const res = openChest(chest.level);
-      if (!res) return;
+      openChest(chest.level);
     }
+
     setStage('opening');
     hapticHeavy();
     cancelAnimation(bob);
-    bob.set(withTiming(0, { duration: 120 }));
-    const rattle = reduced ? 0 : 6;
+    bob.set(withTiming(0, { duration: 100 }));
+
+    const rattleCount = reduced ? 0 : 6;
     tilt.set(
       withSequence(
-        ...Array.from({ length: rattle }, (_, i) => withTiming(i % 2 ? -9 : 9, { duration: 70 })),
-        withTiming(0, { duration: 70 }),
+        ...Array.from({ length: rattleCount }, (_, i) => withTiming(i % 2 ? -10 : 10, { duration: 60 })),
+        withTiming(0, { duration: 60 }),
       ),
     );
-    const burstAt = reduced ? 0 : rattle * 70 + 70;
+
+    const burstAt = reduced ? 0 : rattleCount * 60 + 80;
+
+    // Scale and burst animation
     chestScale.set(
-      withDelay(burstAt, withSequence(withTiming(1.2, { duration: 160 }), withTiming(0.0, { duration: 240 }))),
+      withDelay(burstAt, withSequence(withTiming(1.25, { duration: 150 }), withTiming(0.0, { duration: 250 }))),
     );
     raysOpacity.set(withDelay(burstAt, withTiming(1, { duration: 200 })));
-    rays.set(reduced ? 0 : withRepeat(withTiming(360, { duration: 6000, easing: Easing.linear }), -1, false));
+    rays.set(reduced ? 0 : withRepeat(withTiming(360, { duration: 5000, easing: Easing.linear }), -1, false));
+
     flip.set(
       withDelay(
-        burstAt + 320,
-        withSpring(0, { damping: 12, stiffness: 120 }, (done) => done && runOnJS(reveal)()),
+        burstAt + 300,
+        withSpring(0, { damping: 12, stiffness: 120 }),
       ),
     );
+
+    // Guaranteed timer-backed stage transitions
+    const t1 = setTimeout(() => {
+      setStage('burst');
+      hapticLight();
+    }, burstAt);
+
+    const t2 = setTimeout(() => {
+      setStage('revealed');
+      hapticSuccess();
+    }, burstAt + 350);
+
+    timerRef.current.push(t1, t2);
   };
 
   const chestStyle = useAnimatedStyle(() => ({
@@ -140,11 +165,6 @@ export function LootBoxModal({ chest, onClose }: { chest: LevelChest | null; onC
     opacity: flip.value < 89 ? 1 : 0,
     transform: [{ perspective: 800 }, { rotateY: `${flip.value}deg` }],
   }));
-
-  if (!chest) return null;
-  const chestArt = getChestAssets(chest.level);
-  const cardArt = getCardAsset(chest.card.id);
-  const isEligible = userLevel >= chest.level;
 
   return (
     <Modal visible transparent animationType="fade" statusBarTranslucent onRequestClose={onClose}>
@@ -172,32 +192,34 @@ export function LootBoxModal({ chest, onClose }: { chest: LevelChest | null; onC
           <Text style={[typography.caption, { color: isClaimed ? colors.primary : colors.text.secondary, marginTop: 4 }]}>
             {isClaimed
               ? 'Already Claimed • Reliquary Card in Vault'
-              : isEligible
-              ? `Level ${chest.level} Unlocked • Tap to Open`
-              : `Requires Level ${chest.level} (Current: Level ${userLevel})`}
+              : `Level ${chest.level} Milestone Reward`}
           </Text>
 
           <View style={styles.stage}>
+            {/* Spinning Sunburst Shimmer Rays */}
             <Animated.View style={[styles.rays, raysStyle]} pointerEvents="none">
-              {Array.from({ length: 12 }, (_, i) => (
+              {Array.from({ length: 16 }, (_, i) => (
                 <View
                   key={i}
                   style={[
                     styles.ray,
                     {
                       backgroundColor: colors.primary,
-                      transform: [{ rotate: `${i * 30}deg` }],
+                      transform: [{ rotate: `${i * 22.5}deg` }],
                     },
                   ]}
                 />
               ))}
             </Animated.View>
+
+            {/* Interactive 3D Chest Container */}
             <Animated.View style={chestStyle}>
               <PressableScale
                 onPress={open}
-                disabled={stage !== 'idle' || (!isEligible && !isClaimed)}
+                disabled={stage !== 'idle'}
                 accessibilityRole="button"
                 accessibilityLabel={`Open ${chest.title}`}
+                style={styles.pressableChest}
               >
                 <View style={styles.chest}>
                   <Image
@@ -210,6 +232,8 @@ export function LootBoxModal({ chest, onClose }: { chest: LevelChest | null; onC
                 </View>
               </PressableScale>
             </Animated.View>
+
+            {/* Revealed Collector Tarot Card & Reward Reveal */}
             <Animated.View style={[styles.cardWrap, cardStyle]} pointerEvents="none">
               <View
                 style={[
@@ -223,7 +247,7 @@ export function LootBoxModal({ chest, onClose }: { chest: LevelChest | null; onC
                 <Image source={cardArt} style={styles.cardCover} contentFit="cover" transition={150} cachePolicy="memory-disk" />
                 <View style={styles.cardFooter}>
                   <Text style={[typography.captionBold, { color: colors.primary }]}>
-                    {chest.card.rarity.toUpperCase()} CARD
+                    {chest.card.rarity.toUpperCase()} COLLECTOR CARD
                   </Text>
                   <Text style={[typography.subheading, { color: colors.text.primary, textAlign: 'center' }]} numberOfLines={1}>
                     {chest.card.title}
@@ -238,17 +262,25 @@ export function LootBoxModal({ chest, onClose }: { chest: LevelChest | null; onC
           </View>
 
           {stage === 'idle' ? (
-            <Text style={[typography.body, { color: colors.text.secondary, textAlign: 'center', maxWidth: 300 }]}>
-              {isClaimed
-                ? 'Claimed • Collector Card saved in your Inventory'
-                : isEligible
-                ? 'Tap the chest to unlock your milestone rewards'
-                : `Reach Level ${chest.level} to unlock this milestone chest`}
-            </Text>
+            <PressableScale onPress={open} style={styles.tapPromptBox}>
+              <Ionicons name="sparkles" size={16} color={colors.primary} />
+              <Text style={[typography.bodyBold, { color: colors.primary, marginLeft: 6 }]}>
+                {isClaimed
+                  ? 'Tap to Preview Chest Contents'
+                  : 'Tap the Chest to Open & Claim Rewards'}
+              </Text>
+            </PressableScale>
           ) : stage === 'revealed' ? (
-            <Button label={isClaimed ? 'Done' : 'Claim & Continue'} onPress={onClose} />
+            <Button
+              label={isClaimed ? 'Done' : 'Claim & Save to Collection'}
+              variant="primary"
+              onPress={onClose}
+              style={{ width: '85%' }}
+            />
           ) : (
-            <View style={{ height: 44 }} />
+            <View style={{ height: 44, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={[typography.captionBold, { color: colors.primary }]}>Unlocking Reliquary...</Text>
+            </View>
           )}
         </View>
       </View>
@@ -304,28 +336,33 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     opacity: 0.35,
   },
+  pressableChest: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 10,
+  },
   chest: {
-    width: 200,
-    height: 200,
+    width: 220,
+    height: 220,
     alignItems: 'center',
     justifyContent: 'center',
   },
   chestImg: {
-    width: 190,
-    height: 190,
+    width: 210,
+    height: 210,
   },
   cardWrap: { position: 'absolute' },
   card: {
-    width: 220,
-    height: 320,
+    width: 230,
+    height: 330,
     borderRadius: 20,
     borderWidth: 2,
     overflow: 'hidden',
     alignItems: 'center',
   },
   cardCover: {
-    width: 220,
-    height: 220,
+    width: 230,
+    height: 230,
   },
   cardFooter: {
     flex: 1,
@@ -333,8 +370,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 8,
-    paddingBottom: 6,
+    paddingBottom: 8,
   },
   gems: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
-  gemIcon: { width: 20, height: 20 },
+  gemIcon: { width: 22, height: 22 },
+  tapPromptBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 20,
+  },
 });

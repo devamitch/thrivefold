@@ -1,6 +1,17 @@
-import { parseRoutineRequest, parseTime, routineTimes } from '../../src/domain/routines';
+import { format12Hour, parseRoutineRequest, parseTime, routineTimes, to24Hour } from '../../src/domain/routines';
 
 describe('routines', () => {
+  it('converts between 12-hour AM/PM and 24-hour formats', () => {
+    expect(format12Hour('08:00')).toBe('8:00 AM');
+    expect(format12Hour('18:30')).toBe('6:30 PM');
+    expect(format12Hour('00:15')).toBe('12:15 AM');
+    expect(format12Hour('12:00')).toBe('12:00 PM');
+    expect(to24Hour(8, 0, 'AM')).toBe('08:00');
+    expect(to24Hour(6, 30, 'PM')).toBe('18:30');
+    expect(to24Hour(12, 15, 'AM')).toBe('00:15');
+    expect(to24Hour(12, 0, 'PM')).toBe('12:00');
+  });
+
   it('parses times', () => {
     expect(parseTime('7pm')).toBe('19:00');
     expect(parseTime('7.30 am')).toBe('07:30');

@@ -262,14 +262,11 @@ export default function MarketplaceScreen() {
   );
 
   return (
-    <ScreenContainer style={styles.container}>
-      <AppHeader title="Sanctuary Treasury" showBack />
-
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
+    <ScreenContainer
+      header={<AppHeader title="Sanctuary Treasury" showBack />}
+      scrollMode="shell-scroll-view"
+      contentContainerStyle={styles.scrollContent}
+    >
         {/* Treasury Vault Balance Card */}
         <Card style={styles.walletCard}>
           <View style={styles.walletHeader}>
@@ -576,83 +573,91 @@ export default function MarketplaceScreen() {
                 const cardArt = getCardAsset(chest.card.id);
 
                 return (
-                  <Card key={chest.level} style={styles.chestCard}>
-                    <View style={styles.chestRow}>
-                      {/* 3D Chest Render */}
-                      <View style={styles.chestVisualWrap}>
-                        <Image
-                          source={isClaimed ? chestAssets.burst : chestAssets.closed}
-                          style={styles.chestImage}
-                          contentFit="contain"
-                          cachePolicy="memory-disk"
-                        />
-                      </View>
-
-                      {/* Chest Info */}
-                      <View style={styles.chestMeta}>
-                        <View style={styles.chestHeaderRow}>
-                          <Badge
-                            label={`LEVEL ${chest.level}`}
-                            variant={isClaimed ? 'neutral' : isEligible ? 'success' : 'primary'}
-                          />
-                          <Badge
-                            label={isClaimed ? 'CLAIMED' : isEligible ? 'READY TO OPEN' : 'LOCKED'}
-                            variant={isClaimed ? 'neutral' : isEligible ? 'gold' : 'neutral'}
+                  <PressableScale
+                    key={chest.level}
+                    onPress={() => {
+                      hapticHeavy();
+                      setSelectedChest(chest);
+                    }}
+                  >
+                    <Card style={styles.chestCard}>
+                      <View style={styles.chestRow}>
+                        {/* 3D Chest Render */}
+                        <View style={styles.chestVisualWrap}>
+                          <Image
+                            source={isClaimed ? chestAssets.burst : chestAssets.closed}
+                            style={styles.chestImage}
+                            contentFit="contain"
+                            cachePolicy="memory-disk"
                           />
                         </View>
 
-                        <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 6 }]}>
-                          {chest.title}
-                        </Text>
-
-                        {/* Guaranteed Drops Preview */}
-                        <View style={styles.guaranteedDrops}>
-                          <View style={styles.dropItem}>
-                            <Image source={RewardAssets.currencies.amberGem} style={styles.dropIcon} contentFit="contain" />
-                            <Text style={[typography.captionBold, { color: colors.text.primary }]}>
-                              +{chest.gems} Gems
-                            </Text>
-                          </View>
-                          <View style={styles.dropItem}>
-                            <Image source={cardArt} style={styles.dropCardThumb} contentFit="cover" />
-                            <Text style={[typography.caption, { color: colors.text.secondary }]} numberOfLines={1}>
-                              {chest.card.title}
-                            </Text>
-                          </View>
-                        </View>
-
-                        {/* Action */}
-                        <View style={{ marginTop: spacing.sm }}>
-                          {isClaimed ? (
-                            <View style={styles.claimedRow}>
-                              <Ionicons name="checkmark-circle" size={18} color={colors.primary} />
-                              <Text style={[typography.caption, { color: colors.text.secondary, marginLeft: 6 }]}>
-                                Claimed • Card saved in Collection
-                              </Text>
-                            </View>
-                          ) : isEligible ? (
-                            <Button
-                              label="Open Reliquary Now"
-                              variant="primary"
-                              size="sm"
-                              onPress={() => {
-                                hapticHeavy();
-                                setSelectedChest(chest);
-                              }}
-                              icon={<Ionicons name="gift" size={16} color="#FFF" />}
+                        {/* Chest Info */}
+                        <View style={styles.chestMeta}>
+                          <View style={styles.chestHeaderRow}>
+                            <Badge
+                              label={`LEVEL ${chest.level}`}
+                              variant={isClaimed ? 'neutral' : isEligible ? 'success' : 'primary'}
                             />
-                          ) : (
-                            <View style={styles.lockedRow}>
-                              <Ionicons name="lock-closed-outline" size={16} color={colors.text.muted} />
-                              <Text style={[typography.caption, { color: colors.text.muted, marginLeft: 6 }]}>
-                                Reach Level {chest.level} to Unlock (Currently Lvl {userLevel})
+                            <Badge
+                              label={isClaimed ? 'CLAIMED' : isEligible ? 'READY TO OPEN' : 'LOCKED'}
+                              variant={isClaimed ? 'neutral' : isEligible ? 'gold' : 'neutral'}
+                            />
+                          </View>
+
+                          <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 6 }]}>
+                            {chest.title}
+                          </Text>
+
+                          {/* Guaranteed Drops Preview */}
+                          <View style={styles.guaranteedDrops}>
+                            <View style={styles.dropItem}>
+                              <Image source={RewardAssets.currencies.amberGem} style={styles.dropIcon} contentFit="contain" />
+                              <Text style={[typography.captionBold, { color: colors.text.primary }]}>
+                                +{chest.gems} Gems
                               </Text>
                             </View>
-                          )}
+                            <View style={styles.dropItem}>
+                              <Image source={cardArt} style={styles.dropCardThumb} contentFit="cover" />
+                              <Text style={[typography.caption, { color: colors.text.secondary }]} numberOfLines={1}>
+                                {chest.card.title}
+                              </Text>
+                            </View>
+                          </View>
+
+                          {/* Action */}
+                          <View style={{ marginTop: spacing.sm }}>
+                            {isClaimed ? (
+                              <View style={styles.claimedRow}>
+                                <Ionicons name="checkmark-circle" size={18} color={colors.primary} />
+                                <Text style={[typography.caption, { color: colors.text.secondary, marginLeft: 6 }]}>
+                                  Claimed • Tap to view Card
+                                </Text>
+                              </View>
+                            ) : isEligible ? (
+                              <Button
+                                label="Open Reliquary Now"
+                                variant="primary"
+                                size="sm"
+                                onPress={() => {
+                                  hapticHeavy();
+                                  setSelectedChest(chest);
+                                }}
+                                icon={<Ionicons name="gift" size={16} color="#FFF" />}
+                              />
+                            ) : (
+                              <View style={styles.lockedRow}>
+                                <Ionicons name="lock-closed-outline" size={16} color={colors.text.muted} />
+                                <Text style={[typography.caption, { color: colors.text.muted, marginLeft: 6 }]}>
+                                  Reach Level {chest.level} to Unlock (Currently Lvl {userLevel})
+                                </Text>
+                              </View>
+                            )}
+                          </View>
                         </View>
                       </View>
-                    </View>
-                  </Card>
+                    </Card>
+                  </PressableScale>
                 );
               })}
             </View>
@@ -803,7 +808,6 @@ export default function MarketplaceScreen() {
             </View>
           </View>
         )}
-      </ScrollView>
 
       {/* MODAL 1: DIGITAL ASSET DETAIL & UNLOCK SHEET */}
       <AppBottomSheetModal

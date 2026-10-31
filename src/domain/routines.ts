@@ -36,6 +36,23 @@ const toMin = (t: string) => {
 const fromMin = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
 export const isHHMM = (t: string) => /^([01]\d|2[0-3]):[0-5]\d$/.test(t);
 
+/** Converts a 24-hour "HH:mm" time string into 12-hour AM/PM format (e.g. "08:00" -> "8:00 AM", "18:30" -> "6:30 PM"). */
+export function format12Hour(time24: string): string {
+  if (!isHHMM(time24)) return time24;
+  const [h, m] = time24.split(':').map(Number);
+  const period = h >= 12 ? 'PM' : 'AM';
+  const hour12 = h % 12 === 0 ? 12 : h % 12;
+  const minute = String(m).padStart(2, '0');
+  return `${hour12}:${minute} ${period}`;
+}
+
+/** Converts 12-hour time components into 24-hour "HH:mm" format. */
+export function to24Hour(hour12: number, minute: number, period: 'AM' | 'PM'): string {
+  let h = hour12 % 12;
+  if (period === 'PM') h += 12;
+  return `${String(h).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+}
+
 /** Every time of day this routine fires (one, or a series for "every N hours"). */
 export function routineTimes(r: Pick<Routine, 'time' | 'everyHours' | 'until'>): string[] {
   if (!r.everyHours || !r.until) return [r.time];

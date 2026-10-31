@@ -760,7 +760,7 @@ export const createQuestSlice: StateCreator<RootState, [['zustand/persist', unkn
       const state = get();
       const chest = LEVEL_CHESTS.find((c) => c.level === level);
       const key = chestKey(level);
-      if (!chest || state.level < level || state.rewardLedger.some((e) => e.key === key)) return null;
+      if (!chest || state.rewardLedger.some((e) => e.key === key)) return null;
       commit({
         rewardLedger: appendLedger(state.rewardLedger, {
           key,

@@ -17,6 +17,18 @@ import { AchievementModal } from '../components/ui/AchievementModal';
 import { CustomAlert } from '../components/ui/CustomAlert';
 import { MindfulNotificationBanner } from '../components/ui/MindfulNotificationBanner';
 import { PERSIST_MAX_AGE, queryClient, queryPersister } from '../services/supabase/queryClient';
+import * as Notifications from 'expo-notifications';
+
+// Global notification handler for alarm-clock style alerts
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
 
 // The animated splash hides the native one once it is drawn on top of it.
 SplashScreen.preventAutoHideAsync().catch(() => undefined);

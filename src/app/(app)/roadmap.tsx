@@ -186,7 +186,7 @@ export default function RoadmapScreen() {
         return (
           <Animated.View key={s.id} entering={enter(i + 2)} style={styles.stageRow}>
             <View style={styles.rail}>
-              <Node state={state} icon={s.id === 'chapter_capstone' ? 'trophy' : undefined} />
+              <Node state={state} label={String(i + 1)} />
               {i < stages.length - 1 ? <View style={[styles.railLine, { backgroundColor: state === 'done' ? colors.success : colors.surface2 }]} /> : null}
             </View>
             <View style={[styles.flex, { paddingBottom: spacing.md }]}>
@@ -242,24 +242,21 @@ export default function RoadmapScreen() {
       })}
 
       {chapter.capstone ? (
-        <Card variant="tinted" style={{ padding: spacing.base, marginTop: spacing.sm }}>
-          <View style={styles.row}>
-            <Ionicons name="trophy-outline" size={20} color={colors.primary} />
-            <Text style={[typography.bodyBold, styles.flex, { color: colors.text.primary, marginLeft: 8 }]}>{chapter.capstone.title}</Text>
-          </View>
-          <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>{chapter.capstone.purpose}</Text>
-          <Text style={[typography.caption, { color: colors.text.muted, marginTop: 6 }]}>
+        <Card variant="tinted" style={{ padding: spacing.sm, marginTop: spacing.xs }}>
+          <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{chapter.capstone.title}</Text>
+          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>{chapter.capstone.purpose}</Text>
+          <Text style={[typography.caption, { color: colors.text.muted, fontSize: 11, marginTop: 4 }]}>
             Opens at level {chapter.capstone.requiredAtLevel}. Finishing it moves you to the next chapter.
           </Text>
         </Card>
       ) : null}
 
       {/* Quests that build this chapter */}
-      <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.xl, marginBottom: spacing.xs }]}>
-        Quests that build this chapter
+      <Text style={[typography.subbodyBold, { color: colors.text.primary, marginTop: spacing.lg, marginBottom: 2 }]}>
+        Quests in this chapter
       </Text>
-      <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: spacing.sm }]}>
-        Your daily quests are picked from these and the wider catalog, fitted to your pace.
+      <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: spacing.xs }]}>
+        Your daily quests are selected from these and fitted to your pace.
       </Text>
       {chapter.recommendedTaskIds
         .map((id) => getTaskById(id))
@@ -267,18 +264,15 @@ export default function RoadmapScreen() {
         .slice(0, 8)
         .map((t) => (
           <View key={t.id} style={[styles.questRow, { borderBottomColor: colors.border }]}>
-            <Ionicons
-              name={todayTaskIds.includes(t.id) ? 'today-outline' : 'ellipse-outline'}
-              size={16}
-              color={todayTaskIds.includes(t.id) ? colors.primary : colors.text.muted}
-            />
-            <View style={[styles.flex, { marginLeft: 10 }]}>
+            <View style={styles.flex}>
               <Text style={[typography.subbodyBold, { color: colors.text.primary }]}>{t.title}</Text>
-              <Text style={[typography.caption, { color: colors.text.secondary }]} numberOfLines={2}>
+              <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 1 }]} numberOfLines={1}>
                 {t.shortDescription}
               </Text>
             </View>
-            {todayTaskIds.includes(t.id) ? <Text style={[typography.captionBold, { color: colors.primary }]}>Today</Text> : null}
+            {todayTaskIds.includes(t.id) ? (
+              <Badge label="Today" variant="primary" />
+            ) : null}
           </View>
         ))}
 
@@ -315,20 +309,16 @@ export default function RoadmapScreen() {
   );
 }
 
-function Node({ state, icon, label }: { state: NodeState; icon?: keyof typeof Ionicons.glyphMap; label?: string }) {
+function Node({ state, label }: { state: NodeState; icon?: keyof typeof Ionicons.glyphMap; label?: string }) {
   const { colors, typography } = useTheme();
   const bg = state === 'done' ? colors.success : state === 'current' ? colors.primary : colors.surface1;
   const fg = state === 'locked' ? colors.text.muted : colors.onPrimary;
   return (
     <View style={[styles.node, { backgroundColor: bg }]}>
-      {state === 'done' ? (
-        <Ionicons name="checkmark" size={14} color={fg} />
-      ) : icon ? (
-        <Ionicons name={icon} size={14} color={fg} />
-      ) : label ? (
-        <Text style={[typography.captionBold, { color: fg }]}>{label}</Text>
-      ) : state === 'locked' ? (
-        <Ionicons name="lock-closed" size={12} color={fg} />
+      {label ? (
+        <Text style={[typography.captionBold, { color: fg, fontSize: 11 }]}>{label}</Text>
+      ) : state === 'done' ? (
+        <Text style={[typography.captionBold, { color: fg, fontSize: 10 }]}>✓</Text>
       ) : (
         <View style={[styles.dot, { backgroundColor: fg }]} />
       )}
