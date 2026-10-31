@@ -380,47 +380,55 @@ export default function SomeoneToTalkScreen() {
       scrollMode="shell-scroll-view"
     >
       <View style={{ paddingBottom: spacing.xxl }}>
-        {/* Mode Selector Tabs */}
-        <View style={[styles.tabRow, { marginBottom: spacing.md }]}>
+        {/* Mode Selector Tabs (Horizontal Pill Bar with Full Legible Labels) */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.tabScrollContent}
+          style={{ marginBottom: spacing.md }}
+        >
           {(
             [
               { id: 'talk', label: 'Support & Listening', icon: 'heart-outline' },
               { id: 'box_breathing', label: 'Box Breathing', icon: 'radio-button-on-outline' },
               { id: 'sensory', label: '5-4-3-2-1 Sensory', icon: 'hand-left-outline' },
-              { id: 'directory', label: 'Helplines', icon: 'call-outline' },
+              { id: 'directory', label: 'Helplines & Care', icon: 'call-outline' },
             ] as const
           ).map((t) => {
             const active = mode === t.id;
             return (
               <PressableScale
                 key={t.id}
+                touch="pressable"
                 onPress={() => {
                   setMode(t.id);
                   stopTherapyVoice();
                   setBreathingActive(false);
                 }}
                 scaleTo={0.96}
-                style={styles.tabFlex}
               >
                 <SquircleSurface
-                  radius={12}
+                  radius={16}
                   fill={active ? colors.primaryAlpha : colors.surface1}
                   strokeWidth={active ? 1.5 : 1}
                   style={[
-                    styles.tabButton,
+                    styles.tabPill,
                     { borderColor: active ? colors.primary : colors.border },
                   ]}
                 >
                   <Ionicons
                     name={t.icon}
-                    size={16}
+                    size={18}
                     color={active ? colors.primary : colors.text.secondary}
                   />
                   <Text
-                    numberOfLines={1}
                     style={[
-                      typography.captionBold,
-                      { color: active ? colors.primary : colors.text.secondary, marginTop: 4, fontSize: 11 },
+                      typography.subbodyBold,
+                      {
+                        color: active ? colors.primary : colors.text.secondary,
+                        marginLeft: 6,
+                        fontSize: 13,
+                      },
                     ]}
                   >
                     {t.label}
@@ -429,7 +437,7 @@ export default function SomeoneToTalkScreen() {
               </PressableScale>
             );
           })}
-        </View>
+        </ScrollView>
 
         {/* ── HIGH PRIORITY URGENT ASSISTANCE BANNER (Automated on crisis detection) ── */}
         {activeCrisis ? (
@@ -582,6 +590,7 @@ export default function SomeoneToTalkScreen() {
               {/* Input composer with integrated Voice Input */}
               <View style={styles.composerRow}>
                 <PressableScale
+                  touch="pressable"
                   onPress={toggleVoiceInput}
                   scaleTo={0.9}
                   style={[
@@ -599,7 +608,7 @@ export default function SomeoneToTalkScreen() {
                 >
                   <Ionicons
                     name={voiceState === 'listening' ? 'mic' : 'mic-outline'}
-                    size={20}
+                    size={22}
                     color={voiceState === 'listening' ? colors.onPrimary : colors.primary}
                   />
                 </PressableScale>
@@ -607,6 +616,8 @@ export default function SomeoneToTalkScreen() {
                 <TextField
                   value={draft}
                   onChangeText={setDraft}
+                  returnKeyType="send"
+                  onSubmitEditing={() => handleSend(draft)}
                   placeholder={
                     voiceState === 'listening'
                       ? 'Listening to you speak...'
@@ -618,6 +629,7 @@ export default function SomeoneToTalkScreen() {
                 />
 
                 <PressableScale
+                  touch="pressable"
                   onPress={() => handleSend(draft)}
                   disabled={!draft.trim() || busy}
                   scaleTo={0.92}
@@ -625,11 +637,16 @@ export default function SomeoneToTalkScreen() {
                     styles.sendBtn,
                     {
                       backgroundColor: draft.trim() && !busy ? colors.primary : colors.surface2,
+                      opacity: draft.trim() && !busy ? 1 : 0.6,
                     },
                   ]}
                   accessibilityLabel="Send message"
                 >
-                  <Ionicons name="arrow-up" size={20} color={colors.onPrimary} />
+                  <Ionicons
+                    name="arrow-up"
+                    size={20}
+                    color={draft.trim() && !busy ? colors.onPrimary : colors.text.muted}
+                  />
                 </PressableScale>
               </View>
             </Card>
@@ -1064,18 +1081,18 @@ const styles = StyleSheet.create({
   flagEmoji: {
     fontSize: 14,
   },
-  tabRow: {
+  tabScrollContent: {
     flexDirection: 'row',
-    gap: 6,
-  },
-  tabFlex: {
-    flex: 1,
-  },
-  tabButton: {
-    padding: 8,
+    gap: 8,
+    paddingHorizontal: 2,
     alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 58,
+  },
+  tabPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: 1,
   },
   voiceToggle: {
     padding: 6,
@@ -1123,17 +1140,17 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   micBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,
   },
   sendBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,

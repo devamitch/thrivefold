@@ -144,10 +144,15 @@ export function downloadModelWithProgress(
       await FileSystem.deleteAsync(finalPath, { idempotent: true });
     }
 
-    await FileSystem.moveAsync({
-      from: tmpPath,
-      to: finalPath,
-    });
+    try {
+      await FileSystem.moveAsync({
+        from: tmpPath,
+        to: finalPath,
+      });
+    } catch {
+      await FileSystem.copyAsync({ from: tmpPath, to: finalPath });
+      await FileSystem.deleteAsync(tmpPath, { idempotent: true });
+    }
 
     return finalPath;
   })();

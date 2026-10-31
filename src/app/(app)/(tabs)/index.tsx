@@ -5,6 +5,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { BrainSetupCard } from '../../../components/assistant/BrainSetupCard';
 import { ActivityRow } from '../../../components/game/ActivityRow';
 import { QuestSheet } from '../../../components/game/QuestSheet';
 import { AnalyticalMetricGrid } from '../../../components/home/AnalyticalMetricGrid';
@@ -437,6 +438,7 @@ export default function HomeScreen() {
         />
       )}
     >
+      <BrainSetupCard />
       <AnalyticalMetricGrid
         steps={
           steps

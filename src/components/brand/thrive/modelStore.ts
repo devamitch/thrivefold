@@ -110,7 +110,12 @@ export async function ensureModel(
   });
   const res = await dl.downloadAsync().catch(() => null);
   if (!res) return null;
-  await FileSystem.moveAsync({ from: res.uri, to: local });
+  try {
+    await FileSystem.moveAsync({ from: res.uri, to: local });
+  } catch {
+    await FileSystem.copyAsync({ from: res.uri, to: local });
+    await FileSystem.deleteAsync(res.uri, { idempotent: true });
+  }
   if (!(await valid(local, spec))) { await FileSystem.deleteAsync(local, { idempotent: true }); return null; }
   void mirror(spec, local);
   return local;

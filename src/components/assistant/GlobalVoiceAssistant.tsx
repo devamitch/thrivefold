@@ -69,6 +69,7 @@ import { CHAT_PAGE, chatStore, type ChatMessage } from '../../services/assistant
 import { Chip } from '../ui/Chip';
 import { PressableScale } from '../ui/PressableScale';
 import { BrainSetupCard } from './BrainSetupCard';
+import { getSetupState, subscribeSetup, type SetupState } from '../../services/ai/modelSetup';
 
 type Turn = ChatMessage;
 
@@ -127,6 +128,13 @@ export function GlobalVoiceAssistant() {
   const list = useRef<FlashListRef<Turn>>(null);
   const input = useRef<TextInputInstance>(null);
   const [kb, setKb] = useState(0);
+  const [setupState, setSetupState] = useState<SetupState>(getSetupState);
+  useEffect(() => subscribeSetup(setSetupState), []);
+  const isModelSettingUp =
+    setupState.phase === 'downloading' ||
+    setupState.phase === 'verifying' ||
+    setupState.phase === 'loading';
+  const setupProgress = Math.round((setupState.progress ?? 0) * 100);
 
   // Edge-to-edge Android does not resize a Modal for the keyboard, so the sheet is lifted by the
   // keyboard's height from the keyboard events (one mechanism only; no KeyboardAvoidingView).
@@ -849,8 +857,18 @@ export function GlobalVoiceAssistant() {
                     <Ionicons name="camera-outline" size={22} color={colors.text.secondary} />
                   </PressableScale>
                   <TextInput
-                    style={[typography.body, styles.input, { color: colors.text.primary }]}
-                    placeholder={listening ? 'Listening… or type' : 'Message Anvay'}
+                    style={[
+                      typography.body,
+                      styles.input,
+                      { color: colors.text.primary, opacity: isModelSettingUp ? 0.6 : 1 },
+                    ]}
+                    placeholder={
+                      isModelSettingUp
+                        ? `Anvay on-device model downloading (${setupProgress}%)…`
+                        : listening
+                          ? 'Listening… or type'
+                          : 'Message Anvay'
+                    }
                     placeholderTextColor={colors.text.muted}
                     value={typed}
                     onChangeText={setTyped}
@@ -858,7 +876,8 @@ export function GlobalVoiceAssistant() {
                     onBlur={onInputBlur}
                     ref={input}
                     multiline
-                    onSubmitEditing={() => send(typed)}
+                    editable={!isModelSettingUp}
+                    onSubmitEditing={() => !isModelSettingUp && send(typed)}
                     returnKeyType="send"
                     submitBehavior="submit"
                     accessibilityLabel="Type a message to Anvay"
@@ -875,24 +894,42 @@ export function GlobalVoiceAssistant() {
                     <PressableScale
                       accessibilityRole="button"
                       accessibilityLabel={
-                        hasText
-                          ? 'Send'
-                          : listening
-                            ? 'Stop listening'
-                            : voiceState === 'speaking'
-                              ? 'Interrupt and talk'
-                              : 'Talk'
+                        isModelSettingUp
+                          ? `Model downloading ${setupProgress}%`
+                          : hasText
+                            ? 'Send'
+                            : listening
+                              ? 'Stop listening'
+                              : voiceState === 'speaking'
+                                ? 'Interrupt and talk'
+                                : 'Talk'
                       }
-                      onPress={hasText ? () => send(typed) : toggleMic}
+                      disabled={isModelSettingUp}
+                      onPress={isModelSettingUp ? undefined : hasText ? () => send(typed) : toggleMic}
                       style={[
                         styles.action,
-                        { backgroundColor: listening && !hasText ? colors.error : colors.primary },
+                        {
+                          backgroundColor: isModelSettingUp
+                            ? colors.surface2
+                            : listening && !hasText
+                              ? colors.error
+                              : colors.primary,
+                          opacity: isModelSettingUp ? 0.6 : 1,
+                        },
                       ]}
                     >
                       <Ionicons
-                        name={hasText ? 'send' : listening ? 'stop' : 'mic'}
+                        name={
+                          isModelSettingUp
+                            ? 'cloud-download-outline'
+                            : hasText
+                              ? 'send'
+                              : listening
+                                ? 'stop'
+                                : 'mic'
+                        }
                         size={20}
-                        color={colors.text.inverse}
+                        color={isModelSettingUp ? colors.text.muted : colors.text.inverse}
                       />
                     </PressableScale>
                   </View>

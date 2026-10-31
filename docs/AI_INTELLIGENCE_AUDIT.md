@@ -116,3 +116,4 @@ Under Android 11+ (API level 30+), all 5 applications declare mutual package vis
 - When users are offline or unauthenticated, the app operates 100% locally.
 - For high-precision medical research or large meal plans, Anvay proactively routes to `/(app)/settings/ai-byok`.
 - Keys (Google Gemini 2.0 Flash, Groq Cloud, OpenRouter, Claude, Sarvam) are stored exclusively in hardware-backed `expo-secure-store` on-device and are never exposed in JavaScript bundles or client telemetry.
+

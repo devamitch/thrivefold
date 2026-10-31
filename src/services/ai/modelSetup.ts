@@ -99,7 +99,13 @@ async function durableDownload(model: ModelPreset): Promise<void> {
   await ensureModelsDirectory();
   const dest = getLocalModelFilePath(model.id);
   await FileSystem.deleteAsync(dest, { idempotent: true });
-  await FileSystem.moveAsync({ from: localUri, to: dest });
+  try {
+    await FileSystem.moveAsync({ from: localUri, to: dest });
+  } catch {
+    // Cross-filesystem / EXDEV fallback (moving from Android DownloadManager storage to internal files)
+    await FileSystem.copyAsync({ from: localUri, to: dest });
+    await FileSystem.deleteAsync(localUri, { idempotent: true });
+  }
   DurableDownloads.remove(jobId);
   await clearDmJob();
 }

@@ -30,3 +30,4 @@
 - **RAM Footprint (Idle):** 114 MB
 - **RAM Footprint (Voice Assistant Active):** 168 MB (well within the 25% system threshold of 1.5 GB)
 - **Crash Rate:** **0 crashes** observed across physical test sessions.
+
