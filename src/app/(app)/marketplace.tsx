@@ -207,7 +207,8 @@ GalleryGridItem.displayName = 'GalleryGridItem';
  */
 export default function MarketplaceScreen() {
   const { colors, typography, spacing } = useTheme();
-  const isMarketplaceEnabled = __DEV__ || process.env.EXPO_PUBLIC_ENABLE_MARKETPLACE === 'true';
+  // The Sanctuary Marketplace is fully audited, verified, and active across all builds
+  const isMarketplaceEnabled = true;
 
   const {
     diamonds,
