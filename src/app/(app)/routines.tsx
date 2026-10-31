@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -21,6 +22,7 @@ import {
   type RoutineKind,
 } from '../../domain/routines';
 import { hapticLight, hapticSuccess } from '../../services/haptics/hapticFeedback';
+import { globalVoiceController } from '../../services/voice/globalVoiceController';
 import { useRootStore, useShallow } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
 
@@ -54,6 +56,9 @@ const describe = (r: Pick<Routine, 'time' | 'days' | 'everyHours' | 'until'>) =>
 
 export default function RoutinesScreen() {
   const { colors, typography, spacing } = useTheme();
+  const params = useLocalSearchParams<{ routineId?: string; trigger?: string; title?: string; time?: string }>();
+  const [alarmTriggered, setAlarmTriggered] = useState<boolean>(params.trigger === 'alarm');
+
   const { routines, addRoutine, updateRoutine } = useRootStore(
     useShallow((s) => ({
       routines: s.routines,
@@ -66,6 +71,16 @@ export default function RoutinesScreen() {
   const [addInitial, setAddInitial] = useState<Partial<RoutineFormValues> | undefined>();
   const [editOpen, setEditOpen] = useState(false);
   const [selected, setSelected] = useState<Routine | null>(null);
+
+  useEffect(() => {
+    if (params.trigger === 'alarm') {
+      setAlarmTriggered(true);
+      const target = routines.find(
+        (r) => r.id === params.routineId || (params.title && r.title.toLowerCase().includes(params.title.toLowerCase())),
+      );
+      if (target) setSelected(target);
+    }
+  }, [params.trigger, params.routineId, params.title, routines]);
 
   // Tick every minute so "in 12 min" stays honest.
   const [now, setNow] = useState(() => new Date());
@@ -114,6 +129,54 @@ export default function RoutinesScreen() {
       }
       scrollMode="shell-scroll-view"
     >
+      {alarmTriggered && (
+        <Card variant="surface" style={styles.alarmBannerCard}>
+          <View style={styles.alarmBannerHeader}>
+            <View style={styles.alarmBannerIconCircle}>
+              <Ionicons name="notifications" size={20} color="#D27D5C" />
+            </View>
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text
+                style={[
+                  typography.captionBold,
+                  { color: '#D27D5C', textTransform: 'uppercase', letterSpacing: 0.8 },
+                ]}
+              >
+                Routine Alarm Ringing
+              </Text>
+              <Text style={[typography.subheading, { color: colors.text.primary }]}>
+                {params.title || selected?.title || 'Daily Routine Rhythm'}
+              </Text>
+              <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                {params.time ? `${format12Hour(params.time)} · ` : ''}Your scheduled rhythm is here. Tap complete or ask Coach.
+              </Text>
+            </View>
+          </View>
+          <View style={styles.alarmBannerButtons}>
+            <Button
+              label="Complete Routine"
+              variant="primary"
+              size="sm"
+              onPress={() => {
+                hapticSuccess();
+                setAlarmTriggered(false);
+              }}
+              style={{ flex: 1 }}
+            />
+            <Button
+              label="Talk to Coach"
+              variant="outline"
+              size="sm"
+              onPress={() => {
+                hapticLight();
+                globalVoiceController.open('/(app)/routines');
+              }}
+              style={{ marginLeft: 8 }}
+            />
+          </View>
+        </Card>
+      )}
+
       <BedtimeSleepTimerCard
         onConfigureBedtime={(r) =>
           r
@@ -384,5 +447,28 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  alarmBannerCard: {
+    padding: 16,
+    borderRadius: 20,
+    marginBottom: 16,
+    backgroundColor: '#FFF8F5',
+  },
+  alarmBannerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  alarmBannerIconCircle: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#F7DFD6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  alarmBannerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 14,
   },
 });

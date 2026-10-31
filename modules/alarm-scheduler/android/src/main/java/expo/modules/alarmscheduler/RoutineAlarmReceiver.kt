@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.media.AudioAttributes
 import android.media.RingtoneManager
+import android.net.Uri
 import android.os.Build
 import android.os.PowerManager
 import androidx.core.app.NotificationCompat
@@ -82,10 +83,23 @@ class RoutineAlarmReceiver : BroadcastReceiver() {
             nm.createNotificationChannel(channel)
         }
 
-        val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)?.apply {
+        val deepLinkUri = Uri.parse("thrivefold://routines?routineId=${Uri.encode(routineId)}&title=${Uri.encode(title)}&time=${Uri.encode(time)}&trigger=alarm")
+        val launchIntent = (Intent(Intent.ACTION_VIEW, deepLinkUri).apply {
+            setPackage(context.packageName)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             putExtra("routine_id", routineId)
-        }
+            putExtra("routine_title", title)
+            putExtra("routine_time", time)
+            putExtra("trigger", "alarm")
+        }).takeIf { it.resolveActivity(context.packageManager) != null }
+            ?: context.packageManager.getLaunchIntentForPackage(context.packageName)?.apply {
+                data = deepLinkUri
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                putExtra("routine_id", routineId)
+                putExtra("routine_title", title)
+                putExtra("routine_time", time)
+                putExtra("trigger", "alarm")
+            }
         val pIntent = launchIntent?.let {
             PendingIntent.getActivity(
                 context,

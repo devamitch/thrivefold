@@ -1,18 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Keyboard, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { format12Hour, isHHMM, parseRoutineRequest, to24Hour, type Routine, type RoutineKind } from '../../domain/routines';
 import { daysOverlap, formatCountdown, nextTrigger } from '../../domain/routineSchedule';
 import { hapticLight, hapticSuccess, hapticWarning } from '../../services/haptics/hapticFeedback';
-import { isRoutineVoiceAvailable, listenForRoutine } from './routineVoice';
+import { isRoutineVoiceAvailable, listenForRoutine } from '../../services/routines/routineVoice';
 import { useRootStore } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
-import { AppBottomSheetModal } from '../ui/AppBottomSheetModal';
 import { Button } from '../ui/Button';
 import { PressableScale } from '../ui/PressableScale';
 import { Toggle } from '../ui/Toggle';
+import { RoutineBottomSheet } from './RoutineBottomSheet';
 import { DaySelector } from './DaySelector';
 import { TimeSelector, type Period, type TimeValue } from './TimeSelector';
 
@@ -194,14 +193,14 @@ export function RoutineSheet({ visible, mode, routine, initial, onClose, onSubmi
   );
 
   return (
-    <AppBottomSheetModal
+    <RoutineBottomSheet
       visible={visible}
       onClose={close}
       eyebrow={isEdit ? 'EDIT ALARM' : 'NEW ALARM'}
       title={isEdit ? 'Edit alarm' : 'Add alarm'}
       subtitle={isEdit && routine ? `Set for ${format12Hour(routine.time)}` : undefined}
     >
-      <GestureHandlerRootView style={styles.container}>
+      <View style={styles.container}>
         {nameEditing ? (
           // Typing mode: nothing else on screen, so the keyboard never fights the layout.
           <View>
@@ -268,7 +267,7 @@ export function RoutineSheet({ visible, mode, routine, initial, onClose, onSubmi
                   hapticLight();
                   setNameEditing(true);
                 }}
-                style={[styles.nameRow, { backgroundColor: colors.surface1 }]}
+                style={[styles.nameRow, { backgroundColor: colors.surface2 }]}
                 accessibilityRole="button"
                 accessibilityLabel={`Name: ${title}. Tap to rename`}
               >
@@ -283,7 +282,7 @@ export function RoutineSheet({ visible, mode, routine, initial, onClose, onSubmi
             ) : null}
 
             <Text style={[label, { marginTop: spacing.md }]}>Time</Text>
-            <View style={[styles.card, { backgroundColor: colors.surface1 }]}>
+            <View style={[styles.card, { backgroundColor: colors.surface2 }]}>
               <TimeSelector value={time} onChange={setTime} />
               {routine?.everyHours && routine.until ? (
                 <Text style={[typography.caption, { color: colors.text.muted, textAlign: 'center', marginTop: 10 }]}>
@@ -296,7 +295,7 @@ export function RoutineSheet({ visible, mode, routine, initial, onClose, onSubmi
             <DaySelector days={days} onChange={setDays} />
 
             {isEdit ? (
-              <View style={[styles.statusRow, { backgroundColor: colors.surface1, marginTop: spacing.md }]}>
+              <View style={[styles.statusRow, { backgroundColor: colors.surface2, marginTop: spacing.md }]}>
                 <Text style={[typography.bodyBold, { color: colors.text.primary, flex: 1 }]}>
                   {enabled ? 'Alarm on' : 'Alarm paused'}
                 </Text>
@@ -366,13 +365,13 @@ export function RoutineSheet({ visible, mode, routine, initial, onClose, onSubmi
             ) : null}
           </>
         )}
-      </GestureHandlerRootView>
-    </AppBottomSheetModal>
+      </View>
+    </RoutineBottomSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { paddingVertical: 4 },
+  container: { paddingTop: 4 },
   tiles: { gap: 14, paddingBottom: 14, paddingRight: 8 },
   tile: { alignItems: 'center', width: 62 },
   tileIcon: { width: 46, height: 46, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },

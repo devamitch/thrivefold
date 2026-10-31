@@ -74,6 +74,84 @@ export async function runCommand(cmd: Command): Promise<AssistantReply> {
       return { text: r.success ? 'Got it. I will remember that.' : r.message };
     }
 
+    case 'delete_routines': {
+      const routines = s.routines ?? [];
+      if (!routines.length) {
+        return { text: 'You have no routine alarms set.', route: '/(app)/routines', autoNavigate: true };
+      }
+
+      if (cmd.target === 'unnecessary') {
+        const inactive = routines.filter((r) => !r.enabled);
+        if (inactive.length > 0) {
+          inactive.forEach((r) => s.removeRoutine(r.id));
+          const remaining = useRootStore.getState().routines.length;
+          return {
+            text: `Removed ${inactive.length} unnecessary routine alarm${inactive.length > 1 ? 's' : ''}. You have ${remaining} active routine${remaining === 1 ? '' : 's'} remaining.`,
+            route: '/(app)/routines',
+            autoNavigate: true,
+          };
+        }
+        // Check for duplicates
+        const seen = new Set<string>();
+        const duplicates = routines.filter((r) => {
+          if (seen.has(r.time)) return true;
+          seen.add(r.time);
+          return false;
+        });
+        if (duplicates.length > 0) {
+          duplicates.forEach((d) => s.removeRoutine(d.id));
+          const remaining = useRootStore.getState().routines.length;
+          return {
+            text: `Cleaned up ${duplicates.length} duplicate routine alarm${duplicates.length > 1 ? 's' : ''}. ${remaining} unique routines remaining.`,
+            route: '/(app)/routines',
+            autoNavigate: true,
+          };
+        }
+        return {
+          text: `All ${routines.length} routines are active and scheduled without duplicates. None need deleting.`,
+          route: '/(app)/routines',
+          autoNavigate: true,
+        };
+      }
+
+      if (cmd.target === 'all') {
+        const count = routines.length;
+        routines.forEach((r) => s.removeRoutine(r.id));
+        return {
+          text: `Cleared all ${count} routine alarm${count > 1 ? 's' : ''}.`,
+          route: '/(app)/routines',
+          autoNavigate: true,
+        };
+      }
+
+      if (cmd.target === 'specific' && cmd.query) {
+        const q = cmd.query.toLowerCase();
+        const match = routines.find((r) => r.title.toLowerCase().includes(q) || r.kind.toLowerCase() === q);
+        if (!match) {
+          return { text: `Could not find a routine alarm matching "${cmd.query}".`, route: '/(app)/routines', autoNavigate: true };
+        }
+        s.removeRoutine(match.id);
+        return {
+          text: `Removed routine alarm "${match.title}".`,
+          route: '/(app)/routines',
+          autoNavigate: true,
+        };
+      }
+
+      return { text: 'Here are your routines.', route: '/(app)/routines', autoNavigate: true };
+    }
+
+    case 'toggle_routines': {
+      const routines = s.routines ?? [];
+      routines.forEach((r) => s.updateRoutine(r.id, { enabled: cmd.enable }));
+      const statusText = cmd.enable ? 'enabled' : 'paused';
+      return {
+        text: `All ${routines.length} routine alarms are now ${statusText}.`,
+        route: '/(app)/routines',
+        autoNavigate: true,
+      };
+    }
+
     case 'log_water': {
       s.addWaterLog(cmd.glasses * 250, today);
       const total = useRootStore.getState().hydration[today] ?? 0;

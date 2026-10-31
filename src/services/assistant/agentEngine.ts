@@ -256,7 +256,13 @@ class AgentEngine {
     // 1. Check deterministic fast-path commands first
     const cmd: Command = parseCommand(text);
     const direct =
-      cmd.kind === 'export' || cmd.kind === 'remember' || cmd.kind === 'life' ? await this.runCommand(cmd) : null;
+      cmd.kind === 'export' ||
+      cmd.kind === 'remember' ||
+      cmd.kind === 'life' ||
+      cmd.kind === 'delete_routines' ||
+      cmd.kind === 'toggle_routines'
+        ? await this.runCommand(cmd)
+        : null;
     if (direct) {
       this.finishTurn(direct.message, direct, callbacks);
       return { text: direct.message, toolResult: direct };

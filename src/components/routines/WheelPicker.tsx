@@ -13,7 +13,7 @@ import Animated, {
 import { hapticLight } from '../../services/haptics/hapticFeedback';
 import { useTheme } from '../../theme/useTheme';
 
-export const ITEM_H = 44;
+export const ITEM_H = 40;
 export const VISIBLE_ROWS = 5; // odd: the middle row is the selection
 const PAD = ((VISIBLE_ROWS - 1) / 2) * ITEM_H;
 
@@ -69,6 +69,13 @@ export function WheelPicker({ data, index, onChange, width, loop = false, access
   const lastRaw = useSharedValue(mid * n + index);
   const silent = useSharedValue(false);
 
+  const initialOffset = useRef(offsetFor(index)).current;
+  const endTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearEndTimer = () => {
+    if (endTimer.current) clearTimeout(endTimer.current);
+    endTimer.current = null;
+  };
+
   const tick = useCallback(() => hapticLight(), []);
 
   const onScroll = useAnimatedScrollHandler((e) => {
@@ -121,6 +128,8 @@ export function WheelPicker({ data, index, onChange, width, loop = false, access
   }, [index]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Android ignores contentOffset on first layout, so position explicitly.
+  useEffect(() => () => clearEndTimer(), []); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     const id = requestAnimationFrame(() => ref.current?.scrollTo({ y: offsetFor(index), animated: false }));
     return () => cancelAnimationFrame(id);
@@ -152,11 +161,18 @@ export function WheelPicker({ data, index, onChange, width, loop = false, access
         nestedScrollEnabled
         overScrollMode="never"
         bounces={!loop}
-        contentOffset={{ x: 0, y: offsetFor(index) }}
+        contentOffset={{ x: 0, y: initialOffset }}
         contentContainerStyle={{ paddingVertical: PAD }}
-        onMomentumScrollEnd={(e) => settle(e.nativeEvent.contentOffset.y)}
-        onScrollEndDrag={(e) => {
-          if (Math.abs(e.nativeEvent.velocity?.y ?? 0) < 0.1) settle(e.nativeEvent.contentOffset.y);
+        onScrollBeginDrag={clearEndTimer}
+        onMomentumScrollBegin={clearEndTimer}
+        onMomentumScrollEnd={(e) => {
+          clearEndTimer();
+          settle(e.nativeEvent.contentOffset.y);
+        }}
+        onScrollEndDrag={() => {
+          // If no momentum starts shortly after release, the wheel is already at rest.
+          clearEndTimer();
+          endTimer.current = setTimeout(() => settle(scrollY.value), 160);
         }}
       >
         {rows.map((label, i) => (

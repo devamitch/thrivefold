@@ -12,6 +12,8 @@ export type Command =
   | { kind: 'life'; topic: LifeTopic }
   | { kind: 'export'; format: 'spreadsheet' | 'backup' }
   | { kind: 'remember'; note: string }
+  | { kind: 'delete_routines'; target: 'unnecessary' | 'all' | 'specific'; query?: string }
+  | { kind: 'toggle_routines'; enable: boolean; query?: string }
   | { kind: 'unknown'; text: string };
 
 /**
@@ -53,6 +55,7 @@ const OPEN: { words: RegExp; route: string; label: string }[] = [
   { words: /\bquest/, route: '/(app)/quests', label: 'quests' },
   { words: /\bprogress\b|\btrend|\bhistory\b/, route: '/(app)/(tabs)/progress', label: 'progress' },
   { words: /\bjournal\b|\bwrite\b/, route: '/(app)/journal/new', label: 'a new journal entry' },
+  { words: /\broutines?\b|\balarms?\b|\bschedules?\b|\breminders?\b|\bbedtime timer\b/, route: '/(app)/routines', label: 'routines and alarms' },
   { words: /\bsettings?\b/, route: '/(app)/(tabs)/settings', label: 'settings' },
 ];
 
@@ -77,6 +80,31 @@ export function parseCommand(input: string): Command {
   if (remember && !/\b(?:my )?(?:data|backup|everything|metrics)\b/i.test(remember[1])) return { kind: 'remember', note: remember[1].trim() };
   if (/\b(export|download|back ?up|save a copy of)\b/.test(text) && /\b(data|metrics?|everything|records?|all|backup|spreadsheet|excel|history)\b/.test(text)) {
     return { kind: 'export', format: /\b(back ?up|json|restore|uninstall|everything)\b/.test(text) ? 'backup' : 'spreadsheet' };
+  }
+
+  // Routine & Alarm management
+  if (
+    /\b(?:delete|remove|clear|clean ?up|cancel|drop|prune)\b.*\b(?:unnecessary|unused|disabled|inactive|extra|duplicate|old)\b.*\b(?:routines?|alarms?|reminders?|schedules?)\b/i.test(text) ||
+    /\b(?:delete|remove|clear|clean ?up|cancel|drop|prune)\b.*\b(?:routines?|alarms?|reminders?|schedules?)\b.*\b(?:unnecessary|unused|disabled|inactive|extra)\b/i.test(text)
+  ) {
+    return { kind: 'delete_routines', target: 'unnecessary' };
+  }
+
+  if (/\b(?:delete|remove|clear|cancel)\b.*\b(?:all|every)\b.*\b(?:routines?|alarms?|reminders?|schedules?)\b/i.test(text)) {
+    return { kind: 'delete_routines', target: 'all' };
+  }
+
+  const delMatch = text.match(/\b(?:delete|remove|cancel)\b.*?\b(?:routine|alarm|reminder)\b(?:\s+(?:for|called|named))?\s+([a-z0-9\s'-]+)/i);
+  if (delMatch && !/\b(?:all|every|unnecessary|unused|disabled|inactive|extra)\b/i.test(delMatch[1])) {
+    return { kind: 'delete_routines', target: 'specific', query: delMatch[1].trim() };
+  }
+
+  if (/\b(?:turn off|disable|pause|mute)\b.*\b(?:all|every)\b.*\b(?:routines?|alarms?|reminders?)\b/i.test(text)) {
+    return { kind: 'toggle_routines', enable: false };
+  }
+
+  if (/\b(?:turn on|enable|resume|unmute)\b.*\b(?:all|every)\b.*\b(?:routines?|alarms?|reminders?)\b/i.test(text)) {
+    return { kind: 'toggle_routines', enable: true };
   }
 
   const water = text.match(/\b(?:log|add|drank|had)\b.*?\b(\d+|a|an|one|two|three|four|five|six)\b\s*(?:glass|glasses|cup|cups)\b/);
