@@ -274,6 +274,27 @@ class AgentEngine {
       return { text: res.message, toolResult: res };
     }
 
+    // Direct Intent: Routines and Alarms check
+    if (/\b(?:routine|routines|alarms?|reminders?)\b/i.test(text) && /\b(?:my|show|list|get|check|what|active|scheduled)\b/i.test(text)) {
+      const res = await executeTool('get_routines', {}, { userId: 'local_user' });
+      this.finishTurn(res.message, res, callbacks);
+      return { text: res.message, toolResult: res };
+    }
+
+    // Direct Intent: Pending Rewards and Milestone Chests check
+    if (/\b(?:rewards?|chests?|milestone|gems?|claimable|unclaimed|pending reward)\b/i.test(text) && /\b(?:check|show|any|pending|my|have i|claim)\b/i.test(text)) {
+      const res = await executeTool('get_pending_rewards', {}, { userId: 'local_user' });
+      this.finishTurn(res.message, res, callbacks);
+      return { text: res.message, toolResult: res };
+    }
+
+    // Direct Intent: Routine Adherence / Habits progress
+    if (/\b(?:adherence|habits?|routine habit|missed routine|routine progress)\b/i.test(text)) {
+      const res = await executeTool('get_routine_adherence', {}, { userId: 'local_user' });
+      this.finishTurn(res.message, res, callbacks);
+      return { text: res.message, toolResult: res };
+    }
+
     if (cmd.kind === 'open') {
       const res = await executeTool(
         'navigate_to_screen',
