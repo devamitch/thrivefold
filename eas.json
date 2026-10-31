@@ -7,19 +7,32 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "channel": "development"
+      "channel": "development",
+      "android": {
+        "buildType": "apk"
+      }
     },
     "preview": {
       "distribution": "internal",
-      "channel": "preview"
+      "channel": "preview",
+      "android": {
+        "buildType": "apk"
+      }
     },
     "production": {
       "autoIncrement": true,
       "channel": "production",
       "credentialsSource": "local",
+      "android": {
+        "buildType": "app-bundle"
+      },
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://kwrdugillyakxgvgbrsu.supabase.co"
       }
+    },
+    "production-local": {
+      "extends": "production",
+      "credentialsSource": "local"
     }
   },
   "submit": {
@@ -28,6 +41,20 @@
         "serviceAccountKeyPath": "./setu-511211-f490a061589b.json",
         "track": "internal",
         "releaseStatus": "completed"
+      }
+    },
+    "internal": {
+      "android": {
+        "serviceAccountKeyPath": "./setu-511211-f490a061589b.json",
+        "track": "internal",
+        "releaseStatus": "completed"
+      }
+    },
+    "closed-draft": {
+      "android": {
+        "serviceAccountKeyPath": "./setu-511211-f490a061589b.json",
+        "track": "alpha",
+        "releaseStatus": "draft"
       }
     },
     "alpha": {

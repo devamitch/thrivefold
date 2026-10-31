@@ -21,6 +21,23 @@ const withAndroidAgpFix = (config) => {
       if (!fs.existsSync(targetDir)) {
         fs.mkdirSync(targetDir, { recursive: true })
       }
+
+      const hermesReleaseDir = path.join(
+        config.modRequest.platformProjectRoot,
+        "app/build/generated/assets/react/release"
+      )
+      if (!fs.existsSync(hermesReleaseDir)) {
+        fs.mkdirSync(hermesReleaseDir, { recursive: true })
+      }
+
+      const hermesDebugDir = path.join(
+        config.modRequest.platformProjectRoot,
+        "app/build/generated/assets/react/debug"
+      )
+      if (!fs.existsSync(hermesDebugDir)) {
+        fs.mkdirSync(hermesDebugDir, { recursive: true })
+      }
+
       return config
     },
   ])

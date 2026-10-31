@@ -1,17 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useMemo, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { BedtimeSleepTimerCard } from '../../components/routines/BedtimeSleepTimerCard';
 import { AddRoutineModal } from '../../components/routines/AddRoutineModal';
+import { BedtimeSleepTimerCard } from '../../components/routines/BedtimeSleepTimerCard';
 import { EditRoutineModal } from '../../components/routines/EditRoutineModal';
+import type { RoutineFormValues } from '../../components/routines/RoutineSheet';
 import { AppHeader } from '../../components/ui/AppHeader';
-import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { PressableScale } from '../../components/ui/PressableScale';
 import { ScreenContainer } from '../../components/ui/ScreenContainer';
 import { Toggle } from '../../components/ui/Toggle';
+import { byTimeOfDay, formatCountdown, nextTrigger } from '../../domain/routineSchedule';
 import {
   format12Hour,
   ROUTINE_PRESETS,
@@ -35,18 +36,20 @@ const KIND_ICONS: Record<RoutineKind, keyof typeof Ionicons.glyphMap> = {
   custom: 'alarm',
 };
 
+const describeDays = (days: number[]) =>
+  !days.length
+    ? 'Every day'
+    : days.length === 5 && !days.includes(6) && !days.includes(7)
+      ? 'Weekdays'
+      : days.length === 2 && days.includes(6) && days.includes(7)
+        ? 'Weekends'
+        : days.map((d) => DAYS[d - 1]).join(', ');
+
 const describe = (r: Pick<Routine, 'time' | 'days' | 'everyHours' | 'until'>) => {
   const when = r.everyHours
     ? `Every ${r.everyHours}h, ${format12Hour(routineTimes(r)[0])}–${format12Hour(r.until ?? r.time)}`
-    : format12Hour(r.time);
-  const days = !r.days.length
-    ? 'Every day'
-    : r.days.length === 5 && !r.days.includes(6) && !r.days.includes(7)
-    ? 'Weekdays'
-    : r.days.length === 2 && r.days.includes(6) && r.days.includes(7)
-    ? 'Weekends'
-    : r.days.map((d) => DAYS[d - 1]).join(', ');
-  return `${when} · ${days}`;
+    : null;
+  return when ? `${when} · ${describeDays(r.days)}` : describeDays(r.days);
 };
 
 export default function RoutinesScreen() {
@@ -59,26 +62,45 @@ export default function RoutinesScreen() {
     })),
   );
 
-  // Separate Modal States
-  const [addModalOpen, setAddModalOpen] = useState(false);
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [selectedRoutine, setSelectedRoutine] = useState<Routine | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [addInitial, setAddInitial] = useState<Partial<RoutineFormValues> | undefined>();
+  const [editOpen, setEditOpen] = useState(false);
+  const [selected, setSelected] = useState<Routine | null>(null);
 
+  // Tick every minute so "in 12 min" stays honest.
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  const sorted = useMemo(() => byTimeOfDay(routines), [routines]);
   const activeCount = useMemo(() => routines.filter((r) => r.enabled).length, [routines]);
+
+  const upNext = useMemo(() => {
+    let best: { routine: Routine; at: Date } | null = null;
+    for (const r of routines) {
+      if (!r.enabled) continue;
+      const at = nextTrigger(r, now);
+      if (at && (!best || at < best.at)) best = { routine: r, at };
+    }
+    return best;
+  }, [routines, now]);
 
   const unusedPresets = ROUTINE_PRESETS.filter(
     (p) => !routines.some((r) => r.kind === p.kind && r.title === p.title),
   );
 
-  const openAddModal = () => {
+  const openAdd = (initial?: Partial<RoutineFormValues>) => {
     hapticLight();
-    setAddModalOpen(true);
+    setAddInitial(initial);
+    setAddOpen(true);
   };
 
-  const openEditModal = (r: Routine) => {
+  const openEdit = (r: Routine) => {
     hapticLight();
-    setSelectedRoutine(r);
-    setEditModalOpen(true);
+    setSelected(r);
+    setEditOpen(true);
   };
 
   return (
@@ -86,129 +108,142 @@ export default function RoutinesScreen() {
       header={
         <AppHeader
           title="Daily Rhythms & Alarms"
-          subtitle="Alarm-clock reminders that alert you even when phone is locked"
+          subtitle="Reminders that ring even when your phone is locked"
           showBack
         />
       }
       scrollMode="shell-scroll-view"
     >
-      {/* 1. Bedtime & Sleep Timer Rhythm Sanctuary Card */}
       <BedtimeSleepTimerCard
-        onConfigureBedtime={(sleepRoutine) => {
-          if (sleepRoutine) {
-            openEditModal(sleepRoutine);
-          } else {
-            openAddModal();
-          }
-        }}
+        onConfigureBedtime={(r) =>
+          r
+            ? openEdit(r)
+            : openAdd({ kind: 'sleep', title: 'Start winding down for sleep', time: '22:30' })
+        }
+        onConfigureWake={(r) =>
+          r ? openEdit(r) : openAdd({ kind: 'checkin', title: 'Wake up', time: '06:30' })
+        }
       />
 
-      {/* 2. Top Summary & Action Bar */}
-      <View style={styles.topActionBar}>
+      {upNext ? (
+        <PressableScale
+          onPress={() => openEdit(upNext.routine)}
+          accessibilityRole="button"
+          accessibilityLabel={`Next alarm ${upNext.routine.title} ${formatCountdown(upNext.at, now)}`}
+          style={{ marginBottom: spacing.md }}
+        >
+          <Card variant="surface1" style={styles.nextCard}>
+            <View style={[styles.nextIcon, { backgroundColor: colors.primaryAlpha }]}>
+              <Ionicons
+                name={KIND_ICONS[upNext.routine.kind] ?? 'alarm'}
+                size={18}
+                color={colors.primary}
+              />
+            </View>
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={[typography.caption, { color: colors.text.muted }]}>Next up</Text>
+              <Text style={[typography.bodyBold, { color: colors.text.primary }]} numberOfLines={1}>
+                {upNext.routine.title}
+              </Text>
+            </View>
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text style={[typography.bodyBold, { color: colors.primary }]}>
+                {formatCountdown(upNext.at, now)}
+              </Text>
+              <Text style={[typography.caption, { color: colors.text.secondary }]}>
+                {upNext.at.toDateString() === now.toDateString() ? '' : 'Tomorrow · '}
+                {format12Hour(
+                  `${String(upNext.at.getHours()).padStart(2, '0')}:${String(upNext.at.getMinutes()).padStart(2, '0')}`,
+                )}
+              </Text>
+            </View>
+          </Card>
+        </PressableScale>
+      ) : null}
+
+      <View style={styles.topBar}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Text style={[typography.subheading, { color: colors.text.primary }]}>
-            Active Alarms
-          </Text>
+          <Text style={[typography.subheading, { color: colors.text.primary }]}>Alarms</Text>
           <View style={[styles.countBadge, { backgroundColor: colors.surface2 }]}>
             <Text style={[typography.captionBold, { color: colors.primary }]}>
-              {activeCount} of {routines.length}
+              {activeCount} of {routines.length} on
             </Text>
           </View>
         </View>
-
         <PressableScale
-          onPress={openAddModal}
-          style={[styles.addPillBtn, { backgroundColor: colors.primary }]}
-          accessibilityLabel="Add new alarm"
+          onPress={() => openAdd()}
+          style={[styles.addBtn, { backgroundColor: colors.primary }]}
+          accessibilityRole="button"
+          accessibilityLabel="Add alarm"
         >
           <Ionicons name="add" size={16} color="#FFFFFF" />
-          <Text style={[typography.captionBold, { color: '#FFFFFF', marginLeft: 4 }]}>
-            Add Alarm
-          </Text>
+          <Text style={[typography.captionBold, { color: '#FFFFFF', marginLeft: 4 }]}>Add</Text>
         </PressableScale>
       </View>
 
-      {/* 3. Active Routines List */}
-      <View style={{ marginTop: spacing.xs, marginBottom: spacing.lg }}>
-        {routines.length ? (
-          routines.map((r) => {
-            const displayTime = format12Hour(r.time);
-            const iconName = KIND_ICONS[r.kind] ?? 'alarm';
-
+      <View style={{ marginBottom: spacing.lg }}>
+        {sorted.length ? (
+          sorted.map((r) => {
+            const on = r.enabled;
             return (
               <PressableScale
                 key={r.id}
-                onPress={() => openEditModal(r)}
+                onPress={() => openEdit(r)}
                 style={{ marginBottom: spacing.sm }}
                 accessibilityRole="button"
-                accessibilityLabel={`${r.title} at ${displayTime}. Tap to edit`}
+                accessibilityLabel={`${r.title} at ${format12Hour(r.time)}. ${on ? 'On' : 'Paused'}. Tap to edit`}
               >
-                <Card
-                  variant="surface"
-                  style={[styles.alarmCard, { padding: spacing.md }]}
-                >
+                <Card variant="surface" style={[styles.alarmCard, { padding: spacing.md }]}>
                   <View style={styles.alarmRow}>
-                    {/* Routine Icon */}
                     <View
                       style={[
                         styles.iconWrap,
-                        {
-                          backgroundColor: r.enabled ? colors.primaryAlpha : colors.surface2,
-                        },
+                        { backgroundColor: on ? colors.primaryAlpha : colors.surface2 },
                       ]}
                     >
                       <Ionicons
-                        name={iconName}
+                        name={KIND_ICONS[r.kind] ?? 'alarm'}
                         size={20}
-                        color={r.enabled ? colors.primary : colors.text.muted}
+                        color={on ? colors.primary : colors.text.muted}
                       />
                     </View>
 
-                    {/* Time & Title info */}
-                    <View style={[styles.flex, { marginLeft: 14 }]}>
-                      <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
-                        <Text
-                          style={[
-                            typography.subheading,
-                            {
-                              color: r.enabled ? colors.text.primary : colors.text.muted,
-                              fontWeight: '700',
-                            },
-                          ]}
-                        >
-                          {displayTime}
-                        </Text>
-                      </View>
+                    <View style={{ flex: 1, marginLeft: 14 }}>
+                      <Text
+                        style={[
+                          typography.subheading,
+                          {
+                            color: on ? colors.text.primary : colors.text.muted,
+                            fontWeight: '700',
+                          },
+                        ]}
+                      >
+                        {format12Hour(r.time)}
+                      </Text>
                       <Text
                         style={[
                           typography.subbodyBold,
-                          {
-                            color: r.enabled ? colors.text.primary : colors.text.muted,
-                            marginTop: 1,
-                          },
+                          { color: on ? colors.text.primary : colors.text.muted, marginTop: 1 },
                         ]}
                         numberOfLines={1}
                       >
                         {r.title}
                       </Text>
                       <Text
-                        style={[
-                          typography.caption,
-                          { color: colors.text.secondary, marginTop: 2 },
-                        ]}
+                        style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}
+                        numberOfLines={1}
                       >
-                        {describe(r)}
+                        {on ? describe(r) : `Paused · ${describe(r)}`}
                       </Text>
                     </View>
 
-                    {/* Toggle Switch */}
                     <Toggle
-                      value={r.enabled}
+                      value={on}
                       onValueChange={(v) => {
                         hapticLight();
                         updateRoutine(r.id, { enabled: v });
                       }}
-                      accessibilityLabel={`${r.title} alarm toggle`}
+                      accessibilityLabel={`${r.title} alarm`}
                     />
                   </View>
                 </Card>
@@ -217,11 +252,11 @@ export default function RoutinesScreen() {
           })
         ) : (
           <Card variant="surface1" style={styles.emptyCard}>
-            <View style={[styles.emptyIconBox, { backgroundColor: colors.surface2 }]}>
+            <View style={[styles.emptyIcon, { backgroundColor: colors.surface2 }]}>
               <Ionicons name="alarm-outline" size={28} color={colors.primary} />
             </View>
             <Text style={[typography.subbodyBold, { color: colors.text.primary, marginTop: 10 }]}>
-              No Active Alarms
+              No alarms yet
             </Text>
             <Text
               style={[
@@ -229,14 +264,14 @@ export default function RoutinesScreen() {
                 { color: colors.text.secondary, marginTop: 4, textAlign: 'center', lineHeight: 18 },
               ]}
             >
-              Add routines above or tap any recommended preset below to ensure you get timely reminders throughout the day.
+              Add one below, or pick a quick start.
             </Text>
             <View style={{ marginTop: 14 }}>
               <Button
-                label="Add First Routine"
+                label="Add first alarm"
                 variant="secondary"
                 size="sm"
-                onPress={openAddModal}
+                onPress={() => openAdd()}
                 icon={<Ionicons name="add" size={16} color={colors.primary} />}
               />
             </View>
@@ -244,119 +279,88 @@ export default function RoutinesScreen() {
         )}
       </View>
 
-      {/* 4. Recommended Presets Carousel */}
       {unusedPresets.length ? (
-        <View style={{ marginTop: spacing.sm, marginBottom: spacing.xl }}>
-          <Text
-            style={[
-              typography.captionBold,
-              { color: colors.text.muted, letterSpacing: 0.8, marginBottom: 10 },
-            ]}
-          >
-            RECOMMENDED PRESETS
+        <View style={{ marginBottom: spacing.xl }}>
+          <Text style={[typography.captionBold, { color: colors.text.muted, marginBottom: 10 }]}>
+            Quick start
           </Text>
-
-          <View style={styles.presetsGrid}>
-            {unusedPresets.map((p) => {
-              const iconName = KIND_ICONS[p.kind] ?? 'alarm';
-              return (
-                <PressableScale
-                  key={p.title}
-                  onPress={() => {
-                    hapticSuccess();
-                    addRoutine(p);
-                  }}
-                  style={styles.presetCell}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Add preset ${p.title}`}
-                >
-                  <Card variant="surface" style={styles.presetCard}>
-                    <View style={styles.presetTopRow}>
-                      <View style={[styles.presetIconWrap, { backgroundColor: colors.surface2 }]}>
-                        <Ionicons name={iconName} size={16} color={colors.primary} />
-                      </View>
-                      <Badge label={format12Hour(p.time)} variant="neutral" />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 8 }}
+          >
+            {unusedPresets.map((p) => (
+              <PressableScale
+                key={p.title}
+                onPress={() => {
+                  hapticSuccess();
+                  addRoutine(p);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={`Add ${p.title} at ${format12Hour(p.time)}`}
+              >
+                <Card variant="surface" style={styles.presetCard}>
+                  <View style={styles.presetTop}>
+                    <View style={[styles.presetIcon, { backgroundColor: colors.surface2 }]}>
+                      <Ionicons
+                        name={KIND_ICONS[p.kind] ?? 'alarm'}
+                        size={16}
+                        color={colors.primary}
+                      />
                     </View>
-                    <Text
-                      style={[
-                        typography.captionBold,
-                        { color: colors.text.primary, marginTop: 8 },
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {p.title}
-                    </Text>
-                    <Text
-                      style={[
-                        typography.caption,
-                        { color: colors.text.secondary, marginTop: 2, fontSize: 11 },
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {describe(p)}
-                    </Text>
-                    <View style={styles.addShortcutRow}>
-                      <Ionicons name="add-circle-outline" size={14} color={colors.primary} />
-                      <Text
-                        style={[
-                          typography.captionBold,
-                          { color: colors.primary, fontSize: 11, marginLeft: 4 },
-                        ]}
-                      >
-                        Add
-                      </Text>
-                    </View>
-                  </Card>
-                </PressableScale>
-              );
-            })}
-          </View>
+                    <Ionicons name="add-circle" size={20} color={colors.primary} />
+                  </View>
+                  <Text
+                    style={[typography.captionBold, { color: colors.text.primary, marginTop: 10 }]}
+                    numberOfLines={1}
+                  >
+                    {p.title}
+                  </Text>
+                  <Text
+                    style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}
+                    numberOfLines={1}
+                  >
+                    {format12Hour(p.time)}
+                    {p.everyHours ? ` · every ${p.everyHours}h` : ''}
+                  </Text>
+                </Card>
+              </PressableScale>
+            ))}
+          </ScrollView>
         </View>
       ) : null}
 
-      {/* 5. Separate Modals */}
-      <AddRoutineModal
-        visible={addModalOpen}
-        onClose={() => setAddModalOpen(false)}
-      />
-
-      <EditRoutineModal
-        routine={selectedRoutine}
-        visible={editModalOpen}
-        onClose={() => setEditModalOpen(false)}
-      />
+      <AddRoutineModal visible={addOpen} initial={addInitial} onClose={() => setAddOpen(false)} />
+      <EditRoutineModal routine={selected} visible={editOpen} onClose={() => setEditOpen(false)} />
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
-  topActionBar: {
+  nextCard: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 18 },
+  nextIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  topBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 10,
   },
-  countBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
-    marginLeft: 8,
-  },
-  addPillBtn: {
+  countBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, marginLeft: 8 },
+  addBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 7,
     paddingHorizontal: 12,
     borderRadius: 14,
   },
-  alarmCard: {
-    borderRadius: 20,
-  },
-  alarmRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
+  alarmCard: { borderRadius: 20 },
+  alarmRow: { flexDirection: 'row', alignItems: 'center' },
   iconWrap: {
     width: 44,
     height: 44,
@@ -364,47 +368,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  emptyCard: {
-    padding: 24,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyIconBox: {
+  emptyCard: { padding: 24, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  emptyIcon: {
     width: 52,
     height: 52,
     borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  presetsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  presetCell: {
-    width: '48.8%',
-  },
-  presetCard: {
-    padding: 12,
-    borderRadius: 16,
-    minHeight: 112,
-  },
-  presetTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  presetIconWrap: {
+  presetCard: { width: 164, padding: 12, borderRadius: 16 },
+  presetTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  presetIcon: {
     width: 28,
     height: 28,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  addShortcutRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
   },
 });

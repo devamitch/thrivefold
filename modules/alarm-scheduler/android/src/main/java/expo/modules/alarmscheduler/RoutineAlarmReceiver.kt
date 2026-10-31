@@ -19,32 +19,41 @@ class RoutineAlarmReceiver : BroadcastReceiver() {
         const val EXTRA_ROUTINE_ID = "routine_id"
         const val EXTRA_TITLE = "routine_title"
         const val EXTRA_TIME = "routine_time"
+
+        // Thrivefold terracotta, used to tint the status-bar glyph
+        private const val BRAND_COLOR = 0xFFD27D5C.toInt()
+        private const val STAT_ICON = "ic_stat_thrivefold"
     }
 
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.action ?: return
 
         if (action == Intent.ACTION_BOOT_COMPLETED) {
-            // Restore alarms on reboot from persistence
             AlarmStore.rescheduleAll(context)
             return
         }
 
         if (action == ACTION_TRIGGER) {
             val routineId = intent.getStringExtra(EXTRA_ROUTINE_ID) ?: return
-            val title = intent.getStringExtra(EXTRA_TITLE) ?: "Routine Alarm"
+            val title = intent.getStringExtra(EXTRA_TITLE) ?: "Routine alarm"
             val time = intent.getStringExtra(EXTRA_TIME) ?: ""
 
-            // Acquire temporary WakeLock to ensure notification & alarm sound fire even if device is asleep
             val pm = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
             val wl = pm?.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "thrivefold:RoutineAlarmWakeLock")
-            wl?.acquire(15000L) // 15 seconds
+            wl?.acquire(15000L)
 
             showAlarmNotification(context, routineId, title, time)
-
-            // Reschedule next recurrence if this is a recurring alarm
             AlarmStore.scheduleNextRecurrence(context, routineId)
         }
+    }
+
+    /** "18:30" -> "6:30 PM" */
+    private fun to12Hour(time: String): String {
+        val parts = time.split(":")
+        val h = parts.getOrNull(0)?.toIntOrNull() ?: return time
+        val m = parts.getOrNull(1)?.toIntOrNull() ?: return time
+        val h12 = if (h % 12 == 0) 12 else h % 12
+        return String.format("%d:%02d %s", h12, m, if (h >= 12) "PM" else "AM")
     }
 
     private fun showAlarmNotification(context: Context, routineId: String, title: String, time: String) {
@@ -60,10 +69,10 @@ class RoutineAlarmReceiver : BroadcastReceiver() {
 
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Routine Alarms",
+                "Routine alarms",
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "High priority alarms for Thrivefold mindful routines"
+                description = "Alarms for your Thrivefold routines"
                 setSound(alarmUri, audioAttributes)
                 enableVibration(true)
                 vibrationPattern = longArrayOf(0, 800, 400, 800, 400, 800)
@@ -73,33 +82,40 @@ class RoutineAlarmReceiver : BroadcastReceiver() {
             nm.createNotificationChannel(channel)
         }
 
-        // Tap opens app to the routine screen
         val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)?.apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             putExtra("routine_id", routineId)
         }
-        val pIntent = PendingIntent.getActivity(
-            context,
-            routineId.hashCode(),
-            launchIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+        val pIntent = launchIntent?.let {
+            PendingIntent.getActivity(
+                context,
+                routineId.hashCode(),
+                it,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        }
 
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-            .setContentTitle("⏰ $title")
-            .setContentText("It's time for your $title routine ($time). Tap to begin.")
+        // Brand glyph from the drawable shipped with this module; system alarm icon only as a fallback.
+        val iconRes = context.resources
+            .getIdentifier(STAT_ICON, "drawable", context.packageName)
+            .takeIf { it != 0 } ?: android.R.drawable.ic_lock_idle_alarm
+
+        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(iconRes)
+            .setColor(BRAND_COLOR)
+            .setContentTitle(title) // no emoji: the glyph is the icon
+            .setContentText(if (time.isNotEmpty()) "${to12Hour(time)} · Tap to begin" else "Tap to begin")
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setAutoCancel(true)
-            .setContentIntent(pIntent)
             .setSound(alarmUri)
             .setVibrate(longArrayOf(0, 800, 400, 800, 400, 800))
-            .setFullScreenIntent(pIntent, true)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .build()
 
-        nm.notify(routineId.hashCode(), notification)
+        if (pIntent != null) {
+            builder.setContentIntent(pIntent).setFullScreenIntent(pIntent, true)
+        }
+
+        nm.notify(routineId.hashCode(), builder.build())
     }
 }
-

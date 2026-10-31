@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Monochrome status-bar glyph of the Thrivefold mark (T + leaf + sun). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="1024"
+    android:viewportHeight="1024">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M225,248 L738,248 C745,248 746,254 742,260 C715,305 675,322 622,328 C540,338 497,400 497,470 L497,800 L435,800 C412,800 397,785 397,765 L397,450 C397,400 365,372 328,372 L225,372 C203,372 190,358 190,338 L190,282 C190,262 205,248 225,248 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M815,298 C835,370 845,450 820,530 C790,620 730,650 690,655 C610,668 572,700 572,745 L572,792 C572,798 568,802 562,802 L517,802 C517,700 570,610 640,560 C700,520 745,490 765,442 C720,500 640,540 580,580 C545,605 525,640 523,668 C520,590 545,520 600,480 C680,430 770,380 815,298 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M548,414 a51,51 0 1,0 102,0 a51,51 0 1,0 -102,0 Z" />
+</vector>
+

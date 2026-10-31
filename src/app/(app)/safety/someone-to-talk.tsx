@@ -1,14 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Linking,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ScrollViewInstance } from 'react-native';
+import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -17,7 +10,6 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { AppHeader } from '../../../components/ui/AppHeader';
-import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { Chip } from '../../../components/ui/Chip';
@@ -286,7 +278,12 @@ export default function SomeoneToTalkScreen() {
 
         {/* EMERGENCY REAL ACTION BANNER (Shown automatically on crisis or pinned) */}
         {activeCrisis ? (
-          <Card style={[styles.crisisCard, { backgroundColor: colors.surface1, borderColor: colors.error }]}>
+          <Card
+            style={[
+              styles.crisisCard,
+              { backgroundColor: colors.surface1, borderColor: colors.error },
+            ]}
+          >
             <View style={styles.crisisHeader}>
               <Ionicons name="alert-circle" size={24} color={colors.error} />
               <View style={{ marginLeft: 8, flex: 1 }}>
@@ -349,8 +346,8 @@ export default function SomeoneToTalkScreen() {
                             backgroundColor: isUser
                               ? colors.primary
                               : turn.isCrisisAlert
-                              ? colors.surface2
-                              : colors.surface1,
+                                ? colors.surface2
+                                : colors.surface1,
                             borderColor: turn.isCrisisAlert ? colors.error : colors.border,
                             borderWidth: turn.isCrisisAlert ? 1 : 0,
                           },
@@ -408,8 +405,7 @@ export default function SomeoneToTalkScreen() {
                   style={[
                     styles.sendBtn,
                     {
-                      backgroundColor:
-                        draft.trim() && !busy ? colors.primary : colors.surface2,
+                      backgroundColor: draft.trim() && !busy ? colors.primary : colors.surface2,
                     },
                   ]}
                   accessibilityLabel="Send message"
@@ -450,7 +446,12 @@ export default function SomeoneToTalkScreen() {
             <Text
               style={[
                 typography.caption,
-                { color: colors.text.secondary, textAlign: 'center', marginTop: 4, marginBottom: 24 },
+                {
+                  color: colors.text.secondary,
+                  textAlign: 'center',
+                  marginTop: 4,
+                  marginBottom: 24,
+                },
               ]}
             >
               {GROUNDING_EXERCISES.box_breathing.subtitle}
@@ -511,7 +512,12 @@ export default function SomeoneToTalkScreen() {
             <Text style={[typography.subheading, { color: colors.text.primary }]}>
               {GROUNDING_EXERCISES.sensory_54321.title}
             </Text>
-            <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4, marginBottom: 16 }]}>
+            <Text
+              style={[
+                typography.caption,
+                { color: colors.text.secondary, marginTop: 4, marginBottom: 16 },
+              ]}
+            >
               {GROUNDING_EXERCISES.sensory_54321.subtitle}
             </Text>
 
