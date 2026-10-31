@@ -156,7 +156,7 @@ export function CoachProvider({ children }: { children: React.ReactNode }) {
   return (
     <CoachContext.Provider value={api}>
       {children}
-      {signedIn && isOnboarded && sheetWanted ? (
+      {isOnboarded && sheetWanted ? (
         <Suspense fallback={null}>
           <GlobalVoiceAssistant />
         </Suspense>
