@@ -85,6 +85,8 @@ import { AnvayCompanion } from '../brand/AnvayCompanion';
 import { CameraCapture } from '../camera/CameraCapture';
 import { Chip } from '../ui/Chip';
 import { PressableScale } from '../ui/PressableScale';
+import { Button } from '../ui/Button';
+import { SquircleSurface } from '../ui/SquircleSurface';
 import { BrainSetupCard } from './BrainSetupCard';
 
 type Turn = ChatMessage;
@@ -233,6 +235,13 @@ export function GlobalVoiceAssistant() {
         const quote = pendingQuote.current;
         pendingQuote.current = null;
         const shown = quote ? text.replace(/^About your earlier reply ".*?": /s, '') : text;
+        const crisis = detectCrisisIntent(shown, jurisdiction?.countryCode);
+        if (crisis.gradedTier !== 'ordinary_difficulty') {
+          setActiveCrisis(crisis);
+          if (persona !== 'support') {
+            setPersona('support');
+          }
+        }
         setTurns((t) => [
           ...t,
           {
@@ -440,13 +449,15 @@ export function GlobalVoiceAssistant() {
     hapticSelection();
     setTyped('');
 
-    // Detect situational crisis or urgent distress
+    // Detect situational crisis or graded distress
     const crisis = detectCrisisIntent(t, jurisdiction?.countryCode);
-    if (crisis.isCrisis) {
+    if (crisis.gradedTier !== 'ordinary_difficulty') {
       setActiveCrisis(crisis);
       if (persona !== 'support') {
         setPersona('support');
       }
+    } else if (activeCrisis && activeCrisis.gradedTier !== 'imminent_risk') {
+      setActiveCrisis(null);
     }
     if (replyTo) {
       // A reply to a specific answer: the coach gets that answer as context; the chat shows a quote.
@@ -673,6 +684,26 @@ export function GlobalVoiceAssistant() {
             ? ('error' as const)
             : ('idle' as const);
 
+  const handleRequestClose = useCallback(() => {
+    if (directoryModalVisible) {
+      setDirectoryModalVisible(false);
+      return;
+    }
+    if (countryModalVisible) {
+      setCountryModalVisible(false);
+      return;
+    }
+    if (groundingModal) {
+      setGroundingModal(null);
+      return;
+    }
+    if (camOpen) {
+      setCamOpen(false);
+      return;
+    }
+    close();
+  }, [directoryModalVisible, countryModalVisible, groundingModal, camOpen, close]);
+
   const hasText = typed.trim().length > 0 || pending !== null;
   const showThinking =
     (voiceState === 'reasoning' || voiceState === 'transcribing') &&
@@ -690,7 +721,7 @@ export function GlobalVoiceAssistant() {
       visible
       animationType="slide"
       transparent
-      onRequestClose={close}
+      onRequestClose={handleRequestClose}
       statusBarTranslucent
       navigationBarTranslucent
     >
@@ -732,7 +763,25 @@ export function GlobalVoiceAssistant() {
                         <Text style={[typography.subheading, { color: colors.text.primary }]}>
                           Anvay
                         </Text>
-                        {sanctuary ? (
+                        {persona === 'support' ? (
+                          <View
+                            style={[
+                              styles.sanctuaryPill,
+                              { backgroundColor: colors.primaryAlpha, marginLeft: 8 },
+                            ]}
+                            accessibilityLabel="Support Companion Sanctuary"
+                          >
+                            <Ionicons name="heart-circle" size={13} color={colors.primary} />
+                            <Text
+                              style={[
+                                typography.captionBold,
+                                { color: colors.primary, marginLeft: 3 },
+                              ]}
+                            >
+                              Sanctuary
+                            </Text>
+                          </View>
+                        ) : sanctuary ? (
                           <View
                             style={[styles.sanctuary, { backgroundColor: colors.surface2 }]}
                             accessibilityLabel="Sanctuary status"
@@ -850,115 +899,214 @@ export function GlobalVoiceAssistant() {
                 </ScrollView>
               )}
 
-              {/* Emergency Helplines & Safety Bar */}
-              {persona === 'support' || activeCrisis ? (
-                <View
-                  style={[
-                    styles.safetyBar,
-                    {
-                      backgroundColor: colors.surface,
-                      borderColor: activeCrisis ? colors.error : colors.border,
-                    },
-                  ]}
-                >
-                  <View style={styles.safetyRow}>
-                    <PressableScale
-                      onPress={() => setCountryModalVisible(true)}
-                      style={[styles.countryBadge, { backgroundColor: colors.surface2 }]}
-                      accessibilityLabel={`Region: ${jurisdiction?.countryName ?? 'India'}. Tap to change country.`}
-                    >
-                      <Text style={styles.countryFlag}>{jurisdiction?.flag ?? '🇮🇳'}</Text>
-                      <Text
-                        style={[
-                          typography.captionBold,
-                          { color: colors.text.primary, marginLeft: 4 },
-                        ]}
+              {/* Graded Situational Safety & Support Companion Toolbar */}
+              {activeCrisis?.gradedTier === 'imminent_risk' ? (
+                /* Tier 4: Explicit Imminent Risk */
+                <View style={styles.safetyContainer}>
+                  <SquircleSurface
+                    radius={22}
+                    fill={colors.errorSurface}
+                    style={[styles.safetyCardBox, { borderColor: colors.error, borderWidth: 1 }]}
+                  >
+                    <View style={styles.safetyCardRow}>
+                      <View style={[styles.safetyIconBadge, { backgroundColor: colors.error }]}>
+                        <Ionicons name="alert-circle" size={20} color="#FFFFFF" />
+                      </View>
+                      <View style={styles.flex}>
+                        <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                          Immediate Care & Safety
+                        </Text>
+                        <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                          Your life and physical safety are the highest priority. Free 24/7 care is here.
+                        </Text>
+                      </View>
+                      <PressableScale onPress={() => setActiveCrisis(null)} hitSlop={8}>
+                        <Ionicons name="close" size={18} color={colors.text.muted} />
+                      </PressableScale>
+                    </View>
+                    <View style={styles.safetyCardActions}>
+                      <PressableScale
+                        onPress={() => callNumber(jurisdiction?.primaryEmergency.number ?? '112')}
+                        style={[styles.safetyActionBtn, { backgroundColor: colors.error }]}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Call Emergency ${jurisdiction?.primaryEmergency.number ?? '112'}`}
                       >
-                        {jurisdiction?.countryCode ?? 'IN'}
-                      </Text>
-                      <Ionicons
-                        name="chevron-down"
-                        size={12}
-                        color={colors.text.muted}
-                        style={{ marginLeft: 2 }}
-                      />
-                    </PressableScale>
+                        <Ionicons name="call" size={14} color="#FFFFFF" />
+                        <Text style={[typography.captionBold, { color: '#FFFFFF', marginLeft: 6 }]}>
+                          Call Emergency ({jurisdiction?.primaryEmergency.number ?? '112'})
+                        </Text>
+                      </PressableScale>
 
-                    <PressableScale
-                      onPress={() => callNumber(jurisdiction?.primaryEmergency.number ?? '112')}
-                      style={[styles.emergencyCallBtn, { backgroundColor: '#DC2626' }]}
-                      accessibilityLabel={`Call emergency services ${jurisdiction?.primaryEmergency.number ?? '112'}`}
-                    >
-                      <Ionicons name="call" size={12} color="#FFFFFF" />
-                      <Text style={[typography.captionBold, { color: '#FFFFFF', marginLeft: 4 }]}>
-                        {jurisdiction?.primaryEmergency.number ?? '112'}
-                      </Text>
-                    </PressableScale>
-
-                    <PressableScale
-                      onPress={() =>
-                        callNumber(jurisdiction?.primaryMentalHealth.number ?? '14416')
-                      }
-                      style={[styles.lifelineCallBtn, { backgroundColor: colors.primary }]}
-                      accessibilityLabel={`Call 24/7 mental health lifeline ${jurisdiction?.primaryMentalHealth.number ?? '14416'}`}
-                    >
-                      <Ionicons name="heart" size={12} color="#FFFFFF" />
-                      <Text
-                        style={[typography.captionBold, { color: '#FFFFFF', marginLeft: 4 }]}
-                        numberOfLines={1}
+                      <PressableScale
+                        onPress={() => callNumber(jurisdiction?.primaryMentalHealth.number ?? '14416')}
+                        style={[styles.safetyActionBtn, { backgroundColor: colors.primary }]}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Call Lifeline ${jurisdiction?.primaryMentalHealth.number ?? '14416'}`}
                       >
-                        {jurisdiction?.primaryMentalHealth.number ?? '14416'}
-                      </Text>
-                    </PressableScale>
-                  </View>
-
-                  {/* Grounding & Help Quick Chips */}
-                  <View style={styles.groundingRow}>
+                        <Ionicons name="heart" size={14} color={colors.onPrimary} />
+                        <Text style={[typography.captionBold, { color: colors.onPrimary, marginLeft: 6 }]}>
+                          Lifeline ({jurisdiction?.primaryMentalHealth.number ?? '14416'})
+                        </Text>
+                      </PressableScale>
+                    </View>
+                  </SquircleSurface>
+                </View>
+              ) : activeCrisis?.gradedTier === 'ambiguous_safety' ? (
+                /* Tier 3: Ambiguous Safety Concern */
+                <View style={styles.safetyContainer}>
+                  <SquircleSurface
+                    radius={22}
+                    fill={colors.surface1}
+                    style={[styles.safetyCardBox, { borderColor: colors.primary, borderWidth: 1 }]}
+                  >
+                    <View style={styles.safetyCardRow}>
+                      <View style={[styles.safetyIconBadge, { backgroundColor: colors.primaryAlpha }]}>
+                        <Ionicons name="heart" size={18} color={colors.primary} />
+                      </View>
+                      <View style={styles.flex}>
+                        <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                          We are right here with you
+                        </Text>
+                        <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                          Are you safe right now? Take a gentle breath. You do not have to carry this alone.
+                        </Text>
+                      </View>
+                      <PressableScale onPress={() => setActiveCrisis(null)} hitSlop={8}>
+                        <Ionicons name="close" size={18} color={colors.text.muted} />
+                      </PressableScale>
+                    </View>
+                    <View style={styles.safetyCardActions}>
+                      <PressableScale
+                        onPress={() => callNumber(jurisdiction?.primaryMentalHealth.number ?? '14416')}
+                        style={[styles.safetyActionBtn, { backgroundColor: colors.primary }]}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Call 24/7 Lifeline ${jurisdiction?.primaryMentalHealth.number ?? '14416'}`}
+                      >
+                        <Ionicons name="call" size={14} color={colors.onPrimary} />
+                        <Text style={[typography.captionBold, { color: colors.onPrimary, marginLeft: 6 }]}>
+                          24/7 Support ({jurisdiction?.primaryMentalHealth.number ?? '14416'})
+                        </Text>
+                      </PressableScale>
+                      <PressableScale
+                        onPress={() => setGroundingModal('breathing')}
+                        style={[styles.safetyActionBtn, { backgroundColor: colors.surface2 }]}
+                        accessibilityRole="button"
+                        accessibilityLabel="Box breathing exercise"
+                      >
+                        <Ionicons name="flower-outline" size={14} color={colors.text.primary} />
+                        <Text style={[typography.captionBold, { color: colors.text.primary, marginLeft: 6 }]}>
+                          Box Breathing
+                        </Text>
+                      </PressableScale>
+                    </View>
+                  </SquircleSurface>
+                </View>
+              ) : activeCrisis?.gradedTier === 'significant_distress' ? (
+                /* Tier 2: Significant Distress (Panic / Overwhelm) */
+                <View style={styles.safetyContainer}>
+                  <SquircleSurface
+                    radius={22}
+                    fill={colors.surface1}
+                    style={[styles.safetyCardBox, { borderColor: colors.border, borderWidth: 1 }]}
+                  >
+                    <View style={styles.safetyCardRow}>
+                      <View style={[styles.safetyIconBadge, { backgroundColor: colors.primaryAlpha }]}>
+                        <Ionicons name="flower-outline" size={18} color={colors.primary} />
+                      </View>
+                      <View style={styles.flex}>
+                        <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                          Pause and steady with me
+                        </Text>
+                        <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                          Your nervous system is in high alert. This wave will settle gently.
+                        </Text>
+                      </View>
+                      <PressableScale onPress={() => setActiveCrisis(null)} hitSlop={8}>
+                        <Ionicons name="close" size={18} color={colors.text.muted} />
+                      </PressableScale>
+                    </View>
+                    <View style={styles.safetyCardActions}>
+                      <PressableScale
+                        onPress={() => setGroundingModal('breathing')}
+                        style={[styles.safetyActionBtn, { backgroundColor: colors.primary }]}
+                        accessibilityRole="button"
+                        accessibilityLabel="Start box breathing exercise"
+                      >
+                        <Ionicons name="flower-outline" size={14} color={colors.onPrimary} />
+                        <Text style={[typography.captionBold, { color: colors.onPrimary, marginLeft: 6 }]}>
+                          Start Box Breathing
+                        </Text>
+                      </PressableScale>
+                      <PressableScale
+                        onPress={() => setGroundingModal('sensory')}
+                        style={[styles.safetyActionBtn, { backgroundColor: colors.surface2 }]}
+                        accessibilityRole="button"
+                        accessibilityLabel="5-4-3-2-1 Sensory grounding exercise"
+                      >
+                        <Ionicons name="eye-outline" size={14} color={colors.text.primary} />
+                        <Text style={[typography.captionBold, { color: colors.text.primary, marginLeft: 6 }]}>
+                          5-4-3-2-1 Sensory
+                        </Text>
+                      </PressableScale>
+                    </View>
+                  </SquircleSurface>
+                </View>
+              ) : persona === 'support' ? (
+                /* Tier 1: Ordinary Support Context — Calm, Tranquil Sanctuary Bar */
+                <View style={styles.calmSupportBar}>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.calmSupportChipsContainer}
+                  >
                     <PressableScale
                       onPress={() => setGroundingModal('breathing')}
-                      style={[
-                        styles.toolChip,
-                        { backgroundColor: colors.surface2, borderColor: colors.surface3 },
-                      ]}
+                      style={[styles.calmSupportChip, { backgroundColor: colors.surface, borderColor: colors.surface2 }]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Box breathing exercise"
                     >
-                      <Ionicons name="flower-outline" size={13} color={colors.primary} />
-                      <Text
-                        style={[typography.caption, { color: colors.text.primary, marginLeft: 4 }]}
-                      >
+                      <Ionicons name="flower-outline" size={14} color={colors.primary} />
+                      <Text style={[typography.captionBold, { color: colors.text.primary, marginLeft: 6 }]}>
                         Box Breathing
                       </Text>
                     </PressableScale>
 
                     <PressableScale
                       onPress={() => setGroundingModal('sensory')}
-                      style={[
-                        styles.toolChip,
-                        { backgroundColor: colors.surface2, borderColor: colors.surface3 },
-                      ]}
+                      style={[styles.calmSupportChip, { backgroundColor: colors.surface, borderColor: colors.surface2 }]}
+                      accessibilityRole="button"
+                      accessibilityLabel="5-4-3-2-1 sensory grounding"
                     >
-                      <Ionicons name="eye-outline" size={13} color={colors.primary} />
-                      <Text
-                        style={[typography.caption, { color: colors.text.primary, marginLeft: 4 }]}
-                      >
-                        5-4-3-2-1 Sensory
+                      <Ionicons name="eye-outline" size={14} color={colors.primary} />
+                      <Text style={[typography.captionBold, { color: colors.text.primary, marginLeft: 6 }]}>
+                        5-4-3-2-1 Grounding
                       </Text>
                     </PressableScale>
 
                     <PressableScale
                       onPress={() => setDirectoryModalVisible(true)}
-                      style={[
-                        styles.toolChip,
-                        { backgroundColor: colors.surface2, borderColor: colors.surface3 },
-                      ]}
+                      style={[styles.calmSupportChip, { backgroundColor: colors.surface, borderColor: colors.surface2 }]}
+                      accessibilityRole="button"
+                      accessibilityLabel={`View all verified helplines for ${jurisdiction?.countryName ?? 'India'}`}
                     >
-                      <Ionicons name="call-outline" size={13} color={colors.primary} />
-                      <Text
-                        style={[typography.caption, { color: colors.text.primary, marginLeft: 4 }]}
-                      >
-                        All Helplines
+                      <Text style={{ fontSize: 13 }}>{jurisdiction?.flag ?? '🇮🇳'}</Text>
+                      <Text style={[typography.captionBold, { color: colors.text.secondary, marginLeft: 6 }]}>
+                        Helplines
                       </Text>
                     </PressableScale>
-                  </View>
+
+                    <PressableScale
+                      onPress={() => setCountryModalVisible(true)}
+                      style={[styles.calmSupportChip, { backgroundColor: colors.surface, borderColor: colors.surface2 }]}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Current country: ${jurisdiction?.countryName ?? 'India'}. Tap to change country.`}
+                    >
+                      <Ionicons name="globe-outline" size={14} color={colors.text.muted} />
+                      <Text style={[typography.caption, { color: colors.text.muted, marginLeft: 4 }]}>
+                        {jurisdiction?.countryCode ?? 'IN'}
+                      </Text>
+                    </PressableScale>
+                  </ScrollView>
                 </View>
               ) : null}
 
@@ -1077,79 +1225,7 @@ export function GlobalVoiceAssistant() {
                   }}
                   keyboardShouldPersistTaps="handled"
                   keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
-                  ListHeaderComponent={
-                    <>
-                      <BrainSetupCard compact />
-                      {activeCrisis && activeCrisis.severity !== 'none' ? (
-                        <View
-                          style={[
-                            styles.crisisBanner,
-                            { backgroundColor: colors.surface, borderColor: colors.error },
-                          ]}
-                        >
-                          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <Ionicons name="alert-circle" size={24} color={colors.error} />
-                            <View style={{ marginLeft: 10, flex: 1 }}>
-                              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                                24/7 Professional Help Available
-                              </Text>
-                              <Text
-                                style={[
-                                  typography.caption,
-                                  { color: colors.text.secondary, marginTop: 2 },
-                                ]}
-                              >
-                                {activeCrisis.deescalationScript ||
-                                  'You matter. Immediate confidential human care is ready for you.'}
-                              </Text>
-                            </View>
-                            <PressableScale onPress={() => setActiveCrisis(null)} hitSlop={8}>
-                              <Ionicons
-                                name="close-circle-outline"
-                                size={20}
-                                color={colors.text.muted}
-                              />
-                            </PressableScale>
-                          </View>
-                          <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
-                            <PressableScale
-                              onPress={() =>
-                                callNumber(jurisdiction?.primaryEmergency.number ?? '112')
-                              }
-                              style={[styles.crisisBtn, { backgroundColor: '#DC2626' }]}
-                            >
-                              <Ionicons name="call" size={12} color="#FFFFFF" />
-                              <Text
-                                style={[
-                                  typography.captionBold,
-                                  { color: '#FFFFFF', marginLeft: 4 },
-                                ]}
-                              >
-                                Call Emergency ({jurisdiction?.primaryEmergency.number ?? '112'})
-                              </Text>
-                            </PressableScale>
-                            <PressableScale
-                              onPress={() =>
-                                callNumber(jurisdiction?.primaryMentalHealth.number ?? '14416')
-                              }
-                              style={[styles.crisisBtn, { backgroundColor: colors.primary }]}
-                            >
-                              <Ionicons name="heart" size={12} color="#FFFFFF" />
-                              <Text
-                                style={[
-                                  typography.captionBold,
-                                  { color: '#FFFFFF', marginLeft: 4 },
-                                ]}
-                              >
-                                Call Lifeline ({jurisdiction?.primaryMentalHealth.number ?? '14416'}
-                                )
-                              </Text>
-                            </PressableScale>
-                          </View>
-                        </View>
-                      ) : null}
-                    </>
-                  }
+                  ListHeaderComponent={<BrainSetupCard compact />}
                   ListFooterComponent={
                     <>
                       {showThinking ? (
@@ -1388,317 +1464,378 @@ export function GlobalVoiceAssistant() {
           }}
         />
 
-        {/* Country Selector Modal */}
-        <Modal
-          visible={countryModalVisible}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setCountryModalVisible(false)}
-        >
-          <View style={styles.modalBackdrop}>
-            <View
-              style={[
-                styles.modalBox,
-                { backgroundColor: colors.background, borderColor: colors.border },
-              ]}
-            >
-              <View style={styles.modalHeader}>
-                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                  Select Emergency Country
-                </Text>
-                <PressableScale onPress={() => setCountryModalVisible(false)} hitSlop={8}>
-                  <Ionicons name="close" size={22} color={colors.text.secondary} />
-                </PressableScale>
-              </View>
-              <Text
-                style={[typography.caption, { color: colors.text.secondary, marginBottom: 12 }]}
-              >
-                Emergency and mental health helplines match your physical country.
-              </Text>
-              <ScrollView style={{ maxHeight: 340 }}>
-                {SUPPORTED_COUNTRIES.map((c) => {
-                  const sel = jurisdiction?.countryCode === c.code;
-                  return (
-                    <PressableScale
-                      key={c.code}
-                      onPress={() => selectCountry(c.code)}
-                      style={[
-                        styles.countryRow,
-                        {
-                          backgroundColor: sel ? colors.primaryAlpha : colors.surface,
-                          borderColor: sel ? colors.primary : colors.surface2,
-                        },
-                      ]}
-                    >
-                      <Text style={styles.countryFlagLarge}>{c.flag}</Text>
-                      <View style={{ flex: 1, marginLeft: 10 }}>
-                        <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                          {c.name}
-                        </Text>
-                        <Text style={[typography.caption, { color: colors.text.secondary }]}>
-                          Emergency: {c.defaultEmergency} • Lifeline: {c.defaultMentalHealth}
-                        </Text>
-                      </View>
-                      {sel ? (
-                        <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
-                      ) : null}
-                    </PressableScale>
-                  );
-                })}
-              </ScrollView>
-            </View>
-          </View>
-        </Modal>
-
-        {/* All Helplines Directory Modal */}
-        <Modal
-          visible={directoryModalVisible}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setDirectoryModalVisible(false)}
-        >
-          <View style={styles.modalBackdrop}>
-            <View
-              style={[
-                styles.modalBox,
-                { backgroundColor: colors.background, borderColor: colors.border },
-              ]}
-            >
-              <View style={styles.modalHeader}>
-                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                  {jurisdiction?.flag} Verified Helplines ({jurisdiction?.countryName})
-                </Text>
-                <PressableScale onPress={() => setDirectoryModalVisible(false)} hitSlop={8}>
-                  <Ionicons name="close" size={22} color={colors.text.secondary} />
-                </PressableScale>
-              </View>
-              <ScrollView style={{ maxHeight: 380 }}>
-                {jurisdiction?.allContacts.map((contact) => (
-                  <View
-                    key={contact.id}
-                    style={[
-                      styles.helplineCard,
-                      { backgroundColor: colors.surface, borderColor: colors.surface2 },
-                    ]}
-                  >
-                    <View style={{ flex: 1 }}>
-                      <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                        {contact.name}
-                      </Text>
-                      <Text
-                        style={[typography.captionBold, { color: colors.primary, marginTop: 2 }]}
-                      >
-                        {contact.number} • {contact.hours}
-                      </Text>
-                      <Text
-                        style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}
-                      >
-                        {contact.coverage} • Source: {contact.officialSource}
-                      </Text>
-                    </View>
-                    <PressableScale
-                      onPress={() => callNumber(contact.number)}
-                      style={[
-                        styles.emergencyCallBtn,
-                        {
-                          backgroundColor: colors.primary,
-                          paddingHorizontal: 12,
-                          paddingVertical: 8,
-                        },
-                      ]}
-                    >
-                      <Ionicons name="call" size={14} color="#FFFFFF" />
-                      <Text style={[typography.captionBold, { color: '#FFFFFF', marginLeft: 4 }]}>
-                        Call
-                      </Text>
-                    </PressableScale>
-                  </View>
-                ))}
-              </ScrollView>
-            </View>
-          </View>
-        </Modal>
-
-        {/* Box Breathing Interactive Modal */}
-        <Modal
-          visible={groundingModal === 'breathing'}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setGroundingModal(null)}
-        >
-          <View style={styles.modalBackdrop}>
-            <View
-              style={[
-                styles.modalBox,
-                {
-                  backgroundColor: colors.background,
-                  borderColor: colors.border,
-                  alignItems: 'center',
-                },
-              ]}
-            >
-              <View style={[styles.modalHeader, { width: '100%' }]}>
-                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                  Box Breathing (Sama Vritti)
-                </Text>
-                <PressableScale onPress={() => setGroundingModal(null)} hitSlop={8}>
-                  <Ionicons name="close" size={22} color={colors.text.secondary} />
-                </PressableScale>
-              </View>
-              <Text
+        {/* In-sheet overlays (rendered within GlobalVoiceAssistant's own window, avoiding Android nested Modal bugs) */}
+        {countryModalVisible ? (
+          <View style={styles.sheetOverlayFill} pointerEvents="box-none">
+            <Pressable
+              style={styles.sheetOverlayBackdrop}
+              onPress={() => setCountryModalVisible(false)}
+              accessibilityRole="button"
+              accessibilityLabel="Close country selector"
+            />
+            <View style={styles.sheetOverlayContentWrapper} pointerEvents="box-none">
+              <SquircleSurface
+                radius={28}
+                fill={colors.background}
                 style={[
-                  typography.caption,
-                  { color: colors.text.secondary, textAlign: 'center', marginBottom: 20 },
+                  styles.modalBox,
+                  { borderColor: colors.border, borderWidth: 1 },
                 ]}
               >
-                Calm your nervous system in 4 rhythmic beats
-              </Text>
-
-              {/* Animated breathing circle */}
-              <View style={styles.breathingCircleContainer}>
-                <Animated.View
-                  style={[
-                    styles.breathingCircle,
-                    breathAnimStyle,
-                    { backgroundColor: colors.primaryAlpha, borderColor: colors.primary },
-                  ]}
-                >
-                  <Text style={[typography.heading, { color: colors.primary }]}>
-                    {breathingCount}
+                <View style={styles.modalHeader}>
+                  <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                    Select Emergency Country
                   </Text>
-                </Animated.View>
-              </View>
+                  <PressableScale
+                    onPress={() => setCountryModalVisible(false)}
+                    hitSlop={12}
+                    accessibilityRole="button"
+                    accessibilityLabel="Close"
+                  >
+                    <Ionicons name="close" size={22} color={colors.text.secondary} />
+                  </PressableScale>
+                </View>
+                <Text
+                  style={[typography.caption, { color: colors.text.secondary, marginBottom: 12 }]}
+                >
+                  Emergency and mental health helplines match your physical country.
+                </Text>
+                <ScrollView style={{ maxHeight: 340 }}>
+                  {SUPPORTED_COUNTRIES.map((c) => {
+                    const sel = jurisdiction?.countryCode === c.code;
+                    return (
+                      <PressableScale
+                        key={c.code}
+                        onPress={() => selectCountry(c.code)}
+                        style={[
+                          styles.countryRow,
+                          {
+                            backgroundColor: sel ? colors.primaryAlpha : colors.surface,
+                            borderColor: sel ? colors.primary : colors.surface2,
+                          },
+                        ]}
+                      >
+                        <Text style={styles.countryFlagLarge}>{c.flag}</Text>
+                        <View style={{ flex: 1, marginLeft: 10 }}>
+                          <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                            {c.name}
+                          </Text>
+                          <Text style={[typography.caption, { color: colors.text.secondary }]}>
+                            Emergency: {c.defaultEmergency} • Lifeline: {c.defaultMentalHealth}
+                          </Text>
+                        </View>
+                        {sel ? (
+                          <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
+                        ) : null}
+                      </PressableScale>
+                    );
+                  })}
+                </ScrollView>
+                <Button
+                  label="Done"
+                  variant="secondary"
+                  size="sm"
+                  onPress={() => setCountryModalVisible(false)}
+                  style={{ marginTop: 14 }}
+                />
+              </SquircleSurface>
+            </View>
+          </View>
+        ) : null}
 
-              <Text style={[typography.subbodyBold, { color: colors.text.primary, marginTop: 20 }]}>
-                {
-                  [
-                    'Inhale slowly...',
-                    'Gently hold...',
-                    'Release slowly...',
-                    'Pause in stillness...',
-                  ][breathingStep]
-                }
-              </Text>
-              <Text
+        {/* All Helplines Directory Overlay */}
+        {directoryModalVisible ? (
+          <View style={styles.sheetOverlayFill} pointerEvents="box-none">
+            <Pressable
+              style={styles.sheetOverlayBackdrop}
+              onPress={() => setDirectoryModalVisible(false)}
+              accessibilityRole="button"
+              accessibilityLabel="Close helplines directory"
+            />
+            <View style={styles.sheetOverlayContentWrapper} pointerEvents="box-none">
+              <SquircleSurface
+                radius={28}
+                fill={colors.background}
                 style={[
-                  typography.caption,
+                  styles.modalBox,
+                  { borderColor: colors.border, borderWidth: 1 },
+                ]}
+              >
+                <View style={styles.modalHeader}>
+                  <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                    {jurisdiction?.flag} Verified Helplines ({jurisdiction?.countryName})
+                  </Text>
+                  <PressableScale
+                    onPress={() => setDirectoryModalVisible(false)}
+                    hitSlop={12}
+                    accessibilityRole="button"
+                    accessibilityLabel="Close"
+                  >
+                    <Ionicons name="close" size={22} color={colors.text.secondary} />
+                  </PressableScale>
+                </View>
+                <ScrollView style={{ maxHeight: 380 }}>
+                  {jurisdiction?.allContacts.map((contact) => (
+                    <View
+                      key={contact.id}
+                      style={[
+                        styles.helplineCard,
+                        { backgroundColor: colors.surface, borderColor: colors.surface2 },
+                      ]}
+                    >
+                      <View style={{ flex: 1, paddingRight: 8 }}>
+                        <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                          {contact.name}
+                        </Text>
+                        <Text
+                          style={[typography.captionBold, { color: colors.primary, marginTop: 2 }]}
+                        >
+                          {contact.number} • {contact.hours}
+                        </Text>
+                        <Text
+                          style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}
+                        >
+                          {contact.coverage} • Source: {contact.officialSource}
+                        </Text>
+                      </View>
+                      <PressableScale
+                        onPress={() => callNumber(contact.number)}
+                        style={[
+                          styles.emergencyCallBtn,
+                          {
+                            backgroundColor: colors.primary,
+                            paddingHorizontal: 12,
+                            paddingVertical: 8,
+                          },
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Call ${contact.name}`}
+                      >
+                        <Ionicons name="call" size={14} color="#FFFFFF" />
+                        <Text style={[typography.captionBold, { color: '#FFFFFF', marginLeft: 4 }]}>
+                          Call
+                        </Text>
+                      </PressableScale>
+                    </View>
+                  ))}
+                </ScrollView>
+                <Button
+                  label="Done"
+                  variant="secondary"
+                  size="sm"
+                  onPress={() => setDirectoryModalVisible(false)}
+                  style={{ marginTop: 14 }}
+                />
+              </SquircleSurface>
+            </View>
+          </View>
+        ) : null}
+
+        {/* Box Breathing In-Sheet Overlay */}
+        {groundingModal === 'breathing' ? (
+          <View style={styles.sheetOverlayFill} pointerEvents="box-none">
+            <Pressable
+              style={styles.sheetOverlayBackdrop}
+              onPress={() => setGroundingModal(null)}
+              accessibilityRole="button"
+              accessibilityLabel="Close breathing exercise"
+            />
+            <View style={styles.sheetOverlayContentWrapper} pointerEvents="box-none">
+              <SquircleSurface
+                radius={28}
+                fill={colors.background}
+                style={[
+                  styles.modalBox,
                   {
-                    color: colors.text.secondary,
-                    textAlign: 'center',
-                    marginTop: 6,
-                    marginHorizontal: 20,
+                    borderColor: colors.border,
+                    borderWidth: 1,
+                    alignItems: 'center',
                   },
                 ]}
               >
-                {
-                  [
-                    'Breathe in gently through your nose, expanding your chest.',
-                    'Keep your shoulders completely relaxed.',
-                    'Release smoothly and completely through your mouth.',
-                    'Rest in calm before the next breath.',
-                  ][breathingStep]
-                }
-              </Text>
-
-              <PressableScale
-                onPress={() => setGroundingModal(null)}
-                style={[styles.doneBtn, { backgroundColor: colors.primary, marginTop: 24 }]}
-              >
-                <Text style={[typography.bodyBold, { color: colors.onPrimary }]}>
-                  I feel calmer now
-                </Text>
-              </PressableScale>
-            </View>
-          </View>
-        </Modal>
-
-        {/* 5-4-3-2-1 Sensory Grounding Modal */}
-        <Modal
-          visible={groundingModal === 'sensory'}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setGroundingModal(null)}
-        >
-          <View style={styles.modalBackdrop}>
-            <View
-              style={[
-                styles.modalBox,
-                { backgroundColor: colors.background, borderColor: colors.border },
-              ]}
-            >
-              <View style={styles.modalHeader}>
-                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
-                  5-4-3-2-1 Sensory Grounding
-                </Text>
-                <PressableScale onPress={() => setGroundingModal(null)} hitSlop={8}>
-                  <Ionicons name="close" size={22} color={colors.text.secondary} />
-                </PressableScale>
-              </View>
-              <Text
-                style={[typography.caption, { color: colors.text.secondary, marginBottom: 16 }]}
-              >
-                Anchor your mind into this physical room, step by step.
-              </Text>
-
-              <View
-                style={[
-                  styles.sensoryCard,
-                  { backgroundColor: colors.surface, borderColor: colors.surface2 },
-                ]}
-              >
-                <Text style={[typography.heading, { color: colors.primary, marginBottom: 4 }]}>
-                  {GROUNDING_EXERCISES.sensory_54321.steps[sensoryStep].count}
-                </Text>
-                <Text
-                  style={[typography.subbodyBold, { color: colors.text.primary, lineHeight: 22 }]}
-                >
-                  {GROUNDING_EXERCISES.sensory_54321.steps[sensoryStep].prompt}
-                </Text>
-              </View>
-
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginTop: 18,
-                }}
-              >
-                <PressableScale
-                  onPress={() => setSensoryStep((s) => Math.max(0, s - 1))}
-                  disabled={sensoryStep === 0}
-                  style={[styles.stepBtn, { opacity: sensoryStep === 0 ? 0.3 : 1 }]}
-                >
-                  <Text style={[typography.captionBold, { color: colors.text.secondary }]}>
-                    Previous
+                <View style={[styles.modalHeader, { width: '100%' }]}>
+                  <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                    Box Breathing (Sama Vritti)
                   </Text>
-                </PressableScale>
-
-                <Text style={[typography.caption, { color: colors.text.muted }]}>
-                  Step {sensoryStep + 1} of 5
-                </Text>
-
-                {sensoryStep < 4 ? (
-                  <PressableScale
-                    onPress={() => setSensoryStep((s) => Math.min(4, s + 1))}
-                    style={[styles.stepBtnPrimary, { backgroundColor: colors.primary }]}
-                  >
-                    <Text style={[typography.captionBold, { color: colors.onPrimary }]}>Next</Text>
-                  </PressableScale>
-                ) : (
                   <PressableScale
                     onPress={() => setGroundingModal(null)}
-                    style={[styles.stepBtnPrimary, { backgroundColor: colors.primary }]}
+                    hitSlop={12}
+                    accessibilityRole="button"
+                    accessibilityLabel="Close"
                   >
-                    <Text style={[typography.captionBold, { color: colors.onPrimary }]}>
-                      Complete
-                    </Text>
+                    <Ionicons name="close" size={22} color={colors.text.secondary} />
                   </PressableScale>
-                )}
-              </View>
+                </View>
+                <Text
+                  style={[
+                    typography.caption,
+                    { color: colors.text.secondary, textAlign: 'center', marginBottom: 20 },
+                  ]}
+                >
+                  Calm your autonomic nervous system in 4 rhythmic beats
+                </Text>
+
+                {/* Animated breathing circle */}
+                <View style={styles.breathingCircleContainer}>
+                  <Animated.View
+                    style={[
+                      styles.breathingCircle,
+                      breathAnimStyle,
+                      { backgroundColor: colors.primaryAlpha, borderColor: colors.primary },
+                    ]}
+                  >
+                    <Text style={[typography.heading, { color: colors.primary }]}>
+                      {breathingCount}
+                    </Text>
+                  </Animated.View>
+                </View>
+
+                <Text style={[typography.subbodyBold, { color: colors.text.primary, marginTop: 20 }]}>
+                  {
+                    [
+                      'Inhale slowly...',
+                      'Gently hold...',
+                      'Release slowly...',
+                      'Pause in stillness...',
+                    ][breathingStep]
+                  }
+                </Text>
+                <Text
+                  style={[
+                    typography.caption,
+                    {
+                      color: colors.text.secondary,
+                      textAlign: 'center',
+                      marginTop: 6,
+                      marginHorizontal: 20,
+                    },
+                  ]}
+                >
+                  {
+                    [
+                      'Breathe in gently through your nose, expanding your chest.',
+                      'Keep your shoulders completely relaxed.',
+                      'Release smoothly and completely through your mouth.',
+                      'Rest in calm before the next breath.',
+                    ][breathingStep]
+                  }
+                </Text>
+
+                <Button
+                  label="I feel calmer now"
+                  variant="primary"
+                  size="md"
+                  onPress={() => setGroundingModal(null)}
+                  style={{ marginTop: 24, width: '100%' }}
+                />
+              </SquircleSurface>
             </View>
           </View>
-        </Modal>
+        ) : null}
+
+        {/* 5-4-3-2-1 Sensory Grounding In-Sheet Overlay */}
+        {groundingModal === 'sensory' ? (
+          <View style={styles.sheetOverlayFill} pointerEvents="box-none">
+            <Pressable
+              style={styles.sheetOverlayBackdrop}
+              onPress={() => setGroundingModal(null)}
+              accessibilityRole="button"
+              accessibilityLabel="Close sensory grounding"
+            />
+            <View style={styles.sheetOverlayContentWrapper} pointerEvents="box-none">
+              <SquircleSurface
+                radius={28}
+                fill={colors.background}
+                style={[
+                  styles.modalBox,
+                  { borderColor: colors.border, borderWidth: 1 },
+                ]}
+              >
+                <View style={styles.modalHeader}>
+                  <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                    5-4-3-2-1 Sensory Grounding
+                  </Text>
+                  <PressableScale
+                    onPress={() => setGroundingModal(null)}
+                    hitSlop={12}
+                    accessibilityRole="button"
+                    accessibilityLabel="Close"
+                  >
+                    <Ionicons name="close" size={22} color={colors.text.secondary} />
+                  </PressableScale>
+                </View>
+                <Text
+                  style={[typography.caption, { color: colors.text.secondary, marginBottom: 16 }]}
+                >
+                  Anchor your mind into this physical room, step by step.
+                </Text>
+
+                <View
+                  style={[
+                    styles.sensoryCard,
+                    { backgroundColor: colors.surface, borderColor: colors.surface2 },
+                  ]}
+                >
+                  <Text style={[typography.heading, { color: colors.primary, marginBottom: 4 }]}>
+                    {GROUNDING_EXERCISES.sensory_54321.steps[sensoryStep].count}
+                  </Text>
+                  <Text
+                    style={[typography.subbodyBold, { color: colors.text.primary, lineHeight: 22 }]}
+                  >
+                    {GROUNDING_EXERCISES.sensory_54321.steps[sensoryStep].prompt}
+                  </Text>
+                </View>
+
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginTop: 18,
+                  }}
+                >
+                  <PressableScale
+                    onPress={() => setSensoryStep((s) => Math.max(0, s - 1))}
+                    disabled={sensoryStep === 0}
+                    style={[styles.stepBtn, { opacity: sensoryStep === 0 ? 0.3 : 1 }]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Previous step"
+                  >
+                    <Text style={[typography.captionBold, { color: colors.text.secondary }]}>
+                      Previous
+                    </Text>
+                  </PressableScale>
+
+                  <Text style={[typography.caption, { color: colors.text.muted }]}>
+                    Step {sensoryStep + 1} of 5
+                  </Text>
+
+                  {sensoryStep < 4 ? (
+                    <PressableScale
+                      onPress={() => setSensoryStep((s) => Math.min(4, s + 1))}
+                      style={[styles.stepBtnPrimary, { backgroundColor: colors.primary }]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Next step"
+                    >
+                      <Text style={[typography.captionBold, { color: colors.onPrimary }]}>Next</Text>
+                    </PressableScale>
+                  ) : (
+                    <PressableScale
+                      onPress={() => setGroundingModal(null)}
+                      style={[styles.stepBtnPrimary, { backgroundColor: colors.primary }]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Complete grounding"
+                    >
+                      <Text style={[typography.captionBold, { color: colors.onPrimary }]}>
+                        Complete
+                      </Text>
+                    </PressableScale>
+                  )}
+                </View>
+              </SquircleSurface>
+            </View>
+          </View>
+        ) : null}
       </GestureHandlerRootView>
     </Modal>
   );
@@ -2053,28 +2190,63 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   // Safety & Emergency styles
-  safetyBar: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 16,
-    marginHorizontal: 16,
-    marginBottom: 6,
-    borderWidth: 1,
-    gap: 8,
-  },
-  safetyRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  countryBadge: {
+  sanctuaryPill: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
-    paddingVertical: 6,
+    paddingVertical: 3,
+    borderRadius: 999,
+  },
+  safetyContainer: {
+    paddingHorizontal: 16,
+    marginBottom: 8,
+  },
+  safetyCardBox: {
+    padding: 14,
+  },
+  safetyCardRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  safetyIconBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  safetyCardActions: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 10,
+  },
+  safetyActionBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
     borderRadius: 12,
   },
-  countryFlag: { fontSize: 16 },
+  calmSupportBar: {
+    marginHorizontal: 16,
+    marginBottom: 8,
+  },
+  calmSupportChipsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  calmSupportChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
   countryFlagLarge: { fontSize: 24 },
   emergencyCallBtn: {
     flexDirection: 'row',
@@ -2083,55 +2255,28 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 12,
   },
-  lifelineCallBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
-    flex: 1,
+  sheetOverlayFill: {
+    ...StyleSheet.absoluteFill,
+    zIndex: 99,
     justifyContent: 'center',
-  },
-  groundingRow: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    flexWrap: 'wrap',
   },
-  toolChip: {
-    flexDirection: 'row',
+  sheetOverlayBackdrop: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(0,0,0,0.60)',
+  },
+  sheetOverlayContentWrapper: {
+    width: '100%',
+    paddingHorizontal: 20,
     alignItems: 'center',
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    borderRadius: 999,
-    borderWidth: 1,
-  },
-  crisisBanner: {
-    padding: 12,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    marginBottom: 10,
-  },
-  crisisBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    borderRadius: 10,
-    flex: 1,
     justifyContent: 'center',
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.65)',
-    justifyContent: 'center',
-    padding: 20,
+    zIndex: 100,
   },
   modalBox: {
-    borderRadius: 24,
+    borderRadius: 28,
     padding: 20,
-    borderWidth: 1,
     maxHeight: '85%',
+    width: '100%',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -2168,13 +2313,6 @@ const styles = StyleSheet.create({
     height: 90,
     borderRadius: 45,
     borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  doneBtn: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
   },

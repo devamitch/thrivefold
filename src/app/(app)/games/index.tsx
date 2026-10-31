@@ -1,18 +1,17 @@
-import { SquircleSurface } from '../../../components/ui/SquircleSurface';
 import { Ionicons } from '@expo/vector-icons';
-import { hapticLight, hapticMedium, hapticSuccess } from '../../../services/haptics';
-import React, { useEffect, useState } from 'react';
-import { Modal, StyleSheet, Text, View } from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Image } from 'expo-image';
+import { useEffect, useState } from 'react';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { GestureHandlerRootView, Touchable } from 'react-native-gesture-handler';
+import { hapticLight, hapticMedium, hapticSuccess } from '../../../services/haptics';
 
 import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { Header } from '../../../components/ui/Header';
+import { PressableScale } from '../../../components/ui/PressableScale';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
 import { useTheme } from '../../../theme/useTheme';
-import { PressableScale } from '../../../components/ui/PressableScale';
 
 interface MemoryCard {
   id: number;
@@ -146,17 +145,39 @@ export default function GamesScreen() {
   };
 
   const groundingPrompts = [
-    { count: '5', label: 'Notice 5 things you can see around you.', hint: 'Shapes, colors, soft light.' },
-    { count: '4', label: 'Notice 4 physical textures you can feel.', hint: 'Your clothes, the chair, the phone surface, your breath.' },
-    { count: '3', label: 'Notice 3 subtle sounds you can hear.', hint: 'Ambient hum, distant breeze, your heartbeat.' },
-    { count: '2', label: 'Notice 2 scents in the air.', hint: 'Herbal tea, fresh air, clean cotton.' },
-    { count: '1', label: 'Notice 1 taste or sensation of calm.', hint: 'Sip water or breathe deeply into your center.' },
+    {
+      count: '5',
+      label: 'Notice 5 things you can see around you.',
+      hint: 'Shapes, colors, soft light.',
+    },
+    {
+      count: '4',
+      label: 'Notice 4 physical textures you can feel.',
+      hint: 'Your clothes, the chair, the phone surface, your breath.',
+    },
+    {
+      count: '3',
+      label: 'Notice 3 subtle sounds you can hear.',
+      hint: 'Ambient hum, distant breeze, your heartbeat.',
+    },
+    {
+      count: '2',
+      label: 'Notice 2 scents in the air.',
+      hint: 'Herbal tea, fresh air, clean cotton.',
+    },
+    {
+      count: '1',
+      label: 'Notice 1 taste or sensation of calm.',
+      hint: 'Sip water or breathe deeply into your center.',
+    },
   ];
 
   return (
     <ScreenWrapper scrollable>
       <Header title="Games" subtitle="Short breathing, focus and memory practice" showBack />
-      <View style={[styles.content, { paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }]}>
+      <View
+        style={[styles.content, { paddingHorizontal: spacing.base, paddingBottom: spacing.xxl }]}
+      >
         <Card style={{ marginBottom: spacing.md, padding: 14, backgroundColor: colors.surface }}>
           <View style={styles.heroWrap}>
             <Image
@@ -168,8 +189,14 @@ export default function GamesScreen() {
           <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 12 }]}>
             Gentle Cognitive Rhythm
           </Text>
-          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4, lineHeight: 18 }]}>
-            No punishing loss conditions, lives, or stress clocks. These exercises restore balance to the nervous system and sync with your hormonal vitality.
+          <Text
+            style={[
+              typography.caption,
+              { color: colors.text.secondary, marginTop: 4, lineHeight: 18 },
+            ]}
+          >
+            No punishing loss conditions, lives, or stress clocks. These exercises restore balance
+            to the nervous system and sync with your hormonal vitality.
           </Text>
         </Card>
 
@@ -186,11 +213,22 @@ export default function GamesScreen() {
                 </Text>
               </View>
             </View>
-            <Text style={[typography.subbody, { color: colors.text.secondary, marginVertical: spacing.sm, lineHeight: 20 }]}>
+            <Text
+              style={[
+                typography.subbody,
+                { color: colors.text.secondary, marginVertical: spacing.sm, lineHeight: 20 },
+              ]}
+            >
               {g.desc}
             </Text>
             <Button
-              label={g.id === 'game_breathe' ? 'Start Box Breathing' : g.id === 'game_memory' ? 'Play Flora Match' : 'Begin Grounding'}
+              label={
+                g.id === 'game_breathe'
+                  ? 'Start Box Breathing'
+                  : g.id === 'game_memory'
+                    ? 'Play Flora Match'
+                    : 'Begin Grounding'
+              }
               size="sm"
               variant="outline"
               onPress={() => handleStartGame(g.id)}
@@ -199,9 +237,20 @@ export default function GamesScreen() {
         ))}
 
         {/* Breathing Exercise Modal */}
-        <Modal visible={activeSession === 'game_breathe'} transparent animationType="fade">
+        <Modal
+          visible={activeSession === 'game_breathe'}
+          transparent
+          animationType="fade"
+          statusBarTranslucent
+          onRequestClose={() => setActiveSession(null)}
+        >
           <GestureHandlerRootView style={styles.ghRoot}>
             <View style={[styles.modalOverlay, { backgroundColor: colors.scrim }]}>
+              <Touchable
+                style={StyleSheet.absoluteFill}
+                onPress={() => setActiveSession(null)}
+                accessibilityLabel="Close breathing session"
+              />
               <View style={[styles.modalCard, { backgroundColor: colors.surface }]}>
                 <View style={styles.modalHeader}>
                   <Text style={[typography.subheading, { color: colors.text.primary }]}>
@@ -224,22 +273,30 @@ export default function GamesScreen() {
                               breathPhase === 'Inhale'
                                 ? 1.25
                                 : breathPhase === 'Hold'
-                                ? 1.25
-                                : 0.95,
+                                  ? 1.25
+                                  : 0.95,
                           },
                         ],
                       },
                     ]}
                   >
-                    <Text style={[typography.heading, { color: colors.primary }]}>{breathPhase}</Text>
+                    <Text style={[typography.heading, { color: colors.primary }]}>
+                      {breathPhase}
+                    </Text>
                     <Text style={[typography.display, { color: colors.primary, marginTop: 4 }]}>
                       {breathTimer}
                     </Text>
                   </View>
                 </View>
 
-                <Text style={[typography.caption, { color: colors.text.secondary, textAlign: 'center', marginTop: 12 }]}>
-                  Completed Cycles: {cycleCount} · Inhale for 4, hold for 4, exhale for 4, rest for 4.
+                <Text
+                  style={[
+                    typography.caption,
+                    { color: colors.text.secondary, textAlign: 'center', marginTop: 12 },
+                  ]}
+                >
+                  Completed Cycles: {cycleCount} · Inhale for 4, hold for 4, exhale for 4, rest for
+                  4.
                 </Text>
 
                 <Button
@@ -255,9 +312,20 @@ export default function GamesScreen() {
         </Modal>
 
         {/* Memory Game Modal */}
-        <Modal visible={activeSession === 'game_memory'} transparent animationType="fade">
+        <Modal
+          visible={activeSession === 'game_memory'}
+          transparent
+          animationType="fade"
+          statusBarTranslucent
+          onRequestClose={() => setActiveSession(null)}
+        >
           <GestureHandlerRootView style={styles.ghRoot}>
             <View style={[styles.modalOverlay, { backgroundColor: colors.scrim }]}>
+              <PressableScale
+                style={StyleSheet.absoluteFill}
+                onPress={() => setActiveSession(null)}
+                accessibilityLabel="Close memory game"
+              />
               <View style={[styles.modalCard, { backgroundColor: colors.surface }]}>
                 <View style={styles.modalHeader}>
                   <Text style={[typography.subheading, { color: colors.text.primary }]}>
@@ -268,7 +336,9 @@ export default function GamesScreen() {
                   </PressableScale>
                 </View>
 
-                <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: 16 }]}>
+                <Text
+                  style={[typography.caption, { color: colors.text.secondary, marginBottom: 16 }]}
+                >
                   Pairs Found: {matchedPairs} of {INITIAL_CARDS.length}
                 </Text>
 
@@ -285,15 +355,20 @@ export default function GamesScreen() {
                             backgroundColor: c.matched
                               ? colors.primaryAlpha
                               : isFlipped
-                              ? colors.surface1
-                              : colors.surface1,
+                                ? colors.surface1
+                                : colors.surface1,
                           },
                         ]}
                       >
                         {isFlipped ? (
                           <>
                             <Ionicons name={c.icon} size={24} color={colors.primary} />
-                            <Text style={[typography.caption, { color: colors.text.primary, fontSize: 10, marginTop: 2 }]}>
+                            <Text
+                              style={[
+                                typography.caption,
+                                { color: colors.text.primary, fontSize: 10, marginTop: 2 },
+                              ]}
+                            >
                               {c.label}
                             </Text>
                           </>
@@ -333,9 +408,20 @@ export default function GamesScreen() {
         </Modal>
 
         {/* Sensory Grounding Modal */}
-        <Modal visible={activeSession === 'game_focus'} transparent animationType="fade">
+        <Modal
+          visible={activeSession === 'game_focus'}
+          transparent
+          animationType="fade"
+          statusBarTranslucent
+          onRequestClose={() => setActiveSession(null)}
+        >
           <GestureHandlerRootView style={styles.ghRoot}>
             <View style={[styles.modalOverlay, { backgroundColor: colors.scrim }]}>
+              <Pressable
+                style={StyleSheet.absoluteFill}
+                onPress={() => setActiveSession(null)}
+                accessibilityLabel="Close sensory grounding"
+              />
               <View style={[styles.modalCard, { backgroundColor: colors.surface }]}>
                 <View style={styles.modalHeader}>
                   <Text style={[typography.subheading, { color: colors.text.primary }]}>
@@ -350,10 +436,20 @@ export default function GamesScreen() {
                   <Text style={[typography.display, { color: colors.primary, fontSize: 36 }]}>
                     {groundingPrompts[groundingStep].count}
                   </Text>
-                  <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 8, textAlign: 'center' }]}>
+                  <Text
+                    style={[
+                      typography.bodyBold,
+                      { color: colors.text.primary, marginTop: 8, textAlign: 'center' },
+                    ]}
+                  >
                     {groundingPrompts[groundingStep].label}
                   </Text>
-                  <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 6, textAlign: 'center' }]}>
+                  <Text
+                    style={[
+                      typography.caption,
+                      { color: colors.text.secondary, marginTop: 6, textAlign: 'center' },
+                    ]}
+                  >
                     {groundingPrompts[groundingStep].hint}
                   </Text>
                 </View>

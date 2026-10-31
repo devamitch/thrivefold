@@ -98,4 +98,28 @@ describe('Emergency Support & Crisis Detection', () => {
     expect(GROUNDING_EXERCISES.sensory_54321.steps[0].count).toBe(5);
     expect(GROUNDING_EXERCISES.sensory_54321.steps[4].count).toBe(1);
   });
+
+  test('graded safety tiers: categorizes imminent risk, ambiguous concern, distress, and ordinary difficulty', () => {
+    // Tier 4: Imminent risk
+    const imminent = detectCrisisIntent('I want to kill myself');
+    expect(imminent.gradedTier).toBe('imminent_risk');
+    expect(imminent.isCrisis).toBe(true);
+
+    // Tier 3: Ambiguous safety concern
+    const ambiguous = detectCrisisIntent('feeling hopeless, what is the point of living');
+    expect(ambiguous.gradedTier).toBe('ambiguous_safety');
+    expect(ambiguous.isCrisis).toBe(true);
+    expect(ambiguous.category).toBe('ambiguous_concern');
+    expect(ambiguous.deescalationScript).toContain('Are you safe right now?');
+
+    // Tier 2: Significant distress (panic / acute anxiety)
+    const distress = detectCrisisIntent("I can't breathe and having a panic attack");
+    expect(distress.gradedTier).toBe('significant_distress');
+    expect(distress.recommendedAction).toBe('grounding');
+
+    // Tier 1: Ordinary difficulty
+    const ordinary = detectCrisisIntent('Just had a rough day at work and feeling tired');
+    expect(ordinary.gradedTier).toBe('ordinary_difficulty');
+    expect(ordinary.isCrisis).toBe(false);
+  });
 });

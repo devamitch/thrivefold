@@ -34,6 +34,12 @@ export type CrisisSeverity =
   | 'emotional_support'
   | 'none';
 
+export type GradedSafetyTier =
+  | 'ordinary_difficulty' // Tier 1: Ordinary negative emotion, stress, fatigue, routine sadness
+  | 'significant_distress' // Tier 2: Acute panic, severe anxiety, overwhelmed, crying
+  | 'ambiguous_safety' // Tier 3: Passive ideation, "no reason to live", "hopeless", "want to disappear"
+  | 'imminent_risk'; // Tier 4: Active self-harm, explicit suicide plan, overdose, physical violence
+
 export type CrisisCategory =
   | 'suicidal_intent'
   | 'overdose_poisoning'
@@ -41,6 +47,7 @@ export type CrisisCategory =
   | 'abuse_violence'
   | 'self_harm'
   | 'panic_distress'
+  | 'ambiguous_concern'
   | 'general_emotional'
   | 'third_party_concern'
   | 'none';
@@ -56,6 +63,7 @@ export type RecommendedAction =
 export interface CrisisDetectionResult {
   isCrisis: boolean;
   severity: CrisisSeverity;
+  gradedTier: GradedSafetyTier;
   category: CrisisCategory;
   recommendedAction: RecommendedAction;
   deescalationScript: string;
@@ -147,6 +155,16 @@ const ACUTE_PANIC_PATTERNS = [
   /\b(?:tightness in chest|shaking uncontrollably)\s+from\s+(?:stress|anxiety|fear)\b/i,
 ];
 
+/* ── Ambiguous Safety Concerns (Passive Ideation, Hopelessness, Wanting to Vanish) ─ */
+
+const AMBIGUOUS_SAFETY_PATTERNS = [
+  /\b(?:what(?:'s| is) the point(?: of (?:living|life))?)\b/i,
+  /\b(?:feeling|feel|so) hopeless\b/i,
+  /\b(?:want to disappear|wish i (?:wasn't|was not) here|wish i could just vanish)\b/i,
+  /\b(?:can't go on like this|cant go on like this|tired of existing)\b/i,
+  /\b(?:nobody (?:would )?cares? if i (?:was gone|disappeared))\b/i,
+];
+
 /* ── General Emotional Distress ────────────────────────────────────────────────────────── */
 
 const EMOTIONAL_DISTRESS_PATTERNS = [
@@ -166,6 +184,7 @@ export function detectCrisisIntent(text: string, countryCode?: string): CrisisDe
     return {
       isCrisis: false,
       severity: 'none',
+      gradedTier: 'ordinary_difficulty',
       category: 'none',
       recommendedAction: 'listen',
       deescalationScript: '',
@@ -181,6 +200,7 @@ export function detectCrisisIntent(text: string, countryCode?: string): CrisisDe
     return {
       isCrisis: false,
       severity: 'emotional_support',
+      gradedTier: 'ordinary_difficulty',
       category: 'general_emotional',
       recommendedAction: 'listen',
       deescalationScript:
@@ -197,6 +217,7 @@ export function detectCrisisIntent(text: string, countryCode?: string): CrisisDe
     return {
       isCrisis: false,
       severity: 'emotional_support',
+      gradedTier: 'ordinary_difficulty',
       category: 'general_emotional',
       recommendedAction: 'listen',
       deescalationScript:
@@ -215,6 +236,7 @@ export function detectCrisisIntent(text: string, countryCode?: string): CrisisDe
       return {
         isCrisis: true,
         severity: 'urgent_care',
+        gradedTier: 'ambiguous_safety',
         category: 'third_party_concern',
         recommendedAction: 'crisis_text',
         deescalationScript:
@@ -233,6 +255,7 @@ export function detectCrisisIntent(text: string, countryCode?: string): CrisisDe
       return {
         isCrisis: true,
         severity: 'immediate_emergency',
+        gradedTier: 'imminent_risk',
         category: 'medical_emergency',
         recommendedAction: 'emergency_dial',
         deescalationScript:
@@ -251,6 +274,7 @@ export function detectCrisisIntent(text: string, countryCode?: string): CrisisDe
       return {
         isCrisis: true,
         severity: 'immediate_emergency',
+        gradedTier: 'imminent_risk',
         category: 'overdose_poisoning',
         recommendedAction: 'emergency_dial',
         deescalationScript:
@@ -269,6 +293,7 @@ export function detectCrisisIntent(text: string, countryCode?: string): CrisisDe
       return {
         isCrisis: true,
         severity: 'immediate_emergency',
+        gradedTier: 'imminent_risk',
         category: 'suicidal_intent',
         recommendedAction: 'emergency_dial',
         deescalationScript:
@@ -287,6 +312,7 @@ export function detectCrisisIntent(text: string, countryCode?: string): CrisisDe
       return {
         isCrisis: true,
         severity: 'immediate_emergency',
+        gradedTier: 'imminent_risk',
         category: 'abuse_violence',
         recommendedAction: 'emergency_dial',
         deescalationScript:
@@ -305,6 +331,7 @@ export function detectCrisisIntent(text: string, countryCode?: string): CrisisDe
       return {
         isCrisis: true,
         severity: 'urgent_care',
+        gradedTier: 'imminent_risk',
         category: 'self_harm',
         recommendedAction: 'crisis_text',
         deescalationScript:
@@ -317,12 +344,32 @@ export function detectCrisisIntent(text: string, countryCode?: string): CrisisDe
     }
   }
 
-  // 9. Moderate Layer: Acute Panic & Hyperventilation
+  // 9. Ambiguous Layer: Passive Ideation, Hopelessness, Wanting to Disappear
+  for (const pattern of AMBIGUOUS_SAFETY_PATTERNS) {
+    if (pattern.test(input)) {
+      return {
+        isCrisis: true,
+        severity: 'urgent_care',
+        gradedTier: 'ambiguous_safety',
+        category: 'ambiguous_concern',
+        recommendedAction: 'crisis_text',
+        deescalationScript:
+          "I hear how exhausting and heavy things feel right now. You do not have to carry this alone. Are you safe right now? If you need a listening ear, free confidential support is always here.",
+        isThirdParty: false,
+        isPastEvent: false,
+        isNegated: false,
+        primaryActionLabel: 'Talk to Lifeline Counselor',
+      };
+    }
+  }
+
+  // 10. Moderate Layer: Acute Panic & Hyperventilation
   for (const pattern of ACUTE_PANIC_PATTERNS) {
     if (pattern.test(input)) {
       return {
         isCrisis: false,
         severity: 'elevated_concern',
+        gradedTier: 'significant_distress',
         category: 'panic_distress',
         recommendedAction: 'grounding',
         deescalationScript:
@@ -335,12 +382,13 @@ export function detectCrisisIntent(text: string, countryCode?: string): CrisisDe
     }
   }
 
-  // 10. Gentle Layer: General Emotional Distress
+  // 11. Gentle Layer: General Emotional Distress
   for (const pattern of EMOTIONAL_DISTRESS_PATTERNS) {
     if (pattern.test(input)) {
       return {
         isCrisis: false,
         severity: 'emotional_support',
+        gradedTier: 'ordinary_difficulty',
         category: 'general_emotional',
         recommendedAction: 'listen',
         deescalationScript:
@@ -355,6 +403,7 @@ export function detectCrisisIntent(text: string, countryCode?: string): CrisisDe
   return {
     isCrisis: false,
     severity: 'none',
+    gradedTier: 'ordinary_difficulty',
     category: 'none',
     recommendedAction: 'listen',
     deescalationScript: '',
