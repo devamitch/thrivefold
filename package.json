@@ -14,7 +14,19 @@
     "test:coverage": "jest --coverage",
     "lint": "eslint src tests --quiet",
     "clean": "rm -rf .expo dist",
-    "test:db": "node tests/db/rls.test.mjs"
+    "test:db": "node tests/db/rls.test.mjs",
+    "build:local": "eas build --platform android --profile production-local --local",
+    "build:cloud": "eas build --platform android --profile production",
+    "build:bundle": "cd android && ./gradlew bundleRelease",
+    "build:apk": "cd android && ./gradlew assembleRelease",
+    "submit:play": "eas submit --platform android --latest",
+    "fastlane:build": "bundle exec fastlane android build",
+    "fastlane:internal": "bundle exec fastlane android internal",
+    "fastlane:beta": "bundle exec fastlane android beta",
+    "fastlane:release": "bundle exec fastlane android release",
+    "workflow:create": "eas workflow:run create-production-builds.yml",
+    "workflow:submit": "eas workflow:run submit-build.yml",
+    "workflow:release": "eas workflow:run production.yml"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.1.1",
