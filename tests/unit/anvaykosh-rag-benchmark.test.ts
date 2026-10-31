@@ -88,8 +88,52 @@ jest.mock('expo-sqlite', () => ({
       return { changes: 1 };
     }),
     getAllSync: jest.fn((sql: string, params: any[]) => {
+      if (sql.includes('FROM anvay_search_fts f')) {
+        const rawParam = String(params[0]).toLowerCase();
+        const terms = rawParam
+          .replace(/[^\w\s]/g, ' ')
+          .split(/\s+/)
+          .filter((t) => t.length > 0 && !['and', 'or', 'not'].includes(t));
+
+        // Match against ingested mock chunks or docs
+        const matchedChunks = mockChunks.filter((c) => {
+          const text = c.content.toLowerCase();
+          return terms.some((term) => text.includes(term));
+        });
+
+        return matchedChunks.map((c, idx) => {
+          const doc = mockDocs.find((d) => d.id === c.document_id);
+          return {
+            rowid: idx + 1,
+            entry_key: `thrivefold:local_user:rag_chunks:${c.document_id}:${c.id}`,
+            source_table: 'rag_chunks',
+            source_id: c.document_id,
+            chunk_id: c.id,
+            owner_id: 'local_user',
+            app_id: 'thrivefold',
+            domain: 'documents',
+            source_type: doc?.source_type || 'user_note',
+            title: doc?.title || 'Doc Title',
+            content: c.content,
+            created_at: c.created_at,
+            metadata_json: null,
+            bm25_score: -(10.0 / (idx + 1)),
+            snippet: c.content.slice(0, 100),
+          };
+        });
+      }
       if (sql.includes('FROM rag_documents')) {
         return mockDocs.filter((d) => !params || d.user_id === params[0]);
+      }
+      if (sql.includes('FROM rag_chunks c') && sql.includes('JOIN rag_documents d')) {
+        return mockChunks.map((c) => {
+          const doc = mockDocs.find((d) => d.id === c.document_id);
+          return {
+            ...c,
+            doc_title: doc?.title || 'Doc Title',
+            source_type: doc?.source_type || 'user_note',
+          };
+        });
       }
       if (sql.includes('FROM rag_chunks')) {
         return mockChunks.filter((c) => !params || c.user_id === params[0]);

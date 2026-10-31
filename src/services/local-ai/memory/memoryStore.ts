@@ -6,16 +6,14 @@ import type {
 } from './types';
 import { cosineSimilarity } from './vectorMath';
 import { anvayFtsStore } from '../search/anvayFtsStore';
+import { getSharedLocalMemoryDb } from '../db/localMemoryDb';
 
-let db: SQLite.SQLiteDatabase | null = null;
+let initialized = false;
 
 function getDb(): SQLite.SQLiteDatabase {
-  if (db) return db;
-  try {
-    db = SQLite.openDatabaseSync('thrivefold-local-memory.db');
+  const db = getSharedLocalMemoryDb();
+  if (!initialized) {
     db.execSync(`
-      PRAGMA journal_mode = WAL;
-
       CREATE TABLE IF NOT EXISTS user_memories (
         id TEXT PRIMARY KEY NOT NULL,
         user_id TEXT NOT NULL,
@@ -36,10 +34,9 @@ function getDb(): SQLite.SQLiteDatabase {
       CREATE INDEX IF NOT EXISTS idx_memories_kind ON user_memories(kind);
       CREATE INDEX IF NOT EXISTS idx_memories_status ON user_memories(status);
     `);
-    return db;
-  } catch (err) {
-    throw new Error(`Failed to initialize SQLite local memory store: ${err}`);
+    initialized = true;
   }
+  return db;
 }
 
 interface RawMemoryRow {
@@ -128,6 +125,23 @@ export class AnalyticalMemoryStore {
          WHERE id = ?`,
         [JSON.stringify(mergedEvents), updatedConfidence, now, existing.id]
       );
+
+      // Refresh FTS index with updated confidence & event metadata
+      anvayFtsStore.upsertEntry({
+        sourceTable: 'user_memories',
+        sourceId: existing.id,
+        ownerId: params.userId,
+        domain: 'memories',
+        sourceType: existing.kind,
+        title: `Memory: ${existing.kind}`,
+        content: existing.content,
+        createdAt: now,
+        metadata: {
+          ...existing.metadata,
+          confidence: updatedConfidence,
+          sourceEventIds: mergedEvents,
+        },
+      });
 
       return {
         ...existing,
@@ -236,6 +250,27 @@ export class AnalyticalMemoryStore {
         userId,
       ]
     );
+
+    // Reactive FTS sync: if archived/expired, remove from search index; otherwise update entry
+    if (status === 'archived' || (expiresAt && new Date(expiresAt).getTime() <= Date.now())) {
+      anvayFtsStore.deleteEntry('user_memories', id, null, userId);
+    } else {
+      anvayFtsStore.upsertEntry({
+        sourceTable: 'user_memories',
+        sourceId: id,
+        ownerId: userId,
+        domain: 'memories',
+        sourceType: existing.kind,
+        title: `Memory: ${existing.kind}`,
+        content,
+        createdAt: now,
+        metadata: {
+          ...metadata,
+          confidence,
+          status,
+        },
+      });
+    }
 
     return {
       ...existing,

@@ -2,6 +2,7 @@ import * as SQLite from 'expo-sqlite';
 import { LocalAI, type DocumentChunkResult } from '../../../../modules/local-ai';
 import { cosineSimilarity } from '../memory/vectorMath';
 import { anvayFtsStore } from '../search/anvayFtsStore';
+import { getSharedLocalMemoryDb } from '../db/localMemoryDb';
 
 export interface KnowledgeDocument {
   id: string;
@@ -34,15 +35,12 @@ export interface KnowledgeChunkHit {
   similarity: number;
 }
 
-let db: SQLite.SQLiteDatabase | null = null;
+let initialized = false;
 
 function getDb(): SQLite.SQLiteDatabase {
-  if (db) return db;
-  try {
-    db = SQLite.openDatabaseSync('thrivefold-local-memory.db');
+  const db = getSharedLocalMemoryDb();
+  if (!initialized) {
     db.execSync(`
-      PRAGMA journal_mode = WAL;
-
       CREATE TABLE IF NOT EXISTS rag_documents (
         id TEXT PRIMARY KEY NOT NULL,
         user_id TEXT NOT NULL,
@@ -71,10 +69,9 @@ function getDb(): SQLite.SQLiteDatabase {
       CREATE INDEX IF NOT EXISTS idx_rag_chunks_doc ON rag_chunks(document_id);
       CREATE INDEX IF NOT EXISTS idx_rag_chunks_user ON rag_chunks(user_id);
     `);
-    return db;
-  } catch (err) {
-    throw new Error(`Failed to initialize SQLite knowledge store: ${err}`);
+    initialized = true;
   }
+  return db;
 }
 
 export class KnowledgeStore {

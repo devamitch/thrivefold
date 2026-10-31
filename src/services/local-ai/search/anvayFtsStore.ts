@@ -6,28 +6,36 @@
  * 2. User Memories & Preferences
  * 3. Coach Conversations & Transcripts
  * 4. Exercise Catalogs & App Knowledge
+ * 5. Learn Library articles & AI Interactions
  *
  * Architecture:
- * - Master table `anvay_search_entries` with integer `rowid`
+ * - Master table `anvay_search_entries` with integer `rowid` and collision-safe `entry_key`
  * - FTS5 external content table `anvay_search_fts` using `unicode61 remove_diacritics 2`
  * - Synchronized via atomic SQLite triggers
- * - Support for English, Hindi (Devanagari), Bengali, and mixed Hinglish/Banglish
- * - Parameterized sanitization (phrase, prefix, terms)
+ * - Keyset-paginated source synchronization ($O(1)$ memory)
  * - Strict authorization filters (owner_id, app_id, domain, source_type, date)
  * - Sub-millisecond BM25 ranking and snippet extraction
  * - LRU query caching with automatic mutation invalidation
- * - Hybrid Reciprocal Rank Fusion (RRF) with vector embeddings
+ * - Independent retrieval branch for hybrid Reciprocal Rank Fusion (RRF)
  */
 
 import * as SQLite from 'expo-sqlite';
+import { getSharedLocalMemoryDb } from '../db/localMemoryDb';
 
 export interface SearchEntryInput {
-  sourceTable: 'rag_chunks' | 'rag_documents' | 'user_memories' | 'coach_messages' | 'exercise_catalog';
+  sourceTable:
+    | 'rag_chunks'
+    | 'rag_documents'
+    | 'user_memories'
+    | 'coach_messages'
+    | 'exercise_catalog'
+    | 'learn_library'
+    | 'ai_interactions';
   sourceId: string;
   chunkId?: string | null;
   ownerId: string;
   appId?: string;
-  domain: 'documents' | 'memories' | 'conversations' | 'exercises' | 'knowledge';
+  domain: 'documents' | 'memories' | 'conversations' | 'exercises' | 'knowledge' | 'interactions';
   sourceType: string;
   title: string;
   content: string;
@@ -38,7 +46,7 @@ export interface SearchEntryInput {
 export interface FtsSearchFilter {
   ownerId: string;
   appId?: string;
-  domain?: 'documents' | 'memories' | 'conversations' | 'exercises' | 'knowledge' | string;
+  domain?: 'documents' | 'memories' | 'conversations' | 'exercises' | 'knowledge' | 'interactions' | string;
   sourceType?: string;
   startDate?: string;
   endDate?: string;
@@ -48,6 +56,7 @@ export interface FtsSearchFilter {
 
 export interface FtsSearchHit {
   rowid: number;
+  entryKey: string;
   sourceTable: string;
   sourceId: string;
   chunkId: string | null;
@@ -76,32 +85,46 @@ export interface FtsBenchmarkResult {
   integrityOk: boolean;
 }
 
-let db: SQLite.SQLiteDatabase | null = null;
 const queryCache = new Map<string, { timestamp: number; results: FtsSearchHit[] }>();
 const CACHE_TTL_MS = 60_000; // 1 minute
 const MAX_CACHE_ENTRIES = 200;
 
-function getDb(): SQLite.SQLiteDatabase {
-  if (db) return db;
-  try {
-    db = SQLite.openDatabaseSync('thrivefold-local-memory.db');
-    initFtsSchema(db);
-    return db;
-  } catch (err) {
-    throw new Error(`Failed to initialize Anvay SQLite FTS5: ${err}`);
-  }
+/**
+ * Builds an unambiguous, collision-safe key encoding.
+ * Pattern: ${appId}:${ownerId}:${sourceTable}:${sourceId}:${chunkId || '__root__'}
+ */
+export function buildEntryKey(
+  appId: string,
+  ownerId: string,
+  sourceTable: string,
+  sourceId: string,
+  chunkId?: string | null
+): string {
+  const safeApp = (appId || 'thrivefold').trim();
+  const safeOwner = (ownerId || 'local_user').trim();
+  const safeTable = sourceTable.trim();
+  const safeSource = sourceId.trim();
+  const safeChunk = (chunkId && chunkId.trim()) || '__root__';
+  return `${safeApp}:${safeOwner}:${safeTable}:${safeSource}:${safeChunk}`;
+}
+
+let isInitialized = false;
+
+function ensureInitialized(database: SQLite.SQLiteDatabase): void {
+  if (isInitialized) return;
+  initFtsSchema(database);
+  isInitialized = true;
 }
 
 /**
- * Initializes the master search entry table, FTS5 virtual table, and sync triggers.
+ * Initializes the master search entry table with entry_key, FTS5 virtual table, and sync triggers.
  */
 function initFtsSchema(database: SQLite.SQLiteDatabase): void {
   database.execSync(`
-    PRAGMA journal_mode = WAL;
-
-    -- Master Search Table (Stores authoritative metadata & text with integer rowid)
+    -- Master Search Table (Stores authoritative metadata & text with integer rowid and unique entry_key)
     CREATE TABLE IF NOT EXISTS anvay_search_entries (
       rowid INTEGER PRIMARY KEY AUTOINCREMENT,
+      entry_key TEXT NOT NULL,
       source_table TEXT NOT NULL,
       source_id TEXT NOT NULL,
       chunk_id TEXT,
@@ -112,10 +135,10 @@ function initFtsSchema(database: SQLite.SQLiteDatabase): void {
       title TEXT NOT NULL,
       content TEXT NOT NULL,
       created_at TEXT NOT NULL,
-      metadata_json TEXT,
-      UNIQUE(source_table, source_id, chunk_id)
+      metadata_json TEXT
     );
 
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_anvay_search_entry_key ON anvay_search_entries(entry_key);
     CREATE INDEX IF NOT EXISTS idx_anvay_search_owner ON anvay_search_entries(owner_id, domain);
     CREATE INDEX IF NOT EXISTS idx_anvay_search_app ON anvay_search_entries(app_id);
     CREATE INDEX IF NOT EXISTS idx_anvay_search_created ON anvay_search_entries(created_at);
@@ -144,29 +167,43 @@ function initFtsSchema(database: SQLite.SQLiteDatabase): void {
       INSERT INTO anvay_search_fts(rowid, title, content) VALUES (new.rowid, new.title, new.content);
     END;
   `);
+
+  // Migration: Check if legacy anvay_search_entries table lacked entry_key column
+  try {
+    const tableInfo = database.getAllSync<{ name: string }>(`PRAGMA table_info(anvay_search_entries);`);
+    const hasEntryKey = tableInfo.some((col) => col.name === 'entry_key');
+    if (!hasEntryKey) {
+      database.execSync(`
+        ALTER TABLE anvay_search_entries ADD COLUMN entry_key TEXT;
+        UPDATE anvay_search_entries
+        SET entry_key = app_id || ':' || owner_id || ':' || source_table || ':' || source_id || ':' || COALESCE(chunk_id, '__root__')
+        WHERE entry_key IS NULL;
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_anvay_search_entry_key ON anvay_search_entries(entry_key);
+      `);
+    }
+  } catch {
+    // Column already exists or table freshly created
+  }
 }
 
 /**
  * Sanitizes user input into safe FTS5 query syntax:
  * - Handles quotes for phrase matching
  * - Appends wildcards for prefix matching
- * - Strips syntax-breaking control characters
- * - Supports Unicode (Devanagari, Bengali, Latin)
+ * - Preserves Unicode letters and combining marks (\p{L}\p{M}) for Devanagari/Bengali
  */
 export function sanitizeFtsQuery(query: string): string {
   const trimmed = query.trim();
   if (!trimmed) return '';
 
-  // 1. Check if user explicitly wrote a quoted phrase: e.g. "box breathing"
+  // 1. Quoted phrase: e.g. "box breathing"
   const phraseMatch = trimmed.match(/^"([^"]+)"$/);
   if (phraseMatch) {
     const inner = phraseMatch[1].replace(/["*]/g, '').trim();
     return inner ? `"${inner}"` : '';
   }
 
-  // 2. Tokenize words while preserving Devanagari (\u0900-\u097F) and Bengali (\u0980-\u09FF)
-  // Include \p{M} (combining marks / vowel signs / virama) so Indic matras are preserved
-  // Remove special FTS punctuation: * " ( ) : ^ AND OR NOT
+  // 2. Tokenize words with combining marks for Indian alphabets
   const tokens = trimmed
     .replace(/[^\p{L}\p{M}\p{N}\s]/gu, ' ')
     .split(/\s+/)
@@ -176,33 +213,38 @@ export function sanitizeFtsQuery(query: string): string {
   if (tokens.length === 0) return '';
 
   // 3. Format as prefix search tokens joined by AND
-  // e.g. "morning walk" -> "morning* AND walk*"
   return tokens.map((t) => `"${t}"*`).join(' AND ');
 }
 
 export class AnvayFtsStore {
   /**
-   * Clears the query cache. Called whenever an insert/update/delete occurs.
+   * Clears the query cache.
    */
   private invalidateCache(): void {
     queryCache.clear();
   }
 
   /**
-   * Upserts a search entry into the master table (trigger automatically propagates to FTS5).
+   * Upserts a search entry into the master table with collision-safe entry_key.
+   * Allows passing an external transaction database to maintain atomic consistency.
    */
-  upsertEntry(input: SearchEntryInput): void {
-    const database = getDb();
+  upsertEntry(input: SearchEntryInput, txDb?: SQLite.SQLiteDatabase): void {
+    const database = txDb || getSharedLocalMemoryDb();
+    ensureInitialized(database);
+
     const now = input.createdAt || new Date().toISOString();
     const metaJson = input.metadata ? JSON.stringify(input.metadata) : null;
     const appId = input.appId || 'thrivefold';
     const chunkId = input.chunkId || null;
+    const entryKey = buildEntryKey(appId, input.ownerId, input.sourceTable, input.sourceId, chunkId);
 
+    // Note: ON CONFLICT(entry_key) updates title, content, domain, source_type, created_at, metadata.
+    // It strictly DOES NOT alter owner_id or app_id, enforcing ownership immutability.
     database.runSync(
       `INSERT INTO anvay_search_entries
-        (source_table, source_id, chunk_id, owner_id, app_id, domain, source_type, title, content, created_at, metadata_json)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT(source_table, source_id, chunk_id) DO UPDATE SET
+        (entry_key, source_table, source_id, chunk_id, owner_id, app_id, domain, source_type, title, content, created_at, metadata_json)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(entry_key) DO UPDATE SET
         title = excluded.title,
         content = excluded.content,
         domain = excluded.domain,
@@ -210,6 +252,7 @@ export class AnvayFtsStore {
         created_at = excluded.created_at,
         metadata_json = excluded.metadata_json`,
       [
+        entryKey,
         input.sourceTable,
         input.sourceId,
         chunkId,
@@ -230,30 +273,46 @@ export class AnvayFtsStore {
   /**
    * Batch upserts search entries in an atomic transaction.
    */
-  upsertEntries(inputs: SearchEntryInput[]): void {
+  upsertEntries(inputs: SearchEntryInput[], txDb?: SQLite.SQLiteDatabase): void {
     if (inputs.length === 0) return;
-    const database = getDb();
-    database.withTransactionSync(() => {
+    const database = txDb || getSharedLocalMemoryDb();
+    ensureInitialized(database);
+
+    const perform = (db: SQLite.SQLiteDatabase) => {
       for (const input of inputs) {
-        this.upsertEntry(input);
+        this.upsertEntry(input, db);
       }
-    });
+    };
+
+    if (txDb) {
+      perform(txDb);
+    } else {
+      database.withTransactionSync(() => perform(database));
+    }
   }
 
   /**
-   * Deletes a search entry by source coordinates.
+   * Deletes a search entry by source coordinates, scoped strictly by owner and app.
    */
-  deleteEntry(sourceTable: string, sourceId: string, chunkId?: string | null): void {
-    const database = getDb();
+  deleteEntry(
+    sourceTable: string,
+    sourceId: string,
+    chunkId?: string | null,
+    ownerId = 'local_user',
+    appId = 'thrivefold',
+    txDb?: SQLite.SQLiteDatabase
+  ): void {
+    const database = txDb || getSharedLocalMemoryDb();
+    ensureInitialized(database);
+
     if (chunkId !== undefined) {
-      database.runSync(
-        `DELETE FROM anvay_search_entries WHERE source_table = ? AND source_id = ? AND chunk_id IS ?`,
-        [sourceTable, sourceId, chunkId]
-      );
+      const entryKey = buildEntryKey(appId, ownerId, sourceTable, sourceId, chunkId);
+      database.runSync(`DELETE FROM anvay_search_entries WHERE entry_key = ?`, [entryKey]);
     } else {
       database.runSync(
-        `DELETE FROM anvay_search_entries WHERE source_table = ? AND source_id = ?`,
-        [sourceTable, sourceId]
+        `DELETE FROM anvay_search_entries
+         WHERE source_table = ? AND source_id = ? AND owner_id = ? AND app_id = ?`,
+        [sourceTable, sourceId, ownerId, appId]
       );
     }
     this.invalidateCache();
@@ -263,7 +322,9 @@ export class AnvayFtsStore {
    * Executes a safe, parameterized full-text search with strict authorization filters.
    */
   search(query: string, filters: FtsSearchFilter): FtsSearchHit[] {
-    const database = getDb();
+    const database = getSharedLocalMemoryDb();
+    ensureInitialized(database);
+
     const sanitized = sanitizeFtsQuery(query);
     if (!sanitized) return [];
 
@@ -272,8 +333,19 @@ export class AnvayFtsStore {
     const limit = Math.max(1, Math.min(filters.limit || 20, 100));
     const offset = Math.max(0, filters.offset || 0);
 
-    // Cache check
-    const cacheKey = `${ownerId}:${appId}:${filters.domain || 'all'}:${sanitized}:${limit}:${offset}`;
+    // Multi-dimensional cache key
+    const cacheKey = [
+      ownerId,
+      appId,
+      filters.domain || '*',
+      filters.sourceType || '*',
+      filters.startDate || '*',
+      filters.endDate || '*',
+      sanitized,
+      limit,
+      offset,
+    ].join('|');
+
     const cached = queryCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
       return cached.results;
@@ -308,6 +380,7 @@ export class AnvayFtsStore {
     const sql = `
       SELECT
         e.rowid,
+        e.entry_key,
         e.source_table,
         e.source_id,
         e.chunk_id,
@@ -332,6 +405,7 @@ export class AnvayFtsStore {
       const rows = database.getAllSync<any>(sql, params);
       const hits: FtsSearchHit[] = rows.map((r) => ({
         rowid: r.rowid,
+        entryKey: r.entry_key,
         sourceTable: r.source_table,
         sourceId: r.source_id,
         chunkId: r.chunk_id,
@@ -347,7 +421,7 @@ export class AnvayFtsStore {
         snippet: r.snippet || r.content.slice(0, 120),
       }));
 
-      // Update cache
+      // LRU cache eviction
       if (queryCache.size >= MAX_CACHE_ENTRIES) {
         const oldestKey = queryCache.keys().next().value;
         if (oldestKey) queryCache.delete(oldestKey);
@@ -356,88 +430,159 @@ export class AnvayFtsStore {
 
       return hits;
     } catch {
-      // In case of syntax error or unindexed state, gracefully return empty without throwing
       return [];
     }
   }
 
   /**
-   * Synchronizes all existing SQLite sources into the search index:
-   * - rag_chunks + rag_documents
-   * - user_memories
-   * - coach_messages
+   * Synchronizes sources using bounded keyset pagination to maintain O(1) memory footprint.
    */
-  syncAllSources(): { synchronized: number } {
-    const database = getDb();
+  syncAllSources(ownerId = 'local_user', appId = 'thrivefold'): { synchronized: number } {
+    const database = getSharedLocalMemoryDb();
+    ensureInitialized(database);
     let count = 0;
+    const BATCH_SIZE = 100;
 
-    database.withTransactionSync(() => {
-      // 1. Sync rag_chunks
-      const chunkRows = database.getAllSync<any>(`
-        SELECT c.id AS chunk_id, c.document_id, c.user_id, c.content, c.created_at,
-               d.title, d.source_type
-        FROM rag_chunks c
-        JOIN rag_documents d ON d.id = c.document_id
-      `);
+    // 1. Keyset pagination for rag_chunks
+    let lastChunkRowid = 0;
+    while (true) {
+      const rows = database.getAllSync<any>(
+        `SELECT c.rowid as chunk_rowid, c.id AS chunk_id, c.document_id, c.user_id, c.content, c.created_at,
+                d.title, d.source_type
+         FROM rag_chunks c
+         JOIN rag_documents d ON d.id = c.document_id
+         WHERE c.rowid > ? AND c.user_id = ?
+         ORDER BY c.rowid ASC
+         LIMIT ?`,
+        [lastChunkRowid, ownerId, BATCH_SIZE]
+      );
+      if (rows.length === 0) break;
 
-      for (const row of chunkRows) {
-        database.runSync(
-          `INSERT INTO anvay_search_entries
-            (source_table, source_id, chunk_id, owner_id, app_id, domain, source_type, title, content, created_at)
-           VALUES ('rag_chunks', ?, ?, ?, 'thrivefold', 'documents', ?, ?, ?, ?)
-           ON CONFLICT(source_table, source_id, chunk_id) DO UPDATE SET
-            title = excluded.title,
-            content = excluded.content,
-            created_at = excluded.created_at`,
-          [row.document_id, row.chunk_id, row.user_id, row.source_type, row.title, row.content, row.created_at]
+      database.withTransactionSync(() => {
+        for (const r of rows) {
+          this.upsertEntry(
+            {
+              sourceTable: 'rag_chunks',
+              sourceId: r.document_id,
+              chunkId: r.chunk_id,
+              ownerId: r.user_id,
+              appId,
+              domain: 'documents',
+              sourceType: r.source_type,
+              title: r.title,
+              content: r.content,
+              createdAt: r.created_at,
+            },
+            database
+          );
+          count++;
+          lastChunkRowid = r.chunk_rowid;
+        }
+      });
+      if (rows.length < BATCH_SIZE) break;
+    }
+
+    // 2. Keyset pagination for user_memories (status = 'active')
+    let lastMemRowid = 0;
+    while (true) {
+      const rows = database.getAllSync<any>(
+        `SELECT rowid as mem_rowid, id, user_id, kind, content, created_at, status
+         FROM user_memories
+         WHERE rowid > ? AND user_id = ? AND status = 'active'
+         ORDER BY rowid ASC
+         LIMIT ?`,
+        [lastMemRowid, ownerId, BATCH_SIZE]
+      );
+      if (rows.length === 0) break;
+
+      database.withTransactionSync(() => {
+        for (const r of rows) {
+          this.upsertEntry(
+            {
+              sourceTable: 'user_memories',
+              sourceId: r.id,
+              chunkId: null,
+              ownerId: r.user_id,
+              appId,
+              domain: 'memories',
+              sourceType: r.kind,
+              title: `Memory: ${r.kind}`,
+              content: r.content,
+              createdAt: r.created_at,
+            },
+            database
+          );
+          count++;
+          lastMemRowid = r.mem_rowid;
+        }
+      });
+      if (rows.length < BATCH_SIZE) break;
+    }
+
+    // 3. Keyset pagination for coach_messages
+    let lastMsgRowid = 0;
+    while (true) {
+      const rows = database.getAllSync<any>(
+        `SELECT rowid as msg_rowid, id, who, text, at
+         FROM coach_messages
+         WHERE rowid > ? AND text IS NOT NULL AND length(trim(text)) > 0
+         ORDER BY rowid ASC
+         LIMIT ?`,
+        [lastMsgRowid, BATCH_SIZE]
+      );
+      if (rows.length === 0) break;
+
+      database.withTransactionSync(() => {
+        for (const r of rows) {
+          const title = r.who === 'you' ? 'User Question' : 'Anvay Coach Reply';
+          const dateIso = new Date(r.at).toISOString();
+          this.upsertEntry(
+            {
+              sourceTable: 'coach_messages',
+              sourceId: r.id,
+              chunkId: null,
+              ownerId,
+              appId,
+              domain: 'conversations',
+              sourceType: r.who,
+              title,
+              content: r.text,
+              createdAt: dateIso,
+            },
+            database
+          );
+          count++;
+          lastMsgRowid = r.msg_rowid;
+        }
+      });
+      if (rows.length < BATCH_SIZE) break;
+    }
+
+    // 4. Index learn_library articles if present
+    try {
+      const learnRows = database.getAllSync<any>(
+        `SELECT id, source, topic, title, summary, url FROM learn_library LIMIT 100`
+      );
+      for (const lr of learnRows) {
+        this.upsertEntry(
+          {
+            sourceTable: 'learn_library',
+            sourceId: lr.id,
+            chunkId: null,
+            ownerId,
+            appId,
+            domain: 'knowledge',
+            sourceType: lr.source,
+            title: lr.title,
+            content: `${lr.title}: ${lr.summary}`,
+          },
+          database
         );
         count++;
       }
-
-      // 2. Sync user_memories
-      const memRows = database.getAllSync<any>(`
-        SELECT id, user_id, kind, content, created_at, status
-        FROM user_memories
-        WHERE status = 'active'
-      `);
-
-      for (const row of memRows) {
-        database.runSync(
-          `INSERT INTO anvay_search_entries
-            (source_table, source_id, chunk_id, owner_id, app_id, domain, source_type, title, content, created_at)
-           VALUES ('user_memories', ?, NULL, ?, 'thrivefold', 'memories', ?, ?, ?, ?)
-           ON CONFLICT(source_table, source_id, chunk_id) DO UPDATE SET
-            title = excluded.title,
-            content = excluded.content,
-            created_at = excluded.created_at`,
-          [row.id, row.user_id, row.kind, `Memory: ${row.kind}`, row.content, row.created_at]
-        );
-        count++;
-      }
-
-      // 3. Sync coach_messages
-      const msgRows = database.getAllSync<any>(`
-        SELECT id, who, text, at
-        FROM coach_messages
-        WHERE text IS NOT NULL AND length(trim(text)) > 0
-      `);
-
-      for (const row of msgRows) {
-        const title = row.who === 'you' ? 'User Question' : 'Anvay Coach Reply';
-        const dateIso = new Date(row.at).toISOString();
-        database.runSync(
-          `INSERT INTO anvay_search_entries
-            (source_table, source_id, chunk_id, owner_id, app_id, domain, source_type, title, content, created_at)
-           VALUES ('coach_messages', ?, NULL, 'local_user', 'thrivefold', 'conversations', ?, ?, ?, ?)
-           ON CONFLICT(source_table, source_id, chunk_id) DO UPDATE SET
-            title = excluded.title,
-            content = excluded.content,
-            created_at = excluded.created_at`,
-          [row.id, row.who, title, row.text, dateIso]
-        );
-        count++;
-      }
-    });
+    } catch {
+      // Table may not be created yet
+    }
 
     this.invalidateCache();
     return { synchronized: count };
@@ -447,7 +592,8 @@ export class AnvayFtsStore {
    * Rebuilds the FTS5 virtual table index from the content table.
    */
   rebuild(): void {
-    const database = getDb();
+    const database = getSharedLocalMemoryDb();
+    ensureInitialized(database);
     database.runSync(`INSERT INTO anvay_search_fts(anvay_search_fts) VALUES('rebuild');`);
     this.invalidateCache();
   }
@@ -456,7 +602,8 @@ export class AnvayFtsStore {
    * Validates database and FTS5 integrity.
    */
   checkIntegrity(): boolean {
-    const database = getDb();
+    const database = getSharedLocalMemoryDb();
+    ensureInitialized(database);
     try {
       database.runSync(`INSERT INTO anvay_search_fts(anvay_search_fts) VALUES('integrity-check');`);
       return true;
@@ -466,25 +613,32 @@ export class AnvayFtsStore {
   }
 
   /**
-   * Runs performance and latency diagnostics across Unicode, Hindi, Bengali, and prefix queries.
+   * Runs performance diagnostics and calculates REAL SQLite disk footprint via page counts.
    */
-  benchmark(ownerId = 'local_user'): FtsBenchmarkResult {
-    const database = getDb();
+  benchmark(ownerId = 'local_user', appId = 'thrivefold'): FtsBenchmarkResult {
+    const database = getSharedLocalMemoryDb();
+    ensureInitialized(database);
+
     const countRow = database.getFirstSync<{ count: number }>(
-      `SELECT count(*) as count FROM anvay_search_entries WHERE owner_id = ?`,
-      [ownerId]
+      `SELECT count(*) as count FROM anvay_search_entries WHERE owner_id = ? AND app_id = ?`,
+      [ownerId, appId]
     );
     const count = countRow?.count ?? 0;
 
+    // Real disk usage calculation via PRAGMA page_count and page_size
+    const pageCountRow = database.getFirstSync<{ page_count: number }>(`PRAGMA page_count;`);
+    const pageSizeRow = database.getFirstSync<{ page_size: number }>(`PRAGMA page_size;`);
+    const dbSizeBytes = (pageCountRow?.page_count ?? 0) * (pageSizeRow?.page_size ?? 0);
+
     const measure = (q: string) => {
       const t0 = performance.now();
-      this.search(q, { ownerId, limit: 10 });
+      this.search(q, { ownerId, appId, limit: 10 });
       return Math.round((performance.now() - t0) * 100) / 100;
     };
 
     return {
       indexedCount: count,
-      dbSizeBytes: 0, // Profiled via SQLite page stats
+      dbSizeBytes,
       queryLatencyMs: {
         englishTerm: measure('water'),
         hindiTerm: measure('तनाव'),

@@ -6,6 +6,7 @@ import * as SQLite from 'expo-sqlite';
 
 import type { ChatTable } from '../../domain/assistant/chatActions';
 import { anvayFtsStore } from '../local-ai/search/anvayFtsStore';
+import { getSharedLocalMemoryDb } from '../local-ai/db/localMemoryDb';
 
 export interface ChatMessage {
   id: string;
@@ -28,29 +29,31 @@ export interface ChatMessage {
 
 export const CHAT_PAGE = 30;
 
-let db: SQLite.SQLiteDatabase | null = null;
+let initialized = false;
 const listeners = new Set<() => void>();
 
 function getDb(): SQLite.SQLiteDatabase | null {
-  if (db) return db;
   try {
-    db = SQLite.openDatabaseSync('thrivefold-local-memory.db');
-    db.execSync(`
-      CREATE TABLE IF NOT EXISTS coach_messages (
-        id TEXT PRIMARY KEY NOT NULL,
-        who TEXT NOT NULL,
-        text TEXT NOT NULL,
-        route TEXT,
-        table_json TEXT,
-        at INTEGER NOT NULL
-      );
-      CREATE INDEX IF NOT EXISTS idx_coach_messages_at ON coach_messages(at);
-    `);
-    // Columns added after the first release of this table.
-    const cols = db.getAllSync<{ name: string }>('PRAGMA table_info(coach_messages)').map((c) => c.name);
-    if (!cols.includes('feedback')) db.execSync('ALTER TABLE coach_messages ADD COLUMN feedback TEXT');
-    if (!cols.includes('attachment_json')) db.execSync('ALTER TABLE coach_messages ADD COLUMN attachment_json TEXT');
-    if (!cols.includes('extra_json')) db.execSync('ALTER TABLE coach_messages ADD COLUMN extra_json TEXT');
+    const db = getSharedLocalMemoryDb();
+    if (!initialized) {
+      db.execSync(`
+        CREATE TABLE IF NOT EXISTS coach_messages (
+          id TEXT PRIMARY KEY NOT NULL,
+          who TEXT NOT NULL,
+          text TEXT NOT NULL,
+          route TEXT,
+          table_json TEXT,
+          at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_coach_messages_at ON coach_messages(at);
+      `);
+      // Columns added after the first release of this table.
+      const cols = db.getAllSync<{ name: string }>('PRAGMA table_info(coach_messages)').map((c) => c.name);
+      if (!cols.includes('feedback')) db.execSync('ALTER TABLE coach_messages ADD COLUMN feedback TEXT');
+      if (!cols.includes('attachment_json')) db.execSync('ALTER TABLE coach_messages ADD COLUMN attachment_json TEXT');
+      if (!cols.includes('extra_json')) db.execSync('ALTER TABLE coach_messages ADD COLUMN extra_json TEXT');
+      initialized = true;
+    }
     return db;
   } catch {
     return null;

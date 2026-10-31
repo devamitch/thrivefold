@@ -10,6 +10,7 @@
  */
 
 import * as SQLite from 'expo-sqlite';
+import { getSharedLocalMemoryDb } from '../local-ai/db/localMemoryDb';
 
 export interface AiInteractionRecord {
   id: string;
@@ -23,30 +24,30 @@ export interface AiInteractionRecord {
   status: 'success' | 'error';
 }
 
-let db: SQLite.SQLiteDatabase | null = null;
+let initialized = false;
 
 function getDb(): SQLite.SQLiteDatabase | null {
-  if (db) return db;
   try {
-    db = SQLite.openDatabaseSync('thrivefold-local-memory.db');
-    db.execSync(`
-      PRAGMA journal_mode = WAL;
+    const db = getSharedLocalMemoryDb();
+    if (!initialized) {
+      db.execSync(`
+        CREATE TABLE IF NOT EXISTS ai_interactions (
+          id TEXT PRIMARY KEY NOT NULL,
+          created_at TEXT NOT NULL,
+          user_id TEXT NOT NULL,
+          provider TEXT NOT NULL,
+          model TEXT NOT NULL,
+          prompt TEXT NOT NULL,
+          response TEXT NOT NULL,
+          latency_ms INTEGER NOT NULL,
+          status TEXT NOT NULL
+        );
 
-      CREATE TABLE IF NOT EXISTS ai_interactions (
-        id TEXT PRIMARY KEY NOT NULL,
-        created_at TEXT NOT NULL,
-        user_id TEXT NOT NULL,
-        provider TEXT NOT NULL,
-        model TEXT NOT NULL,
-        prompt TEXT NOT NULL,
-        response TEXT NOT NULL,
-        latency_ms INTEGER NOT NULL,
-        status TEXT NOT NULL
-      );
-
-      CREATE INDEX IF NOT EXISTS idx_ai_interactions_user ON ai_interactions(user_id);
-      CREATE INDEX IF NOT EXISTS idx_ai_interactions_created ON ai_interactions(created_at);
-    `);
+        CREATE INDEX IF NOT EXISTS idx_ai_interactions_user ON ai_interactions(user_id);
+        CREATE INDEX IF NOT EXISTS idx_ai_interactions_created ON ai_interactions(created_at);
+      `);
+      initialized = true;
+    }
     return db;
   } catch {
     return null;

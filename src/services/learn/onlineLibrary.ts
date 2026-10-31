@@ -14,6 +14,7 @@ import * as SQLite from 'expo-sqlite';
 
 import { hashText } from '../../domain/assistant/appKnowledge';
 import { thriveRag } from '../local-ai/rag/thriveRag';
+import { getSharedLocalMemoryDb } from '../local-ai/db/localMemoryDb';
 
 export type LibrarySource = 'wikipedia' | 'openlibrary' | 'gutenberg' | 'archive';
 
@@ -44,25 +45,27 @@ const TIMEOUT_MS = 12_000;
 const USER_AGENT = 'ThrivefoldApp/1.0 (Android wellbeing app; com.amit.thrivefold)';
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-let db: SQLite.SQLiteDatabase | null = null;
+let initialized = false;
 function getDb(): SQLite.SQLiteDatabase | null {
-  if (db) return db;
   try {
-    db = SQLite.openDatabaseSync('thrivefold-local-memory.db');
-    db.execSync(`
-      CREATE TABLE IF NOT EXISTS learn_library (
-        id TEXT PRIMARY KEY NOT NULL,
-        source TEXT NOT NULL,
-        topic TEXT NOT NULL,
-        title TEXT NOT NULL,
-        summary TEXT NOT NULL,
-        url TEXT NOT NULL,
-        byline TEXT,
-        image TEXT,
-        fetched_at INTEGER NOT NULL
-      );
-      CREATE INDEX IF NOT EXISTS idx_learn_library_topic ON learn_library(topic);
-    `);
+    const db = getSharedLocalMemoryDb();
+    if (!initialized) {
+      db.execSync(`
+        CREATE TABLE IF NOT EXISTS learn_library (
+          id TEXT PRIMARY KEY NOT NULL,
+          source TEXT NOT NULL,
+          topic TEXT NOT NULL,
+          title TEXT NOT NULL,
+          summary TEXT NOT NULL,
+          url TEXT NOT NULL,
+          byline TEXT,
+          image TEXT,
+          fetched_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_learn_library_topic ON learn_library(topic);
+      `);
+      initialized = true;
+    }
     return db;
   } catch {
     return null;

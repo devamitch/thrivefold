@@ -13,44 +13,53 @@ jest.mock('expo-sqlite', () => ({
     execSync: jest.fn(),
     runSync: jest.fn((sql: string, params: any[] = []) => {
       if (sql.includes('INSERT INTO anvay_search_entries')) {
-        const existingIdx = mockSearchEntries.findIndex(
-          (e) => e.source_table === params[0] && e.source_id === params[1] && (e.chunk_id || null) === (params[2] || null)
-        );
+        const entryKey = params[0];
+        const existingIdx = mockSearchEntries.findIndex((e) => e.entry_key === entryKey);
         if (existingIdx >= 0) {
           mockSearchEntries[existingIdx] = {
             ...mockSearchEntries[existingIdx],
-            title: params[6],
-            content: params[7],
-            domain: params[4],
-            source_type: params[5],
-            created_at: params[8],
+            title: params[8],
+            content: params[9],
+            domain: params[6],
+            source_type: params[7],
+            created_at: params[10],
           };
         } else {
           mockSearchEntries.push({
             rowid: nextRowId++,
-            source_table: params[0],
-            source_id: params[1],
-            chunk_id: params[2],
-            owner_id: params[3],
-            app_id: params[4] || 'thrivefold',
-            domain: params[5],
-            source_type: params[6],
-            title: params[7],
-            content: params[8],
-            created_at: params[9],
-            metadata_json: params[10],
+            entry_key: params[0],
+            source_table: params[1],
+            source_id: params[2],
+            chunk_id: params[3],
+            owner_id: params[4],
+            app_id: params[5] || 'thrivefold',
+            domain: params[6],
+            source_type: params[7],
+            title: params[8],
+            content: params[9],
+            created_at: params[10],
+            metadata_json: params[11],
           });
         }
         return { changes: 1 };
       }
 
       if (sql.includes('DELETE FROM anvay_search_entries')) {
-        const table = params[0];
-        const id = params[1];
         const initialLen = mockSearchEntries.length;
-        for (let i = mockSearchEntries.length - 1; i >= 0; i--) {
-          if (mockSearchEntries[i].source_table === table && mockSearchEntries[i].source_id === id) {
-            mockSearchEntries.splice(i, 1);
+        if (sql.includes('entry_key = ?')) {
+          const key = params[0];
+          for (let i = mockSearchEntries.length - 1; i >= 0; i--) {
+            if (mockSearchEntries[i].entry_key === key) {
+              mockSearchEntries.splice(i, 1);
+            }
+          }
+        } else {
+          const table = params[0];
+          const id = params[1];
+          for (let i = mockSearchEntries.length - 1; i >= 0; i--) {
+            if (mockSearchEntries[i].source_table === table && mockSearchEntries[i].source_id === id) {
+              mockSearchEntries.splice(i, 1);
+            }
           }
         }
         return { changes: initialLen - mockSearchEntries.length };

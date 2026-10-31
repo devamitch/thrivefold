@@ -1,11 +1,11 @@
 /**
  * Hybrid RAG (Retrieval-Augmented Generation) Pipeline.
  *
- * Unifies dense vector embedding retrieval and sparse BM25 keyword search:
- * 1. Ingests user-scoped notes, analytical memories, and verified exercise catalogs.
- * 2. Employs Reciprocal Rank Fusion (RRF) to blend semantic and lexical matches.
- * 3. Enforces confidence thresholds to avoid AI hallucinations.
- * 4. Assembles evidence-grounded contexts with strict provenance citations.
+ * Implements independent dual-branch retrieval with Reciprocal Rank Fusion (RRF k=60):
+ * Branch A: Independent SQLite FTS5 lexical candidates (sub-millisecond BM25 ranking).
+ * Branch B: Independent semantic vector candidates (cosine similarity top-K).
+ * Fusion: Reciprocal Rank Fusion blending semantic and lexical candidates.
+ * Hydration: Fetches ONLY selected candidate records by ID from SQLite, guarding device RAM.
  */
 
 import { LocalAI } from '../../../../modules/local-ai';
@@ -15,6 +15,7 @@ import { knowledgeStore, type KnowledgeChunk } from './knowledgeStore';
 import { tokenize, makeSnippet } from '../../../domain/ai/localRetrieval';
 import { EXERCISES } from '../../../domain/fitness/workouts';
 import { anvayFtsStore, type FtsSearchHit } from '../search/anvayFtsStore';
+import { getSharedLocalMemoryDb } from '../db/localMemoryDb';
 
 export interface RagDocument {
   id: string;
@@ -27,7 +28,8 @@ export interface RagDocument {
     | 'user_note'
     | 'health_article'
     | 'imported_file'
-    | 'medical_reference';
+    | 'medical_reference'
+    | 'learn_library';
   title: string;
   content: string;
   date?: string;
@@ -115,66 +117,105 @@ export function rankSparseBM25(docs: RagDocument[], query: string): { doc: RagDo
 }
 
 /**
- * Executes a full hybrid retrieval query over persistent analytical memories,
- * ingested documents/guides, and local catalogs.
+ * Hydrates only the specific candidate documents identified by FTS5 or Vector search.
+ */
+function hydrateCandidateDocuments(
+  userId: string,
+  candidateKeys: { chunkIds: string[]; memoryIds: string[]; exerciseIds: string[] }
+): Map<string, RagDocument> {
+  const docMap = new Map<string, RagDocument>();
+  const db = getSharedLocalMemoryDb();
+
+  // 1. Hydrate exercise catalog candidates
+  if (candidateKeys.exerciseIds.length > 0) {
+    const catalog = getExerciseCatalogDocuments();
+    for (const exDoc of catalog) {
+      const bareId = exDoc.id.replace('catalog_ex_', '');
+      if (candidateKeys.exerciseIds.includes(bareId) || candidateKeys.exerciseIds.includes(exDoc.id)) {
+        docMap.set(exDoc.id, exDoc);
+        docMap.set(bareId, exDoc);
+      }
+    }
+  }
+
+  // 2. Hydrate specific memory candidates
+  if (candidateKeys.memoryIds.length > 0) {
+    const placeholders = candidateKeys.memoryIds.map(() => '?').join(',');
+    const rows = db.getAllSync<any>(
+      `SELECT * FROM user_memories WHERE id IN (${placeholders}) AND user_id = ? AND status = 'active'`,
+      [...candidateKeys.memoryIds, userId]
+    );
+    for (const r of rows) {
+      docMap.set(r.id, {
+        id: r.id,
+        sourceType: 'user_memory',
+        title: `${r.kind.toUpperCase()} Memory`,
+        content: r.content,
+        date: r.updated_at,
+        metadata: r.metadata_json ? JSON.parse(r.metadata_json) : undefined,
+      });
+    }
+  }
+
+  // 3. Hydrate specific chunk candidates
+  if (candidateKeys.chunkIds.length > 0) {
+    const placeholders = candidateKeys.chunkIds.map(() => '?').join(',');
+    const rows = db.getAllSync<any>(
+      `SELECT c.*, d.title as doc_title, d.source_type
+       FROM rag_chunks c
+       JOIN rag_documents d ON d.id = c.document_id
+       WHERE c.id IN (${placeholders}) AND c.user_id = ?`,
+      [...candidateKeys.chunkIds, userId]
+    );
+    for (const r of rows) {
+      docMap.set(r.id, {
+        id: r.id,
+        sourceType: 'user_document',
+        title: r.doc_title || 'Document Chunk',
+        content: r.content,
+        date: r.created_at,
+        chunkOffset: { start: r.start_offset, end: r.end_offset },
+        metadata: { documentId: r.document_id, tokenEstimate: r.token_estimate },
+      });
+    }
+  }
+
+  return docMap;
+}
+
+/**
+ * Executes independent dual-branch hybrid retrieval over persistent analytical memories,
+ * ingested documents, and exercise catalogs.
  */
 export async function retrieveHybridEvidence(
   userId: string,
   query: string,
   topK = 4
 ): Promise<RagEvidenceHit[]> {
-  const catalogDocs = getExerciseCatalogDocuments();
-
-  // 1. Fetch user-scoped analytical memories from SQLite
-  const userMemories = await memoryStore.listMemories(userId, { status: 'active' });
-  const memoryDocs: RagDocument[] = userMemories.map((m: UserMemory) => ({
-    id: m.id,
-    sourceType: 'user_memory' as const,
-    title: `${m.kind.toUpperCase()} Memory`,
-    content: m.content,
-    date: m.updatedAt,
-    metadata: m.metadata,
-    embedding: m.embedding,
-  }));
-
-  // 2. Fetch ingested knowledge chunks from SQLite
-  let knowledgeChunkDocs: RagDocument[] = [];
-  try {
-    const chunks = await knowledgeStore.getAllChunks(userId);
-    knowledgeChunkDocs = chunks.map((c) => ({
-      id: c.id,
-      sourceType: 'user_document' as const,
-      title: c.documentTitle ?? `Doc Chunk ${c.chunkIndex + 1}`,
-      content: c.content,
-      date: c.createdAt,
-      embedding: c.embedding,
-      chunkOffset: { start: c.startOffset, end: c.endOffset },
-      metadata: { documentId: c.documentId, tokenEstimate: c.tokenEstimate },
-    }));
-  } catch {
-    // If table is newly created or empty
-  }
-
-  const allDocs = [...catalogDocs, ...memoryDocs, ...knowledgeChunkDocs];
-
-  // 3. SQLite FTS5 Full-Text Retrieval with native C++ BM25 ranking
+  // Branch A: Independent SQLite FTS5 Candidate Retrieval
   const ftsHits = anvayFtsStore.search(query, { ownerId: userId, limit: 30 });
   const sparseRankMap = new Map<string, number>();
   const ftsSnippetMap = new Map<string, string>();
+
+  const candidateChunkIds: string[] = [];
+  const candidateMemoryIds: string[] = [];
+  const candidateExerciseIds: string[] = [];
 
   ftsHits.forEach((hit, idx) => {
     const key = hit.chunkId || hit.sourceId;
     sparseRankMap.set(key, idx + 1);
     if (hit.snippet) ftsSnippetMap.set(key, hit.snippet);
+
+    if (hit.sourceTable === 'rag_chunks' && hit.chunkId) {
+      candidateChunkIds.push(hit.chunkId);
+    } else if (hit.sourceTable === 'user_memories') {
+      candidateMemoryIds.push(hit.sourceId);
+    } else if (hit.sourceTable === 'exercise_catalog') {
+      candidateExerciseIds.push(hit.sourceId);
+    }
   });
 
-  // Fallback to in-memory lexical ranking if FTS store has not indexed documents yet
-  if (sparseRankMap.size === 0) {
-    const fallbackHits = rankSparseBM25(allDocs, query);
-    fallbackHits.forEach((hit, idx) => sparseRankMap.set(hit.doc.id, idx + 1));
-  }
-
-  // 4. Dense Semantic Vector Search (if local embedding model available)
+  // Branch B: Independent Dense Semantic Vector Retrieval (if local model loaded)
   const denseRankMap = new Map<string, number>();
   if (LocalAI.isLoaded()) {
     try {
@@ -182,7 +223,10 @@ export async function retrieveHybridEvidence(
       if (queryVec && queryVec.length > 0) {
         // Query memory store vectors
         const denseMemories = await memoryStore.searchMemoriesByVector(userId, queryVec, 10, 0.4);
-        denseMemories.forEach((res, idx) => denseRankMap.set(res.memory.id, idx + 1));
+        denseMemories.forEach((res, idx) => {
+          denseRankMap.set(res.memory.id, idx + 1);
+          candidateMemoryIds.push(res.memory.id);
+        });
 
         // Query knowledge chunk vectors
         const denseChunks = await knowledgeStore.searchChunksByVector(userId, queryVec, 10, 0.4);
@@ -191,16 +235,33 @@ export async function retrieveHybridEvidence(
           if (currentRank === undefined || idx + 1 < currentRank) {
             denseRankMap.set(res.chunk.id, idx + 1);
           }
+          candidateChunkIds.push(res.chunk.id);
         });
       }
     } catch {
-      // Degrades gracefully to sparse ranking if embedding engine is busy or unavailable
+      // Degrades gracefully to lexical ranking if vector engine is unavailable
     }
   }
 
-  // 5. Reciprocal Rank Fusion (RRF)
+  // Fallback: If both FTS and vector produced zero results (e.g., initial empty index), rank catalog directly
+  if (sparseRankMap.size === 0 && denseRankMap.size === 0) {
+    const catalog = getExerciseCatalogDocuments();
+    const fallbackHits = rankSparseBM25(catalog, query);
+    fallbackHits.slice(0, topK).forEach((hit, idx) => {
+      sparseRankMap.set(hit.doc.id, idx + 1);
+      candidateExerciseIds.push(hit.doc.id);
+    });
+  }
+
+  // Hydrate ONLY the selected candidate records by ID from SQLite
+  const docMap = hydrateCandidateDocuments(userId, {
+    chunkIds: Array.from(new Set(candidateChunkIds)),
+    memoryIds: Array.from(new Set(candidateMemoryIds)),
+    exerciseIds: Array.from(new Set(candidateExerciseIds)),
+  });
+
+  // Reciprocal Rank Fusion (RRF k=60)
   const candidateIds = new Set<string>([...sparseRankMap.keys(), ...denseRankMap.keys()]);
-  const docMap = new Map<string, RagDocument>(allDocs.map((d) => [d.id, d]));
   const fusionHits: RagEvidenceHit[] = [];
 
   for (const docId of candidateIds) {
@@ -212,7 +273,7 @@ export async function retrieveHybridEvidence(
 
     let score = 0;
     if (sRank !== undefined) score += 1 / (RRF_K + sRank);
-    if (dRank !== undefined) score += 1.2 / (RRF_K + dRank); // Boost for semantic vector matches
+    if (dRank !== undefined) score += 1.2 / (RRF_K + dRank); // 1.2x multiplier for semantic relevance
 
     const terms = tokenize(query);
     const snippet = ftsSnippetMap.get(docId) || makeSnippet(doc.content, terms);
@@ -257,7 +318,7 @@ export async function answerWithHybridRag(
     return `[Personal Memory: ${h.document.title}]`;
   });
 
-  // If local AI is loaded, synthesize grounded response; otherwise format crisp factual digest
+  // If local AI is loaded, synthesize grounded response; otherwise format factual digest
   if (LocalAI.isLoaded()) {
     const evidenceText = hits.map((h, i) => `[Source ${i + 1} - ${h.document.title}]: ${h.document.content}`).join('\n\n');
     const prompt =
