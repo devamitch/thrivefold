@@ -7,6 +7,7 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
 import { routineTimes, type Routine } from '../../domain/routines';
+import { syncNativeAlarms } from '../../../modules/alarm-scheduler';
 
 const CHANNEL = 'routines_alarm';
 export const ROUTINE_KIND = 'routine';
@@ -29,9 +30,24 @@ async function ensure(): Promise<boolean> {
   return current.granted || (await Notifications.requestPermissionsAsync()).granted;
 }
 
-/** Returns false when notification permission was refused. */
+/** Syncs routine alarms with both Android native AlarmManager (real alarms) and Expo notifications. */
 export async function syncRoutineReminders(routines: Routine[]): Promise<boolean> {
   try {
+    // 1. Sync Native AlarmManager alarms (fires AlarmClock intent even when app is killed)
+    if (Platform.OS === 'android') {
+      const nativeItems = routines.map((r) => ({
+        id: r.id,
+        title: r.title,
+        time: r.time,
+        days: r.days,
+        enabled: r.enabled,
+      }));
+      syncNativeAlarms(nativeItems).catch((err) =>
+        console.warn('[syncRoutineReminders] native alarm sync failed:', err),
+      );
+    }
+
+    // 2. Also keep Expo Notification triggers as fallback
     const all = await Notifications.getAllScheduledNotificationsAsync();
     await Promise.all(
       all
