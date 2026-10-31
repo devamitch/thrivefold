@@ -583,6 +583,91 @@ export const TOOLS: Record<string, ToolDefinition> = {
       };
     },
   },
+
+  schedule_or_update_routine: {
+    name: 'schedule_or_update_routine',
+    description: 'Add or update a routine alarm with exact time in 24h format and repeat days, detecting and preventing conflicts.',
+    parameters: {
+      title: { type: 'string', description: 'Name of the routine (e.g. Bedtime wind-down, Morning stretch)', required: true },
+      time: { type: 'string', description: '24-hour time HH:mm (e.g. 08:30 or 22:00)', required: true },
+      routineId: { type: 'string', description: 'Optional routine ID if updating an existing alarm' },
+      days: { type: 'array', description: 'Repeat days array (1=Mon ... 7=Sun, empty=daily)' },
+    },
+    execute: async ({ title, time, routineId, days = [] }: { title: string; time: string; routineId?: string; days?: number[] }) => {
+      const store = useRootStore.getState();
+      const existing = store.routines;
+
+      // Conflict detection: check if another routine has the exact same scheduled time
+      const conflict = existing.find((r) => r.time === time && r.id !== routineId && r.enabled);
+      const conflictWarning = conflict ? ` Note: "${conflict.title}" is also scheduled at ${format12Hour(time)}.` : '';
+
+      if (routineId) {
+        store.updateRoutine(routineId, { title, time, days: days || [] });
+        return {
+          success: true,
+          message: `⏰ Updated routine "${title}" to ${format12Hour(time)} (${time}).${conflictWarning}`,
+          routeToOpen: '/(app)/routines',
+        };
+      }
+
+      store.addRoutine({
+        kind: 'custom',
+        title,
+        time,
+        days: days || [],
+      });
+
+      return {
+        success: true,
+        message: `⏰ Scheduled routine alarm "${title}" for ${format12Hour(time)} (${time}) with native alarm wake lock.${conflictWarning}`,
+        routeToOpen: '/(app)/routines',
+      };
+    },
+  },
+
+  remove_routine_alarm: {
+    name: 'remove_routine_alarm',
+    description: 'Remove or cancel a routine alarm schedule by title or routine ID.',
+    parameters: {
+      identifier: { type: 'string', description: 'Title or routine ID to cancel', required: true },
+    },
+    execute: async ({ identifier }: { identifier: string }) => {
+      const store = useRootStore.getState();
+      const match = store.routines.find((r) => r.id === identifier || r.title.toLowerCase().includes(identifier.toLowerCase()));
+      if (!match) {
+        return {
+          success: false,
+          message: `Could not find an active routine matching "${identifier}".`,
+          routeToOpen: '/(app)/routines',
+        };
+      }
+      store.removeRoutine(match.id);
+      return {
+        success: true,
+        message: `🗑️ Removed routine alarm "${match.title}" (${format12Hour(match.time)}).`,
+        routeToOpen: '/(app)/routines',
+      };
+    },
+  },
+
+  emergency_crisis_dispatch: {
+    name: 'emergency_crisis_dispatch',
+    description: 'Emergency response tool for acute crisis or safety distress with regional emergency number lookups.',
+    parameters: {
+      urgency: { type: 'string', description: 'Urgency level: immediate, high, or moderate', required: true },
+      userConcern: { type: 'string', description: 'Description of the distress or emergency' },
+      userCountry: { type: 'string', description: 'Optional user country/region (e.g. US, IN, UK, EU)' },
+    },
+    execute: async ({ urgency, userConcern, userCountry = 'US' }: { urgency: string; userConcern?: string; userCountry?: string }) => {
+      navigateTo('/(app)/safety/someone-to-talk');
+      return {
+        success: true,
+        message: `🚨 Emergency resources active. If you or someone you know is in acute danger, please call emergency services immediately (988 in US/Canada, 112 in EU/India, 999 in UK). I have opened the Someone to Talk crisis sanctuary with 1-tap direct dialers.`,
+        routeToOpen: '/(app)/safety/someone-to-talk',
+        autoNavigate: true,
+      };
+    },
+  },
 };
 
 /**

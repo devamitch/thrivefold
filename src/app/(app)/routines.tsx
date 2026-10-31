@@ -66,6 +66,7 @@ export default function RoutinesScreen() {
 
   // Bottom sheet modal state
   const [modalVisible, setModalVisible] = useState(false);
+  const [editingRoutineId, setEditingRoutineId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
 
   // 12-hour AM/PM time picker state
@@ -80,12 +81,18 @@ export default function RoutinesScreen() {
     [selectedHour, selectedMinute, selectedPeriod],
   );
 
+  // Conflict warning: checks if any existing active routine shares the same time
+  const conflictingRoutine = useMemo(() => {
+    return routines.find((r) => r.time === time24 && r.id !== editingRoutineId && r.enabled);
+  }, [routines, time24, editingRoutineId]);
+
   const unusedPresets = ROUTINE_PRESETS.filter(
     (p) => !routines.some((r) => r.kind === p.kind && r.title === p.title),
   );
 
   const openAddModal = () => {
     hapticLight();
+    setEditingRoutineId(null);
     setTitle('');
     setSelectedHour(8);
     setSelectedMinute(0);
@@ -94,15 +101,43 @@ export default function RoutinesScreen() {
     setModalVisible(true);
   };
 
+  const openEditModal = (r: Routine) => {
+    hapticLight();
+    setEditingRoutineId(r.id);
+    setTitle(r.title);
+    if (isHHMM(r.time)) {
+      const [h, m] = r.time.split(':').map(Number);
+      const period = h >= 12 ? 'PM' : 'AM';
+      const hour12 = h % 12 === 0 ? 12 : h % 12;
+      setSelectedHour(hour12);
+      setSelectedMinute(m);
+      setSelectedPeriod(period);
+    } else {
+      setSelectedHour(8);
+      setSelectedMinute(0);
+      setSelectedPeriod('AM');
+    }
+    setDays(r.days || []);
+    setModalVisible(true);
+  };
+
   const handleSave = () => {
     if (!title.trim() || !isHHMM(time24)) return;
     hapticSuccess();
-    addRoutine({
-      kind: 'custom',
-      title: title.trim(),
-      time: time24,
-      days,
-    });
+    if (editingRoutineId) {
+      updateRoutine(editingRoutineId, {
+        title: title.trim(),
+        time: time24,
+        days,
+      });
+    } else {
+      addRoutine({
+        kind: 'custom',
+        title: title.trim(),
+        time: time24,
+        days,
+      });
+    }
     setModalVisible(false);
   };
 
@@ -179,8 +214,13 @@ export default function RoutinesScreen() {
                   </Text>
                 </View>
 
-                {/* Routine Title & Repeat Days */}
-                <View style={[styles.flex, { marginLeft: spacing.md }]}>
+                {/* Routine Title & Repeat Days - Tap to edit */}
+                <PressableScale
+                  onPress={() => openEditModal(r)}
+                  style={[styles.flex, { marginLeft: spacing.md }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Edit ${r.title}`}
+                >
                   <Text
                     style={[
                       typography.bodyBold,
@@ -193,10 +233,13 @@ export default function RoutinesScreen() {
                   <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
                     {describe(r)}
                   </Text>
-                  <Text style={[typography.caption, { color: colors.text.muted, fontSize: 11, marginTop: 2 }]}>
-                    Saved as {r.time}
-                  </Text>
-                </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+                    <Ionicons name="pencil-outline" size={12} color={colors.primary} />
+                    <Text style={[typography.caption, { color: colors.primary, fontSize: 11, marginLeft: 4 }]}>
+                      Tap to edit ({r.time})
+                    </Text>
+                  </View>
+                </PressableScale>
 
                 {/* Alarm Enable Toggle */}
                 <Toggle
@@ -262,13 +305,30 @@ export default function RoutinesScreen() {
         </View>
       ) : null}
 
-      {/* ADD ROUTINE BOTTOM SHEET MODAL */}
+      {/* ADD / EDIT ROUTINE BOTTOM SHEET MODAL */}
       <AppBottomSheetModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
-        title="Add Routine Alarm"
+        title={editingRoutineId ? 'Edit Routine Alarm' : 'Add Routine Alarm'}
       >
         <View style={styles.modalContent}>
+          {/* Conflict Alert Banner if times collide */}
+          {conflictingRoutine ? (
+            <Card variant="tinted" style={[styles.conflictBanner, { borderColor: '#E57373', marginBottom: 12 }]}>
+              <View style={styles.bannerRow}>
+                <Ionicons name="warning-outline" size={20} color="#D32F2F" />
+                <View style={{ flex: 1, marginLeft: 8 }}>
+                  <Text style={[typography.captionBold, { color: '#D32F2F' }]}>
+                    Time Conflict Notice
+                  </Text>
+                  <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                    &quot;{conflictingRoutine.title}&quot; is already scheduled for {format12Hour(conflictingRoutine.time)}. You can still save or choose another time.
+                  </Text>
+                </View>
+              </View>
+            </Card>
+          ) : null}
+
           {/* Routine Name Input */}
           <TextField
             label="Routine Name"
@@ -487,6 +547,11 @@ const styles = StyleSheet.create({
   bannerCard: {
     padding: 14,
     borderRadius: 16,
+  },
+  conflictBanner: {
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
   },
   bannerRow: {
     flexDirection: 'row',
