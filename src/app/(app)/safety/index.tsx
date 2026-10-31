@@ -1,17 +1,17 @@
-import { SquircleSurface } from '../../../components/ui/SquircleSurface';
-import React, { useState } from 'react';
-import { Linking, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Link, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { hapticMedium, hapticSuccess } from '../../../services/haptics';
+import { Link, useRouter, type Href } from 'expo-router';
+import { useState } from 'react';
+import { Linking, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
-import { Badge } from '../../../components/ui/Badge';
 import { Header } from '../../../components/ui/Header';
 import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
-import { useTheme } from '../../../theme/useTheme';
+import { hapticMedium, hapticSuccess } from '../../../services/haptics';
+import { globalVoiceController } from '../../../services/voice/globalVoiceController';
 import { useRootStore } from '../../../stores/useRootStore';
+import { useTheme } from '../../../theme/useTheme';
 
 export default function SafetyScreen() {
   const router = useRouter();
@@ -26,12 +26,28 @@ export default function SafetyScreen() {
 
   const emergencyResources = [
     { name: 'Suicide & Crisis Lifeline', phone: '988', isSms: false, country: 'US / Canada' },
-    { name: 'Crisis Text Support', phone: '741741', isSms: true, body: 'HOME', country: 'Global / US' },
-    { name: 'National Domestic Violence Hotline', phone: '1-800-799-7233', isSms: false, country: '24/7 Free' },
-    { name: 'The Trevor Project (LGBTQ+ Youth)', phone: '1-866-488-7386', isSms: false, country: '24/7 Free' },
+    {
+      name: 'Crisis Text Support',
+      phone: '741741',
+      isSms: true,
+      body: 'HOME',
+      country: 'Global / US',
+    },
+    {
+      name: 'National Domestic Violence Hotline',
+      phone: '1-800-799-7233',
+      isSms: false,
+      country: '24/7 Free',
+    },
+    {
+      name: 'The Trevor Project (LGBTQ+ Youth)',
+      phone: '1-866-488-7386',
+      isSms: false,
+      country: '24/7 Free',
+    },
   ];
 
-  const handleResourceAction = (res: typeof emergencyResources[0]) => {
+  const handleResourceAction = (res: (typeof emergencyResources)[0]) => {
     hapticMedium();
 
     if (res.isSms) {
@@ -55,7 +71,8 @@ export default function SafetyScreen() {
     showToast({
       type: 'info',
       title: 'Report saved',
-      message: 'Saved on this device. Reports reach a human reviewer once community features are live.',
+      message:
+        'Saved on this device. Reports reach a human reviewer once community features are live.',
     });
     setReportText('');
     setShowReportCard(false);
@@ -64,16 +81,21 @@ export default function SafetyScreen() {
   return (
     <ScreenWrapper scrollable>
       <Header title="Safety" subtitle="Crisis lines, blocking and reports" showBack />
-      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: spacing.xxl }]}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[styles.content, { paddingBottom: spacing.xxl }]}
+      >
         {/* Quick Safety Hub Links */}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-          <Link href={'/(app)/safety/someone-to-talk' as Href} asChild>
-            <Button
-              label="Someone to Talk To"
-              size="sm"
-              icon={<Ionicons name="heart-circle" size={14} color={colors.onPrimary} />}
-            />
-          </Link>
+          <Button
+            label="Someone to Talk To"
+            size="sm"
+            onPress={() => {
+              useRootStore.getState().setCoachPersona('support');
+              void globalVoiceController.open(undefined, { listen: false });
+            }}
+            icon={<Ionicons name="heart-circle" size={14} color={colors.onPrimary} />}
+          />
           <Link href={'/(app)/safety/urgent-support' as Href} asChild>
             <Button
               label="24/7 Helplines"
@@ -119,27 +141,47 @@ export default function SafetyScreen() {
           <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 12 }]}>
             Your safety
           </Text>
-          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4, lineHeight: 18 }]}>
-            You decide who can reach you and what is shared. Crisis lines and appeals are listed below.
+          <Text
+            style={[
+              typography.caption,
+              { color: colors.text.secondary, marginTop: 4, lineHeight: 18 },
+            ]}
+          >
+            You decide who can reach you and what is shared. Crisis lines and appeals are listed
+            below.
           </Text>
         </Card>
 
         {/* Emergency Resources */}
-        <Card style={{ marginBottom: spacing.md, backgroundColor: colors.errorSurface, borderColor: colors.error }}>
+        <Card
+          style={{
+            marginBottom: spacing.md,
+            backgroundColor: colors.errorSurface,
+            borderColor: colors.error,
+          }}
+        >
           <View style={styles.emergencyHeader}>
             <Ionicons name="shield-checkmark" size={24} color={colors.error} />
             <Text style={[typography.heading, { color: colors.error, marginLeft: 8 }]}>
               Immediate Crisis Hotlines
             </Text>
           </View>
-          <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 6, marginBottom: 16 }]}>
-            Confidential, free support available 24/7. Tapping will open your phone dialer or SMS app directly.
+          <Text
+            style={[
+              typography.subbody,
+              { color: colors.text.secondary, marginTop: 6, marginBottom: 16 },
+            ]}
+          >
+            Confidential, free support available 24/7. Tapping will open your phone dialer or SMS
+            app directly.
           </Text>
 
           {emergencyResources.map((res) => (
             <View key={res.name} style={[styles.resourceRow, { borderBottomColor: colors.border }]}>
               <View style={{ flex: 1, paddingRight: 10 }}>
-                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{res.name}</Text>
+                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                  {res.name}
+                </Text>
                 <Text style={[typography.caption, { color: colors.text.muted, marginTop: 2 }]}>
                   {res.country} · {res.isSms ? `SMS: ${res.phone}` : res.phone}
                 </Text>
@@ -149,7 +191,13 @@ export default function SafetyScreen() {
                 size="sm"
                 variant="danger"
                 onPress={() => handleResourceAction(res)}
-                icon={<Ionicons name={res.isSms ? 'chatbubble-ellipses' : 'call'} size={14} color={colors.onPrimary} />}
+                icon={
+                  <Ionicons
+                    name={res.isSms ? 'chatbubble-ellipses' : 'call'}
+                    size={14}
+                    color={colors.onPrimary}
+                  />
+                }
               />
             </View>
           ))}
@@ -187,7 +235,13 @@ export default function SafetyScreen() {
                 ]}
               />
               <View style={[styles.rowEnd, { marginTop: 10 }]}>
-                <Button label="Cancel" variant="ghost" size="sm" onPress={() => setShowReportCard(false)} style={{ marginRight: 8 }} />
+                <Button
+                  label="Cancel"
+                  variant="ghost"
+                  size="sm"
+                  onPress={() => setShowReportCard(false)}
+                  style={{ marginRight: 8 }}
+                />
                 <Button label="Submit Report" size="sm" onPress={handleReportSubmit} />
               </View>
             </View>
@@ -210,20 +264,21 @@ export default function SafetyScreen() {
             </Text>
             <Badge label="Zero Contact" variant="warning" />
           </View>
-          <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 6, marginBottom: 12 }]}>
-            Blocked accounts cannot find your pseudonym, see shared circles, or send letters. Blocked interactions immediately halt in-transit delivery.
+          <Text
+            style={[
+              typography.subbody,
+              { color: colors.text.secondary, marginTop: 6, marginBottom: 12 },
+            ]}
+          >
+            Blocked accounts cannot find your pseudonym, see shared circles, or send letters.
+            Blocked interactions immediately halt in-transit delivery.
           </Text>
 
           {blockedUserIds.length > 0 ? (
             blockedUserIds.map((id) => (
               <View key={id} style={[styles.blockedRow, { borderColor: colors.border }]}>
                 <Text style={[typography.subbodyBold, { color: colors.text.primary }]}>{id}</Text>
-                <Button
-                  label="Unblock"
-                  size="sm"
-                  variant="ghost"
-                  onPress={() => unblockUser(id)}
-                />
+                <Button label="Unblock" size="sm" variant="ghost" onPress={() => unblockUser(id)} />
               </View>
             ))
           ) : (
@@ -237,9 +292,12 @@ export default function SafetyScreen() {
         <Card variant="surface1" style={{ marginBottom: spacing.md, padding: spacing.base }}>
           <View style={styles.rowBetween}>
             <View style={{ flex: 1, paddingRight: 8 }}>
-              <Text style={[typography.subbodyBold, { color: colors.primary }]}>Quick Disconnect (Panic Mode)</Text>
+              <Text style={[typography.subbodyBold, { color: colors.primary }]}>
+                Quick Disconnect (Panic Mode)
+              </Text>
               <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                Immediately closes all open sessions and switches the screen to a discreet journal cover.
+                Immediately closes all open sessions and switches the screen to a discreet journal
+                cover.
               </Text>
             </View>
             <Button

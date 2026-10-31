@@ -376,12 +376,14 @@ export const TOOLS: Record<string, ToolDefinition> = {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { resolveEmergencyJurisdiction } = require('../../services/location/emergencyLocationResolver');
       const jur = await resolveEmergencyJurisdiction();
-      navigateTo('/(app)/safety/someone-to-talk');
+      useRootStore.getState().setCoachPersona('support');
+      const helplineMsg = jur.primaryMentalHealth.name.includes(jur.primaryMentalHealth.number)
+        ? jur.primaryMentalHealth.name
+        : `${jur.primaryMentalHealth.name} on ${jur.primaryMentalHealth.number}`;
       return {
         success: true,
-        message: `You are not alone. I'm opening urgent support right now. For ${jur.countryName}: Emergency is ${jur.primaryEmergency.number}, and free 24/7 mental health support is ${jur.primaryMentalHealth.number}.`,
-        routeToOpen: '/(app)/safety/someone-to-talk',
-        autoNavigate: true,
+        message: `You are not alone. I am right here with you in support mode. For ${jur.countryName}: Emergency is ${jur.primaryEmergency.name} (${jur.primaryEmergency.number}), and free 24/7 mental health support is ${helplineMsg}.`,
+        routeToOpen: '/(app)/safety/urgent-support',
       };
     },
   },
@@ -710,13 +712,11 @@ export const TOOLS: Record<string, ToolDefinition> = {
       userConcern: { type: 'string', description: 'Description of the distress or emergency' },
       userCountry: { type: 'string', description: 'Optional user country/region (e.g. US, IN, UK, EU)' },
     },
-    execute: async ({ urgency, userConcern, userCountry = 'US' }: { urgency: string; userConcern?: string; userCountry?: string }) => {
-      navigateTo('/(app)/safety/someone-to-talk');
+    execute: async ({ urgency, userConcern, userCountry = 'IN' }: { urgency: string; userConcern?: string; userCountry?: string }) => {
+      useRootStore.getState().setCoachPersona('support');
       return {
         success: true,
-        message: `🚨 Emergency resources active. If you or someone you know is in acute danger, please call emergency services immediately (988 in US/Canada, 112 in EU/India, 999 in UK). I have opened the Someone to Talk crisis sanctuary with 1-tap direct dialers.`,
-        routeToOpen: '/(app)/safety/someone-to-talk',
-        autoNavigate: true,
+        message: `🚨 Emergency resources active. If you or someone you know is in acute danger, please call emergency services immediately (112 in India/EU, 988/911 in US/Canada, 999 in UK). I am right here with you in support mode.`,
       };
     },
   },

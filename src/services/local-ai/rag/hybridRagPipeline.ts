@@ -14,6 +14,7 @@ import type { UserMemory } from '../memory/types';
 import { knowledgeStore, type KnowledgeChunk } from './knowledgeStore';
 import { tokenize, makeSnippet } from '../../../domain/ai/localRetrieval';
 import { EXERCISES } from '../../../domain/fitness/workouts';
+import { anvayFtsStore, type FtsSearchHit } from '../search/anvayFtsStore';
 
 export interface RagDocument {
   id: string;
@@ -156,10 +157,22 @@ export async function retrieveHybridEvidence(
 
   const allDocs = [...catalogDocs, ...memoryDocs, ...knowledgeChunkDocs];
 
-  // 3. Sparse Lexical BM25 Ranking
-  const sparseHits = rankSparseBM25(allDocs, query);
+  // 3. SQLite FTS5 Full-Text Retrieval with native C++ BM25 ranking
+  const ftsHits = anvayFtsStore.search(query, { ownerId: userId, limit: 30 });
   const sparseRankMap = new Map<string, number>();
-  sparseHits.forEach((hit, idx) => sparseRankMap.set(hit.doc.id, idx + 1));
+  const ftsSnippetMap = new Map<string, string>();
+
+  ftsHits.forEach((hit, idx) => {
+    const key = hit.chunkId || hit.sourceId;
+    sparseRankMap.set(key, idx + 1);
+    if (hit.snippet) ftsSnippetMap.set(key, hit.snippet);
+  });
+
+  // Fallback to in-memory lexical ranking if FTS store has not indexed documents yet
+  if (sparseRankMap.size === 0) {
+    const fallbackHits = rankSparseBM25(allDocs, query);
+    fallbackHits.forEach((hit, idx) => sparseRankMap.set(hit.doc.id, idx + 1));
+  }
 
   // 4. Dense Semantic Vector Search (if local embedding model available)
   const denseRankMap = new Map<string, number>();
@@ -202,12 +215,13 @@ export async function retrieveHybridEvidence(
     if (dRank !== undefined) score += 1.2 / (RRF_K + dRank); // Boost for semantic vector matches
 
     const terms = tokenize(query);
+    const snippet = ftsSnippetMap.get(docId) || makeSnippet(doc.content, terms);
     fusionHits.push({
       document: doc,
       sparseRank: sRank,
       denseRank: dRank,
       hybridScore: score,
-      snippet: makeSnippet(doc.content, terms),
+      snippet,
     });
   }
 

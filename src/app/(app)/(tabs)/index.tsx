@@ -1,17 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Link, useFocusEffect, useRouter, type Href } from 'expo-router';
-import React, { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BrainSetupCard } from '../../../components/assistant/BrainSetupCard';
+import { BetaStrip } from '../../../components/beta/BetaStrip';
+import { BetaTodayCard } from '../../../components/beta/BetaTodayCard';
 import { ActivityRow } from '../../../components/game/ActivityRow';
 import { QuestSheet } from '../../../components/game/QuestSheet';
 import { AnalyticalMetricGrid } from '../../../components/home/AnalyticalMetricGrid';
-import { ProfileQuestionCard } from '../../../components/home/ProfileQuestionCard';
-import { BetaStrip } from '../../../components/beta/BetaStrip';
-import { BetaTodayCard } from '../../../components/beta/BetaTodayCard';
 import { AnalyticsDetailSheet } from '../../../components/home/AnalyticsDetailSheet';
 import { CalorieDetailSheet } from '../../../components/home/CalorieDetailSheet';
 import { DashboardHeader } from '../../../components/home/DashboardHeader';
@@ -19,7 +18,7 @@ import { DashboardScreenContainer } from '../../../components/home/DashboardScre
 import { HomeGuide } from '../../../components/home/HomeGuide';
 import { HydrationTrackerCard } from '../../../components/home/HydrationTrackerCard';
 import { MetricBarChart } from '../../../components/home/MetricBarChart';
-import { ScreenTimeCard } from '../../../components/home/ScreenTimeCard';
+import { ProfileQuestionCard } from '../../../components/home/ProfileQuestionCard';
 import { SocialInvite } from '../../../components/home/SocialInvite';
 import { StepsDetailSheet } from '../../../components/home/StepsDetailSheet';
 import { ToolsGrid } from '../../../components/home/ToolsGrid';
@@ -31,9 +30,9 @@ import {
 } from '../../../components/home/VitalityHero';
 import { VitalsCard } from '../../../components/home/VitalsCard';
 import { WeekGlance } from '../../../components/home/WeekGlance';
+import { Badge } from '../../../components/ui/Badge';
 import { Card } from '../../../components/ui/Card';
 import { Chip } from '../../../components/ui/Chip';
-import { Badge, BetaBadge } from '../../../components/ui/Badge';
 import { PressableScale } from '../../../components/ui/PressableScale';
 import { SettingsRow } from '../../../components/ui/SettingsRow';
 import { RewardAssets } from '../../../constants/assets';
@@ -66,13 +65,13 @@ import { DAY_PART_LABEL, dayPartAt, splitByTime } from '../../../domain/game/tim
 import { getCyclePredictions } from '../../../domain/health/cycleCalculations';
 import { stepsByDate, type DailySteps } from '../../../domain/interop/readings';
 import { useAgendaSources } from '../../../hooks/useAgendaSources';
+import { useBetaEnabled } from '../../../hooks/useBetaEnabled';
 import { routeForEvent } from '../../../navigation/eventRoutes';
 import { hapticLight } from '../../../services/haptics';
 import { usePhoneSteps } from '../../../services/sensors/phoneSteps';
 import type { Quest } from '../../../stores/slices/questSlice';
 import { useRootStore, useShallow } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
-import { useBetaEnabled } from '../../../hooks/useBetaEnabled';
 
 const EVENT_ICON: Partial<Record<CalendarEvent['kind'], keyof typeof Ionicons.glyphMap>> = {
   exercise: 'barbell-outline',
@@ -95,7 +94,7 @@ const FAMILY_META: Record<QuestFamily, { label: string; icon: keyof typeof Ionic
 
 const greeting = () => {
   const h = new Date().getHours();
-  if (h < 5) return 'Hello';
+  if (h < 5) return 'Still Awake?';
   if (h < 12) return 'Good morning';
   if (h < 17) return 'Good afternoon';
   if (h < 22) return 'Good evening';
@@ -116,7 +115,10 @@ export default function HomeScreen() {
     const todays = betaSessions.filter((b) => b.endedAt >= start.getTime());
     return {
       count: todays.length,
-      minutes: todays.reduce((n, b) => n + Math.max(0, Math.round((b.endedAt - b.startedAt) / 60000)), 0),
+      minutes: todays.reduce(
+        (n, b) => n + Math.max(0, Math.round((b.endedAt - b.startedAt) / 60000)),
+        0,
+      ),
     };
   }, [betaSessions]);
   const s = useRootStore(
@@ -180,7 +182,11 @@ export default function HomeScreen() {
     [s.xp, s.completedCheckpoints],
   );
   const readyChests = useMemo(
-    () => chestsReady(progress.level, s.rewardLedger.map((e) => e.key)),
+    () =>
+      chestsReady(
+        progress.level,
+        s.rewardLedger.map((e) => e.key),
+      ),
     [progress.level, s.rewardLedger],
   );
   const load = useMemo(() => recentLoad(s.checkInHistory, today()), [s.checkInHistory]);

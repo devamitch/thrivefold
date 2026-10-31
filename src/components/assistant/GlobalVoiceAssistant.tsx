@@ -11,24 +11,25 @@
  */
 
 import { Ionicons } from '@expo/vector-icons';
+import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { router, usePathname, type Href } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import type { TextInputInstance } from 'react-native';
 import {
   Dimensions,
   Keyboard,
+  Linking,
   Modal,
   Platform,
-  Share,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TextInput,
   useWindowDimensions,
   View,
 } from 'react-native';
-import type { TextInputInstance } from 'react-native';
-import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
   Easing,
@@ -41,9 +42,39 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import * as Clipboard from 'expo-clipboard';
+import { Image } from 'expo-image';
+import { LocalAI } from '../../../modules/local-ai';
+import type { ChatTable } from '../../domain/assistant/chatActions';
+import { dailyBrief, type BriefInput } from '../../domain/assistant/dailyBrief';
+import { PERSONAS } from '../../domain/assistant/personas';
+import { plainText } from '../../domain/assistant/plainText';
 import { resolveScreenCapability } from '../../domain/assistant/screenRegistry';
 import type { ToolExecutionResult } from '../../domain/assistant/toolRegistry';
+import { hasSanctuaryStatus } from '../../domain/game/rewards';
+import { languageOf, LANGUAGES } from '../../domain/languages';
+import { speakCoachLine, stopCoachSpeech } from '../../services/ai/coachVoiceService';
+import { SUPPORTED_COUNTRIES } from '../../services/ai/emergencyDirectory';
+import {
+  detectCrisisIntent,
+  GROUNDING_EXERCISES,
+  type CrisisDetectionResult,
+} from '../../services/ai/emergencySupport';
+import { getSetupState, subscribeSetup, type SetupState } from '../../services/ai/modelSetup';
+import { setChatActionHooks } from '../../services/assistant/chatActions';
+import {
+  pickFile,
+  readAttachment,
+  type PickedFile,
+} from '../../services/assistant/chatAttachments';
+import { CHAT_PAGE, chatStore, type ChatMessage } from '../../services/assistant/chatStore';
 import { hapticMedium, hapticSelection } from '../../services/haptics';
+import { thriveRag } from '../../services/local-ai/rag/thriveRag';
+import {
+  resolveEmergencyJurisdiction,
+  setExplicitUserCountry,
+  type ResolvedJurisdiction,
+} from '../../services/location/emergencyLocationResolver';
 import {
   globalVoiceController,
   type VoiceAssistantState,
@@ -51,25 +82,10 @@ import {
 import { useRootStore } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
 import { AnvayCompanion } from '../brand/AnvayCompanion';
-import { PERSONAS } from '../../domain/assistant/personas';
-import { hasSanctuaryStatus } from '../../domain/game/rewards';
-import { dailyBrief, type BriefInput } from '../../domain/assistant/dailyBrief';
-import { plainText } from '../../domain/assistant/plainText';
-import { LANGUAGES, languageOf } from '../../domain/languages';
-import { LocalAI } from '../../../modules/local-ai';
-import * as Clipboard from 'expo-clipboard';
-import { speakCoachLine, stopCoachSpeech } from '../../services/ai/coachVoiceService';
-import type { ChatTable } from '../../domain/assistant/chatActions';
-import { setChatActionHooks } from '../../services/assistant/chatActions';
-import { pickFile, readAttachment, type PickedFile } from '../../services/assistant/chatAttachments';
 import { CameraCapture } from '../camera/CameraCapture';
-import { Image } from 'expo-image';
-import { thriveRag } from '../../services/local-ai/rag/thriveRag';
-import { CHAT_PAGE, chatStore, type ChatMessage } from '../../services/assistant/chatStore';
 import { Chip } from '../ui/Chip';
 import { PressableScale } from '../ui/PressableScale';
 import { BrainSetupCard } from './BrainSetupCard';
-import { getSetupState, subscribeSetup, type SetupState } from '../../services/ai/modelSetup';
 
 type Turn = ChatMessage;
 
@@ -99,7 +115,9 @@ function briefInput(): BriefInput {
     checkedInToday: st.checkInHistory.some((c) => c.date === today),
     waterGlasses: st.hydration[today] ?? 0,
     waterTarget: st.hydrationTargetGlasses,
-    openQuests: st.todayQuests.filter((q) => !q.isCompleted && q.status !== 'skipped').map((q) => q.title),
+    openQuests: st.todayQuests
+      .filter((q) => !q.isCompleted && q.status !== 'skipped')
+      .map((q) => q.title),
     medicines: st.medications,
     medicationTaken: st.medicationTaken,
     nowHHMM: `${pad(d.getHours())}:${pad(d.getMinutes())}`,
@@ -215,9 +233,16 @@ export function GlobalVoiceAssistant() {
         const quote = pendingQuote.current;
         pendingQuote.current = null;
         const shown = quote ? text.replace(/^About your earlier reply ".*?": /s, '') : text;
-        setTurns((t) =>
-          [...t, { id: newId(), who: 'you' as const, text: shown, quote: quote ?? undefined, at: Date.now() }],
-        );
+        setTurns((t) => [
+          ...t,
+          {
+            id: newId(),
+            who: 'you' as const,
+            text: shown,
+            quote: quote ?? undefined,
+            at: Date.now(),
+          },
+        ]);
       },
       onAssistantReply: (reply, tool?: ToolExecutionResult) => {
         pendingReply.current = { reply, tool };
@@ -247,7 +272,15 @@ export function GlobalVoiceAssistant() {
               }
               return [
                 ...t,
-                { id: newId(), who: 'coach' as const, text: next.reply, route, table, transient, at: Date.now() },
+                {
+                  id: newId(),
+                  who: 'coach' as const,
+                  text: next.reply,
+                  route,
+                  table,
+                  transient,
+                  at: Date.now(),
+                },
               ];
             });
           });
@@ -280,9 +313,18 @@ export function GlobalVoiceAssistant() {
           setTurns((t) => {
             const last = t[t.length - 1];
             const today = new Date().toDateString();
-            if (t.some((m) => m.who === 'coach' && new Date(m.at).toDateString() === today)) return t;
+            if (t.some((m) => m.who === 'coach' && new Date(m.at).toDateString() === today))
+              return t;
             if (last && new Date(last.at).toDateString() === today) return t;
-            return [...t, { id: newId(), who: 'coach' as const, text: dailyBrief(briefInput()), at: Date.now() }];
+            return [
+              ...t,
+              {
+                id: newId(),
+                who: 'coach' as const,
+                text: dailyBrief(briefInput()),
+                at: Date.now(),
+              },
+            ];
           });
         } else {
           setFocused(false);
@@ -298,6 +340,76 @@ export function GlobalVoiceAssistant() {
   const [langOpen, setLangOpen] = useState(false);
   const persona = useRootStore((st) => st.coachPersona);
   const setPersona = useRootStore((st) => st.setCoachPersona);
+  const showToast = useRootStore((st) => st.showToast);
+
+  const [jurisdiction, setJurisdiction] = useState<ResolvedJurisdiction | null>(null);
+  const [countryModalVisible, setCountryModalVisible] = useState(false);
+  const [directoryModalVisible, setDirectoryModalVisible] = useState(false);
+  const [groundingModal, setGroundingModal] = useState<'breathing' | 'sensory' | null>(null);
+  const [activeCrisis, setActiveCrisis] = useState<CrisisDetectionResult | null>(null);
+
+  // Box Breathing state (4-4-4-4: Inhale, Hold, Exhale, Rest)
+  const [breathingStep, setBreathingStep] = useState(0);
+  const [breathingCount, setBreathingCount] = useState(4);
+  const breathAnim = useSharedValue(1);
+
+  // 5-4-3-2-1 Sensory grounding state
+  const [sensoryStep, setSensoryStep] = useState(0);
+
+  useEffect(() => {
+    if (visible && !jurisdiction) {
+      resolveEmergencyJurisdiction()
+        .then(setJurisdiction)
+        .catch(() => null);
+    }
+  }, [visible, jurisdiction]);
+
+  useEffect(() => {
+    if (groundingModal !== 'breathing') return;
+    setBreathingStep(0);
+    setBreathingCount(4);
+    breathAnim.value = 1;
+    const interval = setInterval(() => {
+      setBreathingCount((prev) => {
+        if (prev <= 1) {
+          setBreathingStep((s) => {
+            const next = (s + 1) % 4;
+            if (next === 0) breathAnim.value = withTiming(1.4, { duration: 4000 });
+            else if (next === 2) breathAnim.value = withTiming(1.0, { duration: 4000 });
+            return next;
+          });
+          return 4;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    breathAnim.value = withTiming(1.4, { duration: 4000 });
+    return () => clearInterval(interval);
+  }, [groundingModal, breathAnim]);
+
+  const callNumber = (number: string) => {
+    hapticMedium();
+    const clean = number.replace(/\s+/g, '');
+    Linking.openURL(`tel:${clean}`).catch(() => {
+      showToast({
+        type: 'warning',
+        title: 'Unable to open dialer',
+        message: `Please dial ${number} manually.`,
+      });
+    });
+  };
+
+  const selectCountry = (code: string) => {
+    setExplicitUserCountry(code);
+    resolveEmergencyJurisdiction(code).then((jur) => {
+      setJurisdiction(jur);
+      setCountryModalVisible(false);
+    });
+  };
+
+  const breathAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: breathAnim.value }],
+  }));
 
   const clearHistory = () => {
     hapticSelection();
@@ -327,12 +439,24 @@ export function GlobalVoiceAssistant() {
     lastSent.current = { text: t, at: Date.now() };
     hapticSelection();
     setTyped('');
+
+    // Detect situational crisis or urgent distress
+    const crisis = detectCrisisIntent(t, jurisdiction?.countryCode);
+    if (crisis.isCrisis) {
+      setActiveCrisis(crisis);
+      if (persona !== 'support') {
+        setPersona('support');
+      }
+    }
     if (replyTo) {
       // A reply to a specific answer: the coach gets that answer as context; the chat shows a quote.
       const quote = plainText(replyTo.text).slice(0, 280);
       setReplyTo(null);
       pendingQuote.current = quote;
-      void globalVoiceController.handleFinalUtterance(`About your earlier reply "${quote}": ${t}`, 'text');
+      void globalVoiceController.handleFinalUtterance(
+        `About your earlier reply "${quote}": ${t}`,
+        'text',
+      );
       return;
     }
     // The controller reports the message back through onFinalTranscript.
@@ -391,10 +515,15 @@ export function GlobalVoiceAssistant() {
       if (next.feedback === 'up') {
         const asked = [...t.slice(0, i)].reverse().find((m) => m.who === 'you')?.text ?? '';
         void thriveRag
-          .remember(asked.slice(0, 80) || 'Helpful answer', `Question: ${asked}\nAnswer: ${next.text}`, 'wellness_guide', {
-            source: 'liked_reply',
-            messageId: id,
-          })
+          .remember(
+            asked.slice(0, 80) || 'Helpful answer',
+            `Question: ${asked}\nAnswer: ${next.text}`,
+            'wellness_guide',
+            {
+              source: 'liked_reply',
+              messageId: id,
+            },
+          )
           .catch(() => undefined);
       }
       return [...t.slice(0, i), next, ...t.slice(i + 1)];
@@ -425,7 +554,13 @@ export function GlobalVoiceAssistant() {
     setTyped('');
     setTurns((t) => [
       ...t,
-      { id: newId(), who: 'you' as const, text: question || file.name, at: Date.now(), attachment: { uri: file.uri, name: file.name, kind: file.kind } },
+      {
+        id: newId(),
+        who: 'you' as const,
+        text: question || file.name,
+        at: Date.now(),
+        attachment: { uri: file.uri, name: file.name, kind: file.kind },
+      },
     ]);
     void readAttachment(file, question);
   };
@@ -442,7 +577,9 @@ export function GlobalVoiceAssistant() {
         stopCoachSpeech();
         return null;
       }
-      void speakCoachLine(plainText(t.translation?.text ?? t.text), { onEnd: () => setSpeakingId((c) => (c === t.id ? null : c)) });
+      void speakCoachLine(plainText(t.translation?.text ?? t.text), {
+        onEnd: () => setSpeakingId((c) => (c === t.id ? null : c)),
+      });
       return t.id;
     });
   }, []);
@@ -452,11 +589,14 @@ export function GlobalVoiceAssistant() {
       setTurns((all) => all.map((m) => (m.id === t.id ? { ...m, translation: undefined } : m)));
       return;
     }
-    const target = useRootStore.getState().coachLanguage === 'en' ? 'hi' : useRootStore.getState().coachLanguage;
+    const target =
+      useRootStore.getState().coachLanguage === 'en' ? 'hi' : useRootStore.getState().coachLanguage;
     try {
       const r = await LocalAI.translateText(t.text, target);
       setTurns((all) => {
-        const next = all.map((m) => (m.id === t.id ? { ...m, translation: { lang: target, text: r.text } } : m));
+        const next = all.map((m) =>
+          m.id === t.id ? { ...m, translation: { lang: target, text: r.text } } : m,
+        );
         const changed = next.find((m) => m.id === t.id);
         if (changed) chatStore.upsert([changed]);
         return next;
@@ -589,11 +729,18 @@ export function GlobalVoiceAssistant() {
                     </View>
                     <View style={styles.flex}>
                       <View style={styles.statusRow}>
-                        <Text style={[typography.subheading, { color: colors.text.primary }]}>Anvay</Text>
+                        <Text style={[typography.subheading, { color: colors.text.primary }]}>
+                          Anvay
+                        </Text>
                         {sanctuary ? (
-                          <View style={[styles.sanctuary, { backgroundColor: colors.surface2 }]} accessibilityLabel="Sanctuary status">
+                          <View
+                            style={[styles.sanctuary, { backgroundColor: colors.surface2 }]}
+                            accessibilityLabel="Sanctuary status"
+                          >
                             <Ionicons name="ribbon" size={12} color={colors.primary} />
-                            <Text style={[typography.caption, { color: colors.primary }]}>Sanctuary</Text>
+                            <Text style={[typography.caption, { color: colors.primary }]}>
+                              Sanctuary
+                            </Text>
                           </View>
                         ) : null}
                       </View>
@@ -628,7 +775,9 @@ export function GlobalVoiceAssistant() {
                       style={[styles.langBtn, { marginRight: 14, borderColor: colors.surface3 }]}
                     >
                       <Ionicons name="language-outline" size={18} color={colors.text.secondary} />
-                      <Text style={[typography.captionBold, { color: colors.text.secondary }]}>{coachLanguage.toUpperCase()}</Text>
+                      <Text style={[typography.captionBold, { color: colors.text.secondary }]}>
+                        {coachLanguage.toUpperCase()}
+                      </Text>
                     </PressableScale>
                     <PressableScale
                       onPress={() => go('/(app)/settings/memories')}
@@ -672,26 +821,146 @@ export function GlobalVoiceAssistant() {
                 </ScrollView>
               ) : null}
               {/* One companion, several roles: the voice, memory and rules stay the same. */}
-              {langOpen ? null : <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                keyboardShouldPersistTaps="handled"
-                style={styles.personaRow}
-                contentContainerStyle={{ paddingHorizontal: spacing.base }}
-              >
-                {PERSONAS.map((p) => (
-                  <Chip
-                    key={p.id}
-                    label={p.label}
-                    selected={persona === p.id}
-                    onPress={() => {
-                      hapticSelection();
-                      setPersona(p.id);
-                    }}
-                    icon={<Ionicons name={p.icon as keyof typeof Ionicons.glyphMap} size={15} color={persona === p.id ? colors.onPrimary : colors.text.secondary} />}
-                  />
-                ))}
-              </ScrollView>}
+              {langOpen ? null : (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled"
+                  style={styles.personaRow}
+                  contentContainerStyle={{ paddingHorizontal: spacing.base }}
+                >
+                  {PERSONAS.map((p) => (
+                    <Chip
+                      key={p.id}
+                      label={p.label}
+                      selected={persona === p.id}
+                      onPress={() => {
+                        hapticSelection();
+                        setPersona(p.id);
+                      }}
+                      icon={
+                        <Ionicons
+                          name={p.icon as keyof typeof Ionicons.glyphMap}
+                          size={15}
+                          color={persona === p.id ? colors.onPrimary : colors.text.secondary}
+                        />
+                      }
+                    />
+                  ))}
+                </ScrollView>
+              )}
+
+              {/* Emergency Helplines & Safety Bar */}
+              {persona === 'support' || activeCrisis ? (
+                <View
+                  style={[
+                    styles.safetyBar,
+                    {
+                      backgroundColor: colors.surface,
+                      borderColor: activeCrisis ? colors.error : colors.border,
+                    },
+                  ]}
+                >
+                  <View style={styles.safetyRow}>
+                    <PressableScale
+                      onPress={() => setCountryModalVisible(true)}
+                      style={[styles.countryBadge, { backgroundColor: colors.surface2 }]}
+                      accessibilityLabel={`Region: ${jurisdiction?.countryName ?? 'India'}. Tap to change country.`}
+                    >
+                      <Text style={styles.countryFlag}>{jurisdiction?.flag ?? '🇮🇳'}</Text>
+                      <Text
+                        style={[
+                          typography.captionBold,
+                          { color: colors.text.primary, marginLeft: 4 },
+                        ]}
+                      >
+                        {jurisdiction?.countryCode ?? 'IN'}
+                      </Text>
+                      <Ionicons
+                        name="chevron-down"
+                        size={12}
+                        color={colors.text.muted}
+                        style={{ marginLeft: 2 }}
+                      />
+                    </PressableScale>
+
+                    <PressableScale
+                      onPress={() => callNumber(jurisdiction?.primaryEmergency.number ?? '112')}
+                      style={[styles.emergencyCallBtn, { backgroundColor: '#DC2626' }]}
+                      accessibilityLabel={`Call emergency services ${jurisdiction?.primaryEmergency.number ?? '112'}`}
+                    >
+                      <Ionicons name="call" size={12} color="#FFFFFF" />
+                      <Text style={[typography.captionBold, { color: '#FFFFFF', marginLeft: 4 }]}>
+                        {jurisdiction?.primaryEmergency.number ?? '112'}
+                      </Text>
+                    </PressableScale>
+
+                    <PressableScale
+                      onPress={() =>
+                        callNumber(jurisdiction?.primaryMentalHealth.number ?? '14416')
+                      }
+                      style={[styles.lifelineCallBtn, { backgroundColor: colors.primary }]}
+                      accessibilityLabel={`Call 24/7 mental health lifeline ${jurisdiction?.primaryMentalHealth.number ?? '14416'}`}
+                    >
+                      <Ionicons name="heart" size={12} color="#FFFFFF" />
+                      <Text
+                        style={[typography.captionBold, { color: '#FFFFFF', marginLeft: 4 }]}
+                        numberOfLines={1}
+                      >
+                        {jurisdiction?.primaryMentalHealth.number ?? '14416'}
+                      </Text>
+                    </PressableScale>
+                  </View>
+
+                  {/* Grounding & Help Quick Chips */}
+                  <View style={styles.groundingRow}>
+                    <PressableScale
+                      onPress={() => setGroundingModal('breathing')}
+                      style={[
+                        styles.toolChip,
+                        { backgroundColor: colors.surface2, borderColor: colors.surface3 },
+                      ]}
+                    >
+                      <Ionicons name="flower-outline" size={13} color={colors.primary} />
+                      <Text
+                        style={[typography.caption, { color: colors.text.primary, marginLeft: 4 }]}
+                      >
+                        Box Breathing
+                      </Text>
+                    </PressableScale>
+
+                    <PressableScale
+                      onPress={() => setGroundingModal('sensory')}
+                      style={[
+                        styles.toolChip,
+                        { backgroundColor: colors.surface2, borderColor: colors.surface3 },
+                      ]}
+                    >
+                      <Ionicons name="eye-outline" size={13} color={colors.primary} />
+                      <Text
+                        style={[typography.caption, { color: colors.text.primary, marginLeft: 4 }]}
+                      >
+                        5-4-3-2-1 Sensory
+                      </Text>
+                    </PressableScale>
+
+                    <PressableScale
+                      onPress={() => setDirectoryModalVisible(true)}
+                      style={[
+                        styles.toolChip,
+                        { backgroundColor: colors.surface2, borderColor: colors.surface3 },
+                      ]}
+                    >
+                      <Ionicons name="call-outline" size={13} color={colors.primary} />
+                      <Text
+                        style={[typography.caption, { color: colors.text.primary, marginLeft: 4 }]}
+                      >
+                        All Helplines
+                      </Text>
+                    </PressableScale>
+                  </View>
+                </View>
+              ) : null}
 
               {turns.length === 0 && !partial ? (
                 // Empty conversation: a plain view (no inverted-list flip quirks).
@@ -701,39 +970,90 @@ export function GlobalVoiceAssistant() {
                     {/* The whole character, never cropped; it steps aside while typing. */}
                     {focused ? null : (
                       <View style={styles.buddy} pointerEvents="none">
-                        <AnvayCompanion size={140} mood={mood} />
+                        <AnvayCompanion
+                          size={140}
+                          mood={mood}
+                          topic={persona === 'support' ? 'mind' : undefined}
+                        />
                       </View>
                     )}
-                    <Text style={[typography.body, { color: colors.text.secondary }]}>
-                      Talk naturally. Ask a question, or say things like &quot;log two glasses of
-                      water and then open sleep&quot;, &quot;export all my metrics&quot; or
-                      &quot;remember that I train at 7 am&quot;.
-                    </Text>
-                    <Text
-                      style={[
-                        typography.captionBold,
-                        styles.chipsTitle,
-                        { color: colors.text.muted },
-                      ]}
-                    >
-                      TRY ON {screen.title.toUpperCase()}
-                    </Text>
-                    <View style={styles.chips}>
-                      {screen.suggestedChips.map((c) => (
-                        <PressableScale
-                          key={c.command}
-                          onPress={() => send(c.command)}
+                    {persona === 'support' ? (
+                      <>
+                        <Text
                           style={[
-                            styles.chip,
-                            { backgroundColor: colors.surface, borderColor: colors.surface2 },
+                            typography.body,
+                            { color: colors.text.secondary, textAlign: 'center', lineHeight: 22 },
                           ]}
                         >
-                          <Text style={[typography.caption, { color: colors.text.primary }]}>
-                            {c.label}
-                          </Text>
-                        </PressableScale>
-                      ))}
-                    </View>
+                          I am right here with you. Take a slow, gentle breath. Whatever you are
+                          feeling, you can talk to me freely. If you need urgent human support, tap
+                          any helpline above.
+                        </Text>
+                        <Text
+                          style={[
+                            typography.captionBold,
+                            styles.chipsTitle,
+                            { color: colors.text.muted },
+                          ]}
+                        >
+                          SAFE WAYS TO START
+                        </Text>
+                        <View style={styles.chips}>
+                          {[
+                            'I feel completely overwhelmed right now',
+                            'I have racing anxious thoughts',
+                            'I just need someone to talk to',
+                            'Guide me through a calming exercise',
+                          ].map((cmd) => (
+                            <PressableScale
+                              key={cmd}
+                              onPress={() => send(cmd)}
+                              style={[
+                                styles.chip,
+                                { backgroundColor: colors.surface, borderColor: colors.surface2 },
+                              ]}
+                            >
+                              <Text style={[typography.caption, { color: colors.text.primary }]}>
+                                {cmd}
+                              </Text>
+                            </PressableScale>
+                          ))}
+                        </View>
+                      </>
+                    ) : (
+                      <>
+                        <Text style={[typography.body, { color: colors.text.secondary }]}>
+                          Talk naturally. Ask a question, or say things like &quot;log two glasses
+                          of water and then open sleep&quot;, &quot;export all my metrics&quot; or
+                          &quot;remember that I train at 7 am&quot;.
+                        </Text>
+                        <Text
+                          style={[
+                            typography.captionBold,
+                            styles.chipsTitle,
+                            { color: colors.text.muted },
+                          ]}
+                        >
+                          TRY ON {screen.title.toUpperCase()}
+                        </Text>
+                        <View style={styles.chips}>
+                          {screen.suggestedChips.map((c) => (
+                            <PressableScale
+                              key={c.command}
+                              onPress={() => send(c.command)}
+                              style={[
+                                styles.chip,
+                                { backgroundColor: colors.surface, borderColor: colors.surface2 },
+                              ]}
+                            >
+                              <Text style={[typography.caption, { color: colors.text.primary }]}>
+                                {c.label}
+                              </Text>
+                            </PressableScale>
+                          ))}
+                        </View>
+                      </>
+                    )}
                   </View>
                 </View>
               ) : (
@@ -757,7 +1077,79 @@ export function GlobalVoiceAssistant() {
                   }}
                   keyboardShouldPersistTaps="handled"
                   keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
-                  ListHeaderComponent={<BrainSetupCard compact />}
+                  ListHeaderComponent={
+                    <>
+                      <BrainSetupCard compact />
+                      {activeCrisis && activeCrisis.severity !== 'none' ? (
+                        <View
+                          style={[
+                            styles.crisisBanner,
+                            { backgroundColor: colors.surface, borderColor: colors.error },
+                          ]}
+                        >
+                          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <Ionicons name="alert-circle" size={24} color={colors.error} />
+                            <View style={{ marginLeft: 10, flex: 1 }}>
+                              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                                24/7 Professional Help Available
+                              </Text>
+                              <Text
+                                style={[
+                                  typography.caption,
+                                  { color: colors.text.secondary, marginTop: 2 },
+                                ]}
+                              >
+                                {activeCrisis.deescalationScript ||
+                                  'You matter. Immediate confidential human care is ready for you.'}
+                              </Text>
+                            </View>
+                            <PressableScale onPress={() => setActiveCrisis(null)} hitSlop={8}>
+                              <Ionicons
+                                name="close-circle-outline"
+                                size={20}
+                                color={colors.text.muted}
+                              />
+                            </PressableScale>
+                          </View>
+                          <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
+                            <PressableScale
+                              onPress={() =>
+                                callNumber(jurisdiction?.primaryEmergency.number ?? '112')
+                              }
+                              style={[styles.crisisBtn, { backgroundColor: '#DC2626' }]}
+                            >
+                              <Ionicons name="call" size={12} color="#FFFFFF" />
+                              <Text
+                                style={[
+                                  typography.captionBold,
+                                  { color: '#FFFFFF', marginLeft: 4 },
+                                ]}
+                              >
+                                Call Emergency ({jurisdiction?.primaryEmergency.number ?? '112'})
+                              </Text>
+                            </PressableScale>
+                            <PressableScale
+                              onPress={() =>
+                                callNumber(jurisdiction?.primaryMentalHealth.number ?? '14416')
+                              }
+                              style={[styles.crisisBtn, { backgroundColor: colors.primary }]}
+                            >
+                              <Ionicons name="heart" size={12} color="#FFFFFF" />
+                              <Text
+                                style={[
+                                  typography.captionBold,
+                                  { color: '#FFFFFF', marginLeft: 4 },
+                                ]}
+                              >
+                                Call Lifeline ({jurisdiction?.primaryMentalHealth.number ?? '14416'}
+                                )
+                              </Text>
+                            </PressableScale>
+                          </View>
+                        </View>
+                      ) : null}
+                    </>
+                  }
                   ListFooterComponent={
                     <>
                       {showThinking ? (
@@ -804,11 +1196,23 @@ export function GlobalVoiceAssistant() {
                 ]}
               >
                 {replyTo ? (
-                  <View style={[styles.replyBar, { backgroundColor: colors.surface, borderLeftColor: colors.primary }]}>
-                    <Text style={[typography.caption, styles.flex, { color: colors.text.secondary }]} numberOfLines={2}>
+                  <View
+                    style={[
+                      styles.replyBar,
+                      { backgroundColor: colors.surface, borderLeftColor: colors.primary },
+                    ]}
+                  >
+                    <Text
+                      style={[typography.caption, styles.flex, { color: colors.text.secondary }]}
+                      numberOfLines={2}
+                    >
                       Replying to: {plainText(replyTo.text)}
                     </Text>
-                    <PressableScale onPress={() => setReplyTo(null)} hitSlop={10} accessibilityLabel="Cancel reply">
+                    <PressableScale
+                      onPress={() => setReplyTo(null)}
+                      hitSlop={10}
+                      accessibilityLabel="Cancel reply"
+                    >
                       <Ionicons name="close" size={18} color={colors.text.muted} />
                     </PressableScale>
                   </View>
@@ -816,21 +1220,48 @@ export function GlobalVoiceAssistant() {
                 {pending ? (
                   <View style={[styles.pending, { backgroundColor: colors.surface }]}>
                     {pending.kind === 'image' ? (
-                      <Image source={{ uri: pending.uri }} style={styles.pendingThumb} contentFit="cover" accessibilityLabel={pending.name} />
+                      <Image
+                        source={{ uri: pending.uri }}
+                        style={styles.pendingThumb}
+                        contentFit="cover"
+                        accessibilityLabel={pending.name}
+                      />
                     ) : (
-                      <View style={[styles.pendingThumb, styles.pendingIcon, { backgroundColor: colors.surface2 }]}>
-                        <Ionicons name={pending.kind === 'pdf' ? 'document-text-outline' : 'document-outline'} size={26} color={colors.text.secondary} />
+                      <View
+                        style={[
+                          styles.pendingThumb,
+                          styles.pendingIcon,
+                          { backgroundColor: colors.surface2 },
+                        ]}
+                      >
+                        <Ionicons
+                          name={
+                            pending.kind === 'pdf' ? 'document-text-outline' : 'document-outline'
+                          }
+                          size={26}
+                          color={colors.text.secondary}
+                        />
                       </View>
                     )}
                     <View style={styles.flex}>
-                      <Text style={[typography.bodyBold, { color: colors.text.primary }]} numberOfLines={1}>
+                      <Text
+                        style={[typography.bodyBold, { color: colors.text.primary }]}
+                        numberOfLines={1}
+                      >
                         {pending.name}
                       </Text>
-                      <Text style={[typography.caption, { color: colors.text.secondary }]} numberOfLines={2}>
+                      <Text
+                        style={[typography.caption, { color: colors.text.secondary }]}
+                        numberOfLines={2}
+                      >
                         Read on this phone. Type a question, or just send for a summary.
                       </Text>
                     </View>
-                    <PressableScale onPress={() => setPending(null)} hitSlop={10} accessibilityLabel="Remove the file">
+                    <PressableScale
+                      onPress={() => setPending(null)}
+                      hitSlop={10}
+                      accessibilityLabel="Remove the file"
+                    >
                       <Ionicons name="close-circle" size={22} color={colors.text.muted} />
                     </PressableScale>
                   </View>
@@ -853,7 +1284,12 @@ export function GlobalVoiceAssistant() {
                   >
                     <Ionicons name="attach" size={22} color={colors.text.secondary} />
                   </PressableScale>
-                  <PressableScale onPress={() => void attach(true)} hitSlop={8} style={styles.camBtn} accessibilityLabel="Take a photo">
+                  <PressableScale
+                    onPress={() => void attach(true)}
+                    hitSlop={8}
+                    style={styles.camBtn}
+                    accessibilityLabel="Take a photo"
+                  >
                     <Ionicons name="camera-outline" size={22} color={colors.text.secondary} />
                   </PressableScale>
                   <TextInput
@@ -905,7 +1341,9 @@ export function GlobalVoiceAssistant() {
                                 : 'Talk'
                       }
                       disabled={isModelSettingUp}
-                      onPress={isModelSettingUp ? undefined : hasText ? () => send(typed) : toggleMic}
+                      onPress={
+                        isModelSettingUp ? undefined : hasText ? () => send(typed) : toggleMic
+                      }
                       style={[
                         styles.action,
                         {
@@ -949,6 +1387,318 @@ export function GlobalVoiceAssistant() {
             setPending({ uri, name: 'Photo', mime: 'image/jpeg', kind: 'image' });
           }}
         />
+
+        {/* Country Selector Modal */}
+        <Modal
+          visible={countryModalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setCountryModalVisible(false)}
+        >
+          <View style={styles.modalBackdrop}>
+            <View
+              style={[
+                styles.modalBox,
+                { backgroundColor: colors.background, borderColor: colors.border },
+              ]}
+            >
+              <View style={styles.modalHeader}>
+                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                  Select Emergency Country
+                </Text>
+                <PressableScale onPress={() => setCountryModalVisible(false)} hitSlop={8}>
+                  <Ionicons name="close" size={22} color={colors.text.secondary} />
+                </PressableScale>
+              </View>
+              <Text
+                style={[typography.caption, { color: colors.text.secondary, marginBottom: 12 }]}
+              >
+                Emergency and mental health helplines match your physical country.
+              </Text>
+              <ScrollView style={{ maxHeight: 340 }}>
+                {SUPPORTED_COUNTRIES.map((c) => {
+                  const sel = jurisdiction?.countryCode === c.code;
+                  return (
+                    <PressableScale
+                      key={c.code}
+                      onPress={() => selectCountry(c.code)}
+                      style={[
+                        styles.countryRow,
+                        {
+                          backgroundColor: sel ? colors.primaryAlpha : colors.surface,
+                          borderColor: sel ? colors.primary : colors.surface2,
+                        },
+                      ]}
+                    >
+                      <Text style={styles.countryFlagLarge}>{c.flag}</Text>
+                      <View style={{ flex: 1, marginLeft: 10 }}>
+                        <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                          {c.name}
+                        </Text>
+                        <Text style={[typography.caption, { color: colors.text.secondary }]}>
+                          Emergency: {c.defaultEmergency} • Lifeline: {c.defaultMentalHealth}
+                        </Text>
+                      </View>
+                      {sel ? (
+                        <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
+                      ) : null}
+                    </PressableScale>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
+
+        {/* All Helplines Directory Modal */}
+        <Modal
+          visible={directoryModalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setDirectoryModalVisible(false)}
+        >
+          <View style={styles.modalBackdrop}>
+            <View
+              style={[
+                styles.modalBox,
+                { backgroundColor: colors.background, borderColor: colors.border },
+              ]}
+            >
+              <View style={styles.modalHeader}>
+                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                  {jurisdiction?.flag} Verified Helplines ({jurisdiction?.countryName})
+                </Text>
+                <PressableScale onPress={() => setDirectoryModalVisible(false)} hitSlop={8}>
+                  <Ionicons name="close" size={22} color={colors.text.secondary} />
+                </PressableScale>
+              </View>
+              <ScrollView style={{ maxHeight: 380 }}>
+                {jurisdiction?.allContacts.map((contact) => (
+                  <View
+                    key={contact.id}
+                    style={[
+                      styles.helplineCard,
+                      { backgroundColor: colors.surface, borderColor: colors.surface2 },
+                    ]}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                        {contact.name}
+                      </Text>
+                      <Text
+                        style={[typography.captionBold, { color: colors.primary, marginTop: 2 }]}
+                      >
+                        {contact.number} • {contact.hours}
+                      </Text>
+                      <Text
+                        style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}
+                      >
+                        {contact.coverage} • Source: {contact.officialSource}
+                      </Text>
+                    </View>
+                    <PressableScale
+                      onPress={() => callNumber(contact.number)}
+                      style={[
+                        styles.emergencyCallBtn,
+                        {
+                          backgroundColor: colors.primary,
+                          paddingHorizontal: 12,
+                          paddingVertical: 8,
+                        },
+                      ]}
+                    >
+                      <Ionicons name="call" size={14} color="#FFFFFF" />
+                      <Text style={[typography.captionBold, { color: '#FFFFFF', marginLeft: 4 }]}>
+                        Call
+                      </Text>
+                    </PressableScale>
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Box Breathing Interactive Modal */}
+        <Modal
+          visible={groundingModal === 'breathing'}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setGroundingModal(null)}
+        >
+          <View style={styles.modalBackdrop}>
+            <View
+              style={[
+                styles.modalBox,
+                {
+                  backgroundColor: colors.background,
+                  borderColor: colors.border,
+                  alignItems: 'center',
+                },
+              ]}
+            >
+              <View style={[styles.modalHeader, { width: '100%' }]}>
+                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                  Box Breathing (Sama Vritti)
+                </Text>
+                <PressableScale onPress={() => setGroundingModal(null)} hitSlop={8}>
+                  <Ionicons name="close" size={22} color={colors.text.secondary} />
+                </PressableScale>
+              </View>
+              <Text
+                style={[
+                  typography.caption,
+                  { color: colors.text.secondary, textAlign: 'center', marginBottom: 20 },
+                ]}
+              >
+                Calm your nervous system in 4 rhythmic beats
+              </Text>
+
+              {/* Animated breathing circle */}
+              <View style={styles.breathingCircleContainer}>
+                <Animated.View
+                  style={[
+                    styles.breathingCircle,
+                    breathAnimStyle,
+                    { backgroundColor: colors.primaryAlpha, borderColor: colors.primary },
+                  ]}
+                >
+                  <Text style={[typography.heading, { color: colors.primary }]}>
+                    {breathingCount}
+                  </Text>
+                </Animated.View>
+              </View>
+
+              <Text style={[typography.subbodyBold, { color: colors.text.primary, marginTop: 20 }]}>
+                {
+                  [
+                    'Inhale slowly...',
+                    'Gently hold...',
+                    'Release slowly...',
+                    'Pause in stillness...',
+                  ][breathingStep]
+                }
+              </Text>
+              <Text
+                style={[
+                  typography.caption,
+                  {
+                    color: colors.text.secondary,
+                    textAlign: 'center',
+                    marginTop: 6,
+                    marginHorizontal: 20,
+                  },
+                ]}
+              >
+                {
+                  [
+                    'Breathe in gently through your nose, expanding your chest.',
+                    'Keep your shoulders completely relaxed.',
+                    'Release smoothly and completely through your mouth.',
+                    'Rest in calm before the next breath.',
+                  ][breathingStep]
+                }
+              </Text>
+
+              <PressableScale
+                onPress={() => setGroundingModal(null)}
+                style={[styles.doneBtn, { backgroundColor: colors.primary, marginTop: 24 }]}
+              >
+                <Text style={[typography.bodyBold, { color: colors.onPrimary }]}>
+                  I feel calmer now
+                </Text>
+              </PressableScale>
+            </View>
+          </View>
+        </Modal>
+
+        {/* 5-4-3-2-1 Sensory Grounding Modal */}
+        <Modal
+          visible={groundingModal === 'sensory'}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setGroundingModal(null)}
+        >
+          <View style={styles.modalBackdrop}>
+            <View
+              style={[
+                styles.modalBox,
+                { backgroundColor: colors.background, borderColor: colors.border },
+              ]}
+            >
+              <View style={styles.modalHeader}>
+                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                  5-4-3-2-1 Sensory Grounding
+                </Text>
+                <PressableScale onPress={() => setGroundingModal(null)} hitSlop={8}>
+                  <Ionicons name="close" size={22} color={colors.text.secondary} />
+                </PressableScale>
+              </View>
+              <Text
+                style={[typography.caption, { color: colors.text.secondary, marginBottom: 16 }]}
+              >
+                Anchor your mind into this physical room, step by step.
+              </Text>
+
+              <View
+                style={[
+                  styles.sensoryCard,
+                  { backgroundColor: colors.surface, borderColor: colors.surface2 },
+                ]}
+              >
+                <Text style={[typography.heading, { color: colors.primary, marginBottom: 4 }]}>
+                  {GROUNDING_EXERCISES.sensory_54321.steps[sensoryStep].count}
+                </Text>
+                <Text
+                  style={[typography.subbodyBold, { color: colors.text.primary, lineHeight: 22 }]}
+                >
+                  {GROUNDING_EXERCISES.sensory_54321.steps[sensoryStep].prompt}
+                </Text>
+              </View>
+
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginTop: 18,
+                }}
+              >
+                <PressableScale
+                  onPress={() => setSensoryStep((s) => Math.max(0, s - 1))}
+                  disabled={sensoryStep === 0}
+                  style={[styles.stepBtn, { opacity: sensoryStep === 0 ? 0.3 : 1 }]}
+                >
+                  <Text style={[typography.captionBold, { color: colors.text.secondary }]}>
+                    Previous
+                  </Text>
+                </PressableScale>
+
+                <Text style={[typography.caption, { color: colors.text.muted }]}>
+                  Step {sensoryStep + 1} of 5
+                </Text>
+
+                {sensoryStep < 4 ? (
+                  <PressableScale
+                    onPress={() => setSensoryStep((s) => Math.min(4, s + 1))}
+                    style={[styles.stepBtnPrimary, { backgroundColor: colors.primary }]}
+                  >
+                    <Text style={[typography.captionBold, { color: colors.onPrimary }]}>Next</Text>
+                  </PressableScale>
+                ) : (
+                  <PressableScale
+                    onPress={() => setGroundingModal(null)}
+                    style={[styles.stepBtnPrimary, { backgroundColor: colors.primary }]}
+                  >
+                    <Text style={[typography.captionBold, { color: colors.onPrimary }]}>
+                      Complete
+                    </Text>
+                  </PressableScale>
+                )}
+              </View>
+            </View>
+          </View>
+        </Modal>
       </GestureHandlerRootView>
     </Modal>
   );
@@ -964,7 +1714,10 @@ function TurnTable({ table }: { table: ChatTable }) {
     <View style={styles.tableWrap}>
       <View style={[styles.tableRow, { borderBottomColor: colors.surface3 }]}>
         {table.columns.map((c) => (
-          <Text key={c} style={[typography.captionBold, styles.tableCell, { color: colors.text.secondary }]}>
+          <Text
+            key={c}
+            style={[typography.captionBold, styles.tableCell, { color: colors.text.secondary }]}
+          >
             {c}
           </Text>
         ))}
@@ -972,7 +1725,11 @@ function TurnTable({ table }: { table: ChatTable }) {
       {rows.map((r, i) => (
         <View key={i} style={[styles.tableRow, { borderBottomColor: colors.surface3 }]}>
           {r.map((cell, j) => (
-            <Text key={j} style={[typography.caption, styles.tableCell, { color: colors.text.primary }]} numberOfLines={3}>
+            <Text
+              key={j}
+              style={[typography.caption, styles.tableCell, { color: colors.text.primary }]}
+              numberOfLines={3}
+            >
               {cell}
             </Text>
           ))}
@@ -1022,8 +1779,16 @@ const TurnRow = React.memo(function TurnRow({
       ]}
     >
       {turn.quote ? (
-        <View style={[styles.quote, { borderLeftColor: mine ? colors.text.inverse : colors.primary }]}>
-          <Text style={[typography.caption, { color: mine ? colors.text.inverse : colors.text.secondary }]} numberOfLines={2}>
+        <View
+          style={[styles.quote, { borderLeftColor: mine ? colors.text.inverse : colors.primary }]}
+        >
+          <Text
+            style={[
+              typography.caption,
+              { color: mine ? colors.text.inverse : colors.text.secondary },
+            ]}
+            numberOfLines={2}
+          >
             {turn.quote}
           </Text>
         </View>
@@ -1032,19 +1797,45 @@ const TurnRow = React.memo(function TurnRow({
         {mine ? turn.text : plainText(turn.text)}
       </Text>
       {turn.translation ? (
-        <View style={[styles.translated, { borderTopColor: mine ? colors.text.inverse : colors.surface3 }]}>
-          <Text style={[typography.caption, { color: mine ? colors.text.inverse : colors.text.muted }]}>
+        <View
+          style={[
+            styles.translated,
+            { borderTopColor: mine ? colors.text.inverse : colors.surface3 },
+          ]}
+        >
+          <Text
+            style={[typography.caption, { color: mine ? colors.text.inverse : colors.text.muted }]}
+          >
             {languageOf(turn.translation.lang).native}, translated on this phone
           </Text>
-          <Text style={[typography.body, { color: mine ? colors.text.inverse : colors.text.primary }]}>{turn.translation.text}</Text>
+          <Text
+            style={[typography.body, { color: mine ? colors.text.inverse : colors.text.primary }]}
+          >
+            {turn.translation.text}
+          </Text>
         </View>
       ) : null}
       {turn.attachment?.kind === 'image' ? (
-        <Image source={{ uri: turn.attachment.uri }} style={styles.bubbleImage} contentFit="cover" accessibilityLabel={turn.attachment.name} />
+        <Image
+          source={{ uri: turn.attachment.uri }}
+          style={styles.bubbleImage}
+          contentFit="cover"
+          accessibilityLabel={turn.attachment.name}
+        />
       ) : turn.attachment ? (
         <View style={styles.fileChip}>
-          <Ionicons name="document-text-outline" size={18} color={mine ? colors.text.inverse : colors.text.secondary} />
-          <Text style={[typography.caption, { color: mine ? colors.text.inverse : colors.text.secondary, flexShrink: 1 }]} numberOfLines={1}>
+          <Ionicons
+            name="document-text-outline"
+            size={18}
+            color={mine ? colors.text.inverse : colors.text.secondary}
+          />
+          <Text
+            style={[
+              typography.caption,
+              { color: mine ? colors.text.inverse : colors.text.secondary, flexShrink: 1 },
+            ]}
+            numberOfLines={1}
+          >
             {turn.attachment.name}
           </Text>
         </View>
@@ -1062,25 +1853,71 @@ const TurnRow = React.memo(function TurnRow({
       ) : null}
       {!mine && turn.text && !turn.transient ? (
         <View style={styles.actions}>
-          <PressableScale onPress={() => onRate(turn.id, 'up')} hitSlop={8} accessibilityLabel="Helpful" accessibilityState={{ selected: turn.feedback === 'up' }}>
-            <Ionicons name={turn.feedback === 'up' ? 'thumbs-up' : 'thumbs-up-outline'} size={16} color={turn.feedback === 'up' ? colors.primary : colors.text.muted} />
+          <PressableScale
+            onPress={() => onRate(turn.id, 'up')}
+            hitSlop={8}
+            accessibilityLabel="Helpful"
+            accessibilityState={{ selected: turn.feedback === 'up' }}
+          >
+            <Ionicons
+              name={turn.feedback === 'up' ? 'thumbs-up' : 'thumbs-up-outline'}
+              size={16}
+              color={turn.feedback === 'up' ? colors.primary : colors.text.muted}
+            />
           </PressableScale>
-          <PressableScale onPress={() => onRate(turn.id, 'down')} hitSlop={8} accessibilityLabel="Not helpful" accessibilityState={{ selected: turn.feedback === 'down' }}>
-            <Ionicons name={turn.feedback === 'down' ? 'thumbs-down' : 'thumbs-down-outline'} size={16} color={turn.feedback === 'down' ? colors.primary : colors.text.muted} />
+          <PressableScale
+            onPress={() => onRate(turn.id, 'down')}
+            hitSlop={8}
+            accessibilityLabel="Not helpful"
+            accessibilityState={{ selected: turn.feedback === 'down' }}
+          >
+            <Ionicons
+              name={turn.feedback === 'down' ? 'thumbs-down' : 'thumbs-down-outline'}
+              size={16}
+              color={turn.feedback === 'down' ? colors.primary : colors.text.muted}
+            />
           </PressableScale>
-          <PressableScale onPress={() => onListen(turn)} hitSlop={8} accessibilityLabel={speaking ? 'Stop reading' : 'Read this reply aloud'}>
-            <Ionicons name={speaking ? 'stop-circle' : 'volume-high-outline'} size={16} color={speaking ? colors.primary : colors.text.muted} />
+          <PressableScale
+            onPress={() => onListen(turn)}
+            hitSlop={8}
+            accessibilityLabel={speaking ? 'Stop reading' : 'Read this reply aloud'}
+          >
+            <Ionicons
+              name={speaking ? 'stop-circle' : 'volume-high-outline'}
+              size={16}
+              color={speaking ? colors.primary : colors.text.muted}
+            />
           </PressableScale>
-          <PressableScale onPress={() => onTranslate(turn)} hitSlop={8} accessibilityLabel="Translate this reply">
-            <Ionicons name="language-outline" size={16} color={turn.translation ? colors.primary : colors.text.muted} />
+          <PressableScale
+            onPress={() => onTranslate(turn)}
+            hitSlop={8}
+            accessibilityLabel="Translate this reply"
+          >
+            <Ionicons
+              name="language-outline"
+              size={16}
+              color={turn.translation ? colors.primary : colors.text.muted}
+            />
           </PressableScale>
-          <PressableScale onPress={() => onReply(turn)} hitSlop={8} accessibilityLabel="Reply to this">
+          <PressableScale
+            onPress={() => onReply(turn)}
+            hitSlop={8}
+            accessibilityLabel="Reply to this"
+          >
             <Ionicons name="arrow-undo-outline" size={16} color={colors.text.muted} />
           </PressableScale>
-          <PressableScale onPress={() => onCopy(turn)} hitSlop={8} accessibilityLabel="Copy this reply">
+          <PressableScale
+            onPress={() => onCopy(turn)}
+            hitSlop={8}
+            accessibilityLabel="Copy this reply"
+          >
             <Ionicons name="copy-outline" size={16} color={colors.text.muted} />
           </PressableScale>
-          <PressableScale onPress={() => onShare(turn.text)} hitSlop={8} accessibilityLabel="Share this reply">
+          <PressableScale
+            onPress={() => onShare(turn.text)}
+            hitSlop={8}
+            accessibilityLabel="Share this reply"
+          >
             <Ionicons name="share-outline" size={16} color={colors.text.muted} />
           </PressableScale>
         </View>
@@ -1091,7 +1928,15 @@ const TurnRow = React.memo(function TurnRow({
 
 const styles = StyleSheet.create({
   personaRow: { flexGrow: 0, marginBottom: 4 },
-  sanctuary: { flexDirection: 'row', alignItems: 'center', gap: 3, borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2, marginLeft: 8 },
+  sanctuary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginLeft: 8,
+  },
   flex: { flex: 1 },
   avoid: { flex: 1, justifyContent: 'flex-end' },
   sheet: {
@@ -1136,9 +1981,32 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', gap: 18, marginTop: 10, flexWrap: 'wrap' },
   translated: { marginTop: 8, paddingTop: 8, borderTopWidth: StyleSheet.hairlineWidth, gap: 2 },
   quote: { borderLeftWidth: 3, paddingLeft: 8, marginBottom: 6 },
-  replyBar: { flexDirection: 'row', alignItems: 'center', gap: 8, borderLeftWidth: 3, borderRadius: 10, padding: 8, marginBottom: 8 },
-  langBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderRadius: 14, paddingHorizontal: 8, paddingVertical: 4 },
-  pending: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderRadius: 16, marginBottom: 8 },
+  replyBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderLeftWidth: 3,
+    borderRadius: 10,
+    padding: 8,
+    marginBottom: 8,
+  },
+  langBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  pending: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 10,
+    borderRadius: 16,
+    marginBottom: 8,
+  },
   pendingThumb: { width: 48, height: 48, borderRadius: 10 },
   pendingIcon: { alignItems: 'center', justifyContent: 'center' },
   fileChip: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
@@ -1146,7 +2014,11 @@ const styles = StyleSheet.create({
   // Mirrors the Send/Mic button on the right: same 48 dp box, bottom-aligned with one line of text.
   attach: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
   camBtn: { width: 36, height: 48, alignItems: 'center', justifyContent: 'center', marginLeft: -6 },
-  tableRow: { flexDirection: 'row', borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 6 },
+  tableRow: {
+    flexDirection: 'row',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 6,
+  },
   tableCell: { flex: 1, paddingRight: 8 },
   composer: {
     paddingTop: 10,
@@ -1163,7 +2035,14 @@ const styles = StyleSheet.create({
     paddingRight: 4,
   },
   // Grows with the text up to about four lines.
-  input: { flex: 1, minHeight: 48, maxHeight: 112, paddingVertical: 12, paddingHorizontal: 2, textAlignVertical: 'center' },
+  input: {
+    flex: 1,
+    minHeight: 48,
+    maxHeight: 112,
+    paddingVertical: 12,
+    paddingHorizontal: 2,
+    textAlignVertical: 'center',
+  },
   actionWrap: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
   ring: { position: 'absolute', width: 48, height: 48, borderRadius: 24 },
   action: {
@@ -1172,5 +2051,147 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  // Safety & Emergency styles
+  safetyBar: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 16,
+    marginHorizontal: 16,
+    marginBottom: 6,
+    borderWidth: 1,
+    gap: 8,
+  },
+  safetyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  countryBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  countryFlag: { fontSize: 16 },
+  countryFlagLarge: { fontSize: 24 },
+  emergencyCallBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  lifelineCallBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    flex: 1,
+    justifyContent: 'center',
+  },
+  groundingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  toolChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  crisisBanner: {
+    padding: 12,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    marginBottom: 10,
+  },
+  crisisBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 10,
+    flex: 1,
+    justifyContent: 'center',
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalBox: {
+    borderRadius: 24,
+    padding: 20,
+    borderWidth: 1,
+    maxHeight: '85%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  countryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 14,
+    marginBottom: 8,
+    borderWidth: 1,
+  },
+  helplineCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 14,
+    marginBottom: 8,
+    borderWidth: 1,
+    gap: 10,
+  },
+  breathingCircleContainer: {
+    width: 140,
+    height: 140,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 10,
+  },
+  breathingCircle: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  doneBtn: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sensoryCard: {
+    padding: 18,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginVertical: 8,
+  },
+  stepBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+  },
+  stepBtnPrimary: {
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 12,
   },
 });

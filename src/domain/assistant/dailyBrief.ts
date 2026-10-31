@@ -17,7 +17,7 @@ export interface BriefInput {
 }
 
 export function dailyBrief(s: BriefInput): string {
-  const part = s.hour < 12 ? 'morning' : s.hour < 17 ? 'afternoon' : 'evening';
+  const part = s.hour < 5 ? 'night' : s.hour < 12 ? 'morning' : s.hour < 17 ? 'afternoon' : 'evening';
   const lines: string[] = [];
   const due = s.medicines.filter((m) => m.time <= s.nowHHMM && !s.medicationTaken.includes(`${s.today}|${m.id}`));
   const later = s.medicines.filter((m) => m.time > s.nowHHMM);

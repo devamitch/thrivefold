@@ -16,6 +16,7 @@ import { bestFileLines, type FileLine } from '../../../domain/ai/fileEvidence';
 import { asyncKeyValueStorage } from '../../../stores/persistStorage';
 import { answerWithHybridRag, retrieveHybridEvidence, type RagEvidenceHit, type RagResponse } from './hybridRagPipeline';
 import { knowledgeStore, type KnowledgeDocument } from './knowledgeStore';
+import { anvayFtsStore, type FtsSearchHit, type FtsBenchmarkResult } from '../search/anvayFtsStore';
 
 const USER = 'local_user';
 
@@ -196,6 +197,21 @@ export const thriveRag = {
   /** Saves free text (a note, a cloud answer, a scanned document) for later retrieval. */
   remember(title: string, text: string, sourceType: KnowledgeDocument['sourceType'] = 'user_note', metadata?: Record<string, unknown>) {
     return knowledgeStore.ingestDocument(USER, { title, text, sourceType, metadata });
+  },
+
+  /** Fast SQLite FTS5 search directly across all indexed documents, memories and conversations. */
+  ftsSearch(query: string, options: { domain?: string; limit?: number } = {}): FtsSearchHit[] {
+    return anvayFtsStore.search(query, { ownerId: USER, domain: options.domain, limit: options.limit });
+  },
+
+  /** Rebuilds or runs diagnostics on SQLite FTS5. */
+  ftsBenchmark(): FtsBenchmarkResult {
+    return anvayFtsStore.benchmark(USER);
+  },
+
+  /** Syncs all SQLite tables into FTS5. */
+  syncFts(): { synchronized: number } {
+    return anvayFtsStore.syncAllSources();
   },
 
   /**

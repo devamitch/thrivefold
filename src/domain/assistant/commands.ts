@@ -22,7 +22,9 @@ export type Command =
  */
 export function splitSteps(input: string): string[] {
   const parts = input
-    .split(/\s*(?:,\s*and then|\band then\b|\bthen\b|\band also\b|;)\s*|\s+and\s+(?=(?:log|add|open|show|start|export|remember|go to|take me)\b)/i)
+    .split(
+      /\s*(?:,\s*and then|\band then\b|\bthen\b|\band also\b|;)\s*|\s+and\s+(?=(?:log|add|open|show|start|export|remember|go to|take me)\b)/i,
+    )
     .map((p) => p.trim())
     .filter(Boolean);
   if (parts.length < 2) return [input];
@@ -30,97 +32,253 @@ export function splitSteps(input: string): string[] {
 }
 
 const OPEN: { words: RegExp; route: string; label: string }[] = [
-  { words: /\bbreath(e|ing)?\b|\bcalm\b|\brelax\b/, route: '/(app)/beta-lab/breathing', label: 'the breathing coach' },
-  { words: /\bface\b(?! shape)|\bjaw\b|\bsmile\b|\bbrow/, route: '/(app)/beta-lab/face-exercises', label: 'face exercises' },
-  { words: /\bglasses\b|\bframes?\b|\bstyle\b|\boutfit\b|\bdress\b|\bbmi\b|\bbody shape\b|\bface shape\b|\bmeal plan/, route: '/(app)/beta-lab/body-style', label: 'the body and style companion' },
-  { words: /\beye game\b|\bball game\b|\blook left\b/, route: '/(app)/beta-lab/eye-games', label: 'the eye game' },
-  { words: /\bpursuit\b|\bfollow the dot\b|\bdot\b/, route: '/(app)/beta-lab/eye-pursuit', label: 'eye pursuit' },
-  { words: /\bvoice\b|\bspeech\b|\bspeak(ing)?\b|\bpronunciation\b|\bvocal\b/, route: '/(app)/beta-lab/voice-practice', label: 'voice practice' },
-  { words: /\beye\b|\beyes\b|\bblink/, route: '/(app)/beta-lab/eye-tracking', label: 'the eye studio' },
-  { words: /\bfinger|\bhand\b|\bhands\b|\bgrip\b|\bgame\b/, route: '/(app)/beta-lab/gesture-game', label: 'the finger game' },
-  { words: /\bpose\b|\bposture\b|\bsquat|\bform\b/, route: '/(app)/health/pose-check', label: 'the pose coach' },
-  { words: /\bmeal\b|\bfood\b|\bate\b|\beat\b|\blunch\b|\bdinner\b|\bbreakfast\b/, route: '/(app)/health/meal-log', label: 'the meal log' },
-  { words: /\bcheck[- ]?in\b|\bmood\b|\bhow i feel\b/, route: '/(app)/check-in', label: 'your check-in' },
+  {
+    words: /\bbreath(e|ing)?\b|\bcalm\b|\brelax\b/,
+    route: '/(app)/beta-lab/breathing',
+    label: 'the breathing coach',
+  },
+  {
+    words: /\bface\b(?! shape)|\bjaw\b|\bsmile\b|\bbrow/,
+    route: '/(app)/beta-lab/face-exercises',
+    label: 'face exercises',
+  },
+  {
+    words:
+      /\bglasses\b|\bframes?\b|\bstyle\b|\boutfit\b|\bdress\b|\bbmi\b|\bbody shape\b|\bface shape\b|\bmeal plan/,
+    route: '/(app)/beta-lab/body-style',
+    label: 'the body and style companion',
+  },
+  {
+    words: /\beye game\b|\bball game\b|\blook left\b/,
+    route: '/(app)/beta-lab/eye-games',
+    label: 'the eye game',
+  },
+  {
+    words: /\bpursuit\b|\bfollow the dot\b|\bdot\b/,
+    route: '/(app)/beta-lab/eye-pursuit',
+    label: 'eye pursuit',
+  },
+  {
+    words: /\bvoice\b|\bspeech\b|\bspeak(ing)?\b|\bpronunciation\b|\bvocal\b/,
+    route: '/(app)/beta-lab/voice-practice',
+    label: 'voice practice',
+  },
+  {
+    words: /\beye\b|\beyes\b|\bblink/,
+    route: '/(app)/beta-lab/eye-tracking',
+    label: 'the eye studio',
+  },
+  {
+    words: /\bfinger|\bhand\b|\bhands\b|\bgrip\b|\bgame\b/,
+    route: '/(app)/beta-lab/gesture-game',
+    label: 'the finger game',
+  },
+  {
+    words: /\bpose\b|\bposture\b|\bsquat|\bform\b/,
+    route: '/(app)/health/pose-check',
+    label: 'the pose coach',
+  },
+  {
+    words: /\bmeal\b|\bfood\b|\bate\b|\beat\b|\blunch\b|\bdinner\b|\bbreakfast\b/,
+    route: '/(app)/health/meal-log',
+    label: 'the meal log',
+  },
+  {
+    words: /\bcheck[- ]?in\b|\bmood\b|\bhow i feel\b/,
+    route: '/(app)/check-in',
+    label: 'your check-in',
+  },
   { words: /\bsleep\b/, route: '/(app)/health/sleep', label: 'sleep' },
   { words: /\bworkout|\bexercise|\btrain/, route: '/(app)/train', label: 'workouts' },
-  { words: /\btreadmill|\bwalking pad|\bswim|\bcycl|\bride\b|\brun\b|\bactivity\b/, route: '/(app)/health/activity', label: 'activity sessions' },
-  { words: /\bouting\b|\bpandal|\bpuja\b|\bplan a (walk|trip|day out)\b|\bsightseeing\b|\bheritage\b/, route: '/(app)/outing', label: 'the outing planner' },
-  { words: /\btrip\b|\bcheck[- ]?in on my way\b|\bgoing home\b|\bwalking home\b/, route: '/(app)/safety/trip', label: 'trip check-in' },
-  { words: /\bprescription\b|\bdiet chart\b|\bfood chart\b|\bworkout plan\b|\btrainer\b|\bdietitian\b/, route: '/(app)/health/documents', label: 'documents' },
-  { words: /\bmedicine|\bmedication|\btablet|\bpill|\bdoctor\b|\bappointment\b/, route: '/(app)/health/medications', label: 'medicines and follow-ups' },
-  { words: /\badhd\b|\bfocus check\b|\battention\b|\bcan'?t focus\b/, route: '/(app)/you/adhd-screener', label: 'the focus self-check' },
-  { words: /\bwhat'?s around\b|\bwhat do you see\b|\bdescribe\b|\blook around\b/, route: '/(app)/assist/look-around', label: "what's around you" },
-  { words: /\bsound alert|\blisten for\b|\bdoorbell\b|\bhard of hearing\b/, route: '/(app)/assist/sound-alerts', label: 'sound alerts' },
-  { words: /\bcut ?out\b|\bremove background\b/, route: '/(app)/assist/photo-cutout', label: 'photo cutout' },
+  {
+    words: /\btreadmill|\bwalking pad|\bswim|\bcycl|\bride\b|\brun\b|\bactivity\b/,
+    route: '/(app)/health/activity',
+    label: 'activity sessions',
+  },
+  {
+    words:
+      /\bouting\b|\bpandal|\bpuja\b|\bplan a (walk|trip|day out)\b|\bsightseeing\b|\bheritage\b/,
+    route: '/(app)/outing',
+    label: 'the outing planner',
+  },
+  {
+    words: /\btrip\b|\bcheck[- ]?in on my way\b|\bgoing home\b|\bwalking home\b/,
+    route: '/(app)/safety/trip',
+    label: 'trip check-in',
+  },
+  {
+    words:
+      /\bprescription\b|\bdiet chart\b|\bfood chart\b|\bworkout plan\b|\btrainer\b|\bdietitian\b/,
+    route: '/(app)/health/documents',
+    label: 'documents',
+  },
+  {
+    words: /\bmedicine|\bmedication|\btablet|\bpill|\bdoctor\b|\bappointment\b/,
+    route: '/(app)/health/medications',
+    label: 'medicines and follow-ups',
+  },
+  {
+    words: /\badhd\b|\bfocus check\b|\battention\b|\bcan'?t focus\b/,
+    route: '/(app)/you/adhd-screener',
+    label: 'the focus self-check',
+  },
+  {
+    words: /\bwhat'?s around\b|\bwhat do you see\b|\bdescribe\b|\blook around\b/,
+    route: '/(app)/assist/look-around',
+    label: "what's around you",
+  },
+  {
+    words: /\bsound alert|\blisten for\b|\bdoorbell\b|\bhard of hearing\b/,
+    route: '/(app)/assist/sound-alerts',
+    label: 'sound alerts',
+  },
+  {
+    words: /\bcut ?out\b|\bremove background\b/,
+    route: '/(app)/assist/photo-cutout',
+    label: 'photo cutout',
+  },
   { words: /\bquest/, route: '/(app)/quests', label: 'quests' },
   { words: /\bprogress\b|\btrend|\bhistory\b/, route: '/(app)/(tabs)/progress', label: 'progress' },
   { words: /\bjournal\b|\bwrite\b/, route: '/(app)/journal/new', label: 'a new journal entry' },
-  { words: /\broutines?\b|\balarms?\b|\bschedules?\b|\breminders?\b|\bbedtime timer\b/, route: '/(app)/routines', label: 'routines and alarms' },
-  { words: /\b(api keys?|byok|bring your own key|gemini key|groq key|ai settings?)\b/, route: '/(app)/settings/ai-byok', label: 'AI settings and keys' },
-  { words: /\bsomeone to talk\b|\btalk to someone\b|\bneed to talk\b|\bgrounding\b/, route: '/(app)/safety/someone-to-talk', label: 'someone to talk to' },
-  { words: /\bemergency (contacts?|numbers?|helplines?)\b|\burgent support\b|\bsos\b/, route: '/(app)/safety/someone-to-talk', label: 'emergency support' },
+  {
+    words: /\broutines?\b|\balarms?\b|\bschedules?\b|\breminders?\b|\bbedtime timer\b/,
+    route: '/(app)/routines',
+    label: 'routines and alarms',
+  },
+  {
+    words: /\b(api keys?|byok|bring your own key|gemini key|groq key|ai settings?)\b/,
+    route: '/(app)/settings/ai-byok',
+    label: 'AI settings and keys',
+  },
   { words: /\bsettings?\b/, route: '/(app)/(tabs)/settings', label: 'settings' },
 ];
 
 export type LifeTopic = 'work' | 'balance' | 'relationship' | 'low';
 
-const NUMBER_WORDS: Record<string, number> = { a: 1, an: 1, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6 };
+const NUMBER_WORDS: Record<string, number> = {
+  a: 1,
+  an: 1,
+  one: 1,
+  two: 2,
+  three: 3,
+  four: 4,
+  five: 5,
+  six: 6,
+};
 
 export function parseCommand(input: string): Command {
-  const text = input.toLowerCase().replace(/[^\w\s'-]/g, ' ').replace(/\s+/g, ' ').trim();
+  const text = input
+    .toLowerCase()
+    .replace(/[^\w\s'-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
   if (!text) return { kind: 'unknown', text: '' };
-  // Anyone who mentions wanting to die or hurt themselves gets support first, before anything else.
-  if (/\b(suicid\w*|kill (my ?self|me)|end (my|it all)|want to die|don'?t want to (live|be here)|self[- ]?harm|hurt(ing)? my ?self|no reason to live)\b/.test(text)) {
+  // Anyone in crisis, distress, or asking for someone to talk to / emergency help gets support immediately.
+  if (
+    /\b(suicid\w*|kill (my ?self|me)|end (my|it all)|want to die|don'?t want to (live|be here)|self[- ]?harm|hurt(ing)? my ?self|no reason to live|someone to talk|talk to someone|need to talk|urgent support|helplines?|emergency contacts?|emergency numbers?|sos)\b/.test(
+      text,
+    )
+  ) {
     return { kind: 'crisis' };
   }
 
-  if (/\b(work|job|office|boss|deadline)s?\b.*\b(stress|pressure|burn ?out|overwhelm|tired|anxious)|\b(stress|pressure|burn ?out)\b.*\b(work|job|office)\b/.test(text)) return { kind: 'life', topic: 'work' };
-  if (/\bwork[- ]life\b|\bno time for (myself|family)\b|\bbalance\b/.test(text)) return { kind: 'life', topic: 'balance' };
-  if (/\b(marriage|husband|wife|partner|relationship|spouse|in-?laws)\b/.test(text) && /\b(fight|issue|problem|stress|arguing|argue|unhappy|trouble|conflict)/.test(text)) return { kind: 'life', topic: 'relationship' };
-  if (/\b(feel(ing)? (low|sad|down|lonely|empty)|depressed|hopeless)\b/.test(text)) return { kind: 'life', topic: 'low' };
+  if (
+    /\b(work|job|office|boss|deadline)s?\b.*\b(stress|pressure|burn ?out|overwhelm|tired|anxious)|\b(stress|pressure|burn ?out)\b.*\b(work|job|office)\b/.test(
+      text,
+    )
+  )
+    return { kind: 'life', topic: 'work' };
+  if (/\bwork[- ]life\b|\bno time for (myself|family)\b|\bbalance\b/.test(text))
+    return { kind: 'life', topic: 'balance' };
+  if (
+    /\b(marriage|husband|wife|partner|relationship|spouse|in-?laws)\b/.test(text) &&
+    /\b(fight|issue|problem|stress|arguing|argue|unhappy|trouble|conflict)/.test(text)
+  )
+    return { kind: 'life', topic: 'relationship' };
+  if (/\b(feel(ing)? (low|sad|down|lonely|empty)|depressed|hopeless)\b/.test(text))
+    return { kind: 'life', topic: 'low' };
 
-  const remember = input.trim().match(/^(?:please\s+)?(?:remember|note|save)\s+(?:that\s+)?(.{3,300})$/i);
-  if (remember && !/\b(?:my )?(?:data|backup|everything|metrics)\b/i.test(remember[1])) return { kind: 'remember', note: remember[1].trim() };
-  if (/\b(export|download|back ?up|save a copy of)\b/.test(text) && /\b(data|metrics?|everything|records?|all|backup|spreadsheet|excel|history)\b/.test(text)) {
-    return { kind: 'export', format: /\b(back ?up|json|restore|uninstall|everything)\b/.test(text) ? 'backup' : 'spreadsheet' };
+  const remember = input
+    .trim()
+    .match(/^(?:please\s+)?(?:remember|note|save)\s+(?:that\s+)?(.{3,300})$/i);
+  if (remember && !/\b(?:my )?(?:data|backup|everything|metrics)\b/i.test(remember[1]))
+    return { kind: 'remember', note: remember[1].trim() };
+  if (
+    /\b(export|download|back ?up|save a copy of)\b/.test(text) &&
+    /\b(data|metrics?|everything|records?|all|backup|spreadsheet|excel|history)\b/.test(text)
+  ) {
+    return {
+      kind: 'export',
+      format: /\b(back ?up|json|restore|uninstall|everything)\b/.test(text)
+        ? 'backup'
+        : 'spreadsheet',
+    };
   }
 
   // Routine & Alarm management
   if (
-    /\b(?:delete|remove|clear|clean ?up|cancel|drop|prune)\b.*\b(?:unnecessary|unused|disabled|inactive|extra|duplicate|old)\b.*\b(?:routines?|alarms?|reminders?|schedules?)\b/i.test(text) ||
-    /\b(?:delete|remove|clear|clean ?up|cancel|drop|prune)\b.*\b(?:routines?|alarms?|reminders?|schedules?)\b.*\b(?:unnecessary|unused|disabled|inactive|extra)\b/i.test(text)
+    /\b(?:delete|remove|clear|clean ?up|cancel|drop|prune)\b.*\b(?:unnecessary|unused|disabled|inactive|extra|duplicate|old)\b.*\b(?:routines?|alarms?|reminders?|schedules?)\b/i.test(
+      text,
+    ) ||
+    /\b(?:delete|remove|clear|clean ?up|cancel|drop|prune)\b.*\b(?:routines?|alarms?|reminders?|schedules?)\b.*\b(?:unnecessary|unused|disabled|inactive|extra)\b/i.test(
+      text,
+    )
   ) {
     return { kind: 'delete_routines', target: 'unnecessary' };
   }
 
-  if (/\b(?:delete|remove|clear|cancel)\b.*\b(?:all|every)\b.*\b(?:routines?|alarms?|reminders?|schedules?)\b/i.test(text)) {
+  if (
+    /\b(?:delete|remove|clear|cancel)\b.*\b(?:all|every)\b.*\b(?:routines?|alarms?|reminders?|schedules?)\b/i.test(
+      text,
+    )
+  ) {
     return { kind: 'delete_routines', target: 'all' };
   }
 
-  const delMatch = text.match(/\b(?:delete|remove|cancel)\b.*?\b(?:routine|alarm|reminder)\b(?:\s+(?:for|called|named))?\s+([a-z0-9\s'-]+)/i);
-  if (delMatch && !/\b(?:all|every|unnecessary|unused|disabled|inactive|extra)\b/i.test(delMatch[1])) {
+  const delMatch = text.match(
+    /\b(?:delete|remove|cancel)\b.*?\b(?:routine|alarm|reminder)\b(?:\s+(?:for|called|named))?\s+([a-z0-9\s'-]+)/i,
+  );
+  if (
+    delMatch &&
+    !/\b(?:all|every|unnecessary|unused|disabled|inactive|extra)\b/i.test(delMatch[1])
+  ) {
     return { kind: 'delete_routines', target: 'specific', query: delMatch[1].trim() };
   }
 
-  if (/\b(?:turn off|disable|pause|mute)\b.*\b(?:all|every)\b.*\b(?:routines?|alarms?|reminders?)\b/i.test(text)) {
+  if (
+    /\b(?:turn off|disable|pause|mute)\b.*\b(?:all|every)\b.*\b(?:routines?|alarms?|reminders?)\b/i.test(
+      text,
+    )
+  ) {
     return { kind: 'toggle_routines', enable: false };
   }
 
-  if (/\b(?:turn on|enable|resume|unmute)\b.*\b(?:all|every)\b.*\b(?:routines?|alarms?|reminders?)\b/i.test(text)) {
+  if (
+    /\b(?:turn on|enable|resume|unmute)\b.*\b(?:all|every)\b.*\b(?:routines?|alarms?|reminders?)\b/i.test(
+      text,
+    )
+  ) {
     return { kind: 'toggle_routines', enable: true };
   }
 
-  const water = text.match(/\b(?:log|add|drank|had)\b.*?\b(\d+|a|an|one|two|three|four|five|six)\b\s*(?:glass|glasses|cup|cups)\b/);
+  const water = text.match(
+    /\b(?:log|add|drank|had)\b.*?\b(\d+|a|an|one|two|three|four|five|six)\b\s*(?:glass|glasses|cup|cups)\b/,
+  );
   if (water || /\b(?:log|add)\b.*\bwater\b/.test(text)) {
     const raw = water?.[1] ?? '1';
     const n = NUMBER_WORDS[raw] ?? Number.parseInt(raw, 10);
     return { kind: 'log_water', glasses: Math.max(1, Math.min(6, Number.isFinite(n) ? n : 1)) };
   }
 
-  const asking = /^(how|what|did|have|am|do|will|is|should|can|whats|when)\b|\?$|\b(how many|how much|tell me)\b/.test(text);
+  const asking =
+    /^(how|what|did|have|am|do|will|is|should|can|whats|when)\b|\?$|\b(how many|how much|tell me)\b/.test(
+      text,
+    );
   if (asking) {
-    if (/\bweather\b|\brain\b|\bhot\b|\bwalk outside\b|\bgo out\b|\bumbrella\b/.test(text)) return { kind: 'ask', metric: 'weather' };
-    if (/\bheart ?(rate|beat)\b|\bpulse\b|\bbpm\b/.test(text)) return { kind: 'ask', metric: 'heart' };
+    if (/\bweather\b|\brain\b|\bhot\b|\bwalk outside\b|\bgo out\b|\bumbrella\b/.test(text))
+      return { kind: 'ask', metric: 'weather' };
+    if (/\bheart ?(rate|beat)\b|\bpulse\b|\bbpm\b/.test(text))
+      return { kind: 'ask', metric: 'heart' };
     if (/\bsteps?\b|\bwalked\b/.test(text)) return { kind: 'ask', metric: 'steps' };
     if (/\bwater\b|\bdrink|\bhydrat/.test(text)) return { kind: 'ask', metric: 'water' };
     if (/\bcalor|\bburn/.test(text)) return { kind: 'ask', metric: 'calories' };
@@ -129,10 +287,15 @@ export function parseCommand(input: string): Command {
 
   // Style and body questions ("which glasses suit me?") are best answered by the companion screen.
   const style = OPEN.find((o) => o.route.endsWith('/body-style'));
-  if (style && style.words.test(text)) return { kind: 'open', route: style.route, label: style.label };
+  if (style && style.words.test(text))
+    return { kind: 'open', route: style.route, label: style.label };
 
-  if (/\b(open|start|go to|show|take me|begin|let's|lets|i want)\b/.test(text) || text.split(' ').length <= 3) {
-    for (const o of OPEN) if (o.words.test(text)) return { kind: 'open', route: o.route, label: o.label };
+  if (
+    /\b(open|start|go to|show|take me|begin|let's|lets|i want)\b/.test(text) ||
+    text.split(' ').length <= 3
+  ) {
+    for (const o of OPEN)
+      if (o.words.test(text)) return { kind: 'open', route: o.route, label: o.label };
   }
   return { kind: 'unknown', text: input.trim() };
 }

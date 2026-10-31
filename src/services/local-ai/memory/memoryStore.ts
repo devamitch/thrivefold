@@ -5,6 +5,7 @@ import type {
   UserMemory,
 } from './types';
 import { cosineSimilarity } from './vectorMath';
+import { anvayFtsStore } from '../search/anvayFtsStore';
 
 let db: SQLite.SQLiteDatabase | null = null;
 
@@ -159,6 +160,19 @@ export class AnalyticalMemoryStore {
       ]
     );
 
+    // Index into Anvay FTS5 Full-Text Engine
+    anvayFtsStore.upsertEntry({
+      sourceTable: 'user_memories',
+      sourceId: id,
+      ownerId: params.userId,
+      domain: 'memories',
+      sourceType: params.kind,
+      title: `Memory: ${params.kind}`,
+      content: params.content,
+      createdAt: now,
+      metadata: params.metadata,
+    });
+
     return {
       id,
       userId: params.userId,
@@ -243,6 +257,7 @@ export class AnalyticalMemoryStore {
       `DELETE FROM user_memories WHERE id = ? AND user_id = ?`,
       [id, userId]
     );
+    anvayFtsStore.deleteEntry('user_memories', id);
     return res.changes > 0;
   }
 
@@ -253,6 +268,10 @@ export class AnalyticalMemoryStore {
     const database = getDb();
     const res = database.runSync(
       `DELETE FROM user_memories WHERE user_id = ?`,
+      [userId]
+    );
+    database.runSync(
+      `DELETE FROM anvay_search_entries WHERE owner_id = ? AND domain = 'memories'`,
       [userId]
     );
     return res.changes > 0;

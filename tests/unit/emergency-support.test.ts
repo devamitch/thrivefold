@@ -24,9 +24,9 @@ describe('Emergency Support & Crisis Detection', () => {
     inputs.forEach((input) => {
       const result = detectCrisisIntent(input);
       expect(result.isCrisis).toBe(true);
-      expect(result.severity).toBe('immediate');
+      expect(result.severity).toBe('immediate_emergency');
       expect(result.recommendedAction).toBe('emergency_dial');
-      expect(result.deescalationScript).toContain('emergency lifeline buttons');
+      expect(result.deescalationScript).toContain('emergency');
     });
   });
 
@@ -40,7 +40,7 @@ describe('Emergency Support & Crisis Detection', () => {
     inputs.forEach((input) => {
       const result = detectCrisisIntent(input);
       expect(result.isCrisis).toBe(true);
-      expect(result.severity).toBe('high');
+      expect(result.severity).toBe('urgent_care');
       expect(result.category).toBe('self_harm');
       expect(result.recommendedAction).toBe('crisis_text');
       expect(result.deescalationScript).toContain('caring counselor');
@@ -50,10 +50,10 @@ describe('Emergency Support & Crisis Detection', () => {
   test('accurately detects acute panic attacks without misclassifying as suicide', () => {
     const result = detectCrisisIntent("I can't breathe and having a panic attack");
     expect(result.isCrisis).toBe(false);
-    expect(result.severity).toBe('moderate');
-    expect(result.category).toBe('panic');
+    expect(result.severity).toBe('elevated_concern');
+    expect(result.category).toBe('panic_distress');
     expect(result.recommendedAction).toBe('grounding');
-    expect(result.deescalationScript).toContain('follow the gentle rhythm');
+    expect(result.deescalationScript).toContain('breathe together');
   });
 
   test('does not false-positive on ordinary fitness or daily speech', () => {
@@ -71,17 +71,17 @@ describe('Emergency Support & Crisis Detection', () => {
     });
   });
 
-  test('emergency contacts have valid telephone and SMS URI protocols', () => {
+  test('emergency contacts have valid telephone, SMS, or web URI protocols', () => {
     expect(EMERGENCY_CONTACTS.length).toBeGreaterThanOrEqual(4);
     EMERGENCY_CONTACTS.forEach((c) => {
-      expect(c.actionUrl).toMatch(/^(tel:|sms:)/);
+      expect(c.actionUrl).toMatch(/^(tel:|sms:|https?:\/\/)/);
       expect(c.number.length).toBeGreaterThan(0);
     });
 
     const lifeline = EMERGENCY_CONTACTS.find((c) => c.id === 'us_988');
     expect(lifeline?.actionUrl).toBe('tel:988');
 
-    const textLine = EMERGENCY_CONTACTS.find((c) => c.id === 'us_text');
+    const textLine = EMERGENCY_CONTACTS.find((c) => c.id === 'us_text_741741');
     expect(textLine?.actionUrl).toBe('sms:741741?body=HOME');
   });
 

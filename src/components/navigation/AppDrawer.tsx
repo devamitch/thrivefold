@@ -1,9 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
-import { hapticSelection } from '../../services/haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { usePathname, useRouter, type Href } from 'expo-router';
-import React, { memo, useCallback, useMemo, type ReactNode, type RefObject } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View, type StyleProp, type ViewStyle, Switch } from 'react-native';
-import type { ViewInstance } from 'react-native';
+import { memo, useCallback, useMemo, type ReactNode, type RefObject } from 'react';
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  useWindowDimensions,
+  View,
+  ViewInstance,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import Animated, {
   Extrapolation,
   interpolate,
@@ -12,9 +22,10 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
-import { LinearGradient } from 'expo-linear-gradient';
+import { hapticSelection } from '../../services/haptics';
 
 import { DRAWER_SECTIONS } from '../../navigation/drawerItems';
+import { globalVoiceController } from '../../services/voice/globalVoiceController';
 import { useRootStore, useShallow } from '../../stores/useRootStore';
 import type { ThemeColors } from '../../theme/colors';
 import type { ProductExperience } from '../../theme/tokens';
@@ -147,9 +158,7 @@ const DrawerRow = memo(function DrawerRow({
         >
           {item.label}
         </Text>
-        {active ? (
-          <View style={[styles.activeBar, { backgroundColor: palette.accent }]} />
-        ) : null}
+        {active ? <View style={[styles.activeBar, { backgroundColor: palette.accent }]} /> : null}
       </View>
     </PressableScale>
   );
@@ -161,7 +170,11 @@ type Row =
   | { kind: 'title'; key: string; title: string; index: number }
   | { kind: 'item'; key: string; item: DrawerItem; index: number };
 
-export function AppDrawer({ blurTarget: _blurTarget }: { blurTarget?: RefObject<ViewInstance | null> }) {
+export function AppDrawer({
+  blurTarget: _blurTarget,
+}: {
+  blurTarget?: RefObject<ViewInstance | null>;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
@@ -240,6 +253,11 @@ export function AppDrawer({ blurTarget: _blurTarget }: { blurTarget?: RefObject<
     (route: string) => {
       tick();
       setOpen(false);
+      if (route === '/(app)/safety/someone-to-talk') {
+        useRootStore.getState().setCoachPersona('support');
+        setTimeout(() => void globalVoiceController.open(undefined, { listen: false }), 200);
+        return;
+      }
       if (cleanRoute(route) === pathname) return;
       setTimeout(() => router.push(route as Href), 160);
     },
@@ -378,7 +396,12 @@ export function AppDrawer({ blurTarget: _blurTarget }: { blurTarget?: RefObject<
             >
               {rows.map((r) =>
                 r.kind === 'title' ? (
-                  <Reveal key={r.key} index={r.index} progress={progress} style={styles.sectionTitle}>
+                  <Reveal
+                    key={r.key}
+                    index={r.index}
+                    progress={progress}
+                    style={styles.sectionTitle}
+                  >
                     <Text
                       accessibilityRole="header"
                       style={[typography.captionBold, { color: palette.inkMuted }]}
@@ -409,7 +432,11 @@ export function AppDrawer({ blurTarget: _blurTarget }: { blurTarget?: RefObject<
 
           {/* Footer: Beta switch, then Safety and Support */}
           <Reveal index={rows.length + 2} progress={progress} style={styles.footer}>
-            <SquircleSurface radius={18} fill={palette.wash} style={[styles.footerButton, { marginBottom: 8 }]}>
+            <SquircleSurface
+              radius={18}
+              fill={palette.wash}
+              style={[styles.footerButton, { marginBottom: 8 }]}
+            >
               <Ionicons name="bulb" size={19} color="#C9A46A" />
               <PressableScale
                 onPress={() => (betaMode ? go('/(app)/beta-lab') : undefined)}
@@ -419,11 +446,29 @@ export function AppDrawer({ blurTarget: _blurTarget }: { blurTarget?: RefObject<
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                   <Text style={[typography.bodyBold, { color: palette.ink }]}>Beta features</Text>
-                  <View style={{ paddingHorizontal: 6, paddingVertical: 1, borderRadius: 8, backgroundColor: '#C9A46A' }}>
-                    <Text style={{ color: '#2A1E0E', fontSize: 10, fontWeight: '800', letterSpacing: 0.6 }}>BETA</Text>
+                  <View
+                    style={{
+                      paddingHorizontal: 6,
+                      paddingVertical: 1,
+                      borderRadius: 8,
+                      backgroundColor: '#C9A46A',
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: '#2A1E0E',
+                        fontSize: 10,
+                        fontWeight: '800',
+                        letterSpacing: 0.6,
+                      }}
+                    >
+                      BETA
+                    </Text>
                   </View>
                 </View>
-                <Text style={[typography.caption, { color: palette.inkMuted }]}>{betaMode ? 'On · open Beta Lab' : 'Eye, voice, camera and AI extras'}</Text>
+                <Text style={[typography.caption, { color: palette.inkMuted }]}>
+                  {betaMode ? 'On · open Beta Lab' : 'Eye, voice, camera and AI extras'}
+                </Text>
               </PressableScale>
               <Switch
                 value={betaMode}

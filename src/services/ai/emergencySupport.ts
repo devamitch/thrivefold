@@ -23,6 +23,7 @@ import {
   getEmergencyContactsForCountry,
   getPrimaryEmergencyContact,
   getPrimaryMentalHealthContact,
+  VERIFIED_EMERGENCY_DIRECTORY,
   type EmergencyServiceContact,
 } from './emergencyDirectory';
 
@@ -68,8 +69,8 @@ export interface CrisisDetectionResult {
 // Backward-compatible type export
 export type EmergencyContact = EmergencyServiceContact;
 
-// Backward-compatible default list (India + US/UK/EU verified)
-export const EMERGENCY_CONTACTS: EmergencyContact[] = getEmergencyContactsForCountry('IN');
+// Backward-compatible default list (all verified country contacts)
+export const EMERGENCY_CONTACTS: EmergencyContact[] = Object.values(VERIFIED_EMERGENCY_DIRECTORY).flat();
 
 /* ── Context Analysis RegExes ──────────────────────────────────────────────────────────── */
 

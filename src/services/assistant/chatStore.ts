@@ -5,6 +5,7 @@
 import * as SQLite from 'expo-sqlite';
 
 import type { ChatTable } from '../../domain/assistant/chatActions';
+import { anvayFtsStore } from '../local-ai/search/anvayFtsStore';
 
 export interface ChatMessage {
   id: string;
@@ -105,6 +106,20 @@ export const chatStore = {
               m.quote || m.translation ? JSON.stringify({ quote: m.quote, translation: m.translation }) : null,
             ],
           );
+
+          // Index non-transient chat messages into FTS5
+          if (!m.transient && m.text && m.text.trim().length > 0) {
+            anvayFtsStore.upsertEntry({
+              sourceTable: 'coach_messages',
+              sourceId: m.id,
+              ownerId: 'local_user',
+              domain: 'conversations',
+              sourceType: m.who,
+              title: m.who === 'you' ? 'User Question' : 'Anvay Coach Reply',
+              content: m.text,
+              createdAt: new Date(m.at).toISOString(),
+            });
+          }
         }
       });
       notify();
@@ -147,6 +162,7 @@ export const chatStore = {
   clear(): void {
     try {
       getDb()?.runSync('DELETE FROM coach_messages');
+      getDb()?.runSync("DELETE FROM anvay_search_entries WHERE domain = 'conversations'");
       notify();
     } catch {
       // Nothing saved.

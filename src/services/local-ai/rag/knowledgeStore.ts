@@ -1,6 +1,7 @@
 import * as SQLite from 'expo-sqlite';
 import { LocalAI, type DocumentChunkResult } from '../../../../modules/local-ai';
 import { cosineSimilarity } from '../memory/vectorMath';
+import { anvayFtsStore } from '../search/anvayFtsStore';
 
 export interface KnowledgeDocument {
   id: string;
@@ -151,6 +152,20 @@ export class KnowledgeStore {
             now,
           ]
         );
+
+        // Also index into Anvay FTS5 Full-Text Engine
+        anvayFtsStore.upsertEntry({
+          sourceTable: 'rag_chunks',
+          sourceId: docId,
+          chunkId,
+          ownerId: userId,
+          domain: 'documents',
+          sourceType,
+          title: doc.title.trim(),
+          content: item.chunk.text,
+          createdAt: now,
+          metadata: doc.metadata,
+        });
       }
     });
 
@@ -259,6 +274,9 @@ export class KnowledgeStore {
         [documentId, userId]
       );
       changes = res.changes;
+
+      // Delete from FTS5
+      anvayFtsStore.deleteEntry('rag_chunks', documentId);
     });
     return changes > 0;
   }
@@ -271,6 +289,10 @@ export class KnowledgeStore {
     database.withTransactionSync(() => {
       database.runSync(`DELETE FROM rag_chunks WHERE user_id = ?`, [userId]);
       database.runSync(`DELETE FROM rag_documents WHERE user_id = ?`, [userId]);
+      database.runSync(
+        `DELETE FROM anvay_search_entries WHERE owner_id = ? AND domain = 'documents'`,
+        [userId]
+      );
     });
     return true;
   }

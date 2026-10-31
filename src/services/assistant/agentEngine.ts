@@ -81,7 +81,10 @@ export function quickReply(text: string, s: ReturnType<typeof useRootStore.getSt
   const hi = name ? `, ${name}` : '';
   if (/^(hi|hello|hey|hii+|namaste|good (morning|afternoon|evening)|yo)\b/.test(t)) {
     const h = new Date().getHours();
-    const part = h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening';
+    if (h < 5) {
+      return `Hello${hi}. Up late? Hope you're resting well. What can I help you with tonight?`;
+    }
+    const part = h < 12 ? 'morning' : h < 17 ? 'afternoon' : h < 22 ? 'evening' : 'night';
     return `Hello${hi}. Good ${part}. What can I do for you?`;
   }
   if (/^(thanks|thank you|thx|great|nice|cool|awesome)\b/.test(t)) return "You're welcome. I'm here whenever you need me.";
@@ -521,6 +524,7 @@ class AgentEngine {
       const isSafetyContext =
         this.activeSession.currentRoute.includes('safety') ||
         this.activeSession.currentRoute.includes('someone-to-talk') ||
+        storeState0().coachPersona === 'support' ||
         detectCrisisIntent(text).isCrisis;
       if (!isSafetyContext) {
         void thriveRag

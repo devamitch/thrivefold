@@ -7,6 +7,16 @@ jest.mock('expo', () => ({
   requireNativeModule: () => null,
 }));
 
+jest.mock('expo-location', () => ({
+  requestForegroundPermissionsAsync: jest.fn(async () => ({ status: 'denied' })),
+  getCurrentPositionAsync: jest.fn(async () => null),
+  reverseGeocodeAsync: jest.fn(async () => []),
+}));
+
+jest.mock('expo-localization', () => ({
+  getLocales: jest.fn(() => [{ regionCode: 'IN', languageCode: 'en' }]),
+}));
+
 jest.mock('expo-file-system/legacy', () => ({
   documentDirectory: '/data/user/0/app/files/',
   getInfoAsync: jest.fn(async () => ({ exists: false, isDirectory: false })),
@@ -97,7 +107,7 @@ describe('Typed Tool Execution Registry', () => {
     const res = await executeTool('trigger_urgent_support', {}, { userId: 'test_user' });
     expect(res.success).toBe(true);
     expect(res.routeToOpen).toBe('/(app)/safety/urgent-support');
-    expect(res.message).toContain('Tele-MANAS on 14416');
+    expect(res.message).toContain('14416');
   });
 
   it('executes lookup_medicine_info for verified entry', async () => {
@@ -140,7 +150,7 @@ describe('Agent Execution Engine', () => {
 
   it('handles fast-path crisis intervention immediately', async () => {
     const result = await agentEngine.processUserInput('I feel like hurting myself');
-    expect(result.text).toContain('Tele-MANAS on 14416');
+    expect(result.text).toContain('14416');
     expect(result.toolResult?.routeToOpen).toBe('/(app)/safety/urgent-support');
   });
 

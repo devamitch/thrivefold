@@ -1,15 +1,14 @@
-import { SquircleSurface } from '../../../components/ui/SquircleSurface';
-import React from 'react';
-import { Text, StyleSheet, ScrollView, Linking, View } from 'react-native';
-import { Link, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
+import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { BetaHero } from '../../../components/beta/BetaHero';
+import { Badge } from '../../../components/ui/Badge';
+import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { Header } from '../../../components/ui/Header';
-import { Button } from '../../../components/ui/Button';
-import { Badge } from '../../../components/ui/Badge';
+import { ScreenWrapper } from '../../../components/ui/ScreenWrapper';
+import { globalVoiceController } from '../../../services/voice/globalVoiceController';
+import { useRootStore } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
-import { BetaHero } from '../../../components/beta/BetaHero';
 import { getSanctuaryIllustration } from '../../../utils/illustrationResolver';
 
 export default function UrgentSupportScreen() {
@@ -63,9 +62,21 @@ export default function UrgentSupportScreen() {
   return (
     <ScreenWrapper scrollable>
       <Header title="Get help now" subtitle="Free, confidential help" showBack />
-      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { padding: spacing.base, paddingBottom: spacing.xxl }]}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[
+          styles.content,
+          { padding: spacing.base, paddingBottom: spacing.xxl },
+        ]}
+      >
         <BetaHero source={getSanctuaryIllustration('emergency', experience)} label="Support" />
-        <Card style={{ marginBottom: spacing.md, backgroundColor: colors.surface1, borderColor: colors.border }}>
+        <Card
+          style={{
+            marginBottom: spacing.md,
+            backgroundColor: colors.surface1,
+            borderColor: colors.border,
+          }}
+        >
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
             <Ionicons name="heart" size={20} color={colors.primary} />
             <Text style={[typography.subbodyBold, { color: colors.text.primary, marginLeft: 6 }]}>
@@ -73,22 +84,28 @@ export default function UrgentSupportScreen() {
             </Text>
           </View>
           <Text style={[typography.caption, { color: colors.text.secondary, lineHeight: 18 }]}>
-            If you or someone you know is in acute distress or experiencing thoughts of self-harm, please connect with a compassionate professional immediately. Thrivefold does not substitute emergency intervention.
+            If you or someone you know is in acute distress or experiencing thoughts of self-harm,
+            please connect with a compassionate professional immediately. Thrivefold does not
+            substitute emergency intervention.
           </Text>
-          <Link href={'/(app)/safety/someone-to-talk' as Href} asChild>
-            <Button
-              label="Talk With Voice Support & Grounding"
-              size="sm"
-              style={{ marginTop: 12, alignSelf: 'flex-start' }}
-              icon={<Ionicons name="heart-circle" size={14} color={colors.onPrimary} />}
-            />
-          </Link>
+          <Button
+            label="Talk With Voice Support & Grounding"
+            size="sm"
+            style={{ marginTop: 12, alignSelf: 'flex-start' }}
+            onPress={() => {
+              useRootStore.getState().setCoachPersona('support');
+              void globalVoiceController.open(undefined, { listen: false });
+            }}
+            icon={<Ionicons name="heart-circle" size={14} color={colors.onPrimary} />}
+          />
         </Card>
 
         {helplines.map((hl) => (
           <Card key={hl.country} style={{ marginBottom: spacing.sm, padding: spacing.lg }}>
             <View style={styles.headerRow}>
-              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{hl.country}</Text>
+              <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                {hl.country}
+              </Text>
               <Badge label={hl.hours} variant="primary" />
             </View>
             <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>
