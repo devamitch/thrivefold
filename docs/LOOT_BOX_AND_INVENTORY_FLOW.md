@@ -57,3 +57,4 @@ Chests unlock as the user advances their health and fitness adherence level:
    - Synchronized across personal profile, coach assistant, and dashboard header.
 3. **Delivery Requests**:
    - Tracked in the user's active gear requests with full shipment address and phone verification.
+

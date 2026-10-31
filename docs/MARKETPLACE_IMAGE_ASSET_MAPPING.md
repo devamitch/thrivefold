@@ -35,3 +35,4 @@
 - Currency icons are strictly gemstones and minted tokens.
 - Cards are collectible cards and achievement emblems.
 - Physical gear items display the actual product (parallettes, gyroballs, journals, bats, grippers).
+

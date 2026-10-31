@@ -42,7 +42,7 @@ Task: fix the Thrive Coach sheet (chat list + keyboard) and the "ghost" micropho
 Work like an engineer debugging a production app, not like a rewriter. Reproduce first, instrument, then change the smallest thing the evidence points to. Do not rewrite files wholesale. Show me a diff per concern.
 
 0. Context
-   App: Thrivefold. Expo SDK 55, React Native 0.83, Android-first, edge-to-edge is on (Android 15 behaviour). Test device: Motorola Moto G71 5G (Snapdragon 695) plus the Android emulator.
+   App: Thrivefold. expo sdk 58, React Native 0.83, Android-first, edge-to-edge is on (Android 15 behaviour). Test device: Motorola Moto G71 5G (Snapdragon 695) plus the Android emulator.
    Libraries already in use: react-native-reanimated, react-native-gesture-handler, react-native-safe-area-context, expo-router, expo-speech-recognition (mic), expo-speech (TTS), pnpm.
    Files involved (attached):
    GlobalVoiceAssistant.tsx: the coach conversation sheet (a React Native Modal).

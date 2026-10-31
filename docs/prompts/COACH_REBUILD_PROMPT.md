@@ -4,7 +4,7 @@ Paste everything below into the AI tool you want to try. It is self-contained.
 
 ---
 
-You are working in the Thrivefold repo (`Apps/thrivefold`): Expo SDK 55, React Native 0.83
+You are working in the Thrivefold repo (`Apps/thrivefold`): expo sdk 58, React Native 0.83
 (new architecture), Expo Router, Reanimated 4, Skia 2.4, Zustand. Read `AGENTS.md` first and obey
 it (pnpm only, theme tokens only, no fake data, stage only your own files, never `git add -A`).
 The test phone is a **Moto G71** (Snapdragon 695, adb serial `ZD2225KYKD`). Judge everything on
@@ -12,17 +12,17 @@ that phone with a **release** build, never the emulator.
 
 ## What exists today (read these files completely before changing anything)
 
-| Part | File |
-| --- | --- |
-| Native camera + MediaPipe pose/face/hands | `modules/pose-landmarker/android/src/main/java/expo/modules/poselandmarker/PoseCameraView.kt` |
-| JS bindings, event shape (`PoseFrame`) | `modules/pose-landmarker/index.ts` |
-| Skeleton drawing (Skia, UI thread) | `src/components/workout/PoseOverlay.tsx` |
-| Rep counting, holds, form faults, framing cues | `src/domain/pose/movement.ts` (+ `tests/unit/pose-movement.test.ts`) |
-| Hands-free gestures | `src/domain/pose/gestures.ts` |
-| Coach voice lines | `src/domain/pose/coachVoice.ts` |
-| Coach screen (intro, live, done) | `src/app/(app)/health/coach/[planId].tsx` |
-| Glass panels, progress ring | `src/components/workout/CoachGlass.tsx` |
-| Exercise catalogue and plans | `src/domain/fitness/workouts.ts`, videos in `src/content/exerciseVideos.ts` |
+| Part                                           | File                                                                                          |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Native camera + MediaPipe pose/face/hands      | `modules/pose-landmarker/android/src/main/java/expo/modules/poselandmarker/PoseCameraView.kt` |
+| JS bindings, event shape (`PoseFrame`)         | `modules/pose-landmarker/index.ts`                                                            |
+| Skeleton drawing (Skia, UI thread)             | `src/components/workout/PoseOverlay.tsx`                                                      |
+| Rep counting, holds, form faults, framing cues | `src/domain/pose/movement.ts` (+ `tests/unit/pose-movement.test.ts`)                          |
+| Hands-free gestures                            | `src/domain/pose/gestures.ts`                                                                 |
+| Coach voice lines                              | `src/domain/pose/coachVoice.ts`                                                               |
+| Coach screen (intro, live, done)               | `src/app/(app)/health/coach/[planId].tsx`                                                     |
+| Glass panels, progress ring                    | `src/components/workout/CoachGlass.tsx`                                                       |
+| Exercise catalogue and plans                   | `src/domain/fitness/workouts.ts`, videos in `src/content/exerciseVideos.ts`                   |
 
 Current measured facts on the G71: CPU pose (lite model) gives ~10 results/s, 60-140 ms per
 inference; the GPU delegate returned no body on this phone. Preview is a SurfaceView
@@ -42,6 +42,7 @@ inference; the GPU delegate returned no body on this phone. Preview is a Surface
 ## Required outcomes
 
 ### A. Tracking speed and sync (measure before and after)
+
 - Log per stage: capture→analyse start, bitmap conversion, inference, emit→JS, JS→UI thread.
   Report the numbers.
 - Try, measure and keep only what helps:
@@ -60,6 +61,7 @@ inference; the GPU delegate returned no body on this phone. Preview is a Surface
 - Target: skeleton visibly stuck to wrists and knees during a brisk squat and arm raise.
 
 ### B. Modern landmark look
+
 - Design 2-3 options and show screenshots: e.g. soft gradient "light trails" on limbs, thin
   luminous limbs with depth-scaled width (MediaPipe `z`), joint dots that grow with confidence,
   a subtle body silhouette glow, rep-progress colour on the working limb. Theme tokens only.
@@ -68,6 +70,7 @@ inference; the GPU delegate returned no body on this phone. Preview is a Surface
   no per-frame allocations beyond paths.
 
 ### C. Exercises that count correctly
+
 - For every exercise in `EXERCISES` record a 10-20 s landmark clip on the phone (add a debug-only
   recorder writing JSON to the app cache, never uploaded) doing it correctly, too shallow, and
   not at all. Turn the clips into Jest fixtures and assert the counted reps.
@@ -78,6 +81,7 @@ inference; the GPU delegate returned no body on this phone. Preview is a Surface
 - Timed exercises count seconds of real movement; holds count only in the right posture.
 
 ### D. A coach that acts like a person
+
 - Before each set: name, target, one key cue, demo clip auto-plays muted at the right moment.
 - During: count out loud with natural timing, encourage by name of the body part ("knees out",
   "nice deep one"), correct one thing at a time, praise when a fault is fixed, never talk over
@@ -89,18 +93,21 @@ inference; the GPU delegate returned no body on this phone. Preview is a Surface
 - Keep everything on-device and deterministic; no invented metrics.
 
 ### E. Heat and battery
+
 - During rest/countdown analyse at ≤4 fps (exists: `minIntervalMs`), stop face/hand models when
   not shown, drop the preview to 1280x960 if it saves power, and stop the camera when the app
   is backgrounded. Report CPU % (`top -H`) and battery temperature (`dumpsys battery`) over a
   10-minute session before and after.
 
 ### F. UI
+
 - Full-screen camera behind transparent status and navigation bars; all controls inside safe
   areas. Glass panels (`CoachGlass`) only; no full-screen blackouts.
 - Picture-in-picture tutorial that can be dragged to any corner and expanded.
 - Lazy-load the YouTube player and face/hand models only when used.
 
 ## Definition of done
+
 - `pnpm compile && pnpm lint && pnpm test && pnpm test:db` pass.
 - Release build on the G71: screenshots of each landmark style, a screen recording of squats,
   rotation and arm raises with counts, gfxinfo and temperature numbers.

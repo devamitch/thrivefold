@@ -58,3 +58,4 @@ The canonical Thrivefold reward economy consists of 4 tiers:
 - **Physical Gear**:
   - Submits a delivery request with name, phone, and delivery address.
   - Tracked in `gear_requests` via Supabase / local queue.
+

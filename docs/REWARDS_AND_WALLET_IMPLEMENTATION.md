@@ -54,3 +54,4 @@ When a user initiates an unlock via `buyMarketItem(itemId, currency)`:
 - **Forge Token**:
   - `tickets >= 5` ➔ converts 5 Tickets into 1 Token.
   - `diamonds >= 2500` ➔ converts 2,500 Gems directly into 1 Token.
+
