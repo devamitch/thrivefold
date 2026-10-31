@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import React, { useEffect, useRef, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
   Easing,
   cancelAnimation,
@@ -17,11 +18,10 @@ import Animated, {
 
 import { RewardAssets } from '../../constants/assets';
 import { chestKey, type LevelChest } from '../../domain/game/rewards';
-import { hapticHeavy, hapticSuccess, hapticLight } from '../../services/haptics/hapticFeedback';
+import { hapticHeavy, hapticLight, hapticSuccess } from '../../services/haptics/hapticFeedback';
 import { useRootStore } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
 import { Button } from '../ui/Button';
-import { PressableScale } from '../ui/PressableScale';
 
 type Stage = 'idle' | 'opening' | 'burst' | 'revealed';
 
@@ -49,13 +49,13 @@ function getCardAsset(cardId: string) {
 }
 
 /**
- * Level chest opening: idle bob → tap → rattle → burst with spinning rays → card flips up with gems.
- * Timer-backed state transitions guarantee 100% reliable rewards reveal across all architectures.
+ * Level chest opening:
+ * Locked chest image (chestArt.closed) -> Tap -> Rattle -> Burst to Opened Glowing Chest (chestArt.burst) -> Collector Card flips up.
+ * Wrapped in GestureHandlerRootView so gestures and touches inside React Native's Modal always work on Android.
  */
 export function LootBoxModal({ chest, onClose }: { chest: LevelChest | null; onClose: () => void }) {
   const { colors, typography } = useTheme();
   const openChest = useRootStore((s) => s.openChest);
-  const userLevel = useRootStore((s) => s.level);
   const isClaimed = useRootStore((s) =>
     chest ? s.rewardLedger.some((e) => e.key === chestKey(chest.level)) : false,
   );
@@ -79,6 +79,7 @@ export function LootBoxModal({ chest, onClose }: { chest: LevelChest | null; onC
 
   useEffect(() => {
     if (!chest) return;
+    setStage('idle');
     flip.set(90);
     raysOpacity.set(0);
     chestScale.set(1);
@@ -101,7 +102,6 @@ export function LootBoxModal({ chest, onClose }: { chest: LevelChest | null; onC
   if (!chest) return null;
   const chestArt = getChestAssets(chest.level);
   const cardArt = getCardAsset(chest.card.id);
-  const isEligible = userLevel >= chest.level || Boolean(chest);
 
   const open = () => {
     if (!chest || stage !== 'idle') return;
@@ -119,7 +119,7 @@ export function LootBoxModal({ chest, onClose }: { chest: LevelChest | null; onC
     const rattleCount = reduced ? 0 : 6;
     tilt.set(
       withSequence(
-        ...Array.from({ length: rattleCount }, (_, i) => withTiming(i % 2 ? -10 : 10, { duration: 60 })),
+        ...Array.from({ length: rattleCount }, (_, i) => withTiming(i % 2 ? -12 : 12, { duration: 60 })),
         withTiming(0, { duration: 60 }),
       ),
     );
@@ -128,7 +128,7 @@ export function LootBoxModal({ chest, onClose }: { chest: LevelChest | null; onC
 
     // Scale and burst animation
     chestScale.set(
-      withDelay(burstAt, withSequence(withTiming(1.25, { duration: 150 }), withTiming(0.0, { duration: 250 }))),
+      withDelay(burstAt, withSequence(withTiming(1.3, { duration: 150 }), withTiming(0.0, { duration: 250 }))),
     );
     raysOpacity.set(withDelay(burstAt, withTiming(1, { duration: 200 })));
     rays.set(reduced ? 0 : withRepeat(withTiming(360, { duration: 5000, easing: Easing.linear }), -1, false));
@@ -168,127 +168,142 @@ export function LootBoxModal({ chest, onClose }: { chest: LevelChest | null; onC
 
   return (
     <Modal visible transparent animationType="fade" statusBarTranslucent onRequestClose={onClose}>
-      <View style={[styles.scrim, { backgroundColor: colors.scrim }]}>
-        <Pressable
-          style={StyleSheet.absoluteFill}
-          onPress={stage === 'opening' || stage === 'burst' ? undefined : onClose}
-          accessibilityRole="button"
-          accessibilityLabel="Close loot box dialog"
-        />
-        <View style={[styles.panel, { backgroundColor: colors.background }]}>
+      <GestureHandlerRootView style={styles.root}>
+        <View style={[styles.scrim, { backgroundColor: colors.scrim }]}>
           <Pressable
-            onPress={onClose}
-            hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
-            style={styles.closeBtn}
+            style={StyleSheet.absoluteFill}
+            onPress={stage === 'opening' || stage === 'burst' ? undefined : onClose}
             accessibilityRole="button"
-            accessibilityLabel="Close"
-          >
-            <Ionicons name="close" size={22} color={colors.text.secondary} />
-          </Pressable>
+            accessibilityLabel="Close loot box dialog"
+          />
+          <View style={[styles.panel, { backgroundColor: colors.background }]}>
+            <Pressable
+              onPress={onClose}
+              hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
+              style={styles.closeBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Close"
+            >
+              <Ionicons name="close" size={22} color={colors.text.secondary} />
+            </Pressable>
 
-          <Text style={[typography.heading, { color: colors.text.primary, textAlign: 'center' }]}>
-            {chest.title}
-          </Text>
-          <Text style={[typography.caption, { color: isClaimed ? colors.primary : colors.text.secondary, marginTop: 4 }]}>
-            {isClaimed
-              ? 'Already Claimed • Reliquary Card in Vault'
-              : `Level ${chest.level} Milestone Reward`}
-          </Text>
+            <Text style={[typography.heading, { color: colors.text.primary, textAlign: 'center' }]}>
+              {chest.title}
+            </Text>
+            <Text style={[typography.caption, { color: isClaimed ? colors.primary : colors.text.secondary, marginTop: 4 }]}>
+              {isClaimed
+                ? 'Already Claimed • Reliquary Card in Vault'
+                : `Level ${chest.level} Milestone Reward`}
+            </Text>
 
-          <View style={styles.stage}>
-            {/* Spinning Sunburst Shimmer Rays */}
-            <Animated.View style={[styles.rays, raysStyle]} pointerEvents="none">
-              {Array.from({ length: 16 }, (_, i) => (
+            <View style={styles.stage}>
+              {/* Spinning Sunburst Shimmer Rays */}
+              <Animated.View style={[styles.rays, raysStyle]} pointerEvents="none">
+                {Array.from({ length: 16 }, (_, i) => (
+                  <View
+                    key={i}
+                    style={[
+                      styles.ray,
+                      {
+                        backgroundColor: colors.primary,
+                        transform: [{ rotate: `${i * 22.5}deg` }],
+                      },
+                    ]}
+                  />
+                ))}
+              </Animated.View>
+
+              {/* Interactive Chest Container - Native React Native Pressable inside Modal */}
+              <Animated.View style={chestStyle}>
+                <Pressable
+                  onPress={open}
+                  disabled={stage !== 'idle'}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open ${chest.title}`}
+                  style={({ pressed }) => [
+                    styles.pressableChest,
+                    pressed && { transform: [{ scale: 0.94 }] },
+                  ]}
+                >
+                  <View style={styles.chest}>
+                    <Image
+                      source={stage === 'burst' || stage === 'revealed' ? chestArt.burst : chestArt.closed}
+                      style={styles.chestImg}
+                      contentFit="contain"
+                      transition={150}
+                      cachePolicy="memory-disk"
+                    />
+                  </View>
+                </Pressable>
+              </Animated.View>
+
+              {/* Revealed Collector Tarot Card & Reward Reveal */}
+              <Animated.View style={[styles.cardWrap, cardStyle]} pointerEvents="none">
                 <View
-                  key={i}
                   style={[
-                    styles.ray,
+                    styles.card,
                     {
-                      backgroundColor: colors.primary,
-                      transform: [{ rotate: `${i * 22.5}deg` }],
+                      backgroundColor: colors.surface,
+                      borderColor: colors.primary,
                     },
                   ]}
-                />
-              ))}
-            </Animated.View>
-
-            {/* Interactive 3D Chest Container */}
-            <Animated.View style={chestStyle}>
-              <PressableScale
-                onPress={open}
-                disabled={stage !== 'idle'}
-                accessibilityRole="button"
-                accessibilityLabel={`Open ${chest.title}`}
-                style={styles.pressableChest}
-              >
-                <View style={styles.chest}>
-                  <Image
-                    source={stage === 'burst' || stage === 'revealed' ? chestArt.burst : chestArt.closed}
-                    style={styles.chestImg}
-                    contentFit="contain"
-                    transition={150}
-                    cachePolicy="memory-disk"
-                  />
-                </View>
-              </PressableScale>
-            </Animated.View>
-
-            {/* Revealed Collector Tarot Card & Reward Reveal */}
-            <Animated.View style={[styles.cardWrap, cardStyle]} pointerEvents="none">
-              <View
-                style={[
-                  styles.card,
-                  {
-                    backgroundColor: colors.surface,
-                    borderColor: colors.primary,
-                  },
-                ]}
-              >
-                <Image source={cardArt} style={styles.cardCover} contentFit="cover" transition={150} cachePolicy="memory-disk" />
-                <View style={styles.cardFooter}>
-                  <Text style={[typography.captionBold, { color: colors.primary }]}>
-                    {chest.card.rarity.toUpperCase()} COLLECTOR CARD
-                  </Text>
-                  <Text style={[typography.subheading, { color: colors.text.primary, textAlign: 'center' }]} numberOfLines={1}>
-                    {chest.card.title}
-                  </Text>
-                  <View style={styles.gems}>
-                    <Image source={RewardAssets.currencies.amberGem} style={styles.gemIcon} contentFit="contain" transition={150} cachePolicy="memory-disk" />
-                    <Text style={[typography.bodyBold, { color: colors.text.primary }]}>+{chest.gems} Amber Gems</Text>
+                >
+                  <Image source={cardArt} style={styles.cardCover} contentFit="cover" transition={150} cachePolicy="memory-disk" />
+                  <View style={styles.cardFooter}>
+                    <Text style={[typography.captionBold, { color: colors.primary }]}>
+                      {chest.card.rarity.toUpperCase()} COLLECTOR CARD
+                    </Text>
+                    <Text style={[typography.subheading, { color: colors.text.primary, textAlign: 'center' }]} numberOfLines={1}>
+                      {chest.card.title}
+                    </Text>
+                    <View style={styles.gems}>
+                      <Image source={RewardAssets.currencies.amberGem} style={styles.gemIcon} contentFit="contain" transition={150} cachePolicy="memory-disk" />
+                      <Text style={[typography.bodyBold, { color: colors.text.primary }]}>+{chest.gems} Amber Gems</Text>
+                    </View>
                   </View>
                 </View>
-              </View>
-            </Animated.View>
-          </View>
-
-          {stage === 'idle' ? (
-            <PressableScale onPress={open} style={styles.tapPromptBox}>
-              <Ionicons name="sparkles" size={16} color={colors.primary} />
-              <Text style={[typography.bodyBold, { color: colors.primary, marginLeft: 6 }]}>
-                {isClaimed
-                  ? 'Tap to Preview Chest Contents'
-                  : 'Tap the Chest to Open & Claim Rewards'}
-              </Text>
-            </PressableScale>
-          ) : stage === 'revealed' ? (
-            <Button
-              label={isClaimed ? 'Done' : 'Claim & Save to Collection'}
-              variant="primary"
-              onPress={onClose}
-              style={{ width: '85%' }}
-            />
-          ) : (
-            <View style={{ height: 44, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={[typography.captionBold, { color: colors.primary }]}>Unlocking Reliquary...</Text>
+              </Animated.View>
             </View>
-          )}
+
+            {stage === 'idle' ? (
+              <Pressable
+                onPress={open}
+                style={({ pressed }) => [
+                  styles.tapPromptBox,
+                  { backgroundColor: colors.surface1 },
+                  pressed && { opacity: 0.7 },
+                ]}
+              >
+                <Ionicons name="sparkles" size={18} color={colors.primary} />
+                <Text style={[typography.bodyBold, { color: colors.primary, marginLeft: 6 }]}>
+                  {isClaimed
+                    ? 'Tap Chest to Preview Rewards'
+                    : 'Tap Chest to Unlock & Claim'}
+                </Text>
+              </Pressable>
+            ) : stage === 'revealed' ? (
+              <Button
+                label={isClaimed ? 'Done' : 'Claim & Save to Collection'}
+                variant="primary"
+                onPress={onClose}
+                style={{ width: '85%' }}
+              />
+            ) : (
+              <View style={{ height: 44, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={[typography.captionBold, { color: colors.primary }]}>Unlocking Reliquary...</Text>
+              </View>
+            )}
+          </View>
         </View>
-      </View>
+      </GestureHandlerRootView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
   panel: {
     width: '100%',
     maxWidth: 380,
@@ -378,8 +393,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    borderRadius: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 22,
+    borderRadius: 22,
   },
 });
