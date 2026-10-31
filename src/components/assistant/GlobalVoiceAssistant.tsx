@@ -670,20 +670,6 @@ export function GlobalVoiceAssistant() {
     });
   const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: dragY.value }] }));
 
-  if (!visible) return null;
-
-  const screen = resolveScreenCapability(pathname);
-  const mood =
-    voiceState === 'listening'
-      ? ('listening' as const)
-      : voiceState === 'reasoning' || voiceState === 'transcribing'
-        ? ('thinking' as const)
-        : voiceState === 'speaking'
-          ? ('speaking' as const)
-          : voiceState === 'error'
-            ? ('error' as const)
-            : ('idle' as const);
-
   const handleRequestClose = useCallback(() => {
     if (directoryModalVisible) {
       setDirectoryModalVisible(false);
@@ -703,6 +689,20 @@ export function GlobalVoiceAssistant() {
     }
     close();
   }, [directoryModalVisible, countryModalVisible, groundingModal, camOpen, close]);
+
+  if (!visible) return null;
+
+  const screen = resolveScreenCapability(pathname);
+  const mood =
+    voiceState === 'listening'
+      ? ('listening' as const)
+      : voiceState === 'reasoning' || voiceState === 'transcribing'
+        ? ('thinking' as const)
+        : voiceState === 'speaking'
+          ? ('speaking' as const)
+          : voiceState === 'error'
+            ? ('error' as const)
+            : ('idle' as const);
 
   const hasText = typed.trim().length > 0 || pending !== null;
   const showThinking =
