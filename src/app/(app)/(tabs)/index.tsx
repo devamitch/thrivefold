@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { Link, useFocusEffect, useRouter, type Href } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -31,9 +32,10 @@ import { VitalsCard } from '../../../components/home/VitalsCard';
 import { WeekGlance } from '../../../components/home/WeekGlance';
 import { Card } from '../../../components/ui/Card';
 import { Chip } from '../../../components/ui/Chip';
-import { BetaBadge } from '../../../components/ui/Badge';
+import { Badge, BetaBadge } from '../../../components/ui/Badge';
 import { PressableScale } from '../../../components/ui/PressableScale';
 import { SettingsRow } from '../../../components/ui/SettingsRow';
+import { RewardAssets } from '../../../constants/assets';
 import { activeCalories } from '../../../domain/activity/calories';
 import { stepInsights } from '../../../domain/activity/stepInsights';
 import { evaluateDeterministicRoutine } from '../../../domain/ai/deterministicRules';
@@ -52,6 +54,7 @@ import {
 } from '../../../domain/calendar/universalCalendarEngine';
 import { currentLevelProgress } from '../../../domain/game/gameCatalogService';
 import { questFamily, type QuestFamily } from '../../../domain/game/progression';
+import { chestsReady } from '../../../domain/game/rewards';
 import {
   EMPTY_BASELINE,
   isSetupSectionAnswered,
@@ -141,6 +144,7 @@ export default function HomeScreen() {
       hydrationTargetGlasses: st.hydrationTargetGlasses,
       setHydrationTargetGlasses: st.setHydrationTargetGlasses,
       setupClaimed: st.rewardLedger.filter((e) => e.kind === 'setup_reward').length,
+      activeSticker: st.activeSticker,
     })),
   );
 
@@ -173,6 +177,10 @@ export default function HomeScreen() {
   const progress = useMemo(
     () => currentLevelProgress(s.xp, s.completedCheckpoints),
     [s.xp, s.completedCheckpoints],
+  );
+  const readyChests = useMemo(
+    () => chestsReady(progress.level, s.rewardLedger.map((e) => e.key)),
+    [progress.level, s.rewardLedger],
   );
   const load = useMemo(() => recentLoad(s.checkInHistory, today()), [s.checkInHistory]);
   const topInsight = useMemo(
@@ -468,6 +476,39 @@ export default function HomeScreen() {
       />
 
       <ProfileQuestionCard />
+
+      {/* Sanctuary Treasury & Rewards Quick Bar */}
+      <PressableScale
+        onPress={() => router.push('/(app)/marketplace' as Href)}
+        style={{ marginTop: spacing.md }}
+        accessibilityRole="button"
+        accessibilityLabel="Sanctuary Marketplace and Treasury"
+      >
+        <Card style={styles.treasuryBanner}>
+          <View style={styles.treasuryLeft}>
+            <Image
+              source={RewardAssets.currencies.amberGem}
+              style={{ width: 32, height: 32 }}
+              contentFit="contain"
+              cachePolicy="memory-disk"
+            />
+            <View style={{ marginLeft: 10 }}>
+              <Text style={[typography.captionBold, { color: colors.text.primary }]}>
+                {s.diamonds.toLocaleString()} Amber Gems
+              </Text>
+              <Text style={[typography.caption, { color: colors.text.muted }]}>
+                {readyChests.length > 0
+                  ? `🎁 ${readyChests.length} Milestone Chest${readyChests.length > 1 ? 's' : ''} Ready!`
+                  : 'Sanctuary Marketplace & Rewards'}
+              </Text>
+            </View>
+          </View>
+          <Badge
+            label={readyChests.length > 0 ? 'CLAIM CHEST' : 'VISIT'}
+            variant={readyChests.length > 0 ? 'gold' : 'neutral'}
+          />
+        </Card>
+      </PressableScale>
 
       <View style={{ marginTop: spacing.md }}>
         <HydrationTrackerCard
@@ -873,6 +914,16 @@ const styles = StyleSheet.create({
   },
   rangeRow: { flexDirection: 'row', gap: 6 },
   rowCenter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  treasuryBanner: {
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  treasuryLeft: {
     flexDirection: 'row',
     alignItems: 'center',
   },

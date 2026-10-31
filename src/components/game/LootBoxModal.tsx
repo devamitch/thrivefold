@@ -99,8 +99,11 @@ export function LootBoxModal({ chest, onClose }: { chest: LevelChest | null; onC
 
   const open = () => {
     if (!chest || stage !== 'idle') return;
-    // Credit reward if eligible
-    openChest(chest.level);
+    if (!isEligible && !isClaimed) return;
+    if (!isClaimed) {
+      const res = openChest(chest.level);
+      if (!res) return;
+    }
     setStage('opening');
     hapticHeavy();
     cancelAnimation(bob);
@@ -192,7 +195,7 @@ export function LootBoxModal({ chest, onClose }: { chest: LevelChest | null; onC
             <Animated.View style={chestStyle}>
               <PressableScale
                 onPress={open}
-                disabled={stage !== 'idle'}
+                disabled={stage !== 'idle' || (!isEligible && !isClaimed)}
                 accessibilityRole="button"
                 accessibilityLabel={`Open ${chest.title}`}
               >
@@ -235,10 +238,12 @@ export function LootBoxModal({ chest, onClose }: { chest: LevelChest | null; onC
           </View>
 
           {stage === 'idle' ? (
-            <Text style={[typography.body, { color: colors.text.secondary }]}>
+            <Text style={[typography.body, { color: colors.text.secondary, textAlign: 'center', maxWidth: 300 }]}>
               {isClaimed
-                ? 'Tap the chest to replay the opening inspection'
-                : 'Tap the chest to unlock your loot'}
+                ? 'Claimed • Collector Card saved in your Inventory'
+                : isEligible
+                ? 'Tap the chest to unlock your milestone rewards'
+                : `Reach Level ${chest.level} to unlock this milestone chest`}
             </Text>
           ) : stage === 'revealed' ? (
             <Button label={isClaimed ? 'Done' : 'Claim & Continue'} onPress={onClose} />

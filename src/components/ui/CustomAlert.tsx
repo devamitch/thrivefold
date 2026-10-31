@@ -46,13 +46,15 @@ export function CustomAlert() {
   if (!alert) return null;
 
   const handleConfirm = () => {
-    alert.onConfirm?.();
+    const fn = alert.onConfirm;
     hideAlert();
+    fn?.();
   };
 
   const handleCancel = () => {
-    alert.onCancel?.();
+    const fn = alert.onCancel;
     hideAlert();
+    fn?.();
   };
 
   const iconName: keyof typeof Ionicons.glyphMap = alert.destructive

@@ -1,62 +1,63 @@
 import { Ionicons } from '@expo/vector-icons';
-import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
-import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import { Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import React, { useCallback, useMemo, useState } from 'react';
+import {
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
-import { AppHeader } from '../../components/ui/AppHeader';
 import { AppBottomSheetModal } from '../../components/ui/AppBottomSheetModal';
+import { AppHeader } from '../../components/ui/AppHeader';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
+import { Chip } from '../../components/ui/Chip';
+import { LootBoxModal } from '../../components/game/LootBoxModal';
 import { PressableScale } from '../../components/ui/PressableScale';
 import { ScreenContainer } from '../../components/ui/ScreenContainer';
-import { TextField } from '../../components/ui/TextField';
-import { LootBoxModal } from '../../components/game/LootBoxModal';
 import { RewardAssets } from '../../constants/assets';
 import {
-  getMasterArtifactSource,
-  MASTER_GENERATED_ARTIFACTS,
-  type MasterArtifact,
-} from '../../constants/masterRewardAssets';
-import {
-  ACTION_REWARDS,
   chestKey,
-  EDITORIAL_ARTWORKS,
   LEVEL_CHESTS,
   MARKET,
-  streakMultiplier,
-  TIER_COST,
-  TICKET_FORGE_GEMS,
-  TOKEN_FORGE_GEMS,
-  TOKEN_FORGE_TICKETS,
-  WELLNESS_PLANS,
-  type EditorialArt,
   type LevelChest,
   type MarketItem,
-  type WellnessPlan,
 } from '../../domain/game/rewards';
-import { useGearStock, useMyGearRequests, useRequestGear } from '../../services/rewards/gear';
-import { useRootStore, useShallow } from '../../stores/useRootStore';
+import { hapticLight, hapticSuccess, hapticHeavy } from '../../services/haptics/hapticFeedback';
+import { useRootStore } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const HORIZONTAL_PADDING = 16;
-const CONTENT_WIDTH = SCREEN_WIDTH - HORIZONTAL_PADDING * 2;
-const HERO_CARD_WIDTH = Math.round(SCREEN_WIDTH * 0.82);
-const HERO_CARD_HEIGHT = 150;
-const GRID_COL_WIDTH = Math.floor((CONTENT_WIDTH - 12) / 2);
-const GRID_IMG_HEIGHT = 120;
+type MarketplaceTab = 'market' | 'chests' | 'inventory';
+type DigitalFilter = 'all' | 'cards' | 'badges' | 'stickers';
 
-function getChestAssets(level: number) {
-  if (level >= 100) return RewardAssets.chests.tier5;
-  if (level >= 50) return RewardAssets.chests.tier4;
-  if (level >= 20) return RewardAssets.chests.tier3;
-  if (level >= 10) return RewardAssets.chests.tier2;
-  return RewardAssets.chests.tier1;
+const TICKET_FORGE_GEMS = 500;
+const TOKEN_FORGE_TICKETS = 5;
+const TOKEN_FORGE_GEMS = 2500;
+
+function getDigitalAssetSource(item: { id: string; assetKey?: string }): any {
+  const key = item.assetKey;
+  if (!key) return RewardAssets.currencies.amberGem;
+
+  if (key in RewardAssets.stickers) {
+    return RewardAssets.stickers[key as keyof typeof RewardAssets.stickers];
+  }
+  if (key in RewardAssets.cards) {
+    return RewardAssets.cards[key as keyof typeof RewardAssets.cards];
+  }
+  if (key in RewardAssets.digitalBadges) {
+    return RewardAssets.digitalBadges[key as keyof typeof RewardAssets.digitalBadges];
+  }
+  if (key in RewardAssets.currencies) {
+    return RewardAssets.currencies[key as keyof typeof RewardAssets.currencies];
+  }
+  return RewardAssets.currencies.amberGem;
 }
 
-function getCardAsset(cardId: string) {
+function getCardAsset(cardId: string): any {
   switch (cardId) {
     case 'card_apex_thrivemaster':
       return RewardAssets.cards.apexThrivemaster;
@@ -71,264 +72,115 @@ function getCardAsset(cardId: string) {
   }
 }
 
-function getItemAsset(assetKey?: string) {
-  if (!assetKey) return null;
-  const master = getMasterArtifactSource(assetKey);
-  if (master) return master;
-  if (assetKey in RewardAssets.marketplace) {
-    return RewardAssets.marketplace[assetKey as keyof typeof RewardAssets.marketplace];
-  }
-  if (assetKey in RewardAssets.currencies) {
-    return RewardAssets.currencies[assetKey as keyof typeof RewardAssets.currencies];
-  }
-  if (assetKey in RewardAssets.cards) {
-    return RewardAssets.cards[assetKey as keyof typeof RewardAssets.cards];
-  }
-  if (assetKey in RewardAssets.editorial) {
-    return RewardAssets.editorial[assetKey as keyof typeof RewardAssets.editorial];
-  }
-  return null;
+function getChestAssets(level: number) {
+  if (level >= 100) return RewardAssets.chests.tier5;
+  if (level >= 50) return RewardAssets.chests.tier4;
+  if (level >= 20) return RewardAssets.chests.tier3;
+  if (level >= 10) return RewardAssets.chests.tier2;
+  return RewardAssets.chests.tier1;
 }
 
-type TabType = 'market' | 'reliquary' | 'gallery' | 'vault';
-type VaultFilter =
-  | 'All'
-  | 'Cinematic Banners'
-  | 'Reliquary Chests'
-  | 'Collector Cards'
-  | 'Currencies & Tokens'
-  | 'Physical Gear';
+function getRarityVariant(cost: number): 'gold' | 'primary' | 'success' | 'neutral' {
+  if (cost >= 2000) return 'gold';
+  if (cost >= 800) return 'primary';
+  if (cost >= 300) return 'success';
+  return 'neutral';
+}
 
-const HERO_BANNERS = MASTER_GENERATED_ARTIFACTS.filter(
-  (a) => a.category === 'Cinematic Banners',
-).slice(0, 4);
+function getRarityLabel(cost: number): string {
+  if (cost >= 2000) return 'MYTHIC';
+  if (cost >= 800) return 'EPIC';
+  if (cost >= 300) return 'RARE';
+  return 'COMMON';
+}
 
-/** Memoized grid item for the 3D Vault FlashList */
-const VaultGridItem = memo(
-  ({
-    item,
-    onPress,
-    colors,
-    typography,
-  }: {
-    item: MasterArtifact;
-    onPress: (art: MasterArtifact) => void;
-    colors: any;
-    typography: any;
-  }) => (
-    <PressableScale
-      onPress={() => onPress(item)}
-      style={[styles.gridCard, { width: GRID_COL_WIDTH, backgroundColor: colors.surface }]}
-      accessibilityRole="button"
-      accessibilityLabel={`View ${item.title}`}
-    >
-      <Image
-        source={item.source}
-        style={{
-          width: GRID_COL_WIDTH,
-          height: GRID_IMG_HEIGHT,
-          borderTopLeftRadius: 16,
-          borderTopRightRadius: 16,
-        }}
-        contentFit="cover"
-        transition={150}
-        cachePolicy="memory-disk"
-      />
-      <View style={styles.gridCardMeta}>
-        <Badge label={item.category} variant="primary" />
-        <Text style={[typography.captionBold, { color: colors.text.primary, marginTop: 4 }]} numberOfLines={1}>
-          {item.title}
-        </Text>
-        <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]} numberOfLines={2}>
-          {item.description}
-        </Text>
-      </View>
-    </PressableScale>
-  ),
-);
-VaultGridItem.displayName = 'VaultGridItem';
-
-/** Memoized grid item for the Gouache Gallery FlashList */
-const GalleryGridItem = memo(
-  ({
-    item,
-    onPress,
-    colors,
-    typography,
-  }: {
-    item: EditorialArt;
-    onPress: (art: EditorialArt) => void;
-    colors: any;
-    typography: any;
-  }) => {
-    const source = getItemAsset(item.assetKey);
-    return (
-      <PressableScale
-        onPress={() => onPress(item)}
-        style={[styles.gridCard, { width: GRID_COL_WIDTH, backgroundColor: colors.surface }]}
-        accessibilityRole="button"
-        accessibilityLabel={`View ${item.title}`}
-      >
-        <Image
-          source={source}
-          style={{
-            width: GRID_COL_WIDTH,
-            height: GRID_IMG_HEIGHT,
-            borderTopLeftRadius: 16,
-            borderTopRightRadius: 16,
-          }}
-          contentFit="cover"
-          transition={150}
-          cachePolicy="memory-disk"
-        />
-        <View style={styles.gridCardMeta}>
-          <Badge label={item.category} variant="primary" />
-          <Text style={[typography.captionBold, { color: colors.text.primary, marginTop: 4 }]} numberOfLines={1}>
-            {item.title}
-          </Text>
-          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]} numberOfLines={2}>
-            {item.description}
-          </Text>
-        </View>
-      </PressableScale>
-    );
-  },
-);
-GalleryGridItem.displayName = 'GalleryGridItem';
-
-/**
- * Thrivefold Grand Marketplace, Treasury & Visual Exhibition
- * - 3-Pillar Treasury: Amber Gems, Silver Tickets, Golden Tokens with on-device Currency Forge
- * - Hero Carousel: Wide cinematic promotional keyframes with zero-delay preloaded rendering
- * - Tab 1 (Market): Habit Stickers, Status Badges, Structured Care Plans, Real Physical Gear
- * - Tab 2 (Chests & Cards): The 5 Reliquary Chests (Closed + Burst views) and 4 Collector Cards
- * - Tab 3 (Gallery): 11 museum-grade Scandinavian-Japanese gouache studies in FlashList
- * - Tab 4 (3D Vault): All 36 custom 3D renders with filter pills and full-screen inspection
- */
 export default function MarketplaceScreen() {
+  const router = useRouter();
   const { colors, typography, spacing } = useTheme();
-  // The Sanctuary Marketplace is fully audited, verified, and active across all builds
-  const isMarketplaceEnabled = true;
 
-  const {
-    diamonds,
-    tickets,
-    tokens,
-    owned,
-    activeSticker,
-    setActiveSticker,
-    buy,
-    forgeTicket,
-    forgeToken,
-    showAlert,
-    streak,
-    ledger,
-  } = useRootStore(
-    useShallow((s) => ({
-      diamonds: s.diamonds,
-      tickets: s.tickets,
-      tokens: s.tokens,
-      owned: s.marketOwned,
-      activeSticker: s.activeSticker,
-      setActiveSticker: s.setActiveSticker,
-      buy: s.buyMarketItem,
-      forgeTicket: s.forgeTicket,
-      forgeToken: s.forgeToken,
-      showAlert: s.showAlert,
-      streak: s.streak,
-      ledger: s.rewardLedger,
-    })),
-  );
+  // Root Store State
+  const diamonds = useRootStore((s) => s.diamonds);
+  const tickets = useRootStore((s) => s.tickets);
+  const tokens = useRootStore((s) => s.tokens);
+  const userLevel = useRootStore((s) => s.level);
+  const marketOwned = useRootStore((s) => s.marketOwned);
+  const activeSticker = useRootStore((s) => s.activeSticker);
+  const rewardLedger = useRootStore((s) => s.rewardLedger);
+  const buy = useRootStore((s) => s.buyMarketItem);
+  const forgeTicket = useRootStore((s) => s.forgeTicket);
+  const forgeToken = useRootStore((s) => s.forgeToken);
+  const setActiveSticker = useRootStore((s) => s.setActiveSticker);
+  const showAlert = useRootStore((s) => s.showAlert);
 
-  const [activeTab, setActiveTab] = useState<TabType>('market');
-  const [vaultFilter, setVaultFilter] = useState<VaultFilter>('All');
-  const [chest, setChest] = useState<LevelChest | null>(null);
-  const [inspectArt, setInspectArt] = useState<EditorialArt | MasterArtifact | null>(null);
-  const multiplier = streakMultiplier(streak);
-  const cards = LEVEL_CHESTS.filter((c) => owned.includes(c.card.id)).map((c) => c.card);
-  const stock = useGearStock();
-  const requests = useMyGearRequests();
-  const requestGear = useRequestGear();
+  // Screen Tabs & Filters
+  const [activeTab, setActiveTab] = useState<MarketplaceTab>('market');
+  const [digitalFilter, setDigitalFilter] = useState<DigitalFilter>('all');
 
-  const [gear, setGear] = useState<MarketItem | WellnessPlan | null>(null);
-  const [payMethod, setPayMethod] = useState<'gems' | 'tokens'>('gems');
-  const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [address, setAddress] = useState('');
+  // Modals & Sheets State
+  const [selectedItem, setSelectedItem] = useState<MarketItem | null>(null);
+  const [selectedChest, setSelectedChest] = useState<LevelChest | null>(null);
+  const [showForgeSheet, setShowForgeSheet] = useState(false);
+  const [unlockedSuccessItem, setUnlockedSuccessItem] = useState<MarketItem | null>(null);
 
-  // Preload primary visual assets on mount so they paint instantly
-  useEffect(() => {
-    const critical = [
-      RewardAssets.currencies.amberGem,
-      RewardAssets.currencies.marketplaceToken,
-      RewardAssets.currencies.sanctuaryPass,
-      RewardAssets.chests.tier1.closed,
-      RewardAssets.chests.tier1.burst,
-      ...HERO_BANNERS.map((b) => b.source),
-    ];
-    critical.forEach((src) => {
-      if (src) Image.loadAsync(src).catch(() => {});
-    });
+  // Digital-only items: Exclude any physical items
+  const digitalItems = useMemo(() => {
+    return MARKET.filter((item) => !item.physical);
   }, []);
 
-  if (!isMarketplaceEnabled) {
-    return (
-      <ScreenContainer style={styles.flex}>
-        <AppHeader title="Sanctuary Marketplace" showBack />
-        <View style={styles.disabledContainer}>
-          <Ionicons name="sparkles" size={56} color={colors.primary} />
-          <Text style={[typography.heading, { color: colors.text.primary, marginTop: 16, textAlign: 'center' }]}>
-            Marketplace Coming Soon
-          </Text>
-          <Text
-            style={[
-              typography.body,
-              { color: colors.text.secondary, marginTop: 8, textAlign: 'center', maxWidth: 300, lineHeight: 22 },
-            ]}
-          >
-            The mindful reward exchange and 3D Treasury are receiving finishing touches for our next update. Your gems, tokens, and streak progress are safely recorded.
-          </Text>
-        </View>
-      </ScreenContainer>
-    );
-  }
+  const filteredItems = useMemo(() => {
+    if (digitalFilter === 'all') return digitalItems;
+    if (digitalFilter === 'cards') return digitalItems.filter((i) => i.id.startsWith('card_'));
+    if (digitalFilter === 'badges') return digitalItems.filter((i) => i.id.startsWith('status_') || i.id.startsWith('badge_'));
+    if (digitalFilter === 'stickers') return digitalItems.filter((i) => i.tier === 'sticker');
+    return digitalItems;
+  }, [digitalFilter, digitalItems]);
 
-  const promptUnlock = useCallback(
-    (item: MarketItem | WellnessPlan, defaultCurrency: 'gems' | 'tokens' | 'tickets' = 'gems') => {
-      if ('physical' in item && item.physical) {
-        setPayMethod(defaultCurrency === 'tickets' ? 'tokens' : defaultCurrency);
-        setGear(item);
-        return;
+  // Owned Collector Cards from Ledger
+  const ownedCards = useMemo(() => {
+    const cardMap = new Map<string, LevelChest>();
+    for (const chest of LEVEL_CHESTS) {
+      if (rewardLedger.some((e) => e.key === chestKey(chest.level))) {
+        cardMap.set(chest.card.id, chest);
       }
-      if (item.id.startsWith('plan_')) {
-        setPayMethod(defaultCurrency === 'tickets' ? 'tokens' : defaultCurrency);
-        setGear(item);
+    }
+    return Array.from(cardMap.values());
+  }, [rewardLedger]);
+
+  // Owned Digital Items mapped to full objects
+  const ownedDigitalObjects = useMemo(() => {
+    return marketOwned
+      .map((id) => digitalItems.find((m) => m.id === id))
+      .filter((item): item is MarketItem => Boolean(item));
+  }, [digitalItems, marketOwned]);
+
+  // Handle direct purchase of digital asset
+  const handleConfirmPurchase = useCallback(
+    (item: MarketItem) => {
+      if (diamonds < item.cost) {
+        showAlert({
+          title: 'Need More Gems',
+          message: `Unlocking ${item.title} requires ${item.cost.toLocaleString()} Amber Gems. You currently have ${diamonds.toLocaleString()} Gems. Complete daily mindful habits to earn more!`,
+          confirmText: 'Understood',
+          cancelText: null,
+        });
         return;
-      }
-
-      let priceText = `${item.cost.toLocaleString()} Gems`;
-      let userBalance = `${diamonds.toLocaleString()} Gems`;
-
-      if (defaultCurrency === 'tokens') {
-        const cost = item.tokenCost ?? 1;
-        priceText = `${cost} Token${cost > 1 ? 's' : ''}`;
-        userBalance = `${tokens} Tokens`;
-      } else if (defaultCurrency === 'tickets') {
-        const cost = ('ticketCost' in item && item.ticketCost) ? item.ticketCost : 1;
-        priceText = `${cost} Ticket${cost > 1 ? 's' : ''}`;
-        userBalance = `${tickets} Tickets`;
       }
 
       showAlert({
         title: `Unlock ${item.title}?`,
-        message: `Price: ${priceText}. Your wallet balance: ${userBalance}.`,
-        confirmText: 'Unlock',
+        message: `Dedicate ${item.cost.toLocaleString()} Amber Gems to permanently unlock this digital asset to your sanctuary collection?`,
+        confirmText: 'Unlock Asset',
+        cancelText: 'Cancel',
         onConfirm: () => {
-          const r = buy(item.id, defaultCurrency);
-          if (!r.ok) {
+          const success = buy(item.id, 'gems');
+          if (success) {
+            hapticSuccess();
+            setSelectedItem(null);
+            setUnlockedSuccessItem(item);
+          } else {
             showAlert({
-              title: 'Not unlocked',
-              message: r.reason === 'insufficient' ? `Not enough ${defaultCurrency} yet.` : 'You already have this.',
+              title: 'Transaction Incomplete',
+              message: 'Could not complete the gem unlock. Please verify your balance and try again.',
               confirmText: 'OK',
               cancelText: null,
             });
@@ -336,15 +188,16 @@ export default function MarketplaceScreen() {
         },
       });
     },
-    [diamonds, tokens, tickets, buy, showAlert],
+    [buy, diamonds, showAlert],
   );
 
-  const handleForgeTicket = useCallback(() => {
+  // Handle Currency Forging
+  const handleForgeTicketAction = useCallback(() => {
     if (diamonds < TICKET_FORGE_GEMS) {
       showAlert({
         title: 'Need More Gems',
-        message: `Forging 1 Sanctuary Ticket requires ${TICKET_FORGE_GEMS} Amber Gems. You currently have ${diamonds}.`,
-        confirmText: 'Got it',
+        message: `Forging 1 Sanctuary Pass Ticket requires ${TICKET_FORGE_GEMS} Amber Gems. Your current balance is ${diamonds.toLocaleString()} Gems.`,
+        confirmText: 'OK',
         cancelText: null,
       });
       return;
@@ -352,1240 +205,1137 @@ export default function MarketplaceScreen() {
     showAlert({
       title: 'Forge Sanctuary Ticket?',
       message: `Convert ${TICKET_FORGE_GEMS} Amber Gems into 1 Silver Sanctuary Ticket?`,
-      confirmText: 'Forge',
+      confirmText: 'Forge Ticket',
+      cancelText: 'Cancel',
       onConfirm: () => {
         forgeTicket();
-        showAlert({
-          title: 'Ticket Forged',
-          message: '1 Sanctuary Ticket has been forged into your wallet.',
-          confirmText: 'Awesome',
-          cancelText: null,
-        });
+        hapticSuccess();
       },
     });
   }, [diamonds, forgeTicket, showAlert]);
 
-  const handleForgeToken = useCallback(
-    (useTickets: boolean) => {
-      if (useTickets) {
+  const handleForgeTokenAction = useCallback(
+    (useTicketsOption: boolean) => {
+      if (useTicketsOption) {
         if (tickets < TOKEN_FORGE_TICKETS) {
           showAlert({
             title: 'Need More Tickets',
-            message: `Forging 1 Marketplace Token requires ${TOKEN_FORGE_TICKETS} Tickets. You currently have ${tickets}.`,
-            confirmText: 'Got it',
+            message: `Forging 1 Golden Token requires ${TOKEN_FORGE_TICKETS} Tickets. Your balance is ${tickets} Tickets.`,
+            confirmText: 'OK',
             cancelText: null,
           });
           return;
         }
         showAlert({
-          title: 'Forge Marketplace Token?',
+          title: 'Forge Golden Token?',
           message: `Convert ${TOKEN_FORGE_TICKETS} Sanctuary Tickets into 1 Golden Marketplace Token?`,
-          confirmText: 'Forge',
+          confirmText: 'Forge Token',
+          cancelText: 'Cancel',
           onConfirm: () => {
             forgeToken(true);
-            showAlert({
-              title: 'Token Forged',
-              message: '1 Golden Marketplace Token added to your treasury.',
-              confirmText: 'Great',
-              cancelText: null,
-            });
+            hapticSuccess();
           },
         });
       } else {
         if (diamonds < TOKEN_FORGE_GEMS) {
           showAlert({
             title: 'Need More Gems',
-            message: `Forging 1 Token directly requires ${TOKEN_FORGE_GEMS.toLocaleString()} Amber Gems. You currently have ${diamonds}.`,
-            confirmText: 'Got it',
+            message: `Forging 1 Golden Token directly requires ${TOKEN_FORGE_GEMS.toLocaleString()} Amber Gems. Your balance is ${diamonds.toLocaleString()} Gems.`,
+            confirmText: 'OK',
             cancelText: null,
           });
           return;
         }
         showAlert({
-          title: 'Forge Marketplace Token?',
+          title: 'Forge Golden Token?',
           message: `Convert ${TOKEN_FORGE_GEMS.toLocaleString()} Amber Gems into 1 Golden Marketplace Token?`,
-          confirmText: 'Forge',
+          confirmText: 'Forge Token',
+          cancelText: 'Cancel',
           onConfirm: () => {
             forgeToken(false);
-            showAlert({
-              title: 'Token Forged',
-              message: '1 Golden Marketplace Token added to your treasury.',
-              confirmText: 'Great',
-              cancelText: null,
-            });
+            hapticSuccess();
           },
         });
       }
     },
-    [diamonds, tickets, forgeToken, showAlert],
-  );
-
-  const confirmGearRequest = async () => {
-    if (!gear) return;
-    const isTokenPay = payMethod === 'tokens';
-    const costGems = gear.cost;
-    const costTokens = gear.tokenCost ?? 10;
-
-    if (isTokenPay && tokens < costTokens) {
-      showAlert({
-        title: 'Not enough Tokens',
-        message: `This requires ${costTokens} Tokens. You have ${tokens}.`,
-        confirmText: 'OK',
-        cancelText: null,
-      });
-      return;
-    }
-    if (!isTokenPay && diamonds < costGems) {
-      showAlert({
-        title: 'Not enough Gems',
-        message: `This requires ${costGems.toLocaleString()} Gems. You have ${diamonds.toLocaleString()}.`,
-        confirmText: 'OK',
-        cancelText: null,
-      });
-      return;
-    }
-
-    try {
-      if (gear.id.startsWith('plan_')) {
-        const res = buy(gear.id, isTokenPay ? 'tokens' : 'gems');
-        if (res.ok) {
-          setGear(null);
-          showAlert({
-            title: 'Plan Enrolled',
-            message: `You have successfully enrolled in ${gear.title}. All pathway milestones and daily routines are active.`,
-            confirmText: 'Start Plan',
-            cancelText: null,
-          });
-        }
-        return;
-      }
-
-      const available = stock.data ? (stock.data[gear.id] ?? 0) : 0;
-      if (available <= 0) {
-        showAlert({
-          title: 'Out of stock',
-          message: 'This gear is temporarily out of stock. Stock is replenished on the 1st of each month.',
-          confirmText: 'OK',
-          cancelText: null,
-        });
-        return;
-      }
-
-      await requestGear.mutateAsync({
-        itemId: gear.id,
-        gems: costGems,
-        fullName: fullName.trim(),
-        phone: phone.trim(),
-        address: address.trim(),
-      });
-
-      buy(gear.id, isTokenPay ? 'tokens' : 'gems');
-
-      setGear(null);
-      setFullName('');
-      setPhone('');
-      setAddress('');
-
-      showAlert({
-        title: 'Request Confirmed',
-        message: 'Your order has been recorded. The Thrivefold wellness team will reach out regarding delivery.',
-        confirmText: 'Done',
-        cancelText: null,
-      });
-    } catch {
-      // Handled by mutation
-    }
-  };
-
-  const filteredVault = useMemo(() => {
-    if (vaultFilter === 'All') return MASTER_GENERATED_ARTIFACTS;
-    return MASTER_GENERATED_ARTIFACTS.filter((a) => a.category === vaultFilter);
-  }, [vaultFilter]);
-
-  const validOrder =
-    fullName.trim().length > 1 &&
-    /^[+\d][\d\s-]{5,19}$/.test(phone.trim()) &&
-    address.trim().length >= 8;
-
-  const renderVaultItem = useCallback(
-    ({ item }: { item: MasterArtifact }) => (
-      <VaultGridItem item={item} onPress={setInspectArt} colors={colors} typography={typography} />
-    ),
-    [colors, typography],
-  );
-
-  const renderGalleryItem = useCallback(
-    ({ item }: { item: EditorialArt }) => (
-      <GalleryGridItem item={item} onPress={setInspectArt} colors={colors} typography={typography} />
-    ),
-    [colors, typography],
+    [diamonds, forgeToken, showAlert, tickets],
   );
 
   return (
-    <ScreenContainer
-      header={<AppHeader title="Marketplace" subtitle="Spend gems & tokens on authentic wellness gear" showBack />}
-      scrollMode="shell-scroll-view"
-    >
-      {/* 3-Pillar Treasury Wallet */}
-      <Card style={[styles.walletCard, { marginBottom: spacing.sm }]}>
-        <View style={styles.walletHeader}>
-          <View style={styles.row}>
-            <Text style={[typography.captionBold, { color: colors.primary }]}>WELLNESS TREASURY</Text>
-            {activeSticker && (
-              <Badge
-                label={`Equipped: ${MARKET.find((m) => m.id === activeSticker)?.title ?? activeSticker}`}
-                variant="neutral"
-              />
-            )}
-          </View>
-          {multiplier > 1 && (
-            <Badge label={`${streak}d Streak · ×${multiplier} Rewards`} variant="primary" />
-          )}
-        </View>
+    <ScreenContainer style={styles.container}>
+      <AppHeader title="Sanctuary Treasury" showBack />
 
-        <View style={styles.currencyRow}>
-          <View style={styles.currencyCol}>
-            <Image
-              source={RewardAssets.currencies.amberGem}
-              style={styles.currencyIcon}
-              contentFit="contain"
-              transition={150}
-              cachePolicy="memory-disk"
-            />
-            <Text style={[typography.heading, { color: colors.text.primary, marginTop: 4 }]}>
-              {diamonds.toLocaleString()}
-            </Text>
-            <Text style={[typography.caption, { color: colors.text.secondary }]}>Amber Gems</Text>
-          </View>
-
-          <View style={[styles.walletDivider, { backgroundColor: colors.border }]} />
-
-          <View style={styles.currencyCol}>
-            <Image
-              source={RewardAssets.currencies.sanctuaryPass}
-              style={styles.currencyIcon}
-              contentFit="contain"
-              transition={150}
-              cachePolicy="memory-disk"
-            />
-            <Text style={[typography.heading, { color: colors.text.primary, marginTop: 4 }]}>{tickets}</Text>
-            <Text style={[typography.caption, { color: colors.text.secondary }]}>Tickets</Text>
-          </View>
-
-          <View style={[styles.walletDivider, { backgroundColor: colors.border }]} />
-
-          <View style={styles.currencyCol}>
-            <Image
-              source={RewardAssets.currencies.marketplaceToken}
-              style={styles.currencyIcon}
-              contentFit="contain"
-              transition={150}
-              cachePolicy="memory-disk"
-            />
-            <Text style={[typography.heading, { color: colors.text.primary, marginTop: 4 }]}>{tokens}</Text>
-            <Text style={[typography.caption, { color: colors.text.secondary }]}>Tokens</Text>
-          </View>
-        </View>
-
-        <View style={[styles.forgeBar, { borderTopColor: colors.border, marginTop: spacing.md, paddingTop: spacing.sm }]}>
-          <Text style={[typography.caption, { color: colors.text.muted, flex: 1 }]}>
-            Forge: 500 Gems ➔ 1 Ticket · 5 Tickets ➔ 1 Token
-          </Text>
-          <View style={styles.forgeButtons}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Treasury Vault Balance Card */}
+        <Card style={styles.walletCard}>
+          <View style={styles.walletHeader}>
+            <View style={{ flex: 1 }}>
+              <Text style={[typography.caption, { color: colors.text.muted, letterSpacing: 0.8 }]}>
+                OFFLINE VAULT TREASURY
+              </Text>
+              <Text style={[typography.heading, { color: colors.text.primary, marginTop: 2 }]}>
+                Digital Assets & Rewards
+              </Text>
+            </View>
             <Button
-              label="+ Ticket"
-              size="sm"
+              label="Forge"
               variant="outline"
-              disabled={diamonds < TICKET_FORGE_GEMS}
-              onPress={handleForgeTicket}
-            />
-            <Button
-              label="+ Token"
               size="sm"
-              variant="outline"
-              disabled={tickets < TOKEN_FORGE_TICKETS && diamonds < TOKEN_FORGE_GEMS}
-              onPress={() => handleForgeToken(tickets >= TOKEN_FORGE_TICKETS)}
+              onPress={() => setShowForgeSheet(true)}
+              icon={<Ionicons name="sparkles-outline" size={15} color={colors.primary} />}
             />
           </View>
-        </View>
-      </Card>
 
-      {/* Hero Showcase Carousel */}
-      <View style={{ marginBottom: spacing.md }}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.heroScroll}
-        >
-          {HERO_BANNERS.map((banner) => (
-            <PressableScale
-              key={banner.id}
-              onPress={() => setInspectArt(banner)}
-              style={styles.heroBannerWrap}
-              accessibilityRole="button"
-              accessibilityLabel={`View ${banner.title}`}
-            >
+          <View style={styles.currencyRow}>
+            {/* Amber Gems */}
+            <View style={styles.currencyCol}>
               <Image
-                source={banner.source}
-                style={styles.heroBannerImg}
-                contentFit="cover"
-                transition={150}
+                source={RewardAssets.currencies.amberGem}
+                style={styles.currencyIcon}
+                contentFit="contain"
                 cachePolicy="memory-disk"
               />
-              <View style={styles.heroOverlay}>
-                <Badge label="Cinematic Showcase" variant="gold" />
-                <Text style={[typography.subheading, { color: '#FFF', marginTop: 4 }]} numberOfLines={1}>
-                  {banner.title}
-                </Text>
-              </View>
-            </PressableScale>
-          ))}
-        </ScrollView>
-      </View>
+              <Text style={[typography.heading, { color: colors.text.primary, marginTop: 4 }]}>
+                {diamonds.toLocaleString()}
+              </Text>
+              <Text style={[typography.caption, { color: colors.text.secondary }]}>Amber Gems</Text>
+            </View>
 
-      {/* 4-Tab Navigation Segments */}
-      <View style={[styles.segmentContainer, { backgroundColor: colors.surface1, marginBottom: spacing.md }]}>
-        <PressableScale
-          style={[styles.segmentTab, activeTab === 'market' && { backgroundColor: colors.surface }]}
-          onPress={() => setActiveTab('market')}
-        >
-          <Ionicons
-            name="bag-handle-outline"
-            size={16}
-            color={activeTab === 'market' ? colors.primary : colors.text.secondary}
-          />
-          <Text
-            style={[
-              typography.captionBold,
-              { color: activeTab === 'market' ? colors.text.primary : colors.text.secondary },
-            ]}
+            <View style={[styles.currencyDivider, { backgroundColor: colors.border }]} />
+
+            {/* Sanctuary Tickets */}
+            <View style={styles.currencyCol}>
+              <Image
+                source={RewardAssets.currencies.sanctuaryPass}
+                style={styles.currencyIcon}
+                contentFit="contain"
+                cachePolicy="memory-disk"
+              />
+              <Text style={[typography.heading, { color: colors.text.primary, marginTop: 4 }]}>
+                {tickets.toLocaleString()}
+              </Text>
+              <Text style={[typography.caption, { color: colors.text.secondary }]}>Tickets</Text>
+            </View>
+
+            <View style={[styles.currencyDivider, { backgroundColor: colors.border }]} />
+
+            {/* Unlocked Assets Count */}
+            <View style={styles.currencyCol}>
+              <Image
+                source={RewardAssets.digitalBadges.emblemMark}
+                style={styles.currencyIcon}
+                contentFit="contain"
+                cachePolicy="memory-disk"
+              />
+              <Text style={[typography.heading, { color: colors.text.primary, marginTop: 4 }]}>
+                {marketOwned.length + ownedCards.length}
+              </Text>
+              <Text style={[typography.caption, { color: colors.text.secondary }]}>Owned Assets</Text>
+            </View>
+          </View>
+        </Card>
+
+        {/* Primary Segmented Navigation Tabs */}
+        <View style={[styles.tabBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <PressableScale
+            style={[styles.tabButton, activeTab === 'market' && { backgroundColor: colors.background }]}
+            onPress={() => {
+              hapticLight();
+              setActiveTab('market');
+            }}
           >
-            Market
-          </Text>
-        </PressableScale>
+            <Ionicons
+              name={activeTab === 'market' ? 'sparkles' : 'sparkles-outline'}
+              size={18}
+              color={activeTab === 'market' ? colors.primary : colors.text.secondary}
+            />
+            <Text
+              style={[
+                typography.captionBold,
+                { color: activeTab === 'market' ? colors.primary : colors.text.secondary },
+              ]}
+            >
+              Digital Market
+            </Text>
+          </PressableScale>
 
-        <PressableScale
-          style={[styles.segmentTab, activeTab === 'reliquary' && { backgroundColor: colors.surface }]}
-          onPress={() => setActiveTab('reliquary')}
-        >
-          <Ionicons
-            name="gift-outline"
-            size={16}
-            color={activeTab === 'reliquary' ? colors.primary : colors.text.secondary}
-          />
-          <Text
-            style={[
-              typography.captionBold,
-              { color: activeTab === 'reliquary' ? colors.text.primary : colors.text.secondary },
-            ]}
+          <PressableScale
+            style={[styles.tabButton, activeTab === 'chests' && { backgroundColor: colors.background }]}
+            onPress={() => {
+              hapticLight();
+              setActiveTab('chests');
+            }}
           >
-            Chests
-          </Text>
-        </PressableScale>
+            <Ionicons
+              name={activeTab === 'chests' ? 'gift' : 'gift-outline'}
+              size={18}
+              color={activeTab === 'chests' ? colors.primary : colors.text.secondary}
+            />
+            <Text
+              style={[
+                typography.captionBold,
+                { color: activeTab === 'chests' ? colors.primary : colors.text.secondary },
+              ]}
+            >
+              Milestone Chests
+            </Text>
+          </PressableScale>
 
-        <PressableScale
-          style={[styles.segmentTab, activeTab === 'gallery' && { backgroundColor: colors.surface }]}
-          onPress={() => setActiveTab('gallery')}
-        >
-          <Ionicons
-            name="color-palette-outline"
-            size={16}
-            color={activeTab === 'gallery' ? colors.primary : colors.text.secondary}
-          />
-          <Text
-            style={[
-              typography.captionBold,
-              { color: activeTab === 'gallery' ? colors.text.primary : colors.text.secondary },
-            ]}
+          <PressableScale
+            style={[styles.tabButton, activeTab === 'inventory' && { backgroundColor: colors.background }]}
+            onPress={() => {
+              hapticLight();
+              setActiveTab('inventory');
+            }}
           >
-            Gallery
-          </Text>
-        </PressableScale>
+            <Ionicons
+              name={activeTab === 'inventory' ? 'albums' : 'albums-outline'}
+              size={18}
+              color={activeTab === 'inventory' ? colors.primary : colors.text.secondary}
+            />
+            <Text
+              style={[
+                typography.captionBold,
+                { color: activeTab === 'inventory' ? colors.primary : colors.text.secondary },
+              ]}
+            >
+              Collection ({marketOwned.length + ownedCards.length})
+            </Text>
+          </PressableScale>
+        </View>
 
-        <PressableScale
-          style={[styles.segmentTab, activeTab === 'vault' && { backgroundColor: colors.surface }]}
-          onPress={() => setActiveTab('vault')}
-        >
-          <Ionicons
-            name="cube-outline"
-            size={16}
-            color={activeTab === 'vault' ? colors.primary : colors.text.secondary}
-          />
-          <Text
-            style={[
-              typography.captionBold,
-              { color: activeTab === 'vault' ? colors.text.primary : colors.text.secondary },
-            ]}
-          >
-            3D Vault
-          </Text>
-        </PressableScale>
-      </View>
+        {/* TAB 1: DIGITAL MARKET */}
+        {activeTab === 'market' && (
+          <View style={styles.tabContent}>
+            {/* Category Filter Pills */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
+              <Chip
+                label="All Digital"
+                selected={digitalFilter === 'all'}
+                onPress={() => {
+                  hapticLight();
+                  setDigitalFilter('all');
+                }}
+              />
+              <Chip
+                label="Collector Cards"
+                selected={digitalFilter === 'cards'}
+                onPress={() => {
+                  hapticLight();
+                  setDigitalFilter('cards');
+                }}
+              />
+              <Chip
+                label="Badges & Talismans"
+                selected={digitalFilter === 'badges'}
+                onPress={() => {
+                  hapticLight();
+                  setDigitalFilter('badges');
+                }}
+              />
+              <Chip
+                label="Profile Stickers"
+                selected={digitalFilter === 'stickers'}
+                onPress={() => {
+                  hapticLight();
+                  setDigitalFilter('stickers');
+                }}
+              />
+            </ScrollView>
 
-      {/* TAB 1: MAIN MARKETPLACE */}
-      {activeTab === 'market' && (
-        <View>
-          {/* Unlocked Collection Shelf */}
-          {(cards.length > 0 || owned.length > 0) && (
-            <View style={{ marginBottom: spacing.md }}>
-              <View style={styles.sectionHead}>
-                <Ionicons name="sparkles" size={18} color={colors.primary} />
-                <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>
-                  Your Sanctuary Relics
-                </Text>
-                <Badge label={`${cards.length} Cards · ${owned.length} Items`} variant="neutral" />
-              </View>
+            {/* Digital Asset Cards Grid */}
+            <View style={styles.itemsGrid}>
+              {filteredItems.map((item) => {
+                const isOwned = marketOwned.includes(item.id);
+                const isEquipped = activeSticker === item.id;
+                const asset = getDigitalAssetSource(item);
+                const rarityLabel = getRarityLabel(item.cost);
+                const rarityVariant = getRarityVariant(item.cost);
 
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.shelfScroll}>
-                {cards.map((c) => {
-                  const cardArt = getCardAsset(c.id);
-                  return (
-                    <View key={c.id} style={[styles.cardItem, { backgroundColor: colors.surface }]}>
-                      <Image
-                        source={cardArt}
-                        style={styles.cardItemImg}
-                        contentFit="cover"
-                        transition={150}
-                        cachePolicy="memory-disk"
-                      />
-                      <Text
-                        style={[
-                          typography.captionBold,
-                          { color: colors.text.primary, textAlign: 'center', marginTop: 4 },
-                        ]}
-                        numberOfLines={1}
-                      >
-                        {c.title}
-                      </Text>
-                      <Text style={[typography.caption, { color: colors.primary }]}>{c.rarity}</Text>
-                    </View>
-                  );
-                })}
-
-                {MARKET.filter((m) => !m.physical && owned.includes(m.id)).map((m) => {
-                  const art = getItemAsset(m.assetKey);
-                  const isEquipped = activeSticker === m.id;
-                  return (
-                    <PressableScale
-                      key={m.id}
-                      onPress={() => setActiveSticker(m.id)}
-                      style={[
-                        styles.stickerItem,
-                        {
-                          backgroundColor: colors.surface,
-                          borderColor: isEquipped ? colors.primary : colors.border,
-                          borderWidth: isEquipped ? 2 : 1,
-                        },
-                      ]}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Equip ${m.title}`}
-                    >
-                      {art ? (
+                return (
+                  <PressableScale
+                    key={item.id}
+                    onPress={() => {
+                      hapticLight();
+                      setSelectedItem(item);
+                    }}
+                    style={styles.gridItemPressable}
+                  >
+                    <Card style={styles.itemCard}>
+                      {/* High-Resolution Artwork Container */}
+                      <View style={[styles.itemArtworkWrap, { backgroundColor: colors.surface2 }]}>
                         <Image
-                          source={art}
-                          style={styles.stickerImg}
+                          source={asset}
+                          style={styles.itemImage}
                           contentFit="contain"
-                          transition={150}
                           cachePolicy="memory-disk"
+                          transition={200}
                         />
-                      ) : (
-                        <View style={[styles.stickerIconBg, { backgroundColor: colors.surface2 }]}>
-                          <Ionicons name={m.icon as keyof typeof Ionicons.glyphMap} size={28} color={colors.primary} />
+                        <View style={styles.tierBadgeWrap}>
+                          <Badge label={rarityLabel} variant={rarityVariant} />
                         </View>
-                      )}
-                      <Text
-                        style={[
-                          typography.captionBold,
-                          { color: colors.text.primary, textAlign: 'center', marginTop: 4 },
-                        ]}
-                        numberOfLines={1}
-                      >
-                        {m.title}
-                      </Text>
-                      <Badge
-                        label={isEquipped ? 'Active Badge' : 'Tap to Equip'}
-                        variant={isEquipped ? 'primary' : 'success'}
-                      />
-                    </PressableScale>
-                  );
-                })}
-              </ScrollView>
+                      </View>
+
+                      {/* Card Content & Metadata */}
+                      <View style={styles.itemBody}>
+                        <Text style={[typography.subheading, { color: colors.text.primary }]} numberOfLines={1}>
+                          {item.title}
+                        </Text>
+                        <Text
+                          style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}
+                          numberOfLines={2}
+                        >
+                          {item.description}
+                        </Text>
+
+                        {/* Price & Ownership Row */}
+                        <View style={styles.priceRow}>
+                          <View style={styles.gemPricePill}>
+                            <Image
+                              source={RewardAssets.currencies.amberGem}
+                              style={styles.tinyGemIcon}
+                              contentFit="contain"
+                            />
+                            <Text style={[typography.bodyBold, { color: colors.primary }]}>
+                              {item.cost.toLocaleString()}
+                            </Text>
+                          </View>
+
+                          {isOwned ? (
+                            <Badge
+                              label={isEquipped ? 'EQUIPPED' : 'OWNED'}
+                              variant={isEquipped ? 'primary' : 'success'}
+                            />
+                          ) : diamonds >= item.cost ? (
+                            <Badge label="UNLOCK" variant="primary" />
+                          ) : (
+                            <Badge label="NEED GEMS" variant="neutral" />
+                          )}
+                        </View>
+
+                        {/* Quick Action Button */}
+                        <View style={{ marginTop: spacing.sm }}>
+                          {isOwned ? (
+                            <Button
+                              label={isEquipped ? 'Active Insignia' : 'Equip to Profile'}
+                              variant={isEquipped ? 'outline' : 'secondary'}
+                              size="sm"
+                              onPress={() => {
+                                hapticLight();
+                                if (isEquipped) {
+                                  setActiveSticker(null);
+                                } else {
+                                  setActiveSticker(item.id);
+                                }
+                              }}
+                            />
+                          ) : (
+                            <Button
+                              label={`Unlock • ${item.cost} Gems`}
+                              variant="primary"
+                              size="sm"
+                              disabled={diamonds < item.cost}
+                              onPress={() => {
+                                hapticLight();
+                                setSelectedItem(item);
+                              }}
+                            />
+                          )}
+                        </View>
+                      </View>
+                    </Card>
+                  </PressableScale>
+                );
+              })}
             </View>
-          )}
-
-          {/* Section: Habit Stickers */}
-          <View style={{ marginBottom: spacing.md }}>
-            <View style={styles.sectionHead}>
-              <Ionicons name="pricetags-outline" size={18} color={colors.primary} />
-              <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>
-                Habit Stickers
-              </Text>
-              <Text style={[typography.caption, { color: colors.text.muted }]}>
-                {TIER_COST.sticker} Gems or 1 Token
-              </Text>
-            </View>
-
-            {MARKET.filter((m) => m.tier === 'sticker').map((m) => {
-              const have = owned.includes(m.id);
-              const art = getItemAsset(m.assetKey);
-              const shortGems = diamonds < m.cost;
-              const shortTokens = tokens < (m.tokenCost ?? 1);
-              return (
-                <Card key={m.id} style={[styles.itemCard, { marginTop: spacing.sm }]}>
-                  <View style={[styles.stickerThumb, { backgroundColor: colors.surface2 }]}>
-                    {art ? (
-                      <Image
-                        source={art}
-                        style={styles.itemImgThumb}
-                        contentFit="contain"
-                        transition={150}
-                        cachePolicy="memory-disk"
-                      />
-                    ) : (
-                      <Ionicons name={m.icon as keyof typeof Ionicons.glyphMap} size={28} color={colors.primary} />
-                    )}
-                  </View>
-                  <View style={styles.flex}>
-                    <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{m.title}</Text>
-                    <Text style={[typography.caption, { color: colors.text.secondary }]}>{m.description}</Text>
-                    <Text style={[typography.caption, { color: colors.primary, marginTop: 2 }]}>
-                      {m.cost} Gems · or {m.tokenCost ?? 1} Token
-                    </Text>
-                  </View>
-                  {have ? (
-                    <Button
-                      label={activeSticker === m.id ? 'Equipped' : 'Equip Sticker'}
-                      size="sm"
-                      variant={activeSticker === m.id ? 'primary' : 'outline'}
-                      onPress={() => setActiveSticker(m.id)}
-                    />
-                  ) : (
-                    <View style={styles.actionRow}>
-                      <Button
-                        label={`${m.cost} Gems`}
-                        size="sm"
-                        variant={shortGems ? 'outline' : 'primary'}
-                        disabled={shortGems}
-                        onPress={() => promptUnlock(m, 'gems')}
-                      />
-                      <Button
-                        label="1 Token"
-                        size="sm"
-                        variant={shortTokens ? 'outline' : 'primary'}
-                        disabled={shortTokens}
-                        onPress={() => promptUnlock(m, 'tokens')}
-                      />
-                    </View>
-                  )}
-                </Card>
-              );
-            })}
-          </View>
-
-          {/* Section: Status & Passes */}
-          <View style={{ marginBottom: spacing.md }}>
-            <View style={styles.sectionHead}>
-              <Ionicons name="ribbon-outline" size={18} color={colors.primary} />
-              <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>
-                Sanctuary Status
-              </Text>
-              <Text style={[typography.caption, { color: colors.text.muted }]}>
-                {TIER_COST.status} Gems or 1 Ticket
-              </Text>
-            </View>
-
-            {MARKET.filter((m) => m.tier === 'status').map((m) => {
-              const have = owned.includes(m.id);
-              const art = getItemAsset(m.assetKey);
-              const shortGems = diamonds < m.cost;
-              const shortTickets = tickets < 1;
-              return (
-                <Card key={m.id} style={[styles.itemCard, { marginTop: spacing.sm }]}>
-                  <View style={[styles.stickerThumb, { backgroundColor: colors.surface2 }]}>
-                    <Image
-                      source={art ?? RewardAssets.currencies.sanctuaryPass}
-                      style={{ width: 44, height: 44 }}
-                      contentFit="contain"
-                      transition={150}
-                      cachePolicy="memory-disk"
-                    />
-                  </View>
-                  <View style={styles.flex}>
-                    <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{m.title}</Text>
-                    <Text style={[typography.caption, { color: colors.text.secondary }]}>{m.description}</Text>
-                    <Text style={[typography.caption, { color: colors.primary, marginTop: 2 }]}>
-                      500 Gems · or 1 Sanctuary Ticket
-                    </Text>
-                  </View>
-                  {have ? (
-                    <Button
-                      label={activeSticker === m.id ? 'Equipped' : 'Set as Title'}
-                      size="sm"
-                      variant={activeSticker === m.id ? 'primary' : 'outline'}
-                      onPress={() => setActiveSticker(m.id)}
-                    />
-                  ) : (
-                    <View style={styles.actionRow}>
-                      <Button
-                        label="500 Gems"
-                        size="sm"
-                        variant={shortGems ? 'outline' : 'primary'}
-                        disabled={shortGems}
-                        onPress={() => promptUnlock(m, 'gems')}
-                      />
-                      <Button
-                        label="1 Ticket"
-                        size="sm"
-                        variant={shortTickets ? 'outline' : 'primary'}
-                        disabled={shortTickets}
-                        onPress={() => promptUnlock(m, 'tickets')}
-                      />
-                    </View>
-                  )}
-                </Card>
-              );
-            })}
-          </View>
-
-          {/* Section: Wellness Care Plans */}
-          <View style={{ marginBottom: spacing.md }}>
-            <View style={styles.sectionHead}>
-              <Ionicons name="fitness-outline" size={18} color={colors.primary} />
-              <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>
-                Wellness Care Plans
-              </Text>
-              <Badge label="Structured Pathways" variant="gold" />
-            </View>
-
-            {WELLNESS_PLANS.map((p) => {
-              const enrolled = owned.includes(p.id);
-              const assetImg = getItemAsset(p.assetKey);
-              const shortTokens = tokens < p.tokenCost;
-              return (
-                <Card key={p.id} style={[styles.itemCard, { marginTop: spacing.sm }]}>
-                  <View style={[styles.gearThumb, { backgroundColor: colors.surface2 }]}>
-                    {assetImg ? (
-                      <Image
-                        source={assetImg}
-                        style={{ width: 56, height: 56, borderRadius: 10 }}
-                        contentFit="cover"
-                        transition={150}
-                        cachePolicy="memory-disk"
-                      />
-                    ) : (
-                      <Ionicons name={p.icon as keyof typeof Ionicons.glyphMap} size={28} color={colors.primary} />
-                    )}
-                  </View>
-                  <View style={styles.flex}>
-                    <View style={styles.row}>
-                      <Badge label={p.category} variant="primary" />
-                    </View>
-                    <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 2 }]}>{p.title}</Text>
-                    <Text style={[typography.caption, { color: colors.text.secondary }]}>{p.description}</Text>
-                    <Text style={[typography.captionBold, { color: colors.primary, marginTop: 4 }]}>
-                      {p.cost.toLocaleString()} Gems · or {p.tokenCost} Tokens
-                    </Text>
-                  </View>
-                  {enrolled ? (
-                    <Badge label="Enrolled" variant="success" />
-                  ) : (
-                    <View style={styles.actionCol}>
-                      <Button
-                        label={`${p.tokenCost} Tokens`}
-                        size="sm"
-                        variant={shortTokens ? 'outline' : 'primary'}
-                        disabled={shortTokens}
-                        onPress={() => promptUnlock(p, 'tokens')}
-                      />
-                      <Button
-                        label={`${(p.cost / 1000).toFixed(1)}k Gems`}
-                        size="sm"
-                        variant="outline"
-                        onPress={() => promptUnlock(p, 'gems')}
-                      />
-                    </View>
-                  )}
-                </Card>
-              );
-            })}
-          </View>
-
-          {/* Section: Physical Merchandise Gear */}
-          <View style={{ marginBottom: spacing.lg }}>
-            <View style={styles.sectionHead}>
-              <Ionicons name="cube-outline" size={18} color={colors.primary} />
-              <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>
-                Real Physical Gear
-              </Text>
-              <Badge label="Limited Stock" variant="neutral" />
-            </View>
-            <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-              Delivered directly to your door. Real accessories funded strictly through verified health adherence.
-            </Text>
-
-            {MARKET.filter((m) => m.physical).map((m) => {
-              const req = requests.data?.find((r) => r.item_id === m.id);
-              const inStock = stock.data ? (stock.data[m.id] ?? 0) : 0;
-              const shortGems = diamonds < m.cost;
-              const assetImg = getItemAsset(m.assetKey);
-              const shortTokens = tokens < (m.tokenCost ?? 10);
-              return (
-                <Card key={m.id} style={[styles.itemCard, { marginTop: spacing.sm }]}>
-                  <View style={[styles.gearThumb, { backgroundColor: colors.surface2 }]}>
-                    {assetImg ? (
-                      <Image
-                        source={assetImg}
-                        style={styles.gearThumbImg}
-                        contentFit="contain"
-                        transition={150}
-                        cachePolicy="memory-disk"
-                      />
-                    ) : (
-                      <Ionicons name={m.icon as keyof typeof Ionicons.glyphMap} size={28} color={colors.primary} />
-                    )}
-                  </View>
-                  <View style={styles.flex}>
-                    <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{m.title}</Text>
-                    <Text style={[typography.caption, { color: colors.text.secondary }]}>{m.description}</Text>
-                    <View style={[styles.row, { gap: 8, marginTop: 4 }]}>
-                      <Text style={[typography.captionBold, { color: colors.primary }]}>
-                        {m.cost.toLocaleString()} Gems · or {m.tokenCost ?? 10} Tokens
-                      </Text>
-                      <Text style={[typography.caption, { color: inStock > 0 ? colors.text.muted : colors.error }]}>
-                        {inStock > 0 ? `${inStock} left this month` : 'Out of stock'}
-                      </Text>
-                    </View>
-                  </View>
-                  {req ? (
-                    <Badge label={req.status === 'pending' ? 'Requested' : req.status} variant="neutral" />
-                  ) : (
-                    <View style={styles.actionCol}>
-                      <Button
-                        label={`${m.tokenCost ?? 10} Tokens`}
-                        size="sm"
-                        variant={shortTokens ? 'outline' : 'primary'}
-                        disabled={inStock <= 0 || (shortGems && shortTokens)}
-                        onPress={() => promptUnlock(m, 'tokens')}
-                      />
-                      <Button
-                        label="Use Gems"
-                        size="sm"
-                        variant="outline"
-                        disabled={inStock <= 0 || shortGems}
-                        onPress={() => promptUnlock(m, 'gems')}
-                      />
-                    </View>
-                  )}
-                </Card>
-              );
-            })}
-          </View>
-        </View>
-      )}
-
-      {/* TAB 2: MILESTONE RELIQUARY CHESTS & COLLECTOR CARDS */}
-      {activeTab === 'reliquary' && (
-        <View style={{ marginBottom: spacing.lg }}>
-          <View style={styles.sectionHead}>
-            <Ionicons name="gift" size={20} color={colors.primary} />
-            <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>
-              Milestone Reliquary Troves
-            </Text>
-            <Badge label="5 Tiers" variant="gold" />
-          </View>
-          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2, marginBottom: spacing.md }]}>
-            Earned exclusively by reaching journey milestones on your Roadmap. Tap any chest to preview full loot animations and card drops.
-          </Text>
-
-          {LEVEL_CHESTS.map((c) => {
-            const chestArt = getChestAssets(c.level);
-            const cardArt = getCardAsset(c.card.id);
-            const isUnlocked = ledger.some((e) => e.kind === 'chest_reward' && e.key === chestKey(c.level));
-            return (
-              <Card key={c.level} style={[styles.reliquaryCard, { marginBottom: spacing.md }]}>
-                <View style={styles.rowBetween}>
-                  <View style={styles.flex}>
-                    <Text style={[typography.captionBold, { color: colors.primary }]}>
-                      MILESTONE · LEVEL {c.level}
-                    </Text>
-                    <Text style={[typography.heading, { color: colors.text.primary, marginTop: 2 }]}>
-                      {c.title}
-                    </Text>
-                  </View>
-                  <Badge label={isUnlocked ? 'Claimed' : `Level ${c.level}`} variant={isUnlocked ? 'success' : 'neutral'} />
-                </View>
-
-                <Text style={[typography.caption, { color: colors.text.secondary, marginVertical: spacing.sm }]}>
-                  +{c.gems} Amber Gems · Unlocks the {c.card.title} ({c.card.rarity}) Collector Card.
-                </Text>
-
-                {/* Dual Chest State Display */}
-                <View style={styles.dualChestRow}>
-                  <View style={styles.chestStateCol}>
-                    <Image
-                      source={chestArt.closed}
-                      style={styles.largeChestImg}
-                      contentFit="contain"
-                      transition={150}
-                      cachePolicy="memory-disk"
-                    />
-                    <Text style={[typography.captionBold, { color: colors.text.muted, marginTop: 4 }]}>Closed State</Text>
-                  </View>
-                  <View style={styles.chestStateCol}>
-                    <Image
-                      source={chestArt.burst}
-                      style={styles.largeChestImg}
-                      contentFit="contain"
-                      transition={150}
-                      cachePolicy="memory-disk"
-                    />
-                    <Text style={[typography.captionBold, { color: colors.primary, marginTop: 4 }]}>Burst Eruption</Text>
-                  </View>
-                </View>
-
-                {/* Card Drop Preview */}
-                <View style={[styles.cardDropPreview, { backgroundColor: colors.surface1 }]}>
-                  <Image
-                    source={cardArt}
-                    style={styles.miniCardImg}
-                    contentFit="cover"
-                    transition={150}
-                    cachePolicy="memory-disk"
-                  />
-                  <View style={styles.flex}>
-                    <Text style={[typography.captionBold, { color: colors.primary }]}>{c.card.rarity.toUpperCase()} COLLECTOR CARD</Text>
-                    <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{c.card.title}</Text>
-                    <Text style={[typography.caption, { color: colors.text.secondary }]}>Debossed geometric watermark seal</Text>
-                  </View>
-                  <Button label="Inspect Loot" size="sm" variant="outline" onPress={() => setChest(c)} />
-                </View>
-              </Card>
-            );
-          })}
-        </View>
-      )}
-
-      {/* TAB 3: ARTISANAL GOUACHE GALLERY */}
-      {activeTab === 'gallery' && (
-        <View style={{ marginBottom: spacing.lg }}>
-          <View style={styles.sectionHead}>
-            <Ionicons name="color-palette" size={20} color={colors.primary} />
-            <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>
-              Artisanal Gouache Gallery
-            </Text>
-            <Badge label="11 Studies" variant="primary" />
-          </View>
-          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2, marginBottom: spacing.md }]}>
-            Hand-painted Scandinavian-Japanese gouache on textured cotton paper. Tap any artwork to inspect full details.
-          </Text>
-
-          <View style={{ minHeight: 400 }}>
-            <FlashList
-              data={EDITORIAL_ARTWORKS}
-              keyExtractor={(item) => item.id}
-              renderItem={renderGalleryItem}
-              numColumns={2}
-              scrollEnabled={false}
-              ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-            />
-          </View>
-        </View>
-      )}
-
-      {/* TAB 4: 3D ARTIFACTS VAULT */}
-      {activeTab === 'vault' && (
-        <View style={{ marginBottom: spacing.lg }}>
-          <View style={styles.sectionHead}>
-            <Ionicons name="cube" size={20} color={colors.primary} />
-            <Text style={[typography.subheading, styles.flex, { color: colors.text.primary }]}>
-              Master 3D Artifacts Vault
-            </Text>
-            <Badge label={`${filteredVault.length} Renders`} variant="gold" />
-          </View>
-          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2, marginBottom: spacing.sm }]}>
-            All 36 high-resolution 3D volumetric renders, medallions, vouchers, and composite promotional keyframes.
-          </Text>
-
-          {/* Filter Pills */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterPillsScroll}>
-            {(
-              [
-                'All',
-                'Cinematic Banners',
-                'Reliquary Chests',
-                'Collector Cards',
-                'Currencies & Tokens',
-                'Physical Gear',
-              ] as VaultFilter[]
-            ).map((filter) => (
-              <PressableScale
-                key={filter}
-                onPress={() => setVaultFilter(filter)}
-                style={[
-                  styles.filterPill,
-                  {
-                    backgroundColor: vaultFilter === filter ? colors.primary : colors.surface,
-                    borderColor: colors.border,
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    typography.captionBold,
-                    { color: vaultFilter === filter ? colors.onPrimary : colors.text.secondary },
-                  ]}
-                >
-                  {filter}
-                </Text>
-              </PressableScale>
-            ))}
-          </ScrollView>
-
-          {/* Master 3D Artifacts Grid via FlashList */}
-          <View style={{ minHeight: 600 }}>
-            <FlashList
-              data={filteredVault}
-              keyExtractor={(item) => item.id}
-              renderItem={renderVaultItem}
-              numColumns={2}
-              scrollEnabled={false}
-              ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-            />
-          </View>
-        </View>
-      )}
-
-      {/* Everyday Earning Guide */}
-      <Text style={[typography.subheading, { color: colors.text.primary, marginBottom: spacing.sm }]}>
-        Everyday Habit Earnings
-      </Text>
-      {Object.values(ACTION_REWARDS).map((a) => (
-        <View key={a.label} style={styles.earnRow}>
-          <Text style={[typography.body, styles.flex, { color: colors.text.secondary }]}>{a.label}</Text>
-          <Text style={[typography.bodyBold, { color: colors.primary }]}>+{a.gems} Gems</Text>
-        </View>
-      ))}
-      <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.sm, marginBottom: spacing.xl }]}>
-        Rewards never reset. Streaks add up to a 2.5× multiplier. Everything here is earned through verified wellness habits.
-      </Text>
-
-      {/* Loot Box Inspection Modal */}
-      <LootBoxModal key={chest?.level ?? 0} chest={chest} onClose={() => setChest(null)} />
-
-      {/* Physical Delivery Request Bottom Sheet */}
-      <AppBottomSheetModal
-        visible={gear !== null}
-        onClose={() => setGear(null)}
-        title={gear?.title ?? 'Claim Reward'}
-        subtitle="Delivery request"
-      >
-        <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: spacing.sm }]}>
-          {gear && gear.id.startsWith('plan_')
-            ? 'Enrolling unlocks 30 daily coaching routines, personalized diet plans, and verified tracking.'
-            : 'Shipped to you at zero cost. We will text you tracking when your package leaves.'}
-        </Text>
-
-        <View style={styles.orderSummary}>
-          <Text style={[typography.captionBold, { color: colors.text.secondary }]}>Payment Selection</Text>
-          <View style={[styles.row, { gap: 10, marginTop: 6 }]}>
-            <PressableScale
-              style={[
-                styles.payChoice,
-                payMethod === 'gems' && { borderColor: colors.primary, backgroundColor: colors.primaryAlpha },
-              ]}
-              onPress={() => setPayMethod('gems')}
-            >
-              <Text style={[typography.captionBold, { color: payMethod === 'gems' ? colors.primary : colors.text.primary }]}>
-                {gear ? gear.cost.toLocaleString() : 0} Gems
-              </Text>
-              <Text style={[typography.caption, { color: colors.text.muted }]}>Balance: {diamonds.toLocaleString()}</Text>
-            </PressableScale>
-
-            <PressableScale
-              style={[
-                styles.payChoice,
-                payMethod === 'tokens' && { borderColor: colors.primary, backgroundColor: colors.primaryAlpha },
-              ]}
-              onPress={() => setPayMethod('tokens')}
-            >
-              <Text style={[typography.captionBold, { color: payMethod === 'tokens' ? colors.primary : colors.text.primary }]}>
-                {gear ? (gear.tokenCost ?? 10) : 10} Tokens
-              </Text>
-              <Text style={[typography.caption, { color: colors.text.muted }]}>Balance: {tokens}</Text>
-            </PressableScale>
-          </View>
-        </View>
-
-        {gear && !gear.id.startsWith('plan_') && (
-          <View style={{ gap: spacing.sm, marginTop: spacing.md }}>
-            <TextField
-              label="Full name"
-              value={fullName}
-              onChangeText={setFullName}
-              placeholder="First and last name"
-              autoCapitalize="words"
-            />
-            <TextField
-              label="Phone"
-              value={phone}
-              onChangeText={setPhone}
-              placeholder="+91 or phone with country code"
-              keyboardType="phone-pad"
-            />
-            <TextField
-              label="Delivery address"
-              value={address}
-              onChangeText={setAddress}
-              placeholder="Flat/house, street, city, pin code"
-              multiline
-              numberOfLines={3}
-            />
           </View>
         )}
 
-        <View style={{ marginTop: spacing.md, gap: spacing.sm }}>
-          <Button
-            label={gear && gear.id.startsWith('plan_') ? 'Enroll in Pathway' : 'Submit Delivery Request'}
-            onPress={confirmGearRequest}
-            disabled={Boolean(gear && !gear.id.startsWith('plan_') && !validOrder)}
-          />
-          <Button label="Cancel" variant="outline" onPress={() => setGear(null)} />
+        {/* TAB 2: MILESTONE CHESTS */}
+        {activeTab === 'chests' && (
+          <View style={styles.tabContent}>
+            <View style={styles.chestsHero}>
+              <Text style={[typography.subheading, { color: colors.text.primary }]}>
+                Milestone Level Reliquaries
+              </Text>
+              <Text style={[typography.body, { color: colors.text.secondary, marginTop: 4 }]}>
+                Deterministic progression chests unlocked by reaching key wellness levels. Each chest contains scarce
+                Amber Gems and a rare collectible Sanctuary Card.
+              </Text>
+            </View>
+
+            <View style={styles.chestsList}>
+              {LEVEL_CHESTS.map((chest) => {
+                const chestAssets = getChestAssets(chest.level);
+                const isClaimed = rewardLedger.some((e) => e.key === chestKey(chest.level));
+                const isEligible = userLevel >= chest.level;
+                const cardArt = getCardAsset(chest.card.id);
+
+                return (
+                  <Card key={chest.level} style={styles.chestCard}>
+                    <View style={styles.chestRow}>
+                      {/* 3D Chest Render */}
+                      <View style={styles.chestVisualWrap}>
+                        <Image
+                          source={isClaimed ? chestAssets.burst : chestAssets.closed}
+                          style={styles.chestImage}
+                          contentFit="contain"
+                          cachePolicy="memory-disk"
+                        />
+                      </View>
+
+                      {/* Chest Info */}
+                      <View style={styles.chestMeta}>
+                        <View style={styles.chestHeaderRow}>
+                          <Badge
+                            label={`LEVEL ${chest.level}`}
+                            variant={isClaimed ? 'neutral' : isEligible ? 'success' : 'primary'}
+                          />
+                          <Badge
+                            label={isClaimed ? 'CLAIMED' : isEligible ? 'READY TO OPEN' : 'LOCKED'}
+                            variant={isClaimed ? 'neutral' : isEligible ? 'gold' : 'neutral'}
+                          />
+                        </View>
+
+                        <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 6 }]}>
+                          {chest.title}
+                        </Text>
+
+                        {/* Guaranteed Drops Preview */}
+                        <View style={styles.guaranteedDrops}>
+                          <View style={styles.dropItem}>
+                            <Image source={RewardAssets.currencies.amberGem} style={styles.dropIcon} contentFit="contain" />
+                            <Text style={[typography.captionBold, { color: colors.text.primary }]}>
+                              +{chest.gems} Gems
+                            </Text>
+                          </View>
+                          <View style={styles.dropItem}>
+                            <Image source={cardArt} style={styles.dropCardThumb} contentFit="cover" />
+                            <Text style={[typography.caption, { color: colors.text.secondary }]} numberOfLines={1}>
+                              {chest.card.title}
+                            </Text>
+                          </View>
+                        </View>
+
+                        {/* Action */}
+                        <View style={{ marginTop: spacing.sm }}>
+                          {isClaimed ? (
+                            <View style={styles.claimedRow}>
+                              <Ionicons name="checkmark-circle" size={18} color={colors.primary} />
+                              <Text style={[typography.caption, { color: colors.text.secondary, marginLeft: 6 }]}>
+                                Claimed • Card saved in Collection
+                              </Text>
+                            </View>
+                          ) : isEligible ? (
+                            <Button
+                              label="Open Reliquary Now"
+                              variant="primary"
+                              size="sm"
+                              onPress={() => {
+                                hapticHeavy();
+                                setSelectedChest(chest);
+                              }}
+                              icon={<Ionicons name="gift" size={16} color="#FFF" />}
+                            />
+                          ) : (
+                            <View style={styles.lockedRow}>
+                              <Ionicons name="lock-closed-outline" size={16} color={colors.text.muted} />
+                              <Text style={[typography.caption, { color: colors.text.muted, marginLeft: 6 }]}>
+                                Reach Level {chest.level} to Unlock (Currently Lvl {userLevel})
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                      </View>
+                    </View>
+                  </Card>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
+        {/* TAB 3: MY COLLECTION (INVENTORY) */}
+        {activeTab === 'inventory' && (
+          <View style={styles.tabContent}>
+            {/* Active Equipped Profile Insignia */}
+            <Card style={styles.activeEquippedCard}>
+              <Text style={[typography.caption, { color: colors.text.muted, letterSpacing: 0.8 }]}>
+                ACTIVE PROFILE INSIGNIA
+              </Text>
+              {activeSticker ? (
+                <View style={styles.activeEquippedRow}>
+                  {(() => {
+                    const activeObj = digitalItems.find((m) => m.id === activeSticker);
+                    const asset = activeObj ? getDigitalAssetSource(activeObj) : null;
+                    return (
+                      <>
+                        <Image source={asset} style={styles.activeEquippedImg} contentFit="contain" />
+                        <View style={{ flex: 1, marginLeft: spacing.md }}>
+                          <Text style={[typography.subheading, { color: colors.text.primary }]}>
+                            {activeObj?.title ?? activeSticker}
+                          </Text>
+                          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                            Displayed prominently next to your name across your personal Sanctuary
+                          </Text>
+                        </View>
+                        <Button
+                          label="Unequip"
+                          variant="outline"
+                          size="sm"
+                          onPress={() => {
+                            hapticLight();
+                            setActiveSticker(null);
+                          }}
+                        />
+                      </>
+                    );
+                  })()}
+                </View>
+              ) : (
+                <View style={styles.activeEquippedEmpty}>
+                  <Ionicons name="shield-outline" size={32} color={colors.text.muted} />
+                  <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 6 }]}>
+                    No badge or sticker currently equipped. Choose any unlocked asset below!
+                  </Text>
+                </View>
+              )}
+            </Card>
+
+            {/* Section 1: Milestone Collector Cards */}
+            <View style={{ marginTop: spacing.lg }}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={[typography.subheading, { color: colors.text.primary }]}>
+                  Collector Cards ({ownedCards.length})
+                </Text>
+                <Badge label="CARDS" variant="gold" />
+              </View>
+
+              {ownedCards.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <Ionicons name="albums-outline" size={36} color={colors.text.muted} />
+                  <Text style={[typography.body, { color: colors.text.secondary, marginTop: 8, textAlign: 'center' }]}>
+                    No milestone cards yet. Level up by completing healthy habits to open milestone reliquary chests!
+                  </Text>
+                </View>
+              ) : (
+                <View style={styles.cardsGrid}>
+                  {ownedCards.map((chest) => {
+                    const cardArt = getCardAsset(chest.card.id);
+                    return (
+                      <Card key={chest.card.id} style={styles.collectorCardItem}>
+                        <Image source={cardArt} style={styles.collectorCardImage} contentFit="cover" cachePolicy="memory-disk" />
+                        <View style={styles.collectorCardBody}>
+                          <Badge label={chest.card.rarity.toUpperCase()} variant="gold" />
+                          <Text style={[typography.subheading, { color: colors.text.primary, marginTop: 6 }]}>
+                            {chest.card.title}
+                          </Text>
+                          <Text style={[typography.caption, { color: colors.text.muted, marginTop: 2 }]}>
+                            Level {chest.level} Relic Reward
+                          </Text>
+                        </View>
+                      </Card>
+                    );
+                  })}
+                </View>
+              )}
+            </View>
+
+            {/* Section 2: Unlocked Digital Badges & Stickers */}
+            <View style={{ marginTop: spacing.xl }}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={[typography.subheading, { color: colors.text.primary }]}>
+                  Unlocked Badges & Stickers ({ownedDigitalObjects.length})
+                </Text>
+                <Badge label="SANCTUARY VAULT" variant="primary" />
+              </View>
+
+              {ownedDigitalObjects.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <Ionicons name="sparkles-outline" size={36} color={colors.text.muted} />
+                  <Text style={[typography.body, { color: colors.text.secondary, marginTop: 8, textAlign: 'center' }]}>
+                    Your digital vault is empty. Earn Amber Gems through everyday mindfulness and unlock badges in the Market!
+                  </Text>
+                </View>
+              ) : (
+                <View style={styles.inventoryGrid}>
+                  {ownedDigitalObjects.map((item) => {
+                    const isEquipped = activeSticker === item.id;
+                    const asset = getDigitalAssetSource(item);
+
+                    return (
+                      <Card key={item.id} style={styles.inventoryCard}>
+                        <View style={[styles.inventoryVisualWrap, { backgroundColor: colors.surface2 }]}>
+                          <Image source={asset} style={styles.inventoryImg} contentFit="contain" cachePolicy="memory-disk" />
+                        </View>
+                        <View style={styles.inventoryBody}>
+                          <Text style={[typography.captionBold, { color: colors.text.primary }]} numberOfLines={1}>
+                            {item.title}
+                          </Text>
+                          <Text style={[typography.caption, { color: colors.text.muted, marginTop: 2 }]} numberOfLines={1}>
+                            {item.tier.toUpperCase()}
+                          </Text>
+                          <View style={{ marginTop: spacing.sm }}>
+                            <Button
+                              label={isEquipped ? 'Equipped' : 'Equip'}
+                              variant={isEquipped ? 'primary' : 'outline'}
+                              size="sm"
+                              onPress={() => {
+                                hapticLight();
+                                if (isEquipped) {
+                                  setActiveSticker(null);
+                                } else {
+                                  setActiveSticker(item.id);
+                                }
+                              }}
+                            />
+                          </View>
+                        </View>
+                      </Card>
+                    );
+                  })}
+                </View>
+              )}
+            </View>
+          </View>
+        )}
+      </ScrollView>
+
+      {/* MODAL 1: DIGITAL ASSET DETAIL & UNLOCK SHEET */}
+      <AppBottomSheetModal
+        visible={Boolean(selectedItem)}
+        onClose={() => setSelectedItem(null)}
+        title={selectedItem?.title ?? 'Digital Asset'}
+      >
+        {selectedItem && (
+          <View style={styles.modalBody}>
+            {/* Asset High-Res Showcase */}
+            <View style={[styles.modalImageWrap, { backgroundColor: colors.surface2 }]}>
+              <Image
+                source={getDigitalAssetSource(selectedItem)}
+                style={styles.modalImage}
+                contentFit="contain"
+                cachePolicy="memory-disk"
+              />
+            </View>
+
+            {/* Rarity & Title */}
+            <View style={styles.modalMetaRow}>
+              <Badge
+                label={getRarityLabel(selectedItem.cost)}
+                variant={getRarityVariant(selectedItem.cost)}
+              />
+              <Text style={[typography.caption, { color: colors.text.muted }]}>
+                {selectedItem.tier.toUpperCase()} • SANCTUARY ASSET
+              </Text>
+            </View>
+
+            <Text style={[typography.heading, { color: colors.text.primary, marginTop: 8 }]}>
+              {selectedItem.title}
+            </Text>
+
+            <Text style={[typography.body, { color: colors.text.secondary, marginTop: 6, lineHeight: 22 }]}>
+              {selectedItem.description}
+            </Text>
+
+            {/* Digital Authenticity & Balance Box */}
+            <View style={[styles.affordBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <View style={styles.affordRow}>
+                <Text style={[typography.caption, { color: colors.text.muted }]}>UNLOCK PRICE</Text>
+                <View style={styles.gemPricePill}>
+                  <Image source={RewardAssets.currencies.amberGem} style={styles.tinyGemIcon} contentFit="contain" />
+                  <Text style={[typography.subheading, { color: colors.primary }]}>
+                    {selectedItem.cost.toLocaleString()} Gems
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.affordRow}>
+                <Text style={[typography.caption, { color: colors.text.muted }]}>YOUR CURRENT BALANCE</Text>
+                <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+                  {diamonds.toLocaleString()} Gems
+                </Text>
+              </View>
+
+              <View style={styles.affordDivider} />
+
+              <View style={styles.affordRow}>
+                <Text style={[typography.captionBold, { color: colors.text.primary }]}>STATUS</Text>
+                {marketOwned.includes(selectedItem.id) ? (
+                  <Badge label="IN YOUR COLLECTION" variant="success" />
+                ) : diamonds >= selectedItem.cost ? (
+                  <Badge label="AVAILABLE TO UNLOCK" variant="success" />
+                ) : (
+                  <Badge label={`NEED ${(selectedItem.cost - diamonds).toLocaleString()} MORE GEMS`} variant="neutral" />
+                )}
+              </View>
+            </View>
+
+            {/* Unlock Action Button */}
+            <View style={{ marginTop: spacing.lg }}>
+              {marketOwned.includes(selectedItem.id) ? (
+                <Button
+                  label={activeSticker === selectedItem.id ? 'Equipped as Active Insignia' : 'Equip to Profile'}
+                  variant={activeSticker === selectedItem.id ? 'outline' : 'primary'}
+                  onPress={() => {
+                    hapticLight();
+                    if (activeSticker === selectedItem.id) {
+                      setActiveSticker(null);
+                    } else {
+                      setActiveSticker(selectedItem.id);
+                    }
+                    setSelectedItem(null);
+                  }}
+                />
+              ) : (
+                <Button
+                  label={`Unlock for ${selectedItem.cost.toLocaleString()} Gems`}
+                  variant="primary"
+                  disabled={diamonds < selectedItem.cost}
+                  onPress={() => handleConfirmPurchase(selectedItem)}
+                  icon={<Ionicons name="sparkles" size={18} color="#FFF" />}
+                />
+              )}
+            </View>
+          </View>
+        )}
+      </AppBottomSheetModal>
+
+      {/* MODAL 2: UNLOCK SUCCESS CELEBRATION SHEET */}
+      <AppBottomSheetModal
+        visible={Boolean(unlockedSuccessItem)}
+        onClose={() => setUnlockedSuccessItem(null)}
+        title="Asset Unlocked!"
+      >
+        {unlockedSuccessItem && (
+          <View style={styles.modalBody}>
+            <View style={styles.successIconWrap}>
+              <Ionicons name="checkmark-circle" size={56} color={colors.primary} />
+            </View>
+
+            <Text style={[typography.heading, { color: colors.text.primary, textAlign: 'center', marginTop: 12 }]}>
+              {unlockedSuccessItem.title}
+            </Text>
+
+            <Text style={[typography.body, { color: colors.text.secondary, textAlign: 'center', marginTop: 8 }]}>
+              Successfully unlocked and saved to your permanent Sanctuary Vault.
+            </Text>
+
+            <View style={{ marginTop: spacing.xl, gap: spacing.sm }}>
+              <Button
+                label="Equip as Active Insignia"
+                variant="primary"
+                onPress={() => {
+                  hapticLight();
+                  setActiveSticker(unlockedSuccessItem.id);
+                  setUnlockedSuccessItem(null);
+                }}
+              />
+              <Button
+                label="View in Collection"
+                variant="outline"
+                onPress={() => {
+                  hapticLight();
+                  setUnlockedSuccessItem(null);
+                  setActiveTab('inventory');
+                }}
+              />
+            </View>
+          </View>
+        )}
+      </AppBottomSheetModal>
+
+      {/* MODAL 3: CURRENCY FORGE BOTTOM SHEET */}
+      <AppBottomSheetModal
+        visible={showForgeSheet}
+        onClose={() => setShowForgeSheet(false)}
+        title="Sanctuary Currency Forge"
+      >
+        <View style={styles.modalBody}>
+          <Text style={[typography.body, { color: colors.text.secondary, marginBottom: spacing.md }]}>
+            Convert your earned Amber Gems into Sanctuary Pass Tickets or Golden Tokens.
+          </Text>
+
+          {/* Forge Ticket Option */}
+          <Card style={styles.forgeOptionCard}>
+            <View style={styles.forgeRow}>
+              <Image source={RewardAssets.currencies.sanctuaryPass} style={styles.forgeIcon} contentFit="contain" />
+              <View style={{ flex: 1, marginLeft: spacing.md }}>
+                <Text style={[typography.subheading, { color: colors.text.primary }]}>
+                  Forge Sanctuary Ticket
+                </Text>
+                <Text style={[typography.caption, { color: colors.text.muted, marginTop: 2 }]}>
+                  Cost: {TICKET_FORGE_GEMS} Amber Gems
+                </Text>
+              </View>
+              <Button
+                label="Forge"
+                variant="primary"
+                size="sm"
+                disabled={diamonds < TICKET_FORGE_GEMS}
+                onPress={handleForgeTicketAction}
+              />
+            </View>
+          </Card>
+
+          {/* Forge Token with Tickets Option */}
+          <Card style={styles.forgeOptionCard}>
+            <View style={styles.forgeRow}>
+              <Image source={RewardAssets.currencies.marketplaceToken} style={styles.forgeIcon} contentFit="contain" />
+              <View style={{ flex: 1, marginLeft: spacing.md }}>
+                <Text style={[typography.subheading, { color: colors.text.primary }]}>
+                  Forge Golden Token (Tickets)
+                </Text>
+                <Text style={[typography.caption, { color: colors.text.muted, marginTop: 2 }]}>
+                  Cost: {TOKEN_FORGE_TICKETS} Sanctuary Tickets
+                </Text>
+              </View>
+              <Button
+                label="Forge"
+                variant="secondary"
+                size="sm"
+                disabled={tickets < TOKEN_FORGE_TICKETS}
+                onPress={() => handleForgeTokenAction(true)}
+              />
+            </View>
+          </Card>
+
+          {/* Forge Token with Gems Direct */}
+          <Card style={styles.forgeOptionCard}>
+            <View style={styles.forgeRow}>
+              <Image source={RewardAssets.currencies.goldenGem} style={styles.forgeIcon} contentFit="contain" />
+              <View style={{ flex: 1, marginLeft: spacing.md }}>
+                <Text style={[typography.subheading, { color: colors.text.primary }]}>
+                  Forge Golden Token (Direct)
+                </Text>
+                <Text style={[typography.caption, { color: colors.text.muted, marginTop: 2 }]}>
+                  Cost: {TOKEN_FORGE_GEMS.toLocaleString()} Amber Gems
+                </Text>
+              </View>
+              <Button
+                label="Forge"
+                variant="outline"
+                size="sm"
+                disabled={diamonds < TOKEN_FORGE_GEMS}
+                onPress={() => handleForgeTokenAction(false)}
+              />
+            </View>
+          </Card>
         </View>
       </AppBottomSheetModal>
 
-      {/* Full-Screen Art / 3D Artifact Inspection Modal */}
-      {inspectArt && (
-        <Modal visible transparent animationType="fade" onRequestClose={() => setInspectArt(null)}>
-          <View style={[styles.modalScrim, { backgroundColor: colors.scrim }]}>
-            <Pressable
-              style={StyleSheet.absoluteFill}
-              onPress={() => setInspectArt(null)}
-              accessibilityRole="button"
-              accessibilityLabel="Close inspection modal"
-            />
-            <View style={[styles.modalCard, { backgroundColor: colors.background }]}>
-              <View style={styles.modalCardHeader}>
-                <Badge label={inspectArt.category} variant="gold" />
-                <Pressable
-                  onPress={() => setInspectArt(null)}
-                  accessibilityRole="button"
-                  accessibilityLabel="Close"
-                  hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
-                >
-                  <Ionicons name="close-circle" size={26} color={colors.text.muted} />
-                </Pressable>
-              </View>
-              <Image
-                source={'source' in inspectArt ? inspectArt.source : getItemAsset(inspectArt.assetKey)}
-                style={{ width: Math.min(CONTENT_WIDTH, 360), height: 260, borderRadius: 16 }}
-                contentFit="contain"
-                transition={150}
-                cachePolicy="memory-disk"
-              />
-              <View style={styles.modalBody}>
-                <Text style={[typography.heading, { color: colors.text.primary, marginTop: 6 }]}>
-                  {inspectArt.title}
-                </Text>
-                <Text style={[typography.body, { color: colors.text.secondary, marginTop: 6 }]}>
-                  {inspectArt.description}
-                </Text>
-                <View style={{ marginTop: spacing.md }}>
-                  <Button label="Done" onPress={() => setInspectArt(null)} />
-                </View>
-              </View>
-            </View>
-          </View>
-        </Modal>
+      {/* MODAL 4: MILESTONE CHEST REVEAL MODAL */}
+      {selectedChest && (
+        <LootBoxModal
+          chest={selectedChest}
+          onClose={() => setSelectedChest(null)}
+        />
       )}
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
-  row: { flexDirection: 'row', alignItems: 'center' },
-  rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  walletCard: { padding: 16, borderRadius: 20 },
-  walletHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  currencyRow: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' },
-  currencyCol: { alignItems: 'center', flex: 1 },
-  currencyIcon: { width: 36, height: 36 },
-  walletDivider: { width: 1, height: 48, opacity: 0.3 },
-  forgeBar: { flexDirection: 'row', alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth },
-  forgeButtons: { flexDirection: 'row', gap: 6 },
-  sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  heroScroll: { gap: 12, paddingVertical: 4 },
-  heroBannerWrap: {
-    width: HERO_CARD_WIDTH,
-    height: HERO_CARD_HEIGHT,
-    borderRadius: 18,
-    overflow: 'hidden',
-    position: 'relative',
+  container: {
+    flex: 1,
   },
-  heroBannerImg: { width: HERO_CARD_WIDTH, height: HERO_CARD_HEIGHT },
-  heroOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 10,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 60,
   },
-  segmentContainer: {
+  walletCard: {
+    padding: 18,
+    borderRadius: 20,
+    marginBottom: 16,
+  },
+  walletHeader: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  currencyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    paddingVertical: 8,
+  },
+  currencyCol: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  currencyIcon: {
+    width: 44,
+    height: 44,
+  },
+  currencyDivider: {
+    width: 1,
+    height: 38,
+  },
+  tabBar: {
+    flexDirection: 'row',
+    borderWidth: 1,
     borderRadius: 14,
     padding: 4,
-    gap: 4,
+    marginBottom: 16,
   },
-  segmentTab: {
+  tabButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderRadius: 10,
+    gap: 6,
   },
-  shelfScroll: { gap: 10, paddingVertical: 6 },
-  cardItem: {
-    width: 96,
-    alignItems: 'center',
-    borderRadius: 14,
-    padding: 8,
+  tabContent: {
+    flex: 1,
   },
-  cardItemImg: { width: 88, height: 120, borderRadius: 10 },
-  stickerItem: {
-    width: 96,
-    alignItems: 'center',
-    borderRadius: 14,
-    padding: 10,
-  },
-  stickerImg: { width: 52, height: 52, borderRadius: 12 },
-  stickerIconBg: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  itemCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 12,
-  },
-  stickerThumb: {
-    width: 52,
-    height: 52,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  itemImgThumb: { width: 48, height: 48, borderRadius: 10 },
-  gearThumb: {
-    width: 60,
-    height: 60,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  gearThumbImg: { width: 56, height: 56 },
-  actionRow: { flexDirection: 'row', gap: 6 },
-  actionCol: { alignItems: 'flex-end', gap: 6 },
-  earnRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6 },
-  reliquaryCard: {
-    padding: 16,
-    borderRadius: 22,
-  },
-  dualChestRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    marginVertical: 12,
-  },
-  chestStateCol: {
-    alignItems: 'center',
-  },
-  largeChestImg: {
-    width: 130,
-    height: 130,
-  },
-  cardDropPreview: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 10,
-    borderRadius: 14,
-  },
-  miniCardImg: {
-    width: 52,
-    height: 72,
-    borderRadius: 8,
-  },
-  filterPillsScroll: {
+  filterScroll: {
     gap: 8,
     paddingBottom: 12,
   },
-  filterPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
+  itemsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
   },
-  gridCard: {
-    borderRadius: 18,
+  gridItemPressable: {
+    width: '48%',
+  },
+  itemCard: {
+    borderRadius: 16,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.06)',
-    marginRight: 10,
+    padding: 0,
   },
-  gridCardMeta: {
-    padding: 10,
-  },
-  modalScrim: {
-    flex: 1,
+  itemArtworkWrap: {
+    width: '100%',
+    height: 140,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
+    position: 'relative',
+    padding: 12,
   },
-  modalCard: {
-    width: '100%',
-    maxWidth: 420,
-    borderRadius: 24,
-    overflow: 'hidden',
-    padding: 16,
+  itemImage: {
+    width: '90%',
+    height: '90%',
+  },
+  tierBadgeWrap: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+  },
+  itemBody: {
+    padding: 12,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: 10,
   },
-  modalCardHeader: {
-    width: '100%',
+  gemPricePill: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 10,
+    gap: 4,
   },
-  modalBody: {
-    padding: 16,
-    width: '100%',
+  tinyGemIcon: {
+    width: 18,
+    height: 18,
   },
-  orderSummary: {
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.08)',
+  chestsHero: {
+    marginBottom: 16,
   },
-  payChoice: {
-    flex: 1,
-    padding: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.1)',
-    alignItems: 'center',
+  chestsList: {
+    gap: 14,
   },
-  disabledContainer: {
-    flex: 1,
+  chestCard: {
+    borderRadius: 18,
+    padding: 14,
+  },
+  chestRow: {
+    flexDirection: 'row',
+    gap: 14,
+  },
+  chestVisualWrap: {
+    width: 90,
+    height: 90,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  chestImage: {
+    width: 86,
+    height: 86,
+  },
+  chestMeta: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  chestHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  guaranteedDrops: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 8,
+  },
+  dropItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  dropIcon: {
+    width: 16,
+    height: 16,
+  },
+  dropCardThumb: {
+    width: 18,
+    height: 24,
+    borderRadius: 3,
+  },
+  claimedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  lockedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  activeEquippedCard: {
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 8,
+  },
+  activeEquippedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  activeEquippedImg: {
+    width: 52,
+    height: 52,
+    borderRadius: 12,
+  },
+  activeEquippedEmpty: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  cardsGrid: {
+    gap: 14,
+  },
+  collectorCardItem: {
+    borderRadius: 18,
+    overflow: 'hidden',
+    padding: 0,
+    marginBottom: 10,
+  },
+  collectorCardImage: {
+    width: '100%',
+    height: 180,
+  },
+  collectorCardBody: {
+    padding: 14,
+  },
+  inventoryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  inventoryCard: {
+    width: '48%',
+    borderRadius: 16,
+    overflow: 'hidden',
+    padding: 0,
+  },
+  inventoryVisualWrap: {
+    width: '100%',
+    height: 110,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 10,
+  },
+  inventoryImg: {
+    width: '80%',
+    height: '80%',
+  },
+  inventoryBody: {
+    padding: 10,
+  },
+  emptyState: {
     padding: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalBody: {
+    paddingVertical: 8,
+  },
+  modalImageWrap: {
+    width: '100%',
+    height: 190,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    marginBottom: 14,
+  },
+  modalImage: {
+    width: '90%',
+    height: '90%',
+  },
+  modalMetaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  affordBox: {
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 14,
+    marginTop: 14,
+  },
+  affordRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginVertical: 4,
+  },
+  affordDivider: {
+    height: 1,
+    backgroundColor: '#E0E0E0',
+    marginVertical: 8,
+  },
+  successIconWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  forgeOptionCard: {
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 10,
+  },
+  forgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  forgeIcon: {
+    width: 44,
+    height: 44,
   },
 });

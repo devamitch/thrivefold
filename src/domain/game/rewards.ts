@@ -47,22 +47,36 @@ export interface MarketItem {
 export const TIER_COST: Record<MarketTier, number> = { sticker: 100, status: 500, gear: 10_000 };
 
 export const MARKET: MarketItem[] = [
-  { id: 'sticker_zen_fox', icon: 'leaf', tier: 'sticker', title: 'Meditating Zen Fox', description: 'Profile sticker for calm streaks.', cost: TIER_COST.sticker, tokenCost: 1, assetKey: 'cardGroundedSeeker' },
-  { id: 'sticker_hydration_drop', icon: 'water', tier: 'sticker', title: 'Living Hydration Drop', description: 'For people who never skip water.', cost: TIER_COST.sticker, tokenCost: 1, assetKey: 'amberGem' },
-  { id: 'sticker_slumber_moon', icon: 'moon', tier: 'sticker', title: 'Slumber Moon', description: 'A sleepy moon for early nights.', cost: TIER_COST.sticker, tokenCost: 1, assetKey: 'goldenGem' },
-  { id: 'sticker_stride_shoes', icon: 'walk', tier: 'sticker', title: 'Morning Stride Shoes', description: 'For daily walkers.', cost: TIER_COST.sticker, tokenCost: 1, assetKey: 'bronzeMedallion' },
-  { id: 'sticker_pranayama', icon: 'flower-outline', tier: 'sticker', title: 'Pranayama Lotus', description: 'For deep breathing and nervous system reset.', cost: TIER_COST.sticker, tokenCost: 1, assetKey: 'booster_2x_jade_talisman' },
-  { id: 'sticker_solar', icon: 'sunny-outline', tier: 'sticker', title: 'Solar Vitality Medal', description: 'For awakening with the morning sun.', cost: TIER_COST.sticker, tokenCost: 1, assetKey: 'cinematic_minted_gold_coin' },
-  { id: 'status_sanctuary', icon: 'ribbon', tier: 'status', title: 'Sanctuary status', description: 'A Sanctuary badge next to Anvay in the coach, for steady habits.', cost: TIER_COST.status, ticketCost: 1, tokenCost: 1, assetKey: 'sanctuaryPass' },
-  { id: 'status_guardian', icon: 'shield-checkmark-outline', tier: 'status', title: 'Guardian Sentinel status', description: 'A protective sentinel shield insignia beside your name.', cost: TIER_COST.status, ticketCost: 1, tokenCost: 1, assetKey: 'sanctuary_guardian_shield' },
+  // Digital Profile Stickers (100 Gems)
+  { id: 'sticker_zen_fox', icon: 'leaf', tier: 'sticker', title: 'Meditating Zen Fox', description: 'Profile sticker for calm streaks and mindful breathing.', cost: TIER_COST.sticker, tokenCost: 1, assetKey: 'zenFox' },
+  { id: 'sticker_hydration_drop', icon: 'water', tier: 'sticker', title: 'Living Hydration Drop', description: 'Celebrating daily hydration discipline.', cost: TIER_COST.sticker, tokenCost: 1, assetKey: 'hydrationDrop' },
+  { id: 'sticker_slumber_moon', icon: 'moon', tier: 'sticker', title: 'Slumber Moon', description: 'A sleepy golden moon for restorative bedtime sleep.', cost: TIER_COST.sticker, tokenCost: 1, assetKey: 'slumberMoon' },
+  { id: 'sticker_stride_shoes', icon: 'walk', tier: 'sticker', title: 'Morning Stride Shoes', description: 'For consistent daily walking and endurance steps.', cost: TIER_COST.sticker, tokenCost: 1, assetKey: 'strideShoes' },
+  { id: 'sticker_pranayama', icon: 'flower-outline', tier: 'sticker', title: 'Pranayama Lotus', description: 'For deep breathing sessions and nervous system balance.', cost: TIER_COST.sticker, tokenCost: 1, assetKey: 'pranayamaLotus' },
+  { id: 'sticker_solar', icon: 'sunny-outline', tier: 'sticker', title: 'Solar Vitality Medal', description: 'Honoring natural morning sunlight and circadian rhythm.', cost: TIER_COST.sticker, tokenCost: 1, assetKey: 'solarMedal' },
+
+  // Digital Badges & Status Insignias (300 - 1500 Gems)
+  { id: 'status_sanctuary', icon: 'ribbon', tier: 'status', title: 'Sanctuary Pass Voucher', description: 'A luxury letterpress pass honoring 7-day steady adherence.', cost: TIER_COST.status, ticketCost: 1, tokenCost: 1, assetKey: 'sanctuaryPass' },
+  { id: 'status_guardian', icon: 'shield-checkmark-outline', tier: 'status', title: 'Guardian Sentinel Emblem', description: 'A protective high-relief heraldic insignia beside your name.', cost: TIER_COST.status, ticketCost: 1, tokenCost: 1, assetKey: 'sanctuarySentinel' },
+  { id: 'badge_booster_2x', icon: 'flash', tier: 'status', title: '2X Habit Speed Talisman', description: 'Translucent sage jade glass speed talisman that doubles daily XP.', cost: 750, ticketCost: 2, tokenCost: 1, assetKey: 'booster2x' },
+  { id: 'badge_bronze_medallion', icon: 'medal-outline', tier: 'status', title: 'Bronze Habit Medallion', description: 'Solid bronze medal celebrating consistent mindfulness adherence.', cost: 300, ticketCost: 1, tokenCost: 1, assetKey: 'bronzeMedallion' },
+  { id: 'badge_golden_star', icon: 'star', tier: 'status', title: 'Golden Star Honor Crest', description: 'Eight-pointed mirror-gold star crystal for 30-day streak devotion.', cost: 1200, ticketCost: 3, tokenCost: 2, assetKey: 'goldenGem' },
+  { id: 'badge_master_token', icon: 'disc', tier: 'status', title: 'Commemorative Master Coin', description: 'Heavy minted bronze-gold coin celebrating lifetime wellness milestones.', cost: 1500, ticketCost: 3, tokenCost: 2, assetKey: 'marketplaceToken' },
+  { id: 'badge_gold_voucher', icon: 'document-text-outline', tier: 'status', title: 'Golden Sanctuary Passport', description: 'Prestigious gold voucher seal demonstrating uninterrupted habit consistency.', cost: 800, ticketCost: 2, tokenCost: 1, assetKey: 'goldVoucher' },
+
+  // Collector Cards (Tarot Archetypes)
+  { id: 'card_grounded_seeker_unlock', icon: 'earth', tier: 'status', title: 'Grounded Seeker Card', description: 'Earthen circular labyrinth mandala collector card for foundational grounding.', cost: 250, assetKey: 'groundedSeeker' },
+  { id: 'card_sanctuary_sentinel_unlock', icon: 'shield-checkmark', tier: 'status', title: 'Sanctuary Sentinel Card', description: 'Heraldic silver shield collector card honoring personal sanctuary boundaries.', cost: 500, assetKey: 'sanctuarySentinel' },
+  { id: 'card_mindful_voyager_unlock', icon: 'compass', tier: 'status', title: 'Mindful Voyager Card', description: 'Celestial astrolabe and morning sun tarot card celebrating life-long journeys.', cost: 1000, assetKey: 'mindfulVoyager' },
+  { id: 'card_apex_thrivemaster_unlock', icon: 'trophy', tier: 'status', title: 'Apex Thrivemaster Card', description: 'Ultra-luxury black obsidian and 24k mirror gold leaf achievement card.', cost: 2500, assetKey: 'apexThrivemaster' },
+
+  // Physical items preserved for backward compatibility / tests only (excluded from digital UI)
   { id: 'gear_pushup_bars', icon: 'barbell', tier: 'gear', title: 'Push-up bars', description: 'Ergonomic solid beechwood parallettes, delivered to you.', cost: TIER_COST.gear, tokenCost: 10, physical: true, assetKey: 'pushupBars' },
-  { id: 'gear_gyroball', icon: 'disc', tier: 'gear', title: 'Gyroball wrist trainer', description: 'High-precision autostart metal gyroball, delivered to you.', cost: TIER_COST.gear, tokenCost: 12, physical: true, assetKey: 'precision_gyroball_render' },
-  { id: 'gear_stationery', icon: 'book', tier: 'gear', title: 'Stationery kit', description: 'Hardcover linen journal and stationery set, delivered to you.', cost: TIER_COST.gear, tokenCost: 10, physical: true, assetKey: 'linen_journal_isometric' },
-  { id: 'gear_gripper', icon: 'fitness-outline', tier: 'gear', title: 'Knurled hand gripper', description: 'Heavy-duty aircraft aluminum grip trainer with knurled handles.', cost: TIER_COST.gear, tokenCost: 10, physical: true, assetKey: 'knurled_hand_gripper' },
-  { id: 'gear_cricket', icon: 'baseball-outline', tier: 'gear', title: 'Junior cricket set', description: 'English willow junior bat and leather ball set, delivered to you.', cost: TIER_COST.gear, tokenCost: 20, physical: true, assetKey: 'junior_cricket_bat' },
-  { id: 'gear_dumbbells', icon: 'barbell', tier: 'gear', title: 'Dumbbells', description: 'A pair of dumbbells, delivered to you.', cost: TIER_COST.gear, tokenCost: 10, physical: true, assetKey: 'gyroball' },
-  { id: 'gear_barbell', icon: 'barbell', tier: 'gear', title: 'Barbell', description: 'A home barbell, delivered to you.', cost: TIER_COST.gear, tokenCost: 15, physical: true, assetKey: 'pushupBars' },
-  { id: 'gear_nordic_set', icon: 'cafe-outline', tier: 'gear', title: 'Nordic wellness still life set', description: 'Natural beechwood, ceramic mug and linen tea towel.', cost: TIER_COST.gear, tokenCost: 12, physical: true, assetKey: 'nordic_wellness_still_life' },
+  { id: 'gear_gyroball', icon: 'disc', tier: 'gear', title: 'Gyroball wrist trainer', description: 'High-precision autostart metal gyroball, delivered to you.', cost: TIER_COST.gear, tokenCost: 12, physical: true, assetKey: 'gyroball' },
+  { id: 'gear_stationery', icon: 'book', tier: 'gear', title: 'Stationery kit', description: 'Hardcover linen journal and stationery set, delivered to you.', cost: TIER_COST.gear, tokenCost: 10, physical: true, assetKey: 'healthJournal' },
+  { id: 'gear_gripper', icon: 'fitness-outline', tier: 'gear', title: 'Knurled hand gripper', description: 'Heavy-duty aircraft aluminum grip trainer with knurled handles.', cost: TIER_COST.gear, tokenCost: 8, physical: true, assetKey: 'gripper' },
+  { id: 'gear_cricket', icon: 'baseball-outline', tier: 'gear', title: 'Junior cricket set', description: 'English willow junior bat and leather ball set, delivered to you.', cost: TIER_COST.gear, tokenCost: 20, physical: true, assetKey: 'cricketKit' },
+  { id: 'gear_nordic_set', icon: 'cafe-outline', tier: 'gear', title: 'Nordic wellness still life set', description: 'Natural beechwood, ceramic mug and linen tea towel.', cost: TIER_COST.gear, tokenCost: 12, physical: true, assetKey: 'mealThali' },
 ];
 
 export interface EditorialArt {

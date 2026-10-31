@@ -97,14 +97,27 @@ export function AppBottomSheetModal({
   const sheetHeight = useSharedValue(screenHeight);
 
   const startCloseAnimation = useCallback(() => {
+    let closed = false;
+    const finish = () => {
+      if (!closed) {
+        closed = true;
+        onClose();
+      }
+    };
+    // Failsafe timeout guarantees dismissal even if worklet callback is interrupted
+    setTimeout(finish, reduceMotion ? 10 : 250);
+
     translateY.value = withTiming(
-      sheetHeight.value + 40,
+      (sheetHeight.value || screenHeight) + 40,
       reduceMotion ? { duration: 0 } : CLOSE,
       (finished) => {
-        if (finished) runOnJS(onClose)();
+        'worklet';
+        if (finished) {
+          runOnJS(finish)();
+        }
       },
     );
-  }, [onClose, reduceMotion, sheetHeight, translateY]);
+  }, [onClose, reduceMotion, screenHeight, sheetHeight, translateY]);
 
   useEffect(() => {
     if (visible) {
@@ -131,9 +144,10 @@ export function AppBottomSheetModal({
       'worklet';
       if (e.translationY > SWIPE_CLOSE_THRESHOLD || e.velocityY > SWIPE_VELOCITY_THRESHOLD) {
         translateY.value = withTiming(
-          sheetHeight.value + 40,
+          (sheetHeight.value || screenHeight) + 40,
           reduceMotion ? { duration: 0 } : CLOSE,
           (finished) => {
+            'worklet';
             if (finished) runOnJS(onClose)();
           },
         );
@@ -211,6 +225,14 @@ export function AppBottomSheetModal({
           style={[styles.keyboardAvoid, avoidKeyboard && keyboardInset > 0 ? { paddingBottom: keyboardInset } : null]}
           pointerEvents="box-none"
         >
+          {/* Explicit tap-to-dismiss above the sheet */}
+          <Pressable
+            style={styles.upperOutsideTap}
+            onPress={startCloseAnimation}
+            accessibilityRole="button"
+            accessibilityLabel="Close sheet backdrop"
+          />
+
           <Animated.View
             accessibilityViewIsModal
             onLayout={(e) => {
@@ -370,6 +392,10 @@ const styles = StyleSheet.create({
   keyboardAvoid: {
     flex: 1,
     justifyContent: 'flex-end',
+    width: '100%',
+  },
+  upperOutsideTap: {
+    flex: 1,
     width: '100%',
   },
   sheet: {
