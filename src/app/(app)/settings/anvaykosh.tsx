@@ -374,9 +374,36 @@ export default function AnvayKoshScreen() {
           </View>
         ))}
       </Card>
-      <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.sm, marginBottom: spacing.xl }]}>
+      <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.sm, marginBottom: spacing.md }]}>
         Opening an app passes no data. Each app asks for its own permissions.
       </Text>
+
+      {/* Beta Testers Community */}
+      <Card variant="tinted" style={{ padding: spacing.md, marginBottom: spacing.xl }}>
+        <View style={styles.row}>
+          <Ionicons name="people-circle-outline" size={28} color={colors.primary} />
+          <View style={[styles.flex, { marginLeft: 12 }]}>
+            <Text style={[typography.subbodyBold, { color: colors.text.primary }]}>
+              Join Beta Testers Community
+            </Text>
+            <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+              Get early builds of Thrivefold, HarmonyBloom, Neev, Setu & BlinkQuest on Google Play.
+            </Text>
+          </View>
+        </View>
+        <View style={{ marginTop: spacing.md }}>
+          <Button
+            label="Join Google Group (anvaykosh-beta-testers)"
+            variant="primary"
+            size="sm"
+            onPress={() => {
+              // eslint-disable-next-line @typescript-eslint/no-require-imports
+              const { Linking } = require('react-native');
+              Linking.openURL('https://groups.google.com/g/anvaykosh-beta-testers').catch(() => {});
+            }}
+          />
+        </View>
+      </Card>
     </ScreenContainer>
   );
 }
