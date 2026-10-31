@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
@@ -12,15 +12,20 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { LootBoxModal } from '../../components/game/LootBoxModal';
 import { AppHeader } from '../../components/ui/AppHeader';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { PressableScale } from '../../components/ui/PressableScale';
 import { ScreenContainer } from '../../components/ui/ScreenContainer';
-import { LootBoxModal } from '../../components/game/LootBoxModal';
 import { AssetIllustrations, RewardAssets } from '../../constants/assets';
-import { currentLevelProgress, getRoadmapChapters, getRoadmapStages, getTaskById } from '../../domain/game/gameCatalogService';
+import {
+  currentLevelProgress,
+  getRoadmapChapters,
+  getRoadmapStages,
+  getTaskById,
+} from '../../domain/game/gameCatalogService';
 import { chestKey, LEVEL_CHESTS, type LevelChest } from '../../domain/game/rewards';
 import { useRootStore, useShallow } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
@@ -62,7 +67,10 @@ export default function RoadmapScreen() {
     })),
   );
 
-  const opened = useMemo(() => ledger.filter((e) => e.kind === 'chest_reward').map((e) => e.key), [ledger]);
+  const opened = useMemo(
+    () => ledger.filter((e) => e.kind === 'chest_reward').map((e) => e.key),
+    [ledger],
+  );
   const [chestModal, setChestModal] = useState<LevelChest | null>(null);
 
   const todayTaskIds = todayQuests.map((q) => q.taskId);
@@ -70,13 +78,18 @@ export default function RoadmapScreen() {
   const level = progress.level;
   const chapters = getRoadmapChapters();
   const stages = getRoadmapStages().filter((s) => Array.isArray(s.range));
-  const chapter = chapters.find((c) => level >= c.levelRange[0] && level <= c.levelRange[1]) ?? chapters[0];
+  const chapter =
+    chapters.find((c) => level >= c.levelRange[0] && level <= c.levelRange[1]) ?? chapters[0];
   const inChapter = level - chapter.levelRange[0] + 1; // 1..50
-  const chapterPct = Math.round(((inChapter - 1) / (chapter.levelRange[1] - chapter.levelRange[0])) * 100);
+  const chapterPct = Math.round(
+    ((inChapter - 1) / (chapter.levelRange[1] - chapter.levelRange[0])) * 100,
+  );
   const toNext = Math.max(0, progress.xpForNext - progress.xpIntoLevel);
 
-  const stageState = (r: [number, number]): NodeState => (inChapter > r[1] ? 'done' : inChapter >= r[0] ? 'current' : 'locked');
-  const chapterState = (n: number): NodeState => (n < chapter.number ? 'done' : n === chapter.number ? 'current' : 'locked');
+  const stageState = (r: [number, number]): NodeState =>
+    inChapter > r[1] ? 'done' : inChapter >= r[0] ? 'current' : 'locked';
+  const chapterState = (n: number): NodeState =>
+    n < chapter.number ? 'done' : n === chapter.number ? 'current' : 'locked';
   const enter = (i: number) => (reduceMotion ? undefined : FadeIn.duration(180));
 
   // Next milestone chest on the journey
@@ -98,7 +111,10 @@ export default function RoadmapScreen() {
   }, []);
 
   return (
-    <ScreenContainer header={<AppHeader title="Roadmap" subtitle="Where you are on the journey" showBack />} scrollMode="shell-scroll-view">
+    <ScreenContainer
+      header={<AppHeader title="Roadmap" subtitle="Where you are on the journey" showBack />}
+      scrollMode="shell-scroll-view"
+    >
       {/* Cinematic Journey Hero Banner */}
       <View style={styles.heroBannerWrap}>
         <Image
@@ -110,7 +126,10 @@ export default function RoadmapScreen() {
         />
         <View style={styles.heroOverlay}>
           <Badge label={`Chapter ${chapter.number} · ${chapter.title}`} variant="gold" />
-          <Text style={[typography.subheading, { color: '#FFFFFF', marginTop: 4 }]} numberOfLines={1}>
+          <Text
+            style={[typography.subheading, { color: '#FFFFFF', marginTop: 4 }]}
+            numberOfLines={1}
+          >
             {chapter.outcome}
           </Text>
         </View>
@@ -125,19 +144,32 @@ export default function RoadmapScreen() {
             </Text>
             <Badge label={`Level ${level}`} variant="primary" />
           </View>
-          <Text style={[typography.heading, { color: colors.text.primary, marginTop: 6 }]}>{chapter.title}</Text>
-          <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>{chapter.outcome}</Text>
+          <Text style={[typography.heading, { color: colors.text.primary, marginTop: 6 }]}>
+            {chapter.title}
+          </Text>
+          <Text style={[typography.subbody, { color: colors.text.secondary, marginTop: 4 }]}>
+            {chapter.outcome}
+          </Text>
           <View style={[styles.track, { backgroundColor: colors.surface1, marginTop: spacing.md }]}>
-            <View style={[styles.fill, { width: `${Math.max(3, chapterPct)}%`, backgroundColor: colors.primary }]} />
+            <View
+              style={[
+                styles.fill,
+                { width: `${Math.max(3, chapterPct)}%`, backgroundColor: colors.primary },
+              ]}
+            />
           </View>
           <View style={[styles.rowBetween, { marginTop: 6 }]}>
             <Text style={[typography.caption, { color: colors.text.muted }]}>
-              Level {inChapter} of {chapter.levelRange[1] - chapter.levelRange[0] + 1} in this chapter
+              Level {inChapter} of {chapter.levelRange[1] - chapter.levelRange[0] + 1} in this
+              chapter
             </Text>
-            <Text style={[typography.captionBold, { color: colors.text.secondary }]}>{toNext} XP to level {level + 1}</Text>
+            <Text style={[typography.captionBold, { color: colors.text.secondary }]}>
+              {toNext} XP to level {level + 1}
+            </Text>
           </View>
           <Text style={[typography.caption, { color: colors.text.muted, marginTop: spacing.sm }]}>
-            XP comes from verified habits, workouts and completed quests. Each level needs a little more than the last.
+            XP comes from verified habits, workouts and completed quests. Each level needs a little
+            more than the last.
           </Text>
         </Card>
       </Animated.View>
@@ -145,7 +177,12 @@ export default function RoadmapScreen() {
       {/* Next Milestone Chest Highlight */}
       {nextMilestone && (
         <Animated.View entering={enter(1)} style={{ marginTop: spacing.md }}>
-          <Card style={[styles.milestoneCard, { borderColor: level >= nextMilestone.level ? colors.primary : colors.border }]}>
+          <Card
+            style={[
+              styles.milestoneCard,
+              { borderColor: level >= nextMilestone.level ? colors.primary : colors.border },
+            ]}
+          >
             <Image
               source={getChestAssets(nextMilestone.level).closed}
               style={styles.milestoneImg}
@@ -156,12 +193,17 @@ export default function RoadmapScreen() {
             <View style={styles.flex}>
               <View style={styles.row}>
                 <Text style={[typography.captionBold, { color: colors.primary }]}>
-                  {level >= nextMilestone.level ? 'MILESTONE READY' : `MILESTONE · LEVEL ${nextMilestone.level}`}
+                  {level >= nextMilestone.level
+                    ? 'MILESTONE READY'
+                    : `MILESTONE · LEVEL ${nextMilestone.level}`}
                 </Text>
               </View>
-              <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 2 }]}>{nextMilestone.title}</Text>
+              <Text style={[typography.bodyBold, { color: colors.text.primary, marginTop: 2 }]}>
+                {nextMilestone.title}
+              </Text>
               <Text style={[typography.caption, { color: colors.text.secondary }]}>
-                +{nextMilestone.gems} Amber Gems · {nextMilestone.card.title} ({nextMilestone.card.rarity} Card)
+                +{nextMilestone.gems} Amber Gems · {nextMilestone.card.title} (
+                {nextMilestone.card.rarity} Card)
               </Text>
             </View>
             {level >= nextMilestone.level ? (
@@ -174,7 +216,14 @@ export default function RoadmapScreen() {
       )}
 
       {/* This chapter's stages, with the current stage's levels on a trail */}
-      <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.xl, marginBottom: spacing.sm }]}>This chapter</Text>
+      <Text
+        style={[
+          typography.subheading,
+          { color: colors.text.primary, marginTop: spacing.xl, marginBottom: spacing.sm },
+        ]}
+      >
+        This chapter
+      </Text>
       {stages.map((s, i) => {
         const state = stageState(s.range);
         const from = chapter.levelRange[0] + s.range[0] - 1;
@@ -187,16 +236,32 @@ export default function RoadmapScreen() {
           <Animated.View key={s.id} entering={enter(i + 2)} style={styles.stageRow}>
             <View style={styles.rail}>
               <Node state={state} label={String(i + 1)} />
-              {i < stages.length - 1 ? <View style={[styles.railLine, { backgroundColor: state === 'done' ? colors.success : colors.surface2 }]} /> : null}
+              {i < stages.length - 1 ? (
+                <View
+                  style={[
+                    styles.railLine,
+                    { backgroundColor: state === 'done' ? colors.success : colors.surface2 },
+                  ]}
+                />
+              ) : null}
             </View>
             <View style={[styles.flex, { paddingBottom: spacing.md }]}>
               <View style={styles.rowBetween}>
-                <Text style={[typography.bodyBold, { color: state === 'locked' ? colors.text.muted : colors.text.primary }]}>
+                <Text
+                  style={[
+                    typography.bodyBold,
+                    { color: state === 'locked' ? colors.text.muted : colors.text.primary },
+                  ]}
+                >
                   {STAGE_NAME[s.id] ?? s.id}
                 </Text>
-                <Text style={[typography.caption, { color: colors.text.muted }]}>{from === to ? `Level ${from}` : `Levels ${from}-${to}`}</Text>
+                <Text style={[typography.caption, { color: colors.text.muted }]}>
+                  {from === to ? `Level ${from}` : `Levels ${from}-${to}`}
+                </Text>
               </View>
-              <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>{s.purpose}</Text>
+              <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                {s.purpose}
+              </Text>
 
               {/* Milestone Chest Callout inside stage */}
               {chestInStage && (
@@ -212,7 +277,11 @@ export default function RoadmapScreen() {
                   ]}
                 >
                   <Image
-                    source={chestDone ? getChestAssets(chestInStage.level).burst : getChestAssets(chestInStage.level).closed}
+                    source={
+                      chestDone
+                        ? getChestAssets(chestInStage.level).burst
+                        : getChestAssets(chestInStage.level).closed
+                    }
                     style={styles.stageChestIcon}
                     contentFit="contain"
                     transition={150}
@@ -227,7 +296,13 @@ export default function RoadmapScreen() {
                     </Text>
                   </View>
                   <Badge
-                    label={chestDone ? 'Claimed' : chestReady ? 'Tap to open' : `Level ${chestInStage.level}`}
+                    label={
+                      chestDone
+                        ? 'Claimed'
+                        : chestReady
+                          ? 'Tap to open'
+                          : `Level ${chestInStage.level}`
+                    }
                     variant={chestDone ? 'success' : chestReady ? 'primary' : 'neutral'}
                   />
                 </PressableScale>
@@ -243,19 +318,33 @@ export default function RoadmapScreen() {
 
       {chapter.capstone ? (
         <Card variant="tinted" style={{ padding: spacing.sm, marginTop: spacing.xs }}>
-          <Text style={[typography.bodyBold, { color: colors.text.primary }]}>{chapter.capstone.title}</Text>
-          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>{chapter.capstone.purpose}</Text>
-          <Text style={[typography.caption, { color: colors.text.muted, fontSize: 11, marginTop: 4 }]}>
-            Opens at level {chapter.capstone.requiredAtLevel}. Finishing it moves you to the next chapter.
+          <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
+            {chapter.capstone.title}
+          </Text>
+          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+            {chapter.capstone.purpose}
+          </Text>
+          <Text
+            style={[typography.caption, { color: colors.text.muted, fontSize: 11, marginTop: 4 }]}
+          >
+            Opens at level {chapter.capstone.requiredAtLevel}. Finishing it moves you to the next
+            chapter.
           </Text>
         </Card>
       ) : null}
 
       {/* Quests that build this chapter */}
-      <Text style={[typography.subbodyBold, { color: colors.text.primary, marginTop: spacing.lg, marginBottom: 2 }]}>
+      <Text
+        style={[
+          typography.subbodyBold,
+          { color: colors.text.primary, marginTop: spacing.lg, marginBottom: 2 },
+        ]}
+      >
         Quests in this chapter
       </Text>
-      <Text style={[typography.caption, { color: colors.text.secondary, marginBottom: spacing.xs }]}>
+      <Text
+        style={[typography.caption, { color: colors.text.secondary, marginBottom: spacing.xs }]}
+      >
         Your daily quests are selected from these and fitted to your pace.
       </Text>
       {chapter.recommendedTaskIds
@@ -265,35 +354,62 @@ export default function RoadmapScreen() {
         .map((t) => (
           <View key={t.id} style={[styles.questRow, { borderBottomColor: colors.border }]}>
             <View style={styles.flex}>
-              <Text style={[typography.subbodyBold, { color: colors.text.primary }]}>{t.title}</Text>
-              <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 1 }]} numberOfLines={1}>
+              <Text style={[typography.subbodyBold, { color: colors.text.primary }]}>
+                {t.title}
+              </Text>
+              <Text
+                style={[typography.caption, { color: colors.text.secondary, marginTop: 1 }]}
+                numberOfLines={1}
+              >
                 {t.shortDescription}
               </Text>
             </View>
-            {todayTaskIds.includes(t.id) ? (
-              <Badge label="Today" variant="primary" />
-            ) : null}
+            {todayTaskIds.includes(t.id) ? <Badge label="Today" variant="primary" /> : null}
           </View>
         ))}
 
       {/* The whole journey */}
-      <Text style={[typography.subheading, { color: colors.text.primary, marginTop: spacing.xl, marginBottom: spacing.sm }]}>The journey</Text>
+      <Text
+        style={[
+          typography.subheading,
+          { color: colors.text.primary, marginTop: spacing.xl, marginBottom: spacing.sm },
+        ]}
+      >
+        The journey
+      </Text>
       {chapters.map((c, i) => {
         const state = chapterState(c.number);
         return (
           <View key={c.id} style={styles.stageRow}>
             <View style={styles.rail}>
               <Node state={state} label={String(c.number)} />
-              {i < chapters.length - 1 ? <View style={[styles.railLine, { backgroundColor: state === 'done' ? colors.success : colors.surface2 }]} /> : null}
+              {i < chapters.length - 1 ? (
+                <View
+                  style={[
+                    styles.railLine,
+                    { backgroundColor: state === 'done' ? colors.success : colors.surface2 },
+                  ]}
+                />
+              ) : null}
             </View>
-            <View style={[styles.flex, { paddingBottom: spacing.md, opacity: state === 'locked' ? 0.6 : 1 }]}>
+            <View
+              style={[
+                styles.flex,
+                { paddingBottom: spacing.md, opacity: state === 'locked' ? 0.6 : 1 },
+              ]}
+            >
               <View style={styles.rowBetween}>
-                <Text style={[typography.bodyBold, styles.flex, { color: colors.text.primary }]}>{c.title}</Text>
+                <Text style={[typography.bodyBold, styles.flex, { color: colors.text.primary }]}>
+                  {c.title}
+                </Text>
                 <Text style={[typography.caption, { color: colors.text.muted }]}>
                   {c.levelRange[0]}-{c.levelRange[1]}
                 </Text>
               </View>
-              <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]} numberOfLines={2}>
+              <Text
+                style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}
+                numberOfLines={2}
+              >
                 {c.description}
               </Text>
             </View>
@@ -304,14 +420,26 @@ export default function RoadmapScreen() {
       <View style={{ height: spacing.xl }} />
 
       {/* Loot Box Modal when opening milestone chests directly from the Roadmap */}
-      <LootBoxModal key={chestModal?.level ?? 0} chest={chestModal} onClose={() => setChestModal(null)} />
+      <LootBoxModal
+        key={chestModal?.level ?? 0}
+        chest={chestModal}
+        onClose={() => setChestModal(null)}
+      />
     </ScreenContainer>
   );
 }
 
-function Node({ state, label }: { state: NodeState; icon?: keyof typeof Ionicons.glyphMap; label?: string }) {
+function Node({
+  state,
+  label,
+}: {
+  state: NodeState;
+  icon?: keyof typeof Ionicons.glyphMap;
+  label?: string;
+}) {
   const { colors, typography } = useTheme();
-  const bg = state === 'done' ? colors.success : state === 'current' ? colors.primary : colors.surface1;
+  const bg =
+    state === 'done' ? colors.success : state === 'current' ? colors.primary : colors.surface1;
   const fg = state === 'locked' ? colors.text.muted : colors.onPrimary;
   return (
     <View style={[styles.node, { backgroundColor: bg }]}>
@@ -327,13 +455,31 @@ function Node({ state, label }: { state: NodeState; icon?: keyof typeof Ionicons
 }
 
 /** Levels of the current stage on a zig-zag trail; the current one breathes. */
-function LevelTrail({ from, to, current, pulse }: { from: number; to: number; current: number; pulse: boolean }) {
+function LevelTrail({
+  from,
+  to,
+  current,
+  pulse,
+}: {
+  from: number;
+  to: number;
+  current: number;
+  pulse: boolean;
+}) {
   const { colors, typography } = useTheme();
   const breath = useSharedValue(0);
   useEffect(() => {
-    if (pulse) breath.value = withRepeat(withTiming(1, { duration: 1800, easing: Easing.inOut(Easing.sin) }), -1, true);
+    if (pulse)
+      breath.value = withRepeat(
+        withTiming(1, { duration: 1800, easing: Easing.inOut(Easing.sin) }),
+        -1,
+        true,
+      );
   }, [breath, pulse]);
-  const halo = useAnimatedStyle(() => ({ opacity: 0.25 + 0.35 * breath.value, transform: [{ scale: 1 + 0.35 * breath.value }] }));
+  const halo = useAnimatedStyle(() => ({
+    opacity: 0.25 + 0.35 * breath.value,
+    transform: [{ scale: 1 + 0.35 * breath.value }],
+  }));
   const levels = Array.from({ length: to - from + 1 }, (_, i) => from + i).slice(0, 12);
   return (
     <View style={styles.trail}>
@@ -343,11 +489,31 @@ function LevelTrail({ from, to, current, pulse }: { from: number; to: number; cu
         const offset = [0, 28, 56, 28][i % 4];
         return (
           <View key={lv} style={[styles.trailNode, { marginLeft: offset }]}>
-            {here ? <Animated.View style={[styles.halo, { backgroundColor: colors.primary }, halo]} /> : null}
-            <View style={[styles.levelDot, { backgroundColor: done ? colors.success : here ? colors.primary : colors.surface1 }]}>
-              <Text style={[typography.captionBold, { color: done || here ? colors.onPrimary : colors.text.muted }]}>{lv}</Text>
+            {here ? (
+              <Animated.View style={[styles.halo, { backgroundColor: colors.primary }, halo]} />
+            ) : null}
+            <View
+              style={[
+                styles.levelDot,
+                {
+                  backgroundColor: done ? colors.success : here ? colors.primary : colors.surface1,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  typography.captionBold,
+                  { color: done || here ? colors.onPrimary : colors.text.muted },
+                ]}
+              >
+                {lv}
+              </Text>
             </View>
-            {here ? <Text style={[typography.captionBold, { color: colors.primary, marginLeft: 8 }]}>You are here</Text> : null}
+            {here ? (
+              <Text style={[typography.captionBold, { color: colors.primary, marginLeft: 8 }]}>
+                You are here
+              </Text>
+            ) : null}
           </View>
         );
       })}
@@ -360,9 +526,20 @@ const styles = StyleSheet.create({
   fill: { borderRadius: 4, height: 8 },
   flex: { flex: 1 },
   halo: { borderRadius: 22, height: 44, left: -4, position: 'absolute', top: -4, width: 44 },
-  levelDot: { alignItems: 'center', borderRadius: 18, height: 36, justifyContent: 'center', width: 36 },
+  levelDot: {
+    alignItems: 'center',
+    borderRadius: 18,
+    height: 36,
+    justifyContent: 'center',
+    width: 36,
+  },
   node: { alignItems: 'center', borderRadius: 14, height: 28, justifyContent: 'center', width: 28 },
-  questRow: { alignItems: 'center', flexDirection: 'row', paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth },
+  questRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
   rail: { alignItems: 'center', marginRight: 12, width: 28 },
   railLine: { flex: 1, marginVertical: 2, width: 2 },
   row: { alignItems: 'center', flexDirection: 'row' },

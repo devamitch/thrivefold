@@ -17,6 +17,8 @@ import { thriveRag } from '../../services/local-ai/rag/thriveRag';
 import { memoryStore } from '../../services/local-ai/memory/memoryStore';
 import { knowledgeStore } from '../../services/local-ai/rag/knowledgeStore';
 import { lookupMedicine, analyzePrescriptionText } from '../../services/ai/medicineResearch';
+import { format12Hour } from '../routines';
+import { chestKey, LEVEL_CHESTS } from '../game/rewards';
 
 function navigateTo(route: string) {
   try {
@@ -377,6 +379,206 @@ export const TOOLS: Record<string, ToolDefinition> = {
         message:
           "You are not alone. I'm opening urgent support right now. Tele-MANAS on 14416 is free, 24/7. In emergency, call 112.",
         routeToOpen: '/(app)/safety/urgent-support',
+        autoNavigate: true,
+      };
+    },
+  },
+
+  // ─── Routines & Rewards Tools ────────────────────────────────────────────────
+
+  get_routines: {
+    name: 'get_routines',
+    description:
+      'Returns the user\'s routine alarms: scheduled times, repeat days, whether they are enabled, and upcoming triggers. Use to answer questions about what reminders are set or to proactively suggest claiming pending rewards.',
+    parameters: {},
+    execute: async () => {
+      const store = useRootStore.getState();
+      const routines = store.routines ?? [];
+      if (!routines.length) {
+        return {
+          success: true,
+          message: 'You have no routines set up yet. I can help you add one — just say "remind me to [something] at [time]".',
+          data: { routines: [] },
+          routeToOpen: '/(app)/routines',
+        };
+      }
+      const enabled = routines.filter((r) => r.enabled);
+      const disabled = routines.filter((r) => !r.enabled);
+      const summary = enabled
+        .map((r) => `• ${r.title} at ${format12Hour(r.time)}${r.days.length ? ` (${r.days.map((d) => ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][d-1]).join(', ')})` : ' daily'}`)
+        .join('\n');
+      const disabledNote = disabled.length ? `\n${disabled.length} routine${disabled.length > 1 ? 's are' : ' is'} disabled.` : '';
+      return {
+        success: true,
+        message: `You have ${enabled.length} active routine alarm${enabled.length !== 1 ? 's' : ''}:\n${summary}${disabledNote}\n\nThese fire as system notifications even when Thrivefold is closed.`,
+        data: {
+          total: routines.length,
+          enabled: enabled.length,
+          disabled: disabled.length,
+          routines: routines.map((r) => ({
+            id: r.id,
+            title: r.title,
+            time12: format12Hour(r.time),
+            time24: r.time,
+            enabled: r.enabled,
+            days: r.days,
+            kind: r.kind,
+          })),
+        },
+        routeToOpen: '/(app)/routines',
+      };
+    },
+  },
+
+  get_pending_rewards: {
+    name: 'get_pending_rewards',
+    description:
+      'Checks which milestone chest rewards the user is eligible to claim but has not yet claimed. Use proactively when the user might have unclaimed rewards. Always check this before ending a conversation about progress.',
+    parameters: {},
+    execute: async () => {
+      const store = useRootStore.getState();
+      const level = store.level ?? 1;
+      const ledger = store.rewardLedger ?? [];
+      const claimedKeys = new Set(ledger.filter((e) => e.kind === 'chest_reward').map((e) => e.key));
+
+      const eligible = LEVEL_CHESTS.filter(
+        (c) => level >= c.level && !claimedKeys.has(chestKey(c.level))
+      );
+      const upcoming = LEVEL_CHESTS.filter(
+        (c) => level < c.level && !claimedKeys.has(chestKey(c.level))
+      ).slice(0, 3);
+      const claimed = LEVEL_CHESTS.filter((c) => claimedKeys.has(chestKey(c.level)));
+
+      if (eligible.length > 0) {
+        const names = eligible.map((c) => `• ${c.title} (Level ${c.level}: +${c.gems} Amber Gems + ${c.card.title} card)`).join('\n');
+        return {
+          success: true,
+          message: `You have ${eligible.length} unclaimed milestone reward${eligible.length > 1 ? 's' : ''}! 🎁\n\n${names}\n\nOpen your Roadmap or Marketplace to claim ${eligible.length > 1 ? 'them' : 'it'} now!`,
+          data: { eligible, upcoming, claimed: claimed.length, userLevel: level },
+          routeToOpen: '/(app)/roadmap',
+        };
+      }
+
+      const upcomingNote = upcoming.length
+        ? `\nNext milestone: ${upcoming[0].title} at Level ${upcoming[0].level} (${upcoming[0].level - level} level${upcoming[0].level - level !== 1 ? 's' : ''} away).`
+        : '';
+      return {
+        success: true,
+        message: `No unclaimed rewards right now — you are Level ${level} and have claimed ${claimed.length} milestone chest${claimed.length !== 1 ? 's' : ''}.${upcomingNote}`,
+        data: { eligible: [], upcoming, claimed: claimed.length, userLevel: level },
+      };
+    },
+  },
+
+  get_routine_adherence: {
+    name: 'get_routine_adherence',
+    description:
+      'Summarises how many routines the user completed, missed, or skipped based on their check-in and quest history. Use when the user asks how they are doing with their habits.',
+    parameters: {
+      days: {
+        type: 'number',
+        description: 'How many recent days to look at (default 7, max 30)',
+      },
+    },
+    execute: async (params: { days?: number }) => {
+      const store = useRootStore.getState();
+      const routines = store.routines ?? [];
+      const lookback = Math.min(30, Math.max(1, params.days ?? 7));
+
+      if (!routines.length) {
+        return {
+          success: true,
+          message: 'You have no routines scheduled yet. Would you like to add some?',
+          routeToOpen: '/(app)/routines',
+          data: { routines: 0 },
+        };
+      }
+
+      // Use quest completions as a proxy for routine adherence
+      const recentQuests = store.todayQuests ?? [];
+      const completedToday = recentQuests.filter((q) => q.isCompleted).length;
+      const totalToday = recentQuests.length;
+
+      const enabled = routines.filter((r) => r.enabled);
+      const tips: string[] = [];
+      if (enabled.length === 0) tips.push('All your routines are disabled — re-enable them to get reminders.');
+      if (enabled.length > 5) tips.push('You have many routines. Consider focusing on 3–5 key ones.');
+
+      return {
+        success: true,
+        message: `You have ${enabled.length} active routine${enabled.length !== 1 ? 's' : ''}. Today: ${completedToday}/${totalToday} quests completed.${tips.length ? '\n\nTip: ' + tips[0] : ''}`,
+        data: {
+          activeRoutines: enabled.length,
+          totalRoutines: routines.length,
+          questsCompletedToday: completedToday,
+          questsTotalToday: totalToday,
+          level: store.level,
+          streak: store.streak,
+        },
+        routeToOpen: '/(app)/routines',
+      };
+    },
+  },
+
+  open_reward_chest: {
+    name: 'open_reward_chest',
+    description:
+      'Opens and claims a specific milestone chest reward for the user. Use when the user asks to claim a reward or when they have an unclaimed eligible reward. Always verify eligibility first.',
+    parameters: {
+      level: {
+        type: 'number',
+        description: 'The milestone level of the chest to open (e.g. 5, 10, 20, 50, 100)',
+        required: true,
+      },
+    },
+    requiresConfirmation: true,
+    execute: async (params: { level: number }, context: ToolExecutionContext) => {
+      const store = useRootStore.getState();
+      const userLevel = store.level ?? 1;
+      const chest = LEVEL_CHESTS.find((c) => c.level === params.level);
+
+      if (!chest) {
+        return {
+          success: false,
+          message: `No milestone chest found at Level ${params.level}. Valid milestones are: ${LEVEL_CHESTS.map((c) => c.level).join(', ')}.`,
+        };
+      }
+
+      const key = chestKey(chest.level);
+      const alreadyClaimed = (store.rewardLedger ?? []).some((e) => e.key === key);
+      if (alreadyClaimed) {
+        return {
+          success: false,
+          message: `You already claimed the ${chest.title} chest! It's saved in your collection. Keep progressing for the next milestone.`,
+          data: { chest, alreadyClaimed: true },
+        };
+      }
+
+      if (userLevel < chest.level) {
+        return {
+          success: false,
+          message: `You need to reach Level ${chest.level} to claim this chest. You are currently Level ${userLevel} — ${chest.level - userLevel} level${chest.level - userLevel !== 1 ? 's' : ''} to go!`,
+          data: { requiredLevel: chest.level, currentLevel: userLevel },
+          routeToOpen: '/(app)/roadmap',
+        };
+      }
+
+      // Claim via the store
+      const result = store.openChest(chest.level);
+      if (!result) {
+        return {
+          success: false,
+          message: 'Could not claim the chest — it may already be claimed. Check your Roadmap for status.',
+          routeToOpen: '/(app)/roadmap',
+        };
+      }
+
+      navigateTo('/(app)/roadmap');
+      return {
+        success: true,
+        message: `🎁 Claimed! You received +${chest.gems} Amber Gems and the ${chest.card.title} (${chest.card.rarity}) collector card from the ${chest.title}! Check your Roadmap to see your collection.`,
+        data: { gems: chest.gems, card: chest.card, chestTitle: chest.title },
+        routeToOpen: '/(app)/roadmap',
         autoNavigate: true,
       };
     },

@@ -6,6 +6,7 @@
 import type { Article } from '../../content/learn';
 import type { Destination } from '../search/destinations';
 import type { ReadingKind } from '../interop/readings';
+import { format12Hour } from '../routines';
 
 export interface KnowledgeDoc {
   /** Stable key: the same key is replaced, never duplicated. */
@@ -183,6 +184,12 @@ export interface StoreDocsInput {
   aiMemories: { category: string; content: string }[];
   betaSessions: { kind: string; endedAt: number; metrics: Record<string, number> }[];
   achievements: string[];
+  routines?: { id: string; kind: string; title: string; time: string; days: number[]; enabled: boolean; everyHours?: number }[];
+  rewardLedger?: { kind: string; key: string; diamonds?: number; xp?: number; sourceId?: string; gameDate?: string }[];
+  level?: number;
+  xp?: number;
+  streak?: number;
+  diamonds?: number;
 }
 
 const list = (label: string, xs: (string | null | undefined)[]) => {
@@ -264,6 +271,44 @@ export function storeDocs(s: StoreDocsInput, now: Date, foodName: (id: string) =
     ...s.aiMemories.map((m) => `${m.category}: ${m.content}`),
     s.achievements.length ? `Achievements: ${s.achievements.length}` : '',
   ], 'Nothing saved to remember yet.');
+
+  // Routines & Alarms
+  if (s.routines && s.routines.length > 0) {
+    const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const active = s.routines.filter((r) => r.enabled);
+    const disabled = s.routines.filter((r) => !r.enabled);
+    push('me:routines', 'Your routine alarms', [
+      `Total routines: ${s.routines.length} (${active.length} active, ${disabled.length} disabled).`,
+      'These fire as system alarm notifications even when the app is closed.',
+      ...active.map((r) => {
+        const daysLabel = r.days.length === 0 ? 'every day' : r.days.map((d) => DAYS[d - 1]).join(', ');
+        const timeLabel = format12Hour(r.time);
+        const repeat = r.everyHours ? ` every ${r.everyHours}h` : '';
+        return `ACTIVE: "${r.title}" at ${timeLabel}${repeat} — ${daysLabel}`;
+      }),
+      ...disabled.map((r) => `DISABLED: "${r.title}" at ${format12Hour(r.time)}`),
+    ], 'No routines set up yet.');
+  }
+
+  // Rewards, milestone chests, and progression
+  if (s.rewardLedger !== undefined) {
+    const level = s.level ?? 1;
+    const xp = s.xp ?? 0;
+    const streak = s.streak ?? 0;
+    const gems = s.diamonds ?? 0;
+    const chestClaims = (s.rewardLedger ?? []).filter((e) => e.kind === 'chest_reward');
+    push('me:rewards', 'Your Amber Gems, milestones, and reward claims', [
+      `Current level: ${level}`,
+      `Total XP: ${xp}`,
+      `Amber Gems balance: ${gems}`,
+      `Streak: ${streak} day${streak !== 1 ? 's' : ''}`,
+      chestClaims.length
+        ? `Milestone chests claimed: ${chestClaims.length} (keys: ${chestClaims.map((e) => e.key).join(', ')})`
+        : 'No milestone chests claimed yet.',
+      'Milestone chests are at levels 5, 10, 20, 50, and 100. Each gives Amber Gems and a collector card.',
+      'To claim a reward: open the Roadmap screen and tap the chest, or ask me to check for pending rewards.',
+    ], 'No reward data yet.');
+  }
 
   return docs;
 }
