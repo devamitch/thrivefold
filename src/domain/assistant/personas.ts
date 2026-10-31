@@ -2,7 +2,7 @@
  * The roles one coach can take. Same voice, same memory, same rules; only the focus and the way
  * it explains change. None of them diagnoses or prescribes.
  */
-export type PersonaId = 'coach' | 'health' | 'speech' | 'nutrition' | 'friend' | 'reader';
+export type PersonaId = 'coach' | 'health' | 'speech' | 'nutrition' | 'friend' | 'reader' | 'support';
 
 export interface Persona {
   id: PersonaId;
@@ -58,6 +58,15 @@ export const PERSONAS: Persona[] = [
     focus:
       'Act like a patient reader and explainer: read the screen, Learn articles and their records back in simple ' +
       'sentences, one idea at a time, with a short example. Offer to go deeper.',
+  },
+  {
+    id: 'support',
+    label: 'Support companion',
+    icon: 'heart-circle-outline',
+    focus:
+      'Act as Anvay in support mode: a warm, nonjudgmental, unhurried space. ' +
+      'Listen first, understand the person\'s situation, never rush or overwhelm them with questionnaires. ' +
+      'For medical or life danger, direct immediately to local emergency care (112 / 911 / 999).',
   },
 ];
 

@@ -27,6 +27,7 @@ import { parseChatAction } from '../../domain/assistant/chatActions';
 import { runChatAction } from './chatActions';
 import { logCoachTurnLocally } from '../ai/aiInteractionStore';
 import { recentDaysLines, standingLines } from '../../domain/assistant/appKnowledge';
+import { detectCrisisIntent } from '../ai/emergencySupport';
 
 /**
  * Hard questions (exact numbers, medicines, trips and real-life plans) go to the online coach when
@@ -253,7 +254,15 @@ class AgentEngine {
       return { text: msg };
     }
 
-    // 1. Check deterministic fast-path commands first
+    // 1. Check deterministic fast-path commands and crisis evaluation first
+    const crisisAssessment = detectCrisisIntent(text);
+    if (crisisAssessment.isCrisis) {
+      const res = await executeTool('trigger_urgent_support', {}, { userId: 'local_user' });
+      const fullReply = `${crisisAssessment.deescalationScript}\n\n${res.message}`;
+      this.finishTurn(fullReply, res, callbacks);
+      return { text: fullReply, toolResult: res };
+    }
+
     const cmd: Command = parseCommand(text);
     const direct =
       cmd.kind === 'export' ||
@@ -508,12 +517,19 @@ class AgentEngine {
       const { reply } = await askThrive(turns.length ? turns : [{ role: 'user', content: text }]);
       const answer = reply?.trim();
       if (!answer) return null;
-      void thriveRag
-        .remember(text.slice(0, 80), `Question: ${text}\nAnswer: ${answer}`, 'wellness_guide', {
-          source: 'cloud_coach',
-          at: new Date().toISOString(),
-        })
-        .catch(() => undefined);
+      // Sensitive safety, medical, or crisis turns are never memorized into long-term RAG memory
+      const isSafetyContext =
+        this.activeSession.currentRoute.includes('safety') ||
+        this.activeSession.currentRoute.includes('someone-to-talk') ||
+        detectCrisisIntent(text).isCrisis;
+      if (!isSafetyContext) {
+        void thriveRag
+          .remember(text.slice(0, 80), `Question: ${text}\nAnswer: ${answer}`, 'wellness_guide', {
+            source: 'cloud_coach',
+            at: new Date().toISOString(),
+          })
+          .catch(() => undefined);
+      }
       return answer;
     } catch {
       return null;

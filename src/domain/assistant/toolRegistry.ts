@@ -373,13 +373,65 @@ export const TOOLS: Record<string, ToolDefinition> = {
     description: 'Provides immediate crisis helpline contacts and opens urgent support screen.',
     parameters: {},
     execute: async () => {
-      navigateTo('/(app)/safety/urgent-support');
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { resolveEmergencyJurisdiction } = require('../../services/location/emergencyLocationResolver');
+      const jur = await resolveEmergencyJurisdiction();
+      navigateTo('/(app)/safety/someone-to-talk');
       return {
         success: true,
-        message:
-          "You are not alone. I'm opening urgent support right now. Tele-MANAS on 14416 is free, 24/7. In emergency, call 112.",
-        routeToOpen: '/(app)/safety/urgent-support',
+        message: `You are not alone. I'm opening urgent support right now. For ${jur.countryName}: Emergency is ${jur.primaryEmergency.number}, and free 24/7 mental health support is ${jur.primaryMentalHealth.number}.`,
+        routeToOpen: '/(app)/safety/someone-to-talk',
         autoNavigate: true,
+      };
+    },
+  },
+
+  get_emergency_directory: {
+    name: 'get_emergency_directory',
+    description: 'Retrieves verified emergency services, ambulance, and crisis support numbers for the user\'s country.',
+    parameters: {
+      countryCode: {
+        type: 'string',
+        description: 'Two-letter ISO country code (e.g. IN, US, GB, CA, AU)',
+        required: false,
+      },
+    },
+    execute: async (params: { countryCode?: string }) => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { resolveEmergencyJurisdiction } = require('../../services/location/emergencyLocationResolver');
+      const jur = await resolveEmergencyJurisdiction(params.countryCode);
+      const lines = jur.allContacts.map((c: any) => `• ${c.name} (${c.number}) - ${c.hours}`);
+      return {
+        success: true,
+        message: `Verified emergency contacts for ${jur.countryName}:\n${lines.join('\n')}`,
+        data: jur,
+        routeToOpen: '/(app)/safety/someone-to-talk',
+      };
+    },
+  },
+
+  find_nearby_emergency_care: {
+    name: 'find_nearby_emergency_care',
+    description: 'Finds the nearest hospital emergency departments and urgent care clinics based on device location.',
+    parameters: {},
+    execute: async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { requestLocationForEmergencyCare, findNearbyEmergencyCare } = require('../../services/location/emergencyLocationResolver');
+      const coords = await requestLocationForEmergencyCare();
+      if (!coords) {
+        return {
+          success: false,
+          message: 'Location access is required to find emergency care closest to you. I can open the map search for hospitals instead.',
+          routeToOpen: '/(app)/safety/someone-to-talk',
+        };
+      }
+      const facilities = await findNearbyEmergencyCare(coords.latitude, coords.longitude);
+      const list = facilities.slice(0, 3).map((f: any) => `• ${f.name}${f.distanceKm ? ` (${f.distanceKm} km away)` : ''}`).join('\n');
+      return {
+        success: true,
+        message: `Found nearby emergency medical care:\n${list}\n\nI have prepared one-tap map directions and direct calls.`,
+        data: { facilities },
+        routeToOpen: '/(app)/safety/someone-to-talk',
       };
     },
   },

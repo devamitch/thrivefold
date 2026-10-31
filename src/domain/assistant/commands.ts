@@ -56,6 +56,9 @@ const OPEN: { words: RegExp; route: string; label: string }[] = [
   { words: /\bprogress\b|\btrend|\bhistory\b/, route: '/(app)/(tabs)/progress', label: 'progress' },
   { words: /\bjournal\b|\bwrite\b/, route: '/(app)/journal/new', label: 'a new journal entry' },
   { words: /\broutines?\b|\balarms?\b|\bschedules?\b|\breminders?\b|\bbedtime timer\b/, route: '/(app)/routines', label: 'routines and alarms' },
+  { words: /\b(api keys?|byok|bring your own key|gemini key|groq key|ai settings?)\b/, route: '/(app)/settings/ai-byok', label: 'AI settings and keys' },
+  { words: /\bsomeone to talk\b|\btalk to someone\b|\bneed to talk\b|\bgrounding\b/, route: '/(app)/safety/someone-to-talk', label: 'someone to talk to' },
+  { words: /\bemergency (contacts?|numbers?|helplines?)\b|\burgent support\b|\bsos\b/, route: '/(app)/safety/someone-to-talk', label: 'emergency support' },
   { words: /\bsettings?\b/, route: '/(app)/(tabs)/settings', label: 'settings' },
 ];
 
