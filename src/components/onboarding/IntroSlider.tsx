@@ -46,7 +46,7 @@ const SLIDES: readonly IntroSlide[] = [
     id: 'health',
     eyebrow: 'Yours, on your phone',
     title: 'Your health, kept close',
-    description: 'Check-ins, sleep, workouts and health notes are encrypted on this device. Nothing leaves it unless you choose.',
+    description: 'Your health logs stay on this device by default. Signing in can sync selected profile and progress details.',
     image: require('../../../assets/illustrations/activity-indoor.jpg'),
   },
   {

@@ -123,7 +123,7 @@ data). The phone had been running a debug build, which on its own makes the whol
 | Excel export                            | real .xlsx, About sheet + one sheet per category; Android saves via folder picker                                                   | 7884e6d      |
 | Server account deletion                 | delete-account function deployed; app deletes server then phone                                                                     | 72b7b63      |
 | Last screen restore                     | never fired before; allowlist, 12 h, on top of Home                                                                                 | 4f08b93      |
-| Crashlytics                             | integrated, opt-out setting, no personal content; `Initializing Firebase Crashlytics 21.0.0` seen in the phone's log                | (this round) |
+| Crashlytics                             | integrated; setting is off until enabled; diagnostics use generic error text and safe stack frames                                  | 2026-11-01   |
 | Pose rate in low light                  | ~10 results/s, 60-140 ms latency: camera frame rate drops in a dim room                                                             | —            |
 
 ## Update — 2026-10-25 (14): dating (spec §18), letters cleanup

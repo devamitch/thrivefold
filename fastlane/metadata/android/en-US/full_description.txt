@@ -1,43 +1,25 @@
-Thrivefold is your calm personal companion for mindful movement, bodyweight biomechanics, daily habits, and vitality.
+Thrivefold is a wellbeing companion for daily check-ins, movement, meals, water and personal routines. Use the app without an account; selected profile and progress details can sync when you sign in.
 
-Designed to help you build sustainable daily health without noisy social feeds or clinical pressure, Thrivefold combines on-device pose tracking with guided movement sessions, wellness quests, and holistic calendar planning.
+DAILY WELLBEING
+• Check in on your mood, energy, stress and sleep.
+• Build routines with quests, reminders and progress views.
+• Keep private journal, cycle and health logs on your device by default.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✨ KEY FEATURES
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MOVEMENT
+• Follow guided home workouts and movement sessions.
+• With camera permission, count repetitions and receive movement cues on your device. Camera frames are processed in memory and are not saved by this feature.
+• Track steps from your phone or connected sources when you grant permission.
 
-🤸 ON-DEVICE POSE COACHING & FORM FEEDBACK
-• Real-Time Landmarks: Utilizes privacy-preserving on-device camera computer vision to observe posture alignment and movement flow.
-• Zero Cloud Video: All camera frames are processed exclusively in volatile device memory and never recorded, saved, or uploaded.
-• Guided Form Guides: Visual and gesture cues guide your movement pacing and rest transitions.
+FOOD AND ACTIVITY
+• Log meals and water.
+• Review food and nutrition information from the app's food data.
+• Ask for an optional AI meal estimate; the selected photo is sent for processing when you request it.
+• Connect Health Connect for supported activity and health records, with permission for each data type.
 
-🔗 HEALTH CONNECT & ON-DEVICE SENSORS
-• Strictly On-Device Sync: Thrivefold utilizes Health Connect and device sensor permissions strictly on-device to read user activity, step count, sleep, and fitness matrices.
-• Real-Time Motivation: This data is processed locally within gamified wellbeing routines to provide real-time self-care motivation.
-• Zero Cloud Health Database: No raw health metrics or personal health data are sold, shared, or persisted to remote backend databases.
+YOUR DATA
+• No account is required for local wellbeing features.
+• Signing in can sync selected profile and progress details. Weekly summaries and cloud AI are separate optional features.
+• Usage analytics and crash reports are off by default and can be enabled in Privacy settings.
+• Export local app data or erase it from the device in the app settings.
 
-🌿 MINDFUL TRAINING & CALM SESSIONS
-• Bodyweight Basics: Core strength, mobility flows, and low-impact cardio routines designed for all fitness levels.
-• Personalized Movement: Choose between home routines, steady-pace mobility, and posture resets.
-• Audio & Motion Guidance: Gentle audio chimes and clear visual guides keep you focused on your breath and form.
-
-📅 HOLISTIC CALENDAR & DAILY QUESTS
-• Daily Check-ins: Quick 1-minute reflection on energy, mood, and movement intentions.
-• Flow Quests: Bite-sized daily actions that reward consistent, mindful habits with experience points (XP).
-• Rhythm Strip: Visual timeline of past sessions, streaks, and personal milestones.
-
-🧠 MINDFUL REFLECTION & FOCUS PACING
-• On-Device Focus Screening: Explore your personal rhythm and pacing with private, HIPAA-aligned daily self-reflection.
-• Coach Voice Guidance: Spoken prompts for eye pursuits, breathing resets, and gentle movement pacing.
-• Adaptive Habit Tweaks: Practical, non-judgmental micro-adjustments for deep work, transitions, and sensory comfort.
-
-🛡️ THE ANVAYKOSH ECOSYSTEM & SOVEREIGN PRIVACY
-• Anvay ID 1-Tap Sign-In: Seamless, federated access across all flagship Amit Dev Labs ecosystem apps.
-• Local-First & Offline Ready: All workouts, logs, and habit records function fully offline in Airplane Mode.
-• Zero Telemetry: No third-party ad trackers, covert device fingerprinting, or invasive analytics.
-• Hardware Encrypted Vault: Your health metrics stay encrypted on your device and are never shared without explicit consent.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚠️ HEALTH & FITNESS DISCLAIMER
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Thrivefold is a general fitness, ergonomic movement, and mindful wellbeing application intended to encourage healthy physical activity and posture habits. Thrivefold is NOT a medical device and does NOT diagnose, treat, cure, or prevent any injury, cardiovascular condition, musculoskeletal disorder, or disease. Always consult a qualified physician or healthcare provider before beginning any new exercise routine.
+Thrivefold supports general wellbeing and healthy habits. It is not a medical device and does not diagnose, treat, cure or prevent any condition. Cycle predictions and nutrition estimates are approximate. Consult a qualified clinician with health concerns or before starting a new exercise programme.

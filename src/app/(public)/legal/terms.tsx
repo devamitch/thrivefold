@@ -29,7 +29,7 @@ export const TERMS_SECTIONS = [
   {
     title: '5. User Responsibilities & Device Security',
     body:
-      'Because your health records, journal notes, and RAG memories are stored encrypted on your device, you are responsible for maintaining physical device security and an active screen lock. You acknowledge that uninstalling the application may remove app-private storage unless you export your records beforehand.',
+      'Thrivefold stores local records in app-private storage and uses MMKV encryption when secure key storage is available on the device. If secure key storage is unavailable, the app may use unencrypted local storage. Keep your device secure and export records you want to retain before uninstalling or changing phones.',
   },
   {
     title: '6. Acceptable Use & Curated Correspondence',

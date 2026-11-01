@@ -1,76 +1,15 @@
-# Thrivefold — Play Console answers (from the code, 2026-10-28)
+# Thrivefold — Play Console draft (review before submission)
 
-Package `com.amit.thrivefold`. Use these when filling the store listing, Data safety, Health apps
-and permission declarations. Every line is based on what the release build actually does; if you
-change a feature, update this file.
+Package `com.amit.thrivefold`. This is a working draft, not a verified Play declaration. Recheck
+the release artifact, enabled SDK behavior, server retention, and every active Play version before
+submission. Update this file when implementation changes.
 
 ## Store listing
 
-**Short description (75 chars)**
+**Listing source**
 
-```
-Private wellbeing: daily check-ins, camera coach, steps, water and meal log.
-```
-
-**Full description** — replace the old text. It claimed "Zero Telemetry" (Firebase crash reports
-and optional analytics exist) and "Anvay ID across all apps" (only inside Thrivefold today).
-
-```
-Thrivefold is a calm, private companion for everyday wellbeing: check in in a minute, move with a camera coach that counts your reps on your phone, log water and meals, and see how your days add up, without ads or social feeds.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✨ WHAT YOU CAN DO
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-☀️ TODAY AT A GLANCE
-• A one-minute check-in for energy, mood, stress and sleep
-• Daily quests picked for your goals, with points, levels and a roadmap
-• One clear next step on your home screen
-
-🤸 CAMERA COACH, ON YOUR PHONE
-• Guided home workouts with tutorial videos
-• The camera counts reps and checks form on the device; frames are never saved or uploaded
-• Hands-free gestures, voice cues, rest timers and set tracking
-• Nothing starts until you tap Start
-
-👣 STEPS, WATER AND ACTIVITY
-• Daily steps from your phone's own step counter (with your permission)
-• Water tracking with quick add, undo and history
-• Week and month charts from your real records only
-
-🍽️ MEAL LOG
-• Scan your plate with the camera or pick a photo
-• On-device food hints, plus an optional AI estimate of foods and macros when you ask for it
-• Typical values from food tables; AI estimates are clearly marked and you review every item
-
-🌸 CYCLE AND HEALTH (women's experience)
-• Cycle tracking with estimated phases and next period, shown as estimates
-• Symptoms, sleep, mood, medications and a private journal
-
-⌚ CONNECTED SOURCES (optional)
-• Health Connect: steps, sleep, heart rate, weight, workouts, and device vitals such as SpO₂, blood pressure or glucose when a watch, cuff or meter provides them
-• Thrivefold never estimates vitals from the camera or phone sensors
-
-🛡️ ANVAYKOSH
-• Optional Anvay ID (Google sign-in) and Anvay Vault: a small profile only you can read (name, photo, language, time zone). Health data is never part of it.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔒 YOUR PRIVACY
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• Works without an account; your records stay on your phone, encrypted
-• No ads and no ad tracking
-• Usage analytics are off unless you turn them on; crash reports help fix bugs and can be turned off in Privacy settings
-• A meal photo leaves your phone only when you ask for an AI estimate, and is not stored
-• Export or erase your data at any time
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚠️ HEALTH DISCLAIMER
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Thrivefold supports general wellbeing and healthy habits. It is not a medical device and does not diagnose, treat, cure or prevent any condition. Cycle predictions, calorie and macro values and AI estimates are approximate. Talk to a qualified clinician before starting a new exercise programme or if you have health concerns.
-```
-
-The repo's `fastlane/metadata/.../full_description.txt` still has the old text (that folder is
-write-protected for agents); copy the block above into it before running fastlane.
+The submitted metadata lives in `fastlane/metadata/android/en-US/`. Keep the full description there
+as the single source; review every claim against the release artifact before upload.
 
 ## App content
 
@@ -78,32 +17,32 @@ write-protected for agents); copy the block above into it before running fastlan
 | --- | --- |
 | Privacy policy URL | **Needed.** No public URL exists in the repo. Publish the in-app policy (`src/app/(app)/you/privacy.tsx` content) on a web page you own and paste its URL. |
 | Ads | **No ads.** |
-| App access | All features work without an account (Explore as guest). Optional Google sign-in. No credentials needed for review. |
+| App access | All features work without an account (Explore as guest). Optional Google sign-in. Guest access is available; verify review access against the current release. |
 | Target audience | 18+ (age gate in onboarding). Not designed for children. |
 | Content rating | Health & fitness; no violence, gambling or user-generated public content. Answer "no" to sharing location and to user-to-user communication (letters/communities are gated off). |
 | Health apps declaration | General wellness / fitness, **not a medical device**. Features: activity and fitness, nutrition, sleep, menstrual/cycle tracking, health metrics from Health Connect. |
 | Government app / financial / news | No. |
 
-## Data safety
+## Data safety — NOT READY FOR SUBMISSION
 
-Data is encrypted in transit (HTTPS) and at rest on the device (MMKV with a Keystore key).
-Users can request deletion: in-app **You → Account → Erase**, which also calls the
-`delete-account` server function for signed-in users.
+This section records implementation flows to investigate; it is not a set of final Play answers.
+Profile sync can include sensitive profile fields (including allergies, diet, height and weight),
+and optional weekly summaries can include health and activity measures. Optional cloud AI requests
+send recent conversation context, and food estimates can send a selected photo. Review exact
+payloads, SDK behavior, processors and retention before completing Play's current form. Device
+storage uses MMKV with a secure-storage key when available and has a fallback; do not claim
+universal hardware-backed encryption. Account deletion and local erase have separate effects.
 
-| Data type (Play category) | Collected? | Shared? | Optional? | Purpose | Notes |
-| --- | --- | --- | --- | --- | --- |
-| Name, email address | Yes, if the person signs in with Google | No | Yes | Account management | Supabase auth (processor). |
-| Health info (cycle, symptoms, check-ins, medications, journal) | **No** (stays on device) | No | — | — | Never uploaded. |
-| Fitness info (steps, workouts, heart rate, sleep, vitals from Health Connect) | **No** (stays on device) | No | — | — | Read from the phone sensor / Health Connect and kept on device. |
-| Photos | Yes, only when the person taps "Find foods and macros with AI" | No | Yes | App functionality | Sent once to Thrivefold's server, forwarded to Google Gemini (or OpenRouter as backup) as processors; not stored. Declare "processed ephemerally". |
-| Other user-generated content (Anvay Vault: display name, photo URL, language, time zone) | Yes, if the person syncs the vault | No | Yes | App functionality | Owner-only row in Supabase. |
-| Crash logs, diagnostics | Yes | No | Yes (toggle in Privacy) | Analytics / app stability | Firebase Crashlytics (processor). |
-| App interactions (screen views) | Yes, only if the person turns on usage analytics | No | Yes (off by default) | Analytics | Firebase Analytics; ad storage and ad ID disabled. |
-| Location, contacts, messages, audio, files, web history, financial info | No | No | — | — | Location permission exists only for Bluetooth scanning on Android ≤ 11 (`maxSdkVersion=30`); no location is read. |
-| Device or other IDs | No | No | — | — | Advertising ID and ad-services permissions are blocked in `app.json`. |
+| Data flow to investigate | Known implementation behavior | Play declaration work |
+| --- | --- | --- |
+| Google sign-in and account data | Sign-in can create an account; Supabase stores account identity. | Confirm exact identity fields and classify collection, purpose, optionality and deletion. |
+| Profile and progress | Selected profile fields and reward/progress details can sync to Supabase. | Include applicable personal and sensitive categories; verify exact schema and payload. |
+| Health and fitness records | Most records are local; optional weekly-summary sharing and profile sync exist. | Audit outbound payloads and classify any health/fitness data sent. |
+| Photos and AI prompts | User-requested meal estimates can send a photo; cloud AI consent can send recent chat context. | Confirm routes, processors, retention and applicable photo, message and health categories. |
+| Diagnostics and app interactions | Crash reporting and usage analytics have separate settings and default off; Firebase SDKs are included. | Inspect release SDK initialization and transmitted fields, including identifiers. |
+| Other categories | Android location permission is limited to older OS versions for BLE scanning; ad identifiers are disabled in app config. | Verify manifest and runtime behavior in the release artifact. |
 
-Under Play's definitions, sending data to a service provider that processes it on your behalf is
-**not sharing**.
+Do not copy categorical "No" answers into Play Console without completing this review.
 
 ## Permissions to justify
 
@@ -122,6 +61,6 @@ build (no feature uses them).
 
 ## Release
 
-- Current build: `versionName 1.0.2`, `versionCode 3`. The upload must have a higher
-  `versionCode` than the last one in Play Console (check *Internal testing*).
+- Repository build config: `versionName 1.0.8`, `versionCode 14`. Confirm the Play Console track
+  has a lower code before upload.
 - Release AAB: `cd android && ./gradlew bundleRelease`.

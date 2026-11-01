@@ -30,7 +30,7 @@ DONE (seen on the phone), BUILT (in the build, not yet seen on the phone), TODO,
 | Roles: Coach, Health guide, Speech practice, Nutrition, Friend, Reader | DONE |
 | Hard questions (numbers, medicines, trips, plans) use local RAG/model first, then consented online fallback only after local failure or evidence refusal | BUILT (source + 568 unit tests; phone verification pending) |
 | Cloud-generated answers become reusable local RAG knowledge only after review and explicit approval | TODO — automatic promotion removed; current RAG schema has no review state |
-| Every coach turn kept on the phone (SQLite `ai_interactions`, never uploaded) | BUILT |
+| Chat history retained locally (`ai_interactions`); recent context can be sent only with cloud AI consent | BUILT |
 | Talks on its own, constant background monitoring | TODO |
 
 ## On-device models
@@ -97,3 +97,10 @@ Rules-of-Hooks errors in untouched `LootBoxModal.tsx`. No device run; no release
 `pnpm compile` PASS · `pnpm test --runInBand` PASS (90 suites, 570 tests) · targeted ESLint for
 policy and dating files PASS · stale-reference scan and `git diff --check` PASS. No device run;
 these changes update documentation and comments only.
+
+
+## Validation (2026-11-01 — privacy defaults and disclosure hygiene)
+`pnpm compile` PASS · `pnpm test --runInBand` PASS (91 suites, 572 tests) · targeted ESLint PASS
+(0 errors; existing warnings in `IntroSlider.tsx` and `appSlice.ts`) · `git diff --check` PASS.
+Full device verification was not performed. Play Data safety declarations remain explicitly marked
+NOT READY FOR SUBMISSION pending release payload, SDK, processor and retention review.

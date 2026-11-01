@@ -122,7 +122,7 @@ export interface AppSlice {
   shareWeeklySummaries: boolean;
   /** Opt-in: anonymous usage analytics (screens and feature use, never health data). Off by default. */
   usageAnalytics: boolean;
-  /** Crash reports (stack traces, device model, app version; no personal content). Opt-out. */
+  /** Crash reports (generic error, stack frames, device model and app version). Off until enabled. */
   crashReports: boolean;
   setCrashReports: (on: boolean) => void;
   /** Explicit consent to send typed questions to the cloud AI companion. Off by default. */
@@ -278,7 +278,7 @@ export const createAppSlice: StateCreator<
   setHomeGuideDone: () => set({ homeGuideDone: true }),
   shareWeeklySummaries: false,
   usageAnalytics: false,
-  crashReports: true,
+  crashReports: false,
   setCrashReports: (crashReports) => set({ crashReports }),
   cloudAiConsent: false,
   setCloudAiConsent: (cloudAiConsent) => set({ cloudAiConsent }),

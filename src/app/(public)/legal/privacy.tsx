@@ -7,29 +7,29 @@ import { useTheme } from '../../../theme/useTheme';
 
 export const PRIVACY_SECTIONS = [
   {
-    title: '1. Local-First & Device-Bound Encryption',
+    title: '1. Local-First Storage',
     body:
-      'Check-ins, daily reflections, biological rhythm logs, pose coordinates, workout metrics, and journal notes are stored directly on your physical device. The database is encrypted at rest using AES-256 with keys managed by the hardware-backed Android Keystore. Your private keys never leave your phone, and our servers cannot decrypt your local data.',
+      'Daily check-ins, cycle entries, journals, workouts, and other health logs are stored on your device by default. Thrivefold uses MMKV encryption when it can create and store a local key with Android secure storage. If secure key storage is unavailable, the current app falls back to unencrypted MMKV; development environments may use memory storage. Do not treat local storage as an online backup.',
   },
   {
     title: '2. Guest Mode & Zero Mandatory Account',
     body:
-      'You are never required to create an account or provide an email, phone number, or social identity to use Thrivefold. All core features—including our on-device wellness coach, routines, timers, games, and local AI—are 100% accessible to guest users out of the box and function completely offline.',
+      'You can use core check-ins, routines, and personal logs without an account. Some features require a network connection, a downloaded on-device model, or a device permission.',
   },
   {
     title: '3. Optional Cloud Account & Sync',
     body:
-      'If you voluntarily choose to sign in (via Google or Email Magic Code), only minimal account metadata (user ID, avatar seed, pseudonym, and earned XP/achievement ledger) is synchronized with our secure Supabase backend so you can restore progress across phones. Your personal health notes, cycle logs, and camera pose coordinates are never uploaded to the cloud.',
+      'If you sign in with Google or an email code, Thrivefold can sync account profile and progress details with its Supabase server. Profile details may include a name, birthday, chosen experience, goals, diet, allergies, contact details, height, weight, and other information you chose to save. Progress sync includes points, levels, achievements, and reward history. Daily check-ins, cycle logs, journals, and camera frames are not part of these sync operations. Weekly summaries are sent only when you enable that separate option.',
   },
   {
     title: '4. On-Device Local AI & Privacy Boundary',
     body:
-      'Our primary intelligent assistant operates using on-device models (GGUF quantizations executed locally via our native Android AI runtime). Prompt processing, token generation, and RAG retrieval occur entirely within your device RAM and never transmit query text to any third-party server.',
+      'When a compatible model is installed, the assistant can answer on-device and retrieve local app knowledge. Local chat turns and memories are stored on this device. The assistant may use other local or online paths depending on your settings and the available evidence; see the cloud AI control below.',
   },
   {
     title: '5. Optional Cloud AI Escalation & Safety Isolation',
     body:
-      'If you have explicitly opted into Cloud AI and are signed in, complex multi-step questions (such as precision macro calculations or complex travel itineraries) may be escalated to our server-side AI gateway. Sensitive domains—including mental health distress, medical symptoms, reproductive tracking, and crisis conversations—are strictly blocked from cloud escalation and are processed exclusively on-device.',
+      'Cloud AI is off until you enable it. When enabled and signed in, recent conversation messages may be sent through Thrivefold’s server to its configured AI provider. Do not include information you do not want processed by that service. The assistant applies local safety and routing rules, but AI responses can be incomplete or wrong and are not medical advice.',
   },
   {
     title: '6. Continuous RAG Knowledge & Memory Scope',
@@ -49,12 +49,12 @@ export const PRIVACY_SECTIONS = [
   {
     title: '9. Zero Advertising, Zero Data Brokering',
     body:
-      'Thrivefold does not include third-party advertising SDKs, data brokers, or profiling networks. We do not monetize your attention, track your cross-app activity, or sell personal information to insurance companies, marketers, or data aggregators.',
+      'Thrivefold has no advertising in this release. Anonymous usage analytics and crash reporting are separate settings and are off until you enable them. When enabled, analytics may include screen or feature use; crash reports may include generic error details, stack frames, device model, app version, and recent screen names. These diagnostics are designed to exclude health records, journal text, messages, and transcripts.',
   },
   {
     title: '10. Data Portability, FHIR Export & 1-Tap Erasure',
     body:
-      'You maintain complete ownership of your wellness data. You can export your full history at any time as JSON or as an HL7 FHIR R4 clinical bundle. You can also trigger 1-tap local data erasure from the You tab, which immediately wipes the database and rotates the Keystore encryption key.',
+      'You can export app data from Privacy and data and restore a saved backup on Android. You can erase local app data from the account controls. Server account data is handled separately through account deletion. Export coverage and available formats can vary by record type; review the export before relying on it as your only copy.',
   },
   {
     title: '11. Non-Medical Wellbeing Disclaimer',

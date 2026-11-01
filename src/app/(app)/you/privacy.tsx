@@ -77,12 +77,12 @@ export default function PrivacyScreen() {
   };
 
   return (
-    <ScreenContainer header={<AppHeader title="Privacy and data" subtitle="Your records stay on this phone" showBack />} scrollMode="shell-scroll-view">
+    <ScreenContainer header={<AppHeader title="Privacy and data" subtitle="Choose what you share" showBack />} scrollMode="shell-scroll-view">
       <Text style={[typography.subbody, { color: colors.text.secondary, marginBottom: spacing.md }]}>
-        Check-ins, cycle records, journal, workouts, meals and photos are encrypted on this phone. Nothing leaves it unless
-        you choose one of the options below.
+        Daily health logs and journal entries stay on this phone by default. When you sign in, selected profile and
+        progress details can sync. Use the options below to control weekly summaries, analytics, crash reports and cloud AI.
       </Text>
-      <SettingsRow icon="download-outline" title="Back up everything" subtitle="Save a full copy as a file. Do this before you uninstall or change phones." onPress={exportAll} />
+      <SettingsRow icon="download-outline" title="Export app data" subtitle="Save records stored by Thrivefold on this phone to a file." onPress={exportAll} />
       {Platform.OS === 'android' ? (
         <SettingsRow icon="cloud-download-outline" title="Restore from a backup" subtitle="Add records from a saved backup. Nothing here is replaced." onPress={restore} />
       ) : null}
@@ -113,13 +113,13 @@ export default function PrivacyScreen() {
       <SettingsRow
         icon="bug-outline"
         title="Send crash reports"
-        subtitle="When the app crashes: the error, device model and app version, and recent screen names. Never your records, notes or messages."
+        subtitle="Sends generic error and stack-frame details, device model, app version and recent screen names. Off until you turn it on."
         right={<Toggle value={s.crash} onValueChange={s.setCrash} accessibilityLabel="Send crash reports" />}
       />
       <SettingsRow
         icon="chatbubble-ellipses-outline"
         title="AI companion (Ask Thrive)"
-        subtitle="Sends only what you type in Ask Thrive to an AI provider through Thrivefold's server. Off by default."
+        subtitle="With your consent, sends recent chat messages to an AI provider through Thrivefold's server. Off by default."
         right={<Toggle value={s.cloudAi} onValueChange={s.setCloudAi} accessibilityLabel="AI companion" />}
       />
       <Link href={'/(app)/safety' as Href} asChild>

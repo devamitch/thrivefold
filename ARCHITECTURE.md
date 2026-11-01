@@ -1,79 +1,26 @@
-# Thrivefold Technical Architecture
+# Architecture overview
 
-## 1. System Overview & Technology Stack
+This is a short map of the current app. Source code and `AGENTS.md` define the implementation
+rules; see `docs/PRODUCT_COMPLETION_PLAN.md` and `docs/REQUIREMENTS_STATUS.md` for current status.
 
-Thrivefold is built on an enterprise-grade, local-first React Native architecture utilizing the Expo managed workflow with modern native plugins:
+## App layers
 
-```
-+-------------------------------------------------------------------------+
-|                           Mobile App (Client)                           |
-|                                                                         |
-|  +---------------------+  +---------------------+  +-----------------+  |
-|  | Expo Router v55     |  | Zustand App Stores  |  | Design System   |  |
-|  | (File-based routes) |  | (MMKV Persistence)  |  | (Setu & Blink)  |  |
-|  +----------+----------+  +----------+----------+  +--------+--------+  |
-|             |                        |                      |           |
-|  +----------v------------------------v----------------------v--------+  |
-|  |                       Core Domain Engine                          |  |
-|  |  +---------------------+  +-----------------+  +---------------+  |  |
-|  |  | Policy Engine       |  | Chip Catalog    |  | Letter Math   |  |  |
-|  |  | (Deterministic RFC) |  | & Moderation    |  | & Transit     |  |  |
-|  |  +---------------------+  +-----------------+  +---------------+  |  |
-|  +-----------------------------------+-------------------------------+  |
-|                                      |                                  |
-|  +-----------------------------------v-------------------------------+  |
-|  |                   Local AI & Offline Intelligence                 |  |
-|  |  +---------------------+  +-----------------+  +---------------+  |  |
-|  |  | Rule-based Expert   |  | Local Classifier|  | Sovereign     |  |  |
-|  |  | Systems             |  | & Sentiment     |  | Memory Vault  |  |  |
-|  |  +---------------------+  +-----------------+  +---------------+  |  |
-+--------------------------------------|----------------------------------+
-                                       | TLS 1.3 / Anonymized Proxy
-                                       v
-+-------------------------------------------------------------------------+
-|                  Serverless Cloud Layer (Optional Sync)                 |
-|                                                                         |
-|  +-----------------------------+     +-------------------------------+  |
-|  | Supabase PostgreSQL 16      |     | Server Cloud AI Proxy         |  |
-|  | - Deny-by-default RLS       |     | - Free Gemini API Gateway     |  |
-|  | - Anonymous Social Profiles |     | - Zero API Keys in Client     |  |
-|  | - Letter Dispatch Queue     |     | - Daily Cost Quotas           |  |
-|  +-----------------------------+     +-------------------------------+  |
-+-------------------------------------------------------------------------+
-```
+- **App shell and navigation:** Expo Router routes under `src/app/`; shared navigation and UI live
+  under `src/components/`.
+- **State:** one Zustand store, `useRootStore`, composed from slices in `src/stores/slices/`.
+- **Persistence:** the store uses MMKV through `src/stores/persistStorage.ts`; encryption depends on
+  secure key storage being available. See `DATA_PRIVACY.md` for the fallback behavior.
+- **Domain rules:** pure calculations and policy decisions live under `src/domain/`.
+- **Local data:** app state is local-first. SQLite supports AI memory, retrieval, analytics, and
+  queued work in their respective service modules.
+- **Network:** server reads and writes use the shared TanStack Query client and service modules.
+- **Native features:** Expo config plugins and custom modules live in `modules/`; generated
+  `android/` and `ios/` directories are not edited directly.
 
----
+## Current boundaries
 
-## 2. Component Layers
-
-### A. Routing & Navigation (`src/app/`)
-Uses Expo Router file-based system:
-- `(onboarding)`: Progressive discovery and experience selection (`women_health`, `men_health`, `pride_wellbeing`).
-- `(app)/(tabs)`: Bottom tab bar navigation for Home, Today, Progress, Learn, and Settings.
-- `(app)/letters`: Mailbox, stamp collection, and the structured chip composer.
-- `(app)/social`: Curated introduction discovery matching consented cohorts.
-- `(app)/circles`: Private, segmented affinity circles.
-- `(app)/safety`: Panic button, emergency hotlines, and instant blocking.
-
-### B. State Management (`src/stores/`)
-- Powered by **Zustand** with synchronous, zero-lag **MMKV** storage persistence.
-- Decoupled into specialized slices:
-  - `useAppStore`: Theme mode, active experience, notifications, and language.
-  - `useAuthStore`: Anonymous session, token state, age assurance status.
-  - `useHealthStore`: Daily metrics, cycle tracking, strength logging, and streak counts.
-  - `useLetterStore`: Sent letters, received letters, stamps, and pen-pal connections.
-  - `usePolicyStore`: Active feature grants, consent audit trail, and quota counters.
-
-### C. UI & Design System (`src/theme/`, `src/components/ui/`)
-- Dynamic theme switching between three palettes:
-  - `women_health`
-  - `men_health`
-  - `pride_wellbeing`
-- Continuous curved squircles matching Apple Design guidelines via custom canvas or border radiuses.
-- Reusable primitives: `ScreenWrapper`, `Card`, `Button`, `Chip`, `Badge`, `Header`.
-
-### D. Security & Row Level Security (RLS)
-- Supabase SQL schema enforces PostgreSQL RLS across all tables:
-  - Users can only read their own profile and private memory logs.
-  - Letters are only readable by sender and recipient once transit time has elapsed.
-  - Blocked users cannot query each other's pseudonym or trigger letter delivery.
+- Core check-ins, routines, journaling, and cycle tracking do not require an account or network.
+- Profile and progress sync are account features; weekly summary sharing is separately controlled.
+- Social routes remain gated until age assurance, consent, and server safeguards are available.
+- The AnvayKosh shared identity, vault, connect, and sync services are not live in Thrivefold.
+- Read [AI system map](AI_SYSTEM.md) for the assistant, local AI, and retrieval entry points.

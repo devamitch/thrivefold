@@ -6,10 +6,10 @@
 
 ## 1. Metadata Policy Compliance
 - [x] Title is <= 30 characters (27 characters).
-- [x] Short description is <= 80 characters (77 characters).
-- [x] Full description is <= 4000 characters (2485 characters).
+- [x] Short description is <= 80 characters (63 characters).
+- [x] Full description is <= 4000 characters (1675 characters).
 - [x] Zero ranking claims ("best", "#1", "top"), price terms, or keyword stuffing.
-- [x] Accurate feature representation substantiated by current code.
+- [ ] Recheck all listing claims against the release build before submission.
 
 ## 2. Graphic Asset Standards
 - [x] Play Icon: Exactly 512 × 512 px, 32-bit PNG with alpha, under 1 MB.
@@ -18,12 +18,12 @@
 - [x] Aspect ratio between 1:2 and 2:1 rigorously verified.
 
 ## 3. Data Safety & Privacy Declarations
-- [x] Zero Telemetry: No third-party ad tracking, commercial location harvesting, or covert fingerprinting.
-- [x] Local Enclave Storage: Data stored locally on device using hardware Keystore / SecureStore.
-- [x] Account Deletion: In-app data purge and clear account removal pathways provided.
-- [x] Sensitive Data Boundary: Health/family/cycle/vision data strictly isolated across apps by default.
+- [ ] Review Data safety categories against profile sync, weekly-summary sharing, cloud AI and Firebase SDK behavior.
+- [ ] Verify storage encryption behavior, account deletion and local erase in the release build.
+- [ ] Confirm optional telemetry defaults and actual transmitted fields in the release build.
+- [ ] Confirm the current privacy policy is published at the declared public URL.
 
 ## 4. Google Play Health Apps Declaration
-- [x] Compliant with Google Play Health Apps Policy (January 2024 / current update).
-- [x] Declared as Observational / General Wellbeing, NOT Medical Device.
-- [x] Explicit prominent health & fitness disclaimer included in full description.
+- [ ] Review current Play Health Apps requirements before submission.
+- [ ] Complete the Health Apps declaration from the shipped feature set.
+- [ ] Confirm the disclaimer in the submitted listing.
