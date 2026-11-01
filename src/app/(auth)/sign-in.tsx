@@ -1,27 +1,41 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { useKeyboardInset } from '../../hooks/useKeyboardInset';
 import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SquircleSurface } from '../../components/ui/SquircleSurface';
+import { useKeyboardInset } from '../../hooks/useKeyboardInset';
 
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { PRIVACY_SECTIONS } from '../(public)/legal/privacy';
+import { TERMS_SECTIONS } from '../(public)/legal/terms';
 import { AnimatedThrivefoldMark } from '../../components/brand/AnimatedThrivefoldMark';
 import { IntroSlider } from '../../components/onboarding/IntroSlider';
 import { Button } from '../../components/ui/Button';
 import { PressableScale } from '../../components/ui/PressableScale';
 import { TextField } from '../../components/ui/TextField';
+import { suggestedExperience } from '../../domain/account/googleProfile';
+import { TERMS_VERSION } from '../../domain/legal/terms';
 import {
   accountsAvailable,
   requestEmailCode,
   verifyEmailCode,
 } from '../../services/account/accountService';
-import { suggestedExperience } from '../../domain/account/googleProfile';
-import { googleAvailable, pendingGoogleProfile, requestBirthdayAndGender, signInWithGoogle } from '../../services/account/googleAccount';
-import { TERMS_VERSION } from '../../domain/legal/terms';
-import { applyProfile, profileFromGoogle, pullProfile, pushProfile } from '../../services/account/profileSync';
+import {
+  googleAvailable,
+  pendingGoogleProfile,
+  requestBirthdayAndGender,
+  signInWithGoogle,
+} from '../../services/account/googleAccount';
+import {
+  applyProfile,
+  profileFromGoogle,
+  pullProfile,
+  pushProfile,
+} from '../../services/account/profileSync';
+import { joinAsBetaTester, shareApp } from '../../services/distribution/appDistribution';
 import { newLocalId } from '../../stores/slices/authSlice';
 import { useRootStore } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
@@ -40,6 +54,7 @@ export default function SignInScreen() {
   const setIntroSeen = useRootStore((s) => s.setIntroSeen);
   const keyboardInset = useKeyboardInset();
   const [step, setStep] = useState<Step>('account');
+  const [legalModal, setLegalModal] = useState<'privacy' | 'terms' | null>(null);
 
   const [pseudonym, setPseudonym] = useState('');
   const [email, setEmail] = useState('');
@@ -79,11 +94,20 @@ export default function SignInScreen() {
     // Returning person: restore the saved profile (server first, then this phone) instead of
     // asking for the birthday and space again.
     const p = res.profile;
-    const base = { id: `google_${p.id}`, email: p.email, photo: p.photo, name: (p.givenName || p.name?.split(' ')[0] || 'Friend').slice(0, 24) };
+    const base = {
+      id: `google_${p.id}`,
+      email: p.email,
+      photo: p.photo,
+      name: (p.givenName || p.name?.split(' ')[0] || 'Friend').slice(0, 24),
+    };
     const remote = p.serverSession ? await pullProfile() : null;
     const local = useRootStore.getState();
     const knownHere =
-      !!local.user && !local.user.isGuest && local.user.email === p.email && local.user.age !== null && local.experienceConfirmed;
+      !!local.user &&
+      !local.user.isGuest &&
+      local.user.email === p.email &&
+      local.user.age !== null &&
+      local.experienceConfirmed;
     setBusy(false);
     if (remote && applyProfile(remote, base)) {
       void pushProfile();
@@ -97,8 +121,17 @@ export default function SignInScreen() {
       await requestBirthdayAndGender();
       const g = pendingGoogleProfile();
       const space = suggestedExperience(g?.gender ?? null);
-      const bd = g?.birthDateString && /^\d{4}-\d{2}-\d{2}$/.test(g.birthDateString) ? g.birthDateString : null;
-      if (g && bd && space && (g.age ?? 0) >= 18 && applyProfile(profileFromGoogle(bd, space, base.name), { ...base, gender: g.gender })) {
+      const bd =
+        g?.birthDateString && /^\d{4}-\d{2}-\d{2}$/.test(g.birthDateString)
+          ? g.birthDateString
+          : null;
+      if (
+        g &&
+        bd &&
+        space &&
+        (g.age ?? 0) >= 18 &&
+        applyProfile(profileFromGoogle(bd, space, base.name), { ...base, gender: g.gender })
+      ) {
         void pushProfile();
         router.replace('/');
       } else {
@@ -106,7 +139,6 @@ export default function SignInScreen() {
       }
     }
   };
-
 
   const guest = () => {
     continueAsGuest();
@@ -151,37 +183,164 @@ export default function SignInScreen() {
     });
     useRootStore.getState().acceptTerms(TERMS_VERSION);
     const remote = await pullProfile();
-    if (remote) applyProfile(remote, { id: res.userId, email: res.email, photo: null, name: name || 'Friend' });
+    if (remote)
+      applyProfile(remote, {
+        id: res.userId,
+        email: res.email,
+        photo: null,
+        name: name || 'Friend',
+      });
     void pushProfile();
     router.replace('/');
   };
 
   const legal = (
     <>
-    <Text style={[typography.caption, { color: colors.text.muted, textAlign: 'center', marginTop: spacing.md }]}>
-      By continuing with an account you confirm you are 18 or older and agree to the Terms and Privacy policy.
-    </Text>
-    <View style={[styles.links, { marginTop: spacing.xs }]}>
-      {(
-        [
-          ['Terms', '/(public)/legal/terms'],
-          ['Privacy', '/(public)/legal/privacy'],
-          ['Not medical advice', '/(public)/legal/health-disclaimer'],
-        ] as const
-      ).map(([label, href], i) => (
-        <React.Fragment key={href}>
-          {i > 0 ? (
-            <Text style={[typography.caption, { color: colors.text.muted }]}> · </Text>
-          ) : null}
-          <Link href={href} asChild>
-            <PressableScale hitSlop={10} accessibilityRole="link">
-              <Text style={[typography.caption, { color: colors.text.muted }]}>{label}</Text>
-            </PressableScale>
-          </Link>
-        </React.Fragment>
-      ))}
-    </View>
+      <Text
+        style={[
+          typography.caption,
+          { color: colors.text.muted, textAlign: 'center', marginTop: spacing.md, fontSize: 11 },
+        ]}
+      >
+        By continuing with an account you confirm you are 18 or older and agree to our
+      </Text>
+      <View
+        style={[
+          styles.links,
+          { marginTop: spacing.xs, flexWrap: 'wrap', justifyContent: 'center' },
+        ]}
+      >
+        <PressableScale
+          hitSlop={10}
+          accessibilityRole="button"
+          onPress={() => setLegalModal('terms')}
+        >
+          <Text
+            style={[
+              typography.captionBold,
+              { color: colors.primary, fontSize: 11, textDecorationLine: 'underline' },
+            ]}
+          >
+            Terms of Service
+          </Text>
+        </PressableScale>
+        <Text style={[typography.caption, { color: colors.text.muted, fontSize: 11 }]}> · </Text>
+        <PressableScale
+          hitSlop={10}
+          accessibilityRole="button"
+          onPress={() => setLegalModal('privacy')}
+        >
+          <Text
+            style={[
+              typography.captionBold,
+              { color: colors.primary, fontSize: 11, textDecorationLine: 'underline' },
+            ]}
+          >
+            Privacy Policy
+          </Text>
+        </PressableScale>
+        <Text style={[typography.caption, { color: colors.text.muted, fontSize: 11 }]}> · </Text>
+        <Link href="/(public)/legal/health-disclaimer" asChild>
+          <PressableScale hitSlop={10} accessibilityRole="link">
+            <Text style={[typography.caption, { color: colors.text.muted, fontSize: 11 }]}>
+              Not medical advice
+            </Text>
+          </PressableScale>
+        </Link>
+      </View>
     </>
+  );
+
+  const legalModalView = (
+    <Modal
+      visible={legalModal !== null}
+      transparent
+      animationType="fade"
+      onRequestClose={() => setLegalModal(null)}
+    >
+      <GestureHandlerRootView
+        style={[
+          StyleSheet.absoluteFill,
+          {
+            backgroundColor: 'rgba(0,0,0,0.65)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: spacing.md,
+          },
+        ]}
+      >
+        <Pressable style={StyleSheet.absoluteFill} onPress={() => setLegalModal(null)} />
+        <SquircleSurface
+          radius={24}
+          fill={colors.background}
+          style={{
+            width: '100%',
+            maxHeight: '82%',
+            padding: spacing.lg,
+            borderWidth: 1,
+            borderColor: colors.border,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: spacing.sm,
+            }}
+          >
+            <Text style={[typography.heading, { color: colors.text.primary }]}>
+              {legalModal === 'privacy' ? 'Privacy Policy' : 'Terms of Service'}
+            </Text>
+            <PressableScale
+              onPress={() => setLegalModal(null)}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel="Close"
+            >
+              <Ionicons name="close" size={24} color={colors.text.secondary} />
+            </PressableScale>
+          </View>
+          <Text
+            style={[
+              typography.caption,
+              { color: colors.text.muted, marginBottom: spacing.md, fontSize: 11 },
+            ]}
+          >
+            Version 2.4 · Effective November 1, 2026 · AnvayKosh Ecosystem
+          </Text>
+          <ScrollView showsVerticalScrollIndicator={false} style={{ flexShrink: 1 }}>
+            {(legalModal === 'privacy' ? PRIVACY_SECTIONS : TERMS_SECTIONS).map((sec) => (
+              <View key={sec.title} style={{ marginBottom: spacing.md }}>
+                <Text
+                  style={[
+                    typography.captionBold,
+                    { color: colors.text.primary, marginBottom: 4, fontSize: 12 },
+                  ]}
+                >
+                  {sec.title}
+                </Text>
+                <Text
+                  style={[
+                    typography.caption,
+                    { color: colors.text.secondary, lineHeight: 18, fontSize: 11 },
+                  ]}
+                >
+                  {sec.body}
+                </Text>
+              </View>
+            ))}
+          </ScrollView>
+          <Button
+            label="Done"
+            variant="primary"
+            size="sm"
+            onPress={() => setLegalModal(null)}
+            style={{ marginTop: spacing.md }}
+          />
+        </SquircleSurface>
+      </GestureHandlerRootView>
+    </Modal>
   );
 
   if (!introSeen) {
@@ -375,7 +534,6 @@ export default function SignInScreen() {
             </View>
           </SquircleSurface>
 
-
           {googleAvailable() ? (
             <PressableScale
               onPress={google}
@@ -417,14 +575,51 @@ export default function SignInScreen() {
           ) : null}
           {/* <Button label="Continue without an account" variant="ghost" onPress={() => setStep('name')} style={{ marginTop: spacing.xs }} /> */}
           <Button label="Explore as guest" variant="ghost" onPress={guest} />
+          <View style={[styles.distributionRow, { marginTop: spacing.xs }]}>
+            <PressableScale
+              onPress={() => void shareApp()}
+              accessibilityRole="button"
+              accessibilityLabel="Share Thrivefold app"
+              style={[styles.distributionAction, { backgroundColor: colors.surface1 }]}
+            >
+              <Ionicons name="share-outline" size={16} color={colors.primary} />
+              <Text
+                style={[
+                  typography.captionBold,
+                  { color: colors.text.primary, marginLeft: spacing.xs },
+                ]}
+              >
+                Share app
+              </Text>
+            </PressableScale>
+            <PressableScale
+              onPress={() => void joinAsBetaTester()}
+              accessibilityRole="button"
+              accessibilityLabel="Join the Thrivefold beta"
+              style={[styles.distributionAction, { backgroundColor: colors.surface1 }]}
+            >
+              <Ionicons name="people-outline" size={16} color={colors.primary} />
+              <Text
+                style={[
+                  typography.captionBold,
+                  { color: colors.text.primary, marginLeft: spacing.xs },
+                ]}
+              >
+                Join beta
+              </Text>
+            </PressableScale>
+          </View>
           <View style={{ paddingBottom: spacing.md }}>{legal}</View>
         </ScrollView>
+        {legalModalView}
       </View>
     );
   }
 
   return (
-    <View style={[styles.root, { backgroundColor: colors.background, paddingBottom: keyboardInset }]}>
+    <View
+      style={[styles.root, { backgroundColor: colors.background, paddingBottom: keyboardInset }]}
+    >
       <ScrollView
         contentContainerStyle={{
           paddingTop: insets.top + spacing.md,
@@ -536,6 +731,7 @@ export default function SignInScreen() {
         ) : null}
         {legal}
       </ScrollView>
+      {legalModalView}
     </View>
   );
 }
@@ -572,6 +768,15 @@ const styles = StyleSheet.create({
   },
   dot: { height: 8, borderRadius: 4 },
   secondaryRow: { flexDirection: 'row', gap: 8 },
+  distributionRow: { flexDirection: 'row', justifyContent: 'center', gap: 8 },
+  distributionAction: {
+    minHeight: 48,
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 16,
+  },
   links: { alignItems: 'center', flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap' },
   back: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   google: {

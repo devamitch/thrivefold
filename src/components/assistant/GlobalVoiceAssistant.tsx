@@ -83,9 +83,9 @@ import { useRootStore } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
 import { AnvayCompanion } from '../brand/AnvayCompanion';
 import { CameraCapture } from '../camera/CameraCapture';
+import { Button } from '../ui/Button';
 import { Chip } from '../ui/Chip';
 import { PressableScale } from '../ui/PressableScale';
-import { Button } from '../ui/Button';
 import { SquircleSurface } from '../ui/SquircleSurface';
 import { BrainSetupCard } from './BrainSetupCard';
 
@@ -771,15 +771,12 @@ export function GlobalVoiceAssistant() {
                             ]}
                             accessibilityLabel="Support Companion Sanctuary"
                           >
-                            <Ionicons name="heart-circle" size={13} color={colors.primary} />
-                            <Text
-                              style={[
-                                typography.captionBold,
-                                { color: colors.primary, marginLeft: 3 },
-                              ]}
-                            >
-                              Sanctuary
-                            </Text>
+                            <Ionicons
+                              name="heart-circle"
+                              accessibilityLabel="Support Companion Sanctuary"
+                              size={13}
+                              color={colors.primary}
+                            />
                           </View>
                         ) : sanctuary ? (
                           <View
@@ -787,9 +784,6 @@ export function GlobalVoiceAssistant() {
                             accessibilityLabel="Sanctuary status"
                           >
                             <Ionicons name="ribbon" size={12} color={colors.primary} />
-                            <Text style={[typography.caption, { color: colors.primary }]}>
-                              Sanctuary
-                            </Text>
                           </View>
                         ) : null}
                       </View>
@@ -916,8 +910,14 @@ export function GlobalVoiceAssistant() {
                         <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
                           Immediate Care & Safety
                         </Text>
-                        <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                          Your life and physical safety are the highest priority. Free 24/7 care is here.
+                        <Text
+                          style={[
+                            typography.caption,
+                            { color: colors.text.secondary, marginTop: 2 },
+                          ]}
+                        >
+                          Your life and physical safety are the highest priority. Free 24/7 care is
+                          here.
                         </Text>
                       </View>
                       <PressableScale onPress={() => setActiveCrisis(null)} hitSlop={8}>
@@ -938,13 +938,20 @@ export function GlobalVoiceAssistant() {
                       </PressableScale>
 
                       <PressableScale
-                        onPress={() => callNumber(jurisdiction?.primaryMentalHealth.number ?? '14416')}
+                        onPress={() =>
+                          callNumber(jurisdiction?.primaryMentalHealth.number ?? '14416')
+                        }
                         style={[styles.safetyActionBtn, { backgroundColor: colors.primary }]}
                         accessibilityRole="button"
                         accessibilityLabel={`Call Lifeline ${jurisdiction?.primaryMentalHealth.number ?? '14416'}`}
                       >
                         <Ionicons name="heart" size={14} color={colors.onPrimary} />
-                        <Text style={[typography.captionBold, { color: colors.onPrimary, marginLeft: 6 }]}>
+                        <Text
+                          style={[
+                            typography.captionBold,
+                            { color: colors.onPrimary, marginLeft: 6 },
+                          ]}
+                        >
                           Lifeline ({jurisdiction?.primaryMentalHealth.number ?? '14416'})
                         </Text>
                       </PressableScale>
@@ -960,15 +967,23 @@ export function GlobalVoiceAssistant() {
                     style={[styles.safetyCardBox, { borderColor: colors.primary, borderWidth: 1 }]}
                   >
                     <View style={styles.safetyCardRow}>
-                      <View style={[styles.safetyIconBadge, { backgroundColor: colors.primaryAlpha }]}>
+                      <View
+                        style={[styles.safetyIconBadge, { backgroundColor: colors.primaryAlpha }]}
+                      >
                         <Ionicons name="heart" size={18} color={colors.primary} />
                       </View>
                       <View style={styles.flex}>
                         <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
                           We are right here with you
                         </Text>
-                        <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
-                          Are you safe right now? Take a gentle breath. You do not have to carry this alone.
+                        <Text
+                          style={[
+                            typography.caption,
+                            { color: colors.text.secondary, marginTop: 2 },
+                          ]}
+                        >
+                          Are you safe right now? Take a gentle breath. You do not have to carry
+                          this alone.
                         </Text>
                       </View>
                       <PressableScale onPress={() => setActiveCrisis(null)} hitSlop={8}>
@@ -977,13 +992,20 @@ export function GlobalVoiceAssistant() {
                     </View>
                     <View style={styles.safetyCardActions}>
                       <PressableScale
-                        onPress={() => callNumber(jurisdiction?.primaryMentalHealth.number ?? '14416')}
+                        onPress={() =>
+                          callNumber(jurisdiction?.primaryMentalHealth.number ?? '14416')
+                        }
                         style={[styles.safetyActionBtn, { backgroundColor: colors.primary }]}
                         accessibilityRole="button"
                         accessibilityLabel={`Call 24/7 Lifeline ${jurisdiction?.primaryMentalHealth.number ?? '14416'}`}
                       >
                         <Ionicons name="call" size={14} color={colors.onPrimary} />
-                        <Text style={[typography.captionBold, { color: colors.onPrimary, marginLeft: 6 }]}>
+                        <Text
+                          style={[
+                            typography.captionBold,
+                            { color: colors.onPrimary, marginLeft: 6 },
+                          ]}
+                        >
                           24/7 Support ({jurisdiction?.primaryMentalHealth.number ?? '14416'})
                         </Text>
                       </PressableScale>
@@ -994,7 +1016,12 @@ export function GlobalVoiceAssistant() {
                         accessibilityLabel="Box breathing exercise"
                       >
                         <Ionicons name="flower-outline" size={14} color={colors.text.primary} />
-                        <Text style={[typography.captionBold, { color: colors.text.primary, marginLeft: 6 }]}>
+                        <Text
+                          style={[
+                            typography.captionBold,
+                            { color: colors.text.primary, marginLeft: 6 },
+                          ]}
+                        >
                           Box Breathing
                         </Text>
                       </PressableScale>
@@ -1010,14 +1037,21 @@ export function GlobalVoiceAssistant() {
                     style={[styles.safetyCardBox, { borderColor: colors.border, borderWidth: 1 }]}
                   >
                     <View style={styles.safetyCardRow}>
-                      <View style={[styles.safetyIconBadge, { backgroundColor: colors.primaryAlpha }]}>
+                      <View
+                        style={[styles.safetyIconBadge, { backgroundColor: colors.primaryAlpha }]}
+                      >
                         <Ionicons name="flower-outline" size={18} color={colors.primary} />
                       </View>
                       <View style={styles.flex}>
                         <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
                           Pause and steady with me
                         </Text>
-                        <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}>
+                        <Text
+                          style={[
+                            typography.caption,
+                            { color: colors.text.secondary, marginTop: 2 },
+                          ]}
+                        >
                           Your nervous system is in high alert. This wave will settle gently.
                         </Text>
                       </View>
@@ -1033,7 +1067,12 @@ export function GlobalVoiceAssistant() {
                         accessibilityLabel="Start box breathing exercise"
                       >
                         <Ionicons name="flower-outline" size={14} color={colors.onPrimary} />
-                        <Text style={[typography.captionBold, { color: colors.onPrimary, marginLeft: 6 }]}>
+                        <Text
+                          style={[
+                            typography.captionBold,
+                            { color: colors.onPrimary, marginLeft: 6 },
+                          ]}
+                        >
                           Start Box Breathing
                         </Text>
                       </PressableScale>
@@ -1044,7 +1083,12 @@ export function GlobalVoiceAssistant() {
                         accessibilityLabel="5-4-3-2-1 Sensory grounding exercise"
                       >
                         <Ionicons name="eye-outline" size={14} color={colors.text.primary} />
-                        <Text style={[typography.captionBold, { color: colors.text.primary, marginLeft: 6 }]}>
+                        <Text
+                          style={[
+                            typography.captionBold,
+                            { color: colors.text.primary, marginLeft: 6 },
+                          ]}
+                        >
                           5-4-3-2-1 Sensory
                         </Text>
                       </PressableScale>
@@ -1061,48 +1105,77 @@ export function GlobalVoiceAssistant() {
                   >
                     <PressableScale
                       onPress={() => setGroundingModal('breathing')}
-                      style={[styles.calmSupportChip, { backgroundColor: colors.surface, borderColor: colors.surface2 }]}
+                      style={[
+                        styles.calmSupportChip,
+                        { backgroundColor: colors.surface, borderColor: colors.surface2 },
+                      ]}
                       accessibilityRole="button"
                       accessibilityLabel="Box breathing exercise"
                     >
                       <Ionicons name="flower-outline" size={14} color={colors.primary} />
-                      <Text style={[typography.captionBold, { color: colors.text.primary, marginLeft: 6 }]}>
+                      <Text
+                        style={[
+                          typography.captionBold,
+                          { color: colors.text.primary, marginLeft: 6 },
+                        ]}
+                      >
                         Box Breathing
                       </Text>
                     </PressableScale>
 
                     <PressableScale
                       onPress={() => setGroundingModal('sensory')}
-                      style={[styles.calmSupportChip, { backgroundColor: colors.surface, borderColor: colors.surface2 }]}
+                      style={[
+                        styles.calmSupportChip,
+                        { backgroundColor: colors.surface, borderColor: colors.surface2 },
+                      ]}
                       accessibilityRole="button"
                       accessibilityLabel="5-4-3-2-1 sensory grounding"
                     >
                       <Ionicons name="eye-outline" size={14} color={colors.primary} />
-                      <Text style={[typography.captionBold, { color: colors.text.primary, marginLeft: 6 }]}>
+                      <Text
+                        style={[
+                          typography.captionBold,
+                          { color: colors.text.primary, marginLeft: 6 },
+                        ]}
+                      >
                         5-4-3-2-1 Grounding
                       </Text>
                     </PressableScale>
 
                     <PressableScale
                       onPress={() => setDirectoryModalVisible(true)}
-                      style={[styles.calmSupportChip, { backgroundColor: colors.surface, borderColor: colors.surface2 }]}
+                      style={[
+                        styles.calmSupportChip,
+                        { backgroundColor: colors.surface, borderColor: colors.surface2 },
+                      ]}
                       accessibilityRole="button"
                       accessibilityLabel={`View all verified helplines for ${jurisdiction?.countryName ?? 'India'}`}
                     >
                       <Text style={{ fontSize: 13 }}>{jurisdiction?.flag ?? '🇮🇳'}</Text>
-                      <Text style={[typography.captionBold, { color: colors.text.secondary, marginLeft: 6 }]}>
+                      <Text
+                        style={[
+                          typography.captionBold,
+                          { color: colors.text.secondary, marginLeft: 6 },
+                        ]}
+                      >
                         Helplines
                       </Text>
                     </PressableScale>
 
                     <PressableScale
                       onPress={() => setCountryModalVisible(true)}
-                      style={[styles.calmSupportChip, { backgroundColor: colors.surface, borderColor: colors.surface2 }]}
+                      style={[
+                        styles.calmSupportChip,
+                        { backgroundColor: colors.surface, borderColor: colors.surface2 },
+                      ]}
                       accessibilityRole="button"
                       accessibilityLabel={`Current country: ${jurisdiction?.countryName ?? 'India'}. Tap to change country.`}
                     >
                       <Ionicons name="globe-outline" size={14} color={colors.text.muted} />
-                      <Text style={[typography.caption, { color: colors.text.muted, marginLeft: 4 }]}>
+                      <Text
+                        style={[typography.caption, { color: colors.text.muted, marginLeft: 4 }]}
+                      >
                         {jurisdiction?.countryCode ?? 'IN'}
                       </Text>
                     </PressableScale>
@@ -1477,10 +1550,7 @@ export function GlobalVoiceAssistant() {
               <SquircleSurface
                 radius={28}
                 fill={colors.background}
-                style={[
-                  styles.modalBox,
-                  { borderColor: colors.border, borderWidth: 1 },
-                ]}
+                style={[styles.modalBox, { borderColor: colors.border, borderWidth: 1 }]}
               >
                 <View style={styles.modalHeader}>
                   <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
@@ -1556,10 +1626,7 @@ export function GlobalVoiceAssistant() {
               <SquircleSurface
                 radius={28}
                 fill={colors.background}
-                style={[
-                  styles.modalBox,
-                  { borderColor: colors.border, borderWidth: 1 },
-                ]}
+                style={[styles.modalBox, { borderColor: colors.border, borderWidth: 1 }]}
               >
                 <View style={styles.modalHeader}>
                   <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
@@ -1593,7 +1660,10 @@ export function GlobalVoiceAssistant() {
                           {contact.number} • {contact.hours}
                         </Text>
                         <Text
-                          style={[typography.caption, { color: colors.text.secondary, marginTop: 2 }]}
+                          style={[
+                            typography.caption,
+                            { color: colors.text.secondary, marginTop: 2 },
+                          ]}
                         >
                           {contact.coverage} • Source: {contact.officialSource}
                         </Text>
@@ -1690,7 +1760,9 @@ export function GlobalVoiceAssistant() {
                   </Animated.View>
                 </View>
 
-                <Text style={[typography.subbodyBold, { color: colors.text.primary, marginTop: 20 }]}>
+                <Text
+                  style={[typography.subbodyBold, { color: colors.text.primary, marginTop: 20 }]}
+                >
                   {
                     [
                       'Inhale slowly...',
@@ -1746,10 +1818,7 @@ export function GlobalVoiceAssistant() {
               <SquircleSurface
                 radius={28}
                 fill={colors.background}
-                style={[
-                  styles.modalBox,
-                  { borderColor: colors.border, borderWidth: 1 },
-                ]}
+                style={[styles.modalBox, { borderColor: colors.border, borderWidth: 1 }]}
               >
                 <View style={styles.modalHeader}>
                   <Text style={[typography.bodyBold, { color: colors.text.primary }]}>
@@ -1817,7 +1886,9 @@ export function GlobalVoiceAssistant() {
                       accessibilityRole="button"
                       accessibilityLabel="Next step"
                     >
-                      <Text style={[typography.captionBold, { color: colors.onPrimary }]}>Next</Text>
+                      <Text style={[typography.captionBold, { color: colors.onPrimary }]}>
+                        Next
+                      </Text>
                     </PressableScale>
                   ) : (
                     <PressableScale

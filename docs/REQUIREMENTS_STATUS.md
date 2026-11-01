@@ -61,6 +61,8 @@ DONE (seen on the phone), BUILT (in the build, not yet seen on the phone), TODO,
 ## Account and data
 | Requirement | Status |
 | --- | --- |
+| Sign-in offers compact Share app and Join beta actions | DONE (release APK on Moto G71 ZD2225KYKD: share sheet opened and beta opt-in page showed Thrivefold; no FATAL or ReactNativeJS errors in logcat; screenshot `/tmp/thrivefold-share-sheet.png`) |
+| Sign-in offers detailed Terms and Privacy options | DONE (release APK on Moto G71 ZD2225KYKD: opened both full-screen legal modals; screenshots `/tmp/thrivefold-current-terms-modal.png` and `/tmp/thrivefold-current-privacy-modal.png`) |
 | Points, level, streaks saved to Supabase and restored | DONE |
 | Profile saved and restored | DONE |
 | Backup to a file and restore | BUILT |

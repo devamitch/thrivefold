@@ -290,6 +290,61 @@ export async function retrieveHybridEvidence(
 }
 
 /**
+ * Calibrated evidence confidence scoring based on weighted geometric mean:
+ * C = exp( sum( w_i * ln( max(eps, c_i) ) ) )
+ *
+ * Factors:
+ * c1: Normalized hybrid retrieval score (RRF rank)
+ * c2: Query term evidence coverage (lexical density)
+ * c3: Provenance trust (catalog = 1.0, document = 0.95, learned cloud = 0.88, memory = 0.80)
+ * c4: Model synthesis grounded multiplier
+ */
+export function calculateCalibratedConfidence(
+  query: string,
+  hits: RagEvidenceHit[],
+  isModelSynthesized: boolean
+): number {
+  if (hits.length === 0) return 0;
+
+  const topHit = hits[0];
+  const EPSILON = 0.05;
+
+  // c1: Retrieval score normalized (RRF top score is typically between 0.015 and 0.04)
+  const c1 = Math.min(1.0, Math.max(0.1, topHit.hybridScore * 30));
+
+  // c2: Token evidence coverage
+  const queryTokens = tokenize(query);
+  if (queryTokens.length === 0) return 0.5;
+  const combinedContent = hits.map((h) => `${h.document.title} ${h.document.content}`).join(' ').toLowerCase();
+  const coveredTokens = queryTokens.filter((t) => combinedContent.includes(t.toLowerCase())).length;
+  const c2 = Math.min(1.0, Math.max(0.1, coveredTokens / queryTokens.length));
+
+  // c3: Provenance trust
+  const sourceType = topHit.document.sourceType;
+  const c3 =
+    sourceType === 'exercise_catalog'
+      ? 1.0
+      : sourceType === 'user_document' || sourceType === 'health_article'
+        ? 0.95
+        : sourceType === 'wellness_guide'
+          ? 0.88
+          : 0.80;
+
+  // c4: Model synthesis grounded multiplier
+  const c4 = isModelSynthesized ? 0.92 : 0.85;
+
+  // Weights sum to 1.0: w1=0.35, w2=0.30, w3=0.20, w4=0.15
+  const logScore =
+    0.35 * Math.log(Math.max(EPSILON, c1)) +
+    0.30 * Math.log(Math.max(EPSILON, c2)) +
+    0.20 * Math.log(Math.max(EPSILON, c3)) +
+    0.15 * Math.log(Math.max(EPSILON, c4));
+
+  const confidence = Math.exp(logScore);
+  return Math.round(confidence * 100) / 100;
+}
+
+/**
  * Answers a user wellness question strictly grounded in verified local evidence.
  */
 export async function answerWithHybridRag(
@@ -335,11 +390,12 @@ export async function answerWithHybridRag(
         system: 'You are an accurate, evidence-grounded on-device wellness assistant. Never invent facts beyond the evidence.',
       });
 
+      const confidence = calculateCalibratedConfidence(query, hits, true);
       return {
         answer: generated.trim(),
         citations,
         evidenceHits: hits,
-        confidence: 0.9,
+        confidence,
         isGrounded: true,
       };
     } catch {
@@ -357,12 +413,13 @@ export async function answerWithHybridRag(
       : 'recorded notes';
 
   const answer = `Based on your ${sourceLabel}: ${hits.map((h) => h.snippet).join(' ')}`;
+  const confidence = calculateCalibratedConfidence(query, hits, false);
 
   return {
     answer,
     citations,
     evidenceHits: hits,
-    confidence: 0.85,
+    confidence,
     isGrounded: true,
   };
 }

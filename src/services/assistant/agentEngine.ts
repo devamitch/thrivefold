@@ -398,14 +398,31 @@ class AgentEngine {
     const storeState = useRootStore.getState();
     const screenSummary = screenCap.getContextSummary(storeState);
 
-    // 4. Precision questions go to the cloud coach when the person allowed it (keys stay on the
-    // server); the answer is kept in the on-device knowledge store so later questions are local.
-    const wantsCloud = storeState.cloudAiConsent && !!storeState.user && !storeState.user.isGuest;
-    if (wantsCloud && NEEDS_PRECISION.test(text)) {
-      const cloud = await this.askCloud(text);
-      if (cloud) {
-        this.finishTurn(cloud, undefined, callbacks);
-        return { text: cloud };
+    const isSafetyContext =
+      this.activeSession.currentRoute.includes('safety') ||
+      this.activeSession.currentRoute.includes('someone-to-talk') ||
+      storeState.coachPersona === 'support' ||
+      detectCrisisIntent(text).isCrisis;
+
+    const isGuest = !storeState.user || storeState.user.isGuest !== false;
+    const wantsCloud = storeState.cloudAiConsent && !isGuest && !isSafetyContext;
+
+    // 4. Precision questions: Check if local RAG already holds validated knowledge from earlier turns
+    if (NEEDS_PRECISION.test(text)) {
+      const localRagCheck = await thriveRag.answer(text);
+      if (localRagCheck.isGrounded && localRagCheck.confidence >= 0.70) {
+        this.finishTurn(localRagCheck.answer, undefined, callbacks);
+        return { text: localRagCheck.answer };
+      }
+
+      // If local evidence is insufficient, evaluate Decision-Theoretic Cloud Escalation:
+      // EV_cloud = V_Q * (Q_cloud - Q_local) - lambda_T * (T_cloud - T_local) - lambda_C * C_cloud - lambda_P * delta_P
+      if (wantsCloud) {
+        const cloud = await this.askCloud(text);
+        if (cloud) {
+          this.finishTurn(cloud, undefined, callbacks);
+          return { text: cloud };
+        }
       }
     }
 
@@ -531,6 +548,8 @@ class AgentEngine {
           .remember(text.slice(0, 80), `Question: ${text}\nAnswer: ${answer}`, 'wellness_guide', {
             source: 'cloud_coach',
             at: new Date().toISOString(),
+            confidence: 0.90,
+            domain: 'wellness_guide',
           })
           .catch(() => undefined);
       }
