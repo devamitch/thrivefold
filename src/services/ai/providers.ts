@@ -10,7 +10,7 @@
  */
 
 import { env, pickGeminiKey, pickGroqKey, pickOpenRouterKey, pickClaudeKey, isLocalOnly } from './env';
-import { recordAiInteraction, checkCloudAiPermission } from './aiInteractionStore';
+import { recordAiInteraction, checkCloudAiPermission, isGuestAccount } from './aiInteractionStore';
 
 export interface AiMessage {
   role: 'user' | 'assistant' | 'system';
@@ -299,7 +299,7 @@ export async function askAi(
     const { useRootStore } = require('../../stores/useRootStore');
     const st = useRootStore.getState?.();
     if (st) {
-      isGuest = !st.adultConfirmedAt && !st.isOnboarded;
+      isGuest = isGuestAccount(st.user);
       const k = st.userApiKeys ?? {};
       hasByok = !!(k.gemini || k.groq || k.openrouter || k.claude || k.sarvam);
     }
@@ -308,7 +308,8 @@ export async function askAi(
   }
 
   const perm = checkCloudAiPermission({ isGuest, hasByok, userId: opts?.userId });
-  if (!perm.allowed && !opts?.forceCloud) {
+  // Explicit forceCloud can bypass a signed-in user's trial quota, never guest protection.
+  if (!perm.allowed && (isGuest || !opts?.forceCloud)) {
     return { text: '', provider: 'none', model: 'quota_exceeded' };
   }
 

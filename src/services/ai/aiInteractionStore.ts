@@ -26,6 +26,11 @@ export interface AiInteractionRecord {
 
 let initialized = false;
 
+/** A missing profile or any profile not explicitly marked non-guest is treated as a guest. */
+export function isGuestAccount(user: { isGuest?: boolean } | null | undefined): boolean {
+  return !user || user.isGuest !== false;
+}
+
 function getDb(): SQLite.SQLiteDatabase | null {
   try {
     const db = getSharedLocalMemoryDb();

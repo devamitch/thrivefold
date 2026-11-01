@@ -29,7 +29,8 @@ export interface RagDocument {
     | 'health_article'
     | 'imported_file'
     | 'medical_reference'
-    | 'learn_library';
+    | 'learn_library'
+    | 'conversation_history';
   title: string;
   content: string;
   date?: string;
@@ -161,21 +162,23 @@ function hydrateCandidateDocuments(
   if (candidateKeys.chunkIds.length > 0) {
     const placeholders = candidateKeys.chunkIds.map(() => '?').join(',');
     const rows = db.getAllSync<any>(
-      `SELECT c.*, d.title as doc_title, d.source_type
+      `SELECT c.*, d.title as doc_title, d.source_type, d.metadata_json
        FROM rag_chunks c
        JOIN rag_documents d ON d.id = c.document_id
        WHERE c.id IN (${placeholders}) AND c.user_id = ?`,
       [...candidateKeys.chunkIds, userId]
     );
     for (const r of rows) {
+      const metadata = r.metadata_json ? JSON.parse(r.metadata_json) : undefined;
       docMap.set(r.id, {
         id: r.id,
-        sourceType: 'user_document',
+        // Existing chat documents were stored as wellness guides; identify them from their stable key.
+        sourceType: metadata?.key === 'me:chat' ? 'conversation_history' : r.source_type,
         title: r.doc_title || 'Document Chunk',
         content: r.content,
         date: r.created_at,
         chunkOffset: { start: r.start_offset, end: r.end_offset },
-        metadata: { documentId: r.document_id, tokenEstimate: r.token_estimate },
+        metadata: { ...metadata, documentId: r.document_id, tokenEstimate: r.token_estimate },
       });
     }
   }
@@ -351,7 +354,9 @@ export async function answerWithHybridRag(
   userId: string,
   query: string
 ): Promise<RagResponse> {
-  const hits = await retrieveHybridEvidence(userId, query, 3);
+  const hits = (await retrieveHybridEvidence(userId, query, 40))
+    .filter((hit) => hit.document.sourceType !== 'conversation_history')
+    .slice(0, 3);
 
   if (hits.length === 0 || hits[0].hybridScore < 0.01) {
     return {

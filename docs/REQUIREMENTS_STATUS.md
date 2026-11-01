@@ -28,7 +28,8 @@ DONE (seen on the phone), BUILT (in the build, not yet seen on the phone), TODO,
 | Thrive RAG (`services/local-ai/rag/thriveRag.ts`) on react-native-rag contracts over llama.cpp + SQLite; indexes screens, Learn, profile, meals, workouts, vitals, journal, calendar, care, cycle, memories, chat (no sign-in data) | BUILT (unit-tested; table and guides seen on the phone) |
 | Chat shows records as tables (medicines, follow-ups, quests, meals, week, screens), guides jobs (prescription scan, meal photo, rep counter), confirms sign-out / deletes in the app alert | DONE (medicines, screens, sign-out, prescription seen on the phone) |
 | Roles: Coach, Health guide, Speech practice, Nutrition, Friend, Reader | DONE |
-| Hard questions (numbers, medicines, trips, plans) to the online coach with consent; answers saved locally for next time and offline | BUILT |
+| Hard questions (numbers, medicines, trips, plans) use local RAG/model first, then consented online fallback only after local failure or evidence refusal | BUILT (source + 568 unit tests; phone verification pending) |
+| Cloud-generated answers become reusable local RAG knowledge only after review and explicit approval | TODO — automatic promotion removed; current RAG schema has no review state |
 | Every coach turn kept on the phone (SQLite `ai_interactions`, never uploaded) | BUILT |
 | Talks on its own, constant background monitoring | TODO |
 
@@ -73,3 +74,10 @@ DONE (seen on the phone), BUILT (in the build, not yet seen on the phone), TODO,
 pnpm compile PASS · pnpm lint PASS · pnpm test 520/520 PASS · pnpm test:db 175/175 PASS ·
 expo-doctor 19/20 (expo 55.0.31 vs 55.0.32 patch; not upgraded per AGENTS.md rule 1) ·
 release APK `android/app/build/outputs/apk/release/app-release.apk` built and installed on ZD2225KYKD.
+
+## Validation (2026-11-01 — AI routing/RAG source changes)
+`pnpm test --runInBand` PASS (90 suites, 570 tests) · `pnpm compile` PASS ·
+`pnpm test:db` PASS (181 checks) · targeted ESLint PASS. Full `pnpm lint` reports 3 Rules-of-Hooks
+errors in untouched `src/components/game/LootBoxModal.tsx` lines 157, 160 and 164. The Moto G71 is
+connected (Android 12), but release/device verification is pending because another release Gradle
+build is active in this checkout; no competing build was started.

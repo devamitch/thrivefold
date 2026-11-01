@@ -25,7 +25,7 @@ import { personaFor } from '../../domain/assistant/personas';
 import { findScreenFor } from '../../domain/search/destinations';
 import { parseChatAction } from '../../domain/assistant/chatActions';
 import { runChatAction } from './chatActions';
-import { logCoachTurnLocally } from '../ai/aiInteractionStore';
+import { isGuestAccount, logCoachTurnLocally } from '../ai/aiInteractionStore';
 import { recentDaysLines, standingLines } from '../../domain/assistant/appKnowledge';
 import { detectCrisisIntent } from '../ai/emergencySupport';
 
@@ -93,6 +93,27 @@ export function quickReply(text: string, s: ReturnType<typeof useRootStore.getSt
   if (/^(who are you|what are you|what is your name|your name)\b/.test(t))
     return "I'm Anvay, your Thrivefold companion. I run on this phone and help with your day, health and habits.";
   return null;
+}
+
+export type LocalAttemptOutcome = 'answered' | 'insufficient' | 'failed' | 'unavailable';
+
+/** Cloud is eligible only after local work has failed, is unavailable, or declined for evidence. */
+export function shouldEscalateToCloud(input: {
+  consented: boolean;
+  isGuest: boolean;
+  isSafetyContext: boolean;
+  localOutcome: LocalAttemptOutcome;
+}): boolean {
+  return (
+    input.consented &&
+    !input.isGuest &&
+    !input.isSafetyContext &&
+    input.localOutcome !== 'answered'
+  );
+}
+
+export function isInsufficientPrecisionAnswer(answer: string): boolean {
+  return /\b(?:don't have enough (?:verified )?(?:information|evidence)|do not have enough (?:verified )?(?:information|evidence)|i don't know|i do not know|can't verify|cannot verify|not enough evidence)\b/i.test(answer);
 }
 
 export interface AgentMessage {
@@ -404,32 +425,31 @@ class AgentEngine {
       storeState.coachPersona === 'support' ||
       detectCrisisIntent(text).isCrisis;
 
-    const isGuest = !storeState.user || storeState.user.isGuest !== false;
+    const isGuest = isGuestAccount(storeState.user);
     const wantsCloud = storeState.cloudAiConsent && !isGuest && !isSafetyContext;
 
-    // 4. Precision questions: Check if local RAG already holds validated knowledge from earlier turns
+    // 4. Precision questions: reuse sufficiently strong local evidence before generation.
+    // Cloud is considered only after the local model gets a chance to answer below.
+    const isPrecisionQuestion = NEEDS_PRECISION.test(text);
     if (NEEDS_PRECISION.test(text)) {
       const localRagCheck = await thriveRag.answer(text);
       if (localRagCheck.isGrounded && localRagCheck.confidence >= 0.70) {
-        this.finishTurn(localRagCheck.answer, undefined, callbacks);
+        this.finishTurn(localRagCheck.answer, undefined, callbacks, 'local_rag');
         return { text: localRagCheck.answer };
-      }
-
-      // If local evidence is insufficient, evaluate Decision-Theoretic Cloud Escalation:
-      // EV_cloud = V_Q * (Q_cloud - Q_local) - lambda_T * (T_cloud - T_local) - lambda_C * C_cloud - lambda_P * delta_P
-      if (wantsCloud) {
-        const cloud = await this.askCloud(text);
-        if (cloud) {
-          this.finishTurn(cloud, undefined, callbacks);
-          return { text: cloud };
-        }
       }
     }
 
     // 5. On-Device LLM Inference (loads the downloaded model on first use)
+    let localOutcome: LocalAttemptOutcome = 'unavailable';
     if (await ensureLocalModel()) {
+      localOutcome = 'failed';
       try {
-        const systemPrompt = buildCoachPrompt(storeState, screenSummary);
+        const systemPrompt = [
+          buildCoachPrompt(storeState, screenSummary),
+          isPrecisionQuestion
+            ? 'This is a precision question. Use retrieved evidence and the person\'s records for exact or time-sensitive claims. If that evidence is insufficient, say clearly that you do not have enough verified information; do not guess.'
+            : '',
+        ].filter(Boolean).join('\n');
 
         let accumulated = '';
         const onTokenListener = (event: any) => {
@@ -439,51 +459,56 @@ class AgentEngine {
           }
         };
 
-        const sub = LocalAI.onToken(onTokenListener);
         // Ground the model in what the phone already knows: saved memories, documents and answers
-        // learned earlier from the cloud coach. This is how replies get better over time.
+        // that the person has explicitly saved. Generated answers are not promoted automatically.
         const evidence = await thriveRag.contextFor(text);
-        LocalAI.startStream(
-          turnId,
-          text,
-          evidence ? `${screenSummary}\nKnown from this phone (use only if relevant):\n${evidence}` : screenSummary,
-          systemPrompt,
-        );
-
-        // Wait for completion via Promise wrapper
         const streamedResult = await new Promise<string>((resolve) => {
-          const doneSub = LocalAI.onStreamComplete((ev) => {
-            if (ev.turnId === turnId) {
-              sub.remove();
-              doneSub.remove();
-              errSub.remove();
-              resolve(ev.fullText);
-            }
-          });
-          const errSub = LocalAI.onStreamError((ev) => {
-            if (ev.turnId === turnId) {
-              sub.remove();
-              doneSub.remove();
-              errSub.remove();
-              resolve('');
-            }
-          });
+          let settled = false;
+          const subscriptions: { remove: () => void }[] = [];
+          const finish = (result: string) => {
+            if (settled) return;
+            settled = true;
+            subscriptions.forEach((subscription) => subscription.remove());
+            resolve(result);
+          };
+          subscriptions.push(LocalAI.onToken(onTokenListener));
+          subscriptions.push(LocalAI.onStreamComplete((ev) => {
+            if (ev.turnId === turnId) finish(ev.fullText);
+          }));
+          subscriptions.push(LocalAI.onStreamError((ev) => {
+            if (ev.turnId === turnId) finish('');
+          }));
+
+          const started = LocalAI.startStream(
+            turnId,
+            text,
+            evidence ? `${screenSummary}\nKnown from this phone (use only if relevant):\n${evidence}` : screenSummary,
+            systemPrompt,
+          );
+          if (!started) finish('');
         });
 
         if (streamedResult && streamedResult.trim()) {
-          this.finishTurn(streamedResult.trim(), undefined, callbacks);
-          return { text: streamedResult.trim() };
+          const localAnswer = streamedResult.trim();
+          const localAnswerIsInsufficient = isPrecisionQuestion && isInsufficientPrecisionAnswer(localAnswer);
+          if (!localAnswerIsInsufficient) {
+            localOutcome = 'answered';
+            this.finishTurn(localAnswer, undefined, callbacks, 'on_device');
+            return { text: localAnswer };
+          }
+          localOutcome = 'insufficient';
         }
       } catch {
         // Fall through to deterministic coach
       }
     }
 
-    // 6. No local model: the cloud coach (if allowed), then the deterministic on-device coach.
-    if (wantsCloud) {
+    // 6. The cloud coach is a fallback only when local generation is unavailable, fails, or
+    // explicitly declines a precision answer for lack of verified evidence.
+    if (shouldEscalateToCloud({ consented: wantsCloud, isGuest, isSafetyContext, localOutcome })) {
       const cloud = await this.askCloud(text);
       if (cloud) {
-        this.finishTurn(cloud, undefined, callbacks);
+        this.finishTurn(cloud, undefined, callbacks, 'cloud_gateway');
         return { text: cloud };
       }
     }
@@ -537,22 +562,9 @@ class AgentEngine {
       const { reply } = await askThrive(turns.length ? turns : [{ role: 'user', content: text }]);
       const answer = reply?.trim();
       if (!answer) return null;
-      // Sensitive safety, medical, or crisis turns are never memorized into long-term RAG memory
-      const isSafetyContext =
-        this.activeSession.currentRoute.includes('safety') ||
-        this.activeSession.currentRoute.includes('someone-to-talk') ||
-        storeState0().coachPersona === 'support' ||
-        detectCrisisIntent(text).isCrisis;
-      if (!isSafetyContext) {
-        void thriveRag
-          .remember(text.slice(0, 80), `Question: ${text}\nAnswer: ${answer}`, 'wellness_guide', {
-            source: 'cloud_coach',
-            at: new Date().toISOString(),
-            confidence: 0.90,
-            domain: 'wellness_guide',
-          })
-          .catch(() => undefined);
-      }
+      // Do not promote generated output into trusted retrieval automatically. This knowledge store
+      // has no review state yet; the old behavior assigned a made-up confidence and could reinforce
+      // an incorrect or stale answer. A reviewed, user-approved ingestion path is still required.
       return answer;
     } catch {
       return null;
@@ -562,7 +574,8 @@ class AgentEngine {
   private finishTurn(
     text: string,
     toolResult?: ToolExecutionResult,
-    callbacks?: AgentTurnCallbacks
+    callbacks?: AgentTurnCallbacks,
+    provider = toolResult ? 'app' : 'rules',
   ) {
     this.activeSession.isReasoning = false;
     this.activeSession.activeTurnId = null;
@@ -577,7 +590,7 @@ class AgentEngine {
     });
 
     const asked = [...this.activeSession.messages].reverse().find((m) => m.sender === 'user')?.text ?? '';
-    logCoachTurnLocally(asked, text, toolResult ? 'app' : LocalAI.isLoaded() ? 'on_device' : 'rules', Date.now() - this.turnStartedAt);
+    logCoachTurnLocally(asked, text, provider, Date.now() - this.turnStartedAt);
 
     callbacks?.onComplete?.(text, toolResult);
   }

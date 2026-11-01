@@ -361,31 +361,40 @@ export class AnalyticalMemoryStore {
     topK = 5,
     minSimilarity = 0.55
   ): Promise<MemoryRetrievalResult[]> {
-    const memories = await this.listMemories(userId, { status: 'active' });
+    if (queryEmbedding.length === 0 || topK <= 0) return [];
+    const database = getDb();
     const now = Date.now();
-
     const results: MemoryRetrievalResult[] = [];
 
-    for (const mem of memories) {
-      if (!mem.embedding || mem.embedding.length === 0) continue;
-      const sim = cosineSimilarity(queryEmbedding, mem.embedding);
-      if (sim >= minSimilarity) {
-        // Recency decay factor (half-life of 30 days)
+    const pageSize = 128;
+    let afterId = '';
+    while (true) {
+      const rows = database.getAllSync<RawMemoryRow>(
+        `SELECT * FROM user_memories
+         WHERE user_id = ? AND status = 'active' AND id > ? AND embedding_json IS NOT NULL
+           AND (expires_at IS NULL OR expires_at > ?)
+         ORDER BY id LIMIT ?`,
+        [userId, afterId, new Date(now).toISOString(), pageSize],
+      );
+      if (rows.length === 0) break;
+      afterId = rows[rows.length - 1].id;
+
+      for (const row of rows) {
+        const mem = rowToMemory(row);
+        if (!mem.embedding || mem.embedding.length === 0) continue;
+        const sim = cosineSimilarity(queryEmbedding, mem.embedding);
+        if (sim < minSimilarity) continue;
+
+        // Recency decay factor (half-life of 30 days); retain only topK hits as pages advance.
         const ageDays = (now - new Date(mem.updatedAt).getTime()) / (1000 * 60 * 60 * 24);
         const recencyWeight = Math.max(0.5, Math.exp(-ageDays / 30));
-
-        // Blended score
         const score = sim * 0.65 + mem.confidence * 0.25 + recencyWeight * 0.10;
-
-        results.push({
-          memory: mem,
-          similarity: sim,
-          score,
-        });
+        results.push({ memory: mem, similarity: sim, score });
       }
+      results.sort((a, b) => b.score - a.score);
+      if (results.length > topK) results.length = topK;
     }
-
-    return results.sort((a, b) => b.score - a.score).slice(0, topK);
+    return results;
   }
 
   /**

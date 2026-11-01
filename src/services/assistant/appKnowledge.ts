@@ -47,7 +47,11 @@ export function refreshAppKnowledge(): Promise<number> {
   if (!useRootStore.getState().isOnboarded) return Promise.resolve(0);
   if (running) return running;
   running = thriveRag
-    .sync(currentAppDocs().map((d) => ({ ...d, hash: hashText(d.text) })))
+    .sync(currentAppDocs().map((d) => ({
+      ...d,
+      hash: hashText(d.text),
+      ...(d.key === 'me:chat' ? { sourceType: 'conversation_history' as const } : {}),
+    })))
     .catch(() => 0)
     .finally(() => {
       running = null;

@@ -8,7 +8,7 @@ export interface KnowledgeDocument {
   id: string;
   userId: string;
   title: string;
-  sourceType: 'user_note' | 'health_article' | 'wellness_guide' | 'imported_file' | 'medical_reference';
+  sourceType: 'user_note' | 'health_article' | 'wellness_guide' | 'imported_file' | 'medical_reference' | 'conversation_history';
   rawText: string;
   chunkCount: number;
   createdAt: string;
@@ -216,18 +216,62 @@ export class KnowledgeStore {
     topK = 5,
     minSimilarity = 0.35
   ): Promise<KnowledgeChunkHit[]> {
-    const chunks = await this.getAllChunks(userId);
+    if (queryVec.length === 0 || topK <= 0) return [];
+    const database = getDb();
     const hits: KnowledgeChunkHit[] = [];
+    const pageSize = 128;
+    let afterId = '';
 
-    for (const chunk of chunks) {
-      if (!chunk.embedding || chunk.embedding.length === 0) continue;
-      const sim = cosineSimilarity(queryVec, chunk.embedding);
-      if (sim >= minSimilarity) {
-        hits.push({ chunk, similarity: sim });
+    // Keep peak memory bounded to one page plus the best matches. The cosine scan remains exact
+    // and owner-filtered; dense retrieval is still independent from FTS candidates.
+    while (true) {
+      const rows = database.getAllSync<{
+        id: string; document_id: string; user_id: string; chunk_index: number; content: string;
+        start_offset: number; end_offset: number; token_estimate: number; embedding_json: string;
+        created_at: string; document_title: string | null;
+      }>(
+        `SELECT c.id, c.document_id, c.user_id, c.chunk_index, c.content, c.start_offset, c.end_offset,
+                c.token_estimate, c.embedding_json, c.created_at, d.title AS document_title
+         FROM rag_chunks c JOIN rag_documents d ON d.id = c.document_id
+         WHERE c.user_id = ? AND c.id > ? AND c.embedding_json IS NOT NULL
+         ORDER BY c.id LIMIT ?`,
+        [userId, afterId, pageSize],
+      );
+      if (rows.length === 0) break;
+      afterId = rows[rows.length - 1].id;
+
+      for (const row of rows) {
+        let embedding: number[];
+        try {
+          embedding = JSON.parse(row.embedding_json);
+        } catch {
+          continue;
+        }
+        if (embedding.length === 0) continue;
+        const similarity = cosineSimilarity(queryVec, embedding);
+        if (similarity >= minSimilarity) {
+          hits.push({
+            chunk: {
+              id: row.id,
+              documentId: row.document_id,
+              userId: row.user_id,
+              chunkIndex: row.chunk_index,
+              content: row.content,
+              startOffset: row.start_offset,
+              endOffset: row.end_offset,
+              tokenEstimate: row.token_estimate,
+              embedding,
+              createdAt: row.created_at,
+              documentTitle: row.document_title ?? undefined,
+            },
+            similarity,
+          });
+        }
       }
+      hits.sort((a, b) => b.similarity - a.similarity);
+      if (hits.length > topK) hits.length = topK;
     }
-
-    return hits.sort((a, b) => b.similarity - a.similarity).slice(0, topK);
+    return hits;
   }
 
   /**

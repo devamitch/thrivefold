@@ -65,7 +65,43 @@ jest.mock('expo-sqlite', () => ({
 import { resolveScreenCapability } from '../../src/domain/assistant/screenRegistry';
 import { executeTool } from '../../src/domain/assistant/toolRegistry';
 import { lookupMedicine, analyzePrescriptionText } from '../../src/services/ai/medicineResearch';
-import { agentEngine } from '../../src/services/assistant/agentEngine';
+import { isGuestAccount } from '../../src/services/ai/aiInteractionStore';
+import {
+  agentEngine,
+  isInsufficientPrecisionAnswer,
+  shouldEscalateToCloud,
+} from '../../src/services/assistant/agentEngine';
+
+describe('Local-first cloud escalation policy', () => {
+  it('treats missing and guest profiles as local-only', () => {
+    expect(isGuestAccount(null)).toBe(true);
+    expect(isGuestAccount({ isGuest: true })).toBe(true);
+    expect(isGuestAccount({ isGuest: false })).toBe(false);
+  });
+
+  it('does not escalate after a usable local answer', () => {
+    expect(
+      shouldEscalateToCloud({ consented: true, isGuest: false, isSafetyContext: false, localOutcome: 'answered' }),
+    ).toBe(false);
+  });
+
+  it('does not escalate for guests or safety contexts', () => {
+    expect(
+      shouldEscalateToCloud({ consented: true, isGuest: true, isSafetyContext: false, localOutcome: 'failed' }),
+    ).toBe(false);
+    expect(
+      shouldEscalateToCloud({ consented: true, isGuest: false, isSafetyContext: true, localOutcome: 'failed' }),
+    ).toBe(false);
+  });
+
+  it('allows an authorized fallback after local failure or a clear evidence refusal', () => {
+    expect(
+      shouldEscalateToCloud({ consented: true, isGuest: false, isSafetyContext: false, localOutcome: 'failed' }),
+    ).toBe(true);
+    expect(isInsufficientPrecisionAnswer("I don't have enough verified information to answer that." )).toBe(true);
+    expect(isInsufficientPrecisionAnswer('A 20 minute walk can be a gentle start.')).toBe(false);
+  });
+});
 
 describe('Screen Capability Registry', () => {
   it('resolves home tab capability with suggested chips', () => {

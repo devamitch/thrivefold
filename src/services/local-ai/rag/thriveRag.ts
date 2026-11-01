@@ -13,6 +13,7 @@ import type { Embeddings, GetResult, LLM, Message, QueryResult, VectorStore } fr
 
 import { LocalAI } from '../../../../modules/local-ai';
 import { bestFileLines, type FileLine } from '../../../domain/ai/fileEvidence';
+import { isConversationRecallQuery } from '../../../domain/ai/localRetrieval';
 import { asyncKeyValueStorage } from '../../../stores/persistStorage';
 import { answerWithHybridRag, retrieveHybridEvidence, type RagEvidenceHit, type RagResponse } from './hybridRagPipeline';
 import { knowledgeStore, type KnowledgeDocument } from './knowledgeStore';
@@ -174,12 +175,13 @@ export const thriveRag = {
   async contextFor(query: string, maxChars = 1500, topK = 4): Promise<string> {
     try {
       const hits = await retrieveHybridEvidence(USER, query, topK);
+      const recallQuery = isConversationRecallQuery(query);
       return hits
         // Fused RRF scores are small (one list alone tops out near 1/61 ≈ 0.016), so any fixed cut
         // above that dropped every hit; candidates already matched a keyword or the meaning.
         .filter((h) => h.hybridScore > 0)
         // Past chat lines are a last resort: they can repeat an earlier wrong answer back to the model.
-        .filter((h, _i, all) => h.document.title !== 'Your conversations with the coach' || all.length === 1)
+        .filter((h) => h.document.sourceType !== 'conversation_history' || recallQuery)
         // Document chunks are short already: pass them whole so page markers and numbers survive.
         .map((h) => `- ${h.document.title}: ${h.document.sourceType === 'user_document' ? h.document.content.replace(/\s+/g, ' ') : h.snippet}`)
         .join('\n')
@@ -238,7 +240,7 @@ export const thriveRag = {
    * Keyed documents the app owns (screens, Learn, recent days, chats): replaced only when the text
    * changed, and removed when a key disappears. Returns how many were written or removed.
    */
-  async sync(docs: { key: string; title: string; text: string; hash: string }[]): Promise<number> {
+  async sync(docs: { key: string; title: string; text: string; hash: string; sourceType?: KnowledgeDocument['sourceType'] }[]): Promise<number> {
     const index = await readIndex();
     // Documents erased elsewhere (Settings > Memories > clear) are written again.
     const present = new Set((await knowledgeStore.listDocuments(USER)).map((d) => d.id));
@@ -252,7 +254,7 @@ export const thriveRag = {
       const saved = await knowledgeStore.ingestDocument(USER, {
         title: doc.title,
         text: doc.text,
-        sourceType: 'wellness_guide',
+        sourceType: doc.sourceType ?? 'wellness_guide',
         metadata: { source: 'app', key: doc.key },
       });
       index[doc.key] = { id: saved.id, hash: doc.hash };

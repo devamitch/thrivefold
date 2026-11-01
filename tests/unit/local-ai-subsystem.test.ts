@@ -29,6 +29,7 @@ import {
   topKSimilar,
   normalizeVector,
 } from '../../src/services/local-ai/memory/vectorMath';
+import { isConversationRecallQuery } from '../../src/domain/ai/localRetrieval';
 import {
   MODEL_PRESETS,
   getModelPresetById,
@@ -312,6 +313,13 @@ describe('Local AI - Hybrid RAG Pipeline', () => {
     expect(res.isGrounded).toBe(false);
     expect(res.answer).toContain('not find enough relevant records');
     expect(res.citations).toHaveLength(0);
+  });
+});
+
+describe('Conversation history retrieval scope', () => {
+  test('uses conversation history only for explicit recall questions', () => {
+    expect(isConversationRecallQuery('What did you tell me about sleep last time?')).toBe(true);
+    expect(isConversationRecallQuery('Tell me how to improve my sleep')).toBe(false);
   });
 });
 

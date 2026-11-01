@@ -18,6 +18,11 @@ export interface RetrievalHit {
   matchedTerms: string[];
 }
 
+/** Conversation turns are context, not trusted knowledge; include them only for explicit recall. */
+export function isConversationRecallQuery(query: string): boolean {
+  return /\b(?:what did (?:you|we) (?:say|tell me|discuss|answer)|what was (?:your|the) answer|you told me|we discussed|our conversation|last time|earlier conversation|previous conversation)\b/i.test(query);
+}
+
 const STOPWORDS = new Set(
   (
     'a an and are as at be been but by can did do does for from had has have how i if in into is it its ' +
