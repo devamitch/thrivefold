@@ -39,10 +39,13 @@ export const crashReporting = {
     if (!enabled) return;
     sdk()?.log(`screen ${screen.replace(/[^a-zA-Z0-9_/()[\]-]/g, '_').slice(0, 80)}`);
   },
-  /** A caught error (e.g. the error boundary). The message is truncated and kept generic. */
+  /** A caught error (e.g. the error boundary). Keeps stack frames, not the original message. */
   recordError(error: unknown, where: string) {
     if (!enabled) return;
-    const e = error instanceof Error ? error : new Error(String(error).slice(0, 200));
-    sdk()?.recordError(e, where);
+    const safeError = new Error('Captured application error');
+    if (error instanceof Error && error.stack) {
+      safeError.stack = error.stack.split('\n').slice(1).join('\n');
+    }
+    sdk()?.recordError(safeError, where);
   },
 };

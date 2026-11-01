@@ -81,3 +81,9 @@ release APK `android/app/build/outputs/apk/release/app-release.apk` built and in
 errors in untouched `src/components/game/LootBoxModal.tsx` lines 157, 160 and 164. The Moto G71 is
 connected (Android 12), but release/device verification is pending because another release Gradle
 build is active in this checkout; no competing build was started.
+
+## Validation (2026-11-01 — documentation and diagnostics hygiene)
+`pnpm compile` PASS · targeted ESLint for `ErrorBoundary.tsx`, `crashReporting.ts` and
+`googleAccount.ts` PASS · `pnpm test --runInBand` PASS (90 suites, 570 tests). Full `pnpm lint`
+still fails on the same three Rules-of-Hooks errors in untouched `LootBoxModal.tsx` (157, 160, 164).
+No device run; changes affect documentation and error diagnostics, not core screen flows.
