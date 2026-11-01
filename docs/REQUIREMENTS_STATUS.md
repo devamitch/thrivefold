@@ -92,3 +92,8 @@ No device run; changes affect documentation and error diagnostics, not core scre
 `pnpm compile` PASS · `pnpm test --runInBand` PASS (90 suites, 570 tests) · targeted ESLint PASS
 (0 errors; warnings in existing Reanimated/import code). Full `pnpm lint` reports the same three
 Rules-of-Hooks errors in untouched `LootBoxModal.tsx`. No device run; no release build was started.
+
+## Validation (2026-11-01 — stale specification cleanup)
+`pnpm compile` PASS · `pnpm test --runInBand` PASS (90 suites, 570 tests) · targeted ESLint for
+policy and dating files PASS · stale-reference scan and `git diff --check` PASS. No device run;
+these changes update documentation and comments only.

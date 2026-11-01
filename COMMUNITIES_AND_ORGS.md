@@ -1,5 +1,9 @@
 # Thrivefold Segmented Communities & Organization Portals
 
+> **Future concept, not a shipped service.** Communities and organization portals remain unavailable
+> until reviewed server safeguards are live. `AGENTS.md` and the current requirements status take
+> precedence over this concept document.
+
 ## 1. Segmented Private Affinity Circles
 
 Thrivefold replaces open, chaotic social media timelines with private, intentional circles structured by verified experience and life phase.

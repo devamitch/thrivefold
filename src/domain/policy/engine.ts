@@ -47,7 +47,7 @@ export const policyConfig = {
     dating_first_contact: 20,
     dating_reply: 20,
   } as Record<string, number>,
-  /** Dating first contact: only a woman may start a new conversation (propmt.md §18). */
+  /** Dating first contact rule, applied after age assurance and other required gates. */
   datingFirstContact: 'women_only' as const,
   // Sensitive rules explicitly recorded as REVIEW_REQUIRED per founder specifications
   founderRequestedSensitiveRules: {

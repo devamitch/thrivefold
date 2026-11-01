@@ -1,5 +1,5 @@
 -- ============================================================================
--- Thrivefold migration 12: dating (propmt.md section 18)
+-- Thrivefold migration 12: dating tables and row-level access policies.
 --
 -- * Verified adults at level 20 only (existing `dating` gate), opted in with a dating profile.
 -- * Gender and who someone is interested in are self-declared, never inferred.

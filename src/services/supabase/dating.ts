@@ -4,8 +4,7 @@ import { queryClient } from './queryClient';
 import { supabase } from './supabaseClient';
 
 // ---------------------------------------------------------------------------
-// Dating (propmt.md section 18). Every rule lives on the server: verified adults at level 20,
-// women start conversations, chip-only messages, blocks and closing. The app reads and asks.
+// Dating data uses server-backed queries and mutations; policy and access checks remain gated.
 // ---------------------------------------------------------------------------
 
 export type DatingGender = 'woman' | 'man' | 'nonbinary';

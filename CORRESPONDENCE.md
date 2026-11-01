@@ -1,5 +1,9 @@
 # Thrivefold Slow Correspondence & Chip Subsystem
 
+> **Future concept, not a shipped service.** Social correspondence remains unavailable until real
+> age assurance, consent, privacy controls, and server safeguards are live. `AGENTS.md` and the
+> current requirements status take precedence over this concept document.
+
 ## 1. Intentional Communication Design
 
 Thrivefold draws direct inspiration from the golden age of written pen-pal correspondence and the acclaimed Slowly app, reimagining it for modern wellbeing.

@@ -65,10 +65,10 @@ pose_landmarker_lite model copied from aura-arena (sha256 in the module's build.
   group works for its organiser and invitees immediately and is listed for others only after
   the founder verifies the organiser on a call (`tf_admin_verify_community`). The age check
   still applies, so groups stay closed until an age-assurance provider exists.
-- **Dating:** opens at level 20 (founder said 20 or 30; the lower value is configured in
-  `policyConfig.progressionGates` and `thrivefold_progression_gates`, easy to raise). Only a
-  self-declared woman may start a new dating conversation (propmt.md §18). Age verification,
-  consent and blocking still come first. Matching/discovery UI is not built.
+- **Dating:** social routes remain gated on real age assurance, consent, and server safeguards.
+  The policy engine has a level gate and a self-declared first-contact rule; discovery remains
+  unavailable until the social service is approved for use. No religious criteria affect access.
+  See `FOUNDER_POLICY_REQUESTS.md` for the status of previously proposed sensitive rules.
 - **Religion inference — declined.** The founder asked to infer religion from name, behaviour
   and progress and show it in a detailed profile. AGENTS rule 4, the master spec (§ Hindu
   women, "never inference from name, food, clothing, prayer, location or behavior") and
