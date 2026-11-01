@@ -124,6 +124,22 @@ describe('AnvayCore SQLite FTS5 Intelligence Engine', () => {
       expect(q).toBe('"morning"* AND "walk"*');
     });
 
+    it('drops English stopwords and caps at significant terms for natural chat questions (Defect D1)', () => {
+      const q = sanitizeFtsQuery('how do I improve my sleep quality');
+      expect(q).toBe('"improve"* AND "sleep"* AND "quality"*');
+    });
+
+    it('supports OR join mode for graceful fallback ranking', () => {
+      const q = sanitizeFtsQuery('sleep quality', 'or');
+      expect(q).toBe('"sleep"* OR "quality"*');
+    });
+
+    it('falls back to keeping tokens if every token is a stopword', () => {
+      const q = sanitizeFtsQuery('to be or not to be');
+      expect(q).toContain('"to"*');
+      expect(q).toContain('"be"*');
+    });
+
     it('preserves exact quoted phrases', () => {
       const q = sanitizeFtsQuery('"box breathing"');
       expect(q).toBe('"box breathing"');

@@ -10,6 +10,7 @@ import {
   isModelDownloaded,
   type ModelPreset,
 } from '../../../../modules/local-ai';
+import { anvayFtsStore } from '../../../services/local-ai/search/anvayFtsStore';
 import { BrainSetupCard } from '../../../components/assistant/BrainSetupCard';
 import { AppHeader } from '../../../components/ui/AppHeader';
 import { Badge } from '../../../components/ui/Badge';
@@ -29,6 +30,61 @@ import {
 import { useRootStore } from '../../../stores/useRootStore';
 import { useTheme } from '../../../theme/useTheme';
 
+type StreamProbe = {
+  ttftMs: number | null;
+  durationMs: number;
+  tokenCount: number;
+  tokensPerSecond: number;
+} | { error: string };
+
+function runStreamProbe(prompt: string, index: number): Promise<StreamProbe> {
+  const turnId = `ai-diagnostic-${Date.now()}-${index}`;
+  const startedAt = Date.now();
+  let ttftMs: number | null = null;
+
+  return new Promise((resolve) => {
+    let settled = false;
+    let subscriptions: { remove: () => void }[] = [];
+    const finish = (result: StreamProbe) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(watchdog);
+      subscriptions.forEach((subscription) => subscription.remove());
+      resolve(result);
+    };
+    const watchdog = setTimeout(() => {
+      LocalAI.cancelGeneration();
+      finish({ error: 'Timed out after 45 seconds.' });
+    }, 45_000);
+
+    subscriptions = [
+      LocalAI.onToken((event) => {
+        if (event.turnId === turnId && ttftMs === null) ttftMs = Date.now() - startedAt;
+      }),
+      LocalAI.onStreamComplete((event) => {
+        if (event.turnId !== turnId) return;
+        finish({
+          ttftMs,
+          durationMs: event.durationMs,
+          tokenCount: event.tokenCount,
+          tokensPerSecond: event.tokensPerSecond,
+        });
+      }),
+      LocalAI.onStreamError((event) => {
+        if (event.turnId === turnId) finish({ error: event.error });
+      }),
+    ];
+
+    try {
+      if (!LocalAI.startStream(turnId, prompt, undefined, 'Reply in one brief sentence.')) {
+        finish({ error: 'Native inference did not start.' });
+      }
+    } catch (error) {
+      finish({ error: error instanceof Error ? error.message : String(error) });
+    }
+  });
+}
+
 /**
  * On-device AI: download a language model once (Wi-Fi recommended), and Thrive Coach, global
  * search and meal plans answer on the phone with llama.cpp. Files are checked against their
@@ -42,6 +98,8 @@ export default function ModelStatusScreen() {
   const [error, setError] = useState<string | null>(null);
   const [state, setState] = useState<'idle' | 'loading' | 'ready' | 'testing'>(LocalAI.isLoaded() ? 'ready' : 'idle');
   const [reply, setReply] = useState<string | null>(null);
+  const [diagnostic, setDiagnostic] = useState<string | null>(null);
+  const [diagnosticRunning, setDiagnosticRunning] = useState(false);
   const supported = LocalAI.isAvailable();
   const caps = supported ? LocalAI.getDeviceCapabilities() : null;
   const recommended = getRecommendedModel(caps?.totalRamMb ?? 4000);
@@ -106,6 +164,98 @@ export default function ModelStatusScreen() {
     );
     setReply(out ?? 'No answer.');
     setState('ready');
+  };
+
+  const runDiagnostics = async () => {
+    if (diagnosticRunning || LocalAI.isGenerating()) return;
+    setDiagnosticRunning(true);
+    setDiagnostic('Running local diagnostics…');
+    const ownerId = `codex-diagnostic-${Date.now()}`;
+    const sourceId = `natural-query-${Date.now()}`;
+    let ftsPassed = false;
+    let embeddingResult = 'skipped: model not loaded';
+    let promptResults: StreamProbe[] = [];
+    let ramBefore = 'unavailable';
+    let ramAfter = 'unavailable';
+    let ftsLatencyMs = 0;
+    let runtimeSummary = `${LocalAI.getRuntimeStatus().nativeEngine}; loaded=${LocalAI.isLoaded()}`;
+
+    try {
+      try {
+        ramBefore = `${Math.round(LocalAI.getDeviceCapabilities().availableRamMb)} MB available before probes`;
+      } catch (error) {
+        ramBefore = `unavailable: ${error instanceof Error ? error.message : String(error)}`;
+      }
+      const startedAt = Date.now();
+      anvayFtsStore.upsertEntry({
+        sourceTable: 'rag_documents',
+        sourceId,
+        ownerId,
+        domain: 'knowledge',
+        sourceType: 'diagnostic',
+        title: 'Sleep quality diagnostic',
+        content: 'A steady bedtime routine can improve sleep quality and support better rest.',
+      });
+      ftsPassed = anvayFtsStore.search('how do I improve my sleep quality', {
+        ownerId,
+        sourceType: 'diagnostic',
+        limit: 5,
+      }).some((hit) => hit.sourceId === sourceId);
+      ftsLatencyMs = Date.now() - startedAt;
+
+      if (LocalAI.isLoaded()) {
+        try {
+          const embedding = await LocalAI.embed('local AI diagnostic embedding');
+          embeddingResult = `${embedding.length} dimensions`;
+        } catch (error) {
+          embeddingResult = `failed: ${error instanceof Error ? error.message : String(error)}`;
+        }
+
+        const prompts = [
+          'Say hello in one sentence.',
+          'Name one gentle way to relax.',
+          'Explain what a routine is in one sentence.',
+        ];
+        promptResults = [];
+        for (let i = 0; i < prompts.length; i += 1) {
+          const result = await runStreamProbe(prompts[i], i);
+          promptResults.push(result);
+          if ('error' in result) break;
+        }
+      }
+
+      try {
+        ramAfter = `${Math.round(LocalAI.getDeviceCapabilities().availableRamMb)} MB available after probes`;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        ramAfter = 'unavailable';
+      }
+      runtimeSummary = `${LocalAI.getRuntimeStatus().nativeEngine}; loaded=${LocalAI.isLoaded()}`;
+
+      const latencyLines = promptResults.length
+        ? promptResults.map((result, index) =>
+            'error' in result
+              ? `Prompt ${index + 1}: ${result.error}`
+              : `Prompt ${index + 1}: TTFT ${result.ttftMs ?? 'no token'} ms · ${result.tokensPerSecond.toFixed(2)} tokens/s · ${result.durationMs} ms total`,
+          )
+        : ['Streaming probes: skipped because no model is loaded.'];
+      setDiagnostic([
+        `FTS5 natural query: ${ftsPassed ? 'PASS' : 'FAIL'} · ${ftsLatencyMs} ms`,
+        `Embedding: ${embeddingResult}`,
+        `Runtime: ${runtimeSummary}`,
+        `RAM: ${ramBefore}; ${ramAfter}`,
+        ...latencyLines,
+      ].join('\n'));
+    } catch (error) {
+      setDiagnostic(`Diagnostics failed: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      try {
+        anvayFtsStore.deleteEntry('rag_documents', sourceId, null, ownerId);
+      } catch {
+        // A failed FTS initialization is already reported in the diagnostic result.
+      }
+      setDiagnosticRunning(false);
+    }
   };
 
   return (
@@ -285,6 +435,27 @@ export default function ModelStatusScreen() {
         <Button label="Try it" variant="outline" onPress={() => void test()} style={{ marginTop: 12 }} />
       ) : null}
       {reply ? <Text style={[typography.body, { color: colors.text.primary, marginTop: 10 }]}>{reply}</Text> : null}
+      {__DEV__ ? (
+        <Card style={styles.card}>
+          <Text style={[typography.bodyBold, { color: colors.text.primary }]}>Local AI diagnostics</Text>
+          <Text style={[typography.caption, { color: colors.text.secondary, marginTop: 4 }]}>
+            Checks a temporary FTS5 entry, embeddings and three streamed prompts when a model is loaded.
+          </Text>
+          <Button
+            label={diagnosticRunning ? 'Running diagnostics…' : 'Run local diagnostics'}
+            size="sm"
+            variant="outline"
+            disabled={diagnosticRunning || LocalAI.isGenerating()}
+            onPress={() => void runDiagnostics()}
+            style={{ marginTop: 10, alignSelf: 'flex-start' }}
+          />
+          {diagnostic ? (
+            <Text selectable style={[typography.caption, { color: colors.text.primary, marginTop: 10 }]}>
+              {diagnostic}
+            </Text>
+          ) : null}
+        </Card>
+      ) : null}
       <Text style={[typography.caption, { color: colors.text.muted, marginTop: 12 }]}>
         Models come from Qwen (Apache-2.0) on Hugging Face and are checked against their published SHA-256. Answers are
         general guidance, not medical advice.

@@ -3,7 +3,7 @@
     "name": "Thrivefold",
     "slug": "thrivefold",
     "scheme": "thrivefold",
-    "version": "1.0.8",
+    "version": "1.0.9",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/images/app-icon-all.png",
@@ -16,7 +16,7 @@
     },
     "android": {
       "package": "com.amit.thrivefold",
-      "versionCode": 14,
+      "versionCode": 20,
       "allowBackup": false,
       "icon": "./assets/images/app-icon-android-legacy.png",
       "adaptiveIcon": {

@@ -27,7 +27,8 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "https://kwrdugillyakxgvgbrsu.supabase.co"
+        "EXPO_PUBLIC_SUPABASE_URL": "https://kwrdugillyakxgvgbrsu.supabase.co",
+        "ORG_GRADLE_PROJECT_reactNativeArchitectures": "arm64-v8a"
       }
     },
     "production-local": {

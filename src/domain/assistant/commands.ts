@@ -14,6 +14,7 @@ export type Command =
   | { kind: 'remember'; note: string }
   | { kind: 'delete_routines'; target: 'unnecessary' | 'all' | 'specific'; query?: string }
   | { kind: 'toggle_routines'; enable: boolean; query?: string }
+  | { kind: 'undo_routines' }
   | { kind: 'unknown'; text: string };
 
 /**
@@ -216,6 +217,10 @@ export function parseCommand(input: string): Command {
   }
 
   // Routine & Alarm management
+  if (/\b(?:undo|restore)\b.*\b(?:routines?|alarms?|reminders?|delete|deletion)\b/i.test(text)) {
+    return { kind: 'undo_routines' };
+  }
+
   if (
     /\b(?:delete|remove|clear|clean ?up|cancel|drop|prune)\b.*\b(?:unnecessary|unused|disabled|inactive|extra|duplicate|old)\b.*\b(?:routines?|alarms?|reminders?|schedules?)\b/i.test(
       text,
@@ -279,10 +284,20 @@ export function parseCommand(input: string): Command {
       return { kind: 'ask', metric: 'weather' };
     if (/\bheart ?(rate|beat)\b|\bpulse\b|\bbpm\b/.test(text))
       return { kind: 'ask', metric: 'heart' };
-    if (/\bsteps?\b|\bwalked\b/.test(text)) return { kind: 'ask', metric: 'steps' };
-    if (/\bwater\b|\bdrink|\bhydrat/.test(text)) return { kind: 'ask', metric: 'water' };
-    if (/\bcalor|\bburn/.test(text)) return { kind: 'ask', metric: 'calories' };
-    if (/\bquests?\b|\btasks?\b|\bleft\b/.test(text)) return { kind: 'ask', metric: 'quests' };
+    if (/\b(?:my\s+)?steps?\b|\bwalked\b/.test(text) && !/\b(?:how to|benefits of|what are)\b/.test(text))
+      return { kind: 'ask', metric: 'steps' };
+    // Defect D10 fix: Personal water metric ask vs general health advice
+    if (
+      (/\bwater\b|\bdrink|\bhydrat/.test(text)) &&
+      (/\b(?:my|logged|drank|had|today|count|glasses)\b/.test(text) || /\bhow (?:much|many)\b/.test(text)) &&
+      !/\b(?:healthy amount|benefits of|why|what is a healthy)\b/.test(text)
+    )
+      return { kind: 'ask', metric: 'water' };
+    if (/\bcalor|\bburn/.test(text) && (/\b(?:my|logged|burned|today)\b/.test(text) || /\bhow (?:much|many)\b/.test(text)))
+      return { kind: 'ask', metric: 'calories' };
+    // Defect D10 fix: Scoped quest matching rather than bare 'left'
+    if (/\bquests?\b|\btasks?\b/.test(text) || (/\b(?:how many|what)\b/.test(text) && /\bleft\b/.test(text)))
+      return { kind: 'ask', metric: 'quests' };
   }
 
   // Style and body questions ("which glasses suit me?") are best answered by the companion screen.

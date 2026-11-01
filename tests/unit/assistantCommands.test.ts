@@ -1,4 +1,5 @@
 import { parseCommand } from '../../src/domain/assistant/commands';
+import { parseRoutineRequest } from '../../src/domain/routines';
 
 describe('assistant commands', () => {
   it.each([
@@ -25,6 +26,24 @@ describe('assistant commands', () => {
     expect(parseCommand('how much water did I drink')).toEqual({ kind: 'ask', metric: 'water' });
     expect(parseCommand('what quests are left')).toEqual({ kind: 'ask', metric: 'quests' });
     expect(parseCommand('will it rain today?')).toEqual({ kind: 'ask', metric: 'weather' });
+  });
+
+  it('distinguishes general advice from personal metric asks (Defect D10)', () => {
+    expect(parseCommand('what is a healthy amount of water to drink')).toMatchObject({ kind: 'unknown' });
+    expect(parseCommand('benefits of walking every morning')).toMatchObject({ kind: 'unknown' });
+  });
+
+  it('supports undoing routine deletion (Defect D10)', () => {
+    expect(parseCommand('undo delete routines')).toEqual({ kind: 'undo_routines' });
+    expect(parseCommand('restore deleted routines')).toEqual({ kind: 'undo_routines' });
+  });
+
+  it('parses natural routine creation requests (Defect D10)', () => {
+    const routine = parseRoutineRequest('set routine Bedtime Wind-down for 10:30 PM');
+    expect(routine).not.toBeNull();
+    expect(routine?.title).toBe('Bedtime wind-down');
+    expect(routine?.time).toBe('22:30');
+    expect(routine?.kind).toBe('sleep');
   });
 
   it('puts support first when someone mentions harming themselves', () => {

@@ -1,2 +1,8 @@
 patchedDependencies:
   '@react-native-firebase/app': patches/@react-native-firebase__app.patch
+
+allowBuilds:
+  '@firebase/util': true
+  '@parcel/watcher': true
+  protobufjs: true
+  unrs-resolver: true

@@ -50,7 +50,9 @@ export class LocalLLM implements LLM {
   }
 
   generate(messages: Message[], callback: (token: string) => void): Promise<string> {
-    if (!LocalAI.isLoaded()) return Promise.reject(new Error('No on-device model is loaded.'));
+    if (!LocalAI.isLoaded()) {
+      return Promise.reject(new Error('No on-device model is loaded.'));
+    }
     const system = messages.filter((m) => m.role === 'system').map((m) => m.content).join('\n');
     const talk = messages.filter((m) => m.role !== 'system');
     const last = talk[talk.length - 1]?.content ?? '';
@@ -62,6 +64,20 @@ export class LocalLLM implements LLM {
     const turnId = `rag_${Date.now()}`;
     this.turn = turnId;
     return new Promise<string>((resolve, reject) => {
+      let settled = false;
+      const watchdog = setTimeout(() => {
+        done();
+        resolve('');
+      }, 25000);
+
+      const done = () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(watchdog);
+        subs.forEach((s) => s.remove());
+        if (this.turn === turnId) this.turn = null;
+      };
+
       const subs = [
         LocalAI.onToken((e) => {
           if (e.turnId === turnId) callback(e.token);
@@ -77,10 +93,7 @@ export class LocalLLM implements LLM {
           reject(new Error(e.error));
         }),
       ];
-      const done = () => {
-        subs.forEach((s) => s.remove());
-        if (this.turn === turnId) this.turn = null;
-      };
+
       if (!LocalAI.startStream(turnId, last, context || undefined, system || undefined)) {
         done();
         reject(new Error('The on-device model is busy.'));
@@ -164,7 +177,8 @@ export const thriveRag = {
   /** Lines from files the person read in the chat that answer the question (quoted, with page). */
   async fileLines(query: string, max = 3): Promise<FileLine[]> {
     try {
-      const docs = (await knowledgeStore.listDocuments(USER)).filter((d) => d.sourceType === 'imported_file');
+      // Defect D5 fix: SQL-filtered by imported_file with rawText only for matching documents
+      const docs = await knowledgeStore.listDocuments(USER, { sourceType: 'imported_file', includeRawText: true });
       return bestFileLines(docs.map((d) => ({ name: d.title, text: d.rawText })), query, max);
     } catch {
       return [];
@@ -221,7 +235,8 @@ export const thriveRag = {
    * marked "[page N]" so answers can cite them. A file with the same text is not added twice.
    */
   async rememberDocument(name: string, pages: { page: number; text: string }[], hash: string): Promise<{ id: string; duplicate: boolean }> {
-    const existing = (await knowledgeStore.listDocuments(USER)).find((d) => d.metadata?.hash === hash);
+    // Defect D5 fix: Fast hash lookup without loading all documents and rawText into memory
+    const existing = await knowledgeStore.findDocumentByHash(USER, hash);
     if (existing) return { id: existing.id, duplicate: true };
     const text = pages
       .filter((p) => p.text.trim())

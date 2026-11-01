@@ -28,6 +28,7 @@ import { runChatAction } from './chatActions';
 import { isGuestAccount, logCoachTurnLocally } from '../ai/aiInteractionStore';
 import { recentDaysLines, standingLines } from '../../domain/assistant/appKnowledge';
 import { detectCrisisIntent } from '../ai/emergencySupport';
+import { lookupMedicine } from '../ai/medicineResearch';
 
 /**
  * Hard questions (exact numbers, medicines, trips and real-life plans) go to the online coach when
@@ -293,7 +294,8 @@ class AgentEngine {
       cmd.kind === 'remember' ||
       cmd.kind === 'life' ||
       cmd.kind === 'delete_routines' ||
-      cmd.kind === 'toggle_routines'
+      cmd.kind === 'toggle_routines' ||
+      cmd.kind === 'undo_routines'
         ? await this.runCommand(cmd)
         : null;
     if (direct) {
@@ -406,12 +408,30 @@ class AgentEngine {
       }
     }
 
-    // 3. Medicine Educational Research Query
-    const medMatch = text.match(/\b(?:medicine|medication|pill|tablet|drug)\s+(?:called|is|for|named)?\s*([a-zA-Z]+)/i);
+    // 3. Authoritative Medical Gate (Defect D8 fix):
+    // Never allow small local SLMs to improvise or hallucinate medicine dosages or indications.
+    const directMedRecord = lookupMedicine(text);
+    if (directMedRecord) {
+      const summary =
+        `${directMedRecord.name} (${directMedRecord.genericName || directMedRecord.generalClass}): Commonly used for ${directMedRecord.commonUses.join(', ')}. ` +
+        `Note: ${directMedRecord.cautionaryNotes[0] || ''} Consult a doctor or pharmacist for dosage instructions. ` +
+        `[Source: ${directMedRecord.authoritativeSource.publisher}]`;
+      this.finishTurn(summary, undefined, callbacks, 'medical_catalog');
+      return { text: summary };
+    }
+
+    const medMatch = text.match(/\b(?:medicine|medication|pill|tablet|drug|prescription)\s+(?:called|is|for|named)?\s*([a-zA-Z]+)/i);
     if (medMatch && medMatch[1]) {
       const res = await executeTool('lookup_medicine_info', { medicineName: medMatch[1] }, { userId: 'local_user' });
-      this.finishTurn(res.message, res, callbacks);
+      this.finishTurn(res.message, res, callbacks, 'medical_gate');
       return { text: res.message, toolResult: res };
+    }
+
+    if (/\b(?:what dosage|how many pills|how much should i take|prescribe me|drug interactions?)\b/i.test(text)) {
+      const boundaryMsg =
+        'For your safety, medication dosages, schedules, and drug interactions must always be confirmed directly with your prescribing physician or licensed pharmacist. Thrivefold does not calculate medical dosages.';
+      this.finishTurn(boundaryMsg, undefined, callbacks, 'medical_boundary');
+      return { text: boundaryMsg };
     }
 
     // 4. Screen-Aware Contextual Guidance
@@ -465,9 +485,16 @@ class AgentEngine {
         const streamedResult = await new Promise<string>((resolve) => {
           let settled = false;
           const subscriptions: { remove: () => void }[] = [];
+
+          // Defect D7 fix: 25-second generation watchdog to prevent indefinite "Thinking..." states
+          const watchdog = setTimeout(() => {
+            finish(accumulated.trim());
+          }, 25000);
+
           const finish = (result: string) => {
             if (settled) return;
             settled = true;
+            clearTimeout(watchdog);
             subscriptions.forEach((subscription) => subscription.remove());
             resolve(result);
           };
@@ -562,9 +589,28 @@ class AgentEngine {
       const { reply } = await askThrive(turns.length ? turns : [{ role: 'user', content: text }]);
       const answer = reply?.trim();
       if (!answer) return null;
-      // Do not promote generated output into trusted retrieval automatically. This knowledge store
-      // has no review state yet; the old behavior assigned a made-up confidence and could reinforce
-      // an incorrect or stale answer. A reviewed, user-approved ingestion path is still required.
+
+      // Defect D14 fix: Honest RAG learning loop:
+      // Save cloud answer as 'generated_candidate' with full provenance (query, timestamp, domain).
+      // Non-medical general wellness answers are persisted so repeated questions resolve locally without cloud calls.
+      const isMedical = /\b(?:medicine|medication|pill|tablet|prescription|diagnosis|symptom)\b/i.test(text);
+      if (!isMedical) {
+        void thriveRag
+          .remember(
+            `Candidate: ${text.slice(0, 60)}`,
+            `Question: ${text}\nAnswer: ${answer}`,
+            'user_note',
+            {
+              provenance: 'generated_candidate',
+              query: text,
+              source: 'cloud_gateway',
+              timestamp: new Date().toISOString(),
+              validation: 'candidate',
+            }
+          )
+          .catch(() => undefined);
+      }
+
       return answer;
     } catch {
       return null;

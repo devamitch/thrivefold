@@ -62,6 +62,8 @@ function getDb(): SQLite.SQLiteDatabase {
         end_offset INTEGER NOT NULL,
         token_estimate INTEGER NOT NULL,
         embedding_json TEXT,
+        embedding_model TEXT,
+        dim INTEGER,
         created_at TEXT NOT NULL,
         FOREIGN KEY (document_id) REFERENCES rag_documents(id) ON DELETE CASCADE
       );
@@ -69,6 +71,20 @@ function getDb(): SQLite.SQLiteDatabase {
       CREATE INDEX IF NOT EXISTS idx_rag_chunks_doc ON rag_chunks(document_id);
       CREATE INDEX IF NOT EXISTS idx_rag_chunks_user ON rag_chunks(user_id);
     `);
+
+    // Additive migration: check if legacy rag_chunks lacked embedding_model or dim
+    try {
+      const chunkTableInfo = db.getAllSync<{ name: string }>(`PRAGMA table_info(rag_chunks);`);
+      const hasModel = chunkTableInfo.some((c) => c.name === 'embedding_model');
+      if (!hasModel) {
+        db.execSync(`ALTER TABLE rag_chunks ADD COLUMN embedding_model TEXT;`);
+      }
+      const hasDim = chunkTableInfo.some((c) => c.name === 'dim');
+      if (!hasDim) {
+        db.execSync(`ALTER TABLE rag_chunks ADD COLUMN dim INTEGER;`);
+      }
+    } catch {}
+
     initialized = true;
   }
   return db;
@@ -134,8 +150,8 @@ export class KnowledgeStore {
       for (const item of chunksWithEmbeddings) {
         const chunkId = `chk_${docId}_${item.chunk.index}`;
         database.runSync(
-          `INSERT INTO rag_chunks (id, document_id, user_id, chunk_index, content, start_offset, end_offset, token_estimate, embedding_json, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO rag_chunks (id, document_id, user_id, chunk_index, content, start_offset, end_offset, token_estimate, embedding_json, embedding_model, dim, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             chunkId,
             docId,
@@ -146,6 +162,8 @@ export class KnowledgeStore {
             item.chunk.endOffset,
             item.chunk.tokenEstimate,
             item.embedding ? JSON.stringify(item.embedding) : null,
+            item.embedding ? 'on_device' : null,
+            item.embedding ? item.embedding.length : null,
             now,
           ]
         );
@@ -228,10 +246,11 @@ export class KnowledgeStore {
       const rows = database.getAllSync<{
         id: string; document_id: string; user_id: string; chunk_index: number; content: string;
         start_offset: number; end_offset: number; token_estimate: number; embedding_json: string;
+        embedding_model: string | null; dim: number | null;
         created_at: string; document_title: string | null;
       }>(
         `SELECT c.id, c.document_id, c.user_id, c.chunk_index, c.content, c.start_offset, c.end_offset,
-                c.token_estimate, c.embedding_json, c.created_at, d.title AS document_title
+                c.token_estimate, c.embedding_json, c.embedding_model, c.dim, c.created_at, d.title AS document_title
          FROM rag_chunks c JOIN rag_documents d ON d.id = c.document_id
          WHERE c.user_id = ? AND c.id > ? AND c.embedding_json IS NOT NULL
          ORDER BY c.id LIMIT ?`,
@@ -241,13 +260,18 @@ export class KnowledgeStore {
       afterId = rows[rows.length - 1].id;
 
       for (const row of rows) {
+        // Defect D4 fix: Dimension mismatch (e.g. after model switch). Treat as needing re-embedding later, skip rather than 0 similarity
+        if (row.dim && row.dim !== queryVec.length) {
+          continue;
+        }
+
         let embedding: number[];
         try {
           embedding = JSON.parse(row.embedding_json);
         } catch {
           continue;
         }
-        if (embedding.length === 0) continue;
+        if (embedding.length === 0 || embedding.length !== queryVec.length) continue;
         const similarity = cosineSimilarity(queryVec, embedding);
         if (similarity >= minSimilarity) {
           hits.push({
@@ -275,17 +299,29 @@ export class KnowledgeStore {
   }
 
   /**
-   * Lists all ingested documents for a user.
+   * Lists ingested documents for a user with optional memory bounding and sourceType filter.
+   * Defect D5 fix: Never load raw_text unless explicitly requested.
    */
-  async listDocuments(userId: string): Promise<KnowledgeDocument[]> {
+  async listDocuments(
+    userId: string,
+    options?: { sourceType?: KnowledgeDocument['sourceType']; includeRawText?: boolean }
+  ): Promise<KnowledgeDocument[]> {
     const database = getDb();
-    const rows = database.getAllSync<any>(
-      `SELECT id, user_id, title, source_type, raw_text, chunk_count, created_at, metadata_json
-       FROM rag_documents
-       WHERE user_id = ?
-       ORDER BY created_at DESC`,
-      [userId]
-    );
+    const includeText = options?.includeRawText !== false;
+    const textCol = includeText ? 'raw_text' : "'' AS raw_text";
+
+    let sql = `SELECT id, user_id, title, source_type, ${textCol}, chunk_count, created_at, metadata_json
+               FROM rag_documents
+               WHERE user_id = ?`;
+    const params: (string | number)[] = [userId];
+
+    if (options?.sourceType) {
+      sql += ` AND source_type = ?`;
+      params.push(options.sourceType);
+    }
+    sql += ` ORDER BY created_at DESC`;
+
+    const rows = database.getAllSync<any>(sql, params);
 
     return rows.map((r) => ({
       id: r.id,
@@ -297,6 +333,32 @@ export class KnowledgeStore {
       createdAt: r.created_at,
       metadata: r.metadata_json ? JSON.parse(r.metadata_json) : undefined,
     }));
+  }
+
+  /**
+   * Fast document check by hash without loading raw_text into memory.
+   */
+  async findDocumentByHash(userId: string, hash: string): Promise<KnowledgeDocument | null> {
+    const database = getDb();
+    const rows = database.getAllSync<any>(
+      `SELECT id, user_id, title, source_type, '' AS raw_text, chunk_count, created_at, metadata_json
+       FROM rag_documents
+       WHERE user_id = ? AND json_extract(metadata_json, '$.hash') = ?
+       LIMIT 1`,
+      [userId, hash]
+    );
+    if (rows.length === 0) return null;
+    const r = rows[0];
+    return {
+      id: r.id,
+      userId: r.user_id,
+      title: r.title,
+      sourceType: r.source_type,
+      rawText: r.raw_text,
+      chunkCount: r.chunk_count,
+      createdAt: r.created_at,
+      metadata: r.metadata_json ? JSON.parse(r.metadata_json) : undefined,
+    };
   }
 
   /**

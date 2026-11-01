@@ -533,6 +533,27 @@ export function GlobalVoiceAssistant() {
             {
               source: 'liked_reply',
               messageId: id,
+              provenance: 'generated_promoted',
+              query: asked,
+              validation: 'promoted',
+              timestamp: new Date().toISOString(),
+            },
+          )
+          .catch(() => undefined);
+      } else if (next.feedback === 'down') {
+        const asked = [...t.slice(0, i)].reverse().find((m) => m.who === 'you')?.text ?? '';
+        void thriveRag
+          .remember(
+            asked.slice(0, 80) || 'Disputed answer',
+            `Question: ${asked}\nAnswer: ${next.text}`,
+            'wellness_guide',
+            {
+              source: 'disliked_reply',
+              messageId: id,
+              provenance: 'disputed',
+              query: asked,
+              validation: 'disputed',
+              timestamp: new Date().toISOString(),
             },
           )
           .catch(() => undefined);

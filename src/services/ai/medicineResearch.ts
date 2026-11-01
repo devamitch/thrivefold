@@ -165,19 +165,93 @@ const VERIFIED_MEDICINE_CATALOG: Record<string, MedicineRecord> = {
 
 /**
  * Searches the verified educational medicine catalog.
+ * Defect D9 fix: Strict exact and word-boundary matching (\b) prevents false positives
+ * (e.g. "at" matching atorvastatin, or "in" matching amoxicillin).
  */
 export function lookupMedicine(nameOrQuery: string): MedicineRecord | null {
   const q = nameOrQuery.toLowerCase().trim();
+  if (!q || q.length < 3) return null;
+
+  // 1. Exact match on catalog key, brand name, or generic name
   for (const [key, record] of Object.entries(VERIFIED_MEDICINE_CATALOG)) {
     if (
-      key.includes(q) ||
-      q.includes(key) ||
-      record.name.toLowerCase().includes(q) ||
-      (record.genericName && record.genericName.toLowerCase().includes(q))
+      key === q ||
+      record.name.toLowerCase() === q ||
+      (record.genericName && record.genericName.toLowerCase() === q)
     ) {
       return record;
     }
   }
+
+  // 2. Word-boundary regex matching within user query
+  for (const [key, record] of Object.entries(VERIFIED_MEDICINE_CATALOG)) {
+    const keyRegex = new RegExp(`\\b${key}\\b`, 'i');
+    const nameRegex = new RegExp(`\\b${record.name}\\b`, 'i');
+    const genRegex = record.genericName ? new RegExp(`\\b${record.genericName}\\b`, 'i') : null;
+
+    if (keyRegex.test(q) || nameRegex.test(q) || (genRegex && genRegex.test(q))) {
+      return record;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Fetches authoritative pharmacology evidence from official open APIs (OpenFDA / RxNav).
+ * Used when an inquiry references an uncatalogued medicine, avoiding paid cloud calls
+ * and preventing SLMs from hallucinating unverified dosages.
+ */
+export async function fetchAuthoritativeMedicineEvidence(drugName: string): Promise<MedicineRecord | null> {
+  const cleanName = drugName.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
+  if (!cleanName || cleanName.length < 3) return null;
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4500);
+
+    const fdaUrl = `https://api.fda.gov/drug/label.json?search=openfda.generic_name:${encodeURIComponent(cleanName)}+openfda.brand_name:${encodeURIComponent(cleanName)}&limit=1`;
+    const response = await fetch(fdaUrl, { signal: controller.signal });
+    clearTimeout(timeout);
+
+    if (response.ok) {
+      const data = await response.json();
+      const result = data.results?.[0];
+      if (result) {
+        const brand = result.openfda?.brand_name?.[0] || cleanName;
+        const generic = result.openfda?.generic_name?.[0] || brand;
+        const uses = result.purpose?.[0]
+          ? [result.purpose[0].slice(0, 150)]
+          : result.indications_and_usage?.[0]
+            ? [result.indications_and_usage[0].slice(0, 150)]
+            : ['Educational pharmacology reference'];
+        const notes = result.warnings?.[0]
+          ? [result.warnings[0].slice(0, 180)]
+          : ['Verify exact directions with your prescribing clinician or pharmacist.'];
+
+        return {
+          id: `openfda_${cleanName}`,
+          name: brand.charAt(0).toUpperCase() + brand.slice(1).toLowerCase(),
+          genericName: generic.charAt(0).toUpperCase() + generic.slice(1).toLowerCase(),
+          commonUses: uses,
+          generalClass: result.openfda?.pharm_class_cs?.[0] || 'Pharmaceutical Agent',
+          cautionaryNotes: notes,
+          questionsForPharmacist: [
+            'What is the recommended frequency and timing for this medication?',
+            'Are there any known interactions with other supplements or foods?',
+          ],
+          authoritativeSource: {
+            publisher: 'U.S. Food & Drug Administration (OpenFDA)',
+            referenceUrl: 'https://open.fda.gov/apis/drug/label/',
+            lastVerifiedDate: new Date().toISOString().split('T')[0],
+          },
+        };
+      }
+    }
+  } catch {
+    // Network unavailable or timeout; fall back to safe non-diagnostic boundary
+  }
+
   return null;
 }
 

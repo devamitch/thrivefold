@@ -118,81 +118,95 @@ function ensureInitialized(database: SQLite.SQLiteDatabase): void {
 
 /**
  * Initializes the master search entry table with entry_key, FTS5 virtual table, and sync triggers.
+ * Defect D2 fix: Checks legacy schema and migrates columns BEFORE creating indexes.
  */
 function initFtsSchema(database: SQLite.SQLiteDatabase): void {
-  database.execSync(`
-    -- Master Search Table (Stores authoritative metadata & text with integer rowid and unique entry_key)
-    CREATE TABLE IF NOT EXISTS anvay_search_entries (
-      rowid INTEGER PRIMARY KEY AUTOINCREMENT,
-      entry_key TEXT NOT NULL,
-      source_table TEXT NOT NULL,
-      source_id TEXT NOT NULL,
-      chunk_id TEXT,
-      owner_id TEXT NOT NULL,
-      app_id TEXT NOT NULL DEFAULT 'thrivefold',
-      domain TEXT NOT NULL,
-      source_type TEXT NOT NULL,
-      title TEXT NOT NULL,
-      content TEXT NOT NULL,
-      created_at TEXT NOT NULL,
-      metadata_json TEXT
-    );
-
-    CREATE UNIQUE INDEX IF NOT EXISTS idx_anvay_search_entry_key ON anvay_search_entries(entry_key);
-    CREATE INDEX IF NOT EXISTS idx_anvay_search_owner ON anvay_search_entries(owner_id, domain);
-    CREATE INDEX IF NOT EXISTS idx_anvay_search_app ON anvay_search_entries(app_id);
-    CREATE INDEX IF NOT EXISTS idx_anvay_search_created ON anvay_search_entries(created_at);
-
-    -- FTS5 Virtual Table (External Content pattern: content='anvay_search_entries')
-    -- Tokenizer: unicode61 with remove_diacritics=2 for accent-insensitivity while preserving Indian alphabets
-    CREATE VIRTUAL TABLE IF NOT EXISTS anvay_search_fts USING fts5(
-      title,
-      content,
-      content='anvay_search_entries',
-      content_rowid='rowid',
-      tokenize = 'unicode61 remove_diacritics 2'
-    );
-
-    -- Synchronization Triggers: Keep FTS5 in atomic lockstep with anvay_search_entries
-    CREATE TRIGGER IF NOT EXISTS trg_anvay_search_ai AFTER INSERT ON anvay_search_entries BEGIN
-      INSERT INTO anvay_search_fts(rowid, title, content) VALUES (new.rowid, new.title, new.content);
-    END;
-
-    CREATE TRIGGER IF NOT EXISTS trg_anvay_search_ad AFTER DELETE ON anvay_search_entries BEGIN
-      INSERT INTO anvay_search_fts(anvay_search_fts, rowid, title, content) VALUES ('delete', old.rowid, old.title, old.content);
-    END;
-
-    CREATE TRIGGER IF NOT EXISTS trg_anvay_search_au AFTER UPDATE ON anvay_search_entries BEGIN
-      INSERT INTO anvay_search_fts(anvay_search_fts, rowid, title, content) VALUES ('delete', old.rowid, old.title, old.content);
-      INSERT INTO anvay_search_fts(rowid, title, content) VALUES (new.rowid, new.title, new.content);
-    END;
-  `);
-
-  // Migration: Check if legacy anvay_search_entries table lacked entry_key column
   try {
+    // 1. Check if legacy anvay_search_entries exists and lacks entry_key
     const tableInfo = database.getAllSync<{ name: string }>(`PRAGMA table_info(anvay_search_entries);`);
-    const hasEntryKey = tableInfo.some((col) => col.name === 'entry_key');
-    if (!hasEntryKey) {
-      database.execSync(`
-        ALTER TABLE anvay_search_entries ADD COLUMN entry_key TEXT;
-        UPDATE anvay_search_entries
-        SET entry_key = app_id || ':' || owner_id || ':' || source_table || ':' || source_id || ':' || COALESCE(chunk_id, '__root__')
-        WHERE entry_key IS NULL;
-        CREATE UNIQUE INDEX IF NOT EXISTS idx_anvay_search_entry_key ON anvay_search_entries(entry_key);
-      `);
+    if (tableInfo.length > 0) {
+      const hasEntryKey = tableInfo.some((col) => col.name === 'entry_key');
+      if (!hasEntryKey) {
+        database.execSync(`
+          ALTER TABLE anvay_search_entries ADD COLUMN entry_key TEXT;
+          UPDATE anvay_search_entries
+          SET entry_key = app_id || ':' || owner_id || ':' || source_table || ':' || source_id || ':' || COALESCE(chunk_id, '__root__')
+          WHERE entry_key IS NULL;
+        `);
+      }
     }
-  } catch {
-    // Column already exists or table freshly created
+
+    // 2. Create tables, unique indexes, external content FTS5, and triggers
+    database.execSync(`
+      -- Master Search Table (Stores authoritative metadata & text with integer rowid and unique entry_key)
+      CREATE TABLE IF NOT EXISTS anvay_search_entries (
+        rowid INTEGER PRIMARY KEY AUTOINCREMENT,
+        entry_key TEXT NOT NULL,
+        source_table TEXT NOT NULL,
+        source_id TEXT NOT NULL,
+        chunk_id TEXT,
+        owner_id TEXT NOT NULL,
+        app_id TEXT NOT NULL DEFAULT 'thrivefold',
+        domain TEXT NOT NULL,
+        source_type TEXT NOT NULL,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        metadata_json TEXT
+      );
+
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_anvay_search_entry_key ON anvay_search_entries(entry_key);
+      CREATE INDEX IF NOT EXISTS idx_anvay_search_owner ON anvay_search_entries(owner_id, domain);
+      CREATE INDEX IF NOT EXISTS idx_anvay_search_app ON anvay_search_entries(app_id);
+      CREATE INDEX IF NOT EXISTS idx_anvay_search_created ON anvay_search_entries(created_at);
+
+      -- FTS5 Virtual Table (External Content pattern: content='anvay_search_entries')
+      -- Tokenizer: unicode61 with remove_diacritics=2 for accent-insensitivity while preserving Indian alphabets
+      CREATE VIRTUAL TABLE IF NOT EXISTS anvay_search_fts USING fts5(
+        title,
+        content,
+        content='anvay_search_entries',
+        content_rowid='rowid',
+        tokenize = 'unicode61 remove_diacritics 2'
+      );
+
+      -- Synchronization Triggers: Keep FTS5 in atomic lockstep with anvay_search_entries
+      CREATE TRIGGER IF NOT EXISTS trg_anvay_search_ai AFTER INSERT ON anvay_search_entries BEGIN
+        INSERT INTO anvay_search_fts(rowid, title, content) VALUES (new.rowid, new.title, new.content);
+      END;
+
+      CREATE TRIGGER IF NOT EXISTS trg_anvay_search_ad AFTER DELETE ON anvay_search_entries BEGIN
+        INSERT INTO anvay_search_fts(anvay_search_fts, rowid, title, content) VALUES ('delete', old.rowid, old.title, old.content);
+      END;
+
+      CREATE TRIGGER IF NOT EXISTS trg_anvay_search_au AFTER UPDATE ON anvay_search_entries BEGIN
+        INSERT INTO anvay_search_fts(anvay_search_fts, rowid, title, content) VALUES ('delete', old.rowid, old.title, old.content);
+        INSERT INTO anvay_search_fts(rowid, title, content) VALUES (new.rowid, new.title, new.content);
+      END;
+    `);
+  } catch (err) {
+    console.warn('[AnvayFtsStore] initFtsSchema error:', err);
+    throw err;
   }
 }
 
+const STOPWORDS = new Set(
+  (
+    'a an and are as at be been but by can could did do does for from had has have how i if in into is it its ' +
+    'me my of on or our so than that the their them then there these they this to too was we were what ' +
+    'when where which who why will with you your am about after again all also any because before being ' +
+    'both just more most no not now only other over same some such very should would'
+  ).split(' '),
+);
+
 /**
  * Sanitizes user input into safe FTS5 query syntax:
- * - Handles quotes for phrase matching
- * - Appends wildcards for prefix matching
- * - Preserves Unicode letters and combining marks (\p{L}\p{M}) for Devanagari/Bengali
+ * - Drops common English stopwords while strictly preserving Hindi/Bengali scripts
+ * - Caps at 6 significant terms
+ * - Preserves exact quoted phrases
+ * - Supports 'and' or 'or' join modes
  */
-export function sanitizeFtsQuery(query: string): string {
+export function sanitizeFtsQuery(query: string, mode: 'and' | 'or' = 'and'): string {
   const trimmed = query.trim();
   if (!trimmed) return '';
 
@@ -203,17 +217,22 @@ export function sanitizeFtsQuery(query: string): string {
     return inner ? `"${inner}"` : '';
   }
 
-  // 2. Tokenize words with combining marks for Indian alphabets
-  const tokens = trimmed
+  // 2. Tokenize words with combining marks for Indian alphabets (\p{L}\p{M})
+  const rawTokens = trimmed
     .replace(/[^\p{L}\p{M}\p{N}\s]/gu, ' ')
     .split(/\s+/)
     .map((t) => t.trim().toLowerCase())
-    .filter((t) => t.length > 0 && !['and', 'or', 'not'].includes(t));
+    .filter((t) => t.length > 0 && !['and', 'or', 'not', 'near'].includes(t));
 
-  if (tokens.length === 0) return '';
+  if (rawTokens.length === 0) return '';
 
-  // 3. Format as prefix search tokens joined by AND
-  return tokens.map((t) => `"${t}"*`).join(' AND ');
+  // Filter stopwords for English words (Hindi / Bengali Unicode tokens are never in STOPWORDS and are preserved)
+  const nonStopwords = rawTokens.filter((t) => !STOPWORDS.has(t));
+  const tokens = (nonStopwords.length > 0 ? nonStopwords : rawTokens).slice(0, 6);
+
+  // 3. Format as prefix search tokens joined by AND or OR
+  const joiner = mode === 'or' ? ' OR ' : ' AND ';
+  return tokens.map((t) => `"${t}"*`).join(joiner);
 }
 
 export class AnvayFtsStore {
@@ -319,44 +338,23 @@ export class AnvayFtsStore {
   }
 
   /**
-   * Executes a safe, parameterized full-text search with strict authorization filters.
+   * Helper to execute parameterized full-text query against SQLite FTS5.
    */
-  search(query: string, filters: FtsSearchFilter): FtsSearchHit[] {
-    const database = getSharedLocalMemoryDb();
-    ensureInitialized(database);
-
-    const sanitized = sanitizeFtsQuery(query);
-    if (!sanitized) return [];
-
+  private executeFtsQuery(
+    database: SQLite.SQLiteDatabase,
+    ftsMatchQuery: string,
+    filters: FtsSearchFilter,
+    limit: number,
+    offset: number
+  ): FtsSearchHit[] {
     const ownerId = filters.ownerId;
     const appId = filters.appId || 'thrivefold';
-    const limit = Math.max(1, Math.min(filters.limit || 20, 100));
-    const offset = Math.max(0, filters.offset || 0);
-
-    // Multi-dimensional cache key
-    const cacheKey = [
-      ownerId,
-      appId,
-      filters.domain || '*',
-      filters.sourceType || '*',
-      filters.startDate || '*',
-      filters.endDate || '*',
-      sanitized,
-      limit,
-      offset,
-    ].join('|');
-
-    const cached = queryCache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-      return cached.results;
-    }
-
     const whereClauses: string[] = [
       `anvay_search_fts MATCH ?`,
       `e.owner_id = ?`,
       `e.app_id = ?`,
     ];
-    const params: (string | number)[] = [sanitized, ownerId, appId];
+    const params: (string | number)[] = [ftsMatchQuery, ownerId, appId];
 
     if (filters.domain) {
       whereClauses.push(`e.domain = ?`);
@@ -403,7 +401,7 @@ export class AnvayFtsStore {
 
     try {
       const rows = database.getAllSync<any>(sql, params);
-      const hits: FtsSearchHit[] = rows.map((r) => ({
+      return rows.map((r) => ({
         rowid: r.rowid,
         entryKey: r.entry_key,
         sourceTable: r.source_table,
@@ -420,18 +418,64 @@ export class AnvayFtsStore {
         bm25Score: r.bm25_score,
         snippet: r.snippet || r.content.slice(0, 120),
       }));
-
-      // LRU cache eviction
-      if (queryCache.size >= MAX_CACHE_ENTRIES) {
-        const oldestKey = queryCache.keys().next().value;
-        if (oldestKey) queryCache.delete(oldestKey);
-      }
-      queryCache.set(cacheKey, { timestamp: Date.now(), results: hits });
-
-      return hits;
     } catch {
       return [];
     }
+  }
+
+  /**
+   * Executes a safe, parameterized full-text search with strict authorization filters.
+   * Defect D1 fix: Tries AND of significant terms; falls back to OR with BM25 ranking.
+   */
+  search(query: string, filters: FtsSearchFilter): FtsSearchHit[] {
+    const database = getSharedLocalMemoryDb();
+    ensureInitialized(database);
+
+    const sanitizedAnd = sanitizeFtsQuery(query, 'and');
+    if (!sanitizedAnd) return [];
+
+    const ownerId = filters.ownerId;
+    const appId = filters.appId || 'thrivefold';
+    const limit = Math.max(1, Math.min(filters.limit || 20, 100));
+    const offset = Math.max(0, filters.offset || 0);
+
+    // Multi-dimensional cache key
+    const cacheKey = [
+      ownerId,
+      appId,
+      filters.domain || '*',
+      filters.sourceType || '*',
+      filters.startDate || '*',
+      filters.endDate || '*',
+      sanitizedAnd,
+      limit,
+      offset,
+    ].join('|');
+
+    const cached = queryCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      return cached.results;
+    }
+
+    // 1. Try AND query first
+    let hits = this.executeFtsQuery(database, sanitizedAnd, filters, limit, offset);
+
+    // 2. Fall back to OR query if AND produces 0 hits and multiple terms exist
+    if (hits.length === 0) {
+      const sanitizedOr = sanitizeFtsQuery(query, 'or');
+      if (sanitizedOr && sanitizedOr !== sanitizedAnd) {
+        hits = this.executeFtsQuery(database, sanitizedOr, filters, limit, offset);
+      }
+    }
+
+    // LRU cache eviction
+    if (queryCache.size >= MAX_CACHE_ENTRIES) {
+      const oldestKey = queryCache.keys().next().value;
+      if (oldestKey) queryCache.delete(oldestKey);
+    }
+    queryCache.set(cacheKey, { timestamp: Date.now(), results: hits });
+
+    return hits;
   }
 
   /**

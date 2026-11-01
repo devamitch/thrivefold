@@ -81,14 +81,24 @@ export function parseTime(raw: string): string | null {
 
 /**
  * "remind me to stretch at 6pm every weekday", "remind me to drink water every 2 hours",
- * "every day at 7:30 remind me to meditate". Null when it isn't a reminder request.
+ * "set routine Bedtime Wind-down for 10:30 PM", "every day at 7:30 remind me to meditate". Null when it isn't a reminder request.
+ * Defect D10 fix: Supports "set routine <name> for <time>" as well as reminder formats.
  */
 export function parseRoutineRequest(input: string): Omit<Routine, 'id' | 'enabled'> | null {
   const t = input.toLowerCase().replace(/\s+/g, ' ').trim();
-  if (!/\bremind me\b|\bset (?:a )?reminder\b|\bnotify me\b/.test(t)) return null;
+  if (
+    !/\bremind me\b|\bset (?:a )?(?:reminder|routine|alarm)\b|\bnotify me\b|\bcreate (?:a )?(?:routine|reminder|alarm)\b|\bschedule (?:a )?(?:routine|reminder|alarm)\b/.test(
+      t,
+    )
+  )
+    return null;
   const every = t.match(/every (\d{1,2}) hours?/);
-  const at = t.match(/\bat (\d{1,2}(?:[:.]\d{2})?\s*(?:am|pm)?)/);
-  const what = (t.match(/\b(?:to|about) (.+?)(?= at \d| every | on |$)/)?.[1] ?? '').replace(/\b(daily|every day|each day)\b/g, '').trim();
+  const at = t.match(/\b(?:at|for) (\d{1,2}(?:[:.]\d{2})?\s*(?:am|pm)?)/);
+  const what = (
+    t.match(/\b(?:to|about|routine|alarm|reminder)\s+(.+?)(?=\s+(?:at|for)\s+\d|\s+every\s+|\s+on\s+|$)/)?.[1] ?? ''
+  )
+    .replace(/\b(daily|every day|each day)\b/g, '')
+    .trim();
   if (!what) return null;
   let days: number[] = [];
   for (const [word, d] of Object.entries(DAY_WORDS)) if (t.includes(word)) days = [...new Set([...days, ...d])];

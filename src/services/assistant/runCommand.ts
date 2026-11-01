@@ -41,6 +41,9 @@ const SYSTEM =
   'You are Thrive, a warm, brief wellbeing coach inside a health app. Answer in at most three short sentences. ' +
   'Give general wellbeing guidance only. Never diagnose, never name medicines or doses, and suggest a doctor for anything worrying or urgent.';
 
+// Stash for reversible routine deletions (Defect D10)
+let lastDeletedRoutines: any[] = [];
+
 /** Carries out one command against the person's own data on this phone and says what happened. */
 export async function runCommand(cmd: Command): Promise<AssistantReply> {
   const s = useRootStore.getState();
@@ -74,6 +77,20 @@ export async function runCommand(cmd: Command): Promise<AssistantReply> {
       return { text: r.success ? 'Got it. I will remember that.' : r.message };
     }
 
+    case 'undo_routines': {
+      if (!lastDeletedRoutines.length) {
+        return { text: 'No recently deleted routines to restore.', route: '/(app)/routines', autoNavigate: true };
+      }
+      const count = lastDeletedRoutines.length;
+      lastDeletedRoutines.forEach((r) => s.addRoutine(r));
+      lastDeletedRoutines = [];
+      return {
+        text: `Restored ${count} routine alarm${count > 1 ? 's' : ''}.`,
+        route: '/(app)/routines',
+        autoNavigate: true,
+      };
+    }
+
     case 'delete_routines': {
       const routines = s.routines ?? [];
       if (!routines.length) {
@@ -83,10 +100,11 @@ export async function runCommand(cmd: Command): Promise<AssistantReply> {
       if (cmd.target === 'unnecessary') {
         const inactive = routines.filter((r) => !r.enabled);
         if (inactive.length > 0) {
+          lastDeletedRoutines = [...inactive];
           inactive.forEach((r) => s.removeRoutine(r.id));
           const remaining = useRootStore.getState().routines.length;
           return {
-            text: `Removed ${inactive.length} unnecessary routine alarm${inactive.length > 1 ? 's' : ''}. You have ${remaining} active routine${remaining === 1 ? '' : 's'} remaining.`,
+            text: `Removed ${inactive.length} unnecessary routine alarm${inactive.length > 1 ? 's' : ''}. You have ${remaining} active routine${remaining === 1 ? '' : 's'} remaining. Say "undo" to restore.`,
             route: '/(app)/routines',
             autoNavigate: true,
           };
@@ -99,10 +117,11 @@ export async function runCommand(cmd: Command): Promise<AssistantReply> {
           return false;
         });
         if (duplicates.length > 0) {
+          lastDeletedRoutines = [...duplicates];
           duplicates.forEach((d) => s.removeRoutine(d.id));
           const remaining = useRootStore.getState().routines.length;
           return {
-            text: `Cleaned up ${duplicates.length} duplicate routine alarm${duplicates.length > 1 ? 's' : ''}. ${remaining} unique routines remaining.`,
+            text: `Cleaned up ${duplicates.length} duplicate routine alarm${duplicates.length > 1 ? 's' : ''}. ${remaining} unique routines remaining. Say "undo" to restore.`,
             route: '/(app)/routines',
             autoNavigate: true,
           };
@@ -116,9 +135,10 @@ export async function runCommand(cmd: Command): Promise<AssistantReply> {
 
       if (cmd.target === 'all') {
         const count = routines.length;
+        lastDeletedRoutines = [...routines];
         routines.forEach((r) => s.removeRoutine(r.id));
         return {
-          text: `Cleared all ${count} routine alarm${count > 1 ? 's' : ''}.`,
+          text: `Cleared all ${count} routine alarm${count > 1 ? 's' : ''}. Say "undo" to restore.`,
           route: '/(app)/routines',
           autoNavigate: true,
         };
@@ -130,9 +150,10 @@ export async function runCommand(cmd: Command): Promise<AssistantReply> {
         if (!match) {
           return { text: `Could not find a routine alarm matching "${cmd.query}".`, route: '/(app)/routines', autoNavigate: true };
         }
+        lastDeletedRoutines = [match];
         s.removeRoutine(match.id);
         return {
-          text: `Removed routine alarm "${match.title}".`,
+          text: `Removed routine alarm "${match.title}". Say "undo" to restore.`,
           route: '/(app)/routines',
           autoNavigate: true,
         };

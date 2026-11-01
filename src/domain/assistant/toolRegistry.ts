@@ -16,7 +16,7 @@ import { activeCalories } from '../activity/calories';
 import { thriveRag } from '../../services/local-ai/rag/thriveRag';
 import { memoryStore } from '../../services/local-ai/memory/memoryStore';
 import { knowledgeStore } from '../../services/local-ai/rag/knowledgeStore';
-import { lookupMedicine, analyzePrescriptionText } from '../../services/ai/medicineResearch';
+import { lookupMedicine, analyzePrescriptionText, fetchAuthoritativeMedicineEvidence } from '../../services/ai/medicineResearch';
 import { format12Hour } from '../routines';
 import { chestKey, LEVEL_CHESTS } from '../game/rewards';
 
@@ -328,11 +328,14 @@ export const TOOLS: Record<string, ToolDefinition> = {
       },
     },
     execute: async (params: { medicineName: string }) => {
-      const rec = lookupMedicine(params.medicineName);
+      let rec = lookupMedicine(params.medicineName);
+      if (!rec) {
+        rec = await fetchAuthoritativeMedicineEvidence(params.medicineName);
+      }
       if (!rec) {
         return {
           success: true,
-          message: `I could not find a verified educational entry for "${params.medicineName}". Please confirm with your pharmacist or doctor.`,
+          message: `I could not find a verified educational entry for "${params.medicineName}". Please confirm dosage and directions with your licensed pharmacist or doctor.`,
         };
       }
       const summary =

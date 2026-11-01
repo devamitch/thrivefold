@@ -1,110 +1,249 @@
-# Thrivefold — Agent Contract
+# THRIVEFOLD AI — COMPLETE CODE MAP + ENGINEERING EXECUTION
 
-> **Think first.** Understand what the owner actually wants (read for meaning; messages are quick
-> and repeated), plan before the first command, and use your full judgement — tests and lint are
-> tools, not the goal; never play dumb or hide behind a rule. Only the hard safety rules never bend.
-> Details: `../../Docs/PRODUCTION_DELIVERY_PLAYBOOK.md` §0.
+Work exclusively inside the existing ThriveFold project.
 
-> **Start here (every agent, every session):** read `../../Docs/PRODUCTION_DELIVERY_PLAYBOOK.md`
-> (strict operating rules, truth rules, design and functionality standards, bug finding, release),
-> then `docs/REQUIREMENTS_STATUS.md` (live status — update it with evidence) and
-> `docs/PRODUCT_COMPLETION_PLAN.md`. Skill: `.agents/skills/production-delivery`.
-> Never claim anything you did not observe on a phone or in command output.
+## 1. READ FIRST — MANDATORY REPOSITORY RULES
 
-Single source of truth for every AI coding tool and contributor (Claude, Antigravity/Gemini,
-Codex, Copilot, Cursor). Tool files (`CLAUDE.md`, `GEMINI.md`, `.github/copilot-instructions.md`)
-only point here. Skills with step-by-step methods live in `.agents/skills/*/SKILL.md`
-(`.claude/skills` is a symlink to the same folder).
+Before running commands or editing anything, read:
 
-## 1. Product in one paragraph
+- `../../Docs/PRODUCTION_DELIVERY_PLAYBOOK.md`
+- `docs/REQUIREMENTS_STATUS.md`
+- `docs/PRODUCT_COMPLETION_PLAN.md`
+- `.agents/skills/production-delivery/SKILL.md`
+- `AGENTS.md`
+- `docs/ai/` relevant AI instructions.
 
-Thrivefold is an Expo (SDK 58) React Native, Android-first, local-first health and wellbeing
-app with three self-selected experiences (women's health, men's health, LGBTQ+ wellbeing).
-Daily check-ins, cycle tracking, journaling, gentle routines and deterministic on-device
-suggestions work without any account or cloud. Social features (slow chip-only letters,
-private communities) are gated behind real age assurance, consent and a server that is not
-live yet. It is not a medical device and never diagnoses.
+Follow the existing ThriveFold Agent Contract without exception.
 
-## 2. Hard rules
+Use `pnpm` only. Inspect Git status first. Preserve other agents' changes. Read actual files before editing. Smallest possible diffs. Never invent APIs, metrics or test results.
 
-1. **pnpm only. Keep dependencies current and working.** Upgrade with `pnpm exec expo install --fix`
-   (or `expo install <pkg>`) so native packages stay on the versions the Expo SDK supports
-   (Reanimated, Worklets, Gesture Handler, Screens). Going past the SDK's versions is allowed when
-   a fix needs it: rebuild, run every command in §4, and check the app on a device before committing.
-2. **Real data only.** No seeded records, fake people, `Math.random()` metrics, simulated
-   success, or buttons that do nothing. Empty state or honest "not available yet" instead.
-3. **No payments** in this release (REQ-014): no SDKs, plans, prices, credits or upsell copy.
-4. **Never infer or act on sensitive traits** (religion, orientation, ethnicity, caste,
-   diagnoses). Stated religion never changes eligibility. Unreviewed cohort pathways stay off.
-5. **Age verification is never self-set.** Self-declaration ≠ verification (client + DB trigger).
-6. **Design system only:** theme tokens (`src/theme`), Geist type tokens, Ionicons, shared
-   components. No raw hex in screens, no emoji in UI, no decorative logos inside screens.
-7. **One store:** `useRootStore` composed of slices in `src/stores/slices`, persisted to MMKV.
-   Use selectors or `useShallow`; never call the store without a selector.
-8. **Commits:** `type(scope): summary` (≤72 chars), feature-sized. **Stage only the paths you
-   changed — never `git add -A`/`git add .`** (other agents work here in parallel). Never push.
-9. Don't edit `android/`/`ios/` (generated). Change `app.json`/plugins, then `expo prebuild`.
-10. Report honestly: PASS / FAIL / BLOCKED / NOT TESTED, with the command or screenshot.
+## 2. STRICT SCOPE
 
-## 3. Map
+**THRIVEFOLD AI ONLY.**
 
-| Area                 | Path                                                                                                                                                                              |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Routes (Expo Router) | `src/app/` — `(auth)/sign-in`, `(onboarding)/*` (4 steps + optional prefs), `(app)/(tabs)` Home · Today · [Thrive orb → check-in] · Progress · You, pushed screens under `(app)/` |
-| Root resolver        | `src/app/index.tsx` (signed out → sign-in, not onboarded → resume step, else home)                                                                                                |
-| Store                | `src/stores/useRootStore.ts`, slices in `src/stores/slices/`, MMKV in `persistStorage.ts`                                                                                         |
-| Theme                | `src/theme/colors.ts` (palette recipe), `typography.ts` (Geist), `tokens.ts`, `useTheme.ts`                                                                                       |
-| Components           | `src/components/ui/*`, dock `navigation/CustomTabBar.tsx`, onboarding `onboarding/OnboardingScaffold.tsx`                                                                         |
-| Policy engine        | `src/domain/policy/engine.ts`, `ageAssurance.ts` (pure, tested)                                                                                                                   |
-| Privacy              | `src/services/privacy/localData.ts` (export / erase)                                                                                                                              |
-| Backend              | `supabase/migrations/*` (not deployed; needs its own project)                                                                                                                     |
-| Dev tools            | `src/app/(app)/dev.tsx` (development builds only; linked from You)                                                                                                                |
+Do not modify unrelated application code, screens, business logic or infrastructure.
 
-## 5. Definition of done
+Do not touch:
 
-Behaviour seen working on an emulator or device (release build for startup/splash), all
-commands above pass, traceability updated, and the summary separates verified from not.
+- Other applications.
+- Alarm native module.
+- Pose-landmarker.
+- Theme tokens.
+- Authentication/sign-in implementation.
+- Signing configuration.
+- Generated `android/` or `ios/`.
+- Unrelated app configuration.
+- Existing user data or downloaded models.
 
-## 6. AnvayKosh (अन्वयकोश) ecosystem
+Existing alarm and other application actions may remain connected through their existing interfaces. Do not modify their protected implementations.
 
-Thrivefold belongs to **AnvayKosh** (Thrivefold, Neev, HarmonyBloom, BlinkQuest, Setu).
-Surfaces: **Anvay ID** (one sign-in), **Anvay Vault** (encrypted user-controlled profile),
-**Anvay Connect** (authorised app-to-app exchange), **Anvay Sync** (offline-first merge).
+No new dependency, database, vector store, assistant, chat store or model manager without written evidence that existing infrastructure cannot satisfy the requirement.
 
-**Current state:** none of them is live in Thrivefold. The old "Unified Vault SOS" deep-link handoff
-was removed because it put user data in URLs and trusted any caller. `src/app/+native-intent.tsx`
-sends old `unified-vault`, `auth/callback` and `sso` links to Home unread. Do not restore it.
+Guest users must retain access to local AI without signing in. Cloud requires explicit consent and an authenticated account or genuinely supported BYOK. Never convert guest requests into platform-funded cloud requests.
 
-Rules for any new ecosystem code:
+## 3. FIRST DELIVERABLE — ONE COMPACT AI CODE MAP
 
-1. OAuth 2.1 authorization code + PKCE via the system browser and verified App Links. Validate
-   issuer, audience, state, nonce, expiry. One-time codes only in URLs.
-2. Never put profile/health data, tokens or keys in a URL, QR, push, log or analytics event.
-3. Server-side app registry (package name + signing-cert SHA-256 per environment); fail closed.
-4. Per-category consent with expiry and revoke; authentication grants no data access.
-5. Merges are non-destructive: fill empty fields only, keep provenance, never overwrite.
-6. Setu is not required; each app works alone.
-7. Never bypass the device or app lock because a deep link arrived.
-8. No secrets in the client: service keys only in Supabase Edge Function secrets;
-   `EXPO_PUBLIC_*` is public. Never print `.env*` values.
-9. Android 11+ `<queries>` for peer packages only when a real feature needs them.
-10. Use the AnvayKosh icon from `assets/brand/anvaykosh-icon.svg` / `AnvayKoshIcon` (no background).
+Inspect the complete ThriveFold source tree and create:
 
-## Engineering standards (all agents, all features)
+`docs/ai/THRIVEFOLD_AI_CODE_MAP.md`
 
-1. **Network data goes through TanStack Query.** Every server or public-API read uses
-   `useQuery` / `useMutation` with the app's single `queryClient` (`src/services/supabase/queryClient.ts`,
-   persisted, `networkMode: 'offlineFirst'`, backoff retries). Put the fetch function in a service
-   file and a typed hook next to it (`useXxxQuery`), with stable query keys
-   (`['library', topic]`). No ad-hoc `fetch` + `useState(loading)` in screens.
-2. **Reuse before you write.** Use the shared components in `src/components/ui`
-   (`ScreenContainer`, `AppHeader`, `Card`, `Chip`, `Button`, `TextField`, `PressableScale`,
-   `AppBottomSheetModal`, `CustomAlert` via `showAlert`, `ImageViewer`, `SettingsRow`, `Toggle`,
-   `Badge`) and the root providers (`useCoach`, the voice service, the chat store). A second
-   component that does the same job as an existing one is a bug.
-3. **Lists:** FlashList for anything that can grow; page from SQLite instead of loading all rows.
-4. **States:** every screen handles loading, empty, error and offline with real copy; no inert
-   buttons, no fake data.
-5. **Theme:** tokens only (no raw hex in screens), light and dark checked, contrast checked.
-6. **Production ready means:** compile, lint, tests and a release build pass, the feature was used
-   on a real Android phone, and logcat showed no `FATAL` or `ReactNativeJS` errors.
+This file must contain **only ThriveFold AI-related code, paths, dependencies, registrations, routes, callers and execution maps**.
+
+Search the entire project. Do not restrict discovery to known filenames.
+
+Include all relevant existing implementations:
+
+| Area      | What to discover                                                               |
+| --------- | ------------------------------------------------------------------------------ |
+| Assistant | GlobalVoiceAssistant, CoachProvider, globalVoiceController, chat orchestration |
+| Local AI  | localCoachAI, localClassifier, routing, prompts, inference adapters            |
+| Native AI | Existing Kotlin/Expo module, GGUF runtime, registration, streaming             |
+| Models    | Catalogue, downloads, installation, activation, lifecycle                      |
+| RAG       | rag_documents, rag_chunks, hybridRagPipeline, retrieval, RRF                   |
+| Search    | FTS5, vector search, embeddings, indexing, synchronization                     |
+| Memory    | memoryStore, user_memories, ai_interactions, conversation persistence          |
+| Actions   | toolRegistry, commands, AI-accessible existing actions                         |
+| Voice     | AI-related STT, TTS, transcription and orchestration                           |
+| Cloud     | Existing providers, gateway, escalation and response handling                  |
+| Routes    | Actual AI screens, Expo Router paths, registrations and deep links             |
+| Tests     | AI tests, native tests, fixtures and evaluation datasets                       |
+
+### Exact output format
+
+Keep descriptions minimal. Prioritize paths, code, imports, exports and actual execution relationships.
+
+```md
+# THRIVEFOLD AI
+
+## FILES
+
+`exact/path/file.ts` — exports/functions
+
+## IMPORTS
+
+`caller` → `imported implementation`
+
+## ROUTES
+
+`actual route` → `screen` → `AI entry point`
+
+## COMPONENTS
+
+`exact/path`
+[AI-specific source]
+
+## SERVICES
+
+`exact/path`
+[AI-specific source]
+
+## NATIVE
+
+`exact/path`
+[Kotlin/Expo source and registration]
+
+## MODELS
+
+`exact/path`
+[catalogue/loading/download/inference]
+
+## RAG_SEARCH
+
+`exact/path`
+[FTS5/vector/hybrid/RRF/indexing]
+
+## MEMORY_DATABASE
+
+`exact/path`
+[AI schemas, queries and persistence]
+
+## ACTIONS_VOICE
+
+`exact/path`
+[registries, commands and execution]
+
+## CLOUD
+
+`exact/path`
+[provider and escalation code]
+
+## EXECUTION_MAPS
+
+[actual caller → service → runtime → result]
+
+## TESTS
+
+`exact/path`
+[test names and coverage]
+
+## DISCONNECTED_DUPLICATED
+
+[path] — implemented but unused/unregistered/duplicated
+```
+
+Rules:
+
+- Use exact, case-sensitive paths.
+- Include all relevant AI files, including files discovered through imports and callers.
+- Include complete AI-specific source where practical.
+- For mixed-purpose files, extract only AI-related imports, exports and functions.
+- Include actual routes and registration paths, not hypothetical routes.
+- Show real call relationships, not guessed architecture.
+- No entire `app.json`, unrelated components or unrelated configuration.
+- Never include secrets or environment values.
+- No tutorials, recommendations, long descriptions or decorative content.
+- Keep the document compact and code-focused.
+- Do not minify source syntax or alter code merely to remove whitespace.
+- Do not modify application source during this discovery stage.
+
+Cross-check the map against imports, exports, callers, native registration, routes and tests. No important AI implementation should be silently omitted.
+
+## 4. THEN — IMPROVE THE EXISTING THRIVEFOLD AI
+
+Use the code map and actual source as the implementation baseline.
+
+Do not build a replacement AI system.
+
+Connect, repair and optimize the existing:
+
+- Global Assistant and orchestration.
+- Local classifier and local conversational AI.
+- Native GGUF inference runtime.
+- Existing model manager.
+- SQLite and FTS5.
+- Existing vector retrieval and hybrid RAG.
+- Memory and conversation history.
+- Existing tools, commands and action registry.
+- Existing voice AI.
+- Existing cloud integration.
+
+Make every relevant existing implementation reachable through its proper production workflow. No unexplained orphaned AI modules, duplicate services or disconnected capabilities.
+
+### Target execution
+
+`Input → existing classifier → deterministic action / SQLite → FTS5 + vector RAG → local model → validation → cloud escalation only when justified → response → validated RAG ingestion`
+
+### Local-first intelligence
+
+- Deterministic code handles predictable operations.
+- Existing SQLite and retrieval answer known questions.
+- Existing local models handle ordinary conversation and explanations.
+- Existing cloud AI handles genuinely difficult tasks only.
+- Never sacrifice answer correctness to inflate local-resolution metrics.
+
+### Better routing mathematics
+
+Measure each tier's latency \(t_i\) and conditional success probability \(s_i\).
+
+\[
+E[T]=\sum_i t_i\prod_{j<i}(1-s_j)
+\]
+
+\[
+E[C]=\sum_i C_i\prod_{j<i}(1-s_j)
+\]
+
+Use these to optimize the execution cascade. Calibrate decisions using real ThriveFold evaluation results. Privacy and consent remain hard restrictions.
+
+### RAG learning
+
+Evaluate useful local and cloud outputs before ingestion. Preserve provenance, ownership, freshness and validation status. Never blindly save every answer as trusted knowledge.
+
+Repeated questions should retrieve previously validated knowledge and use local inference whenever sufficient.
+
+This is RAG-based knowledge improvement, not automatic model-weight training.
+
+### Engineering priorities
+
+- Fix actual retrieval, FTS5, vector-search and memory-scope defects.
+- Improve context construction and token efficiency.
+- Improve model loading, streaming, cancellation and memory usage.
+- Optimize inference scheduling and retrieval latency.
+- Remove fabricated confidence values.
+- Validate structured model outputs.
+- Preserve deterministic execution and confirmation for risky actions.
+- Keep crisis handling deterministic, local and independent of network or model availability.
+
+## 5. TESTING AND DELIVERY
+
+Follow the Agent Contract:
+
+- Reproduce bugs before fixing them.
+- Run `pnpm compile`, `pnpm lint`, focused tests and the full suite as applicable; discover exact scripts first.
+- Verify native functionality on an actual Android device.
+- Use `adb devices -l` and `adb logcat` where available.
+- Do not claim device verification without observing it.
+- Never delete data or models as a testing shortcut.
+- Two failed attempts on the same issue: stop and report the exact blocker.
+- One verified phase per session; run its gate, update requirements status, commit only explicitly changed paths and report honestly.
+- Never push unless explicitly authorized.
+
+Final report: implemented, tested, device-verified, blocked and not tested. Include actual paths, commands, exit codes and evidence.
+
+## FINAL INSTRUCTION
+
+First create `docs/ai/THRIVEFOLD_AI_CODE_MAP.md` as a compact, comprehensive, verified dump of our existing AI code and execution paths.
+
+Then use that verified understanding to improve the existing ThriveFold AI without unnecessary rewrites.
+
+**Only ThriveFold AI. All existing relevant AI code. All actual paths. All actual routes. All real connections. No unrelated files. No duplicate systems. No fake completion.**

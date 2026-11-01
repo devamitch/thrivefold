@@ -104,6 +104,7 @@ npm-debug.*
 *.key
 *.mobileprovision
 *.orig.*
+google-services*.json
 
 web-build/
 dist/
@@ -228,8 +229,15 @@ blinkquest-*.json
 *.zip
 .bundle/
 vendor/bundle/
-!google-services.json
-!credentials.json
-!setu-upload.jks
-!setu-511211-f490a061589b.json
 
+# Google Play & EAS Release Service Account Keys
+setu-511211-f490a061589b.json
+*511211*.json
+*-play-service-account*.json
+
+# Local agent and task documents are not needed in the app build.
+AGENTS.md
+MASTER_PROMPT.md
+RELEASE_RUNBOOK.md
+THRIVEFOLD_AI_CODE_MAP.md
+!google-services.json
