@@ -12,6 +12,7 @@
 
 import { AppState, type AppStateStatus } from 'react-native';
 import { useRootStore } from '../../stores/useRootStore';
+import { safeStackFrames, sanitizeDiagnosticContext } from './crashReporting';
 
 export type MicroEventType =
   | 'touch_tap'
@@ -164,8 +165,7 @@ class AnalyticsService {
    * Log non-fatal error or fatal crash event (Google Crashlytics / local diagnostics)
    */
   logCrash(error: Error | string, fatal = false, context?: Record<string, unknown>) {
-    const errorMessage = typeof error === 'string' ? error : error.message;
-    const stack = typeof error === 'string' ? undefined : error.stack;
+    const stack = safeStackFrames(error);
 
     const event: TelemetryEvent = {
       id: createTelemetryId('err'),
@@ -174,23 +174,20 @@ class AnalyticsService {
       screen: 'global',
       metadata: {
         fatal,
-        message: errorMessage,
+        message: 'Captured application error',
         stack: stack?.slice(0, 500),
-        ...context,
+        ...sanitizeDiagnosticContext(context),
       },
     };
     this.recordEvent(event);
 
     // Also persist into root store audit log for user transparency and export
     try {
-      useRootStore.getState()?.audit?.('sync_read', 'local_data', `Exception: ${errorMessage.slice(0, 100)}`);
+      useRootStore.getState()?.audit?.('sync_read', 'local_data', 'Captured application error');
     } catch {
       // safe fallback
     }
 
-    if (__DEV__) {
-      console.warn(`[Telemetry Crashlytics] ${fatal ? 'FATAL' : 'NON-FATAL'}: ${errorMessage}`);
-    }
   }
 
   /**

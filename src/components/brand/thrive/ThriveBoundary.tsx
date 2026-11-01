@@ -1,4 +1,5 @@
 import React from 'react';
+import { crashReporting } from '../../../services/telemetry/crashReporting';
 
 /** Wrap any Thrive UI. If rendering throws, the fallback (e.g. the static brand icon) shows instead of a crash. */
 export class ThriveBoundary extends React.Component<
@@ -10,7 +11,7 @@ export class ThriveBoundary extends React.Component<
     return { failed: true };
   }
   componentDidCatch(error: unknown) {
-    if (__DEV__) console.warn('[thrive] render failed', error);
+    crashReporting.recordError(error, 'ThriveBoundary');
   }
   render() {
     return this.state.failed ? (this.props.fallback ?? null) : this.props.children;

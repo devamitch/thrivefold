@@ -6,6 +6,7 @@
 import type { LedgerEntry } from '../../domain/game/progression';
 import { useRootStore } from '../../stores/useRootStore';
 import { supabase } from '../supabase/supabaseClient';
+import { crashReporting } from '../telemetry/crashReporting';
 
 async function userId(): Promise<string | null> {
   if (!supabase) return null;
@@ -24,7 +25,7 @@ export async function syncProgress(): Promise<boolean> {
     .eq('user_id', id)
     .maybeSingle();
   if (error) {
-    console.warn('progress pull failed', error.code, error.message);
+    crashReporting.recordError(new Error('Progress sync failed'), 'ProgressSync.pull');
     return false;
   }
   if (data) {
@@ -59,7 +60,7 @@ async function pushProgress(id: string): Promise<boolean> {
     { onConflict: 'user_id' },
   );
   if (error) {
-    console.warn('progress push failed', error.code, error.message);
+    crashReporting.recordError(new Error('Progress sync failed'), 'ProgressSync.push');
     return false;
   }
   return true;

@@ -29,6 +29,27 @@ function sdk(): Crashlytics | null {
 
 let enabled = false;
 
+const diagnosticKeys = new Set(['code', 'component', 'operation', 'route', 'phase', 'status', 'source', 'feature']);
+
+export function sanitizeDiagnosticContext(context?: Record<string, unknown>): Record<string, string | number | boolean> {
+  const safe: Record<string, string | number | boolean> = {};
+  for (const [key, value] of Object.entries(context ?? {})) {
+    if (!diagnosticKeys.has(key)) continue;
+    if (typeof value === 'string') safe[key] = value.replace(/[^a-zA-Z0-9_./: -]/g, '_').slice(0, 80);
+    else if (typeof value === 'number' || typeof value === 'boolean') safe[key] = value;
+  }
+  return safe;
+}
+
+export function safeStackFrames(error: unknown): string | undefined {
+  if (!(error instanceof Error) || !error.stack) return undefined;
+  const frames = error.stack
+    .split('\n')
+    .slice(1)
+    .filter((line) => /^\s*at\s/.test(line) || /^\s*https?:\/\//.test(line));
+  return frames.slice(0, 12).join('\n').slice(0, 500) || undefined;
+}
+
 export const crashReporting = {
   setEnabled(on: boolean) {
     enabled = on;
@@ -43,9 +64,7 @@ export const crashReporting = {
   recordError(error: unknown, where: string) {
     if (!enabled) return;
     const safeError = new Error('Captured application error');
-    if (error instanceof Error && error.stack) {
-      safeError.stack = error.stack.split('\n').slice(1).join('\n');
-    }
+    safeError.stack = safeStackFrames(error);
     sdk()?.recordError(safeError, where);
   },
 };

@@ -8,7 +8,6 @@ import { useRootStore } from '../stores/useRootStore';
 import { useTheme } from '../theme/useTheme';
 import { preloadAllAppImages } from '../utils/imagePreloader';
 
-// import { BlurRoot } from '@/components/ui';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { CoachProvider } from '../components/assistant/CoachProvider';
 import { AnimatedSplash } from '../components/brand/AnimatedSplash';

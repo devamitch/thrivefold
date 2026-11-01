@@ -1,5 +1,6 @@
 import { requireOptionalNativeModule } from 'expo';
 import { Platform } from 'react-native';
+import { crashReporting } from '../../src/services/telemetry/crashReporting';
 
 export interface NativeAlarmItem {
   id: string;
@@ -42,8 +43,8 @@ export async function syncNativeAlarms(alarms: NativeAlarmItem[]): Promise<boole
   if (Platform.OS !== 'android' || !AlarmScheduler) return true;
   try {
     return await AlarmScheduler.syncAlarms(alarms);
-  } catch (e) {
-    console.warn('[AlarmScheduler] Failed to sync alarms:', e);
+  } catch {
+    crashReporting.recordError(new Error('Alarm sync failed'), 'AlarmScheduler.sync');
     return false;
   }
 }

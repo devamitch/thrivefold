@@ -16,6 +16,7 @@
 import { Platform } from 'react-native';
 import { useRootStore } from '../../stores/useRootStore';
 import { enqueueTelemetryEvent } from './sqliteAnalyticsStore';
+import { safeStackFrames, sanitizeDiagnosticContext } from './crashReporting';
 
 /** Nothing reaches Firebase unless the person turned usage analytics on. */
 const allowed = () => {
@@ -31,7 +32,6 @@ export interface FirebaseEventParams {
 }
 
 const FIREBASE_APP_ID = process.env.EXPO_PUBLIC_FIREBASE_APP_ID || '';
-const FIREBASE_PROJECT_ID = process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || '';
 const MEASUREMENT_PROTOCOL_URL = 'https://www.google-analytics.com/mp/collect';
 
 class FirebaseAnalyticsManager {
@@ -122,8 +122,7 @@ class FirebaseAnalyticsManager {
    * Log crash or exception event for Firebase Crashlytics & Analytics
    */
   async logCrash(error: Error | string, isFatal = false, context?: Record<string, unknown>): Promise<void> {
-    const message = typeof error === 'string' ? error : error.message;
-    const stack = typeof error === 'string' ? undefined : error.stack;
+    const stack = safeStackFrames(error);
 
     enqueueTelemetryEvent({
       id: `crsh_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
@@ -131,22 +130,17 @@ class FirebaseAnalyticsManager {
       timestamp: new Date().toISOString(),
       screen: 'global',
       metadata: {
-        message: message.slice(0, 200),
+        message: 'Captured application error',
         fatal: isFatal,
         stack: stack?.slice(0, 500),
-        ...context,
+        ...sanitizeDiagnosticContext(context),
       },
     });
 
     await this.sendFirebaseEvent('app_exception', {
       fatal: isFatal,
-      description: message.slice(0, 100),
+      description: 'Captured application error',
     });
-
-    if (__DEV__) {
-      // eslint-disable-next-line no-console
-      console.warn(`[Firebase Crashlytics] ${isFatal ? 'FATAL' : 'NON-FATAL'}: ${message}`);
-    }
   }
 
   /**

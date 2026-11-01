@@ -51,11 +51,11 @@ const OPEN_RETRIES = 0;
 const END_GUARD_MS = 30_000;
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
-// Timeline logging for the microphone; set VOICE_DEBUG to true to trace it in release builds.
+// Enable temporarily during local voice debugging; never log transcripts or user content.
 const VOICE_DEBUG = false;
 const t0 = Date.now();
 const log = (...args: unknown[]) => {
-  if (__DEV__ || VOICE_DEBUG) console.log(`[voice] t=${Date.now() - t0}ms`, ...args);
+  if (__DEV__ && VOICE_DEBUG) console.log(`[voice] t=${Date.now() - t0}ms`, ...args);
 };
 
 function deviceLocale(): string {
@@ -116,7 +116,7 @@ class GlobalVoiceController {
           if (this.lastTranscript === text && now - this.lastTranscriptAt < 1200) return;
           this.lastTranscript = text;
           this.lastTranscriptAt = now;
-          log('final', text);
+          log('final transcript received');
           this.setState('transcribing');
           void this.handleFinalUtterance(text, 'voice');
         } else {

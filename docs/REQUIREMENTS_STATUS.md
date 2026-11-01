@@ -87,3 +87,8 @@ build is active in this checkout; no competing build was started.
 `googleAccount.ts` PASS · `pnpm test --runInBand` PASS (90 suites, 570 tests). Full `pnpm lint`
 still fails on the same three Rules-of-Hooks errors in untouched `LootBoxModal.tsx` (157, 160, 164).
 No device run; changes affect documentation and error diagnostics, not core screen flows.
+
+## Validation (2026-11-01 — project documentation and diagnostic logging)
+`pnpm compile` PASS · `pnpm test --runInBand` PASS (90 suites, 570 tests) · targeted ESLint PASS
+(0 errors; warnings in existing Reanimated/import code). Full `pnpm lint` reports the same three
+Rules-of-Hooks errors in untouched `LootBoxModal.tsx`. No device run; no release build was started.

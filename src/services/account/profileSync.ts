@@ -9,6 +9,7 @@ import { PHONE_RE, mergeKosh, type EmergencyContact, type KoshProfile } from '..
 import type { ProductExperience } from '../../theme/tokens';
 import { useRootStore } from '../../stores/useRootStore';
 import { supabase } from '../supabase/supabaseClient';
+import { crashReporting } from '../telemetry/crashReporting';
 
 export interface RemoteProfile {
   display_name: string | null;
@@ -82,7 +83,7 @@ export async function pullProfile(): Promise<RemoteProfile | null> {
     .eq('user_id', id)
     .maybeSingle();
   if (error) {
-    console.warn('profile pull failed', error.code, error.message);
+    crashReporting.recordError(new Error('Profile sync failed'), 'ProfileSync.pull');
     return null;
   }
   return (data as RemoteProfile | null) ?? null;
@@ -93,7 +94,6 @@ export async function pushProfile(): Promise<boolean> {
   const id = await userId();
   const s = useRootStore.getState();
   if (!supabase || !id || !s.user || s.user.isGuest) {
-    if (s.user && !s.user.isGuest && !id) console.warn('profile push skipped: no server session');
     return false;
   }
   const o = s.onboarding;
@@ -130,8 +130,7 @@ export async function pushProfile(): Promise<boolean> {
     { onConflict: 'user_id' },
   );
   if (error) {
-    // Code and message only; never the profile values.
-    console.warn('profile push failed', error.code, error.message);
+    crashReporting.recordError(new Error('Profile sync failed'), 'ProfileSync.push');
     return false;
   }
   return syncEmergencyContacts(id);

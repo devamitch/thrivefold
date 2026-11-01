@@ -9,7 +9,6 @@ import {
   Pressable,
   StyleSheet,
   useWindowDimensions,
-  View,
 } from 'react-native';
 import type { ViewInstance } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -147,17 +146,10 @@ export function DrawerSceneWrapper({
     // and no per-frame re-clip for the rest of the drag.
     const borderRadius = interpolate(p, [0, 0.15], [0, DRAWER_SCENE_RADIUS], CLAMP);
 
-    // if (reduceMotion) {
-    //   return { borderRadius, transform: [{ translateX }] };
-    // }
-
     const scale = interpolate(p, [0, 1], [1, DRAWER_SCENE_SCALE], CLAMP);
     if (!IS_IOS) {
       let rotateY = interpolate(p, [0, 1], [0, -28], CLAMP);
 
-      // translateX = interpolate(progress.value, [0, 1], [0, DRAWER_SCENE_SCALE], CLAMP);
-
-      // rotateY = interpolate(progress.value, [0, 1], [0, -25], CLAMP);
       return {
         borderRadius,
         transform: [{ perspective: 1000 }, { translateX }, { scale }, { rotateY: `${rotateY}deg` }],

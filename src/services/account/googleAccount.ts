@@ -8,6 +8,7 @@ import { GoogleSignin, isErrorWithCode, isSuccessResponse, statusCodes } from '@
 
 import { birthDateFromPeople, factsFromPeople, type ProfileFacts } from '../../domain/account/googleProfile';
 import { supabase } from '../supabase/supabaseClient';
+import { crashReporting } from '../telemetry/crashReporting';
 
 // Sign-in itself asks only for name, email and photo.
 const NECESSARY_SCOPES = ['profile', 'email'];
@@ -50,6 +51,7 @@ async function readFacts(accessToken: string): Promise<ProfileFacts> {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     if (!res.ok) {
+      crashReporting.recordError(new Error('Google profile facts unavailable'), 'GoogleAccount.readFacts');
       return { age: null, birthYear: null, gender: null, birthDateString: null };
     }
     const json = await res.json();
@@ -58,6 +60,7 @@ async function readFacts(accessToken: string): Promise<ProfileFacts> {
       birthDateString: birthDateFromPeople(json),
     };
   } catch {
+    crashReporting.recordError(new Error('Google profile facts unavailable'), 'GoogleAccount.readFacts');
     return { age: null, birthYear: null, gender: null, birthDateString: null };
   }
 }
@@ -123,6 +126,7 @@ export async function requestBirthdayAndGender(): Promise<ProfileFacts | null> {
     };
     return facts;
   } catch {
+    crashReporting.recordError(new Error('Google profile permission request failed'), 'GoogleAccount.requestFacts');
     return null;
   }
 }

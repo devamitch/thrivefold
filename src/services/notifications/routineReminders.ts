@@ -42,9 +42,7 @@ export async function syncRoutineReminders(routines: Routine[]): Promise<boolean
         days: r.days,
         enabled: r.enabled,
       }));
-      syncNativeAlarms(nativeItems).catch((err) =>
-        console.warn('[syncRoutineReminders] native alarm sync failed:', err),
-      );
+      void syncNativeAlarms(nativeItems);
     }
 
     // 2. Also keep Expo Notification triggers as fallback
