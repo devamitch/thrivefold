@@ -11,7 +11,8 @@ export interface AppDistributionConfig {
 export const THRIVEFOLD_DISTRIBUTION: AppDistributionConfig = {
   appId: 'com.amit.thrivefold',
   appName: 'Thrivefold',
-  tagline: 'A calm, local-first sanctuary for your biological rhythm, daily check-ins, and holistic health.',
+  tagline:
+    'A calm, local-first sanctuary for your biological rhythm, daily check-ins, and holistic health.',
   playStoreUrl: 'https://play.google.com/store/apps/details?id=com.amit.thrivefold',
   betaOptInUrl: 'https://play.google.com/apps/testing/com.amit.thrivefold',
 };
@@ -20,7 +21,9 @@ export const THRIVEFOLD_DISTRIBUTION: AppDistributionConfig = {
  * Invokes native Android Sharesheet with app invitation link.
  * Does not expose raw text URL in the UI.
  */
-export async function shareApp(config: AppDistributionConfig = THRIVEFOLD_DISTRIBUTION): Promise<boolean> {
+export async function shareApp(
+  config: AppDistributionConfig = THRIVEFOLD_DISTRIBUTION,
+): Promise<boolean> {
   try {
     const result = await Share.share(
       {
@@ -30,7 +33,7 @@ export async function shareApp(config: AppDistributionConfig = THRIVEFOLD_DISTRI
       },
       {
         dialogTitle: `Share ${config.appName}`,
-      }
+      },
     );
     return result.action === Share.sharedAction;
   } catch {
@@ -41,7 +44,9 @@ export async function shareApp(config: AppDistributionConfig = THRIVEFOLD_DISTRI
 /**
  * Opens Google Play Beta Testing opt-in page with fallback to Play Store.
  */
-export async function joinAsBetaTester(config: AppDistributionConfig = THRIVEFOLD_DISTRIBUTION): Promise<boolean> {
+export async function joinAsBetaTester(
+  config: AppDistributionConfig = THRIVEFOLD_DISTRIBUTION,
+): Promise<boolean> {
   try {
     const supported = await Linking.canOpenURL(config.betaOptInUrl);
     if (supported) {
@@ -63,7 +68,9 @@ export async function joinAsBetaTester(config: AppDistributionConfig = THRIVEFOL
 /**
  * Invokes native Android Sharesheet with beta invitation link.
  */
-export async function shareBetaInvite(config: AppDistributionConfig = THRIVEFOLD_DISTRIBUTION): Promise<boolean> {
+export async function shareBetaInvite(
+  config: AppDistributionConfig = THRIVEFOLD_DISTRIBUTION,
+): Promise<boolean> {
   try {
     const result = await Share.share(
       {
@@ -73,7 +80,7 @@ export async function shareBetaInvite(config: AppDistributionConfig = THRIVEFOLD
       },
       {
         dialogTitle: `Invite to ${config.appName} Beta`,
-      }
+      },
     );
     return result.action === Share.sharedAction;
   } catch {

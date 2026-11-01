@@ -369,13 +369,13 @@ export default function SignInScreen() {
           >
             <Ionicons name="chevron-back" size={20} color={colors.text.primary} />
           </PressableScale>
-          <View style={[styles.hero, { marginTop: spacing.sm }]}>
-            <AnimatedThrivefoldMark size={112} />
+          <View style={[styles.hero, { marginTop: spacing.xs, marginBottom: spacing.md }]}>
+            <AnimatedThrivefoldMark size={84} />
             <Text
               style={[
                 typography.display,
                 styles.center,
-                { color: colors.text.primary, marginTop: spacing.md },
+                { color: colors.text.primary, marginTop: spacing.sm },
               ]}
               accessibilityRole="header"
             >
@@ -385,153 +385,68 @@ export default function SignInScreen() {
               style={[
                 typography.body,
                 styles.center,
-                { color: colors.text.secondary, marginTop: spacing.xs },
+                { color: colors.text.secondary, marginTop: 4, maxWidth: 320 },
               ]}
             >
-              A calm, local-first sanctuary for your biological rhythm, daily check-ins, and
-              holistic health.
+              A calm, local-first sanctuary for your biological rhythm, daily check-ins, and holistic health.
             </Text>
           </View>
 
-          {/* Editorial Value & Privacy Guarantee Points */}
+          {/* Meaningful, compact trust badge */}
           <SquircleSurface
-            radius={20}
+            radius={18}
             fill={colors.surface1}
-            style={{ padding: spacing.md, marginVertical: spacing.md, width: '100%' }}
+            style={{
+              paddingVertical: spacing.sm + 2,
+              paddingHorizontal: spacing.md,
+              marginBottom: spacing.md,
+              width: '100%',
+              borderWidth: 1,
+              borderColor: colors.border,
+            }}
           >
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-around',
+              }}
+            >
+              <View style={{ alignItems: 'center', gap: 4 }}>
+                <Ionicons name="shield-checkmark" size={18} color={colors.primary} />
+                <Text style={[typography.captionBold, { color: colors.text.primary, fontSize: 11 }]}>
+                  On-Device Vault
+                </Text>
+              </View>
+              <View style={{ width: 1, height: 24, backgroundColor: colors.border }} />
+              <View style={{ alignItems: 'center', gap: 4 }}>
+                <Ionicons name="hardware-chip-outline" size={18} color={colors.primary} />
+                <Text style={[typography.captionBold, { color: colors.text.primary, fontSize: 11 }]}>
+                  Local-First AI
+                </Text>
+              </View>
+              <View style={{ width: 1, height: 24, backgroundColor: colors.border }} />
+              <View style={{ alignItems: 'center', gap: 4 }}>
+                <Ionicons name="eye-off-outline" size={18} color={colors.primary} />
+                <Text style={[typography.captionBold, { color: colors.text.primary, fontSize: 11 }]}>
+                  Zero Trackers
+                </Text>
+              </View>
+            </View>
             <Text
               style={[
                 typography.caption,
                 {
-                  color: colors.primary,
-                  fontWeight: '700',
-                  letterSpacing: 0.8,
-                  textTransform: 'uppercase',
-                  marginBottom: spacing.xs,
+                  color: colors.text.muted,
+                  textAlign: 'center',
+                  marginTop: spacing.xs + 2,
+                  fontSize: 11,
+                  lineHeight: 15,
                 },
               ]}
             >
-              Private & Transparent Authentication
+              Your health logs, check-ins, and memories remain encrypted on this phone.
             </Text>
-
-            <View style={{ gap: 10, marginTop: 4 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
-                <View
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: 14,
-                    backgroundColor: colors.surface2,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginTop: 1,
-                  }}
-                >
-                  <Ionicons name="shield-checkmark-outline" size={15} color={colors.primary} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[typography.bodyBold, { color: colors.text.primary, fontSize: 13 }]}>
-                    Local-First & Encrypted
-                  </Text>
-                  <Text
-                    style={[
-                      typography.caption,
-                      { color: colors.text.secondary, marginTop: 1, lineHeight: 17 },
-                    ]}
-                  >
-                    Sensitive check-ins, cycles, and journal notes stay stored on your device only.
-                  </Text>
-                </View>
-              </View>
-
-              <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
-                <View
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: 14,
-                    backgroundColor: colors.surface2,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginTop: 1,
-                  }}
-                >
-                  <Ionicons name="cloud-done-outline" size={15} color={colors.primary} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[typography.bodyBold, { color: colors.text.primary, fontSize: 13 }]}>
-                    Seamless Device Restore
-                  </Text>
-                  <Text
-                    style={[
-                      typography.caption,
-                      { color: colors.text.secondary, marginTop: 1, lineHeight: 17 },
-                    ]}
-                  >
-                    Switch phones anytime without losing streaks, achievements, or customized
-                    routines.
-                  </Text>
-                </View>
-              </View>
-
-              <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
-                <View
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: 14,
-                    backgroundColor: colors.surface2,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginTop: 1,
-                  }}
-                >
-                  <Ionicons name="eye-off-outline" size={15} color={colors.primary} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[typography.bodyBold, { color: colors.text.primary, fontSize: 13 }]}>
-                    Zero Ads or Data Broking
-                  </Text>
-                  <Text
-                    style={[
-                      typography.caption,
-                      { color: colors.text.secondary, marginTop: 1, lineHeight: 17 },
-                    ]}
-                  >
-                    No hidden trackers, third-party profiling, or monetization of personal health.
-                  </Text>
-                </View>
-              </View>
-
-              <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
-                <View
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: 14,
-                    backgroundColor: colors.surface2,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginTop: 1,
-                  }}
-                >
-                  <Ionicons name="checkmark-circle-outline" size={15} color={colors.primary} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[typography.bodyBold, { color: colors.text.primary, fontSize: 13 }]}>
-                    1-Tap Guest Access Anytime
-                  </Text>
-                  <Text
-                    style={[
-                      typography.caption,
-                      { color: colors.text.secondary, marginTop: 1, lineHeight: 17 },
-                    ]}
-                  >
-                    Every core wellness tool is always 100% accessible offline without an account.
-                  </Text>
-                </View>
-              </View>
-            </View>
           </SquircleSurface>
 
           {googleAvailable() ? (
@@ -545,6 +460,7 @@ export default function SignInScreen() {
                 {
                   backgroundColor: colors.surface,
                   borderColor: colors.borderStrong,
+                  borderWidth: 1,
                   opacity: busy ? 0.6 : 1,
                 },
               ]}
@@ -574,19 +490,27 @@ export default function SignInScreen() {
             />
           ) : null}
           {/* <Button label="Continue without an account" variant="ghost" onPress={() => setStep('name')} style={{ marginTop: spacing.xs }} /> */}
-          <Button label="Explore as guest" variant="ghost" onPress={guest} />
-          <View style={[styles.distributionRow, { marginTop: spacing.xs }]}>
+          <Button
+            label="Explore as guest"
+            variant="ghost"
+            onPress={guest}
+            style={{ marginTop: spacing.xs }}
+          />
+          <View style={[styles.distributionRow, { marginTop: spacing.sm }]}>
             <PressableScale
               onPress={() => void shareApp()}
               accessibilityRole="button"
               accessibilityLabel="Share Thrivefold app"
-              style={[styles.distributionAction, { backgroundColor: colors.surface1 }]}
+              style={[
+                styles.distributionAction,
+                { backgroundColor: colors.surface1, borderWidth: 1, borderColor: colors.border },
+              ]}
             >
-              <Ionicons name="share-outline" size={16} color={colors.primary} />
+              <Ionicons name="share-outline" size={15} color={colors.primary} />
               <Text
                 style={[
                   typography.captionBold,
-                  { color: colors.text.primary, marginLeft: spacing.xs },
+                  { color: colors.text.primary, marginLeft: spacing.xs, fontSize: 12 },
                 ]}
               >
                 Share app
@@ -596,13 +520,16 @@ export default function SignInScreen() {
               onPress={() => void joinAsBetaTester()}
               accessibilityRole="button"
               accessibilityLabel="Join the Thrivefold beta"
-              style={[styles.distributionAction, { backgroundColor: colors.surface1 }]}
+              style={[
+                styles.distributionAction,
+                { backgroundColor: colors.surface1, borderWidth: 1, borderColor: colors.border },
+              ]}
             >
-              <Ionicons name="people-outline" size={16} color={colors.primary} />
+              <Ionicons name="people-outline" size={15} color={colors.primary} />
               <Text
                 style={[
                   typography.captionBold,
-                  { color: colors.text.primary, marginLeft: spacing.xs },
+                  { color: colors.text.primary, marginLeft: spacing.xs, fontSize: 12 },
                 ]}
               >
                 Join beta
