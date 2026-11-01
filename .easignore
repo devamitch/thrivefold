@@ -241,3 +241,6 @@ MASTER_PROMPT.md
 RELEASE_RUNBOOK.md
 THRIVEFOLD_AI_CODE_MAP.md
 !google-services.json
+!credentials.json
+!setu-upload.jks
+!setu-511211-f490a061589b.json

@@ -40,3 +40,11 @@ Read and strictly obey `AGENTS.md` and `MASTER_PROMPT.md`.
    - Never run `pm clear` or delete user SQLite databases during tests.
    - Never log API keys, Keystore credentials, or print `.env` files.
 
+7. **GRADLE OOM & EAS RELEASE BUILD RELIABILITY**:
+   - Expo SDK 58 combines heavy C++ native libraries (Hermes, Reanimated, Skia, Worklets, GestureHandler, SVG) with ProGuard/R8 minification (`minifyReleaseWithR8`).
+   - In `app.json` under `expo-build-properties`:
+     - Keep `org.gradle.jvmargs: "-Xmx4096m -XX:MaxMetaspaceSize=1024m -XX:+UseParallelGC"`.
+     - Pin `reactNativeArchitectures: "arm64-v8a"` to avoid simultaneously compiling 4 ABIs on 8GB EAS runners.
+   - For `credentialsSource: "local"` in `eas.json`, `.easignore` MUST explicitly whitelist:
+     `!credentials.json`, `!setu-upload.jks`, and `!google-services.json`. Never remove these exceptions.
+

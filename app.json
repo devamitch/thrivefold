@@ -150,7 +150,7 @@
           "android": {
             "minSdkVersion": 26,
             "extraGradleProperties": {
-              "org.gradle.jvmargs": "-Xmx6144m -XX:MaxMetaspaceSize=1024m -XX:+UseParallelGC",
+              "org.gradle.jvmargs": "-Xmx4096m -XX:MaxMetaspaceSize=1024m -XX:+UseParallelGC",
               "org.gradle.parallel": "true",
               "org.gradle.caching": "true",
               "android.enablePngCrunchInReleaseBuilds": "false",
