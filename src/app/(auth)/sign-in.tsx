@@ -1,28 +1,26 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  cancelAnimation,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { SquircleSurface } from '../../components/ui/SquircleSurface';
-import { useKeyboardInset } from '../../hooks/useKeyboardInset';
 
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { PRIVACY_SECTIONS } from '../(public)/legal/privacy';
-import { TERMS_SECTIONS } from '../(public)/legal/terms';
 import { AnimatedThrivefoldMark } from '../../components/brand/AnimatedThrivefoldMark';
 import { IntroSlider } from '../../components/onboarding/IntroSlider';
-import { Button } from '../../components/ui/Button';
 import { PressableScale } from '../../components/ui/PressableScale';
-import { TextField } from '../../components/ui/TextField';
 import { suggestedExperience } from '../../domain/account/googleProfile';
 import { TERMS_VERSION } from '../../domain/legal/terms';
-import {
-  accountsAvailable,
-  requestEmailCode,
-  verifyEmailCode,
-} from '../../services/account/accountService';
 import {
   googleAvailable,
   pendingGoogleProfile,
@@ -36,443 +34,302 @@ import {
   pushProfile,
 } from '../../services/account/profileSync';
 import { joinAsBetaTester, shareApp } from '../../services/distribution/appDistribution';
-import { newLocalId } from '../../stores/slices/authSlice';
 import { useRootStore } from '../../stores/useRootStore';
 import { useTheme } from '../../theme/useTheme';
 
-type Step = 'account' | 'name' | 'email' | 'code';
+const PINS = [0, 1, 2, 3, 4];
 
+const FACTS = [
+  { icon: 'hardware-chip-outline', label: 'On-device AI' },
+  { icon: 'cloud-offline-outline', label: 'Offline' },
+  { icon: 'shield-checkmark-outline', label: 'No trackers' },
+] as const;
+
+/** Chip legs on all four sides. Sits behind the chip body. */
+function Pins({ color }: { color: string }) {
+  return (
+    <>
+      <View style={[styles.pinRowH, { top: 0 }]}>
+        {PINS.map((i) => (
+          <View key={`t${i}`} style={[styles.pinV, { backgroundColor: color }]} />
+        ))}
+      </View>
+      <View style={[styles.pinRowH, { bottom: 0 }]}>
+        {PINS.map((i) => (
+          <View key={`b${i}`} style={[styles.pinV, { backgroundColor: color }]} />
+        ))}
+      </View>
+      <View style={[styles.pinColV, { left: 0 }]}>
+        {PINS.map((i) => (
+          <View key={`l${i}`} style={[styles.pinH, { backgroundColor: color }]} />
+        ))}
+      </View>
+      <View style={[styles.pinColV, { right: 0 }]}>
+        {PINS.map((i) => (
+          <View key={`r${i}`} style={[styles.pinH, { backgroundColor: color }]} />
+        ))}
+      </View>
+    </>
+  );
+}
+
+/** The one moving thing on the screen: a double-beat, then rest. */
+function Heartbeat({ still }: { still: boolean }) {
+  const { colors } = useTheme();
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    if (still) return;
+    scale.value = withRepeat(
+      withSequence(
+        withTiming(1.3, { duration: 120 }),
+        withTiming(1, { duration: 160 }),
+        withTiming(1.18, { duration: 110 }),
+        withTiming(1, { duration: 180 }),
+        withTiming(1, { duration: 1100 }),
+      ),
+      -1,
+      false,
+    );
+    return () => cancelAnimation(scale);
+  }, [still, scale]);
+
+  const iconStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
+  return (
+    <View style={styles.pulseRow}>
+      <View style={[styles.pulseLine, { backgroundColor: colors.surface2 }]} />
+      <Animated.View style={iconStyle}>
+        <Ionicons name="pulse" size={22} color={colors.primary} />
+      </Animated.View>
+      <View style={[styles.pulseLine, { backgroundColor: colors.surface2 }]} />
+    </View>
+  );
+}
+
+type ActionProps = {
+  label: string;
+  onPress: () => void;
+  solid?: boolean;
+  icon?: keyof typeof Ionicons.glyphMap;
+  disabled?: boolean;
+  accessibilityLabel?: string;
+};
+
+/** Flat full-width action. Solid = the main one, tonal = the alternative. */
+function Action({ label, onPress, solid, icon, disabled, accessibilityLabel }: ActionProps) {
+  const { colors, typography } = useTheme();
+  const bg = solid ? colors.text.primary : colors.surface1;
+  const fg = solid ? colors.background : colors.text.primary;
+  return (
+    <PressableScale
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityState={{ disabled: !!disabled, busy: !!disabled }}
+      style={[styles.action, { backgroundColor: bg, opacity: disabled ? 0.6 : 1 }]}
+    >
+      {icon ? <Ionicons name={icon} size={19} color={fg} style={styles.actionIcon} /> : null}
+      <Text style={[typography.bodyBold, { color: fg }]}>{label}</Text>
+    </PressableScale>
+  );
+}
+
+/** Sign-in: Google or guest. Flat and tonal, no borders and no shadows. */
 export default function SignInScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, typography, spacing } = useTheme();
   const reduceMotion = useReducedMotion();
-  const setUser = useRootStore((s) => s.setUser);
   const continueAsGuest = useRootStore((s) => s.continueAsGuest);
 
   const introSeen = useRootStore((s) => s.introSeen);
   const setIntroSeen = useRootStore((s) => s.setIntroSeen);
-  const keyboardInset = useKeyboardInset();
-  const [step, setStep] = useState<Step>('account');
-  const [legalModal, setLegalModal] = useState<'privacy' | 'terms' | null>(null);
 
-  const [pseudonym, setPseudonym] = useState('');
-  const [email, setEmail] = useState('');
-  const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  const name = pseudonym.trim();
-  const tooLong = name.length > 24;
-
-  const createProfile = () => {
-    if (tooLong) return;
-    setUser({
-      id: newLocalId('user'),
-      pseudonym: name || 'Friend',
-      avatarSeed: newLocalId('seed'),
-      age: null,
-      isAgeVerified: false,
-      ageBand: null,
-      createdAt: new Date().toISOString(),
-    });
-    router.replace('/');
-  };
+  const hasGoogle = googleAvailable();
 
   const google = async () => {
     if (busy) return;
     setBusy(true);
     setAuthError(null);
-    const res = await signInWithGoogle();
-    if (!res.ok) {
-      setBusy(false);
-      if (!res.cancelled) setAuthError(res.message);
-      return;
-    }
-    // Continuing with an account is the agreement stated under the buttons.
-    useRootStore.getState().acceptTerms(TERMS_VERSION);
-    // Returning person: restore the saved profile (server first, then this phone) instead of
-    // asking for the birthday and space again.
-    const p = res.profile;
-    const base = {
-      id: `google_${p.id}`,
-      email: p.email,
-      photo: p.photo,
-      name: (p.givenName || p.name?.split(' ')[0] || 'Friend').slice(0, 24),
-    };
-    const remote = p.serverSession ? await pullProfile() : null;
-    const local = useRootStore.getState();
-    const knownHere =
-      !!local.user &&
-      !local.user.isGuest &&
-      local.user.email === p.email &&
-      local.user.age !== null &&
-      local.experienceConfirmed;
-    setBusy(false);
-    if (remote && applyProfile(remote, base)) {
-      void pushProfile();
-      router.replace('/');
-    } else if (knownHere) {
-      void pushProfile();
-      router.replace('/');
-    } else {
-      // New here: ask Google (its own consent screen) for the birthday and gender in the account.
-      // With a full birthday and a gender that maps to a space, nothing needs to be typed.
-      await requestBirthdayAndGender();
-      const g = pendingGoogleProfile();
-      const space = suggestedExperience(g?.gender ?? null);
-      const bd =
-        g?.birthDateString && /^\d{4}-\d{2}-\d{2}$/.test(g.birthDateString)
-          ? g.birthDateString
-          : null;
-      if (
-        g &&
-        bd &&
-        space &&
-        (g.age ?? 0) >= 18 &&
-        applyProfile(profileFromGoogle(bd, space, base.name), { ...base, gender: g.gender })
-      ) {
+    // Busy stays on through the whole hand-off, so a second tap can't start another sign-in
+    // while Google's birthday consent is still open.
+    try {
+      const res = await signInWithGoogle();
+      if (!res.ok) {
+        if (!res.cancelled) setAuthError(res.message);
+        return;
+      }
+      // Continuing with an account is the agreement stated under the buttons.
+      useRootStore.getState().acceptTerms(TERMS_VERSION);
+      // Returning person: restore the saved profile (server first, then this phone) instead of
+      // asking for the birthday and space again.
+      const p = res.profile;
+      const base = {
+        id: `google_${p.id}`,
+        email: p.email,
+        photo: p.photo,
+        name: (p.givenName || p.name?.split(' ')[0] || 'Friend').slice(0, 24),
+      };
+      const remote = p.serverSession ? await pullProfile() : null;
+      const local = useRootStore.getState();
+      const knownHere =
+        !!local.user &&
+        !local.user.isGuest &&
+        local.user.email === p.email &&
+        local.user.age !== null &&
+        local.experienceConfirmed;
+      if (remote && applyProfile(remote, base)) {
+        void pushProfile();
+        router.replace('/');
+      } else if (knownHere) {
         void pushProfile();
         router.replace('/');
       } else {
-        router.push('/(auth)/confirm-profile');
+        // New here: ask Google (its own consent screen) for the birthday and gender in the account.
+        // With a full birthday and a gender that maps to a space, nothing needs to be typed.
+        await requestBirthdayAndGender();
+        const g = pendingGoogleProfile();
+        const space = suggestedExperience(g?.gender ?? null);
+        const bd =
+          g?.birthDateString && /^\d{4}-\d{2}-\d{2}$/.test(g.birthDateString)
+            ? g.birthDateString
+            : null;
+        if (
+          g &&
+          bd &&
+          space &&
+          (g.age ?? 0) >= 18 &&
+          applyProfile(profileFromGoogle(bd, space, base.name), { ...base, gender: g.gender })
+        ) {
+          void pushProfile();
+          router.replace('/');
+        } else {
+          router.push('/(auth)/confirm-profile');
+        }
       }
+    } finally {
+      setBusy(false);
     }
   };
 
   const guest = () => {
+    if (busy) return;
     continueAsGuest();
     router.replace('/');
   };
-
-  const sendCode = async () => {
-    if (busy) return;
-    setBusy(true);
-    setAuthError(null);
-    const res = await requestEmailCode(email);
-    setBusy(false);
-    if (res.ok) setStep('code');
-    else setAuthError(res.message);
-  };
-
-  const confirmCode = async () => {
-    if (busy) return;
-    setBusy(true);
-    setAuthError(null);
-    const res = await verifyEmailCode(email, code);
-    setBusy(false);
-    if (!res.ok) {
-      setAuthError(res.message);
-      return;
-    }
-    // Records already on this device stay; the account is attached to them.
-    const existing = useRootStore.getState().user;
-    setUser({
-      id: res.userId,
-      pseudonym:
-        existing?.pseudonym && existing.pseudonym !== 'Guest'
-          ? existing.pseudonym
-          : name || 'Friend',
-      avatarSeed: existing?.avatarSeed ?? newLocalId('seed'),
-      age: existing?.age ?? null,
-      isAgeVerified: false,
-      ageBand: existing?.ageBand ?? null,
-      email: res.email,
-      isGuest: false,
-      createdAt: existing?.createdAt ?? new Date().toISOString(),
-    });
-    useRootStore.getState().acceptTerms(TERMS_VERSION);
-    const remote = await pullProfile();
-    if (remote)
-      applyProfile(remote, {
-        id: res.userId,
-        email: res.email,
-        photo: null,
-        name: name || 'Friend',
-      });
-    void pushProfile();
-    router.replace('/');
-  };
-
-  const legal = (
-    <>
-      <Text
-        style={[
-          typography.caption,
-          { color: colors.text.muted, textAlign: 'center', marginTop: spacing.md, fontSize: 11 },
-        ]}
-      >
-        By continuing with an account you confirm you are 18 or older and agree to our
-      </Text>
-      <View
-        style={[
-          styles.links,
-          { marginTop: spacing.xs, flexWrap: 'wrap', justifyContent: 'center' },
-        ]}
-      >
-        <PressableScale
-          hitSlop={10}
-          accessibilityRole="button"
-          onPress={() => setLegalModal('terms')}
-        >
-          <Text
-            style={[
-              typography.captionBold,
-              { color: colors.primary, fontSize: 11, textDecorationLine: 'underline' },
-            ]}
-          >
-            Terms of Service
-          </Text>
-        </PressableScale>
-        <Text style={[typography.caption, { color: colors.text.muted, fontSize: 11 }]}> · </Text>
-        <PressableScale
-          hitSlop={10}
-          accessibilityRole="button"
-          onPress={() => setLegalModal('privacy')}
-        >
-          <Text
-            style={[
-              typography.captionBold,
-              { color: colors.primary, fontSize: 11, textDecorationLine: 'underline' },
-            ]}
-          >
-            Privacy Policy
-          </Text>
-        </PressableScale>
-        <Text style={[typography.caption, { color: colors.text.muted, fontSize: 11 }]}> · </Text>
-        <Link href="/(public)/legal/health-disclaimer" asChild>
-          <PressableScale hitSlop={10} accessibilityRole="link">
-            <Text style={[typography.caption, { color: colors.text.muted, fontSize: 11 }]}>
-              Not medical advice
-            </Text>
-          </PressableScale>
-        </Link>
-      </View>
-    </>
-  );
-
-  const legalModalView = (
-    <Modal
-      visible={legalModal !== null}
-      transparent
-      animationType="fade"
-      onRequestClose={() => setLegalModal(null)}
-    >
-      <GestureHandlerRootView
-        style={[
-          StyleSheet.absoluteFill,
-          {
-            backgroundColor: 'rgba(0,0,0,0.65)',
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: spacing.md,
-          },
-        ]}
-      >
-        <Pressable style={StyleSheet.absoluteFill} onPress={() => setLegalModal(null)} />
-        <SquircleSurface
-          radius={24}
-          fill={colors.background}
-          style={{
-            width: '100%',
-            maxHeight: '82%',
-            padding: spacing.lg,
-            borderWidth: 1,
-            borderColor: colors.border,
-          }}
-        >
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: spacing.sm,
-            }}
-          >
-            <Text style={[typography.heading, { color: colors.text.primary }]}>
-              {legalModal === 'privacy' ? 'Privacy Policy' : 'Terms of Service'}
-            </Text>
-            <PressableScale
-              onPress={() => setLegalModal(null)}
-              hitSlop={10}
-              accessibilityRole="button"
-              accessibilityLabel="Close"
-            >
-              <Ionicons name="close" size={24} color={colors.text.secondary} />
-            </PressableScale>
-          </View>
-          <Text
-            style={[
-              typography.caption,
-              { color: colors.text.muted, marginBottom: spacing.md, fontSize: 11 },
-            ]}
-          >
-            Version 2.4 · Effective November 1, 2026 · AnvayKosh Ecosystem
-          </Text>
-          <ScrollView showsVerticalScrollIndicator={false} style={{ flexShrink: 1 }}>
-            {(legalModal === 'privacy' ? PRIVACY_SECTIONS : TERMS_SECTIONS).map((sec) => (
-              <View key={sec.title} style={{ marginBottom: spacing.md }}>
-                <Text
-                  style={[
-                    typography.captionBold,
-                    { color: colors.text.primary, marginBottom: 4, fontSize: 12 },
-                  ]}
-                >
-                  {sec.title}
-                </Text>
-                <Text
-                  style={[
-                    typography.caption,
-                    { color: colors.text.secondary, lineHeight: 18, fontSize: 11 },
-                  ]}
-                >
-                  {sec.body}
-                </Text>
-              </View>
-            ))}
-          </ScrollView>
-          <Button
-            label="Done"
-            variant="primary"
-            size="sm"
-            onPress={() => setLegalModal(null)}
-            style={{ marginTop: spacing.md }}
-          />
-        </SquircleSurface>
-      </GestureHandlerRootView>
-    </Modal>
-  );
 
   if (!introSeen) {
     return <IntroSlider onFinish={() => setIntroSeen(true)} />;
   }
 
-  if (step === 'account') {
-    return (
-      <View style={[styles.root, { backgroundColor: colors.background }]}>
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{
-            paddingTop: insets.top + spacing.md,
-            paddingBottom: insets.bottom + spacing.lg,
-            paddingHorizontal: spacing.lg,
+  return (
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingTop: insets.top + spacing.sm,
+          paddingBottom: insets.bottom + spacing.md,
+          paddingHorizontal: spacing.lg,
+        }}
+      >
+        <PressableScale
+          onPress={() => {
+            setAuthError(null);
+            setIntroSeen(false);
           }}
+          accessibilityRole="button"
+          accessibilityLabel="See the introduction again"
+          style={[styles.back, { backgroundColor: colors.surface1 }]}
         >
-          <PressableScale
-            onPress={() => {
-              setAuthError(null);
-              setIntroSeen(false);
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="See the introduction again"
-            style={[styles.back, { backgroundColor: colors.surface1 }]}
-          >
-            <Ionicons name="chevron-back" size={20} color={colors.text.primary} />
-          </PressableScale>
-          <View style={[styles.hero, { marginTop: spacing.xs, marginBottom: spacing.md }]}>
-            <AnimatedThrivefoldMark size={84} />
-            <Text
-              style={[
-                typography.display,
-                styles.center,
-                { color: colors.text.primary, marginTop: spacing.sm },
-              ]}
-              accessibilityRole="header"
-            >
-              Welcome to Thrivefold
-            </Text>
-            <Text
-              style={[
-                typography.body,
-                styles.center,
-                { color: colors.text.secondary, marginTop: 4, maxWidth: 320 },
-              ]}
-            >
-              A calm, local-first sanctuary for your biological rhythm, daily check-ins, and holistic health.
-            </Text>
+          <Ionicons name="chevron-back" size={20} color={colors.text.primary} />
+        </PressableScale>
+
+        {/* Hero: a chip with the Thrivefold mark as its die. Only the heartbeat moves. */}
+        <Animated.View
+          entering={reduceMotion ? undefined : FadeIn.duration(400)}
+          style={styles.hero}
+        >
+          <View style={styles.chipStage}>
+            <Pins color={colors.surface3} />
+            <View style={[styles.chipBody]}>
+              {/* <View style={[styles.chipDie]}> */}
+              <AnimatedThrivefoldMark size={140} />
+              {/* </View> */}
+            </View>
           </View>
 
-          {/* Meaningful, compact trust badge */}
-          <SquircleSurface
-            radius={18}
-            fill={colors.surface1}
-            style={{
-              paddingVertical: spacing.sm + 2,
-              paddingHorizontal: spacing.md,
-              marginBottom: spacing.md,
-              width: '100%',
-              borderWidth: 1,
-              borderColor: colors.border,
-            }}
-          >
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-around',
-              }}
-            >
-              <View style={{ alignItems: 'center', gap: 4 }}>
-                <Ionicons name="shield-checkmark" size={18} color={colors.primary} />
-                <Text style={[typography.captionBold, { color: colors.text.primary, fontSize: 11 }]}>
-                  On-Device Vault
-                </Text>
-              </View>
-              <View style={{ width: 1, height: 24, backgroundColor: colors.border }} />
-              <View style={{ alignItems: 'center', gap: 4 }}>
-                <Ionicons name="hardware-chip-outline" size={18} color={colors.primary} />
-                <Text style={[typography.captionBold, { color: colors.text.primary, fontSize: 11 }]}>
-                  Local-First AI
-                </Text>
-              </View>
-              <View style={{ width: 1, height: 24, backgroundColor: colors.border }} />
-              <View style={{ alignItems: 'center', gap: 4 }}>
-                <Ionicons name="eye-off-outline" size={18} color={colors.primary} />
-                <Text style={[typography.captionBold, { color: colors.text.primary, fontSize: 11 }]}>
-                  Zero Trackers
-                </Text>
-              </View>
-            </View>
-            <Text
-              style={[
-                typography.caption,
-                {
-                  color: colors.text.muted,
-                  textAlign: 'center',
-                  marginTop: spacing.xs + 2,
-                  fontSize: 11,
-                  lineHeight: 15,
-                },
-              ]}
-            >
-              Your health logs, check-ins, and memories remain encrypted on this phone.
-            </Text>
-          </SquircleSurface>
+          <View style={{ marginTop: spacing.md }}>
+            <Heartbeat still={reduceMotion} />
+          </View>
 
-          {googleAvailable() ? (
-            <PressableScale
-              onPress={google}
-              disabled={busy}
-              accessibilityRole="button"
-              accessibilityLabel="Continue with Google"
-              style={[
-                styles.google,
-                {
-                  backgroundColor: colors.surface,
-                  borderColor: colors.borderStrong,
-                  borderWidth: 1,
-                  opacity: busy ? 0.6 : 1,
-                },
-              ]}
-            >
-              <Ionicons name="logo-google" size={20} color={colors.text.primary} />
-              <Text style={[typography.bodyBold, { color: colors.text.primary, marginLeft: 12 }]}>
-                {busy ? 'Opening Google…' : 'Continue with Google'}
-              </Text>
-            </PressableScale>
-          ) : null}
+          <Text
+            style={[
+              typography.display,
+              styles.center,
+              { color: colors.text.primary, marginTop: spacing.md },
+            ]}
+            accessibilityRole="header"
+          >
+            {'Your health,\non your device.'}
+          </Text>
+          <Text
+            style={[
+              typography.body,
+              styles.center,
+              { color: colors.text.secondary, marginTop: spacing.xs, maxWidth: 300 },
+            ]}
+          >
+            Check-ins, routines and guidance in one private health app.
+          </Text>
+
+          <View style={[styles.factRow, { marginTop: spacing.md }]}>
+            {FACTS.map((f) => (
+              <View key={f.label} style={[styles.fact, { backgroundColor: colors.surface }]}>
+                <Ionicons name={f.icon} size={15} color={colors.primary} />
+                <Text
+                  style={[
+                    typography.captionBold,
+                    { color: colors.text.primary, marginLeft: 6, fontSize: 12 },
+                  ]}
+                >
+                  {f.label}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </Animated.View>
+
+        {/* Actions: sign-in first. Guest is the main action only when Google isn't available. */}
+        <Animated.View
+          entering={reduceMotion ? undefined : FadeInDown.duration(380).delay(120)}
+          style={{ marginTop: spacing.lg }}
+        >
+          {hasGoogle ? (
+            <>
+              <Action
+                solid
+                icon="logo-google"
+                label={busy ? 'Opening Google…' : 'Continue with Google'}
+                accessibilityLabel="Continue with Google"
+                onPress={google}
+                disabled={busy}
+              />
+              <View style={{ height: spacing.sm }} />
+              <Action label="Continue as guest" onPress={guest} disabled={busy} />
+            </>
+          ) : (
+            <Action solid label="Continue as guest" onPress={guest} />
+          )}
+
           {authError ? (
             <Text
+              accessibilityLiveRegion="polite"
               style={[
                 typography.caption,
                 { color: colors.error, marginTop: spacing.sm, textAlign: 'center' },
@@ -481,237 +338,123 @@ export default function SignInScreen() {
               {authError}
             </Text>
           ) : null}
-          {accountsAvailable() ? (
-            <Button
-              label="Sign in with email"
-              variant="outline"
-              onPress={() => setStep('email')}
-              style={{ marginTop: spacing.sm }}
-            />
-          ) : null}
-          {/* <Button label="Continue without an account" variant="ghost" onPress={() => setStep('name')} style={{ marginTop: spacing.xs }} /> */}
-          <Button
-            label="Explore as guest"
-            variant="ghost"
-            onPress={guest}
-            style={{ marginTop: spacing.xs }}
-          />
-          <View style={[styles.distributionRow, { marginTop: spacing.sm }]}>
+
+          {/* Legal lives in the existing public pages. No copies here. */}
+          <Text
+            style={[
+              typography.caption,
+              styles.center,
+              { color: colors.text.muted, fontSize: 12, marginTop: spacing.md },
+            ]}
+          >
+            By continuing with Google you confirm you are 18 or older and agree to our
+          </Text>
+          <View style={[styles.links, { marginTop: spacing.xs }]}>
+            <Link href="/(public)/legal/terms" asChild>
+              <PressableScale hitSlop={10} accessibilityRole="link">
+                <Text style={[typography.captionBold, styles.legalLink, { color: colors.primary }]}>
+                  Terms of Service
+                </Text>
+              </PressableScale>
+            </Link>
+            <Text style={[typography.caption, styles.dot, { color: colors.text.muted }]}> · </Text>
+            <Link href="/(public)/legal/privacy" asChild>
+              <PressableScale hitSlop={10} accessibilityRole="link">
+                <Text style={[typography.captionBold, styles.legalLink, { color: colors.primary }]}>
+                  Privacy Policy
+                </Text>
+              </PressableScale>
+            </Link>
+            <Text style={[typography.caption, styles.dot, { color: colors.text.muted }]}> · </Text>
+            <Link href="/(public)/legal/health-disclaimer" asChild>
+              <PressableScale hitSlop={10} accessibilityRole="link">
+                <Text style={[typography.caption, styles.legalLink, { color: colors.text.muted }]}>
+                  Not medical advice
+                </Text>
+              </PressableScale>
+            </Link>
+          </View>
+
+          <View style={[styles.links, { marginTop: spacing.md, gap: spacing.lg }]}>
             <PressableScale
               onPress={() => void shareApp()}
+              hitSlop={12}
               accessibilityRole="button"
               accessibilityLabel="Share Thrivefold app"
-              style={[
-                styles.distributionAction,
-                { backgroundColor: colors.surface1, borderWidth: 1, borderColor: colors.border },
-              ]}
             >
-              <Ionicons name="share-outline" size={15} color={colors.primary} />
-              <Text
-                style={[
-                  typography.captionBold,
-                  { color: colors.text.primary, marginLeft: spacing.xs, fontSize: 12 },
-                ]}
-              >
+              <Text style={[typography.caption, { color: colors.text.muted, fontSize: 12 }]}>
                 Share app
               </Text>
             </PressableScale>
             <PressableScale
               onPress={() => void joinAsBetaTester()}
+              hitSlop={12}
               accessibilityRole="button"
               accessibilityLabel="Join the Thrivefold beta"
-              style={[
-                styles.distributionAction,
-                { backgroundColor: colors.surface1, borderWidth: 1, borderColor: colors.border },
-              ]}
             >
-              <Ionicons name="people-outline" size={15} color={colors.primary} />
-              <Text
-                style={[
-                  typography.captionBold,
-                  { color: colors.text.primary, marginLeft: spacing.xs, fontSize: 12 },
-                ]}
-              >
+              <Text style={[typography.caption, { color: colors.text.muted, fontSize: 12 }]}>
                 Join beta
               </Text>
             </PressableScale>
           </View>
-          <View style={{ paddingBottom: spacing.md }}>{legal}</View>
-        </ScrollView>
-        {legalModalView}
-      </View>
-    );
-  }
-
-  return (
-    <View
-      style={[styles.root, { backgroundColor: colors.background, paddingBottom: keyboardInset }]}
-    >
-      <ScrollView
-        contentContainerStyle={{
-          paddingTop: insets.top + spacing.md,
-          paddingBottom: insets.bottom + spacing.lg,
-          paddingHorizontal: spacing.lg,
-          flexGrow: 1,
-        }}
-        keyboardShouldPersistTaps="handled"
-      >
-        <PressableScale
-          onPress={() => {
-            setAuthError(null);
-            setStep(step === 'code' ? 'email' : 'account');
-          }}
-          accessibilityRole="button"
-          accessibilityLabel="Back"
-          style={[styles.back, { backgroundColor: colors.surface1 }]}
-        >
-          <Ionicons name="chevron-back" size={20} color={colors.text.primary} />
-        </PressableScale>
-
-        <Animated.View
-          entering={reduceMotion ? undefined : FadeIn.duration(250)}
-          style={{ marginTop: spacing.xl }}
-        >
-          <Text
-            style={[typography.display, { color: colors.text.primary }]}
-            accessibilityRole="header"
-          >
-            {step === 'name'
-              ? 'What should we call you?'
-              : step === 'email'
-                ? 'Sign in with email'
-                : 'Enter your code'}
-          </Text>
-          <Text style={[typography.body, { color: colors.text.secondary, marginTop: spacing.xs }]}>
-            {step === 'name'
-              ? 'A first name or nickname. You can change it later. No email or password needed.'
-              : step === 'email'
-                ? 'We will send a 6-digit code. Your health records still stay on this phone.'
-                : `We sent a code to ${email.trim()}.`}
-          </Text>
-
-          <View style={{ marginTop: spacing.lg }}>
-            {step === 'name' ? (
-              <TextField
-                label="Name or nickname"
-                placeholder="e.g. Alex"
-                value={pseudonym}
-                onChangeText={setPseudonym}
-                autoCapitalize="words"
-                autoCorrect={false}
-                autoFocus
-                returnKeyType="go"
-                onSubmitEditing={createProfile}
-                error={tooLong ? 'Keep it under 25 characters' : undefined}
-                maxLength={40}
-              />
-            ) : step === 'email' ? (
-              <TextField
-                label="Email"
-                placeholder="you@example.com"
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-                autoCorrect={false}
-                autoFocus
-                keyboardType="email-address"
-                textContentType="emailAddress"
-                returnKeyType="send"
-                onSubmitEditing={sendCode}
-                error={authError ?? undefined}
-              />
-            ) : (
-              <TextField
-                label="6-digit code"
-                placeholder="123456"
-                value={code}
-                onChangeText={(t) => setCode(t.replace(/[^0-9]/g, '').slice(0, 6))}
-                keyboardType="number-pad"
-                textContentType="oneTimeCode"
-                autoFocus
-                returnKeyType="go"
-                onSubmitEditing={confirmCode}
-                error={authError ?? undefined}
-              />
-            )}
-          </View>
         </Animated.View>
-
-        <View style={styles.flex} />
-
-        <Button
-          label={step === 'name' ? 'Continue' : step === 'email' ? 'Send code' : 'Sign in'}
-          size="lg"
-          loading={busy}
-          disabled={busy || (step === 'name' && tooLong) || (step === 'code' && code.length !== 6)}
-          onPress={step === 'name' ? createProfile : step === 'email' ? sendCode : confirmCode}
-          style={{ marginTop: spacing.lg }}
-        />
-        {step === 'code' ? (
-          <Button
-            label="Send a new code"
-            variant="ghost"
-            onPress={sendCode}
-            disabled={busy}
-            style={{ marginTop: spacing.xs }}
-          />
-        ) : null}
-        {legal}
       </ScrollView>
-      {legalModalView}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  flex: { flex: 1 },
-  hero: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 },
   center: { textAlign: 'center' },
-  brandRow: { flexDirection: 'row', alignItems: 'center', height: 56 },
-  brandMark: { width: 32, height: 32 },
-  slides: { flexGrow: 0 },
-  imageWrap: {
-    width: '100%',
-    aspectRatio: 1.3,
+  back: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  hero: { flex: 1, minHeight: 300, alignItems: 'center', justifyContent: 'center' },
+  chipStage: { width: 168, height: 168, alignItems: 'center', justifyContent: 'center' },
+  chipBody: {
+    width: 150,
+    height: 150,
+    borderRadius: 34,
+    borderCurve: 'continuous',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chipDie: {
+    width: 130,
+    height: 130,
     borderRadius: 24,
     borderCurve: 'continuous',
-    overflow: 'hidden',
-  },
-  image: { width: '100%', height: '100%' },
-  slideIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dotsRow: {
+  pinRowH: {
+    position: 'absolute',
+    left: 26,
+    right: 26,
     flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 6,
-    alignItems: 'center',
-    height: 20,
+    justifyContent: 'space-between',
   },
-  dot: { height: 8, borderRadius: 4 },
-  secondaryRow: { flexDirection: 'row', gap: 8 },
-  distributionRow: { flexDirection: 'row', justifyContent: 'center', gap: 8 },
-  distributionAction: {
-    minHeight: 48,
-    flex: 1,
+  pinColV: { position: 'absolute', top: 26, bottom: 26, justifyContent: 'space-between' },
+  pinV: { width: 1, height: 12, borderRadius: 3 },
+  pinH: { width: 12, height: 1, borderRadius: 3 },
+  pulseRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  pulseLine: { width: 56, height: 2, borderRadius: 1 },
+  factRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 },
+  fact: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 16,
+    height: 34,
+    paddingHorizontal: 11,
+    borderRadius: 17,
   },
-  links: { alignItems: 'center', flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap' },
-  back: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  google: {
+  action: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 56,
+    minHeight: 54,
     borderRadius: 18,
     borderCurve: 'continuous',
   },
+  actionIcon: { marginRight: 10 },
+  links: { alignItems: 'center', flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap' },
+  legalLink: { fontSize: 12, textDecorationLine: 'underline' },
+  dot: { fontSize: 12 },
 });
